@@ -14,7 +14,7 @@ reflectivity_32bit
 # reflectivity_16bit  
 MOR                 
 amplitude           
-n_particles        
+n_particles
 n_all_particles     
 temperature_sensor  
 heating_current     
@@ -34,7 +34,7 @@ code_NWS
 # Other options 
 Nd / d / drop_diameter_counts / Field_N # ???
 Vd / v / drop_velocity_counts / Field_V # ???    
-N / n / raw_data  / Field_Raw     # ??? 
+N / n / raw_data  / Field_Raw     # ??? pcm Parsivel conditional matrix
 
 
 diameter_bin_width / diameter_class_width / diameter_width   (left or right)
@@ -48,9 +48,9 @@ time / timestep  # start or end?
 # diameter/ velocity ... bin lower, center or upper? which core dimension TODO !!!!
 
 ## Coords
-lat                latitude                
-lon                longitude                 
-altitude           altitude                   ?? attrs ? 
+lat     OR           latitude                
+lon     OR           longitude                 
+altitude (TO ATTRS?)                          
 crs
 
 ### Suggested name changes 
@@ -81,6 +81,9 @@ crs
 # 'CorrectedVolumetricDrops',
 # 'RawDrops',
 # 'VolumetricDrops',
+
+### PCM 
+# - https://github.com/DISDRONET/PyDSD/blob/master/pydsd/parsivel_conditional_matrix.txt 
 
 ##----------------------------------------------------------------------------.
 ####################
@@ -376,3 +379,143 @@ def attrs_explanations():
              }
     return explanations
 
+def get_OTT_Parsivel_bins():
+    diameter_center = np.array([  
+        0.06,
+        0.19,
+        0.32,
+        0.45,
+        0.58,
+        0.71,
+        0.84,
+        0.96,
+        1.09,
+        1.22,
+        1.42,
+        1.67,
+        1.93,
+        2.19,
+        2.45,
+        2.83,
+        3.35,
+        3.86,
+        4.38,
+        4.89,
+        5.66,
+        6.7,
+        7.72,
+        8.76,
+        9.78,
+        11.33,
+        13.39,
+        15.45,
+        17.51,
+        19.57,
+        22.15,
+        25.24,
+    ]
+    diameter_width = np.array([
+        0.129,
+        0.129,
+        0.129,
+        0.129,
+        0.129,
+        0.129,
+        0.129,
+        0.129,
+        0.129,
+        0.129,
+        0.257,
+        0.257,
+        0.257,
+        0.257,
+        0.257,
+        0.515,
+        0.515,
+        0.515,
+        0.515,
+        0.515,
+        1.030,
+        1.030,
+        1.030,
+        1.030,
+        1.030,
+        2.060,
+        2.060,
+        2.060,
+        2.060,
+        2.060,
+        3.090,
+        3.090,
+        ])
+    velocity_center = np.array([
+        0.05,
+        0.15,
+        0.25,
+        0.35,
+        0.45,
+        0.55,
+        0.65,
+        0.75,
+        0.85,
+        0.95,
+        1.1,
+        1.3,
+        1.5,
+        1.7,
+        1.9,
+        2.2,
+        2.6,
+        3,
+        3.4,
+        3.8,
+        4.4,
+        5.2,
+        6.0,
+        6.8,
+        7.6,
+        8.8,
+        10.4,
+        12.0,
+        13.6,
+        15.2,
+        17.6,
+        20.8,
+    ])
+    velocity_width = np.array([ 
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.1,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.2,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.4,
+        0.8,
+        0.8,
+        0.8,
+        0.8,
+        0.8,
+        1.6,
+        1.6,
+        1.6,
+        1.6,
+        1.6,
+        3.2,
+        3.2,
+    ])
+
+    
+    
