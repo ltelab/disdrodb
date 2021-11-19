@@ -13,20 +13,20 @@ acc_rain_amount
 reflectivity_32bit       
 # reflectivity_16bit  
 MOR                 
-amplitude           
+amplitude                     # --> laser_amplitude ?     
 n_particles
 n_all_particles     
 temperature_sensor  
-heating_current     
-voltage             
-sensor_status       
-error_code          
+heating_current               # --> heating_current_sensor or sensor_heating_current
+voltage                       # which voltage? is it sensor_voltage
+sensor_status                      
+error_code                    # is it a sensor error code or data acquisition error code
 temperature_PBC     
 temperature_right   
 temperature_left    
-kinetic_energy      
+kinetic_energy                # precip_kinetic_energy?
 snowfall_intensity  
-code_4680              
+code_4680                     # wanna add some info on this codes in the name? some are METAR, some are NWS, etc
 code_4677           
 code_4678            
 code_NWS           
@@ -44,7 +44,7 @@ velocity_bin_center # ...
 diameter_bin_lower, diameter_bin_upper  # same for velocity? 
 
 # Dimensions 
-time / timestep  # start or end? 
+time / timestep  # start or end?   --> TIME should be always END in my opinion for weather measurements (jgr)
 # diameter/ velocity ... bin lower, center or upper? which core dimension TODO !!!!
 
 ## Coords
