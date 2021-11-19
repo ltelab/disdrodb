@@ -7,18 +7,18 @@ Created on Wed Nov 17 15:03:47 2021
 """
 #####################
 ### Variable Name ###
-#####################                                     
+#####################         ### Suggested name changes 
 rain_rate               
-acc_rain_amount   
+acc_rain_amount               # --> rain_acc / rain_accum
 reflectivity_32bit       
 # reflectivity_16bit  
-MOR                 
-amplitude                     # --> laser_amplitude ?     
+MOR                           # --> mor_visibility
+amplitude                     # --> JG: laser_amplitude ? GG: signal_amplitude (I guess)  
 n_particles
-n_all_particles     
+n_all_particles               # Difference with the above? More explicit name?
 temperature_sensor  
 heating_current               # --> heating_current_sensor or sensor_heating_current
-voltage                       # which voltage? is it sensor_voltage
+voltage                       # JG: which voltage? is it sensor_voltage --> GG: Power supply voltage --> supply_voltage / power_voltage / battery_voltage
 sensor_status                      
 error_code                    # is it a sensor error code or data acquisition error code
 temperature_PBC     
@@ -27,48 +27,39 @@ temperature_left
 kinetic_energy                # precip_kinetic_energy?
 snowfall_intensity  
 code_4680                     # wanna add some info on this codes in the name? some are METAR, some are NWS, etc
-code_4677           
-code_4678            
-code_NWS           
+code_4677                     # SYNOP_4680, SYNOP_4677
+code_4678                     # SYNOP_4678 (METAR/SPECI_4678) ?
+code_NWS                      # NWS   (prefix: precip_type_<...> --> precip_type_SYNOP_4677
+# --> http://www.czo.psu.edu/downloads/Metadataworksheets/LPM_SYNOP_METAR_key.pdf
 
 # Other options 
 Nd / d / drop_diameter_counts / Field_N # ???
 Vd / v / drop_velocity_counts / Field_V # ???    
 N / n / raw_data  / Field_Raw     # ??? pcm Parsivel conditional matrix
 
-
-diameter_bin_width / diameter_class_width / diameter_width   (left or right)
-velocity_bin_width # .... 
-diameter_bin_center / diameter_class_center     
-velocity_bin_center # ... 
-diameter_bin_lower, diameter_bin_upper  # same for velocity? 
-
-# Dimensions 
+# Core dimensions 
 time / timestep  # start or end?   --> TIME should be always END in my opinion for weather measurements (jgr)
-# diameter/ velocity ... bin lower, center or upper? which core dimension TODO !!!!
+diameter_bin_center   # --> bin or class ? 
+velocity_bin_center
 
 ## Coords
-lat     OR           latitude                
-lon     OR           longitude                 
-altitude (TO ATTRS?)                          
+lat     # OR  latitude                
+lon     # OR  longitude                 
+altitude                         
 crs
-
-### Suggested name changes 
-# acc_rain_amount --> rain_acc 
-# MOR --> mor_visibility 
-# amplitide --> signal amplitude 
-# voltage --> supply_voltage / power_voltage
-# code_4680 --> SYNOP_4680
-# code_4677 --> SYNOP_4677
-# code_4678 --> SYNOP_4678
-# code_NWS --> NWS
+diameter_bin_width    
+velocity_bin_width  
+diameter_bin_lower
+diameter_bin_upper 
+velocity_bin_lower
+velocity_bin_upper 
 
 ### Datalogger EPFL 
 # 'Datalogger_temp': 'object',
 # 'Datalogger_power': 'object', 
 # 'Datalogger_communication': 'uint8', 
  
-### Changes 4 Kimbo   
+### Acronyms used by Kimbo   
 # 'Signal_amplitude_laser_strip': amplitude
 # 'Number_detected_particles':  # n_particles or n_all_particles --> Check based on OTT code
 # 'Current_through_heating_system': heating_current
@@ -98,44 +89,61 @@ attrs = {"title"      : 'Parsivel disdrometer observations from Ardeche region, 
          "source": 'Parsivel observations of drop counts per velocity/equivolume diameter class, filtered for quality control.',
          "history": '', # created the xxxx-xx-xx ?
          "conventions": '',
-         "site_name": '',
-         "sensor_name": '',  # instrument name? 
-         "instrument_version": '',
-         "project_name": 'https://ruisdael-observatory.nl/',
-         "contributors": 'Marc Schleiss, Saverio Guzzo, Rob Mackenzie', 
-         "authors": '', # or authors
-         "sensor_type": 'OTT Hydromet Parsivel2',
+         
+         'campaign_name': 
+         "site_name": '',    
+         'station_id': 10,
+         'station_name': 'Mirabel',
+         'location': '',
+         'country': '',
+         'continent: '',
+         'crs': 'WGS84',
+         'latitude': '',
+         'longitude': '',
+         'latitude_unit': 'DegreesNorth',
+         'longitude_unit': 'DegreesEast',
+         'altitude_unit': 'MetersAboveSeaLevel',
+            
+          # Very imporant 
+          # - Limited set to be checked on runtime for inclusion in DB 
+          # - I would define values such as Parsivel, Parsivel2, ThiesLPM, ...
+         "sensor_name": 'Parsivel2',  # instrument name?      
+         "sensor_long_name": 'OTT Hydromet Parsivel2',
+         "instrument_version": '', # included in sensor_name no?
+         "sensor_wavelegth": '', # change between Parsivel version ... 
          "sensor_serial_number": '',  
          "firmware_IOP": '',  
          "firmware_DSP": '', 
-         # firmware_version
+         "firmware_version": '', 
          
-         # Suggested 
-        'campaign_name': 
-        'station_id': 10,
-        'station_name': 'Mirabel',
-        'location': '',
-        'crs': 'WGS84',
-        'latitude_unit': 'DegreesNorth',
-        'longitude_unit': 'DegreesEast',
-        'altitude_unit': 'MetersAboveSeaLevel',
-        'country': '', 
+         # Quantity useful for downstream computations (JG)
+         # - Example: conversion from areal DSD to volumetric DSD
+         "sensor_beam_width": '', #  Parsivel2 > Parsivel
+         'temporal_resolution': 30 # "measurement_interval", default in seconds ? ,
         
+         # Attribution 
+         "project_name": 'https://ruisdael-observatory.nl/',  # rendunant with campaign_name? 
+         "contributors": 'Marc Schleiss, Saverio Guzzo, Rob Mackenzie', 
+         "authors": '', # or authors
+         'reference': 'XXX et al., ... ',
+         'documentation': '',
+         'website': '', 
+         'source_repository': '',
+         'doi': '',
+         'contact': '',
+         'contact_information': 'http://lte.epfl.ch',
+         
+         # DISDRO DB attrs 
         'obs_type': '', # raw/preprocessed/postprocessed?
         'level': 'L0', 
-        'temporal_resolution': '30 seconds.',
-        'reference': 'XXX et al., ... ',
-        'documentation': '',
-        'website': '', 
-        'source_repository': '',
-        'doi': '',
-        'contact': '',
-        'contact_information': 'http://lte.epfl.ch',
-        # To derive 
-        # - Years coverage
-        # - Total minutes
-        # - Total rain events
-        # - Other stats TBD 
+      
+              
+         # To derive 
+         # - Years coverage
+         # - Total minutes
+         # - Total rain events
+         # - Other stats TBD 
+        
      }  
 
 def get_default_attrs(): 
