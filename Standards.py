@@ -13,18 +13,18 @@ acc_rain_amount               # --> rain_acc / rain_accum
 reflectivity_32bit       
 # reflectivity_16bit  
 MOR                           # --> mor_visibility
-amplitude                     # --> JG: laser_amplitude ? GG: signal_amplitude (I guess)  
+amplitude                     # --> JG: laser_amplitude . AB: I agree with Jacopo, I think it is the laser amplitude. A way to monitor if windows are dirty or not. 
 n_particles
 n_all_particles               # Difference with the above? More explicit name?
 temperature_sensor  
 heating_current               # --> heating_current_sensor or sensor_heating_current
 voltage                       # JG: which voltage? is it sensor_voltage --> GG: Power supply voltage --> supply_voltage / power_voltage / battery_voltage
-sensor_status                      
-error_code                    # is it a sensor error code or data acquisition error code
-temperature_PBC     
-temperature_right   
-temperature_left    
-kinetic_energy                # precip_kinetic_energy?
+sensor_status                 # AB: this code is related to laser amplitude, and I think 3 is best and 0 means obstruction.   
+error_code                    # is it a sensor error code or data acquisition error code?
+temperature_PBC               # AB: what does PBC stands for?
+temperature_right             # AB: confusing: right or left with respect to what?
+temperature_left              # AB: If part of the head, I suggest to use transmitter or receiver side...
+kinetic_energy                # JG: precip_kinetic_energy? AB: rain_kinetic_energy
 snowfall_intensity  
 code_4680                     # wanna add some info on this codes in the name? some are METAR, some are NWS, etc
 code_4677                     # SYNOP_4680, SYNOP_4677
@@ -38,7 +38,7 @@ Vd / v / drop_velocity_counts / Field_V # ???
 N / n / raw_data  / Field_Raw     # ??? pcm Parsivel conditional matrix
 
 # Core dimensions 
-time / timestep  # start or end?   --> TIME should be always END in my opinion for weather measurements (jgr)
+time / timestep  # start or end?   --> JG/AB: Time should be always END in my opinion for weather measurements 
 diameter_bin_center   # --> bin or class ? 
 velocity_bin_center
 
@@ -90,13 +90,13 @@ attrs = {"title"      : 'Parsivel disdrometer observations from Ardeche region, 
          "history": '', # created the xxxx-xx-xx ?
          "conventions": '',
          
-         'campaign_name': 
+         'campaign_name': '',
          "site_name": '',    
          'station_id': 10,
          'station_name': 'Mirabel',
          'location': '',
          'country': '',
-         'continent: '',
+         'continent': '',
          'crs': 'WGS84',
          'latitude': '',
          'longitude': '',
@@ -109,7 +109,10 @@ attrs = {"title"      : 'Parsivel disdrometer observations from Ardeche region, 
           # - I would define values such as Parsivel, Parsivel2, ThiesLPM, ...
          "sensor_name": 'Parsivel2',  # instrument name?      
          "sensor_long_name": 'OTT Hydromet Parsivel2',
-         "instrument_version": '', # included in sensor_name no?
+         
+         "instrument_version": '', # GG: included in sensor_name no?
+         "instrument_name": '', # AB: If network, instrument name could be a number in the network. GG: --> station_id ? Do not belong to sensor specs
+         
          "sensor_wavelegth": '', # change between Parsivel version ... 
          "sensor_serial_number": '',  
          "firmware_IOP": '',  
@@ -118,11 +121,13 @@ attrs = {"title"      : 'Parsivel disdrometer observations from Ardeche region, 
          
          # Quantity useful for downstream computations (JG)
          # - Example: conversion from areal DSD to volumetric DSD
-         "sensor_beam_width": '', #  Parsivel2 > Parsivel
-         'temporal_resolution': 30 # "measurement_interval", default in seconds ? ,
-        
+         # AB: + the effective beam width changes dynamically because of the margin fallers...
+         "sensor_beam_width": '', #  Parsivel2 > Parsivel  
+         'sensor_nominal_wdith': '', # AB
+         'temporal_resolution': 30, # "measurement_interval", default in seconds ? ,
+
          # Attribution 
-         "project_name": 'https://ruisdael-observatory.nl/',  # rendunant with campaign_name? 
+         "project_name": 'https://ruisdael-observatory.nl/',  # rendunant with campaign_name?   AB: not an issue in my view, better to have redundancy than missing some info... 
          "contributors": 'Marc Schleiss, Saverio Guzzo, Rob Mackenzie', 
          "authors": '', # or authors
          'reference': 'XXX et al., ... ',
