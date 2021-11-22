@@ -6,62 +6,82 @@ Created on Mon Nov 22 10:59:21 2021
 @author: ghiggi
 """
 import os
+os.chdir("/home/ghiggi/Projects/parsiveldb")
 import glob 
 import argparse # prefer click ... https://click.palletsprojects.com/en/8.0.x/
 import click
 import time
-
 import dask 
-# import pandas as dd
-import dask.dataframe as dd
 import numpy as np 
 import xarray as xr 
 
-from parsiveldb import XXXX
-from parsiveldb import check_L0_standards
-from parsiveldb import check_L1_standards
-from parsiveldb import check_L2_standards
-from parsiveldb import get_attrs_standards
-from parsiveldb import get_dtype_standards
-from parsiveldb import get_L1_encodings_standards
-from parsiveldb import get_L1_chunks_standards
+from parsiveldb.io import check_valid_varname
+from parsiveldb.io import check_L0_standards
+from parsiveldb.io import check_L1_standards
+from parsiveldb.io import check_L2_standards
+from parsiveldb.io import get_attrs_standards
+from parsiveldb.io import get_dtype_standards
+from parsiveldb.io import get_L1_encodings_standards
+ 
 
 # A file for each instrument 
 # TODO: force=True ... remove existing file 
 #       force=False ... raise error if file already exists 
-# Time execution 
-print('- Ln, validation and test sets: {:.2f}s'.format(time.time() - t_i))
+ 
 
+base_dir = "/home/ghiggi/Data_sample_Ticino_2018/Ticino_2018/data/61"
 
-dirpath = "/home/ghiggi/Data_sample_Ticino_2018/Ticino_2018/data/61/*"
-file_list = glob.glob(dirpath)[0:3]
-file_list = glob.glob(dirpath)
-
-debug_on = True 
 debug_on = False
+debug_on = True 
+lazy = True
+force = True
+verbose = True
 
-def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=True):
+def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=True, debug_on=True, lazy=True):
     #-------------------------------------------------------------------------.
-    
+    # Whether to use pandas or dask 
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
+
+    #-------------------------------------------------------------------------.
+    # - Define directory and file paths 
     df_fpath = "/tmp/Ticino.parquet"   
     nc_fpath = "/tmp/Ticino.nc"   
-    L1_nc_fpath = "/tmp/Ticino1.nc"   
+    L1_nc_fpath = "/tmp/Ticino1.nc"  
+    
+    #-------------------------------------------------------------------------.
+    # - Check if a directory already exists 
+    # TODO 
+    
+    #-------------------------------------------------------------------------.
+    # - Define instrument type 
     sensor_name = "Parsivel"
+    
     # - Define attributes 
     attrs = get_attrs_standards()
     attrs['Title'] = 'aaa'
-    attrs['Title'] = ...
     attrs['lat'] = 1223
     attrs['lon'] = 1232
     attrs['crs'] = "WGS84"  # EPSG Code 
-
+    attrs['sensor_name'] = sensor_name
+ 
     ###############################
     #### Perform L0 processing ####
     ###############################
     if L1_processing: 
+        #----------------------------------------------------------------.
         if verbose:
             print("L0 processing of XXXX started")
         t_i = time.time() 
+        # - Retrieve filepaths of raw data files 
+        if debug_on: 
+            file_list = glob.glob(os.path.join(base_dir,"*"))[0:3]
+            
+        else:  
+            file_list = glob.glob(os.path.join(base_dir,"*"))
+        #----------------------------------------------------------------.
         # - Define raw data headers 
         raw_data_columns = ['ID',
                             'Geo_coordinate_x',
@@ -84,17 +104,21 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=
                             'Sensor_status',
                             'Rain_amount_absolute',
                             'Error_code',
-                            'xxx'
+                            'xxx',
                             'FieldN',
                             'FieldV',
-                            'RAW_data',
+                            'RawData',
                             'Unknow_column'
                             ]
         check_valid_varname(raw_data_columns)   
         ##------------------------------------------------------.      
         # Determine dtype based on standards 
         dtype_dict = get_dtype_standards()
+        dtype_dict['FieldN'] = 'U'
+        dtype_dict['FieldV'] = 'U'
+        dtype_dict['RawData'] = 'U'
         dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+        
         ##------------------------------------------------------.
         # Define reader options 
         reader_kwargs = {}
@@ -102,7 +126,7 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=
         reader_kwargs['delimiter'] = ','
         reader_kwargs["on_bad_lines"] = 'skip'
         reader_kwargs["engine"] = 'python'
-        if not debug_on:
+        if lazy:
             reader_kwargs["blocksize"] = None
         reader_kwargs["on_bad_lines"] = 'skip'
         
@@ -116,25 +140,34 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=
                                  names = raw_data_columns, 
                                  dtype = dtype_dict,
                                  **reader_kwargs)
+                
                 # - Drop rows with all NaN
-                df = df.dropna(how='all')  
+                # ---> TODO: find a row with all NA 
+                # ---> TODO: remove rows with NA in specific columns 
+                df = df.dropna(how='all') 
+                
                 # - Replace custom NA with standard flags 
                 # TODO !!! 
+                
                 # - Append to the list of dataframe 
                 list_df.append(df)
                 
             except (Exception, ValueError) as e:
-              print("{} has been skipped. The error is {}".format(filename, e))
-              list_skipped_files.append("{} has been skipped. The error is {}".format(filename, e))
-            
-        print('{} files on {} has been skipped.'.format(len(list_skipped_files), len(file_list)))
+              msg = "{} has been skipped. The error is {}".format(filename, e)
+              if verbose: 
+                  print(msg)
+              list_skipped_files.append(msg)
+             
+        if verbose:      
+            print('{} files on {} has been skipped.'.format(len(list_skipped_files), len(file_list)))
         
         ##------------------------------------------------------.
         # Concatenate the dataframe 
         try:
-            df = dd.concat(temp_list, axis=0, ignore_index = True)
+            df = dd.concat(list_df, axis=0, ignore_index = True)
         except (AttributeError, TypeError) as e:
             raise ValueError("Can not create concat data files. Error: {}".format(e))
+            
         ##------------------------------------------------------.                                   
         # Write to Parquet 
         print('Starting conversion to parquet file')
@@ -163,27 +196,20 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=
         df_path = '' # TBD
         df = dd.read_parquet(df_fpath)
         
-        # df = df.head(10) 
+        df = df.head(10) 
         
-        fields_length = {"Error_code": 32,
-                         "FieldN": 32,
-                         "FieldV": 1024,
-                         }
-        
-        # fields_length = {"FieldN": 32,
-        #                  "FieldV": 32,
-        #                    "RAW_data": 1024,
-        #                  }
+        # Retrieve raw data matrix 
         dict_data = {}
-        for key, n_bins in fields_length.items(): 
+        n_bins_dict = get_raw_field_nbins()
+        for key, n_bins in n_bins_dict.items(): 
             np_arr_str =  df[key].values.compute().astype(str) # Dask
             # np_arr_str =  df[key].values.astype(str)           # Pandas 
             list_arr_str = np.char.split(np_arr_str,",")
             arr_str = np.stack(list_arr_str, axis=0) 
-            arr = arr_str[:, 0:n_bins].astype(float)               # <---- TO ADAPT 
+            arr = arr_str[:, 0:n_bins].astype(float)                
+            if key == 'RawData':
+                arr = arr.reshape(..., n_bins_dict['FieldN'], n_bins_dict['FieldV'])
             dict_data[key] = arr
-        
-        # dict_data['FieldV'].values.reshape(n_timesteps, 32, 32)
         
         ##-----------------------------------------------------------
         # Define data variables for xarray Dataset 
