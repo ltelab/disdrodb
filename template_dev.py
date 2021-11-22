@@ -5,13 +5,6 @@ Created on Mon Nov 22 10:59:21 2021
 
 @author: ghiggi
 """
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov 17 18:39:40 2021
-
-@author: ghiggi
-"""
 import os
 import glob 
 import argparse # prefer click ... https://click.palletsprojects.com/en/8.0.x/
@@ -43,17 +36,24 @@ print('- Ln, validation and test sets: {:.2f}s'.format(time.time() - t_i))
 dirpath = "/home/ghiggi/Data_sample_Ticino_2018/Ticino_2018/data/61/*"
 file_list = glob.glob(dirpath)[0:3]
 file_list = glob.glob(dirpath)
+
 debug_on = True 
+debug_on = False
 
 def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=True):
     #-------------------------------------------------------------------------.
     
     df_fpath = "/tmp/Ticino.parquet"   
     nc_fpath = "/tmp/Ticino.nc"   
+    L1_nc_fpath = "/tmp/Ticino1.nc"   
+    sensor_name = "Parsivel"
     # - Define attributes 
     attrs = get_attrs_standards()
     attrs['Title'] = 'aaa'
     attrs['Title'] = ...
+    attrs['lat'] = 1223
+    attrs['lon'] = 1232
+    attrs['crs'] = "WGS84"  # EPSG Code 
 
     ###############################
     #### Perform L0 processing ####
@@ -84,6 +84,7 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=
                             'Sensor_status',
                             'Rain_amount_absolute',
                             'Error_code',
+                            'xxx'
                             'FieldN',
                             'FieldV',
                             'RAW_data',
@@ -145,7 +146,7 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=
         
         ##------------------------------------------------------.   
         if verbose:
-            print("L0 processing of XXXX ended in {}:.2f}".format(time.time() - t_i)))
+            print("L0 processing of XXXX ended in {}:.2f}".format(time.time() - t_i))
     
     #-------------------------------------------------------------------------.
     ###############################
@@ -183,34 +184,39 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False, verbose=
             dict_data[key] = arr
         
         # dict_data['FieldV'].values.reshape(n_timesteps, 32, 32)
-        # - Conversion to xarray 
-        diameter_bin_center =
-        coords = {
-             "diameter_bin_center":  np.arange(0,32),
-             "time": df['Timestamp'].values, 
-                                               
-        #     lat=(["x", "y"], lat),
-        #     time=time,
-        #     reference_time=reference_time,
-        }
-        ds = xr.Dataset(data_vars={
-                            "FieldN": (["time", "diameter_bin_center"], dict_data['Error_code']),
-                            "FieldV": (["time", "velocity_bin_center"], dict_data['FieldN']),
-                            # "Raw": (["diameter_bin_center", "velocity_bin_center", "time"], precipitation),
-                        },
+        
+        ##-----------------------------------------------------------
+        # Define data variables for xarray Dataset 
+        data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
+                     "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
+                     "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
+                    }
+        # Define coordinates for xarray Dataset
+        coords = get_L1_coords(sensor_name=sensor_name)
+        coords['time'] = df['Timestamp'].values
+        coords['lat'] = attrs['lat']
+        coords['lon'] = attrs['lon']
+        coords['crs'] = attrs['crs']
+
+        ##-----------------------------------------------------------
+        # Create xarray Dataset
+        ds = xr.Dataset(data_vars = data_vars, 
                         coords = coords, 
                         attrs = attrs,
-                    )
- 
-        # - Save netcdf 
-        L1_nc_fpath = '' # TBD
-        encoding = get_L1_encodings_standards()
-        chunks = get_L1_chunks_standards()
-        ds.to_netcdf(L1_nc_fpath, encoding=encoding, chunks=chunks)
+                        )
         
+        ##-----------------------------------------------------------
+        # Save netCDF4 
+        encoding_dict = get_L1_encodings_standards(sensor_name=sensor_name) # TODO: generalize to sensor_name 
+        ds.to_netcdf(L1_nc_fpath, encoding=encoding_dict, format="NETCDF4", mode="w")
+        
+        ##-----------------------------------------------------------
         if verbose:
-            print("L1 processing of XXXX ended in {}:.2f}".format(time.time() - t_i)))
+            print("L1 processing of XXXX ended in {}:.2f}".format(time.time() - t_i))
+    
     #-------------------------------------------------------------------------.
+
+# Parquet schema 
 
 # TODO: maybe found a better way --> click
 # https://click.palletsprojects.com/en/8.0.x/ 
