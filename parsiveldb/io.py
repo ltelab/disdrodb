@@ -6,6 +6,7 @@ Created on Mon Nov 22 11:10:59 2021
 @author: ghiggi
 """
 import os
+import shutil
 import glob
 import numpy as np 
 import pandas as pd
@@ -15,7 +16,7 @@ import dask.dataframe
 ## Kimbo
 # - correct header names
 # - dtype, attrs standards 
-# - Check folder exists if force=True, 
+# - Check folder exists if force=True, why?
 # - coordinate standards ? 
 #   get_velocity_bin_center(): 
     # - args: instrument=Parsivel,Thies .. if, elif 
@@ -25,7 +26,8 @@ import dask.dataframe
 def check_folder_structure(base_dir, campaign_name):
     """Create the folder structure required for data processing"""
     # Define directories 
-    raw_campaign_dir = os.path.join(base_dir, "raw", campaign_name)
+    # raw_campaign_dir = os.path.join(base_dir, "raw", campaign_name)
+    # In Ticino_2018 there is data folder and not raw
     processed_campaign_dir = os.path.join(base_dir, "processed", campaign_name)
     
     # Check if processed folder exist
@@ -36,7 +38,7 @@ def check_folder_structure(base_dir, campaign_name):
             raise FileNotFoundError("Can not create folder <processed>. Error: {}".format(e))
     
     # Create station subfolder if need it
-    for station_folder in glob.glob(os.path.join(raw_campaign_dir,"data", "*")):
+    for station_folder in glob.glob(os.path.join(base_dir,"data", "*")):
         try:
             os.makedirs(os.path.join(processed_campaign_dir, os.path.basename(os.path.normpath(station_folder))))
         except FileExistsError:
@@ -58,16 +60,14 @@ def _check_sensor_name(sensor_name):
         raise ValueError("Valid sensor_name are {}".format(_available_sensors()))
     return 
 
-def _write_to_parquet(df, fpath, force=False):  
+def _write_to_parquet(df, path, campaign_name, force=False):  
     # Check if a file already exists (and remove if force=True)
+    fpath = path + '/' + campaign_name + '.parquet'
     if os.path.exists(fpath):
         if not force: 
-            raise ValueError("'force' is False and a file already exists at {}", fpath)
+            raise ValueError("'force' is False and a file already exists at: {}", fpath)
         else:
-            if os.isdir(fpath): 
-                os.rmdir(fpath)
-            else: 
-                os.remove(fpath)
+            shutil.rmtree(fpath, ignore_errors=True)
     ##-------------------------------------------------------------------------.
     # Options 
     compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
@@ -374,13 +374,13 @@ def get_attrs_standards():
 
 def get_dtype_standards(): 
     dtype_dict = {                                 # Kimbo option
-        "id": "int32",
+        "id": "uint32",
         "rain_rate": 'float32',
         "acc_rain_amount":   'float32',
         "rain_amount_absolute": 'object', 
         "reflectivity_16bit": 'float32',
         "reflectivity_32bit": 'float32',
-        "mor"             :'float32',          #  uint16 
+        "mor"             :'uint16',          #  uint16 
         "amplitude"       :'float32',          #  uint32
         "n_particles"     :'int32',            # 'uint32' 
         "n_all_particles": 'int32',            # 'uint32'  

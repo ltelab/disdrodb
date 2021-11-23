@@ -6,7 +6,7 @@ Created on Mon Nov 22 10:59:21 2021
 @author: ghiggi
 """
 import os
-os.chdir("/home/ghiggi/Projects/parsiveldb")
+os.chdir("/home/kimbo/Documents/parsiveldb")
 import glob 
 import shutil
 import argparse # prefer click ... https://click.palletsprojects.com/en/8.0.x/
@@ -42,14 +42,16 @@ from parsiveldb.io import get_L1_nc_encodings_standards
 
 # A file for each instrument 
 
+# Logging
+
 ## Infer Arrow schema from pandas
 # import pyarrow as pa
 # schema = pa.Schema.from_pandas(df)
 
-base_dir = "/home/ghiggi/Data_sample_Ticino_2018/Ticino_2018/data/61"
+base_dir = "/SharedVM/Campagne/Ticino_2018"
+campaign_name = os.path.basename(base_dir)
 
-debug_on = False
-debug_on = False 
+debug_on = True
 lazy = True
 force = True
 verbose = True
@@ -68,13 +70,14 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
 
     #-------------------------------------------------------------------------.
     # - Define directory and file paths 
-    df_fpath = "/tmp/Ticino.parquet"   
-    L1_nc_fpath = "/tmp/Ticino1.nc"  
+    df_fpath = "/SharedVM/Campagne/Ticino_2018/processed/Ticino.parquet"   
+    L1_nc_fpath = "/SharedVM/Campagne/Ticino_2018/processed/Ticino.nc"  
     
     #-------------------------------------------------------------------------.
     # - Check if a directory already exists 
     # - TODO ADD: force=True ... remove existing file 
     #             force=False ... raise error if file already exists 
+    # - TODO: save processed files inside his station folder
     
     # check_folder_structure(base_dir, campaign_name, force=True)
 
@@ -94,224 +97,242 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
     ###############################
     #### Perform L0 processing ####
     ###############################
-    if L1_processing: 
-        #----------------------------------------------------------------.
-        if verbose:
-            print("L1 processing of {} started".format(attrs['disdrodb_id']))
-        t_i = time.time() 
-        # - Retrieve filepaths of raw data files 
-        file_list = sorted(glob.glob(os.path.join(base_dir,"*")))
-        if debug_on: 
-            file_list = file_list[0:3]
+    
+    ##------------------------------------------------------.   
+    # Check processed folder
+    check_folder_structure(base_dir,'Ticino_2018')   
+    
+    ##------------------------------------------------------.   
+    # Process all devices
+    for device in glob.glob(os.path.join(base_dir,"data", "*")):
         
-        #----------------------------------------------------------------.
-        # - Define raw data headers 
-        raw_data_columns = ['id',
-                            'latitude',
-                            'longitude',
-                            'time',
-                            'temperature_sensor',
-                            'datalogger_power',
-                            'datalogger_sensor_status',
-                            'rain_rate',
-                            'acc_rain_amount',
-                            'code_4680',
-                            'code_4677',
-                            'reflectivity_16bit',
-                            'mor',
-                            'amplitude',
-                            'n_particles',
-                            'heating_current',
-                            'voltage',
-                            'sensor_status',
-                            'rain_amount_absolute',
-                            'error_code',
-                            'FieldN',
-                            'FieldV',
-                            'RawData',
-                            'Unknow_column',
-                            ]
-        check_valid_varname(raw_data_columns)   
-        
-        ##------------------------------------------------------.      
-        # Determine dtype based on standards 
-        dtype_dict = get_dtype_standards()
-        # dtype_dict['FieldN'] = 'U'
-        # dtype_dict['FieldV'] = 'U'
-        # dtype_dict['RawData'] = 'U'
-        dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
-        
-        ##------------------------------------------------------.
-        # Define reader options 
-        reader_kwargs = {}
-        reader_kwargs['compression'] = 'gzip'
-        reader_kwargs['delimiter'] = ','
-        reader_kwargs["on_bad_lines"] = 'skip'
-        reader_kwargs["engine"] = 'python'
-        if lazy:
-            reader_kwargs["blocksize"] = None
-        reader_kwargs["on_bad_lines"] = 'skip'
-        
-        ##------------------------------------------------------.
-        # Loop over all files 
-        list_skipped_files = []
-        list_df = []
-        for filename in file_list:
+        # for device in 
+        if L1_processing: 
+            #----------------------------------------------------------------.
+            if verbose:
+                print("L1 processing of {} started".format(attrs['disdrodb_id']))
+            t_i = time.time() 
+            # - Retrieve filepaths of raw data files 
+            # file_list = sorted(glob.glob(os.path.join(base_dir,"*")))
+            # - With campaign path and all the stations files
+            file_list = sorted(glob.glob(os.path.join(device,"**/*.dat*"), recursive = True))
+            if debug_on: 
+                file_list = file_list[0:2]
+            
+            #----------------------------------------------------------------.
+            # - Define raw data headers 
+            raw_data_columns = ['id',
+                                'latitude',
+                                'longitude',
+                                'time',
+                                'temperature_sensor',
+                                'datalogger_power',
+                                'datalogger_sensor_status',
+                                'rain_rate',
+                                'acc_rain_amount',
+                                'code_4680',
+                                'code_4677',
+                                'reflectivity_16bit',
+                                'mor',
+                                'amplitude',
+                                'n_particles',
+                                'heating_current',
+                                'voltage',
+                                'sensor_status',
+                                'rain_amount_absolute',
+                                'error_code',
+                                'FieldN',
+                                'FieldV',
+                                'RawData',
+                                'Unknow_column',
+                                ]
+            check_valid_varname(raw_data_columns)   
+            
+            ##------------------------------------------------------.      
+            # Determine dtype based on standards 
+            dtype_dict = get_dtype_standards()
+            # dtype_dict['FieldN'] = 'U'
+            # dtype_dict['FieldV'] = 'U'
+            # dtype_dict['RawData'] = 'U'
+            dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+            
+            ##------------------------------------------------------.
+            # Define reader options 
+            reader_kwargs = {}
+            reader_kwargs['compression'] = 'gzip'
+            reader_kwargs['delimiter'] = ','
+            reader_kwargs["on_bad_lines"] = 'skip'
+            reader_kwargs["engine"] = 'python'
+            if lazy:
+                reader_kwargs["blocksize"] = None
+            reader_kwargs["on_bad_lines"] = 'skip'
+            
+            ##------------------------------------------------------.
+            # Loop over all files 
+            list_skipped_files = []
+            list_df = []
+            for filename in file_list:
+                try:
+                    df = dd.read_csv(filename, 
+                                     names = raw_data_columns, 
+                                     dtype = dtype_dict,
+                                     **reader_kwargs)
+                    
+                    # - Drop rows with all NaN
+                    # ---> TODO: find a row with all NA 
+                    # ---> TODO: remove rows with NA in specific columns 
+                    df = df.dropna(how='all') 
+                    
+                    # - Replace custom NA with standard flags 
+                    # TODO !!! 
+                    
+                    # - Append to the list of dataframe 
+                    list_df.append(df)
+                    
+                except (Exception, ValueError) as e:
+                  msg = "{} has been skipped. The error is {}".format(filename, e)
+                  if verbose: 
+                      print(msg)
+                  list_skipped_files.append(msg)
+                 
+            if verbose:      
+                print('{} files on {} has been skipped.'.format(len(list_skipped_files), len(file_list)))
+            
+            ##------------------------------------------------------.
+            # Concatenate the dataframe 
             try:
-                df = dd.read_csv(filename, 
-                                 names = raw_data_columns, 
-                                 dtype = dtype_dict,
-                                 **reader_kwargs)
+                df = dd.concat(list_df, axis=0, ignore_index = True)
+            except (AttributeError, TypeError) as e:
+                raise ValueError("Can not create concat data files. Error: {}".format(e))
                 
-                # - Drop rows with all NaN
-                # ---> TODO: find a row with all NA 
-                # ---> TODO: remove rows with NA in specific columns 
-                df = df.dropna(how='all') 
-                
-                # - Replace custom NA with standard flags 
-                # TODO !!! 
-                
-                # - Append to the list of dataframe 
-                list_df.append(df)
-                
-            except (Exception, ValueError) as e:
-              msg = "{} has been skipped. The error is {}".format(filename, e)
-              if verbose: 
-                  print(msg)
-              list_skipped_files.append(msg)
-             
-        if verbose:      
-            print('{} files on {} has been skipped.'.format(len(list_skipped_files), len(file_list)))
-        
-        ##------------------------------------------------------.
-        # Concatenate the dataframe 
-        try:
-            df = dd.concat(list_df, axis=0, ignore_index = True)
-        except (AttributeError, TypeError) as e:
-            raise ValueError("Can not create concat data files. Error: {}".format(e))
+            ##------------------------------------------------------.                                   
+            # Write to Parquet 
+            print('Starting conversion to parquet file')
+            # Path to device folder
+            path = path=os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device))
+            _write_to_parquet(df, path, campaign_name, force = True)
             
-        ##------------------------------------------------------.                                   
-        # Write to Parquet 
-        print('Starting conversion to parquet file')
-        _write_to_parquet(df, fpath=df_fpath)
+            ##------------------------------------------------------.   
+            # Check Parquet standards 
+            check_L0_standards(df)
+            
+            ##------------------------------------------------------.   
+            if verbose:
+                t_f = time.time() - t_i
+                print("L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
         
-        ##------------------------------------------------------.   
-        # Check Parquet standards 
-        check_L0_standards(df)
-        
-        ##------------------------------------------------------.   
-        if verbose:
-            t_f = time.time() - t_i
-            print("L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
+        #-------------------------------------------------------------------------.
+        ###############################
+        #### Perform L1 processing ####
+        ###############################
+        if L1_processing: 
+            ##-----------------------------------------------------------
+            t_i = time.time()  
+            if verbose:
+                print("L1 processing of {} started".format(attrs['disdrodb_id']))
+            
+            ##-----------------------------------------------------------
+            # Check the L0 df is available 
+            # Path device folder parquet
+            df_fpath = path + '/' + campaign_name + '.parquet'
+            if not L0_processing:
+                if not os.path.exists(df_fpath):
+                    raise ValueError("Need to run L0 processing. The {} file is not available.".format(df_fpath))
+            
+            ##-----------------------------------------------------------
+            # Read raw data from parquet file 
+            df = dd.read_parquet(df_fpath)
+            
+            ##-----------------------------------------------------------
+            # Subset row sample to debug 
+            if not lazy and debug_on:
+               df = df.iloc[0:100,:] # df.head(100) 
+               
+            ##-----------------------------------------------------------
+            # Retrieve raw data matrix 
+            dict_data = {}
+            n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+            n_timesteps = df.shape[0].compute()
+            for key, n_bins in n_bins_dict.items(): 
+                
+                # Dask based 
+                dd_series = df[key].astype(str).str.split(",")
+                da_arr = da.stack(dd_series, axis=0)
+                # Remove '' at the end 
+                da_arr = da_arr[:, 0:n_bins_dict[key]]
+                
+                # Convert flag values to XXXX
+                # dir(da_arr.str)
+                # FieldN and FieldV --> -9.999, has floating number 
+                
+                if key == 'RawData':
+                    da_arr = da_arr.astype(int)
+                    da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                else:
+                    da_arr = da_arr.astype(float)                
+                dict_data[key] = da_arr
+                           
+                # Pandas/Numpy based 
+                # np_arr_str =  df[key].values.astype(str)            
+                # list_arr_str = np.char.split(np_arr_str,",")
+                # arr_str = np.stack(list_arr_str, axis=0) 
+                # arr = arr_str[:, 0:n_bins]
+                # arr = arr.astype(float)                
+                # if key == 'RawData':
+                #     arr = arr.reshape(..., n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                # dict_data[key] = arr
+            
+            ##-----------------------------------------------------------
+            # Define data variables for xarray Dataset 
+            data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
+                         "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
+                         "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
+                        }
+            
+            # Define coordinates for xarray Dataset
+            coords = get_L1_coords(sensor_name=sensor_name)
+            coords['time'] = df['time'].values
+            coords['lat'] = attrs['lat']
+            coords['lon'] = attrs['lon']
+            coords['crs'] = attrs['crs']
     
-    #-------------------------------------------------------------------------.
-    ###############################
-    #### Perform L1 processing ####
-    ###############################
-    if L1_processing: 
-        ##-----------------------------------------------------------
-        t_i = time.time()  
-        if verbose:
-            print("L1 processing of {} started".format(attrs['disdrodb_id']))
-        
-        ##-----------------------------------------------------------
-        # Check the L0 df is available 
-        if not L0_processing:
-            if not os.path.exists(df_fpath):
-                raise ValueError("Need to run L0 processing. The {} file is not available.".format(df_fpath))
-        
-        ##-----------------------------------------------------------
-        # Read raw data from parquet file 
-        df = dd.read_parquet(df_fpath)
-        
-        ##-----------------------------------------------------------
-        # Subset row sample to debug 
-        if not lazy and debug_on:
-           df = df.iloc[0:100,:] # df.head(100) 
-           
-        ##-----------------------------------------------------------
-        # Retrieve raw data matrix 
-        dict_data = {}
-        n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-        n_timesteps = df.shape[0].compute()
-        for key, n_bins in n_bins_dict.items(): 
+            ##-----------------------------------------------------------
+            # Create xarray Dataset
+            ds = xr.Dataset(data_vars = data_vars, 
+                            coords = coords, 
+                            attrs = attrs,
+                            )
             
-            # Dask based 
-            dd_series = df[key].astype(str).str.split(",")
-            da_arr = da.stack(dd_series, axis=0)
-            # Remove '' at the end 
-            da_arr = da_arr[:, 0:n_bins_dict[key]]
+            ##-----------------------------------------------------------
+            # Check L1 standards 
+            check_L1_standards(ds)
             
-            # Convert flag values to XXXX
-            # dir(da_arr.str)
-            # FieldN and FieldV --> -9.999, has floating number 
+            ##-----------------------------------------------------------    
+            # Write to Zarr as intermediate storage 
+            # tmp_zarr_fpath = "/tmp/Ticino1.zarr"
+            # ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
+            # zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
+            # ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict)  
             
-            if key == 'RawData':
-                da_arr = da_arr.astype(int)
-                da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
-            else:
-                da_arr = da_arr.astype(float)                
-            dict_data[key] = da_arr
-                       
-            # Pandas/Numpy based 
-            # np_arr_str =  df[key].values.astype(str)            
-            # list_arr_str = np.char.split(np_arr_str,",")
-            # arr_str = np.stack(list_arr_str, axis=0) 
-            # arr = arr_str[:, 0:n_bins]
-            # arr = arr.astype(float)                
-            # if key == 'RawData':
-            #     arr = arr.reshape(..., n_bins_dict['FieldN'], n_bins_dict['FieldV'])
-            # dict_data[key] = arr
+            ##-----------------------------------------------------------  
+            # Write L1 dataset to netCDF
+            # Path for save into device folder
+            L1_nc_fpath = path + '/' + campaign_name + '.nc'
+            ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
+            nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
+            ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
+            
+            ##-----------------------------------------------------------
+            if verbose:
+                t_f = time.time() - t_i
+                print("L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
         
-        ##-----------------------------------------------------------
-        # Define data variables for xarray Dataset 
-        data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
-                     "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
-                     "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
-                    }
-        
-        # Define coordinates for xarray Dataset
-        coords = get_L1_coords(sensor_name=sensor_name)
-        coords['time'] = df['time'].values
-        coords['lat'] = attrs['lat']
-        coords['lon'] = attrs['lon']
-        coords['crs'] = attrs['crs']
-
-        ##-----------------------------------------------------------
-        # Create xarray Dataset
-        ds = xr.Dataset(data_vars = data_vars, 
-                        coords = coords, 
-                        attrs = attrs,
-                        )
-        
-        ##-----------------------------------------------------------
-        # Check L1 standards 
-        check_L1_standards(ds)
-        
-        ##-----------------------------------------------------------    
-        # Write to Zarr as intermediate storage 
-        # tmp_zarr_fpath = "/tmp/Ticino1.zarr"
-        # ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
-        # zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
-        # ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict)  
-        
-        ##-----------------------------------------------------------  
-        # Write L1 dataset to netCDF 
-        ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
-        nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
-        ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
-        
-        ##-----------------------------------------------------------
-        if verbose:
-            t_f = time.time() - t_i
-            print("L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
-    
-    #-------------------------------------------------------------------------.
+        #-------------------------------------------------------------------------.
 
  
 
 if __name__ == '__main__':
-    main() # when using click 
+    main(base_dir) # when using click 
     
     # Otherwise:     
     # parser = argparse.ArgumentParser(description='L0 and L1 data processing')
