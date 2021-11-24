@@ -12,7 +12,6 @@ import shutil
 import argparse # prefer click ... https://click.palletsprojects.com/en/8.0.x/
 import click
 import time
-import dask 
 import dask.array as da
 import numpy as np 
 import xarray as xr 
@@ -40,8 +39,6 @@ from parsiveldb.io import get_L1_nc_encodings_standards
 # --> Intermediate storage in Zarr: 74.32s
 # --> Direct writing to netCDF: 61s 
 
-# A file for each instrument 
-
 # Logging
 
 ## Infer Arrow schema from pandas
@@ -51,16 +48,29 @@ from parsiveldb.io import get_L1_nc_encodings_standards
 base_dir = "/SharedVM/Campagne/Ticino_2018"
 campaign_name = os.path.basename(base_dir)
 
-debug_on = True
-lazy = True
-force = True
-verbose = True
-L0_processing = True
-L1_processing = True
-keep_zarr = False 
+# debug_on = True
+# lazy = True
+# force = True
+# verbose = True
+# l0_processing = True
+# l1_processing = True
+# keep_zarr = False 
 
-def main(base_dir, L0_processing=True, L1_processing=True, force=False, 
-         verbose=True, debug_on=True, lazy=True, keep_zarr=False):
+@click.command()
+@click.argument('base_dir', type=click.Path(exists=True))
+@click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+@click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+def main(base_dir, l0_processing=True, l1_processing=False, force=True, 
+          verbose=True, debug_on=True, lazy=True, keep_zarr=False):
+    '''
+    Script description
+    
+    '''
     #-------------------------------------------------------------------------.
     # Whether to use pandas or dask 
     if lazy: 
@@ -107,7 +117,7 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
     for device in glob.glob(os.path.join(base_dir,"data", "*")):
         
         # for device in 
-        if L1_processing: 
+        if l0_processing: 
             #----------------------------------------------------------------.
             if verbose:
                 print("L1 processing of {} started".format(attrs['disdrodb_id']))
@@ -209,8 +219,8 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
             # Write to Parquet 
             print('Starting conversion to parquet file')
             # Path to device folder
-            path = path=os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device))
-            _write_to_parquet(df, path, campaign_name, force = True)
+            path = os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device))
+            _write_to_parquet(df, path, campaign_name, force)
             
             ##------------------------------------------------------.   
             # Check Parquet standards 
@@ -225,7 +235,7 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
         ###############################
         #### Perform L1 processing ####
         ###############################
-        if L1_processing: 
+        if l1_processing: 
             ##-----------------------------------------------------------
             t_i = time.time()  
             if verbose:
@@ -234,8 +244,8 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
             ##-----------------------------------------------------------
             # Check the L0 df is available 
             # Path device folder parquet
-            df_fpath = path + '/' + campaign_name + '.parquet'
-            if not L0_processing:
+            df_fpath = os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device)) + '/' + campaign_name + '.parquet'
+            if not l0_processing:
                 if not os.path.exists(df_fpath):
                     raise ValueError("Need to run L0 processing. The {} file is not available.".format(df_fpath))
             
@@ -246,7 +256,7 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
             ##-----------------------------------------------------------
             # Subset row sample to debug 
             if not lazy and debug_on:
-               df = df.iloc[0:100,:] # df.head(100) 
+                df = df.iloc[0:100,:] # df.head(100) 
                
             ##-----------------------------------------------------------
             # Retrieve raw data matrix 
@@ -285,8 +295,8 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
             ##-----------------------------------------------------------
             # Define data variables for xarray Dataset 
             data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
-                         "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
-                         "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
+                          "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
+                          "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
                         }
             
             # Define coordinates for xarray Dataset
@@ -317,6 +327,7 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
             ##-----------------------------------------------------------  
             # Write L1 dataset to netCDF
             # Path for save into device folder
+            path = os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device))
             L1_nc_fpath = path + '/' + campaign_name + '.nc'
             ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
             nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
@@ -332,33 +343,34 @@ def main(base_dir, L0_processing=True, L1_processing=True, force=False,
  
 
 if __name__ == '__main__':
-    main(base_dir) # when using click 
+    main() # when using click 
+    # main(base_dir)
     
     # Otherwise:     
     # parser = argparse.ArgumentParser(description='L0 and L1 data processing')
     # parser.add_argument('--base_dir', type=str)
-    # parser.add_argument('--L0_processing', type=str, default='True')
-    # parser.add_argument('--L1_processing', type=str, default='True')
+    # parser.add_argument('--l0_processing', type=str, default='True')
+    # parser.add_argument('--l1_processing', type=str, default='True')
     # parser.add_argument('--force', type=str, default='False')                    
     
-    # L0_processing=True, L1_processing=True, force=False
+    # l0_processing=True, l1_processing=True, force=False
     
     # args = parser.parse_args()
     # if args.force == 'True':
     #     force = True
     # else: 
     #     force = False
-    # if args.L0_processing == 'True':
-    #     L0_processing = True
+    # if args.l0_processing == 'True':
+    #     l0_processing = True
     # else: 
-    #     L0_processing = False 
-    #  if args.L1_processing == 'True':
-    #     L1_processing = True
+    #     l0_processing = False 
+    #  if args.l1_processing == 'True':
+    #     l1_processing = True
     # else: 
-    #     L1_processing = False   
+    #     l1_processing = False   
         
     # main(base_dir = base_dir, 
-    #      L0_processing=L0_processing, 
-    #      L1_processing=L1_processing,
+    #      l0_processing=l0_processing, 
+    #      l1_processing=l1_processing,
     #      force=force)
  

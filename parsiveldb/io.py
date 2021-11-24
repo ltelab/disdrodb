@@ -16,7 +16,7 @@ import dask.dataframe
 ## Kimbo
 # - correct header names
 # - dtype, attrs standards 
-# - Check folder exists if force=True, why?
+# - Check folder exists if force=True
 # - coordinate standards ? 
 #   get_velocity_bin_center(): 
     # - args: instrument=Parsivel,Thies .. if, elif 
@@ -60,14 +60,17 @@ def _check_sensor_name(sensor_name):
         raise ValueError("Valid sensor_name are {}".format(_available_sensors()))
     return 
 
-def _write_to_parquet(df, path, campaign_name, force=False):  
+def _write_to_parquet(df, path, campaign_name, force):  
     # Check if a file already exists (and remove if force=True)
     fpath = path + '/' + campaign_name + '.parquet'
     if os.path.exists(fpath):
         if not force: 
-            raise ValueError("'force' is False and a file already exists at: {}", fpath)
+            raise ValueError("--force is False and a file already exists at:" + fpath)
         else:
-            shutil.rmtree(fpath, ignore_errors=True)
+            if(os.path.isfile(fpath)):
+                os.remove(fpath)
+            else:
+                shutil.rmtree(fpath, ignore_errors=True)
     ##-------------------------------------------------------------------------.
     # Options 
     compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
@@ -374,23 +377,23 @@ def get_attrs_standards():
 
 def get_dtype_standards(): 
     dtype_dict = {                                 # Kimbo option
-        "id": "uint32",
+        "id": "intp",
         "rain_rate": 'float32',
-        "acc_rain_amount":   'float32',
-        "rain_amount_absolute": 'object', 
+        "acc_rain_amount":   'int8',
+        "rain_amount_absolute": 'float32', 
         "reflectivity_16bit": 'float32',
         "reflectivity_32bit": 'float32',
-        "mor"             :'uint16',          #  uint16 
-        "amplitude"       :'float32',          #  uint32
-        "n_particles"     :'int32',            # 'uint32' 
-        "n_all_particles": 'int32',            # 'uint32'  
-        "temperature_sensor": 'object',         #  int8
-        'datalogger_power': 'object',
-        "datalogger_sensor_status": "object", 
+        "mor"             :'uint16',
+        "amplitude"       :'uint8',
+        "n_particles"     :'uint8',
+        "n_all_particles": 'uint16',
+        "temperature_sensor": 'object',         #  int8, all 'na'
+        'datalogger_power': 'object',           # all 'OK'
+        "datalogger_sensor_status": "float32", 
         "heating_current" : 'float32',
         "voltage"         : 'float32',
-        "sensor_status"   : 'int8',
-        "error_code"      : 'int8',  
+        "sensor_status"   : 'uint8',
+        "error_code"      : 'uint8',  
         
         "temperature_PBC" : 'int8',
         "temperature_right" : 'int8',
@@ -398,8 +401,8 @@ def get_dtype_standards():
         "kinetic_energy"  :'float32',
         "snowfall_intensity": 'float32',
         
-        "code_4680"      :'int8',             # o uint8
-        "code_4677"      :'int8',             # o uint8
+        "code_4680"      :'uint8',
+        "code_4677"      :'uint8',
         "code_4678"      :'U',
         "code_NWS"       :'U',
         
@@ -411,8 +414,8 @@ def get_dtype_standards():
         "RawData": 'object',
         
         # Coords 
-        "latitude" : 'object',
-        "longitude" : 'object',
+        "latitude" : 'float32',
+        "longitude" : 'float32',
         "altitude" : 'float32',
         
          # Dimensions
