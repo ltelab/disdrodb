@@ -318,7 +318,8 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             # Retrieve raw data matrix 
             dict_data = {}
             n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-            n_timesteps = df.shape[0].compute()
+            # n_timesteps = df.shape[0].compute()
+            n_timesteps = df.shape[0]
             for key, n_bins in n_bins_dict.items(): 
                 
                 # Dask based 
