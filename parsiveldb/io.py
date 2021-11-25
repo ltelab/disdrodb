@@ -12,17 +12,21 @@ import numpy as np
 import pandas as pd
 import zarr
 import dask.dataframe
+
+from parsiveldb.logger import log
     
 ## Kimbo
-# - correct header names
-# - dtype, attrs standards 
-# - Check folder exists if force=True
+# - dtype, attrs standards
 # - coordinate standards ? 
 #   get_velocity_bin_center(): 
     # - args: instrument=Parsivel,Thies .. if, elif 
-# - click https://click.palletsprojects.com/en/8.0.x/ -> default type=bool
+# - Add L0, L1 and L2 folder 
 
-#-----------------------------------------------------------------------------. 
+#-----------------------------------------------------------------------------.
+
+logger = None
+
+
 def check_folder_structure(base_dir, campaign_name):
     """Create the folder structure required for data processing"""
     # Define directories 
@@ -30,21 +34,34 @@ def check_folder_structure(base_dir, campaign_name):
     # In Ticino_2018 there is data folder and not raw
     processed_campaign_dir = os.path.join(base_dir, "processed", campaign_name)
     
+    # Start logger
+    global logger
+    logger = log(base_dir)
+    
     # Check if processed folder exist
     if not os.path.isdir(processed_campaign_dir):
         try:
             os.makedirs(processed_campaign_dir)
+            logger.debug(f'Created {processed_campaign_dir}')
         except (Exception) as e:
-            raise FileNotFoundError("Can not create folder <processed>. Error: {}".format(e))
+            logger.exception(f"Can not create folder <processed>. Error: {e}")
+            raise FileNotFoundError(f"Can not create folder <processed>. Error: {e}")
+    else:
+        logger.debug(f'Found {processed_campaign_dir}')
     
     # Create station subfolder if need it
     for station_folder in glob.glob(os.path.join(base_dir,"data", "*")):
         try:
-            os.makedirs(os.path.join(processed_campaign_dir, os.path.basename(os.path.normpath(station_folder))))
+            station_folder_path = os.path.join(processed_campaign_dir, os.path.basename(os.path.normpath(station_folder)))
+            os.makedirs(station_folder_path)
+            logger.debug(f'Created {station_folder_path}')
         except FileExistsError:
+            logger.debug(f'Found {station_folder_path}')
             pass
         except (Exception) as e:
-            raise FileNotFoundError("Can not create the device folder inside <processed>. Error: {}".format(e))
+            logger.exception(f"Can not create folder the device folder inside <processed>. Error: {e}")
+            raise FileNotFoundError(f"Can not create the device folder inside <processed>. Error: {e}")
+            
     # TODO 
     # - Add L0, L1 and L2 folder 
     return 
@@ -55,22 +72,26 @@ def _available_sensors():
 
 def _check_sensor_name(sensor_name): 
     if not isinstance(sensor_name, str):
+        logger.exception("'sensor_name' must be a string'")
         raise TypeError("'sensor_name' must be a string'")
-    if sensor_name not in _available_sensors(): 
-        raise ValueError("Valid sensor_name are {}".format(_available_sensors()))
+    if sensor_name not in _available_sensors():
+        logger.exception(f"Valid sensor_name are {_available_sensors()}")
+        raise ValueError(f"Valid sensor_name are {_available_sensors()}")
     return 
 
 def _write_to_parquet(df, path, campaign_name, force):  
     # Check if a file already exists (and remove if force=True)
     fpath = path + '/' + campaign_name + '.parquet'
     if os.path.exists(fpath):
-        if not force: 
+        if not force:
+            logger.error(f"--force is False and a file already exists at:{fpath}")
             raise ValueError("--force is False and a file already exists at:" + fpath)
         else:
-            if(os.path.isfile(fpath)):
-                os.remove(fpath)
-            else:
-                shutil.rmtree(fpath, ignore_errors=True)
+            if path is None:
+                if(os.path.isfile(fpath)):
+                    os.remove(fpath)
+                else:
+                    shutil.rmtree(fpath, ignore_errors=True)
     ##-------------------------------------------------------------------------.
     # Options 
     compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
@@ -83,9 +104,11 @@ def _write_to_parquet(df, path, campaign_name, force):
                           engine = engine,
                           compression = compression,
                           row_group_size = row_group_size)
+            logger.info(f'Converted data file in {path} to parquet')  
         except (Exception) as e:
-            raise ValueError("The Pandas DataFrame cannot be written as a parquet file."
-                             "The error is {}".format(e))
+            logger.exception("The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
+            raise ValueError("The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
+            
     elif isinstance(df, dask.dataframe.DataFrame): 
         # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetWriter.html 
         try:
@@ -95,10 +118,11 @@ def _write_to_parquet(df, path, campaign_name, force):
                           engine = engine, 
                           row_group_size = row_group_size,
                           compression = compression, 
-                          write_metadata_file=False)                          
+                          write_metadata_file=False)
+            logger.info(f'Converted data file in {path} to parquet')                 
         except (Exception) as e:
-            raise ValueError("The Dask DataFrame cannot be written as a parquet file."
-                             "The error is {}".format(e))
+            logger.exception("The Dask DataFrame cannot be written as a parquet file, the error is {e}")
+            raise ValueError("The Dask DataFrame cannot be written as a parquet file, the error is {e}")
     else:
         raise NotImplementedError("Pandas or Dask DataFrame is required.")
         
@@ -129,12 +153,15 @@ def _get_diameter_bin_center(sensor_name):
         x = np.arange(0,32)
         
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
     return x
 
 def _get_diameter_bin_lower(sensor_name): 
@@ -142,12 +169,15 @@ def _get_diameter_bin_lower(sensor_name):
         x = np.arange(0,32)
         
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
     return x
 
 def _get_diameter_bin_upper(sensor_name): 
@@ -155,38 +185,47 @@ def _get_diameter_bin_upper(sensor_name):
         x = np.arange(0,32)
         
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
     return x
 
 def _get_diameter_bin_width(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        raise NotImplementedError
-    else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
-    return x
+   if sensor_name == "Parsivel":
+       x = np.arange(0,32)
+       
+   elif sensor_name == "Parsivel2":
+       logger.exception(f'Not implemented {sensor_name} device')
+       raise NotImplementedError
+       
+   elif sensor_name == "ThiesLPM":
+       logger.exception(f'Not implemented {sensor_name} device')
+       raise NotImplementedError
+   else:
+       logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+       raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+   return x
  
 def _get_velocity_bin_center(sensor_name): 
     if sensor_name == "Parsivel":
         x = np.arange(0,32)
         
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
     return x
 
 def _get_velocity_bin_lower(sensor_name): 
@@ -194,12 +233,15 @@ def _get_velocity_bin_lower(sensor_name):
         x = np.arange(0,32)
         
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
     return x
 
 def _get_velocity_bin_upper(sensor_name): 
@@ -207,12 +249,15 @@ def _get_velocity_bin_upper(sensor_name):
         x = np.arange(0,32)
         
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
     return x
 
 def _get_velocity_bin_width(sensor_name): 
@@ -220,12 +265,15 @@ def _get_velocity_bin_width(sensor_name):
         x = np.arange(0,32)
         
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("L0 bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
     return x
  
 def get_raw_field_nbins(sensor_name): 
@@ -235,12 +283,15 @@ def get_raw_field_nbins(sensor_name):
                       "RawData": 1024,
                      }
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
     else:
-        raise ValueError("Bin characteristics for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'Bin characteristics for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'Bin characteristics for sensor {sensor_name} are not yet defined')
     return nbins_dict
 
 
@@ -287,11 +338,16 @@ def get_L1_chunks(sensor_name):
                        'RawData': (5000,32,32),
                       }
     elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
+        
     elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
         raise NotImplementedError
+        
     else:
-        raise ValueError("L0 chunks for sensor {} are not yet defined".format(sensor_name))
+        logger.exception(f'L0 chunks for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 chunks for sensor {sensor_name} are not yet defined')
     return chunks_dict
 
 def get_L1_dtype():
@@ -408,7 +464,7 @@ def get_dtype_standards():
         
         "Unknow_column": "object",
         
-        # Data fields (TODO) (Log scale?)
+        # Data fields (TODO) (logger scale?)
         "FieldN": 'object',
         "FieldV": 'object',
         "RawData": 'object',
