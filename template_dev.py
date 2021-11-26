@@ -6,7 +6,7 @@ Created on Mon Nov 22 10:59:21 2021
 @author: ghiggi
 """
 import os
-os.chdir("/home/kimbo/Documents/parsiveldb")
+os.chdir("/home/kimbo/Documents/disdrodb")
 import glob 
 import shutil
 import argparse # prefer click ... https://click.palletsprojects.com/en/8.0.x/
@@ -16,21 +16,21 @@ import dask.array as da
 import numpy as np 
 import xarray as xr 
 
-from parsiveldb.io import check_folder_structure
-from parsiveldb.io import check_valid_varname
-from parsiveldb.io import check_L0_standards
-from parsiveldb.io import check_L1_standards
-from parsiveldb.io import get_attrs_standards
-from parsiveldb.io import get_dtype_standards
-from parsiveldb.io import _write_to_parquet
+from disdrodb.io import check_folder_structure
+from disdrodb.io import check_valid_varname
+from disdrodb.io import check_L0_standards
+from disdrodb.io import check_L1_standards
+from disdrodb.io import get_attrs_standards
+from disdrodb.io import get_dtype_standards
+from disdrodb.io import _write_to_parquet
 
-from parsiveldb.io import get_raw_field_nbins
-from parsiveldb.io import get_L1_coords
-from parsiveldb.io import rechunk_L1_dataset
-from parsiveldb.io import get_L1_zarr_encodings_standards
-from parsiveldb.io import get_L1_nc_encodings_standards
+from disdrodb.io import get_raw_field_nbins
+from disdrodb.io import get_L1_coords
+from disdrodb.io import rechunk_L1_dataset
+from disdrodb.io import get_L1_zarr_encodings_standards
+from disdrodb.io import get_L1_nc_encodings_standards
 
-from parsiveldb.logger import log
+from disdrodb.logger import log
 
 ### TODO 4 Kimbo tomorrow
 
