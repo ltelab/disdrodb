@@ -85,13 +85,16 @@ def _write_to_parquet(df, path, campaign_name, force):
     if os.path.exists(fpath):
         if not force:
             logger.error(f"--force is False and a file already exists at:{fpath}")
-            raise ValueError("--force is False and a file already exists at:" + fpath)
-        else:
-            if path is None:
-                if(os.path.isfile(fpath)):
-                    os.remove(fpath)
-                else:
-                    shutil.rmtree(fpath, ignore_errors=True)
+            raise ValueError(f"--force is False and a file already exists at:{fpath}")
+        try:
+            os.remove(fpath)
+        except IsADirectoryError:
+            try:
+                os.rmdir(fpath)
+            except (Exception) as e:
+                logger.error(f"Something wrong with: {fpath}")
+                raise ValueError(f"Something wrong with: {fpath}")
+        
     ##-------------------------------------------------------------------------.
     # Options 
     compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'

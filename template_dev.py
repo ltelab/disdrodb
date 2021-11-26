@@ -50,26 +50,26 @@ from parsiveldb.logger import log
 #-------------------------------------------------------------------------.
 # Click implementation
 
-@click.command(options_metavar='<options>')
+# @click.command(options_metavar='<options>')
 
-@click.argument('base_dir', type=click.Path(exists=True), metavar ='<base_dir>')
+# @click.argument('base_dir', type=click.Path(exists=True), metavar ='<base_dir>')
 
-@click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
-@click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
-@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+# @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+# @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-# base_dir = "/SharedVM/Campagne/Ticino_2018"
-# l0_processing = True
-# l1_processing = False
-# force = True
-# verbose = True
-# debug_on = True
-# lazy = True
-# keep_zarr = False
+base_dir = "/SharedVM/Campagne/Ticino_2018"
+l0_processing = True
+l1_processing = True
+force = True
+verbose = True
+debug_on = True
+lazy = False
+keep_zarr = False
 
 
 #-------------------------------------------------------------------------.
@@ -304,21 +304,39 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                 if not os.path.exists(df_fpath):
                     logger.exception("Need to run L0 processing. The {df_fpath} file is not available.")
                     raise ValueError("Need to run L0 processing. The {df_fpath} file is not available.")
+            if verbose:
+                print(f'Found parquet file: {df_fpath}')
+            logger.info(f'Found parquet file: {df_fpath}')
             
             ##-----------------------------------------------------------
             # Read raw data from parquet file 
+            if verbose:
+                print(f'Start reading: {df_fpath}')
+            logger.info(f'Start reading: {df_fpath}')
+            
             df = dd.read_parquet(df_fpath)
+            
+            if verbose:
+                print(f'Finish reading: {df_fpath}')
+            logger.info(f'Finish reading: {df_fpath}')
             
             ##-----------------------------------------------------------
             # Subset row sample to debug 
             if not lazy and debug_on:
-                df = df.iloc[0:100,:] # df.head(100) 
+                # df = df.iloc[0:100,:] # df.head(100) 
+                df = df.iloc[0:,:]
+                if verbose:
+                    print(f'Debug = True and Lazy = False, then only the first 100 rows are read')
+                logger.info(f'Debug = True and Lazy = False, then only the first 100 rows are read')
                
             ##-----------------------------------------------------------
             # Retrieve raw data matrix 
+            if verbose:
+                print(f"Retrieve raw data matrix for {attrs['disdrodb_id']}")
+            logger.info(f"Retrieve raw data matrix for {attrs['disdrodb_id']}")
+            
             dict_data = {}
             n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-            # n_timesteps = df.shape[0].compute()
             n_timesteps = df.shape[0]
             for key, n_bins in n_bins_dict.items(): 
                 
@@ -326,7 +344,7 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                 dd_series = df[key].astype(str).str.split(",")
                 da_arr = da.stack(dd_series, axis=0)
                 # Remove '' at the end 
-                da_arr = da_arr[:, 0:n_bins_dict[key]]
+                da_arr = da_arr[: , 0:n_bins_dict[key]]
                 
                 # Convert flag values to XXXX
                 # dir(da_arr.str)
@@ -337,17 +355,22 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                     da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
                 else:
                     da_arr = da_arr.astype(float)                
+                
                 dict_data[key] = da_arr
                            
                 # Pandas/Numpy based 
-                # np_arr_str =  df[key].values.astype(str)            
+                # np_arr_str =  df[key].values.astype(str)
                 # list_arr_str = np.char.split(np_arr_str,",")
                 # arr_str = np.stack(list_arr_str, axis=0) 
                 # arr = arr_str[:, 0:n_bins]
                 # arr = arr.astype(float)                
                 # if key == 'RawData':
-                #     arr = arr.reshape(..., n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                #     arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
                 # dict_data[key] = arr
+            
+            if verbose:
+                print(f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}")
+            logger.info(f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}")
             
             ##-----------------------------------------------------------
             # Define data variables for xarray Dataset 
@@ -389,7 +412,12 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             L1_nc_fpath = path + '/' + campaign_name + '.nc'
             ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
             nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
-            ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
+            
+            if debug_on:
+                ds.to_netcdf(L1_nc_fpath, engine="netcdf4")
+            else:
+                ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
+            
             
             ##-----------------------------------------------------------
             if verbose:
@@ -410,9 +438,9 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
  
 
 if __name__ == '__main__':
-    main() # when using click 
+    # main() # when using click 
     # main()
-    # main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
     
     # Otherwise:     
     # parser = argparse.ArgumentParser(description='L0 and L1 data processing')
