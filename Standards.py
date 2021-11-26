@@ -13,18 +13,18 @@ acc_rain_amount               # --> rain_acc / rain_accum
 reflectivity_32bit       
 # reflectivity_16bit  
 MOR                           # --> mor_visibility
-amplitude                     # --> JG: laser_amplitude . AB: I agree with Jacopo, I think it is the laser amplitude. A way to monitor if windows are dirty or not. 
+amplitude                     # --> JG: laser_amplitude . AB,MS agree with Jacopo. A way to monitor if windows are dirty or not. 
 n_particles
-n_all_particles               # Difference with the above? More explicit name?
+n_all_particles               # Difference with the above? More explicit name? MS: Perhaps this is the total number of particles since beginning of the measurements
 temperature_sensor  
 heating_current               # --> heating_current_sensor or sensor_heating_current
 voltage                       # JG: which voltage? is it sensor_voltage --> GG: Power supply voltage --> supply_voltage / power_voltage / battery_voltage
 sensor_status                 # AB: this code is related to laser amplitude, and I think 3 is best and 0 means obstruction.   
 error_code                    # is it a sensor error code or data acquisition error code?
-temperature_PBC               # AB: what does PBC stands for?
+temperature_PBC               # AB: what does PBC stands for? MS: printed circuit board
 temperature_right             # AB: confusing: right or left with respect to what?
 temperature_left              # AB: If part of the head, I suggest to use transmitter or receiver side...
-kinetic_energy                # JG: precip_kinetic_energy? AB: rain_kinetic_energy
+kinetic_energy                # JG: precip_kinetic_energy? AB, MS: rain_kinetic_energy
 snowfall_intensity  
 code_4680                     # wanna add some info on this codes in the name? some are METAR, some are NWS, etc
 code_4677                     # SYNOP_4680, SYNOP_4677
@@ -127,7 +127,7 @@ attrs = {"title"      : 'Parsivel disdrometer observations from Ardeche region, 
          'temporal_resolution': 30, # "measurement_interval", default in seconds ? ,
 
          # Attribution 
-         "project_name": 'https://ruisdael-observatory.nl/',  # rendunant with campaign_name?   AB: not an issue in my view, better to have redundancy than missing some info... 
+         "project_name": 'https://ruisdael-observatory.nl/',   
          "contributors": 'Marc Schleiss, Saverio Guzzo, Rob Mackenzie', 
          "authors": '', # or authors
          'reference': 'XXX et al., ... ',
