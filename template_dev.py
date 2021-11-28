@@ -45,6 +45,11 @@ from disdrodb.logger import log
 # schema = pa.Schema.from_pandas(df)
 
 
+# TODO
+# - Ensure not time duplicate !!!
+# - Ensure time ordered !!!
+
+# Make template work for Ticino, Payerne, 1 ARM Parsivel, 1 UK Diven, 1 Hymex
 
 
 #-------------------------------------------------------------------------.
@@ -93,18 +98,76 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
 
     #-------------------------------------------------------------------------.
     # - Define instrument type 
-    sensor_name = "Parsivel"
-    
-    # - Define attributes 
+    sensor_name = ""
+    #-------------------------------------------------------------------------.
+    ### Define attributes 
     attrs = get_attrs_standards()
-    attrs['Title'] = 'aaa'
-    attrs['lat'] = 1223
-    attrs['lon'] = 1232
-    attrs['crs'] = "WGS84"  # EPSG Code 
-    attrs['sensor_name'] = sensor_name
-    attrs['disdrodb_id'] = ''
+    # - Description
+    attrs['title'] = 'DSD observations along a mountain transect near Locarno, Ticino, Switerland'
+    attrs['description'] = '' 
+    attrs['institution'] = 'Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne' 
+    attrs['source'] = ''
+    attrs['history'] = ''
+    attrs['conventions'] = ''
+    attrs['campaign_name'] = 'Locarno2018'
+    attrs['project_name'] = "",
     
+    # - Instrument specs 
+    attrs['sensor_name'] = "Parsivel"
+    attrs["sensor_long_name"] = 'OTT Hydromet Parsivel'
+    
+    attrs["sensor_beam_width"] = 180     # TODO
+    attrs["sensor_nominal_width"] = 180  # TODO
+    attrs["measurement_interval"] = 30
+    attrs["temporal_resolution"] = 30
+    
+    attrs["sensor_wavelegth"] = '650 nm'
+    attrs["sensor_serial_number"] = ''
+    attrs["firmware_IOP"] = ''
+    attrs["firmware_DSP"] = ''
+    
+    # - Location info 
+    attrs['station_id'] = "" # TODO
+    attrs['station_name'] = "" # TODO
+    attrs['station_number'] = 0 # TODO
+    attrs['location'] = "" # TODO
+    attrs['country'] = "Switzerland"  
+    attrs['continent'] = "Europe" 
  
+    attrs['latitude'] = 0   # TODO
+    attrs['longitude'] = 0  # TODO
+    attrs['altitude'] = 0  # TODO
+    
+    attrs['latitude_unit'] = "DegreesNorth"   
+    attrs['longitude_unit'] = "DegreesEast"   
+    attrs['altitude_unit'] = "MetersAboveSeaLevel"   
+    
+    attrs['crs'] = "WGS84"   
+    attrs['EPSG'] = 4326
+    attrs['proj4_string'] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+    # - Attribution 
+    attrs['contributors'] = ''
+    attrs['authors'] = ''
+    attrs['reference'] = ''
+    attrs['documentation'] = ''
+    attrs['website'] = ''
+    attrs['source_repository'] = ''
+    attrs['doi'] = ''    
+    attrs['contact'] = ''    
+    attrs['contact_information'] = 'http://lte.epfl.ch' 
+    
+    # - DISDRODB attrs 
+    attrs['source_data_format'] = 'raw_data'        
+    attrs['obs_type'] = 'raw'   # preprocess/postprocessed
+    attrs['level'] = 'L0'       # L0, L1, L2, ...    
+    attrs['disdrodb_id'] = ''   # TODO         
+ 
+    ##------------------------------------------------------------------------. 
+    
+    sensor_name = attrs['sensor_name']
+    
+    
     ###############################
     #### Perform L0 processing ####
     ###############################
@@ -161,19 +224,19 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                                 'latitude',
                                 'longitude',
                                 'time',
-                                'temperature_sensor',
+                                'sensor_temperature',   # TODO: or datalogger_temperature?
                                 'datalogger_power',
                                 'datalogger_sensor_status',
-                                'rain_rate',
-                                'acc_rain_amount',
-                                'code_4680',
-                                'code_4677',
+                                'rain_rate_32bit',
+                                'rain_accumulated_32bit',
+                                'weather_code_SYNOP_4680',
+                                'weather_code_SYNOP_4677',
                                 'reflectivity_16bit',
-                                'mor',
-                                'amplitude',
+                                'mor_visbility',
+                                'laser_amplitude',
                                 'n_particles',
-                                'heating_current',
-                                'voltage',
+                                'sensor_heating_current',
+                                'sensor_battery_voltage',
                                 'sensor_status',
                                 'rain_amount_absolute',
                                 'error_code',
@@ -375,15 +438,16 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             ##-----------------------------------------------------------
             # Define data variables for xarray Dataset 
             data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
-                          "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
-                          "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
+                         "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
+                         "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
                         }
             
             # Define coordinates for xarray Dataset
             coords = get_L1_coords(sensor_name=sensor_name)
             coords['time'] = df['time'].values
-            coords['lat'] = attrs['lat']
-            coords['lon'] = attrs['lon']
+            coords['latitude'] = attrs['latitude']
+            coords['longitude'] = attrs['longitude']
+            coords['altitude'] = attrs['altitude']
             coords['crs'] = attrs['crs']
     
             ##-----------------------------------------------------------

@@ -14,6 +14,15 @@ import zarr
 import dask.dataframe
 
 from parsiveldb.logger import log
+from parsiveldb.aux import get_diameter_bin_center
+from parsiveldb.aux import get_diameter_bin_lower
+from parsiveldb.aux import get_diameter_bin_upper
+from parsiveldb.aux import get_diameter_bin_width
+from parsiveldb.aux import get_velocity_bin_center
+from parsiveldb.aux import get_velocity_bin_lower
+from parsiveldb.aux import get_velocity_bin_upper
+from parsiveldb.aux import get_velocity_bin_width
+from parsiveldb.aux import get_raw_field_nbins
     
 ## Kimbo
 # - dtype, attrs standards
@@ -151,151 +160,6 @@ def _write_to_parquet(df, path, campaign_name, force):
 
 #-----------------------------------------------------------------------------.
 # TODO correct values 
-def _get_diameter_bin_center(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-    return x
-
-def _get_diameter_bin_lower(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-    return x
-
-def _get_diameter_bin_upper(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-    return x
-
-def _get_diameter_bin_width(sensor_name): 
-   if sensor_name == "Parsivel":
-       x = np.arange(0,32)
-       
-   elif sensor_name == "Parsivel2":
-       logger.exception(f'Not implemented {sensor_name} device')
-       raise NotImplementedError
-       
-   elif sensor_name == "ThiesLPM":
-       logger.exception(f'Not implemented {sensor_name} device')
-       raise NotImplementedError
-   else:
-       logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-       raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-   return x
- 
-def _get_velocity_bin_center(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-    return x
-
-def _get_velocity_bin_lower(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-    return x
-
-def _get_velocity_bin_upper(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-    return x
-
-def _get_velocity_bin_width(sensor_name): 
-    if sensor_name == "Parsivel":
-        x = np.arange(0,32)
-        
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
-    return x
- 
-def get_raw_field_nbins(sensor_name): 
-    if sensor_name == "Parsivel":
-        nbins_dict = {"FieldN": 32,
-                      "FieldV": 32,
-                      "RawData": 1024,
-                     }
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-    else:
-        logger.exception(f'Bin characteristics for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'Bin characteristics for sensor {sensor_name} are not yet defined')
-    return nbins_dict
 
 
 def _get_default_nc_encoding(chunks, dtype='float32'):
@@ -318,19 +182,17 @@ def _get_default_zarr_encoding(dtype='float32'):
     return encoding_kwargs
 
 ##----------------------------------------------------------------------------.
-
-
 def get_L1_coords(sensor_name): 
     _check_sensor_name(sensor_name=sensor_name)
     coords = {} 
-    coords["diameter_bin_center"] = _get_diameter_bin_center(sensor_name=sensor_name)
-    coords["diameter_bin_lower"] = (["diameter_bin_center"], _get_diameter_bin_lower(sensor_name=sensor_name))
-    coords["diameter_bin_upper"] = (["diameter_bin_center"], _get_diameter_bin_upper(sensor_name=sensor_name))
-    coords["diameter_bin_width"] = (["diameter_bin_center"], _get_diameter_bin_width(sensor_name=sensor_name))
-    coords["velocity_bin_center"] = (["velocity_bin_center"], _get_velocity_bin_center(sensor_name=sensor_name))
-    coords["velocity_bin_lower"] = (["velocity_bin_center"], _get_velocity_bin_lower(sensor_name=sensor_name))
-    coords["velocity_bin_upper"] = (["velocity_bin_center"], _get_velocity_bin_upper(sensor_name=sensor_name))
-    coords["velocity_bin_width"] = (["velocity_bin_center"], _get_velocity_bin_width(sensor_name=sensor_name))
+    coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)
+    coords["diameter_bin_lower"] = (["diameter_bin_center"], get_diameter_bin_lower(sensor_name=sensor_name))
+    coords["diameter_bin_upper"] = (["diameter_bin_center"], get_diameter_bin_upper(sensor_name=sensor_name))
+    coords["diameter_bin_width"] = (["diameter_bin_center"], get_diameter_bin_width(sensor_name=sensor_name))
+    coords["velocity_bin_center"] = (["velocity_bin_center"], get_velocity_bin_center(sensor_name=sensor_name))
+    coords["velocity_bin_lower"] = (["velocity_bin_center"], get_velocity_bin_lower(sensor_name=sensor_name))
+    coords["velocity_bin_upper"] = (["velocity_bin_center"], get_velocity_bin_upper(sensor_name=sensor_name))
+    coords["velocity_bin_width"] = (["velocity_bin_center"], get_velocity_bin_width(sensor_name=sensor_name))
     return coords 
                  
 def get_L1_chunks(sensor_name):
@@ -409,65 +271,77 @@ def check_L2_standards(x):
     pass
 
 def get_attrs_standards(): 
-    list_attrs = ["title", "description", "institution",
+    list_attrs = [# Description 
+                  "title", "description",
                   "source", "history", "conventions",
                   "campaign_name", "project_name",
                   # Location
-                  "site_name", "station_id", "station_name", 
+                  "station_id", "station_name", "station_number", 
                   "location", "country", "continent",
-                  "latitde", "longitude", "altitude", "crs", "proj4", "EPSG"
+                  "latitude", "longitude", "altitude", "crs", "proj4", "EPSG"
                   "latitude_unit", "longitude_unit", "altitude_unit",
                   # Sensor info 
                   "sensor_name", "sensor_long_name", 
                   "sensor_wavelegth", "sensor_serial_number",
                   "firmware_IOP", "firmware_DSP", "firmware_version", 
-                  "sensor_beam_width", "sensor_nominal_wdith", 
-                  "temporal_resolution",  # "measurement_interval" 
+                  "sensor_beam_width", "sensor_nominal_width", 
+                  "temporal_resolution", "measurement_interval",
                   # Attribution 
-                  "contributors", "authors",
+                  "contributors", "authors", "institution",
                   "reference", "documentation",
                   "website","source_repository",
                   "doi", "contact", "contact_information",
+                  # Source datatype 
+                  "source_data_format", 
                   # DISDRO DB attrs 
                   "obs_type", "level", "disdrodb_id",
                  ]  
     attrs_dict = {key: '' for key in list_attrs}
     return attrs_dict
-
+   
 def get_dtype_standards(): 
     dtype_dict = {                                 # Kimbo option
-        "id": "intp",
-        "rain_rate": 'float32',
-        "acc_rain_amount":   'int8',
+        "id": "object",
+        "rain_rate_16bit": 'float32',
+        "rain_rate_32bit": 'float32',
+        "rain_accumulated_16bit":   'float32',
+        "rain_accumulated_32bit":   'float32',
+        
         "rain_amount_absolute": 'float32', 
         "reflectivity_16bit": 'float32',
         "reflectivity_32bit": 'float32',
-        "mor"             :'uint16',
-        "amplitude"       :'uint8',
-        "n_particles"     :'uint8',
-        "n_all_particles": 'uint16',
-        "temperature_sensor": 'object',         #  int8, all 'na'
-        'datalogger_power': 'object',           # all 'OK'
-        "datalogger_sensor_status": "float32", 
-        "heating_current" : 'float32',
-        "voltage"         : 'float32',
-        "sensor_status"   : 'uint8',
-        "error_code"      : 'uint8',  
         
+        "rain_kinetic_energy"  :'float32',
+        "snowfall_intensity": 'float32',
+        
+        "mor_visibility"    :'uint16',
+        
+        "weather_code_SYNOP_4680":'uint8',             
+        "weather_code_SYNOP_4677":'uint8',              
+        "weather_code_METAR_4678":'U',
+        "weather_code_NWS":'U',
+        
+        "n_particles"     :'uint32',
+        "n_particles_all": 'uint32',
+        
+        "sensor_temperature": 'object',     #  int8, all 'na'
         "temperature_PBC" : 'int8',
         "temperature_right" : 'int8',
         "temperature_left":'int8',
-        "kinetic_energy"  :'float32',
-        "snowfall_intensity": 'float32',
         
-        "code_4680"      :'uint8',
-        "code_4677"      :'uint8',
-        "code_4678"      :'U',
-        "code_NWS"       :'U',
-        
+        "sensor_heating_current" : 'float32',
+        "sensor_battery_voltage" : 'float32',
+        "sensor_status"   : 'uint8',
+        "laser_amplitude" :'float32',          #  uint32
+        "error_code"      : 'uint8',          
+
+        # Custom ields       
         "Unknow_column": "object",
+        'datalogger_power': 'object',           # all 'OK'
+        "datalogger_sensor_status": "float32", 
+        "datalogger_temperature": "float32", 
         
-        # Data fields (TODO) (logger scale?)
+        # Data fields (TODO) 
         "FieldN": 'object',
         "FieldV": 'object',
         "RawData": 'object',
