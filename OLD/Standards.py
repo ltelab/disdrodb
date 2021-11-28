@@ -9,9 +9,9 @@ Created on Wed Nov 17 15:03:47 2021
 ### Variable Name ###
 #####################         ### Suggested name changes 
 rain_rate               
-acc_rain_amount               # --> rain_acc / rain_accum
+rain_accumulated               
 reflectivity_32bit       
-# reflectivity_16bit  
+reflectivity_16bit  
 MOR                           # --> mor_visibility
 amplitude                     # --> JG: laser_amplitude . AB,MS agree with Jacopo. A way to monitor if windows are dirty or not. 
 n_particles
@@ -159,7 +159,6 @@ def get_default_attrs():
 # How to define attributes 
 attrs = get_default_attrs()
 attrs['title'] = 'Parsivel disdrometer observations from Ardeche region"
-# .... 
 
 ##----------------------------------------------------------------------------.
 #######################
@@ -215,11 +214,6 @@ def var_dtypes():
 # columns = ["Number_detected_particles", "Current_through_heating_system"]
 # dtype_subset = {var:var_type()[var] for var in columns}
  
-
- 
- 
-
-
 ##---------------------------------------------------------------------------.
 ### NAN Flags 
 # - Determine standard flags for each variable 
@@ -392,143 +386,8 @@ def attrs_explanations():
              }
     return explanations
 
-def get_OTT_Parsivel_bins():
-    diameter_center = np.array([  
-        0.06,
-        0.19,
-        0.32,
-        0.45,
-        0.58,
-        0.71,
-        0.84,
-        0.96,
-        1.09,
-        1.22,
-        1.42,
-        1.67,
-        1.93,
-        2.19,
-        2.45,
-        2.83,
-        3.35,
-        3.86,
-        4.38,
-        4.89,
-        5.66,
-        6.7,
-        7.72,
-        8.76,
-        9.78,
-        11.33,
-        13.39,
-        15.45,
-        17.51,
-        19.57,
-        22.15,
-        25.24,
-    ]
-    diameter_width = np.array([
-        0.129,
-        0.129,
-        0.129,
-        0.129,
-        0.129,
-        0.129,
-        0.129,
-        0.129,
-        0.129,
-        0.129,
-        0.257,
-        0.257,
-        0.257,
-        0.257,
-        0.257,
-        0.515,
-        0.515,
-        0.515,
-        0.515,
-        0.515,
-        1.030,
-        1.030,
-        1.030,
-        1.030,
-        1.030,
-        2.060,
-        2.060,
-        2.060,
-        2.060,
-        2.060,
-        3.090,
-        3.090,
-        ])
-    velocity_center = np.array([
-        0.05,
-        0.15,
-        0.25,
-        0.35,
-        0.45,
-        0.55,
-        0.65,
-        0.75,
-        0.85,
-        0.95,
-        1.1,
-        1.3,
-        1.5,
-        1.7,
-        1.9,
-        2.2,
-        2.6,
-        3,
-        3.4,
-        3.8,
-        4.4,
-        5.2,
-        6.0,
-        6.8,
-        7.6,
-        8.8,
-        10.4,
-        12.0,
-        13.6,
-        15.2,
-        17.6,
-        20.8,
-    ])
-    velocity_width = np.array([ 
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.1,
-        0.2,
-        0.2,
-        0.2,
-        0.2,
-        0.2,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.4,
-        0.8,
-        0.8,
-        0.8,
-        0.8,
-        0.8,
-        1.6,
-        1.6,
-        1.6,
-        1.6,
-        1.6,
-        3.2,
-        3.2,
-    ])
 
-    
+
+
+
     
