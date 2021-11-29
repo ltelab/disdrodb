@@ -9,7 +9,6 @@ import os
 os.chdir("/home/kimbo/Documents/disdrodb")
 import glob 
 import shutil
-import argparse # prefer click ... https://click.palletsprojects.com/en/8.0.x/
 import click
 import time
 import dask.array as da
@@ -31,14 +30,13 @@ from disdrodb.io import get_L1_zarr_encodings_standards
 from disdrodb.io import get_L1_nc_encodings_standards
 
 from disdrodb.logger import log
+from disdrodb.logger import close_log
 
 ### TODO 4 Kimbo tomorrow
 
 # To think eventually 
 # --> Intermediate storage in Zarr: 74.32s
 # --> Direct writing to netCDF: 61s
-
-# loggerging -> File stuck open, it could be the global logger in io.py
 
 ## Infer Arrow schema from pandas
 # import pyarrow as pa
@@ -69,11 +67,11 @@ from disdrodb.logger import log
 
 base_dir = "/SharedVM/Campagne/Ticino_2018"
 l0_processing = True
-l1_processing = True
+l1_processing = False
 force = True
 verbose = True
-debug_on = True
-lazy = False
+debug_on = False
+lazy = True
 keep_zarr = False
 
 
@@ -180,17 +178,17 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
     campaign_name = os.path.basename(base_dir)
     
     ##------------------------------------------------------.   
-    # Start log
-    logger = log(base_dir)
-    
-    print('### Script start ###')
-    logger.info('### Script start ###')
-    
-    ##------------------------------------------------------.   
     # Check processed folder
     check_folder_structure(base_dir,campaign_name)
     
     campaign_name = os.path.basename(base_dir)
+    
+    ##------------------------------------------------------.   
+    # Start log
+    logger = log(base_dir, 'template_dev')
+    
+    print('### Script start ###')
+    logger.info('### Script start ###')
     
     ##------------------------------------------------------.   
     # Process all devices
@@ -232,7 +230,7 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                                 'weather_code_SYNOP_4680',
                                 'weather_code_SYNOP_4677',
                                 'reflectivity_16bit',
-                                'mor_visbility',
+                                'mor_visibility',
                                 'laser_amplitude',
                                 'n_particles',
                                 'sensor_heating_current',
@@ -261,7 +259,6 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             reader_kwargs["engine"] = 'python'
             if lazy:
                 reader_kwargs["blocksize"] = None
-            reader_kwargs["on_bad_lines"] = 'skip'
             
             ##------------------------------------------------------.
             # Loop over all files
@@ -281,7 +278,8 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                     # - Drop rows with all NaN
                     # ---> TODO: find a row with all NA 
                     # ---> TODO: remove rows with NA in specific columns 
-                    df = df.dropna(how='all') 
+                    # df = df.dropna(how='all')
+                    df.replace('na', float("nan")).dropna(thresh = (len(raw_data_columns) -1), how = 'all')
                     
                     # - Replace custom NA with standard flags 
                     # TODO !!! 
@@ -386,8 +384,8 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             ##-----------------------------------------------------------
             # Subset row sample to debug 
             if not lazy and debug_on:
-                # df = df.iloc[0:100,:] # df.head(100) 
-                df = df.iloc[0:,:]
+                df = df.iloc[0:100,:] # df.head(100) 
+                # df = df.iloc[0:,:]
                 if verbose:
                     print(f'Debug = True and Lazy = False, then only the first 100 rows are read')
                 logger.info(f'Debug = True and Lazy = False, then only the first 100 rows are read')
@@ -492,13 +490,16 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
         #-------------------------------------------------------------------------.
     
     if verbose:
-        print(f'Total skipped files: {all_files} on {len(list_skipped_files)} in L0 process')
+        print(f'Total skipped files: {len(list_skipped_files)} on {all_files} in L0 process')
     logger.info('---')
-    logger.info(f'Total skipped files: {all_files} on {len(list_skipped_files)} in L0 process')
+    logger.info(f'Total skipped files: {len(list_skipped_files)} on {all_files} in L0 process')
     logger.info('---')
     
     print('### Script finish ###')
     logger.info('### Script finish ###')
+    
+    close_log()
+    
  
 
 if __name__ == '__main__':

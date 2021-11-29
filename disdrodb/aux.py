@@ -6,7 +6,7 @@ Created on Sun Nov 28 18:26:51 2021
 @author: ghiggi
 """
 import numpy as np 
-from parsiveldb.logger import log
+from disdrodb.logger import log
 
 logger = None
 
@@ -181,8 +181,8 @@ def get_OTT_Parsivel_velocity_bin_bounds():
     
     return classV
 
-def get_OTT_Parsivel_velocity_bin_bounds(): 
-    return get_OTT_Parsivel_velocity_bin_bounds()
+# def get_OTT_Parsivel_velocity_bin_bounds(): 
+#     return get_OTT_Parsivel_velocity_bin_bounds()
 
 def get_OTT_Parsivel_diameter_bin_width():
     """

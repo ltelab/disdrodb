@@ -13,16 +13,16 @@ import pandas as pd
 import zarr
 import dask.dataframe
 
-from parsiveldb.logger import log
-from parsiveldb.aux import get_diameter_bin_center
-from parsiveldb.aux import get_diameter_bin_lower
-from parsiveldb.aux import get_diameter_bin_upper
-from parsiveldb.aux import get_diameter_bin_width
-from parsiveldb.aux import get_velocity_bin_center
-from parsiveldb.aux import get_velocity_bin_lower
-from parsiveldb.aux import get_velocity_bin_upper
-from parsiveldb.aux import get_velocity_bin_width
-from parsiveldb.aux import get_raw_field_nbins
+from disdrodb.logger import log
+from disdrodb.aux import get_diameter_bin_center
+from disdrodb.aux import get_diameter_bin_lower
+from disdrodb.aux import get_diameter_bin_upper
+from disdrodb.aux import get_diameter_bin_width
+from disdrodb.aux import get_velocity_bin_center
+from disdrodb.aux import get_velocity_bin_lower
+from disdrodb.aux import get_velocity_bin_upper
+from disdrodb.aux import get_velocity_bin_width
+from disdrodb.aux import get_raw_field_nbins
     
 ## Kimbo
 # - dtype, attrs standards
@@ -35,28 +35,30 @@ from parsiveldb.aux import get_raw_field_nbins
 
 logger = None
 
+def check_processed_folder(base_dir, campaign_name):
+    # Check if processed folder exist
+    processed_campaign_dir = os.path.join(base_dir, "processed", campaign_name)
+    
+    if not os.path.isdir(processed_campaign_dir):
+        try:
+            os.makedirs(processed_campaign_dir)
+            return processed_campaign_dir
+        except (Exception) as e:
+            raise FileNotFoundError(f"Can not create folder <processed>. Error: {e}")
+    else:
+        return processed_campaign_dir
 
 def check_folder_structure(base_dir, campaign_name):
     """Create the folder structure required for data processing"""
     # Define directories 
     # raw_campaign_dir = os.path.join(base_dir, "raw", campaign_name)
     # In Ticino_2018 there is data folder and not raw
-    processed_campaign_dir = os.path.join(base_dir, "processed", campaign_name)
+    
+    processed_campaign_dir = check_processed_folder(base_dir, campaign_name)
     
     # Start logger
     global logger
-    logger = log(base_dir)
-    
-    # Check if processed folder exist
-    if not os.path.isdir(processed_campaign_dir):
-        try:
-            os.makedirs(processed_campaign_dir)
-            logger.debug(f'Created {processed_campaign_dir}')
-        except (Exception) as e:
-            logger.exception(f"Can not create folder <processed>. Error: {e}")
-            raise FileNotFoundError(f"Can not create folder <processed>. Error: {e}")
-    else:
-        logger.debug(f'Found {processed_campaign_dir}')
+    logger = log(base_dir, 'io')
     
     # Create station subfolder if need it
     for station_folder in glob.glob(os.path.join(base_dir,"data", "*")):
@@ -100,9 +102,20 @@ def _write_to_parquet(df, path, campaign_name, force):
         except IsADirectoryError:
             try:
                 os.rmdir(fpath)
-            except (Exception) as e:
-                logger.error(f"Something wrong with: {fpath}")
-                raise ValueError(f"Something wrong with: {fpath}")
+            except OSError:
+                try:
+                    # shutil.rmtree(fpath.rpartition('.')[0])
+                    for f in glob.glob(fpath + '/*'):
+                        try:
+                            os.remove(f)
+                        except OSError as e:
+                            msg = f"Can not delete file {f}, error: {e.strerror}"
+                            logger.exception(msg)
+                    os.rmdir(fpath)
+                except (Exception) as e:
+                    logger.error(f"Something wrong with: {fpath}")
+                    raise ValueError(f"Something wrong with: {fpath}")
+        logger.info(r"Deleted folder {fpath}")
         
     ##-------------------------------------------------------------------------.
     # Options 
@@ -118,8 +131,8 @@ def _write_to_parquet(df, path, campaign_name, force):
                           row_group_size = row_group_size)
             logger.info(f'Converted data file in {path} to parquet')  
         except (Exception) as e:
-            logger.exception("The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
-            raise ValueError("The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
+            logger.exception(f"The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
+            raise ValueError(f"The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
             
     elif isinstance(df, dask.dataframe.DataFrame): 
         # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetWriter.html 
@@ -133,8 +146,8 @@ def _write_to_parquet(df, path, campaign_name, force):
                           write_metadata_file=False)
             logger.info(f'Converted data file in {path} to parquet')                 
         except (Exception) as e:
-            logger.exception("The Dask DataFrame cannot be written as a parquet file, the error is {e}")
-            raise ValueError("The Dask DataFrame cannot be written as a parquet file, the error is {e}")
+            logger.exception(f"The Dask DataFrame cannot be written as a parquet file, the error is {e}")
+            raise ValueError(f"The Dask DataFrame cannot be written as a parquet file, the error is {e}")
     else:
         raise NotImplementedError("Pandas or Dask DataFrame is required.")
         
