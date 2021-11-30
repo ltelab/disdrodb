@@ -53,26 +53,26 @@ from disdrodb.logger import close_log
 #-------------------------------------------------------------------------.
 # Click implementation
 
-# @click.command(options_metavar='<options>')
+@click.command(options_metavar='<options>')
 
-# @click.argument('base_dir', type=click.Path(exists=True), metavar ='<base_dir>')
+@click.argument('base_dir', type=click.Path(exists=True), metavar ='<base_dir>')
 
-# @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
-# @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
-# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+@click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+@click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-base_dir = "/SharedVM/Campagne/Ticino_2018"
-l0_processing = True
-l1_processing = False
-force = True
-verbose = True
-debug_on = False
-lazy = True
-keep_zarr = False
+# base_dir = "/SharedVM/Campagne/Ticino_2018"
+# l0_processing = True
+# l1_processing = False
+# force = True
+# verbose = True
+# debug_on = False
+# lazy = True
+# keep_zarr = False
 
 
 #-------------------------------------------------------------------------.
@@ -193,13 +193,14 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
     ##------------------------------------------------------.   
     # Process all devices
     
-    all_files = len(glob.glob(os.path.join(base_dir,"*")))
+    all_files = len(glob.glob(os.path.join(base_dir, 'data', "**/*")))
     list_skipped_files = []
     if verbose:
         print(f'{all_files} files to process in {base_dir}')
     logger.info(f'{all_files} files to process in {base_dir}')
     
     for device in glob.glob(os.path.join(base_dir,"data", "*")):
+    # for device in range (0,1):
         
         # for device in 
         if l0_processing: 
@@ -211,7 +212,9 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             # - Retrieve filepaths of raw data files 
             # file_list = sorted(glob.glob(os.path.join(base_dir,"*")))
             # - With campaign path and all the stations files
-            file_list = sorted(glob.glob(os.path.join(device,"**/*.dat*"), recursive = True))                
+            
+            file_list = sorted(glob.glob(os.path.join(device,"**/*.dat*"), recursive = True))         
+            # file_list = glob.glob(os.path.join(base_dir,"nan_zip", "*"))
             
             if debug_on: 
                 file_list = file_list[0:3]
@@ -257,6 +260,8 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             reader_kwargs['delimiter'] = ','
             reader_kwargs["on_bad_lines"] = 'skip'
             reader_kwargs["engine"] = 'python'
+            # - Replace custom NA with standard flags 
+            reader_kwargs['na_values'] = 'na'
             if lazy:
                 reader_kwargs["blocksize"] = None
             
@@ -272,17 +277,11 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                 try:
                     df = dd.read_csv(filename, 
                                      names = raw_data_columns, 
-                                     dtype = dtype_dict,
+                                      dtype = dtype_dict,
                                      **reader_kwargs)
                     
-                    # - Drop rows with all NaN
-                    # ---> TODO: find a row with all NA 
-                    # ---> TODO: remove rows with NA in specific columns 
-                    # df = df.dropna(how='all')
-                    df.replace('na', float("nan")).dropna(thresh = (len(raw_data_columns) -1), how = 'all')
-                    
-                    # - Replace custom NA with standard flags 
-                    # TODO !!! 
+                    # Drop rows with more than 2 nan (longitute and latitude)
+                    df = df.dropna(thresh = (len(raw_data_columns) -1), how = 'all')
                     
                     # - Append to the list of dataframe 
                     list_df.append(df)
@@ -387,8 +386,8 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                 df = df.iloc[0:100,:] # df.head(100) 
                 # df = df.iloc[0:,:]
                 if verbose:
-                    print(f'Debug = True and Lazy = False, then only the first 100 rows are read')
-                logger.info(f'Debug = True and Lazy = False, then only the first 100 rows are read')
+                    print('Debug = True and Lazy = False, then only the first 100 rows are read')
+                logger.info('Debug = True and Lazy = False, then only the first 100 rows are read')
                
             ##-----------------------------------------------------------
             # Retrieve raw data matrix 
@@ -503,9 +502,8 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
  
 
 if __name__ == '__main__':
-    # main() # when using click 
-    # main()
-    main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    main() # when using click 
+    # main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
     
     # Otherwise:     
     # parser = argparse.ArgumentParser(description='L0 and L1 data processing')

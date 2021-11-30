@@ -125,7 +125,7 @@ def _write_to_parquet(df, path, campaign_name, force):
     # Save to parquet 
     if isinstance(df, pd.DataFrame): 
         try:
-            df.to_parquet(fpath ,
+            df.to_parquet(fpath,
                           engine = engine,
                           compression = compression,
                           row_group_size = row_group_size)
