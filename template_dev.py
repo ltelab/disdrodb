@@ -6,7 +6,7 @@ Created on Mon Nov 22 10:59:21 2021
 @author: ghiggi
 """
 import os
-os.chdir("/home/kimbo/Documents/disdrodb")
+# os.chdir("/home/kimbo/Documents/disdrodb")
 import glob 
 import shutil
 import click
