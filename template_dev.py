@@ -21,6 +21,7 @@ from disdrodb.io import check_L0_standards
 from disdrodb.io import check_L1_standards
 from disdrodb.io import get_attrs_standards
 from disdrodb.io import get_dtype_standards
+from disdrodb.io import get_dtype_standards_all_object
 from disdrodb.io import _write_to_parquet
 
 from disdrodb.io import get_raw_field_nbins
@@ -42,6 +43,8 @@ from disdrodb.logger import close_log
 # import pyarrow as pa
 # schema = pa.Schema.from_pandas(df)
 
+# Error file busy on zarr, don't overwrite
+# Error on lazy
 
 # TODO
 # - Ensure not time duplicate !!!
@@ -55,7 +58,9 @@ from disdrodb.logger import close_log
 
 @click.command(options_metavar='<options>')
 
-@click.argument('base_dir', type=click.Path(exists=True), metavar ='<base_dir>')
+@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+
+@click.argument('processed_path', metavar ='<processed_path>') #TODO
 
 @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
 @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
@@ -65,27 +70,32 @@ from disdrodb.logger import close_log
 @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
 @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-# base_dir = "/SharedVM/Campagne/Ticino_2018"
+# raw_dir = "/SharedVM/Campagne/Raw/Ticino_2018"
+# processed_path = '/SharedVM/Campagne/Processed/Ticino_2018'
 # l0_processing = True
-# l1_processing = False
+# l1_processing = True
 # force = True
 # verbose = True
-# debug_on = False
-# lazy = True
+# debug_on = True
+# lazy = False
 # keep_zarr = False
 
 
 #-------------------------------------------------------------------------.
 
 
-def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr):
+def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr):
     '''
     Script description
     
-    <base_dir> : Campaign path
+    <raw_dir>           : Raw file location of the campaign (example: <...>/Raw/<campaign name>, /ltenas3/0_Data/ParsivelDB/Raw/Ticino_2018)
+    <processed_path>    : Processed file path output of the campaign (example: <...>/Processed/<campaign name>, /ltenas3/0_Data/ParsivelDB/Processed/Ticino_2018)
     
     
     '''
+    #-------------------------------------------------------------------------.
+    # Hard coded server path
+    # processed_path = '/ltenas3/0_Data/ParsivelDB/Processed/Ticino_2018'
     
     #-------------------------------------------------------------------------.
     # Whether to use pandas or dask 
@@ -172,20 +182,25 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
     
     ##------------------------------------------------------.   
     # Check the campaign path
-    if not os.path.exists(base_dir):
-        raise FileExistsError('Not a directory, check the path')
+    if os.path.isdir(raw_dir):
+        pass
+        #Path check in click, something else doesn't work
+    else:
+        print('Something wrong with path, quit script')
+        raise SystemExit
+        
     
-    campaign_name = os.path.basename(base_dir)
+    campaign_name = os.path.basename(processed_path)
     
     ##------------------------------------------------------.   
     # Check processed folder
-    check_folder_structure(base_dir,campaign_name)
+    check_folder_structure(raw_dir, campaign_name, processed_path)
     
-    campaign_name = os.path.basename(base_dir)
+    campaign_name = os.path.basename(processed_path)
     
     ##------------------------------------------------------.   
     # Start log
-    logger = log(base_dir, 'template_dev')
+    logger = log(processed_path, 'template_dev')
     
     print('### Script start ###')
     logger.info('### Script start ###')
@@ -193,13 +208,13 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
     ##------------------------------------------------------.   
     # Process all devices
     
-    all_files = len(glob.glob(os.path.join(base_dir, 'data', "**/*")))
+    all_files = len(glob.glob(os.path.join(raw_dir, 'data', "**/*")))
     list_skipped_files = []
     if verbose:
-        print(f'{all_files} files to process in {base_dir}')
-    logger.info(f'{all_files} files to process in {base_dir}')
+        print(f'{all_files} files to process in {raw_dir}')
+    logger.info(f'{all_files} files to process in {raw_dir}')
     
-    for device in glob.glob(os.path.join(base_dir,"data", "*")):
+    for device in glob.glob(os.path.join(raw_dir,"data", "*")):
     # for device in range (0,1):
         
         # for device in 
@@ -210,11 +225,11 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                 print("L0 processing of {} started".format(attrs['disdrodb_id']))
             logger.info("L0 processing of {} started".format(attrs['disdrodb_id']))
             # - Retrieve filepaths of raw data files 
-            # file_list = sorted(glob.glob(os.path.join(base_dir,"*")))
+            # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
             # - With campaign path and all the stations files
             
             file_list = sorted(glob.glob(os.path.join(device,"**/*.dat*"), recursive = True))         
-            # file_list = glob.glob(os.path.join(base_dir,"nan_zip", "*"))
+            # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
             
             if debug_on: 
                 file_list = file_list[0:3]
@@ -250,7 +265,7 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             
             ##------------------------------------------------------.      
             # Determine dtype based on standards 
-            dtype_dict = get_dtype_standards()
+            dtype_dict = get_dtype_standards_all_object()
             dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
             
             ##------------------------------------------------------.
@@ -323,7 +338,7 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                 print(f"Starting conversion to parquet file for {attrs['disdrodb_id']}")
             logger.info(f"Starting conversion to parquet file for {attrs['disdrodb_id']}")
             # Path to device folder
-            path = os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device))
+            path = os.path.join(processed_path + '/' + os.path.basename(device))
             # Write to Parquet 
             _write_to_parquet(df, path, campaign_name, force)
             if verbose:
@@ -359,7 +374,7 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             ##-----------------------------------------------------------
             # Check the L0 df is available 
             # Path device folder parquet
-            df_fpath = os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device)) + '/' + campaign_name + '.parquet'
+            df_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.parquet'
             if not l0_processing:
                 if not os.path.exists(df_fpath):
                     logger.exception("Need to run L0 processing. The {df_fpath} file is not available.")
@@ -383,7 +398,7 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             ##-----------------------------------------------------------
             # Subset row sample to debug 
             if not lazy and debug_on:
-                df = df.iloc[0:100,:] # df.head(100) 
+                # df = df.iloc[0:100,:] # df.head(100) 
                 # df = df.iloc[0:,:]
                 if verbose:
                     print('Debug = True and Lazy = False, then only the first 100 rows are read')
@@ -412,7 +427,13 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
                 
                 if key == 'RawData':
                     da_arr = da_arr.astype(int)
-                    da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                    try:
+                        da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                    except TypeError as e:
+                        msg = f'Error on retrive raw data matrix, set lazy computation to FALSE! Error: {e}'
+                        logger.error(msg)
+                        print(msg)
+                        raise SystemExit
                 else:
                     da_arr = da_arr.astype(float)                
                 
@@ -449,10 +470,16 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
     
             ##-----------------------------------------------------------
             # Create xarray Dataset
-            ds = xr.Dataset(data_vars = data_vars, 
-                            coords = coords, 
-                            attrs = attrs,
-                            )
+            try:
+                ds = xr.Dataset(data_vars = data_vars, 
+                                coords = coords, 
+                                attrs = attrs,
+                                )
+            except ValueError as e:
+                msg = f'Error on creation xarray dataset, set lazy computation to FALSE! Error: {e}'
+                logger.error(msg)
+                print(msg)
+                raise SystemExit
             
             ##-----------------------------------------------------------
             # Check L1 standards 
@@ -461,15 +488,15 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
             ##-----------------------------------------------------------    
             # Write to Zarr as intermediate storage 
             if keep_zarr:
-                tmp_zarr_fpath = os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device)) + '/' + campaign_name + '.zarr'
+                tmp_zarr_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.zarr'
                 ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
                 zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
-                ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict)
+                ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
             
             ##-----------------------------------------------------------  
             # Write L1 dataset to netCDF
             # Path for save into device folder
-            path = os.path.join(base_dir + "/processed/" + campaign_name + '/' + os.path.basename(device))
+            path = os.path.join(processed_path + '/' + os.path.basename(device))
             L1_nc_fpath = path + '/' + campaign_name + '.nc'
             ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
             nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
@@ -503,11 +530,11 @@ def main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy,
 
 if __name__ == '__main__':
     main() # when using click 
-    # main(base_dir, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    # main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
     
     # Otherwise:     
     # parser = argparse.ArgumentParser(description='L0 and L1 data processing')
-    # parser.add_argument('--base_dir', type=str)
+    # parser.add_argument('--raw_dir', type=str)
     # parser.add_argument('--l0_processing', type=str, default='True')
     # parser.add_argument('--l1_processing', type=str, default='True')
     # parser.add_argument('--force', type=str, default='False')                    
@@ -528,7 +555,7 @@ if __name__ == '__main__':
     # else: 
     #     l1_processing = False   
         
-    # main(base_dir = base_dir, 
+    # main(raw_dir = raw_dir, 
     #      l0_processing=l0_processing, 
     #      l1_processing=l1_processing,
     #      force=force)

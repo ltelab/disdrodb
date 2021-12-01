@@ -35,9 +35,9 @@ from disdrodb.aux import get_raw_field_nbins
 
 logger = None
 
-def check_processed_folder(base_dir, campaign_name):
+def check_processed_folder(raw_dir):
     # Check if processed folder exist
-    processed_campaign_dir = os.path.join(base_dir, "processed", campaign_name)
+    processed_campaign_dir = os.path.join(raw_dir)
     
     if not os.path.isdir(processed_campaign_dir):
         try:
@@ -48,22 +48,22 @@ def check_processed_folder(base_dir, campaign_name):
     else:
         return processed_campaign_dir
 
-def check_folder_structure(base_dir, campaign_name):
+def check_folder_structure(raw_dir, campaign_name, processed_path):
     """Create the folder structure required for data processing"""
     # Define directories 
-    # raw_campaign_dir = os.path.join(base_dir, "raw", campaign_name)
+    # raw_campaign_dir = os.path.join(raw_dir, "raw", campaign_name)
     # In Ticino_2018 there is data folder and not raw
     
-    processed_campaign_dir = check_processed_folder(base_dir, campaign_name)
+    processed_campaign_dir = check_processed_folder(processed_path)
     
     # Start logger
     global logger
-    logger = log(base_dir, 'io')
+    logger = log(processed_path, 'io')
     
     # Create station subfolder if need it
-    for station_folder in glob.glob(os.path.join(base_dir,"data", "*")):
+    for station_folder in glob.glob(os.path.join(raw_dir,"data", "*")):
         try:
-            station_folder_path = os.path.join(processed_campaign_dir, os.path.basename(os.path.normpath(station_folder)))
+            station_folder_path = os.path.join(processed_path, os.path.basename(os.path.normpath(station_folder)))
             os.makedirs(station_folder_path)
             logger.debug(f'Created {station_folder_path}')
         except FileExistsError:
@@ -366,6 +366,64 @@ def get_dtype_standards():
         
          # Dimensions
         'time': 'datetime64[ns]', 
+        
+    }
+    return dtype_dict
+
+def get_dtype_standards_all_object(): 
+    dtype_dict = {                                 # Kimbo option
+        "id": "object",
+        "rain_rate_16bit": 'object',
+        "rain_rate_32bit": 'object',
+        "rain_accumulated_16bit":   'object',
+        "rain_accumulated_32bit":   'object',
+        
+        "rain_amount_absolute": 'object', 
+        "reflectivity_16bit": 'object',
+        "reflectivity_32bit": 'object',
+        
+        "rain_kinetic_energy"  :'object',
+        "snowfall_intensity": 'object',
+        
+        "mor_visibility"    :'object',
+        
+        "weather_code_SYNOP_4680":'object',             
+        "weather_code_SYNOP_4677":'object',              
+        "weather_code_METAR_4678":'U',
+        "weather_code_NWS":'U',
+        
+        "n_particles"     :'object',
+        "n_particles_all": 'object',
+        
+        "sensor_temperature": 'object',     #  int8, all 'na'
+        "temperature_PBC" : 'object',
+        "temperature_right" : 'object',
+        "temperature_left":'object',
+        
+        "sensor_heating_current" : 'object',
+        "sensor_battery_voltage" : 'object',
+        "sensor_status"   : 'object',
+        "laser_amplitude" :'object',          #  uint32
+        "error_code"      : 'object',          
+
+        # Custom ields       
+        "Unknow_column": "object",
+        'datalogger_power': 'object',           # all 'OK'
+        "datalogger_sensor_status": "object", 
+        "datalogger_temperature": "object", 
+        
+        # Data fields (TODO) 
+        "FieldN": 'object',
+        "FieldV": 'object',
+        "RawData": 'object',
+        
+        # Coords 
+        "latitude" : 'object',
+        "longitude" : 'object',
+        "altitude" : 'object',
+        
+         # Dimensions
+        'time': 'object', 
         
     }
     return dtype_dict

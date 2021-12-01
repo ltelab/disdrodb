@@ -17,7 +17,7 @@ def log(path, logger_name):
     
     global loggers
     
-    file_name = f'{path}/processed/{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
+    file_name = f'{path}/{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
     
     format_type = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     
