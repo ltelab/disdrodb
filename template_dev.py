@@ -20,7 +20,7 @@ from disdrodb.io import check_valid_varname
 from disdrodb.io import check_L0_standards
 from disdrodb.io import check_L1_standards
 from disdrodb.io import get_attrs_standards
-from disdrodb.io import get_dtype_standards
+from disdrodb.io import get_L0_dtype_standards
 from disdrodb.io import get_dtype_standards_all_object
 from disdrodb.io import _write_to_parquet
 
@@ -44,7 +44,9 @@ from disdrodb.logger import close_log
 # schema = pa.Schema.from_pandas(df)
 
 # Error file busy on zarr, don't overwrite
-# Error on lazy
+# Error on lazy with l1
+
+# Attributes for every devices
 
 # TODO
 # - Ensure not time duplicate !!!
@@ -56,29 +58,29 @@ from disdrodb.logger import close_log
 #-------------------------------------------------------------------------.
 # Click implementation
 
-@click.command(options_metavar='<options>')
+# @click.command(options_metavar='<options>')
 
-@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-@click.argument('processed_path', metavar ='<processed_path>') #TODO
+# @click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-@click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
-@click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
-@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+# @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+# @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-# raw_dir = "/SharedVM/Campagne/Raw/Ticino_2018"
-# processed_path = '/SharedVM/Campagne/Processed/Ticino_2018'
-# l0_processing = True
-# l1_processing = True
-# force = True
-# verbose = True
-# debug_on = True
-# lazy = False
-# keep_zarr = False
+raw_dir = "/SharedVM/Campagne/Raw/Ticino_2018"
+processed_path = '/SharedVM/Campagne/Processed/Ticino_2018'
+l0_processing = True
+l1_processing = False
+force = True
+verbose = True
+debug_on = True
+lazy = False
+keep_zarr = False
 
 
 #-------------------------------------------------------------------------.
@@ -202,17 +204,20 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
     # Start log
     logger = log(processed_path, 'template_dev')
     
-    print('### Script start ###')
-    logger.info('### Script start ###')
+    msg = '### Script start ###'
+    print(msg)
+    logger.info(msg)
     
     ##------------------------------------------------------.   
     # Process all devices
     
     all_files = len(glob.glob(os.path.join(raw_dir, 'data', "**/*")))
     list_skipped_files = []
+    
+    msg = f'{all_files} files to process in {raw_dir}'
     if verbose:
-        print(f'{all_files} files to process in {raw_dir}')
-    logger.info(f'{all_files} files to process in {raw_dir}')
+        print(msg)
+    logger.info(msg)
     
     for device in glob.glob(os.path.join(raw_dir,"data", "*")):
     # for device in range (0,1):
@@ -221,9 +226,10 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
         if l0_processing: 
             #----------------------------------------------------------------.
             t_i = time.time() 
+            msg = "L0 processing of {} started".format(attrs['disdrodb_id'])
             if verbose:
-                print("L0 processing of {} started".format(attrs['disdrodb_id']))
-            logger.info("L0 processing of {} started".format(attrs['disdrodb_id']))
+                print(msg)
+            logger.info(msg)
             # - Retrieve filepaths of raw data files 
             # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
             # - With campaign path and all the stations files
@@ -240,17 +246,17 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                 'latitude',
                                 'longitude',
                                 'time',
-                                'sensor_temperature',   # TODO: or datalogger_temperature?
-                                'datalogger_power',
-                                'datalogger_sensor_status',
+                                'datalogger_temperature',
+                                'datalogger_voltage',
                                 'rain_rate_32bit',
                                 'rain_accumulated_32bit',
                                 'weather_code_SYNOP_4680',
                                 'weather_code_SYNOP_4677',
-                                'reflectivity_16bit',
-                                'mor_visibility',
-                                'laser_amplitude',
+                                'reflectivity_16bit', #Has flag -9.999
+                                'mor_visibility',   #Has flag 9999
+                                'laser_amplitude',  
                                 'n_particles',
+                                'sensor_temperature',
                                 'sensor_heating_current',
                                 'sensor_battery_voltage',
                                 'sensor_status',
@@ -259,13 +265,13 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                 'FieldN',
                                 'FieldV',
                                 'RawData',
-                                'Unknow_column',
+                                'datalogger_error',
                                 ]
             check_valid_varname(raw_data_columns)   
             
             ##------------------------------------------------------.      
             # Determine dtype based on standards 
-            dtype_dict = get_dtype_standards_all_object()
+            dtype_dict = get_L0_dtype_standards()   # TODO - TO CHANGE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
             
             ##------------------------------------------------------.
@@ -276,16 +282,17 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             reader_kwargs["on_bad_lines"] = 'skip'
             reader_kwargs["engine"] = 'python'
             # - Replace custom NA with standard flags 
-            reader_kwargs['na_values'] = 'na'
+            # reader_kwargs['na_values'] = 'na'
             if lazy:
                 reader_kwargs["blocksize"] = None
             
             ##------------------------------------------------------.
             # Loop over all files
             
+            msg = f"{len(file_list)} files to process for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"{len(file_list)} files to process for {attrs['disdrodb_id']}")
-            logger.info(f"{len(file_list)} files to process for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             
             list_df = []
             for filename in file_list:
@@ -295,55 +302,87 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                       dtype = dtype_dict,
                                      **reader_kwargs)
                     
-                    # Drop rows with more than 2 nan (longitute and latitude)
-                    df = df.dropna(thresh = (len(raw_data_columns) -1), how = 'all')
                     
-                    # - Append to the list of dataframe 
+                    #-------------------------------------------------------------------------
+                    ### Keep only clean data 
+                    # Drop latitude and longitute (always the same)
+                    
+                    # Get position if need it
+                    # np.median(df["latitude"].values.astype(float)/100)
+                    # np.median(df["longitude"].values.astype(float)/100)
+                    
+                    df.drop(columns=['latitude', 'longitude'])
+                    
+                    # Remove rows with bad data 
+                    idx_valid = df['sensor_status'].isin([0, 1])
+                    df = df[idx_valid]
+                    # Remove rows with datalogger errors 
+                    idx_valid = df['datalogger_error'] == 0 
+                    df = df[idx_valid]
+                    # Remove rows with error_code not 000 
+                    idx_valid = df['error_code'] == 0 
+                    df = df[idx_valid]
+                    
+                    
                     list_df.append(df)
                     
                     logger.debug(f'{filename} processed successfully')
+                    
                 except (Exception, ValueError) as e:
                   msg = f"{filename} has been skipped. The error is {e}"
-                  logger.warning(f'{filename} has been skipped')
+                  logger.warning(msg)
                   if verbose: 
                       print(msg)
                   list_skipped_files.append(msg)
-                 
+            
+            msg = f"{len(list_skipped_files)} files on {len(file_list)} for {attrs['disdrodb_id']} has been skipped."
             if verbose:      
-                print(f"{len(list_skipped_files)} files on {len(file_list)} for {attrs['disdrodb_id']} has been skipped.")
+                print(msg)
             logger.info('---')
-            logger.info(f"{len(list_skipped_files)} files on {len(file_list)} for {attrs['disdrodb_id']} has been skipped.")
+            logger.info(msg)
             logger.info('---')
                 
             
             ##------------------------------------------------------.
-            # Concatenate the dataframe 
+            # Concatenate the dataframe
+            msg = f"Start concat dataframes for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Start concat dataframes for {attrs['disdrodb_id']}")
-            logger.info(f"Start concat dataframes for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             
             try:
                 df = dd.concat(list_df, axis=0, ignore_index = True)
-            except (AttributeError, TypeError) as e:
-                logger.exception(f"Can not create concat data files. Error: {e}")
-                raise ValueError(f"Can not create concat data files. Error: {e}")
+                # Drop duplicated values 
+                df = df.drop_duplicates(subset="time")
+                # Sort by increasing time 
+                df = df.sort_values(by="time")
                 
+            except (AttributeError, TypeError) as e:
+                msg ='f"Can not create concat data files. Error: {e}"'
+                logger.exception(msg)
+                raise ValueError(msg)
+                
+            msg = f"Finish concat dataframes for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Finish concat dataframes for {attrs['disdrodb_id']}")
-            logger.info(f"Finish concat dataframes for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
+
                 
             ##------------------------------------------------------.                                   
             # Write to Parquet 
+            msg = f"Starting conversion to parquet file for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Starting conversion to parquet file for {attrs['disdrodb_id']}")
-            logger.info(f"Starting conversion to parquet file for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             # Path to device folder
             path = os.path.join(processed_path + '/' + os.path.basename(device))
             # Write to Parquet 
             _write_to_parquet(df, path, campaign_name, force)
+            
+            msg = f"Finish conversion to parquet file for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Finish conversion to parquet file for {attrs['disdrodb_id']}")
-            logger.info(f"Finish conversion to parquet file for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             
             ##------------------------------------------------------.   
             # Check Parquet standards 
@@ -351,9 +390,10 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             
             ##------------------------------------------------------.   
             t_f = time.time() - t_i
+            msg = "L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
             if verbose:
-                print("L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
-            logger.info("L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
+                print(msg)
+            logger.info(msg)
             
             ##------------------------------------------------------.   
             # Delete temp variables
@@ -366,10 +406,11 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
         ###############################
         if l1_processing: 
             ##-----------------------------------------------------------
-            t_i = time.time()  
+            t_i = time.time()
+            msg = "L1 processing of {} started".format(attrs['disdrodb_id'])
             if verbose:
-                print("L1 processing of {} started".format(attrs['disdrodb_id']))
-            logger.info("L1 processing of {} started".format(attrs['disdrodb_id']))
+                print(msg)
+            logger.info(msg)
             
             ##-----------------------------------------------------------
             # Check the L0 df is available 
@@ -377,38 +418,46 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             df_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.parquet'
             if not l0_processing:
                 if not os.path.exists(df_fpath):
-                    logger.exception("Need to run L0 processing. The {df_fpath} file is not available.")
-                    raise ValueError("Need to run L0 processing. The {df_fpath} file is not available.")
+                    msg = "Need to run L0 processing. The {df_fpath} file is not available."
+                    logger.exception(msg)
+                    raise ValueError(msg)
+                    
+            msg = f'Found parquet file: {df_fpath}'
             if verbose:
-                print(f'Found parquet file: {df_fpath}')
-            logger.info(f'Found parquet file: {df_fpath}')
+                print(msg)
+            logger.info(msg)
             
             ##-----------------------------------------------------------
             # Read raw data from parquet file 
+            msg = f'Start reading: {df_fpath}'
             if verbose:
-                print(f'Start reading: {df_fpath}')
-            logger.info(f'Start reading: {df_fpath}')
+                print(msg)
+            logger.info(msg)
             
             df = dd.read_parquet(df_fpath)
             
+            msg = f'Finish reading: {df_fpath}'
             if verbose:
-                print(f'Finish reading: {df_fpath}')
-            logger.info(f'Finish reading: {df_fpath}')
+                print(msg)
+            logger.info(msg)
             
             ##-----------------------------------------------------------
             # Subset row sample to debug 
             if not lazy and debug_on:
                 # df = df.iloc[0:100,:] # df.head(100) 
                 # df = df.iloc[0:,:]
+                
+                msg = 'Debug = True and Lazy = False, then only the first 100 rows are read'
                 if verbose:
-                    print('Debug = True and Lazy = False, then only the first 100 rows are read')
-                logger.info('Debug = True and Lazy = False, then only the first 100 rows are read')
+                    print(msg)
+                logger.info(msg)
                
             ##-----------------------------------------------------------
             # Retrieve raw data matrix 
+            msg = f"Retrieve raw data matrix for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Retrieve raw data matrix for {attrs['disdrodb_id']}")
-            logger.info(f"Retrieve raw data matrix for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             
             dict_data = {}
             n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
@@ -449,9 +498,10 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                 #     arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
                 # dict_data[key] = arr
             
+            msg = f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}")
-            logger.info(f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             
             ##-----------------------------------------------------------
             # Define data variables for xarray Dataset 
@@ -508,29 +558,32 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             
             
             ##-----------------------------------------------------------
+            msg = "L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
             if verbose:
                 t_f = time.time() - t_i
-                print("L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
-            logger.info("L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f))
+                print(msg)
+            logger.info(msg)
         
         #-------------------------------------------------------------------------.
     
+    msg = f'Total skipped files: {len(list_skipped_files)} on {all_files} in L0 process'
     if verbose:
-        print(f'Total skipped files: {len(list_skipped_files)} on {all_files} in L0 process')
+        print(msg)
     logger.info('---')
-    logger.info(f'Total skipped files: {len(list_skipped_files)} on {all_files} in L0 process')
+    logger.info(msg)
     logger.info('---')
     
-    print('### Script finish ###')
-    logger.info('### Script finish ###')
+    msg = '### Script finish ###'
+    print(msg)
+    logger.info(msg)
     
     close_log()
     
  
 
 if __name__ == '__main__':
-    main() # when using click 
-    # main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    # main() # when using click 
+    main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
     
     # Otherwise:     
     # parser = argparse.ArgumentParser(description='L0 and L1 data processing')

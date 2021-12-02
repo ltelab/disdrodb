@@ -312,9 +312,9 @@ def get_attrs_standards():
     attrs_dict = {key: '' for key in list_attrs}
     return attrs_dict
    
-def get_dtype_standards(): 
+def get_L0_dtype_standards(): 
     dtype_dict = {                                 # Kimbo option
-        "id": "object",
+        "id": "uint32",
         "rain_rate_16bit": 'float32',
         "rain_rate_32bit": 'float32',
         "rain_accumulated_16bit":   'float32',
@@ -331,28 +331,28 @@ def get_dtype_standards():
         
         "weather_code_SYNOP_4680":'uint8',             
         "weather_code_SYNOP_4677":'uint8',              
-        "weather_code_METAR_4678":'U',
-        "weather_code_NWS":'U',
+        "weather_code_METAR_4678":'TODO',
+        "weather_code_NWS":'TODO',
         
         "n_particles"     :'uint32',
         "n_particles_all": 'uint32',
         
-        "sensor_temperature": 'object',     #  int8, all 'na'
-        "temperature_PBC" : 'int8',
-        "temperature_right" : 'int8',
-        "temperature_left":'int8',
+        "sensor_temperature": 'uint8',
+        "temperature_PBC" : 'TODO',
+        "temperature_right" : 'TODO',
+        "temperature_left":'TODO',
         
         "sensor_heating_current" : 'float32',
         "sensor_battery_voltage" : 'float32',
         "sensor_status"   : 'uint8',
-        "laser_amplitude" :'float32',          #  uint32
+        "laser_amplitude" :'uint32',
         "error_code"      : 'uint8',          
 
         # Custom ields       
         "Unknow_column": "object",
-        'datalogger_power': 'object',           # all 'OK'
-        "datalogger_sensor_status": "float32", 
-        "datalogger_temperature": "float32", 
+        "datalogger_temperature": "object",
+        "datalogger_voltage": "object",
+        'datalogger_error': 'uint8',
         
         # Data fields (TODO) 
         "FieldN": 'object',
@@ -365,65 +365,14 @@ def get_dtype_standards():
         "altitude" : 'float32',
         
          # Dimensions
-        'time': 'datetime64[ns]', 
+        'time': 'object',
         
     }
     return dtype_dict
 
 def get_dtype_standards_all_object(): 
-    dtype_dict = {                                 # Kimbo option
-        "id": "object",
-        "rain_rate_16bit": 'object',
-        "rain_rate_32bit": 'object',
-        "rain_accumulated_16bit":   'object',
-        "rain_accumulated_32bit":   'object',
+    dtype_dict = get_dtype_standards()
+    for i in dtype_dict:
+        dtype_dict[i] = 'object'
         
-        "rain_amount_absolute": 'object', 
-        "reflectivity_16bit": 'object',
-        "reflectivity_32bit": 'object',
-        
-        "rain_kinetic_energy"  :'object',
-        "snowfall_intensity": 'object',
-        
-        "mor_visibility"    :'object',
-        
-        "weather_code_SYNOP_4680":'object',             
-        "weather_code_SYNOP_4677":'object',              
-        "weather_code_METAR_4678":'U',
-        "weather_code_NWS":'U',
-        
-        "n_particles"     :'object',
-        "n_particles_all": 'object',
-        
-        "sensor_temperature": 'object',     #  int8, all 'na'
-        "temperature_PBC" : 'object',
-        "temperature_right" : 'object',
-        "temperature_left":'object',
-        
-        "sensor_heating_current" : 'object',
-        "sensor_battery_voltage" : 'object',
-        "sensor_status"   : 'object',
-        "laser_amplitude" :'object',          #  uint32
-        "error_code"      : 'object',          
-
-        # Custom ields       
-        "Unknow_column": "object",
-        'datalogger_power': 'object',           # all 'OK'
-        "datalogger_sensor_status": "object", 
-        "datalogger_temperature": "object", 
-        
-        # Data fields (TODO) 
-        "FieldN": 'object',
-        "FieldV": 'object',
-        "RawData": 'object',
-        
-        # Coords 
-        "latitude" : 'object',
-        "longitude" : 'object',
-        "altitude" : 'object',
-        
-         # Dimensions
-        'time': 'object', 
-        
-    }
     return dtype_dict
