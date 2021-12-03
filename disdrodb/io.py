@@ -367,6 +367,18 @@ def get_L0_dtype_standards():
          # Dimensions
         'time': 'object',
         
+        #Temp variables
+        "Debug_data" : 'object',
+        'All_0': 'object',
+        'error_code?': 'object',
+        'unknow2': 'object',
+        'unknow3': 'object',
+        'unknow4': 'object',
+        'unknow5': 'object',
+        'unknow': 'object',
+        'unknow6': 'object',
+        'power_supply_voltage': 'object'
+        
     }
     return dtype_dict
 
