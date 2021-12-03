@@ -115,7 +115,7 @@ def _write_to_parquet(df, path, campaign_name, force):
                 except (Exception) as e:
                     logger.error(f"Something wrong with: {fpath}")
                     raise ValueError(f"Something wrong with: {fpath}")
-        logger.info(r"Deleted folder {fpath}")
+        logger.info(f"Deleted folder {fpath}")
         
     ##-------------------------------------------------------------------------.
     # Options 
@@ -371,8 +371,47 @@ def get_L0_dtype_standards():
     return dtype_dict
 
 def get_dtype_standards_all_object(): 
-    dtype_dict = get_dtype_standards()
+    dtype_dict = get_L0_dtype_standards()
     for i in dtype_dict:
         dtype_dict[i] = 'object'
         
     return dtype_dict
+
+def get_flags(device):
+    if device == 'Parsivel':
+        flag_dict = {
+            'sensor_status': [
+                2,
+                3
+            ],
+            'datalogger_error' : [
+                1
+            ],
+            'error_code' : [
+                1,
+                2
+            ]
+            }
+    return flag_dict
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+    

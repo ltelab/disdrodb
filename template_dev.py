@@ -22,6 +22,7 @@ from disdrodb.io import check_L1_standards
 from disdrodb.io import get_attrs_standards
 from disdrodb.io import get_L0_dtype_standards
 from disdrodb.io import get_dtype_standards_all_object
+from disdrodb.io import get_flags
 from disdrodb.io import _write_to_parquet
 
 from disdrodb.io import get_raw_field_nbins
@@ -78,8 +79,8 @@ l0_processing = True
 l1_processing = False
 force = True
 verbose = True
-debug_on = True
-lazy = False
+debug_on = False
+lazy = True
 keep_zarr = False
 
 
@@ -213,6 +214,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
     
     all_files = len(glob.glob(os.path.join(raw_dir, 'data', "**/*")))
     list_skipped_files = []
+    count_file = 0
     
     msg = f'{all_files} files to process in {raw_dir}'
     if verbose:
@@ -271,7 +273,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             
             ##------------------------------------------------------.      
             # Determine dtype based on standards 
-            dtype_dict = get_L0_dtype_standards()   # TODO - TO CHANGE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            dtype_dict = get_L0_dtype_standards()
             dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
             
             ##------------------------------------------------------.
@@ -282,7 +284,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             reader_kwargs["on_bad_lines"] = 'skip'
             reader_kwargs["engine"] = 'python'
             # - Replace custom NA with standard flags 
-            # reader_kwargs['na_values'] = 'na'
+            reader_kwargs['na_values'] = 'na'
             if lazy:
                 reader_kwargs["blocksize"] = None
             
@@ -311,7 +313,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     # np.median(df["latitude"].values.astype(float)/100)
                     # np.median(df["longitude"].values.astype(float)/100)
                     
-                    df.drop(columns=['latitude', 'longitude'])
+                    df = df.drop(columns=['latitude', 'longitude'])
                     
                     # Remove rows with bad data 
                     idx_valid = df['sensor_status'].isin([0, 1])
@@ -326,7 +328,9 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     
                     list_df.append(df)
                     
-                    logger.debug(f'{filename} processed successfully')
+                    count_file += 1
+                    
+                    logger.debug(f'{count_file} on {all_files} processed successfully: File name: {filename}')
                     
                 except (Exception, ValueError) as e:
                   msg = f"{filename} has been skipped. The error is {e}"
