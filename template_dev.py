@@ -45,13 +45,8 @@ from disdrodb.logger import close_log
 # schema = pa.Schema.from_pandas(df)
 
 # Error file busy on zarr, don't overwrite
-# Error on lazy with l1
 
 # Attributes for every devices
-
-# TODO
-# - Ensure not time duplicate !!!
-# - Ensure time ordered !!!
 
 # Make template work for Ticino, Payerne, 1 ARM Parsivel, 1 UK Diven, 1 Hymex
 
@@ -59,29 +54,29 @@ from disdrodb.logger import close_log
 #-------------------------------------------------------------------------.
 # Click implementation
 
-# @click.command(options_metavar='<options>')
+@click.command(options_metavar='<options>')
 
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-# @click.argument('processed_path', metavar ='<processed_path>') #TODO
+@click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-# @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
-# @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
-# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+@click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+@click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-raw_dir = "/SharedVM/Campagne/Raw/Ticino_2018"
-processed_path = '/SharedVM/Campagne/Processed/Ticino_2018'
-l0_processing = True
-l1_processing = False
-force = True
-verbose = True
-debug_on = False
-lazy = True
-keep_zarr = False
+# raw_dir = "/SharedVM/Campagne/Raw/Ticino_2018"
+# processed_path = '/SharedVM/Campagne/Processed/Ticino_2018'
+# l0_processing = True
+# l1_processing = False
+# force = True
+# verbose = True
+# debug_on = False
+# lazy = True
+# keep_zarr = False
 
 
 #-------------------------------------------------------------------------.
@@ -586,34 +581,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
  
 
 if __name__ == '__main__':
-    # main() # when using click 
-    main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    main() # when using click 
+    # main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
     
-    # Otherwise:     
-    # parser = argparse.ArgumentParser(description='L0 and L1 data processing')
-    # parser.add_argument('--raw_dir', type=str)
-    # parser.add_argument('--l0_processing', type=str, default='True')
-    # parser.add_argument('--l1_processing', type=str, default='True')
-    # parser.add_argument('--force', type=str, default='False')                    
-    
-    # l0_processing=True, l1_processing=True, force=False
-    
-    # args = parser.parse_args()
-    # if args.force == 'True':
-    #     force = True
-    # else: 
-    #     force = False
-    # if args.l0_processing == 'True':
-    #     l0_processing = True
-    # else: 
-    #     l0_processing = False 
-    #  if args.l1_processing == 'True':
-    #     l1_processing = True
-    # else: 
-    #     l1_processing = False   
-        
-    # main(raw_dir = raw_dir, 
-    #      l0_processing=l0_processing, 
-    #      l1_processing=l1_processing,
-    #      force=force)
  
