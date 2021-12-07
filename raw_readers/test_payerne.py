@@ -5,6 +5,11 @@ Created on Mon Nov 22 10:59:21 2021
 
 @author: kimbo
 """
+
+import sys
+  
+sys.path.insert(0, '/home/kimbo/Documents/disdrodb/')
+
 import os
 # os.chdir("/home/kimbo/Documents/disdrodb")
 import glob 
@@ -240,19 +245,19 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                 'id',
                                 'power_supply_voltage',
                                 'sensor_heating_current',
-                                'sensor_battery_voltage',
-                                'unknow',
+                                'rain_rate_32bit',
+                                'rain_amount_absolute',
                                 'weather_code_SYNOP_4680',
                                 'weather_code_SYNOP_4677',
                                 'reflectivity_16bit',
                                 'unknow2',
-                                'unknow3',
+                                'laser_amplitude',
                                 'n_particles',
                                 'unknow4',
                                 'A_voltage?',
-                                'unknow5',
-                                'error_code?',
-                                'unknow6',
+                                'A_voltage2?',
+                                'error_code',
+                                'rain_accumulated_32bit',
                                 'Debug_data',
                                 'FieldN',
                                 'FieldV',
@@ -297,6 +302,14 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     
                     # Drop all 0 column
                     df = df.drop(columns = ['All_0'])
+                    
+                    # Split Debug_data
+                    df1 = df['Debug_data'].str.split(r': |  | ms', expand=True, n = 7)
+                    df1 = df1.drop([0,1,7], axis = 1)
+                    df1.columns = ["Debug_data1","Debug_data2","Debug_data3","Debug_data4","Debug_data5"]
+                    df = dd.concat([df, df1], axis = 1)
+                    df = df.drop(['Debug_data'], axis = 1)
+
                     
                     # - Append to the list of dataframe 
                     list_df.append(df)

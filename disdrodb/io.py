@@ -14,15 +14,15 @@ import zarr
 import dask.dataframe
 
 from disdrodb.logger import log
-from disdrodb.aux import get_diameter_bin_center
-from disdrodb.aux import get_diameter_bin_lower
-from disdrodb.aux import get_diameter_bin_upper
-from disdrodb.aux import get_diameter_bin_width
-from disdrodb.aux import get_velocity_bin_center
-from disdrodb.aux import get_velocity_bin_lower
-from disdrodb.aux import get_velocity_bin_upper
-from disdrodb.aux import get_velocity_bin_width
-from disdrodb.aux import get_raw_field_nbins
+from disdrodb.standards import get_diameter_bin_center
+from disdrodb.standards import get_diameter_bin_lower
+from disdrodb.standards import get_diameter_bin_upper
+from disdrodb.standards import get_diameter_bin_width
+from disdrodb.standards import get_velocity_bin_center
+from disdrodb.standards import get_velocity_bin_lower
+from disdrodb.standards import get_velocity_bin_upper
+from disdrodb.standards import get_velocity_bin_width
+from disdrodb.standards import get_raw_field_nbins
     
 ## Kimbo
 # - dtype, attrs standards
@@ -331,16 +331,16 @@ def get_L0_dtype_standards():
         
         "weather_code_SYNOP_4680":'uint8',             
         "weather_code_SYNOP_4677":'uint8',              
-        "weather_code_METAR_4678":'TODO',
-        "weather_code_NWS":'TODO',
+        "weather_code_METAR_4678":'object', #TODO
+        "weather_code_NWS":'object', #TODO
         
         "n_particles"     :'uint32',
         "n_particles_all": 'uint32',
         
         "sensor_temperature": 'uint8',
-        "temperature_PBC" : 'TODO',
-        "temperature_right" : 'TODO',
-        "temperature_left":'TODO',
+        "temperature_PBC" : 'object', #TODO
+        "temperature_right" : 'object', #TODO
+        "temperature_left":'object', #TODO
         
         "sensor_heating_current" : 'float32',
         "sensor_battery_voltage" : 'float32',
@@ -377,7 +377,8 @@ def get_L0_dtype_standards():
         'unknow5': 'object',
         'unknow': 'object',
         'unknow6': 'object',
-        'power_supply_voltage': 'object'
+        'power_supply_voltage': 'object',
+        'A_voltage2?' : 'object'
         
     }
     return dtype_dict

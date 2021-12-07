@@ -68,8 +68,8 @@ from disdrodb.logger import close_log
 @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
 @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-# raw_dir = "/SharedVM/Campagne/Raw/Ticino_2018"
-# processed_path = '/SharedVM/Campagne/Processed/Ticino_2018'
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018"
+# processed_path = '/SharedVM/Campagne/ltnas3/Processed/Ticino_2018'
 # l0_processing = True
 # l1_processing = False
 # force = True
@@ -264,12 +264,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                 'RawData',
                                 'datalogger_error',
                                 ]
-            check_valid_varname(raw_data_columns)   
-            
-            ##------------------------------------------------------.      
-            # Determine dtype based on standards 
-            dtype_dict = get_L0_dtype_standards()
-            dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+            check_valid_varname(raw_data_columns)
             
             ##------------------------------------------------------.
             # Define reader options 
@@ -291,12 +286,19 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                 print(msg)
             logger.info(msg)
             
+            ##------------------------------------------------------.
+            # Cast dataframe to dtypes
+            # Determine dtype based on standards 
+            dtype_dict = get_L0_dtype_standards()
+            
+            dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+            
             list_df = []
             for filename in file_list:
                 try:
                     df = dd.read_csv(filename, 
-                                     names = raw_data_columns, 
-                                      dtype = dtype_dict,
+                                     names = raw_data_columns,
+                                     dtype = dtype_dict,
                                      **reader_kwargs)
                     
                     
@@ -319,8 +321,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     # Remove rows with error_code not 000 
                     idx_valid = df['error_code'] == 0 
                     df = df[idx_valid]
-                    
-                    
+                
                     list_df.append(df)
                     
                     count_file += 1
@@ -356,16 +357,17 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                 # Sort by increasing time 
                 df = df.sort_values(by="time")
                 
+                
             except (AttributeError, TypeError) as e:
-                msg ='f"Can not create concat data files. Error: {e}"'
+                msg = f"Can not create concat data files. Error: {e}"
                 logger.exception(msg)
                 raise ValueError(msg)
                 
             msg = f"Finish concat dataframes for {attrs['disdrodb_id']}"
             if verbose:
                 print(msg)
-            logger.info(msg)
-
+            logger.info(msg)     
+            
                 
             ##------------------------------------------------------.                                   
             # Write to Parquet 
