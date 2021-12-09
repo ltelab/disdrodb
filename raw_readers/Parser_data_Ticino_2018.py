@@ -54,29 +54,29 @@ from disdrodb.logger import close_log
 #-------------------------------------------------------------------------.
 # Click implementation
 
-# @click.command(options_metavar='<options>')
+@click.command(options_metavar='<options>')
 
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-# @click.argument('processed_path', metavar ='<processed_path>') #TODO
+@click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-# @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
-# @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
-# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+@click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+@click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018"
-processed_path = '/SharedVM/Campagne/ltnas3/Processed/Ticino_2018'
-l0_processing = True
-l1_processing = True
-force = True
-verbose = True
-debug_on = True
-lazy = True
-keep_zarr = True
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018"
+# processed_path = '/SharedVM/Campagne/ltnas3/Processed/Ticino_2018'
+# l0_processing = True
+# l1_processing = False
+# force = True
+# verbose = True
+# debug_on = False
+# lazy = True
+# keep_zarr = True
 
 
 #-------------------------------------------------------------------------.
@@ -281,7 +281,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             reader_kwargs["on_bad_lines"] = 'skip'
             reader_kwargs["engine"] = 'python'
             # - Replace custom NA with standard flags 
-            reader_kwargs['na_values'] = 'na'
+            reader_kwargs['na_values'] = ['na', 'Error in data reading! error0']
             if lazy:
                 reader_kwargs["blocksize"] = None
             
@@ -307,9 +307,17 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                      names = ['a','FieldV','RawData','datalogger_error'],
                                      **reader_kwargs)
                     
-                    # Split column
-                    df = dd.concat([df['a'].str.split(',', expand = True, n = 20),df.iloc[:,1:3]], axis = 1,  ignore_unknown_divisions=True).rename(columns = col_names)
+                    # Check if file empty
+                    if len(df.index) == 0:
+                        msg = f"{filename} is empty and has been skipped."
+                        logger.warning(msg)
+                        if verbose: 
+                            print(msg)
+                        list_skipped_files.append(msg)
+                        continue
                     
+                    # Split column
+                    df = dd.concat([df['a'].str.split(',', expand = True, n = 20),df.iloc[:,1:]], axis = 1,  ignore_unknown_divisions=True).rename(columns = col_names)
                     
                     #-------------------------------------------------------------------------
                     ### Keep only clean data 
@@ -321,10 +329,19 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     
                     df = df.drop(columns=['latitude', 'longitude'])
                     
+                    # Drop rows with half nan values
+                    df = df.dropna(thresh = 15)
+                    
                     # Remove rows with bad data 
                     df = df[df.sensor_status != 0]
                     # Remove rows with error_code not 000 
                     df = df[df.error_code != 0]
+                    
+                    # Assign dtypes
+                    dtype_dict = {column: dtype_dict[column] for column in df.columns}
+
+                    for k, v in dtype_dict.items():
+                        df[k] = df[k].astype(v)
                 
                     list_df.append(df)
                     
@@ -338,7 +355,8 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                   if verbose: 
                       print(msg)
                   list_skipped_files.append(msg)
-            
+
+
             msg = f"{len(list_skipped_files)} files on {len(file_list)} for {attrs['disdrodb_id']} has been skipped."
             if verbose:      
                 print(msg)
@@ -587,7 +605,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
  
 
 if __name__ == '__main__':
-    # main() # when using click 
-    main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    main() # when using click 
+    # main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
     
  

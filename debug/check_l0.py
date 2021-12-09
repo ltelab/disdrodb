@@ -18,4 +18,11 @@ def print_unique(df):
         
     for key, value in a.items():
         print(key, ' : ', value)
+        
+def print_nan_rows(df):
+    is_NaN = df.isnull()
+    row_has_NaN = is_NaN.any(axis=1)
+    rows_with_NaN = df[row_has_NaN]
+
+    print(rows_with_NaN)
 
