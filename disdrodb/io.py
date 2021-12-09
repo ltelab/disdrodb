@@ -320,7 +320,7 @@ def get_L0_dtype_standards():
         "rain_accumulated_16bit":   'float32',
         "rain_accumulated_32bit":   'float32',
         
-        "rain_amount_absolute": 'float32', 
+        "rain_amount_absolute_32bit": 'float32', 
         "reflectivity_16bit": 'float32',
         "reflectivity_32bit": 'float32',
         

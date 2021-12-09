@@ -1,545 +1,593 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-A script used to assemble the data from a parsivel device into a parquet file
-Once merged all the files and converted to .parquet, it create a README.txt and a log<datetime>.txt file in /<campaign_name>/processed
-If there are more than one sub-folder inside the data folder (the folder where are saved all the parsivel data files),
-it will create a parquet file for every folder, and it will call <folder_name>_<campaign_name>_Processed_data.parquet inside /<campaign_name>/processed folder 
-    
+Created on Thu Dec  9 10:09:19 2021
 
-    Attributes
-    ----------
-    campaign_name: str
-        the name of the parsival data collection campaing
-    campaign_path: path
-        path location of the parent folder's campaign
-    file_list : list
-        a list of all the single data (.dat) inside the campaign path
-    header_column_list : 
-        the header of the table on the .dat files (25 columns)        
-    dtype_set : set
-        rappresent the datatype of the dataframe's columns
-    chunk_size : int
-        the chunk size use in read_csv process
-    skip_files = dictionary
-        store skipped files for folder during files reading
-    file_list : list
-        list files to read
-    folder_file_list : dictionary
-        list files and folder to read
-    __temp_list : list
-        temporary list to merge the rows of the data files
-    __temp_skip_files : int
-        counter for skipped file during data files reading
-    __temp_skip_files_list : list
-        store skipped file error during files reading
-    
-
-    Methods
-    -------
-    create_parquet
-        Merge all the data files found in the path folder into a parquet file inside a folder called 'processed', or into 'processed'/<subfolder> if there are subfolders
-    __getDataFiles()
-        Populate the _temp_list with parsivel data files in the path set on campaign_path
-    __merge_files_data()
-        Convert all the data files in self.__getDataFiles() into a Dask dataframe, drop all the Nan rows and append in every dataframe read into self.__temp_list
-    __concat_frames()
-        Concat the dataframes inside self.__temp_list
-    __save_parquet()
-        Save a dask dataframe into a parquet file inside a folder called 'processed', or 'processed'/<subfolder>/Processed_data_<campaing_name>_<subfolder>.parquet
-    __check_processed_folder()
-        Check if exist /<campaign_name>/processed folder, if not will create it and also the subfolder if need it
-    __getDataFiles()
-        Populate the file_list with parsivel data files in the path set on campaign_path, and populate also the subfolder into folder_file_list if need it
-    __createREADME()
-        Create README.txt in processed folder to store campaign info
-    __createLog()
-        Create lof.txt in processed folder to store conversion info and errors
+@author: kimbo
 """
+import os
+# os.chdir("/home/kimbo/Documents/disdrodb")
+import glob 
+import shutil
+import click
+import time
+import dask.array as da
+import numpy as np 
+import xarray as xr 
 
-class Campaign:
+from disdrodb.io import check_folder_structure
+from disdrodb.io import check_valid_varname
+from disdrodb.io import check_L0_standards
+from disdrodb.io import check_L1_standards
+from disdrodb.io import get_attrs_standards
+from disdrodb.io import get_L0_dtype_standards
+from disdrodb.io import get_dtype_standards_all_object
+from disdrodb.io import get_flags
+from disdrodb.io import _write_to_parquet
+
+from disdrodb.io import get_raw_field_nbins
+from disdrodb.io import get_L1_coords
+from disdrodb.io import rechunk_L1_dataset
+from disdrodb.io import get_L1_zarr_encodings_standards
+from disdrodb.io import get_L1_nc_encodings_standards
+
+from disdrodb.logger import log
+from disdrodb.logger import close_log
+
+### TODO 4 Kimbo tomorrow
+
+# To think eventually 
+# --> Intermediate storage in Zarr: 74.32s
+# --> Direct writing to netCDF: 61s
+
+## Infer Arrow schema from pandas
+# import pyarrow as pa
+# schema = pa.Schema.from_pandas(df)
+
+# Error file busy on zarr, don't overwrite
+
+# Attributes for every devices
+
+# Make template work for Ticino, Payerne, 1 ARM Parsivel, 1 UK Diven, 1 Hymex
+
+
+#-------------------------------------------------------------------------.
+# Click implementation
+
+# @click.command(options_metavar='<options>')
+
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+
+# @click.argument('processed_path', metavar ='<processed_path>') #TODO
+
+# @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+# @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+
+raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018"
+processed_path = '/SharedVM/Campagne/ltnas3/Processed/Ticino_2018'
+l0_processing = True
+l1_processing = True
+force = True
+verbose = True
+debug_on = True
+lazy = True
+keep_zarr = True
+
+
+#-------------------------------------------------------------------------.
+
+
+def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr):
     '''
-    A class used to assemble in a parquet file a collection of data from a Parsivel device
+    Script description
     
-    Attributes
-    ----------
-    campaign_name: str
-        the name of the parsival data collection campaing
-    campaign_path: path
-        path location of the parent folder's campaign
-    file_list : list
-        a list of all the single data (.dat) inside the campaign path
-    header_column_list : 
-        the header of the table on the .dat files (25 columns)        
-    dtype_set : set
-        rappresent the datatype of the dataframe's columns
-    chunk_size : int
-        the chunk size use in read_csv process
-    skip_files = dictionary
-        store skipped files for folder during files reading
-    file_list : list
-        list files to read
-    folder_file_list : dictionary
-        list files and folder to read
-    __temp_list : list
-        temporary list to merge the rows of the data files
-    __temp_skip_files : int
-        counter for skipped file during data files reading
-    __temp_skip_files_list : list
-        store skipped file error during files reading
-    
-
-    Methods
-    -------
-    create_parquet
-        Merge all the data files found in the path folder into a parquet file inside a folder called 'processed', or into 'processed'/<subfolder> if there are subfolders
-    __getDataFiles()
-        Populate the _temp_list with parsivel data files in the path set on campaign_path
-    __merge_files_data()
-        Convert all the data files in self.__getDataFiles() into a Dask dataframe, drop all the Nan rows and append in every dataframe read into self.__temp_list
-    __concat_frames()
-        Concat the dataframes inside self.__temp_list
-    __save_parquet()
-        Save a dask dataframe into a parquet file inside a folder called 'processed', or 'processed'/<subfolder>/Processed_data_<campaing_name>_<subfolder>.parquet
-    __check_processed_folder()
-        Check if exist /<campaign_name>/processed folder, if not will create it and also the subfolder if need it
-    __getDataFiles()
-        Populate the file_list with parsivel data files in the path set on campaign_path, and populate also the subfolder into folder_file_list if need it
-    __createREADME()
-        Create README.txt in processed folder to store campaign info
-    __createLog()
-        Create lof.txt in processed folder to store conversion info and errors
+    <raw_dir>           : Raw file location of the campaign (example: <...>/Raw/<campaign name>, /ltenas3/0_Data/ParsivelDB/Raw/Ticino_2018)
+    <processed_path>    : Processed file path output of the campaign (example: <...>/Processed/<campaign name>, /ltenas3/0_Data/ParsivelDB/Processed/Ticino_2018)
     
     
     '''
+    #-------------------------------------------------------------------------.
+    # Hard coded server path
+    # processed_path = '/ltenas3/0_Data/ParsivelDB/Processed/Ticino_2018'
     
-    __temp_list = []
-    
-    __temp_skip_files = 0
-        
-    __temp_skip_files_list = []
-    
-    skip_files = {}
-    
-    file_list = []
-    
-    folder_file_list = {}
-    
-    header_column_list = ['ID',
-                          'Geo_coordinate_x',
-                          'Geo_coordinate_y',
-                          'Timestamp',
-                          'Datalogger_temp',
-                          'Datalogger_power',
-                          'Datalogger_communication',
-                          'Rain_intensity',
-                          'Rain_amount_accumulated',
-                          'Weather_code_SYNOP_according_table_4680',
-                          'Weather_code_SYNOP_according_table_4677',
-                          'Radar_reflectivity',
-                          'MOR_visibility_precipitation',
-                          'Signal_amplitude_laser_strip',
-                          'Number_detected_particles',
-                          'Temperature_sensor',
-                          'Current_through_heating_system',
-                          'Power_supply_voltage',
-                          'Sensor_status',
-                          'Rain_amount_absolute',
-                          'Error_code',
-                          'FieldN',
-                          'FieldV',
-                          'RAW_data',
-                          'Unknow_column'
-                          ]
-
-    dtype_set= {'ID': 'int16',
-                'Geo_coordinate_x': 'object',
-                'Geo_coordinate_y': 'object',
-                'Timestamp': 'datetime64[ns]',
-                'Datalogger_temp': 'object',
-                'Datalogger_power': 'object',
-                'Datalogger_communication': 'uint8',
-                'Rain_intensity': 'float',
-                'Rain_amount_accumulated': 'float',
-                'Weather_code_SYNOP_according_table_4680': 'uint8',
-                'Weather_code_SYNOP_according_table_4677': 'uint8',
-                'Radar_reflectivity': 'float',
-                'MOR_visibility_precipitation': 'uint16',
-                'Signal_amplitude_laser_strip': 'uint32',
-                'Number_detected_particles': 'uint32',
-                'Temperature_sensor': 'int8',
-                'Current_through_heating_system': 'float',
-                'Power_supply_voltage': 'float',
-                'Sensor_status': 'int8',
-                'Rain_amount_absolute': 'float32', #Da domandare se è troppo
-                'Error_code': 'object',
-                'FieldN': 'object',
-                'FieldV': 'object',
-                'RAW_data': 'object',
-                'Unknow_column': 'float'
-                }
-
-    def __init__(self, campaign_path, campaign_name, chunk_size = None):
-        """
-        Parameters
-        ----------
-        
-        campaign_name: str
-            the name of the parsival data collection campaing
-        campaign_path: path
-            path location of the parent folder's campaign
-        chunk_size: int
-            custom chunk size for dask read_csv function
-            
-        """
-
-        self.campaign_path = campaign_path
-        self.campaign_name = campaign_name
-        self.chunk_size = chunk_size
-          
-    def __merge_files_data(self, folder_name = None):
-        """Convert all the data files in self.__getDataFiles() into a Dask dataframe, drop all the Nan rows and append in self.__temp_list
-
-        Parameters
-        ----------
-        folder_name: string (optional)
-            explicit the folder name inside <campaing_name>/data/<FOLDER_NAME>/*.dat, need it for loop every folder inside data.
-            If is None, it mean the data folder hasn't subfolder
-
-
-        Raises
-        ------
-        Exception, ValueError
-            On .dat files error's, skip the file and write the file name and error into log file in <campaign_name>/processed/log_<datetime>.txt
-        """
-        
+    #-------------------------------------------------------------------------.
+    # Whether to use pandas or dask 
+    if lazy: 
         import dask.dataframe as dd
+    else: 
+        import pandas as dd
+
+    #-------------------------------------------------------------------------.
+    # - Define instrument type 
+    sensor_name = ""
+    #-------------------------------------------------------------------------.
+    ### Define attributes 
+    attrs = get_attrs_standards()
+    # - Description
+    attrs['title'] = 'DSD observations along a mountain transect near Locarno, Ticino, Switerland'
+    attrs['description'] = '' 
+    attrs['institution'] = 'Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne' 
+    attrs['source'] = ''
+    attrs['history'] = ''
+    attrs['conventions'] = ''
+    attrs['campaign_name'] = 'Locarno2018'
+    attrs['project_name'] = "",
+    
+    # - Instrument specs 
+    attrs['sensor_name'] = "Parsivel"
+    attrs["sensor_long_name"] = 'OTT Hydromet Parsivel'
+    
+    attrs["sensor_beam_width"] = 180     # TODO
+    attrs["sensor_nominal_width"] = 180  # TODO
+    attrs["measurement_interval"] = 30
+    attrs["temporal_resolution"] = 30
+    
+    attrs["sensor_wavelegth"] = '650 nm'
+    attrs["sensor_serial_number"] = ''
+    attrs["firmware_IOP"] = ''
+    attrs["firmware_DSP"] = ''
+    
+    # - Location info 
+    attrs['station_id'] = "" # TODO
+    attrs['station_name'] = "" # TODO
+    attrs['station_number'] = 0 # TODO
+    attrs['location'] = "" # TODO
+    attrs['country'] = "Switzerland"  
+    attrs['continent'] = "Europe" 
+ 
+    attrs['latitude'] = 0   # TODO
+    attrs['longitude'] = 0  # TODO
+    attrs['altitude'] = 0  # TODO
+    
+    attrs['latitude_unit'] = "DegreesNorth"   
+    attrs['longitude_unit'] = "DegreesEast"   
+    attrs['altitude_unit'] = "MetersAboveSeaLevel"   
+    
+    attrs['crs'] = "WGS84"   
+    attrs['EPSG'] = 4326
+    attrs['proj4_string'] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+
+    # - Attribution 
+    attrs['contributors'] = ''
+    attrs['authors'] = ''
+    attrs['reference'] = ''
+    attrs['documentation'] = ''
+    attrs['website'] = ''
+    attrs['source_repository'] = ''
+    attrs['doi'] = ''    
+    attrs['contact'] = ''    
+    attrs['contact_information'] = 'http://lte.epfl.ch' 
+    
+    # - DISDRODB attrs 
+    attrs['source_data_format'] = 'raw_data'        
+    attrs['obs_type'] = 'raw'   # preprocess/postprocessed
+    attrs['level'] = 'L0'       # L0, L1, L2, ...    
+    attrs['disdrodb_id'] = ''   # TODO         
+ 
+    ##------------------------------------------------------------------------. 
+    
+    sensor_name = attrs['sensor_name']
+    
+    
+    ###############################
+    #### Perform L0 processing ####
+    ###############################
+    
+    ##------------------------------------------------------.   
+    # Check the campaign path
+    if os.path.isdir(raw_dir):
+        pass
+        #Path check in click, something else doesn't work
+    else:
+        print('Something wrong with path, quit script')
+        raise SystemExit
         
-        #If has argument, it mean there are folders to process
-        if folder_name:
-            self.file_list = []
-            for file in self.folder_file_list[folder_name]:
-                self.file_list.append(file)
-                    
-        for filename in self.file_list:
+    
+    campaign_name = os.path.basename(processed_path)
+    
+    ##------------------------------------------------------.   
+    # Check processed folder
+    check_folder_structure(raw_dir, campaign_name, processed_path)
+    
+    campaign_name = os.path.basename(processed_path)
+    
+    ##------------------------------------------------------.   
+    # Start log
+    logger = log(processed_path, 'template_dev')
+    
+    msg = '### Script start ###'
+    print(msg)
+    logger.info(msg)
+    
+    ##------------------------------------------------------.   
+    # Process all devices
+    
+    all_files = len(glob.glob(os.path.join(raw_dir, 'data', "**/*")))
+    list_skipped_files = []
+    count_file = 0
+    
+    msg = f'{all_files} files to process in {raw_dir}'
+    if verbose:
+        print(msg)
+    logger.info(msg)
+    
+    for device in glob.glob(os.path.join(raw_dir,"data", "*")):
+    # for device in range (0,1):
+        
+        # for device in 
+        if l0_processing: 
+            #----------------------------------------------------------------.
+            t_i = time.time() 
+            msg = "L0 processing of {} started".format(attrs['disdrodb_id'])
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            # - Retrieve filepaths of raw data files 
+            # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
+            # - With campaign path and all the stations files
+            
+            file_list = sorted(glob.glob(os.path.join(device,"**/*.dat*"), recursive = True))         
+            # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
+            
+            if debug_on: 
+                file_list = file_list[0:10]
+            
+            #----------------------------------------------------------------.
+            # - Define raw data headers 
+            raw_data_columns = ['id',
+                                'latitude',
+                                'longitude',
+                                'time',
+                                'datalogger_temperature',
+                                'datalogger_voltage',
+                                'rain_rate_32bit',
+                                'rain_accumulated_32bit',
+                                'weather_code_SYNOP_4680',
+                                'weather_code_SYNOP_4677',
+                                'reflectivity_16bit',
+                                'mor_visibility',
+                                'laser_amplitude',  
+                                'n_particles',
+                                'sensor_temperature',
+                                'sensor_heating_current',
+                                'sensor_battery_voltage',
+                                'sensor_status',
+                                'rain_amount_absolute_32bit',
+                                'error_code',
+                                'FieldN',
+                                'FieldV',
+                                'RawData',
+                                'datalogger_error',
+                                ]
+            check_valid_varname(raw_data_columns)
+            
+            # Dictionary for rename columns
+            n = 0
+            col_names = {}
+            for name in raw_data_columns:
+                col_names[n] = name
+                n += 1
+            
+            ##------------------------------------------------------.
+            # Define reader options 
+            reader_kwargs = {}
+            # reader_kwargs['compression'] = 'gzip'
+            reader_kwargs['delimiter'] = ',,'
+            reader_kwargs["on_bad_lines"] = 'skip'
+            reader_kwargs["engine"] = 'python'
+            # - Replace custom NA with standard flags 
+            reader_kwargs['na_values'] = 'na'
+            if lazy:
+                reader_kwargs["blocksize"] = None
+            
+            ##------------------------------------------------------.
+            # Loop over all files
+            
+            msg = f"{len(file_list)} files to process for {attrs['disdrodb_id']}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##------------------------------------------------------.
+            # Cast dataframe to dtypes
+            # Determine dtype based on standards 
+            dtype_dict = get_L0_dtype_standards()
+            
+            dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+            
+            list_df = []
+            for filename in file_list:
                 try:
+                    df = dd.read_csv(filename, 
+                                     names = ['a','FieldV','RawData','datalogger_error'],
+                                     **reader_kwargs)
                     
-                    if filename.endswith('.gz'):
-                        df = dd.read_csv(filename, compression = 'gzip', delimiter = ',', on_bad_lines='skip', engine="python", blocksize=None, names = self.header_column_list, dtype = self.dtype_set)
+                    # Split column
+                    df = dd.concat([df['a'].str.split(',', expand = True, n = 20),df.iloc[:,1:3]], axis = 1,  ignore_unknown_divisions=True).rename(columns = col_names)
                     
-                        df = df.dropna(how='any')    
                     
-                    else:
-                        df = dd.read_csv(filename, delimiter = ',', on_bad_lines='skip', engine="python", blocksize=None, names = self.header_column_list, dtype = self.dtype_set)
-                        
-                        df = df.dropna(how='any')
-                        
-                    self.__temp_list.append(df)
+                    #-------------------------------------------------------------------------
+                    ### Keep only clean data 
+                    # Drop latitude and longitute (always the same)
+                    
+                    # Get position if need it
+                    # np.median(df["latitude"].values.astype(float)/100)
+                    # np.median(df["longitude"].values.astype(float)/100)
+                    
+                    df = df.drop(columns=['latitude', 'longitude'])
+                    
+                    # Remove rows with bad data 
+                    df = df[df.sensor_status != 0]
+                    # Remove rows with error_code not 000 
+                    df = df[df.error_code != 0]
+                
+                    list_df.append(df)
+                    
+                    count_file += 1
+                    
+                    logger.debug(f'{count_file} on {all_files} processed successfully: File name: {filename}')
                     
                 except (Exception, ValueError) as e:
-                  print("{} has been skipped. The error is {}".format(filename, e))
-                  self.__temp_skip_files_list.append("{} has been skipped. The error is {}".format(filename, e))
-                  self.__temp_skip_files += 1
-                  
+                  msg = f"{filename} has been skipped. The error is {e}"
+                  logger.warning(msg)
+                  if verbose: 
+                      print(msg)
+                  list_skipped_files.append(msg)
             
-        print()
-        print('{} files on {} has been skipped.'.format(self.__temp_skip_files, len(self.file_list)))
-        print()
-        
-        #For log
-        if folder_name:
-            self.skip_files[folder_name] = self.__temp_skip_files_list
-        
-        self.__temp_skip_files = 0
-        
-    def __concat_frames(self):
-        """Concat the frame inside __temp_list
-
-        Parameters
-        ----------
-        None
-
-
-        TODO
-        Raises
-        ------
-        AttributeError, TypeError
-            If can't concat, throw error
-        """
-        
-        import dask.dataframe as dd 
-        
-        try:
-            df = dd.concat(self.__temp_list, axis=0, ignore_index = True)
-            return df
-        except (AttributeError, TypeError) as e:
-            print("Can not create concat data files. Error: {}".format(e))
-            raise
-    
-    def __save_parquet(self, folder_name = None):
-        """Save a dask dataframe into a parquet file inside a folder called 'processed', or 'processed'/<subfolder>/Processed_data_<campaing_name>_<subfolder>.parquet
-
-        Parameters
-        ----------
-        None
-
-        Raises
-        ------
-        Exception
-            I don't know ...
-        """
-        
-        import os
-        
-        if folder_name:
-            __folder_path = r'/' + folder_name
-        else:
-            __folder_path = ''
-        
-        print('Starting conversion to parquet file')
-        
-        try:
-            self.__concat_frames().to_parquet(os.path.join(self.campaign_path + r'/processed' + __folder_path,r'Processed_data_' + self.campaign_name + '_' + folder_name +'.parquet'), schema='infer')
-        except (Exception) as e:
-              print("Can not convert to parquet file. The error is {}".format(e))
-              raise
-        
-        print('Processed_data' + self.campaign_name + '_' + folder_name + '.parquet is saved in {}'.format(self.campaign_path))
-        
-    def __check_processed_folder(self):
-        """Check if exist /<campaign_name>/processed folder, if not will create it and also the subfolder if need it
-
-        Parameters
-        ----------
-        None
-
-
-        TODO
-        Raises
-        ------
-        Exception
-            If can't create folder, quit the script
-        """
-        
-        import os
-        
-        if not os.path.isdir(self.campaign_path + r'/processed'):
+            msg = f"{len(list_skipped_files)} files on {len(file_list)} for {attrs['disdrodb_id']} has been skipped."
+            if verbose:      
+                print(msg)
+            logger.info('---')
+            logger.info(msg)
+            logger.info('---')
+                
+            
+            ##------------------------------------------------------.
+            # Concatenate the dataframe
+            msg = f"Start concat dataframes for {attrs['disdrodb_id']}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
             try:
-                os.mkdir(self.campaign_path + r'/processed')
-            except Exception() as e:
-                print("Can not create folder <processed>. Error: {}".format(e))
-                raise SystemExit(0)
-        
-        # Create subfolder for every device in processed folder
-        if self.folder_file_list:
-            for folder in self.folder_file_list.keys():
-                if not os.path.isdir(self.campaign_path + r'/processed/' + folder):
-                    try:
-                        os.mkdir(self.campaign_path + r'/processed/' + folder)
-                    except Exception() as e:
-                        print("Can not create the device folder into {}/processed. Error: {}".format(self.campaign_path , e))
-                        raise SystemExit(0)
-                    except FileExistsError:
-                        pass
+                df = dd.concat(list_df, axis=0, ignore_index = True)
+                # Drop duplicated values 
+                df = df.drop_duplicates(subset="time")
+                # Sort by increasing time 
+                df = df.sort_values(by="time")
+                
+                
+            except (AttributeError, TypeError) as e:
+                msg = f"Can not create concat data files. Error: {e}"
+                logger.exception(msg)
+                raise ValueError(msg)
+                
+            msg = f"Finish concat dataframes for {attrs['disdrodb_id']}"
+            if verbose:
+                print(msg)
+            logger.info(msg)     
             
-    def __getDataFiles(self):
-        """Populate the file_list with parsivel data files in the path set on campaign_path, and populate also the subfolder into folder_file_list if need it
-
-        Parameters
-        ----------
-        None
-
-        Raises
-        ------
-        IndexError
-            No files to process, quit the script
+                
+            ##------------------------------------------------------.                                   
+            # Write to Parquet 
+            msg = f"Starting conversion to parquet file for {attrs['disdrodb_id']}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            # Path to device folder
+            path = os.path.join(processed_path + '/' + os.path.basename(device))
+            # Write to Parquet 
+            _write_to_parquet(df, path, campaign_name, force)
+            
+            msg = f"Finish conversion to parquet file for {attrs['disdrodb_id']}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##------------------------------------------------------.   
+            # Check Parquet standards 
+            check_L0_standards(df)
+            
+            ##------------------------------------------------------.   
+            t_f = time.time() - t_i
+            msg = "L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##------------------------------------------------------.   
+            # Delete temp variables
+            del df
+            del list_df
         
-        """
-        
-        import glob
-        
-        from pathlib import Path
-        
-        #Exit script if folder does not exist
-        if not Path(self.campaign_path + '/data').exists():
-            raise ValueError("The data folder doesn't exist, check the path")
+        #-------------------------------------------------------------------------.
+        ###############################
+        #### Perform L1 processing ####
+        ###############################
+        if l1_processing: 
+            ##-----------------------------------------------------------
+            t_i = time.time()
+            msg = "L1 processing of {} started".format(attrs['disdrodb_id'])
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Check the L0 df is available 
+            # Path device folder parquet
+            df_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.parquet'
+            if not l0_processing:
+                if not os.path.exists(df_fpath):
+                    msg = "Need to run L0 processing. The {df_fpath} file is not available."
+                    logger.exception(msg)
+                    raise ValueError(msg)
+                    
+            msg = f'Found parquet file: {df_fpath}'
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Read raw data from parquet file 
+            msg = f'Start reading: {df_fpath}'
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            df = dd.read_parquet(df_fpath)
+            
+            msg = f'Finish reading: {df_fpath}'
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Subset row sample to debug 
+            if not lazy and debug_on:
+                df = df.iloc[0:100,:] # df.head(100) 
+                df = df.iloc[0:,:]
+                
+                msg = 'Debug = True and Lazy = False, then only the first 100 rows are read'
+                if verbose:
+                    print(msg)
+                logger.info(msg)
                
-                
-         #Check if there are more than 1 Parsivel device (looking for subfolder)
-        if glob.glob(self.campaign_path + '/data/*/'):
-            for folder in glob.glob(self.campaign_path + 'data/*/'):
-                try:
-                    files = glob.glob(folder + "/*.dat*", recursive = True)
-                    self.folder_file_list[folder.split('data/')[-1][:-1]] = files
-                    files = []
-                except IndexError:
-                    pass
-        
-        #If file_list is empty, no files found
-        if self.file_list:
-            raise ValueError('None .dat files founds, check the path')
-        else:
-            try:
-                self.file_list = glob.glob(self.campaign_path + "/**/*.dat*", recursive = True)
-            except ValueError:
-                raise('None .dat files founds, check the path')
-        
-    
-    def __createREADME(self):
-        """Create README.txt in processed folder to store campaign info
-        
-        Parameters
-        ----------
-        None
-
-        Raises
-        ------
-        None
-        
-        """
-        
-        info = "###   Campaign info   ###\n\n"
-        info += 'Campaign name: {}\n'.format(self.campaign_name)
-        info += 'Campaign path: {}\n'.format(self.campaign_path)
-        info += 'Campaign date: {}\n'.format('Unknown')
-        info += 'Campaign location: {}\n'.format('Unknown')
-        if self.folder_file_list:
-            devices_list = ''
-            for key in self.folder_file_list.keys():
-                devices_list += '{}, '.format(key)
-            info += 'Campaign devices: {}\n'.format(devices_list)
-        
-        with open(self.campaign_path + r'/processed/README.txt', 'w') as f:
-            f.write(info)
-            return print('README.txt is saved in {}processed/'.format(self.campaign_path))
-        
-        
-    def __createLog(self):
-        """Create lof.txt in processed folder to store conversion info and errors
-        
-        Parameters
-        ----------
-        None
-
-        Raises
-        ------
-        None
-        
-        """
-        
-        from datetime import datetime
-        
-        ora = datetime.now().strftime('%Y%m%d%H%M%S')
-        
-        info = "###   Log info   ###\n\n"
-        info += 'Script ran: ' + datetime.now().strftime('%d.%m.%Y %H:%M:%S') + '\n\n'
-        
-        if self.folder_file_list:
-            for folder in self.folder_file_list.keys():
-                info += 'Files processed in folder {}{}:\n\n'.format(self.campaign_path,folder)
-                for file in self.folder_file_list[folder]:
-                    info += '{}\n'.format(file)
-                if self.skip_files:
-                    info += "\nErrors in folder {}: \n'".format(folder)
-                    for e in self.skip_files[folder]: info += e + '\n'
-                info += "\n"
-            info += "\n"
-            info += 'Total processed files: {}\n\n'.format(sum(map(len, self.folder_file_list.values())))
-            info += 'Total errors: {} on {} files\n\n'.format(sum(map(len, self.skip_files.values())),sum(map(len, self.folder_file_list.values())))
-        else:
-            info += 'Files processed: {}\n\n'.format(self.file_list)
-            info += "File processed list: \n'"
-            for p in self.file_list: info += p + '\n'
-            if self.__temp_skip_files_list:
-                info += "\nErrors: \n'"
-                for p in self.__temp_skip_files_list: info += p + '\n'
-        
-        with open(self.campaign_path + r'/processed/log_{}.txt'.format(ora), 'w') as f:
-            f.write(info)
-            return print('log_{}.txt is saved in {}processed/'.format(ora, self.campaign_path))
-        
-        
-    def create_parquet(self):
-        """Merge all the data files found in the path folder into a parquet file inside a folder called 'processed', or into 'processed'/<subfolder> if there are subfolders
-
-
-        Raises
-        ------
-        None, LOL
-        
-        """
-
-        self.__getDataFiles()
-        
-        print(' ### BEGIN ### ')
-        
-        print()
-        
-        if self.folder_file_list:
-            for dev in self.folder_file_list.keys():
-                
-                print("Processing {}{} folder".format(self.campaign_path, dev))
-                
-                print()
-                
-                self.__merge_files_data(dev)
-        
-                self.__check_processed_folder()
-                
-                self.__save_parquet(dev)
-                
-                print()
-                
-                print("Finish processing {}{} folder".format(self.campaign_path, dev))
-                
-                print()
-        else:
-            self.__merge_files_data()
-        
-            self.__check_processed_folder()
+            ##-----------------------------------------------------------
+            # Retrieve raw data matrix 
+            msg = f"Retrieve raw data matrix for {attrs['disdrodb_id']}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
             
-            self.__save_parquet()
+            dict_data = {}
+            n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+            n_timesteps = df.shape[0].compute()
+            for key, n_bins in n_bins_dict.items(): 
+                
+                # Dask based 
+                dd_series = df[key].astype(str).str.split(",")
+                da_arr = da.stack(dd_series, axis=0)
+                # Remove '' at the end 
+                da_arr = da_arr[: , 0:n_bins_dict[key]]
+                
+                # Convert flag values to XXXX
+                # dir(da_arr.str)
+                # FieldN and FieldV --> -9.999, has floating number 
+                
+                if key == 'RawData':
+                    da_arr = da_arr.astype(int)
+                    try:
+                        da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                    except Exception as e:
+                        msg = f'Error on retrive raw data matrix: {e}'
+                        logger.error(msg)
+                        print(msg)
+                        # raise SystemExit
+                else:
+                    da_arr = da_arr.astype(float)                
+                
+                dict_data[key] = da_arr
+                           
+                # Pandas/Numpy based 
+                # np_arr_str =  df[key].values.astype(str)
+                # list_arr_str = np.char.split(np_arr_str,",")
+                # arr_str = np.stack(list_arr_str, axis=0) 
+                # arr = arr_str[:, 0:n_bins]
+                # arr = arr.astype(float)                
+                # if key == 'RawData':
+                #     arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                # dict_data[key] = arr
+            
+            msg = f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Define data variables for xarray Dataset 
+            data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
+                         "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
+                         "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
+                        }
+            
+            # Define coordinates for xarray Dataset
+            coords = get_L1_coords(sensor_name=sensor_name)
+            coords['time'] = df['time'].values
+            coords['latitude'] = attrs['latitude']
+            coords['longitude'] = attrs['longitude']
+            coords['altitude'] = attrs['altitude']
+            coords['crs'] = attrs['crs']
+    
+            ##-----------------------------------------------------------
+            # Create xarray Dataset
+            try:
+                ds = xr.Dataset(data_vars = data_vars, 
+                                coords = coords, 
+                                attrs = attrs,
+                                )
+            except Exception as e:
+                msg = f'Error on creation xarray dataset: {e}'
+                logger.error(msg)
+                print(msg)
+                # raise SystemExit
+            
+            ##-----------------------------------------------------------
+            # Check L1 standards 
+            check_L1_standards(ds)
+            
+            ##-----------------------------------------------------------    
+            # Write to Zarr as intermediate storage 
+            if keep_zarr:
+                tmp_zarr_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.zarr'
+                ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
+                zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
+                ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
+            
+            ##-----------------------------------------------------------  
+            # Write L1 dataset to netCDF
+            # Path for save into device folder
+            path = os.path.join(processed_path + '/' + os.path.basename(device))
+            L1_nc_fpath = path + '/' + campaign_name + '.nc'
+            ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
+            nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
+            
+            if debug_on:
+                ds.to_netcdf(L1_nc_fpath, engine="netcdf4")
+            else:
+                ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
+            
+            
+            ##-----------------------------------------------------------
+            msg = "L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
+            if verbose:
+                t_f = time.time() - t_i
+                print(msg)
+            logger.info(msg)
         
-        self.__createREADME()
-        
-        self.__createLog()
-        
-        print()
-        print(' ### FINISH! ### ')
+        #-------------------------------------------------------------------------.
+    
+    msg = f'Total skipped files: {len(list_skipped_files)} on {all_files} in L0 process'
+    if verbose:
+        print(msg)
+    logger.info('---')
+    logger.info(msg)
+    logger.info('---')
+    
+    msg = '### Script finish ###'
+    print(msg)
+    logger.info(msg)
+    
+    close_log()
+    
+ 
 
-        
-        
-# -----------------------------------------------------------------------------------
-
-
-camp = Campaign('/SharedVM/Campagne/Ticino_2018/', 'Ticino_2018')
-
-camp.create_parquet()
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+if __name__ == '__main__':
+    # main() # when using click 
+    main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    
+ 
