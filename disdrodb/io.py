@@ -48,6 +48,7 @@ def check_processed_folder(raw_dir):
     else:
         return processed_campaign_dir
 
+
 def check_folder_structure(raw_dir, campaign_name, processed_path):
     """Create the folder structure required for data processing"""
     # Define directories 
@@ -368,6 +369,7 @@ def get_L0_dtype_standards():
         'time': 'object',
         
         #Temp variables
+        'temp': 'object',
         "Debug_data" : 'object',
         'All_0': 'object',
         'error_code?': 'object',

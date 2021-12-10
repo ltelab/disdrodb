@@ -68,15 +68,15 @@ from disdrodb.logger import close_log
 @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
 @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018"
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018/epfl_parsivel/raw"
 # processed_path = '/SharedVM/Campagne/ltnas3/Processed/Ticino_2018'
 # l0_processing = True
-# l1_processing = False
+# l1_processing = True
 # force = True
 # verbose = True
-# debug_on = False
+# debug_on = True
 # lazy = True
-# keep_zarr = True
+# keep_zarr = False
 
 
 #-------------------------------------------------------------------------.
@@ -207,7 +207,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
     ##------------------------------------------------------.   
     # Process all devices
     
-    all_files = len(glob.glob(os.path.join(raw_dir, 'data', "**/*")))
+    all_files = len(glob.glob(os.path.join(raw_dir, "*/*/*.dat*")))
     list_skipped_files = []
     count_file = 0
     
@@ -216,95 +216,87 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
         print(msg)
     logger.info(msg)
     
-    for device in glob.glob(os.path.join(raw_dir,"data", "*")):
-    # for device in range (0,1):
+    file_list = sorted(glob.glob(os.path.join(raw_dir, "*/*/*.dat*"))) 
+    # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
+    
+    if debug_on: 
+        file_list = file_list[0:25]
         
-        # for device in 
-        if l0_processing: 
-            #----------------------------------------------------------------.
-            t_i = time.time() 
-            msg = "L0 processing of {} started".format(attrs['disdrodb_id'])
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            # - Retrieve filepaths of raw data files 
-            # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
-            # - With campaign path and all the stations files
-            
-            file_list = sorted(glob.glob(os.path.join(device,"**/*.dat*"), recursive = True))         
-            # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
-            
-            if debug_on: 
-                file_list = file_list[0:10]
-            
-            #----------------------------------------------------------------.
-            # - Define raw data headers 
-            raw_data_columns = ['id',
-                                'latitude',
-                                'longitude',
-                                'time',
-                                'datalogger_temperature',
-                                'datalogger_voltage',
-                                'rain_rate_32bit',
-                                'rain_accumulated_32bit',
-                                'weather_code_SYNOP_4680',
-                                'weather_code_SYNOP_4677',
-                                'reflectivity_16bit',
-                                'mor_visibility',
-                                'laser_amplitude',  
-                                'n_particles',
-                                'sensor_temperature',
-                                'sensor_heating_current',
-                                'sensor_battery_voltage',
-                                'sensor_status',
-                                'rain_amount_absolute_32bit',
-                                'error_code',
-                                'FieldN',
-                                'FieldV',
-                                'RawData',
-                                'datalogger_error',
-                                ]
-            check_valid_varname(raw_data_columns)
-            
-            # Dictionary for rename columns
-            n = 0
-            col_names = {}
-            for name in raw_data_columns:
-                col_names[n] = name
-                n += 1
-            
-            ##------------------------------------------------------.
-            # Define reader options 
-            reader_kwargs = {}
-            # reader_kwargs['compression'] = 'gzip'
-            reader_kwargs['delimiter'] = ',,'
-            reader_kwargs["on_bad_lines"] = 'skip'
-            reader_kwargs["engine"] = 'python'
-            # - Replace custom NA with standard flags 
-            reader_kwargs['na_values'] = ['na', 'Error in data reading! error0']
-            if lazy:
-                reader_kwargs["blocksize"] = None
-            
-            ##------------------------------------------------------.
-            # Loop over all files
-            
-            msg = f"{len(file_list)} files to process for {attrs['disdrodb_id']}"
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            
-            ##------------------------------------------------------.
-            # Cast dataframe to dtypes
-            # Determine dtype based on standards 
-            dtype_dict = get_L0_dtype_standards()
-            
-            dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
-            
-            list_df = []
-            for filename in file_list:
+    # for device in 
+    if l0_processing: 
+        #----------------------------------------------------------------.
+        t_i = time.time() 
+        msg = "L0 processing of {} started".format(attrs['disdrodb_id'])
+        if verbose:
+            print(msg)
+        logger.info(msg)
+        # - Retrieve filepaths of raw data files 
+        # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
+        # - With campaign path and all the stations files
+        
+        
+        
+        #----------------------------------------------------------------.
+        # - Define raw data headers 
+        # In all datafile, the datalogger voltage hasn't the delimeter, so need it to split (x)
+        raw_data_columns = ['id',
+                            'latitude',
+                            'longitude',
+                            'time',
+                            'datalogger_temperature',
+                            'temp', #datalogger_voltage rain_rate_32bit
+                            'rain_accumulated_32bit',
+                            'weather_code_SYNOP_4680',
+                            'weather_code_SYNOP_4677',
+                            'reflectivity_16bit',
+                            'mor_visibility',
+                            'laser_amplitude',  
+                            'n_particles',
+                            'sensor_temperature',
+                            'sensor_heating_current',
+                            'sensor_battery_voltage',
+                            'sensor_status',
+                            'rain_amount_absolute_32bit',
+                            'error_code',
+                            'FieldN',
+                            'FieldV',
+                            'RawData',
+                            'datalogger_error'
+                            ]
+        check_valid_varname(raw_data_columns)
+        
+        ##------------------------------------------------------.
+        # Define reader options 
+        reader_kwargs = {}
+        # reader_kwargs['compression'] = 'gzip'
+        reader_kwargs['delimiter'] = ';'
+        reader_kwargs["on_bad_lines"] = 'skip'
+        reader_kwargs["engine"] = 'python'
+        # - Replace custom NA with standard flags 
+        reader_kwargs['na_values'] = 'na'
+        if lazy:
+            reader_kwargs["blocksize"] = None
+        
+        ##------------------------------------------------------.
+        # Loop over all files
+        
+        # msg = f"{len(file_list)} files to process for {attrs['disdrodb_id']}"
+        # if verbose:
+        #     print(msg)
+        # logger.info(msg)
+        
+        ##------------------------------------------------------.
+        # Cast dataframe to dtypes
+        # Determine dtype based on standards 
+        dtype_dict = get_L0_dtype_standards()
+        
+        dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+        
+        list_df = []
+        for filename in file_list:
                 try:
-                    df = dd.read_csv(filename, 
-                                     names = ['a','FieldV','RawData','datalogger_error'],
+                    df = dd.read_csv(filename,
+                                     names = raw_data_columns,
                                      **reader_kwargs)
                     
                     # Check if file empty
@@ -317,7 +309,13 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                         continue
                     
                     # Split column
-                    df = dd.concat([df['a'].str.split(',', expand = True, n = 20),df.iloc[:,1:]], axis = 1,  ignore_unknown_divisions=True).rename(columns = col_names)
+                    df2 = df['temp'].str.split(',', n=1, expand=True)
+                    
+                    df2.columns = ['datalogger_voltage','rain_rate_32bit']
+
+                    df = df.drop(columns=['temp'])
+
+                    df = dd.concat([df,df2], axis = 1, ignore_unknown_divisions=True)
                     
                     #-------------------------------------------------------------------------
                     ### Keep only clean data 
@@ -330,18 +328,18 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     df = df.drop(columns=['latitude', 'longitude'])
                     
                     # Drop rows with half nan values
-                    df = df.dropna(thresh = 15)
+                    df = df.dropna(thresh = (len(df.columns) - 10), how = 'all')
                     
                     # Remove rows with bad data 
-                    df = df[df.sensor_status != 0]
+                    df = df[df.sensor_status == 0]
                     # Remove rows with error_code not 000 
-                    df = df[df.error_code != 0]
+                    df = df[df.error_code == 0]
                     
                     # Assign dtypes
-                    dtype_dict = {column: dtype_dict[column] for column in df.columns}
+                    # dtype_dict = {column: dtype_dict[column] for column in df.columns}
 
-                    for k, v in dtype_dict.items():
-                        df[k] = df[k].astype(v)
+                    # for k, v in dtype_dict.items():
+                    #     df[k] = df[k].astype(v)
                 
                     list_df.append(df)
                     
@@ -357,77 +355,77 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                   list_skipped_files.append(msg)
 
 
-            msg = f"{len(list_skipped_files)} files on {len(file_list)} for {attrs['disdrodb_id']} has been skipped."
-            if verbose:      
-                print(msg)
-            logger.info('---')
-            logger.info(msg)
-            logger.info('---')
-                
-            
-            ##------------------------------------------------------.
-            # Concatenate the dataframe
-            msg = f"Start concat dataframes for {attrs['disdrodb_id']}"
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            
-            try:
-                df = dd.concat(list_df, axis=0, ignore_index = True)
-                # Drop duplicated values 
-                df = df.drop_duplicates(subset="time")
-                # Sort by increasing time 
-                df = df.sort_values(by="time")
-                
-                
-            except (AttributeError, TypeError) as e:
-                msg = f"Can not create concat data files. Error: {e}"
-                logger.exception(msg)
-                raise ValueError(msg)
-                
-            msg = f"Finish concat dataframes for {attrs['disdrodb_id']}"
-            if verbose:
-                print(msg)
-            logger.info(msg)     
-            
-                
-            ##------------------------------------------------------.                                   
-            # Write to Parquet 
-            msg = f"Starting conversion to parquet file for {attrs['disdrodb_id']}"
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            # Path to device folder
-            path = os.path.join(processed_path + '/' + os.path.basename(device))
-            # Write to Parquet 
-            _write_to_parquet(df, path, campaign_name, force)
-            
-            msg = f"Finish conversion to parquet file for {attrs['disdrodb_id']}"
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            
-            ##------------------------------------------------------.   
-            # Check Parquet standards 
-            check_L0_standards(df)
-            
-            ##------------------------------------------------------.   
-            t_f = time.time() - t_i
-            msg = "L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            
-            ##------------------------------------------------------.   
-            # Delete temp variables
-            del df
-            del list_df
+        msg = f"{len(list_skipped_files)} files on {len(file_list)} for {attrs['disdrodb_id']} has been skipped."
+        if verbose:      
+            print(msg)
+        logger.info('---')
+        logger.info(msg)
+        logger.info('---')
+           
+   
+        ##------------------------------------------------------.
+        # Concatenate the dataframe
+        msg = f"Start concat dataframes for {attrs['disdrodb_id']}"
+        if verbose:
+            print(msg)
+        logger.info(msg)
         
-        #-------------------------------------------------------------------------.
-        ###############################
-        #### Perform L1 processing ####
-        ###############################
-        if l1_processing: 
+        try:
+            df = dd.concat(list_df, axis=0, ignore_index = True)
+            # Drop duplicated values 
+            df = df.drop_duplicates(subset="time")
+            # Sort by increasing time 
+            df = df.sort_values(by="time")
+            
+            
+        except (AttributeError, TypeError) as e:
+            msg = f"Can not create concat data files. Error: {e}"
+            logger.exception(msg)
+            raise ValueError(msg)
+            
+        msg = f"Finish concat dataframes for {attrs['disdrodb_id']}"
+        if verbose:
+            print(msg)
+        logger.info(msg)     
+       
+            
+        ##------------------------------------------------------.                                   
+        # Write to Parquet 
+        msg = f"Starting conversion to parquet file for {attrs['disdrodb_id']}"
+        if verbose:
+            print(msg)
+        logger.info(msg)
+        # Path to device folder
+        path = os.path.join(processed_path)
+        # Write to Parquet 
+        _write_to_parquet(df, path, campaign_name, force)
+        
+        msg = f"Finish conversion to parquet file for {attrs['disdrodb_id']}"
+        if verbose:
+            print(msg)
+        logger.info(msg)
+        
+        ##------------------------------------------------------.   
+        # Check Parquet standards 
+        check_L0_standards(df)
+        
+        ##------------------------------------------------------.   
+        t_f = time.time() - t_i
+        msg = "L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
+        if verbose:
+            print(msg)
+        logger.info(msg)
+        
+        ##------------------------------------------------------.   
+        # Delete temp variables
+        del df
+        del list_df
+    
+    #-------------------------------------------------------------------------.
+    ###############################
+    #### Perform L1 processing ####
+    ###############################
+    if l1_processing: 
             ##-----------------------------------------------------------
             t_i = time.time()
             msg = "L1 processing of {} started".format(attrs['disdrodb_id'])
@@ -438,7 +436,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------
             # Check the L0 df is available 
             # Path device folder parquet
-            df_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.parquet'
+            df_fpath = os.path.join(processed_path + '/' + campaign_name + '.parquet')
             if not l0_processing:
                 if not os.path.exists(df_fpath):
                     msg = "Need to run L0 processing. The {df_fpath} file is not available."
@@ -561,7 +559,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------    
             # Write to Zarr as intermediate storage 
             if keep_zarr:
-                tmp_zarr_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.zarr'
+                tmp_zarr_fpath = os.path.join(processed_path + '/' + campaign_name + '.zarr')
                 ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
                 zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
                 ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
@@ -569,7 +567,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------  
             # Write L1 dataset to netCDF
             # Path for save into device folder
-            path = os.path.join(processed_path + '/' + os.path.basename(device))
+            path = os.path.join(processed_path)
             L1_nc_fpath = path + '/' + campaign_name + '.nc'
             ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
             nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
@@ -581,11 +579,14 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             
             
             ##-----------------------------------------------------------
-            msg = "L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
-            if verbose:
-                t_f = time.time() - t_i
-                print(msg)
-            logger.info(msg)
+            try:
+                msg = "L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
+                if verbose:
+                    t_f = time.time() - t_i
+                    print(msg)
+                logger.info(msg)
+            except Exception:
+                pass
         
         #-------------------------------------------------------------------------.
     

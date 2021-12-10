@@ -25,4 +25,5 @@ def print_nan_rows(df):
     rows_with_NaN = df[row_has_NaN]
 
     print(rows_with_NaN)
+    
 
