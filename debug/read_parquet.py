@@ -10,8 +10,8 @@ import pandas as pd
 import dask.dataframe as dd
 import os
 
-path = r'/SharedVM/Campagne/ltnas3/Processed/Ticino_2018/'
-campagna = 'Ticino_2018'
+path = r'/SharedVM/Campagne/ltnas3/Processed/Payerne_2014/10/l0'
+campagna = 'Payerne_2014'
 file = campagna + '.parquet'
 file_path = os.path.join(path, file)
 

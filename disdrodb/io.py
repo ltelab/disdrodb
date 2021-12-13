@@ -67,15 +67,36 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
             station_folder_path = os.path.join(processed_path, os.path.basename(os.path.normpath(station_folder)))
             os.makedirs(station_folder_path)
             logger.debug(f'Created {station_folder_path}')
+            try:
+                l0_folder_path = os.path.join(station_folder_path, 'l0')
+                os.makedirs(l0_folder_path)
+                logger.debug(f'Created {l0_folder_path}')
+            except FileExistsError:
+                logger.debug(f'Found {l0_folder_path}')
+                pass
+            except (Exception) as e:
+                msg = f"Can not create folder l0 inside <station_folder_path>. Error: {e}"
+                logger.exception(msg)
+                raise FileNotFoundError(msg)
+            try:
+                l1_folder_path = os.path.join(station_folder_path, 'l1')
+                os.makedirs(l1_folder_path)
+                logger.debug(f'Created {l1_folder_path}')
+            except FileExistsError:
+                logger.debug(f'Found {l1_folder_path}')
+                pass
+            except (Exception) as e:
+                msg = f"Can not create folder l01inside <l1_folder_path>. Error: {e}"
+                logger.exception(msg)
+                raise FileNotFoundError(msg)
         except FileExistsError:
             logger.debug(f'Found {station_folder_path}')
             pass
         except (Exception) as e:
-            logger.exception(f"Can not create folder the device folder inside <processed>. Error: {e}")
-            raise FileNotFoundError(f"Can not create the device folder inside <processed>. Error: {e}")
+            msg = f"Can not create folder the device folder inside <processed>. Error: {e}"
+            logger.exception(msg)
+            raise FileNotFoundError(msg)
             
-    # TODO 
-    # - Add L0, L1 and L2 folder 
     return 
             
 def _available_sensors():
@@ -396,6 +417,7 @@ def get_flags(device):
     if device == 'Parsivel':
         flag_dict = {
             'sensor_status': [
+                1,
                 2,
                 3
             ],
@@ -408,10 +430,7 @@ def get_flags(device):
             ]
             }
     return flag_dict
-        
-        
-        
-        
+
         
         
         

@@ -61,29 +61,29 @@ from disdrodb.logger import close_log
 #-------------------------------------------------------------------------.
 # Click implementation
 
-# @click.command(options_metavar='<options>')
+@click.command(options_metavar='<options>')
 
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-# @click.argument('processed_path', metavar ='<processed_path>') #TODO
+@click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-# @click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
-# @click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
-# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+@click.option('--l0_processing',    '--l0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in l0_processing')
+@click.option('--l1_processing',    '--l1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in l1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
 
-raw_dir = "/SharedVM/Campagne/Raw/Payerne_2014"
-processed_path = '/SharedVM/Campagne/Processed/Payerne_2014'
-l0_processing = True
-l1_processing = False
-force = True
-verbose = True
-debug_on = False
-lazy = True
-keep_zarr = False
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw//Payerne_2014"
+# processed_path = '/SharedVM/Campagne/ltnas3/Processed/Payerne_2014'
+# l0_processing = True
+# l1_processing = False
+# force = True
+# verbose = True
+# debug_on = True
+# lazy = True
+# keep_zarr = False
 
 
 #-------------------------------------------------------------------------.
@@ -298,7 +298,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                      **reader_kwargs)
                     
                     # Drop rows with more than 2 nan (longitute and latitude)
-                    # df = df.dropna(thresh = (len(raw_data_columns) -1), how = 'all')
+                    df = df.dropna(thresh = (len(raw_data_columns) -1), how = 'all')
                     
                     # Drop all 0 column
                     df = df.drop(columns = ['All_0'])
@@ -307,7 +307,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     df1 = df['Debug_data'].str.split(r': |  | ms', expand=True, n = 7)
                     df1 = df1.drop([0,1,7], axis = 1)
                     df1.columns = ["Debug_data1","Debug_data2","Debug_data3","Debug_data4","Debug_data5"]
-                    df = dd.concat([df, df1], axis = 1)
+                    df = dd.concat([df, df1], axis = 1, ignore_unknown_divisions=True)
                     df = df.drop(['Debug_data'], axis = 1)
 
                     
@@ -351,7 +351,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                 print(f"Starting conversion to parquet file for {attrs['disdrodb_id']}")
             logger.info(f"Starting conversion to parquet file for {attrs['disdrodb_id']}")
             # Path to device folder
-            path = os.path.join(processed_path + '/' + os.path.basename(device))
+            path = os.path.join(processed_path + '/' + os.path.basename(device) + '/l0/')
             # Write to Parquet 
             _write_to_parquet(df, path, campaign_name, force)
             if verbose:
@@ -387,7 +387,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------
             # Check the L0 df is available 
             # Path device folder parquet
-            df_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.parquet'
+            df_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/l0/' + campaign_name + '.parquet'
             if not l0_processing:
                 if not os.path.exists(df_fpath):
                     logger.exception("Need to run L0 processing. The {df_fpath} file is not available.")
@@ -411,22 +411,24 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------
             # Subset row sample to debug 
             if not lazy and debug_on:
-                # df = df.iloc[0:100,:] # df.head(100) 
-                # df = df.iloc[0:,:]
-                msg = 'Debug = True and Lazy = False, then not read all the files or data'
+                df = df.iloc[0:100,:] # df.head(100) 
+                df = df.iloc[0:,:]
+                
+                msg = 'Debug = True and Lazy = False, then only the first 100 rows are read'
                 if verbose:
                     print(msg)
                 logger.info(msg)
                
             ##-----------------------------------------------------------
             # Retrieve raw data matrix 
+            msg = f"Retrieve raw data matrix for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Retrieve raw data matrix for {attrs['disdrodb_id']}")
-            logger.info(f"Retrieve raw data matrix for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             
             dict_data = {}
             n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-            n_timesteps = df.shape[0]
+            n_timesteps = df.shape[0].compute()
             for key, n_bins in n_bins_dict.items(): 
                 
                 # Dask based 
@@ -443,11 +445,11 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     da_arr = da_arr.astype(int)
                     try:
                         da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
-                    except TypeError as e:
-                        msg = f'Error on retrive raw data matrix, set lazy computation to FALSE! Error: {e}'
+                    except Exception as e:
+                        msg = f'Error on retrive raw data matrix: {e}'
                         logger.error(msg)
                         print(msg)
-                        raise SystemExit
+                        # raise SystemExit
                 else:
                     da_arr = da_arr.astype(float)                
                 
@@ -463,9 +465,10 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                 #     arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
                 # dict_data[key] = arr
             
+            msg = f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}"
             if verbose:
-                print(f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}")
-            logger.info(f"Finish retrieve raw data matrix for {attrs['disdrodb_id']}")
+                print(msg)
+            logger.info(msg)
             
             ##-----------------------------------------------------------
             # Define data variables for xarray Dataset 
@@ -489,11 +492,11 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                                 coords = coords, 
                                 attrs = attrs,
                                 )
-            except ValueError as e:
-                msg = f'Error on creation xarray dataset, set lazy computation to FALSE! Error: {e}'
+            except Exception as e:
+                msg = f'Error on creation xarray dataset: {e}'
                 logger.error(msg)
                 print(msg)
-                raise SystemExit
+                # raise SystemExit
             
             ##-----------------------------------------------------------
             # Check L1 standards 
@@ -502,7 +505,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------    
             # Write to Zarr as intermediate storage 
             if keep_zarr:
-                tmp_zarr_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/' + campaign_name + '.zarr'
+                tmp_zarr_fpath = os.path.join(processed_path + '/' + os.path.basename(device)) + '/l1/' + campaign_name + '.zarr'
                 ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
                 zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
                 ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
@@ -511,7 +514,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             # Write L1 dataset to netCDF
             # Path for save into device folder
             path = os.path.join(processed_path + '/' + os.path.basename(device))
-            L1_nc_fpath = path + '/' + campaign_name + '.nc'
+            L1_nc_fpath = path + '/l1/' + campaign_name + '.nc'
             ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
             nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
             
@@ -543,34 +546,5 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
  
 
 if __name__ == '__main__':
-    # main() # when using click 
-    main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
-    
-    # Otherwise:     
-    # parser = argparse.ArgumentParser(description='L0 and L1 data processing')
-    # parser.add_argument('--raw_dir', type=str)
-    # parser.add_argument('--l0_processing', type=str, default='True')
-    # parser.add_argument('--l1_processing', type=str, default='True')
-    # parser.add_argument('--force', type=str, default='False')                    
-    
-    # l0_processing=True, l1_processing=True, force=False
-    
-    # args = parser.parse_args()
-    # if args.force == 'True':
-    #     force = True
-    # else: 
-    #     force = False
-    # if args.l0_processing == 'True':
-    #     l0_processing = True
-    # else: 
-    #     l0_processing = False 
-    #  if args.l1_processing == 'True':
-    #     l1_processing = True
-    # else: 
-    #     l1_processing = False   
-        
-    # main(raw_dir = raw_dir, 
-    #      l0_processing=l0_processing, 
-    #      l1_processing=l1_processing,
-    #      force=force)
- 
+    main() # when using click 
+    # main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
