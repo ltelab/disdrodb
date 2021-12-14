@@ -20,23 +20,23 @@ import dask.array as da
 import numpy as np 
 import xarray as xr 
 
-from .disdrodb.io import check_folder_structure
-from .disdrodb.io import check_valid_varname
-from .disdrodb.io import check_L0_standards
-from .disdrodb.io import check_L1_standards
-from .disdrodb.io import get_attrs_standards
-from .disdrodb.io import get_L0_dtype_standards
-from .disdrodb.io import get_dtype_standards_all_object
-from .disdrodb.io import _write_to_parquet
+from .io import check_folder_structure
+from .io import check_valid_varname
+from .io import check_L0_standards
+from .io import check_L1_standards
+from .io import get_attrs_standards
+from .io import get_L0_dtype_standards
+from .io import get_dtype_standards_all_object
+from .io import _write_to_parquet
 
-from .disdrodb.io import get_raw_field_nbins
-from .disdrodb.io import get_L1_coords
-from .disdrodb.io import rechunk_L1_dataset
-from .disdrodb.io import get_L1_zarr_encodings_standards
-from .disdrodb.io import get_L1_nc_encodings_standards
+from .io import get_raw_field_nbins
+from .io import get_L1_coords
+from .io import rechunk_L1_dataset
+from .io import get_L1_zarr_encodings_standards
+from .io import get_L1_nc_encodings_standards
 
-from .disdrodb.logger import log
-from .disdrodb.logger import close_log
+from .logger import log
+from .logger import close_log
 
 ### TODO 4 Kimbo tomorrow
 
