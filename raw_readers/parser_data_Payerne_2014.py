@@ -271,6 +271,8 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             dtype_dict = get_dtype_standards_all_object()
             # dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
             
+            
+            
             ##------------------------------------------------------.
             # Define reader options 
             reader_kwargs = {}

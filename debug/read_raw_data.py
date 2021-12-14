@@ -214,13 +214,13 @@ df.astype({'datalogger_voltage': 'int32', }).dtypes
 # }
 
 
-# # a = {}
+# a = {}
 
-# # for col in list(df.iloc[:,:18]):
-# #     a[col] = df[col].unique()
+# for col in list(df.iloc[:,:18]):
+#     a[col] = df[col].unique()
     
-# # for key, value in a.items():
-# #     print(key, ' : ', value)
+# for key, value in a.items():
+#     print(key, ' : ', value)
     
 
 
