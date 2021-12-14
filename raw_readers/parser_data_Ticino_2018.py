@@ -7,13 +7,17 @@ Created on Thu Dec  9 10:09:19 2021
 """
 import os
 # os.chdir("/home/kimbo/Documents/disdrodb")
+import sys
 import glob 
 import shutil
 import click
 import time
 import dask.array as da
 import numpy as np 
-import xarray as xr 
+import xarray as xr
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
 
 from disdrodb.io import check_folder_structure
 from disdrodb.io import check_valid_varname
