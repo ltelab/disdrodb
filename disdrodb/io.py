@@ -108,8 +108,9 @@ def _check_sensor_name(sensor_name):
         logger.exception("'sensor_name' must be a string'")
         raise TypeError("'sensor_name' must be a string'")
     if sensor_name not in _available_sensors():
-        logger.exception(f"Valid sensor_name are {_available_sensors()}")
-        raise ValueError(f"Valid sensor_name are {_available_sensors()}")
+        msg = f"Valid sensor_name are {_available_sensors()}"
+        logger.exception(msg)
+        raise ValueError(msg)
     return 
 
 def _write_to_parquet(df, path, campaign_name, force):  
@@ -117,8 +118,9 @@ def _write_to_parquet(df, path, campaign_name, force):
     fpath = path + '/' + campaign_name + '.parquet'
     if os.path.exists(fpath):
         if not force:
-            logger.error(f"--force is False and a file already exists at:{fpath}")
-            raise ValueError(f"--force is False and a file already exists at:{fpath}")
+            msg = f"--force is False and a file already exists at:{fpath}"
+            logger.error(msg)
+            raise ValueError(msg)
         try:
             os.remove(fpath)
         except IsADirectoryError:
@@ -135,8 +137,9 @@ def _write_to_parquet(df, path, campaign_name, force):
                             logger.exception(msg)
                     os.rmdir(fpath)
                 except (Exception) as e:
-                    logger.error(f"Something wrong with: {fpath}")
-                    raise ValueError(f"Something wrong with: {fpath}")
+                    msg = f"Something wrong with: {fpath}"
+                    logger.error(msg)
+                    raise ValueError(msg)
         logger.info(f"Deleted folder {fpath}")
         
     ##-------------------------------------------------------------------------.
@@ -153,8 +156,9 @@ def _write_to_parquet(df, path, campaign_name, force):
                           row_group_size = row_group_size)
             logger.info(f'Converted data file in {path} to parquet')  
         except (Exception) as e:
-            logger.exception(f"The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
-            raise ValueError(f"The Pandas DataFrame cannot be written as a parquet file, the error is {e}")
+            msg = f"The Pandas DataFrame cannot be written as a parquet file, the error is {e}"
+            logger.exception(msg)
+            raise ValueError(msg)
             
     elif isinstance(df, dask.dataframe.DataFrame): 
         # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetWriter.html 
@@ -168,8 +172,9 @@ def _write_to_parquet(df, path, campaign_name, force):
                           write_metadata_file=False)
             logger.info(f'Converted data file in {path} to parquet')                 
         except (Exception) as e:
-            logger.exception(f"The Dask DataFrame cannot be written as a parquet file, the error is {e}")
-            raise ValueError(f"The Dask DataFrame cannot be written as a parquet file, the error is {e}")
+            msg = f"The Dask DataFrame cannot be written as a parquet file, the error is {e}"
+            logger.exception(msg)
+            raise ValueError(msg)
     else:
         raise NotImplementedError("Pandas or Dask DataFrame is required.")
         
@@ -370,7 +375,7 @@ def get_L0_dtype_standards():
         "laser_amplitude" :'uint32',
         "error_code"      : 'uint8',          
 
-        # Custom ields       
+        # Custom fields       
         "Unknow_column": "object",
         "datalogger_temperature": "object",
         "datalogger_voltage": "object",
@@ -431,9 +436,145 @@ def get_flags(device):
             }
     return flag_dict
 
+def get_dtype_range_values():
+    
+    import datetime
+    
+    dtype_range_values = {
+            'id': [0, 4294967295],
+            'rain_rate_16bit': [0, 9999.999],
+            'rain_rate_32bit': [0, 9999.999],
+            'rain_accumulated_16bit': [0, 300.00],
+            'rain_accumulated_32bit': [0, 300.00],
+            'rain_amount_absolute_32bit': [0, 999.999],
+            'reflectivity_16bit': [-9.999, 99.999],
+            'reflectivity_32bit': [-9.999, 99.999],
+            'rain_kinetic_energy': [0, 999.999],
+            'snowfall_intensity': [0, 999.999],
+            'mor_visibility': [0, 20000],
+            'weather_code_SYNOP_4680': [0, 99],
+            'weather_code_SYNOP_4677': [0, 99],
+            'n_particles': [0, 99999],  #For debug, [0, 99999]
+            'n_particles_all': [0, 8192],
+            'sensor_temperature': [-99, 100],
+            'temperature_PBC': [-99, 100],
+            'temperature_right': [-99, 100],
+            'temperature_left': [-99, 100],
+            'sensor_heating_current': [0, 4.00],
+            'sensor_battery_voltage': [0, 30.0],
+            'sensor_status': [0, 3],
+            'laser_amplitude': [0, 99999],
+            'error_code': [0,3],
+            'datalogger_temperature': [-99, 100],
+            'datalogger_voltage': [0, 30.0],
+            'datalogger_error': [0,3],
+            
+            'latitude': [-90000, 90000],
+            'longitude': [-180000, 180000],
+            
+            'time': [datetime.datetime(1900, 1, 1), datetime.datetime.now()]
+           
+            }
+    return dtype_range_values
+
+
+def get_dtype_max_digit():
+
+    dtype_max_digit ={
+            'id': [8],  #Maybe to change in the future
+            'rain_rate_16bit': [8],
+            'rain_rate_32bit': [8],
+            'rain_accumulated_16bit': [7],
+            'rain_accumulated_32bit': [7],
+            'rain_amount_absolute_32bit': [7],
+            'reflectivity_16bit': [6],
+            'reflectivity_32bit': [6],
+            'rain_kinetic_energy': [7],
+            'snowfall_intensity': [7],
+            'mor_visibility': [4],
+            'weather_code_SYNOP_4680': [2],
+            'weather_code_SYNOP_4677': [2],
+            'n_particles': [5],
+            'n_particles_all': [8],
+            'sensor_temperature': [3],
+            'temperature_PBC': [3],
+            'temperature_right': [3],
+            'temperature_left': [3],
+            'sensor_heating_current': [4],
+            'sensor_battery_voltage': [4],
+            'sensor_status': [1],
+            'laser_amplitude': [5],
+            'error_code': [1],
+            'datalogger_temperature': [3],
+            'datalogger_voltage': [4],
+            'datalogger_error': [1],
+            
+            'latitude': [9],
+            'longitude': [15],
+            
+            'time': [19],
+            
+            'FieldN': [225],
+            'FieldV': [225],
+            'RawData': [4097],
+        }
+
+    return dtype_max_digit
         
         
-        
+def col_dtype_check(df, file_path, verbose = False):
+
+    dtype_max_digit = get_dtype_max_digit()
+    dtype_range_values = get_dtype_range_values()
+    
+    ignore_colums_range = [
+        'FieldN',
+        'FieldV',
+        'RawData'
+        ]
+
+    df = df.compute()
+
+    for col in df.columns:
+        try:
+            # Check if all nan
+            if not df[col].isnull().all():
+                # Check if data is longer than default in declared in dtype_max_digit
+                if not df[col].astype(str).str.len().max() <= dtype_max_digit[col][0]:
+                    msg1 = f'{col} has more than %s' % dtype_max_digit[col][0]
+                    msg2 = f'File: {file_path}, the values {col} have too much digits (%s) in index: %s' % dtype_max_digit[col][0], df.index[df[col].astype(str).str.len() >= dtype_max_digit[col][0]].tolist()
+                    if verbose:
+                        print(msg1)
+                        print(msg2)
+                    logger.warning(msg1)
+                    logger.warning(msg2)
+                    
+                # Check if data is in default range declared in dtype_range_values
+                if not df[col].between(dtype_range_values[col][0], dtype_range_values[col][1]).all():
+                    msg = f'File: {file_path}, the values {col} in index are not in dtype range: %s' % (df.index[df[col].between(dtype_range_values[col][0], dtype_range_values[col][1]) == False].tolist())
+                    if verbose:
+                        print(msg)
+                    logger.warning(msg)
+            else:
+                msg = f'File: {file_path}, {col} has all nan, check ignored'
+                if verbose:
+                    print(msg)
+                logger.warning(msg)
+            pass
+                 
+        except KeyError:
+            if not col in ignore_colums_range:
+                msg = f'File: {file_path}, no range values for {col}, check ignored'
+                if verbose:
+                    print(msg)
+                logger.warning(msg)
+            pass
+        except TypeError:
+            msg = f'File: {file_path}, {col} is object, check ignored'
+            if verbose:
+                print(msg)
+            logger.warning(msg)
+            pass
         
         
         

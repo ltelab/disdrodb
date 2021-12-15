@@ -6,6 +6,7 @@ Created on Thu Dec  9 10:09:19 2021
 @author: kimbo
 """
 import os
+os.chdir(os.path.normpath(os.getcwd() + os.sep + os.pardir))
 # os.chdir("/home/kimbo/Documents/disdrodb")
 import glob 
 import shutil
@@ -25,6 +26,8 @@ from disdrodb.io import get_L0_dtype_standards
 from disdrodb.io import get_dtype_standards_all_object
 from disdrodb.io import get_flags
 from disdrodb.io import _write_to_parquet
+from disdrodb.io import col_dtype_check
+
 
 from disdrodb.io import get_raw_field_nbins
 from disdrodb.io import get_L1_coords
@@ -68,6 +71,7 @@ from disdrodb.logger import close_log
 # @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
 # @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
 # @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+# @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018/epfl_parsivel/raw"
 processed_path = '/SharedVM/Campagne/ltnas3/Processed/Ticino_2018'
@@ -78,12 +82,13 @@ verbose = True
 debug_on = True
 lazy = True
 keep_zarr = False
+dtype_check = True
 
 
 #-------------------------------------------------------------------------.
 
 
-def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr):
+def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check):
     '''
     Script description
     
@@ -221,7 +226,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
     # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
     
     if debug_on: 
-        file_list = file_list[0:25]
+        file_list = file_list[0:5]
         
     # for device in 
     if l0_processing: 
@@ -264,6 +269,9 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                             'RawData',
                             'datalogger_error'
                             ]
+        
+        time_col = ['time']
+        
         check_valid_varname(raw_data_columns)
         
         ##------------------------------------------------------.
@@ -275,6 +283,8 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
         reader_kwargs["engine"] = 'python'
         # - Replace custom NA with standard flags 
         reader_kwargs['na_values'] = 'na'
+        # Define time column
+        reader_kwargs['parse_dates'] = time_col
         if lazy:
             reader_kwargs["blocksize"] = None
         
@@ -286,12 +296,9 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
         #     print(msg)
         # logger.info(msg)
         
-        ##------------------------------------------------------.
-        # Cast dataframe to dtypes
-        # Determine dtype based on standards 
-        dtype_dict = get_L0_dtype_standards()
         
-        dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+        
+        # dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
         
         list_df = []
         for filename in file_list:
@@ -340,18 +347,25 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     # Drop rows with half nan values
                     df = df.dropna(thresh = (len(df.columns) - 10), how = 'all')
                     
-                    # if 
-                    
                     # Remove rows with bad data 
                     df = df[df.sensor_status == 0]
                     # Remove rows with error_code not 000 
                     df = df[df.error_code == 0]
                     
-                    # Assign dtypes
-                    # dtype_dict = {column: dtype_dict[column] for column in df.columns}
+                    ##------------------------------------------------------.
+                    # Cast dataframe to dtypes
+                    # Determine dtype based on standards 
+                    dtype_dict = get_L0_dtype_standards()
+                    dtype_dict = {column: dtype_dict[column] for column in df.columns}
 
-                    # for k, v in dtype_dict.items():
-                    #     df[k] = df[k].astype(v)
+                    for k, v in dtype_dict.items():
+                        df[k] = df[k].astype(v)
+                        
+                        
+                    ##------------------------------------------------------.
+                    # Check dtype
+                    if dtype_check:
+                        col_dtype_check(df, filename, verbose)
                 
                     list_df.append(df)
                     
@@ -619,6 +633,6 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
 
 if __name__ == '__main__':
     # main() # when using click 
-    main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr)
+    main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
     
  
