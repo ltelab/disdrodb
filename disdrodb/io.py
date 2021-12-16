@@ -68,25 +68,25 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
             os.makedirs(station_folder_path)
             logger.debug(f'Created {station_folder_path}')
             try:
-                l0_folder_path = os.path.join(station_folder_path, 'l0')
-                os.makedirs(l0_folder_path)
-                logger.debug(f'Created {l0_folder_path}')
+                L0_folder_path = os.path.join(station_folder_path, 'L0')
+                os.makedirs(L0_folder_path)
+                logger.debug(f'Created {L0_folder_path}')
             except FileExistsError:
-                logger.debug(f'Found {l0_folder_path}')
+                logger.debug(f'Found {L0_folder_path}')
                 pass
             except (Exception) as e:
-                msg = f"Can not create folder l0 inside <station_folder_path>. Error: {e}"
+                msg = f"Can not create folder L0 inside <station_folder_path>. Error: {e}"
                 logger.exception(msg)
                 raise FileNotFoundError(msg)
             try:
-                l1_folder_path = os.path.join(station_folder_path, 'l1')
-                os.makedirs(l1_folder_path)
-                logger.debug(f'Created {l1_folder_path}')
+                L1_folder_path = os.path.join(station_folder_path, 'L1')
+                os.makedirs(L1_folder_path)
+                logger.debug(f'Created {L1_folder_path}')
             except FileExistsError:
-                logger.debug(f'Found {l1_folder_path}')
+                logger.debug(f'Found {L1_folder_path}')
                 pass
             except (Exception) as e:
-                msg = f"Can not create folder l01inside <l1_folder_path>. Error: {e}"
+                msg = f"Can not create folder L01inside <L1_folder_path>. Error: {e}"
                 logger.exception(msg)
                 raise FileNotFoundError(msg)
         except FileExistsError:
