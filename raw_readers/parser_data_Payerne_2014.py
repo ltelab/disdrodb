@@ -64,48 +64,32 @@ from disdrodb.sensor import Sensor
 #-------------------------------------------------------------------------.
 # Click implementation
 
-# @click.command(options_metavar='<options>')
+@click.command(options_metavar='<options>')
 
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-# @click.argument('processed_path', metavar ='<processed_path>') #TODO
+@click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-# @click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
-# @click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
-# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
-# @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
-
-
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Payerne_2014"
-processed_path = '/SharedVM/Campagne/ltnas3/Processed/Payerne_2014'
-L0_processing = False
-L1_processing = True
-force = True
-verbose = True
-debug_on = True
-lazy = True
-keep_zarr = False
-dtype_check = False
+@click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
+@click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+@click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 
-
-# class Sensor:
-#     def __init__(self, 
-#                 sensor_name,
-#                 latitude,
-#                 longitude,
-#                 altitude,
-#                 disdrodb_id,
-#                  ):
-#         self.sensor_name = sensor_name
-#         self.latitude = latitude
-#         self.longitude = longitude
-#         self.altitude = altitude
-#         self.disdrodb_id = disdrodb_id
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Payerne_2014"
+# processed_path = '/SharedVM/Campagne/ltnas3/Processed/Payerne_2014'
+# L0_processing = True
+# L1_processing = True
+# force = True
+# verbose = True
+# debug_on = True
+# lazy = True
+# keep_zarr = False
+# dtype_check = False
 
 
 #-------------------------------------------------------------------------.
@@ -169,9 +153,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     attrs['country'] = "Switzerland"  
     attrs['continent'] = "Europe" 
  
-    attrs['latitude'] = []   # TODO
-    attrs['longitude'] = []  # TODO
-    attrs['altitude'] = []  # TODO
+    attrs['latitude'] = [1,2,3,4,5]   # TODO
+    attrs['longitude'] = [1,2,3,4,5]  # TODO
+    attrs['altitude'] = [100,100,100,100,100]  # TODO
     
     attrs['latitude_unit'] = "DegreesNorth"   
     attrs['longitude_unit'] = "DegreesEast"   
@@ -328,7 +312,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
             
             if debug_on: 
-                file_list = file_list[0:3]
+                file_list = file_list[0:5]
             
             #----------------------------------------------------------------.
             # - Define raw data headers 
@@ -344,9 +328,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                                 'mor_visibility',
                                 'laser_amplitude',
                                 'n_particles',
-                                'unknow4',
-                                'A_voltage?',
-                                'A_voltage2?',
+                                'unknow4', #TODO
+                                'A_voltage?', #TODO
+                                'A_voltage2?', #TODO
                                 'sensor_status',
                                 'rain_rate_32bit',
                                 'Debug_data',
@@ -355,6 +339,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                                 'RawData',
                                 'All_0'
                                 ]
+            
+            # time_col = ['time']
+            
             check_valid_varname(raw_data_columns)
             
             ##------------------------------------------------------.      
@@ -362,6 +349,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             dtype_dict = get_dtype_standards_all_object()
             # dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
             
+            dtype_temp = dtype_dict
             
             
             ##------------------------------------------------------.
@@ -371,7 +359,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             reader_kwargs["on_bad_lines"] = 'skip'
             reader_kwargs["engine"] = 'python'
             # - Replace custom NA with standard flags 
-            reader_kwargs['na_values'] = 'na'
+            reader_kwargs['na_values'] = ['na', 'NA']
+            # Define time column
+            # reader_kwargs['parse_dates'] = time_col
             if lazy:
                 reader_kwargs["blocksize"] = None
             
@@ -387,12 +377,30 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             for filename in file_list:
                 try:
                     df = dd.read_csv(filename, 
-                                     names = raw_data_columns, 
-                                      dtype = dtype_dict,
+                                     names = raw_data_columns,
+                                     dtype = dtype_temp,
                                      **reader_kwargs)
                     
+                    # Check if file empty
+                    if len(df.index) == 0:
+                        msg = f"{filename} is empty and has been skipped."
+                        logger.warning(msg)
+                        if verbose: 
+                            print(msg)
+                        list_skipped_files.append(msg)
+                        continue
+                    
+                    # Check column number
+                    if len(df.columns) != len(raw_data_columns):
+                        msg = f"{filename} has wrong columns number, and has been skipped"
+                        logger.warning(msg)
+                        if verbose: 
+                            print(msg)
+                        list_skipped_files.append(msg)
+                        continue
+                    
                     # Drop rows with more than 2 nan (longitute and latitude)
-                    df = df.dropna(thresh = (len(raw_data_columns) -1), how = 'all')
+                    df = df.dropna(thresh = (len(raw_data_columns) - 2), how = 'all')
                     
                     # Drop all 0 column
                     df = df.drop(columns = ['All_0'])
@@ -403,6 +411,26 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                     df1.columns = ["Debug_data1","Debug_data2","Debug_data3","Debug_data4","Debug_data5"]
                     df = dd.concat([df, df1], axis = 1, ignore_unknown_divisions=True)
                     df = df.drop(['Debug_data'], axis = 1)
+                    
+                    ##------------------------------------------------------.
+                    # Cast dataframe to dtypes
+                    # Determine dtype based on standards 
+                    dtype_dict = get_L0_dtype_standards()
+                    # dtype_dict = {column: dtype_dict[column] for column in df.columns}
+
+                    for col in df.columns:
+                        try:
+                            df[col] = df[col].astype(dtype_dict[col])
+                        except KeyError:
+                            # If column dtype is not into L0_dtype_standards, assign object
+                            df[col] = df[col].astype('object')
+                            pass
+                        
+                        
+                    ##------------------------------------------------------.
+                    # Check dtype
+                    if dtype_check:
+                        col_dtype_check(df, filename, verbose)
 
                     # - Append to the list of dataframe 
                     list_df.append(df)
@@ -600,6 +628,10 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             coords['altitude'] = device_list[device].latitude
             coords['crs'] = device_list[device].crs
             
+            attrs['latitude'] = device_list[device].latitude
+            attrs['longitude'] = device_list[device].longitude
+            attrs['altitude'] = device_list[device].latitude
+            
             # coords['latitude'] = attrs['latitude']
             # coords['longitude'] = attrs['longitude']
             # coords['altitude'] = attrs['altitude']
@@ -643,7 +675,6 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             else:
                 ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
             
-            
             ##-----------------------------------------------------------
             t_f = time.time() - t_i
             msg = "L1 processing of device {} ended in {:.2f}s".format(device, t_f)
@@ -669,5 +700,5 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
  
 
 if __name__ == '__main__':
-    # main() # when using click 
-    main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
+    main() # when using click 
+    # main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)

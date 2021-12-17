@@ -17,8 +17,15 @@ campagna = 'Parsivel_2007'
 file = campagna + '.nc'
 file_path = os.path.join(path, file)
 
-f = netCDF4.Dataset(file_path)
+f3 = netCDF4.Dataset(file_path)
 
+
+path = r'/SharedVM/Campagne/ltnas3/Processed/Payerne_2014/10/L1'
+campagna = 'Payerne_2014'
+file = campagna + '.nc'
+file_path = os.path.join(path, file)
+
+f = netCDF4.Dataset(file_path)
 
 path = r'/SharedVM/Campagne/ltnas3/Processed/Payerne_2014/20/L1'
 campagna = 'Payerne_2014'
