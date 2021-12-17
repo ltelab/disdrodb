@@ -61,39 +61,71 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
     global logger
     logger = log(processed_path, 'io')
     
+    # Check if campaign has device folder
+    has_device_folder = False
+    list_file = glob.glob(os.path.join(raw_dir,"data", "*"))
+    for element in list_file:
+        if os.path.isdir(element):
+            has_device_folder = True
+            break
+    
     # Create station subfolder if need it
-    for station_folder in glob.glob(os.path.join(raw_dir,"data", "*")):
+    if has_device_folder:
+        for station_folder in glob.glob(os.path.join(raw_dir,"data", "*")):
+            try:
+                station_folder_path = os.path.join(processed_path, os.path.basename(os.path.normpath(station_folder)))
+                os.makedirs(station_folder_path)
+                logger.debug(f'Created {station_folder_path}')
+                try:
+                    L0_folder_path = os.path.join(station_folder_path, 'L0')
+                    os.makedirs(L0_folder_path)
+                    logger.debug(f'Created {L0_folder_path}')
+                except FileExistsError:
+                    logger.debug(f'Found {L0_folder_path}')
+                    pass
+                except (Exception) as e:
+                    msg = f"Can not create folder L0 inside <station_folder_path>. Error: {e}"
+                    logger.exception(msg)
+                    raise FileNotFoundError(msg)
+                try:
+                    L1_folder_path = os.path.join(station_folder_path, 'L1')
+                    os.makedirs(L1_folder_path)
+                    logger.debug(f'Created {L1_folder_path}')
+                except FileExistsError:
+                    logger.debug(f'Found {L1_folder_path}')
+                    pass
+                except (Exception) as e:
+                    msg = f"Can not create folder L0 1inside <L1_folder_path>. Error: {e}"
+                    logger.exception(msg)
+                    raise FileNotFoundError(msg)
+            except FileExistsError:
+                logger.debug(f'Found {station_folder_path}')
+                pass
+            except (Exception) as e:
+                msg = f"Can not create folder the device folder inside <processed>. Error: {e}"
+                logger.exception(msg)
+                raise FileNotFoundError(msg)
+    else:
         try:
-            station_folder_path = os.path.join(processed_path, os.path.basename(os.path.normpath(station_folder)))
-            os.makedirs(station_folder_path)
-            logger.debug(f'Created {station_folder_path}')
-            try:
-                L0_folder_path = os.path.join(station_folder_path, 'L0')
-                os.makedirs(L0_folder_path)
-                logger.debug(f'Created {L0_folder_path}')
-            except FileExistsError:
-                logger.debug(f'Found {L0_folder_path}')
-                pass
-            except (Exception) as e:
-                msg = f"Can not create folder L0 inside <station_folder_path>. Error: {e}"
-                logger.exception(msg)
-                raise FileNotFoundError(msg)
-            try:
-                L1_folder_path = os.path.join(station_folder_path, 'L1')
-                os.makedirs(L1_folder_path)
-                logger.debug(f'Created {L1_folder_path}')
-            except FileExistsError:
-                logger.debug(f'Found {L1_folder_path}')
-                pass
-            except (Exception) as e:
-                msg = f"Can not create folder L01inside <L1_folder_path>. Error: {e}"
-                logger.exception(msg)
-                raise FileNotFoundError(msg)
+            L0_folder_path = os.path.join(processed_path, 'L0')
+            os.makedirs(L0_folder_path)
+            logger.debug(f'Created {L0_folder_path}')
         except FileExistsError:
-            logger.debug(f'Found {station_folder_path}')
+            logger.debug(f'Found {L0_folder_path}')
             pass
         except (Exception) as e:
-            msg = f"Can not create folder the device folder inside <processed>. Error: {e}"
+            msg = f"Can not create folder L0 inside <station_folder_path>. Error: {e}"
+            logger.exception(msg)
+            raise FileNotFoundError(msg)
+        try:
+            L1_folder_path = os.path.join(processed_path, 'L1')
+            os.makedirs(L1_folder_path)
+            logger.debug(f'Created {L1_folder_path}')
+        except FileExistsError:
+            logger.debug(f'Found {L1_folder_path}')
+            pass
+        except (Exception) as e:
+            msg = f"Can not create folder L0 1inside <L1_folder_path>. Error: {e}"
             logger.exception(msg)
             raise FileNotFoundError(msg)
             

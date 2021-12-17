@@ -10,8 +10,8 @@ import pandas as pd
 import dask.dataframe as dd
 import os
 
-path = r'/SharedVM/Campagne/ltnas3/Processed/Payerne_2014/10/l0'
-campagna = 'Payerne_2014'
+path = r'/SharedVM/Campagne/ltnas3/Processed/Parsivel_2007/L0'
+campagna = 'Parsivel_2007'
 file = campagna + '.parquet'
 file_path = os.path.join(path, file)
 
@@ -20,23 +20,23 @@ df = dd.read_parquet(file_path)
 df = df.compute()
 
 
-path = r'/SharedVM/Campagne/ltnas3/Processed/Payerne_2014/20/l0'
-campagna = 'Payerne_2014'
-file = campagna + '.parquet'
-file_path = os.path.join(path, file)
+# path = r'/SharedVM/Campagne/ltnas3/Processed/Payerne_2014/20/l0'
+# campagna = 'Payerne_2014'
+# file = campagna + '.parquet'
+# file_path = os.path.join(path, file)
 
-df2 = dd.read_parquet(file_path)
+# df2 = dd.read_parquet(file_path)
 
-df2 = df2.compute()
+# df2 = df2.compute()
 
-path = r'/SharedVM/Campagne/ltnas3/Processed/Ticino_2018/'
-campagna = 'Ticino_2018'
-file = campagna + '.parquet'
-file_path = os.path.join(path, file)
+# path = r'/SharedVM/Campagne/ltnas3/Processed/Ticino_2018/'
+# campagna = 'Ticino_2018'
+# file = campagna + '.parquet'
+# file_path = os.path.join(path, file)
 
-df3 = dd.read_parquet(file_path)
+# df3 = dd.read_parquet(file_path)
 
-df3 = df3.compute()
+# df3 = df3.compute()
 
 # a = {}
 
