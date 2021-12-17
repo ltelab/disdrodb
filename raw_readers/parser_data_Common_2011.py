@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 17 09:12:58 2021
+Created on Fri Dec 17 14:31:45 2021
 
 @author: kimbo
 """
@@ -64,32 +64,32 @@ from disdrodb.sensor import Sensor
 #-------------------------------------------------------------------------.
 # Click implementation
 
-@click.command(options_metavar='<options>')
+# @click.command(options_metavar='<options>')
 
-@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-@click.argument('processed_path', metavar ='<processed_path>') #TODO
+# @click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-@click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
-@click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
-@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
-@click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
+# @click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
+# @click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
+# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+# @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 
-# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Parsivel_2007"
-# processed_path = '/SharedVM/Campagne/ltnas3/Processed/Parsivel_2007'
-# L0_processing = True
-# L1_processing = True
-# force = True
-# verbose = True
-# debug_on = False
-# lazy = True
-# keep_zarr = False
-# dtype_check = False
+raw_dir = "/SharedVM/Campagne/ltnas3/Raw/COMMON_2011"
+processed_path = '/SharedVM/Campagne/ltnas3/Processed/COMMON_2011'
+L0_processing = True
+L1_processing = True
+force = True
+verbose = True
+debug_on = False
+lazy = True
+keep_zarr = False
+dtype_check = False
 
 
 #-------------------------------------------------------------------------.
@@ -122,13 +122,13 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     ### Define attributes 
     attrs = get_attrs_standards()
     # - Description
-    attrs['title'] = 'Unknow'
+    attrs['title'] = 'Common_2011'
     attrs['description'] = '' 
     attrs['institution'] = 'Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne' 
     attrs['source'] = ''
     attrs['history'] = ''
     attrs['conventions'] = ''
-    attrs['campaign_name'] = 'Parsivel_2007'
+    attrs['campaign_name'] = 'Common_2011'
     attrs['project_name'] = "",
     
     # - Instrument specs 
@@ -211,7 +211,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     
     ##------------------------------------------------------.   
     # Start log
-    logger = log(processed_path, 'template_dev')
+    logger = log(processed_path, campaign_name)
     
     print('### Script start ###')
     logger.info('### Script start ###')
@@ -250,7 +250,8 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     ##------------------------------------------------------.   
     # Process all devices
     
-    all_files = len(glob.glob(os.path.join(raw_dir, 'data') + "**/*.dat*", recursive = True))
+    files_path = glob.glob(raw_dir + "/*.dat*")
+    all_files = len(files_path)
     list_skipped_files = []
     
     msg = f'{all_files} files to process in {raw_dir}'
@@ -271,7 +272,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
         # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
         # - With campaign path and all the stations files
         
-        file_list = sorted(glob.glob(os.path.join(raw_dir, 'data') + "**/*.dat*", recursive = True))         
+        file_list = sorted(files_path)         
         # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
         
         if debug_on: 
@@ -279,25 +280,29 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
         
         #----------------------------------------------------------------.
         # - Define raw data headers 
+        
         raw_data_columns = ['time',
                             'id',
-                            'rain_rate_16bit',
-                            'rain_accumulated_16bit',
-                            'weather_code_SYNOP_4680',
-                            'weather_code_SYNOP_4677',
+                            'sensor_heating_current',
+                            'sensor_battery_voltage',
+                            'unknow',
+                            'unknow2',
+                            'unknow3',
+                            'unknow4',
                             'reflectivity_16bit',
-                            'mor_visibility',
-                            'laser_amplitude',
-                            'n_particles',
-                            'sensor_temperature', #Has flag -9.999
-                            'sensor_heating_current',   #Has flag 9999
-                            'sensor_battery_voltage',  
-                            'sensor_status',
-                            'rain_amount_absolute_32bit',
-                            'error_code',
+                            'unknow5',
+                            'A_voltage?', #Has flag -9.999
+                            'unknow6',   #Has flag 9999
+                            'sensor_temperature',  
+                            'unknow7',
+                            'A_voltage2?',
+                            'unknow8',
+                            'unknow9',
+                            'Debug_data',
                             'FieldN',
                             'FieldV',
-                            'RawData'
+                            'RawData',
+                            'All_0',
                             ]
         
         # time_col = ['time']
@@ -668,5 +673,5 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
  
 
 if __name__ == '__main__':
-    main() # when using click 
-    # main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
+    # main() # when using click 
+    main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)

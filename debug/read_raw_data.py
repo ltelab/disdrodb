@@ -9,84 +9,58 @@ Created on Thu Dec  9 10:09:19 2021
 import pandas as pd
 import dask.dataframe as dd
 import numpy as np
+import os
 
 print(' ### INIZIO ### ')
 print()
 
-# D:\SharedVM\Campagne\ltnas3\Raw\Ticino_2018\epfl_parsivel\raw\2019\07
+raw_dir = "/SharedVM/Campagne/ltnas3/Raw/COMMON_2011"
 
-path = r'/SharedVM/Campagne/ltnas3/Raw/Ticino_2018/epfl_parsivel/raw/2019'
+path = raw_dir
 campagna = 'Ticino_2018'
 folder_device = '07'
-file_name = 'Station-61-2019-07-13.dat'
+file_name = '20_ascii_20110311.dat'
 
-path_raw = path + r'/Raw/' + campagna + '/data/' + folder_device + '/' + file_name
-path_processed = path + r'/processed/' + campagna + '/30/' + campagna + '.parquet'
+path_raw = os.path.join(path, file_name)
+# path_processed = path + r'/processed/' + campagna + '/30/' + campagna + '.parquet'
 
-path_raw = path + '/' + folder_device + '/' + file_name
+# path_raw = path + '/' + folder_device + '/' + file_name
 
-raw_data_columns = ['id',
-                    'latitude',
-                    'longitude',
-                    'time',
-                    'datalogger_temperature',
-                    'x', #datalogger_voltage rain_rate_32bit
-                    'rain_accumulated_32bit',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
-                    'reflectivity_16bit',
-                    'mor_visibility',
-                    'laser_amplitude',  
-                    'n_particles',
-                    'sensor_temperature',
+raw_data_columns = ['time',
+                    'id',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
-                    'sensor_status',
-                    'rain_amount_absolute_32bit',
-                    'error_code',
+                    'unknow',
+                    'unknow2',
+                    'unknow3',
+                    'unknow4',
+                    'reflectivity_16bit',
+                    'unknow5',
+                    'A_voltage?', #Has flag -9.999
+                    'unknow6',   #Has flag 9999
+                    'sensor_temperature',  
+                    'unknow7',
+                    'A_voltage2?',
+                    'unknow8',
+                    'unknow9',
+                    'Debug_data',
                     'FieldN',
                     'FieldV',
                     'RawData',
-                    'datalogger_error'
-                    ]
-
-raw_data_columns2 = ['id',
-                    'latitude',
-                    'longitude',
-                    'time',
-                    'datalogger_temperature',
-                    'datalogger_voltage',
-                    'rain_rate_32bit', 
-                    'rain_accumulated_32bit',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
-                    'reflectivity_16bit',
-                    'mor_visibility',
-                    'laser_amplitude',  
-                    'n_particles',
-                    'sensor_temperature',
-                    'sensor_heating_current',
-                    'sensor_battery_voltage',
-                    'sensor_status',
-                    'rain_amount_absolute_32bit',
-                    'error_code',
-                    'FieldN',
-                    'FieldV',
-                    'RawData',
-                    'datalogger_error'
+                    'All_0',
                     ]
 
 
 ##------------------------------------------------------.
 # Define reader options 
-reader_kwargs = {}
-# reader_kwargs['compression'] = 'gzip'
-reader_kwargs['delimiter'] = ';'
-reader_kwargs["on_bad_lines"] = 'skip'
-reader_kwargs["engine"] = 'python'
-# - Replace custom NA with standard flags 
-reader_kwargs['na_values'] = 'na'
-reader_kwargs["blocksize"] = None
+# reader_kwargs = {}
+# # reader_kwargs['compression'] = 'gzip'
+# reader_kwargs['delimiter'] = ';'
+# reader_kwargs["on_bad_lines"] = 'skip'
+# reader_kwargs["engine"] = 'python'
+# # - Replace custom NA with standard flags 
+# reader_kwargs['na_values'] = 'na'
+# reader_kwargs["blocksize"] = None
 
 
 
@@ -94,14 +68,16 @@ reader_kwargs["blocksize"] = None
 
 # df = df['datalogger_voltage'].str.split(',', expand = True)
 
-df = pd.read_csv(path_raw, delimiter = ';', names = raw_data_columns)
+df = pd.read_csv(path_raw, 
+                 # delimiter = ';', 
+                 names = raw_data_columns)
 
 
-df2 = df['x'].str.split(',', n=1, expand=True)
+# df2 = df['x'].str.split(',', n=1, expand=True)
 
-df2.columns = ['datalogger_voltage','rain_rate_32bit']
+# df2.columns = ['datalogger_voltage','rain_rate_32bit']
 
-df.astype({'datalogger_voltage': 'int32', }).dtypes
+# df.astype({'datalogger_voltage': 'int32', }).dtypes
 
 
 # df2 = df["datalogger_voltage"].str.split(pat=",", expand=True, n=1)

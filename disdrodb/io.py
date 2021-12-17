@@ -437,8 +437,12 @@ def get_L0_dtype_standards():
         'unknow5': 'object',
         'unknow': 'object',
         'unknow6': 'object',
+        'unknow7': 'object',
+        'unknow8': 'object',
+        'unknow9': 'object',
         'power_supply_voltage': 'object',
-        'A_voltage2?' : 'object'
+        'A_voltage2?' : 'object',
+        'A_voltage?' : 'object'
         
     }
     return dtype_dict
