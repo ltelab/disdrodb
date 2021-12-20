@@ -63,151 +63,30 @@ raw_data_columns = ['time',
 # reader_kwargs["blocksize"] = None
 
 
-
-# df3 = df = pd.read_csv(path_raw, delimiter = ';', names = raw_data_columns)
-
-# df = df['datalogger_voltage'].str.split(',', expand = True)
-
 df = pd.read_csv(path_raw, 
                  # delimiter = ';', 
                  names = raw_data_columns)
 
 
-# df2 = df['x'].str.split(',', n=1, expand=True)
+# Drop rows with more than 2 nan (longitute and latitude)
+df = df.dropna(thresh = (len(raw_data_columns) - 2), how = 'all')
 
-# df2.columns = ['datalogger_voltage','rain_rate_32bit']
+# Drop all 0 column
+df = df.drop(columns = ['All_0'])
 
-# df.astype({'datalogger_voltage': 'int32', }).dtypes
+# Split Debug_data
+df1 = df['Debug_data'].str.split(r'T ', expand=True, n = 13).add_prefix('col_')
 
+df1 = df1.drop(['col_0'], axis=1)
 
-# df2 = df["datalogger_voltage"].str.split(pat=",", expand=True, n=1)
+df2 = df1['col_3'].str.rsplit(r'  ', expand=True, n = 6).add_prefix('col_')
 
-# df2 = dd.DataFrame(columns=['datalogger_voltage','rain_rate_32bit'])
+df2 = df2['col_1'] + df2['col_2'] + df2['col_3'] + df2['col_4'] + df2['col_5'] + df2['col_6']
 
-# df2[['datalogger_voltage','rain_rate_32bit']] = df['x'].str.split(',', n=1, expand=True)
-
-# df = df.drop(columns=['x'])
-
-# df = dd.concat([df,df2], axis = 1)
-
-
-
-# df = dd.read_csv(path_raw,
-#                  names = raw_data_columns,
-#                  **reader_kwargs)
-
-# df[["datalogger_voltage", "rain_rate_32bit"]] = df["datalogger_voltage"].str.split(pat=",", expand=True, n=1)
-
-# df = df.compute()
-
-
-
-# df3 = pd.concat(df, df2)
-
-# # df = pd.read_csv(path_raw, delimiter = ',,', names = ['a','FieldV','RawData','datalogger_error'], engine = 'python', na_values = ['na', 'Error in data reading! error0', 'None'])
-
-# # df2 = df['a'].str.split(',', expand = True, n = 20)
-
-# df = pd.concat([df['a'].str.split(',', expand = True, n = 20),df.iloc[:,1:3]], axis = 1).rename(columns = col_names)
-
-# # df[df['rain_rate_32bit'].apply(lambda x: str(x).isdigit())]
-
-# df = df.drop(columns=['latitude', 'longitude'])
-
-# df = df.dropna(thresh = 15)
-
-# # df = df.fillna(value=np.nan)
-
-# # ---------------------------------------------
-
-# dtype_dict = {                                 # Kimbo option
-#     "id": "uint32",
-#     "rain_rate_16bit": 'float32',
-#     "rain_rate_32bit": 'object',
-#     "rain_accumulated_16bit":   'float32',
-#     "rain_accumulated_32bit":   'float32',
-    
-#     "rain_amount_absolute_32bit": 'float32', 
-#     "reflectivity_16bit": 'float32',
-#     "reflectivity_32bit": 'float32',
-    
-#     "rain_kinetic_energy"  :'float32',
-#     "snowfall_intensity": 'float32',
-    
-#     "mor_visibility"    :'uint16',
-    
-#     "weather_code_SYNOP_4680":'uint8',             
-#     "weather_code_SYNOP_4677":'uint8',              
-#     "weather_code_METAR_4678":'object', #TODO
-#     "weather_code_NWS":'object', #TODO
-    
-#     "n_particles"     :'uint32',
-#     "n_particles_all": 'uint32',
-    
-#     "sensor_temperature": 'uint8',
-#     "temperature_PBC" : 'object', #TODO
-#     "temperature_right" : 'object', #TODO
-#     "temperature_left":'object', #TODO
-    
-#     "sensor_heating_current" : 'float32',
-#     "sensor_battery_voltage" : 'float32',
-#     "sensor_status"   : 'uint8',
-#     "laser_amplitude" :'uint32',
-#     "error_code"      : 'uint8',          
-
-#     # Custom ields       
-#     "Unknow_column": "object",
-#     "datalogger_temperature": "object",
-#     "datalogger_voltage": "object",
-#     'datalogger_error': 'uint8',
-    
-#     # Data fields (TODO) 
-#     "FieldN": 'object',
-#     "FieldV": 'object',
-#     "RawData": 'object',
-    
-#     # Coords 
-#     "latitude" : 'float32',
-#     "longitude" : 'float32',
-#     "altitude" : 'float32',
-    
-#      # Dimensions
-#     'time': 'object',
-    
-#     #Temp variables
-#     "Debug_data" : 'object',
-#     'All_0': 'object',
-#     'error_code?': 'object',
-#     'unknow2': 'object',
-#     'unknow3': 'object',
-#     'unknow4': 'object',
-#     'unknow5': 'object',
-#     'unknow': 'object',
-#     'unknow6': 'object',
-#     'power_supply_voltage': 'object',
-#     'A_voltage2?' : 'object'
-    
-# }
-
-
-# a = {}
-
-# for col in list(df.iloc[:,:18]):
-#     a[col] = df[col].unique()
-    
-# for key, value in a.items():
-#     print(key, ' : ', value)
-    
-
-
-
-# dtype_dict = {column: dtype_dict[column] for column in df.columns}
-
-# for k, v in dtype_dict.items():
-#     print(f'{k} is {v}')
-#     df[k] = df[k].astype(v)
-    
-    
+# df1 = df1.drop([0,1,7], axis = 1)
+# df1.columns = ["Debug_data1","Debug_data2","Debug_data3","Debug_data4","Debug_data5"]
+# df = dd.concat([df, df1], axis = 1, ignore_unknown_divisions=True)
+# df = df.drop(['Debug_data'], axis = 1)
     
     
     

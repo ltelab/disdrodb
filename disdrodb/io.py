@@ -403,6 +403,8 @@ def get_L0_dtype_standards():
         
         "sensor_heating_current" : 'float32',
         "sensor_battery_voltage" : 'float32',
+        "datalogger_heating_current" : 'float32',
+        "datalogger_battery_voltage" : 'float32',
         "sensor_status"   : 'uint8',
         "laser_amplitude" :'uint32',
         "error_code"      : 'uint8',          
@@ -442,7 +444,8 @@ def get_L0_dtype_standards():
         'unknow9': 'object',
         'power_supply_voltage': 'object',
         'A_voltage2?' : 'object',
-        'A_voltage?' : 'object'
+        'A_voltage?' : 'object',
+        'All_nan' : 'object',
         
     }
     return dtype_dict
@@ -568,8 +571,14 @@ def col_dtype_check(df, file_path, verbose = False):
         'FieldV',
         'RawData'
         ]
-
-    df = df.compute()
+    
+    try:
+        df = df.compute()
+    except Exception as e:
+        msg = f'Error on read dataframe, error: {e}'
+        if verbose:
+            print(msg)
+        logger.warning(msg)
 
     for col in df.columns:
         try:

@@ -86,10 +86,11 @@ L0_processing = True
 L1_processing = True
 force = True
 verbose = True
-debug_on = False
+debug_on = True
 lazy = True
 keep_zarr = False
 dtype_check = False
+
 
 
 #-------------------------------------------------------------------------.
@@ -153,9 +154,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     attrs['country'] = "Switzerland"  
     attrs['continent'] = "Europe" 
  
-    attrs['latitude'] = []   # TODO
-    attrs['longitude'] = []  # TODO
-    attrs['altitude'] = []  # TODO
+    attrs['latitude'] = [0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
+    attrs['longitude'] = [0,0,0,0,0] # TODO, Example [1,2,3,4,5]
+    attrs['altitude'] = [0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
     
     attrs['latitude_unit'] = "DegreesNorth"   
     attrs['longitude_unit'] = "DegreesEast"   
@@ -180,7 +181,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     attrs['source_data_format'] = 'raw_data'        
     attrs['obs_type'] = 'raw'   # preprocess/postprocessed
     attrs['level'] = 'L0'       # L0, L1, L2, ...    
-    attrs['disdrodb_id'] = [1]   # TODO         
+    attrs['disdrodb_id'] = [20,21,22,40,41]   # TODO, Example   [20,21,22,40,41]        
  
     ##------------------------------------------------------------------------. 
     
@@ -217,445 +218,480 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     logger.info('### Script start ###')
     
     ##------------------------------------------------------.   
-    # Info for the device
-    dev = Sensor(
-                attrs['disdrodb_id'],
-                attrs['sensor_name'],
-                attrs["sensor_long_name"],
-                attrs["sensor_beam_width"],
-                attrs["sensor_nominal_width"],
-                attrs["measurement_interval"],
-                attrs["temporal_resolution"],
-                attrs["sensor_wavelegth"],
-                attrs["sensor_serial_number"],
-                attrs["firmware_IOP"],
-                attrs["firmware_DSP"],
-                attrs['station_id'],
-                attrs['station_name'],
-                attrs['station_number'],
-                attrs['location'],
-                attrs['country'],
-                attrs['continent'],
-                attrs['latitude'],
-                attrs['longitude'],
-                attrs['altitude'],
-                attrs['latitude_unit'] ,
-                attrs['longitude_unit'],
-                attrs['altitude_unit'],
-                attrs['crs'],
-                attrs['EPSG'],
-                attrs['proj4_string']
-                )
+    # Popolate device list
+    device_list = {}
+    i = 0
+    for device in glob.glob(os.path.join(raw_dir,"data", "*")):
+        try:
+            device_list[os.path.basename(device)] = Sensor(
+                        attrs['disdrodb_id'][i],
+                        attrs['sensor_name'],
+                        attrs["sensor_long_name"],
+                        attrs["sensor_beam_width"],
+                        attrs["sensor_nominal_width"],
+                        attrs["measurement_interval"],
+                        attrs["temporal_resolution"],
+                        attrs["sensor_wavelegth"],
+                        attrs["sensor_serial_number"],
+                        attrs["firmware_IOP"],
+                        attrs["firmware_DSP"],
+                        attrs['station_id'],
+                        attrs['station_name'],
+                        attrs['station_number'],
+                        attrs['location'],
+                        attrs['country'],
+                        attrs['continent'],
+                        attrs['latitude'][i],
+                        attrs['longitude'][i],
+                        attrs['altitude'][i],
+                        attrs['latitude_unit'] ,
+                        attrs['longitude_unit'],
+                        attrs['altitude_unit'],
+                        attrs['crs'],
+                        attrs['EPSG'],
+                        attrs['proj4_string'])
+        except IndexError:
+            device_list[os.path.basename(device)] = Sensor(
+                        os.path.basename(device),
+                        attrs['sensor_name'],
+                        attrs["sensor_long_name"],
+                        attrs["sensor_beam_width"],
+                        attrs["sensor_nominal_width"],
+                        attrs["measurement_interval"],
+                        attrs["temporal_resolution"],
+                        attrs["sensor_wavelegth"],
+                        attrs["sensor_serial_number"],
+                        attrs["firmware_IOP"],
+                        attrs["firmware_DSP"],
+                        attrs['station_id'],
+                        attrs['station_name'],
+                        attrs['station_number'],
+                        attrs['location'],
+                        attrs['country'],
+                        attrs['continent'],
+                        attrs['latitude'],
+                        attrs['longitude'],
+                        attrs['altitude'],
+                        attrs['latitude_unit'] ,
+                        attrs['longitude_unit'],
+                        attrs['altitude_unit'],
+                        attrs['crs'],
+                        attrs['EPSG'],
+                        attrs['proj4_string'])
+        i += 1
     
     ##------------------------------------------------------.   
     # Process all devices
     
-    files_path = glob.glob(raw_dir + "/*.dat*")
-    all_files = len(files_path)
+    all_files = len(glob.glob(os.path.join(raw_dir, 'data', "**/*")))
     list_skipped_files = []
     
     msg = f'{all_files} files to process in {raw_dir}'
     if verbose:
         print(msg)
     logger.info(msg)
-        
-    # for device in 
-    if L0_processing: 
-        #----------------------------------------------------------------.
-        t_i = time.time() 
-        
-        msg = f"L0 processing of device {dev.disdrodb_id} started"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        # - Retrieve filepaths of raw data files 
-        # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
-        # - With campaign path and all the stations files
-        
-        file_list = sorted(files_path)         
-        # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
-        
-        if debug_on: 
-            file_list = file_list[0:3]
-        
-        #----------------------------------------------------------------.
-        # - Define raw data headers 
-        
-        raw_data_columns = ['time',
-                            'id',
-                            'sensor_heating_current',
-                            'sensor_battery_voltage',
-                            'unknow',
-                            'unknow2',
-                            'unknow3',
-                            'unknow4',
-                            'reflectivity_16bit',
-                            'unknow5',
-                            'A_voltage?', #Has flag -9.999
-                            'unknow6',   #Has flag 9999
-                            'sensor_temperature',  
-                            'unknow7',
-                            'A_voltage2?',
-                            'unknow8',
-                            'unknow9',
-                            'Debug_data',
-                            'FieldN',
-                            'FieldV',
-                            'RawData',
-                            'All_0',
-                            ]
-        
-        # time_col = ['time']
-        
-        check_valid_varname(raw_data_columns)
-        
-        ##------------------------------------------------------.      
-        # Determine dtype based on standards 
-        dtype_dict = get_dtype_standards_all_object()
-        # dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
-        
-        dtype_temp = dtype_dict
-        
-        ##------------------------------------------------------.
-        # Define reader options 
-        reader_kwargs = {}
-        reader_kwargs['delimiter'] = ','
-        reader_kwargs["on_bad_lines"] = 'skip'
-        reader_kwargs["engine"] = 'python'
-        # - Replace custom NA with standard flags 
-        reader_kwargs['na_values'] = ['', 'error']
-        # Define time column
-        # reader_kwargs['parse_dates'] = time_col
-        reader_kwargs["blocksize"] = None
-        reader_kwargs["compression"] = 'gzip'
-        
-        ##------------------------------------------------------.
-        # Loop over all files
-        
-        msg = f"{len(file_list)} files to process for {dev.disdrodb_id}"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        list_df = []
-        for filename in file_list:
-            try:
-                df = dd.read_csv(filename, 
-                                 skiprows = 4, 
-                                 names = raw_data_columns,assume_missing=True,
-                                 dtype = dtype_temp,
-                                 **reader_kwargs
-                                 )
-                
-                # Check if file empty
-                if len(df.index) == 0:
-                    msg = f"{filename} is empty and has been skipped."
-                    logger.warning(msg)
-                    if verbose: 
-                        print(msg)
-                    list_skipped_files.append(msg)
-                    continue
-                
-                # Check column number
-                if len(df.columns) != len(raw_data_columns):
-                    msg = f"{filename} has wrong columns number, and has been skipped"
-                    logger.warning(msg)
-                    if verbose: 
-                        print(msg)
-                    list_skipped_files.append(msg)
-                    continue
-                
-                #-------------------------------------------------------------------------
-                ### Keep only clean data 
-                df = df.dropna()
-                
-                ##------------------------------------------------------.
-                # Cast dataframe to dtypes
-                # Determine dtype based on standards 
-                dtype_dict = get_L0_dtype_standards()
-
-                for col in df.columns:
-                    try:
-                        df[col] = df[col].astype(dtype_dict[col])
-                    except KeyError:
-                        # If column dtype is not into L0_dtype_standards, assign object
-                        df[col] = df[col].astype('object')
-                        pass
-                    
-                    
-                ##------------------------------------------------------.
-                # Check dtype
-                if dtype_check:
-                    col_dtype_check(df, filename, verbose)
-
-                # - Append to the list of dataframe 
-                list_df.append(df)
-                
-                logger.debug(f'{filename} processed successfully')
-                
-            except (Exception, ValueError) as e:
-              msg = f"{filename} has been skipped. The error is {e}"
-              logger.warning(f'{filename} has been skipped')
-              if verbose: 
-                  print(msg)
-              list_skipped_files.append(msg)
-        
-        msg = f"{len(list_skipped_files)} files on {len(file_list)} for {dev.disdrodb_id} has been skipped."
-        if verbose:      
-            print(msg)
-        logger.info('---')
-        logger.info(msg)
-        logger.info('---')
-            
-        
-        ##------------------------------------------------------.
-        # Concatenate the dataframe 
-        msg = f"Start concat dataframes for device {dev.disdrodb_id}"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        try:
-            df = dd.concat(list_df, axis=0, ignore_index = True)
-            # Drop duplicated values 
-            df = df.drop_duplicates(subset="time")
-            # Sort by increasing time 
-            df = df.sort_values(by="time")
-            
-            #Cast dataframe to dtypes
-            dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
-            
-            df = df.astype(dtype_dict)
-            
-        except (AttributeError, TypeError) as e:
-            msg = f"Can not create concat data files. Error: {e}"
-            logger.exception(msg)
-            raise ValueError(msg)
-        
-        msg = f"Finish concat dataframes for device {dev.disdrodb_id}"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-            
-        ##------------------------------------------------------.                                   
-        # Write to Parquet 
-        msg = f"Starting conversion to parquet file for device {dev.disdrodb_id}"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        # Path to device folder
-        path = os.path.join(processed_path + '/L0/')
-        # Write to Parquet 
-        _write_to_parquet(df, path, campaign_name, force)
-        
-        msg = f"Finish conversion to parquet file for device {dev.disdrodb_id}"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        ##------------------------------------------------------.   
-        # Check Parquet standards 
-        check_L0_standards(df)
-        
-        ##------------------------------------------------------.   
-        t_f = time.time() - t_i
-        msg = "L0 processing of {} ended in {:.2f}s".format(dev.disdrodb_id, t_f)
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        ##------------------------------------------------------.   
-        # Delete temp variables
-        del df
-        del list_df
     
-    #-------------------------------------------------------------------------.
-    ###############################
-    #### Perform L1 processing ####
-    ###############################
-    if L1_processing: 
-        ##-----------------------------------------------------------
-        t_i = time.time()  
+    for device in device_list:
+        device_path = os.path.join(raw_dir,'data', device)
+    # for device in range (0,1):
         
-        msg =f"L1 processing of device {dev.disdrodb_id} started"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        ##-----------------------------------------------------------
-        # Check the L0 df is available 
-        # Path device folder parquet
-        df_fpath = os.path.join(processed_path + '/L0/' + campaign_name + '.parquet')
-        if not L0_processing:
-            if not os.path.exists(df_fpath):
-                msg = "Need to run L0 processing. The {df_fpath} file is not available."
-                logger.exception(msg)
-                raise ValueError(msg)
-        
-        msg = f'Found parquet file: {df_fpath}'
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        ##-----------------------------------------------------------
-        # Read raw data from parquet file 
-        msg = f'Start reading: {df_fpath}'
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        df = dd.read_parquet(df_fpath)
-        
-        # Cast time datetime into object
-        df = df.compute()
-        if df['time'].dtype.kind == 'M':
-            df['time'] = df['time'].astype('object')
-
-        
-        msg = f'Finish reading: {df_fpath}'
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        ##-----------------------------------------------------------
-        # Subset row sample to debug 
-        if not lazy and debug_on:
-            df = df.iloc[0:100,:] # df.head(100) 
-            df = df.iloc[0:,:]
+        # for device in 
+        if L0_processing: 
+            #----------------------------------------------------------------.
+            t_i = time.time() 
             
-            msg = 'Debug = True and Lazy = False, then only the first 100 rows are read'
+            msg = f"L0 processing of device {device} started"
             if verbose:
                 print(msg)
             logger.info(msg)
-           
-        ##-----------------------------------------------------------
-        # Retrieve raw data matrix 
-        msg = f"Retrieve raw data matrix for device {dev.disdrodb_id}"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        dict_data = {}
-        n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-        
-        if not lazy and debug_on:
-            n_timesteps = df.shape[0]
-        else:
-            try:
-                n_timesteps = df.shape[0].compute()
-            except AttributeError:
-                n_timesteps = df.shape[0]
+            # - Retrieve filepaths of raw data files 
+            # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
+            # - With campaign path and all the stations files
             
-        for key, n_bins in n_bins_dict.items(): 
+            file_list = sorted(glob.glob(os.path.join(device_path,"**/*.dat*"), recursive = True))      
+            # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
             
-            # Dask based 
-            dd_series = df[key].astype(str).str.split(",")
-            da_arr = da.stack(dd_series, axis=0)
-            # Remove '' at the end 
-            da_arr = da_arr[: , 0:n_bins_dict[key]]
+            if debug_on: 
+                file_list = file_list[0:5]
             
-            # Convert flag values to XXXX
-            # dir(da_arr.str)
-            # FieldN and FieldV --> -9.999, has floating number 
+            #----------------------------------------------------------------.
+            # - Define raw data headers 
             
-            if key == 'RawData':
-                da_arr = da_arr.astype(int)
+            raw_data_columns = ['time',
+                                'id',
+                                'sensor_heating_current',
+                                'sensor_battery_voltage',
+                                'unknow',
+                                'unknow2',
+                                'unknow3',
+                                'unknow4',
+                                'reflectivity_16bit',
+                                'unknow5',
+                                'A_voltage?', #Has flag -9.999
+                                'unknow6',   #Has flag 9999
+                                'sensor_temperature',  
+                                'unknow7',
+                                'A_voltage2?',
+                                'unknow8',
+                                'unknow9',
+                                'Debug_data',
+                                'FieldN',
+                                'FieldV',
+                                'RawData',
+                                'All_0',
+                                ]
+            
+            # time_col = ['time']
+            
+            check_valid_varname(raw_data_columns)
+            
+            ##------------------------------------------------------.      
+            # Determine dtype based on standards 
+            dtype_dict = get_dtype_standards_all_object()
+            # dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
+            
+            dtype_temp = dtype_dict
+            
+            ##------------------------------------------------------.
+            # Define reader options 
+            reader_kwargs = {}
+            # reader_kwargs['delimiter'] = ','
+            reader_kwargs["on_bad_lines"] = 'skip'
+            reader_kwargs["engine"] = 'python'
+            # - Replace custom NA with standard flags 
+            reader_kwargs['na_values'] = ['', 'error', 'NA']
+            # Define time column
+            # reader_kwargs['parse_dates'] = time_col
+            reader_kwargs["blocksize"] = None
+            # reader_kwargs["compression"] = 'gzip'
+            
+            ##------------------------------------------------------.
+            # Loop over all files
+            
+            msg = f"{len(file_list)} files to process for {device}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            list_df = []
+            for filename in file_list:
                 try:
-                    da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
-                except Exception as e:
-                    msg = f'Error on retrive raw data matrix: {e}'
-                    logger.error(msg)
-                    print(msg)
-                    # raise SystemExit
-            else:
-                da_arr = da_arr.astype(float)                
+                    df = dd.read_csv(filename,
+                                     dtype = dtype_temp,
+                                     names = raw_data_columns,
+                                     **reader_kwargs
+                                     )
+                    
+                    # Check if file empty
+                    if len(df.index) == 0:
+                        msg = f"{filename} is empty and has been skipped."
+                        logger.warning(msg)
+                        if verbose: 
+                            print(msg)
+                        list_skipped_files.append(msg)
+                        continue
+                    
+                    # Check column number
+                    if len(df.columns) != len(raw_data_columns):
+                        msg = f"{filename} has wrong columns number, and has been skipped"
+                        logger.warning(msg)
+                        if verbose: 
+                            print(msg)
+                        list_skipped_files.append(msg)
+                        continue
+                    
+                    #-------------------------------------------------------------------------
+                    ### Keep only clean data 
+                    # Drop rows with more than 2 nan
+                    df = df.dropna(thresh = (len(raw_data_columns) - 2), how = 'all')
+                    
+                    
+                    # TODO Debug column, ask to Gionata
+                    # # Split Debug_data
+                    # df1 = df['Debug_data'].str.split(r'T ', expand=True, n = 13).add_prefix('col_')
+
+                    # df1 = df1.drop(['col_0'], axis=1)
+
+                    # df2 = df1['col_3'].str.rsplit(r'  ', expand=True, n = 6).add_prefix('col_')
+                    
+                    ##------------------------------------------------------.
+                    # Cast dataframe to dtypes
+                    # Determine dtype based on standards 
+                    dtype_dict = get_L0_dtype_standards()
+
+                    for col in df.columns:
+                        try:
+                            df[col] = df[col].astype(dtype_dict[col])
+                        except KeyError:
+                            # If column dtype is not into L0_dtype_standards, assign object
+                            df[col] = df[col].astype('object')
+                            pass
+                        
+                        
+                    ##------------------------------------------------------.
+                    # Check dtype
+                    if dtype_check:
+                        col_dtype_check(df, filename, verbose)
+
+                    # - Append to the list of dataframe 
+                    list_df.append(df)
+                    
+                    logger.debug(f'{filename} processed successfully')
+                    
+                except (Exception, ValueError) as e:
+                  msg = f"{filename} has been skipped. The error is {e}"
+                  logger.warning(f'{filename} has been skipped')
+                  if verbose: 
+                      print(msg)
+                  list_skipped_files.append(msg)
             
-            dict_data[key] = da_arr
-                       
-            # Pandas/Numpy based 
-            # np_arr_str =  df[key].values.astype(str)
-            # list_arr_str = np.char.split(np_arr_str,",")
-            # arr_str = np.stack(list_arr_str, axis=0) 
-            # arr = arr_str[:, 0:n_bins]
-            # arr = arr.astype(float)                
-            # if key == 'RawData':
-            #     arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
-            # dict_data[key] = arr
+            msg = f"{len(list_skipped_files)} files on {len(file_list)} for {device} has been skipped."
+            if verbose:      
+                print(msg)
+            logger.info('---')
+            logger.info(msg)
+            logger.info('---')
+                
+            
+            ##------------------------------------------------------.
+            # Concatenate the dataframe 
+            msg = f"Start concat dataframes for device {device}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            try:
+                df = dd.concat(list_df, axis=0, ignore_index = True)
+                # Drop duplicated values 
+                df = df.drop_duplicates(subset="time")
+                # Sort by increasing time 
+                df = df.sort_values(by="time")
+                
+            except (AttributeError, TypeError) as e:
+                msg = f"Can not create concat data files. Error: {e}"
+                logger.exception(msg)
+                raise ValueError(msg)
+            
+            msg = f"Finish concat dataframes for device {device}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+                
+            ##------------------------------------------------------.                                   
+            # Write to Parquet 
+            msg = f"Starting conversion to parquet file for device {device}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            # Path to device folder
+            path = os.path.join(processed_path + '/' + device + '/L0/')
+            # Write to Parquet 
+            _write_to_parquet(df, path, campaign_name, force)
+            
+            msg = f"Finish conversion to parquet file for device {device}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##------------------------------------------------------.   
+            # Check Parquet standards 
+            check_L0_standards(df)
+            
+            ##------------------------------------------------------.   
+            t_f = time.time() - t_i
+            msg = "L0 processing of {} ended in {:.2f}s".format(device, t_f)
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##------------------------------------------------------.   
+            # Delete temp variables
+            del df
+            del list_df
         
-        msg = f"Finish retrieve raw data matrix for device {dev.disdrodb_id}"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        
-        ##-----------------------------------------------------------
-        # Define data variables for xarray Dataset 
-        data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
-                     "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
-                     "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
-                    }
-        
-        # Define coordinates for xarray Dataset
-        coords = get_L1_coords(sensor_name=sensor_name)
-        
-        # coords['time'] = df['time'].values.compute()
-        coords['time'] = df['time'].values
-
-        coords['latitude'] = dev.latitude
-        coords['longitude'] = dev.longitude
-        coords['altitude'] = dev.latitude
-        coords['crs'] = dev.crs
-        
-        # coords['latitude'] = attrs['latitude']
-        # coords['longitude'] = attrs['longitude']
-        # coords['altitude'] = attrs['altitude']
-        # coords['crs'] = attrs['crs']
-
-        ##-----------------------------------------------------------
-        # Create xarray Dataset
-        try:
-            ds = xr.Dataset(data_vars = data_vars, 
-                            coords = coords, 
-                            attrs = attrs,
-                            )
-        except Exception as e:
-            msg = f'Error on creation xarray dataset: {e}'
-            logger.error(msg)
-            print(msg)
-            # raise SystemExit
-        
-        ##-----------------------------------------------------------
-        # Check L1 standards 
-        check_L1_standards(ds)
-         
-        ##-----------------------------------------------------------    
-        # Write to Zarr as intermediate storage 
-        if keep_zarr:
-            tmp_zarr_fpath = os.path.join(processed_path + '/L1/' + campaign_name + '.zarr')
-            ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
-            zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
-            ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
-        
-        ##-----------------------------------------------------------  
-        # Write L1 dataset to netCDF
-        # Path for save into device folder
-        L1_nc_fpath = processed_path + '/L1/' + campaign_name + '.nc'
-        ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
-        nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
-        
-        if debug_on:
-            ds.to_netcdf(L1_nc_fpath, engine="netcdf4")
-        else:
-            ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
-        
-        
-        ##-----------------------------------------------------------
-        t_f = time.time() - t_i
-        msg = "L1 processing of device {} ended in {:.2f}s".format(dev.disdrodb_id, t_f)
-        if verbose:
-            print(msg)
-        logger.info(msg)
+        #-------------------------------------------------------------------------.
+        ###############################
+        #### Perform L1 processing ####
+        ###############################
+        if L1_processing: 
+            ##-----------------------------------------------------------
+            t_i = time.time()  
+            
+            msg =f"L1 processing of device {device} started"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Check the L0 df is available 
+            # Path device folder parquet
+            df_fpath = os.path.join(processed_path + '/' + device + '/L0/' + campaign_name + '.parquet')
+            if not L0_processing:
+                if not os.path.exists(df_fpath):
+                    msg = "Need to run L0 processing. The {df_fpath} file is not available."
+                    logger.exception(msg)
+                    raise ValueError(msg)
+            
+            msg = f'Found parquet file: {df_fpath}'
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Read raw data from parquet file 
+            msg = f'Start reading: {df_fpath}'
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            df = dd.read_parquet(df_fpath)
+            
+            msg = f'Finish reading: {df_fpath}'
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Subset row sample to debug 
+            if not lazy and debug_on:
+                df = df.iloc[0:100,:] # df.head(100) 
+                df = df.iloc[0:,:]
+                
+                msg = 'Debug = True and Lazy = False, then only the first 100 rows are read'
+                if verbose:
+                    print(msg)
+                logger.info(msg)
+               
+            ##-----------------------------------------------------------
+            # Retrieve raw data matrix 
+            msg = f"Retrieve raw data matrix for device {device}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            dict_data = {}
+            n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+            
+            if not lazy and debug_on:
+                n_timesteps = df.shape[0]
+            else:
+                n_timesteps = df.shape[0].compute()
+                
+            for key, n_bins in n_bins_dict.items(): 
+                
+                # Dask based 
+                dd_series = df[key].astype(str).str.split(",")
+                da_arr = da.stack(dd_series, axis=0)
+                # Remove '' at the end 
+                da_arr = da_arr[: , 0:n_bins_dict[key]]
+                
+                # Convert flag values to XXXX
+                # dir(da_arr.str)
+                # FieldN and FieldV --> -9.999, has floating number 
+                
+                if key == 'RawData':
+                    da_arr = da_arr.astype(int)
+                    try:
+                        da_arr = da_arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                    except Exception as e:
+                        msg = f'Error on retrive raw data matrix: {e}'
+                        logger.error(msg)
+                        print(msg)
+                        # raise SystemExit
+                else:
+                    da_arr = da_arr.astype(float)                
+                
+                dict_data[key] = da_arr
+                           
+                # Pandas/Numpy based 
+                # np_arr_str =  df[key].values.astype(str)
+                # list_arr_str = np.char.split(np_arr_str,",")
+                # arr_str = np.stack(list_arr_str, axis=0) 
+                # arr = arr_str[:, 0:n_bins]
+                # arr = arr.astype(float)                
+                # if key == 'RawData':
+                #     arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+                # dict_data[key] = arr
+            
+            msg = f"Finish retrieve raw data matrix for device {device}"
+            if verbose:
+                print(msg)
+            logger.info(msg)
+            
+            ##-----------------------------------------------------------
+            # Define data variables for xarray Dataset 
+            data_vars = {"FieldN": (["time", "diameter_bin_center"], dict_data['FieldN']),
+                         "FieldV": (["time", "velocity_bin_center"], dict_data['FieldV']),
+                         "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
+                        }
+            
+            # Define coordinates for xarray Dataset
+            coords = get_L1_coords(sensor_name=sensor_name)
+            coords['time'] = df['time'].values
+            
+            coords['latitude'] = device_list[device].latitude
+            coords['longitude'] = device_list[device].longitude
+            coords['altitude'] = device_list[device].latitude
+            coords['crs'] = device_list[device].crs
+            coords['disdrodb_id'] = device_list[device].disdrodb_id
+            
+            attrs['latitude'] = device_list[device].latitude
+            attrs['longitude'] = device_list[device].longitude
+            attrs['altitude'] = device_list[device].latitude
+            attrs['crs'] = device_list[device].crs
+            attrs['disdrodb_id'] = device_list[device].disdrodb_id
+            
+            # coords['latitude'] = attrs['latitude']
+            # coords['longitude'] = attrs['longitude']
+            # coords['altitude'] = attrs['altitude']
+            # coords['crs'] = attrs['crs']
     
-    #-------------------------------------------------------------------------.
+            ##-----------------------------------------------------------
+            # Create xarray Dataset
+            try:
+                ds = xr.Dataset(data_vars = data_vars, 
+                                coords = coords, 
+                                attrs = attrs,
+                                )
+            except Exception as e:
+                msg = f'Error on creation xarray dataset: {e}'
+                logger.error(msg)
+                print(msg)
+                # raise SystemExit
+            
+            ##-----------------------------------------------------------
+            # Check L1 standards 
+            check_L1_standards(ds)
+            
+            ##-----------------------------------------------------------    
+            # Write to Zarr as intermediate storage 
+            if keep_zarr:
+                tmp_zarr_fpath = os.path.join(processed_path + '/' + device + '/L1/' + campaign_name + '.zarr')
+                ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
+                zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
+                ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
+            
+            ##-----------------------------------------------------------  
+            # Write L1 dataset to netCDF
+            # Path for save into device folder
+            path = os.path.join(processed_path + '/' + device)
+            L1_nc_fpath = path + '/L1/' + campaign_name + '.nc'
+            ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
+            nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
+            
+            if debug_on:
+                ds.to_netcdf(L1_nc_fpath, engine="netcdf4")
+            else:
+                ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
+            
+            ##-----------------------------------------------------------
+            t_f = time.time() - t_i
+            msg = "L1 processing of device {} ended in {:.2f}s".format(device, t_f)
+            if verbose:
+                print(msg)
+            logger.info(msg)
+        
+        #-------------------------------------------------------------------------.
     
     msg = f'Total skipped files: {len(list_skipped_files)} on {all_files} in L0 process'
     if verbose:
