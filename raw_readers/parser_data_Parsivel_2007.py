@@ -337,7 +337,8 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             try:
                 df = dd.read_csv(filename, 
                                  skiprows = 4, 
-                                 names = raw_data_columns,assume_missing=True,
+                                 names = raw_data_columns, 
+                                 assume_missing=True,
                                  dtype = dtype_temp,
                                  **reader_kwargs
                                  )

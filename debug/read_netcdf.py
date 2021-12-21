@@ -17,11 +17,16 @@ path = f'/SharedVM/Campagne/ltnas3/Processed/{campagna}/20/L1'
 file = campagna + '.nc'
 file_path = os.path.join(path, file)
 
-f = netCDF4.Dataset(file_path)
+ds = xr.open_dataset(file_path)
 
-print(f)
+ds['time'] = ds['time'].astype('M8')
 
-f.close()
+ds['FieldN'].plot(x = 'time', y = 'diameter_bin_center')
+
+
+# ds.plot(x = 'time', y = 'diameter_bin_center')
+
+
 
 # campagna = 'Parsivel_2007'
 # path = f'/SharedVM/Campagne/ltnas3/Processed/{campagna}/L1'
