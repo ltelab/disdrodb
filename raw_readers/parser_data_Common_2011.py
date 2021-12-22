@@ -405,15 +405,6 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                     # Drop rows with more than 2 nan
                     df = df.dropna(thresh = (len(raw_data_columns) - 2), how = 'all')
                     
-                    
-                    # TODO Debug column, ask to Gionata
-                    # # Split Debug_data
-                    # df1 = df['Debug_data'].str.split(r'T ', expand=True, n = 13).add_prefix('col_')
-
-                    # df1 = df1.drop(['col_0'], axis=1)
-
-                    # df2 = df1['col_3'].str.rsplit(r'  ', expand=True, n = 6).add_prefix('col_')
-                    
                     ##------------------------------------------------------.
                     # Cast dataframe to dtypes
                     # Determine dtype based on standards 

@@ -17,24 +17,20 @@ path = f'/SharedVM/Campagne/ltnas3/Processed/{campagna}/20/L1'
 file = campagna + '.nc'
 file_path = os.path.join(path, file)
 
+campagna = 'DAVOS_2009'
+path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/50_incoming/L1"
+file = campagna + '.nc'
+file_path = os.path.join(path, file)
+
 ds = xr.open_dataset(file_path)
 
-ds['time'] = ds['time'].astype('M8')
+# ds['time'] = ds['time'].astype('M8')
 
-ds['FieldN'].plot(x = 'time', y = 'diameter_bin_center')
-
+# ds['FieldN'].plot(x = 'time', y = 'diameter_bin_center')
 
 # ds.plot(x = 'time', y = 'diameter_bin_center')
 
 
+print(ds)
 
-# campagna = 'Parsivel_2007'
-# path = f'/SharedVM/Campagne/ltnas3/Processed/{campagna}/L1'
-# file = campagna + '.nc'
-# file_path = os.path.join(path, file)
-
-# f2 = netCDF4.Dataset(file_path)
-
-# print(f2)
-
-# f2.close()
+ds.close()

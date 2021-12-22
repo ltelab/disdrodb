@@ -59,32 +59,32 @@ from disdrodb.L1 import L1_process
 #-------------------------------------------------------------------------.
 # Click implementation
 
-# @click.command(options_metavar='<options>')
+@click.command(options_metavar='<options>')
 
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-# @click.argument('processed_path', metavar ='<processed_path>') #TODO
+@click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-# @click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
-# @click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
-# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
-# @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
+@click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
+@click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+@click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/DAVOS_2009"
-processed_path = '/SharedVM/Campagne/ltnas3/Processed/DAVOS_2009'
-L0_processing = True
-L1_processing = False
-force = True
-verbose = True
-debug_on = False
-lazy = True
-keep_zarr = False
-dtype_check = False
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/DAVOS_2009"
+# processed_path = '/SharedVM/Campagne/ltnas3/Processed/DAVOS_2009'
+# L0_processing = True
+# L1_processing = False
+# force = True
+# verbose = True
+# debug_on = False
+# lazy = True
+# keep_zarr = False
+# dtype_check = False
 
 
 
@@ -176,7 +176,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     attrs['source_data_format'] = 'raw_data'        
     attrs['obs_type'] = 'raw'   # preprocess/postprocessed
     attrs['level'] = 'L0'       # L0, L1, L2, ...    
-    attrs['disdrodb_id'] = [50]   # TODO, Example   [20,21,22,40,41]        
+    attrs['disdrodb_id'] = [50, 50]   # TODO, Example   [20,21,22,40,41]        
  
     ##------------------------------------------------------------------------. 
     
@@ -310,7 +310,8 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 file_list = file_list[0:10]
             
             #----------------------------------------------------------------.
-            # - Define raw data headers 
+            # - Define raw data headers
+            #   Because there are 2 .dat file format
 
             raw_data_columns = ['id',
                                 'latitude',
@@ -335,6 +336,31 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                                 'FieldN',
                                 'FieldV',
                                 'RawData'
+                                ]
+            
+            raw_data_columns2 = ['id',
+                                'latitude',
+                                'longitude',
+                                'time',
+                                'All_nan',
+                                'sensor_battery_voltage',
+                                'weather_code_SYNOP_4680',
+                                'weather_code_SYNOP_4677',
+                                'reflectivity_16bit',
+                                'rain_kinetic_energy',
+                                'n_particles',
+                                'unknow',
+                                'datalogger_heating_current',
+                                'datalogger_battery_voltage',
+                                'unknow2',
+                                'All_0',
+                                'rain_amount_absolute_32bit',
+                                'error_code',
+                                'FieldN',
+                                'FieldV',
+                                'RawData',
+                                'sensor_status',
+                                'sensor_heating_current',
                                 ]
 
 
@@ -374,14 +400,13 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 
                 # Temp columns
                 header_col_1 = ["all","FieldV","RAW_data", "to_drop"]
-
-                dtypes_1 = {'all': 'object', 'FieldV': 'object', 'RAW_data': 'object', 'to_drop': 'object'}               
+                dtypes_1 = {'all': 'object', 'FieldV': 'object', 'RAW_data': 'object', 'to_drop': 'object'}
                 
                 try:
                     # The dat file has 2 different delimeters (, and ,,). Begin with split in 4 parts (other, N, V and RAW)
                     temp_df = dd.read_csv(filename,
                                       dtype = dtypes_1,
-                                      names = header_col_1,
+                                       names = header_col_1,
                                       **reader_kwargs
                                       )
                     
@@ -394,33 +419,34 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                         list_skipped_files.append(msg)
                         continue
                     
-                    #Drop rows with NaN N, V and RAW
-                    temp_df = temp_df.dropna(thresh = (len(raw_data_columns) - 3), how = 'all')
+                    # If string contain error, drop it
+                    temp_df = temp_df[~temp_df['all'].str.contains('Error in data reading! 0')]
                     
-                    #Put the N, V and RAW into a separate df
-                    temp_df_2 = temp_df.iloc[:, 1:3]
-                    
-                    #Some .dat files has different delimiter
-                    temp_df['all'] = temp_df['all'].str.replace(";", ",")
-
-                    #Split the 'all' column by ','
-                    temp_df_1 = temp_df['all'].str.split(',', expand=True, n=20)
-                    
-                    #Put togheter the dfs
-                    df = dd.concat([temp_df_1,temp_df_2], axis = 1, ignore_unknown_divisions=True)
-                    
-                    #Assign columns names
-                    df.columns = raw_data_columns
+                    # If fields NaN (the last 3) than another .dat file format
+                    if temp_df['FieldV'].isnull().all().compute() and temp_df['RAW_data'].isnull().all().compute() and temp_df['to_drop'].isnull().all().compute():
+                        # Split columns
+                        temp_df1 = temp_df['all'].str.split(';', expand=True, n=22).add_prefix('col_')
+                        # There is one different delimeter in a column
+                        temp_df2 = temp_df1['col_5'].str.split(',', n=1, expand=True)
+                        # Drop the split and all 0 columns
+                        temp_df1 = temp_df1.drop(columns=['col_5', 'col_22'])
+                        # Put togheter
+                        df = dd.concat([temp_df1,temp_df2], axis = 1, ignore_unknown_divisions=True)
+                        #Assign columns names
+                        df.columns = raw_data_columns2
+                    else:
+                        #Put the N, V and RAW into a separate df
+                        temp_df_2 = temp_df.iloc[:, 1:3]
+                        #Split the 'all' column by ','
+                        temp_df_1 = temp_df['all'].str.split(',', expand=True, n=20)
+                        #Put togheter the dfs
+                        df = dd.concat([temp_df_1,temp_df_2], axis = 1, ignore_unknown_divisions=True)
+                        #Assign columns names
+                        df.columns = raw_data_columns
                     
                     #Invalid values manipulation
                     df = df.replace({"na": np.nan, "nan": np.nan, "OK": 0, 'OK"': 0})
-                    
-                    #
-                    # df = df.dropna(thresh =  9, how = 'all')
-                    
-                    # df = df.replace({np.nan : 0})
-                    
-                    
+
                     # Check column number
                     if len(df.columns) != len(raw_data_columns):
                         msg = f"{filename} has wrong columns number, and has been skipped"
@@ -434,8 +460,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                     ### Keep only clean data 
                     # Drop rows with more than 2 nan
                     df = df.dropna(thresh = (len(raw_data_columns) - 2), how = 'all')
-                    
-                    
+                      
                     ##------------------------------------------------------.
                     # Cast dataframe to dtypes
                     # Determine dtype based on standards 
@@ -474,7 +499,6 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             logger.info(msg)
             logger.info('---')
                 
-            
             ##------------------------------------------------------.
             # Concatenate the dataframe 
             msg = f"Start concat dataframes for device {device}"
@@ -567,8 +591,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     
     close_log()
     
- 
-
+    
 if __name__ == '__main__':
-    # main() # when using click 
-    main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
+    main() # when using click 
+    # main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
