@@ -82,7 +82,7 @@ verbose = True
 debug_on = True
 lazy = True
 keep_zarr = False
-dtype_check = True
+dtype_check = False
 
 
 #-------------------------------------------------------------------------.
@@ -337,11 +337,6 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
                     #-------------------------------------------------------------------------
                     ### Keep only clean data 
                     # Drop latitude and longitute (always the same)
-                    
-                    # Get position if need it
-                    # np.median(df["latitude"].values.astype(float)/100)
-                    # np.median(df["longitude"].values.astype(float)/100)
-                    
                     df = df.drop(columns=['latitude', 'longitude'])
                     
                     # Drop rows with half nan values

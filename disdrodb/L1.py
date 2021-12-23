@@ -98,7 +98,7 @@ def L1_process(device, verbose, processed_path, campaign_name, L0_processing, la
         df = df.iloc[0:100,:] # df.head(100) 
         df = df.iloc[0:,:]
         
-        msg = 'Debug = True and Lazy = False, then only the first 100 rows are read'
+        msg = ' ***** Debug = True and Lazy = False, then only the first 100 rows are read *****'
         if verbose:
             print(msg)
         logger.info(msg)
@@ -143,6 +143,7 @@ def L1_process(device, verbose, processed_path, campaign_name, L0_processing, la
             da_arr = da_arr.astype(float)                
         
         dict_data[key] = da_arr
+
                    
         # Pandas/Numpy based 
         # np_arr_str =  df[key].values.astype(str)

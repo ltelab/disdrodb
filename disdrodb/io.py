@@ -556,7 +556,7 @@ def get_dtype_max_digit():
             
             'FieldN': [225],
             'FieldV': [225],
-            'RawData': [4097],
+            'RawData': [4096],
         }
 
     return dtype_max_digit
@@ -575,6 +575,9 @@ def col_dtype_check(df, file_path, verbose = False):
     
     try:
         df = df.compute()
+    except AttributeError:
+        #Not dask, so is pandas, ignore
+        pass
     except Exception as e:
         msg = f'Error on read dataframe, error: {e}'
         if verbose:
@@ -601,6 +604,13 @@ def col_dtype_check(df, file_path, verbose = False):
                     if verbose:
                         print(msg)
                     logger.warning(msg)
+                # Check exact length for FieldN, FieldV and RawData
+                # if col == 'FieldN' or col == 'FieldV':
+                #     if df[col].astype(str).str.len().min() =! dtype_max_digit[col][0] and df[col].astype(str).str.len().max() =! dtype_max_digit[col][0]:
+                #         msg = f'File: {file_path}, the values {col} are not in range: %s' % (dtype_max_digit[col][0].tolist())
+                #         if verbose:
+                #             print(msg)
+                #         logger.warning(msg)
             else:
                 msg = f'File: {file_path}, {col} has all nan, check ignored'
                 if verbose:
