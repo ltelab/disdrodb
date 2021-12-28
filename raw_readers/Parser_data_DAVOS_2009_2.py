@@ -83,8 +83,8 @@ L0_processing = False
 L1_processing = True
 force = True
 verbose = True
-debug_on = True
-lazy = False
+debug_on = False
+lazy = True
 keep_zarr = False
 dtype_check = False
 
@@ -432,7 +432,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                                      names = header_col_1,
                                      delimiter = ',,',
                                      engine='python',
-                                     na_values = 'na'
+                                     na_values = ['na','Error in data reading!', 'OK",Error in data reading! 0000.000', 'OK,Error in data reading! 0']
                                      )
                     
                     # Check if file empty
@@ -474,7 +474,13 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                         df.columns = raw_data_columns
 
                     # Invalid values manipulation
-                    df = df.replace({"na": np.nan, "nan": np.nan, "OK": 0, 'OK"': 0})        
+                    df = df.replace({"na": np.nan, 
+                                     "nan": np.nan, 
+                                     "Error in data reading!": np.nan,
+                                     'OK",Error in data reading! 0000.000': np.nan,
+                                     'OK,Error in data reading! 0': np.nan,
+                                     "OK": 0, 
+                                     'OK"': 0})        
                     
                     #Save only these colums
                     df = df[['id', 'time', 'latitude', 'longitude', 'sensor_battery_voltage','FieldN', 'FieldV', 'RawData']]
@@ -521,7 +527,13 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                         
                         df = pd.concat([df,df2], axis = 0)
                         
-                        df = df.replace({"na": np.nan, "nan": np.nan, "OK": 0})
+                        df = df.replace({"na": np.nan, 
+                                         "nan": np.nan, 
+                                         "Error in data reading!": np.nan,
+                                         'OK",Error in data reading! 0000.000': np.nan,
+                                         'OK,Error in data reading! 0': np.nan,
+                                         "OK": 0, 
+                                         'OK"': 0})
                         
                         # Fill nan latitude and longitude
                         df['latitude'] = df['latitude'].astype('float32')
@@ -552,6 +564,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                   if verbose: 
                       print(msg)
                   list_skipped_files.append(msg)
+                  
+                # Drop a lot of error lines
+                df = df.loc[df['RawData'].astype(str).str.len() == 4096]
                   
                 ##------------------------------------------------------.
                 # Cast dataframe to dtypes

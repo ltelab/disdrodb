@@ -590,8 +590,8 @@ def col_dtype_check(df, file_path, verbose = False):
             if not df[col].isnull().all():
                 # Check if data is longer than default in declared in dtype_max_digit
                 if not df[col].astype(str).str.len().max() <= dtype_max_digit[col][0]:
-                    msg1 = f'{col} has more than %s' % dtype_max_digit[col][0]
-                    msg2 = f'File: {file_path}, the values {col} have too much digits (%s) in index: %s' % dtype_max_digit[col][0], df.index[df[col].astype(str).str.len() >= dtype_max_digit[col][0]].tolist()
+                    msg1 = f'{col} has more than %s digits' % dtype_max_digit[col][0]
+                    msg2 = f"File: {file_path}, the values {col} have too much digits (%s) in index: %s" % (dtype_max_digit[col][0], df.index[df[col].astype(str).str.len() >= dtype_max_digit[col][0]].tolist())
                     if verbose:
                         print(msg1)
                         print(msg2)
@@ -606,7 +606,8 @@ def col_dtype_check(df, file_path, verbose = False):
                     logger.warning(msg)
                 # Check exact length for FieldN, FieldV and RawData
                 # if col == 'FieldN' or col == 'FieldV':
-                #     if df[col].astype(str).str.len().min() =! dtype_max_digit[col][0] and df[col].astype(str).str.len().max() =! dtype_max_digit[col][0]:
+                #     # if df[col].astype(str).str.len().min() =! dtype_max_digit[col][0] or df[col].astype(str).str.len().max() =! dtype_max_digit[col][0]:
+                #     if df[col].astype(str).str.len().min() != dtype_max_digit[col][0] or df[col].astype(str).str.len().max() != dtype_max_digit[col][0]:
                 #         msg = f'File: {file_path}, the values {col} are not in range: %s' % (dtype_max_digit[col][0].tolist())
                 #         if verbose:
                 #             print(msg)
@@ -619,7 +620,7 @@ def col_dtype_check(df, file_path, verbose = False):
             pass
                  
         except KeyError:
-            if not col in ignore_colums_range:
+            if col in ignore_colums_range:
                 msg = f'File: {file_path}, no range values for {col}, check ignored'
                 if verbose:
                     print(msg)

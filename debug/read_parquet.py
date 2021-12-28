@@ -5,13 +5,14 @@ Created on Fri Dec 10 11:41:47 2021
 
 @author: kimbo
 """
+
 import os
 os.chdir(os.path.normpath(os.getcwd() + os.sep + os.pardir))
 import pandas as pd
 import dask.dataframe as dd
 import os
 import numpy as np
-from disdrodb.io import col_dtype_check
+# from disdrodb.io import col_dtype_check
 
 
 campagna = 'DAVOS_2009_2'
@@ -45,7 +46,7 @@ df2 = df2.compute()
 # print(len(list_arr_str2[0]))
 
 
-col_dtype_check(df, path, verbose=True)
+# col_dtype_check(df, path, verbose=True)
 
 
 n_timesteps = df.shape[0]
