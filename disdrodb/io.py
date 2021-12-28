@@ -55,6 +55,11 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
     # raw_campaign_dir = os.path.join(raw_dir, "raw", campaign_name)
     # In Ticino_2018 there is data folder and not raw
     
+    if os.path.isdir(os.path.join(raw_dir,"Raw_data")):
+        name_data_folder = 'Raw_data'
+    else:
+        name_data_folder = 'data'
+    
     processed_campaign_dir = check_processed_folder(processed_path)
     
     # Start logger
@@ -63,7 +68,7 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
     
     # Check if campaign has device folder
     has_device_folder = False
-    list_file = glob.glob(os.path.join(raw_dir,"data", "*"))
+    list_file = glob.glob(os.path.join(raw_dir, name_data_folder , "*"))
     for element in list_file:
         if os.path.isdir(element):
             has_device_folder = True
@@ -71,7 +76,7 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
     
     # Create station subfolder if need it
     if has_device_folder:
-        for station_folder in glob.glob(os.path.join(raw_dir,"data", "*")):
+        for station_folder in glob.glob(os.path.join(raw_dir, name_data_folder , "*")):
             try:
                 station_folder_path = os.path.join(processed_path, os.path.basename(os.path.normpath(station_folder)))
                 os.makedirs(station_folder_path)
@@ -125,7 +130,7 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
             logger.debug(f'Found {L1_folder_path}')
             pass
         except (Exception) as e:
-            msg = f"Can not create folder L0 1inside <L1_folder_path>. Error: {e}"
+            msg = f"Can not create folder L1 inside <L1_folder_path>. Error: {e}"
             logger.exception(msg)
             raise FileNotFoundError(msg)
             

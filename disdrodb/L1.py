@@ -46,12 +46,12 @@ from disdrodb.sensor import Sensor
 #### Perform L1 processing ####
 ###############################
 
-def L1_process(device, verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list):
+def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list, device = None):
     
-
     # Start logger
     global logger
     logger = log(processed_path, 'L1')
+
     
     if lazy: 
         import dask.dataframe as dd
@@ -66,7 +66,11 @@ def L1_process(device, verbose, processed_path, campaign_name, L0_processing, la
     ##-----------------------------------------------------------
     # Check the L0 df is available 
     # Path device folder parquet
-    df_fpath = os.path.join(processed_path + '/' + device + '/L0/' + campaign_name + '.parquet')
+    if device == None:
+        df_fpath = os.path.join(processed_path + '/L0/' + campaign_name + '.parquet')
+    else:
+        df_fpath = os.path.join(processed_path + '/' + device + '/L0/' + campaign_name + '.parquet')
+    
     if not L0_processing:
         if not os.path.exists(df_fpath):
             msg = "Need to run L0 processing. The {df_fpath} file is not available."
@@ -170,23 +174,25 @@ def L1_process(device, verbose, processed_path, campaign_name, L0_processing, la
     # Define coordinates for xarray Dataset
     coords = get_L1_coords(sensor_name=sensor_name)
     coords['time'] = df['time'].values
+    
+    if device == None:
+        coords['latitude'] = attrs['latitude']
+        coords['longitude'] = attrs['longitude']
+        coords['altitude'] = attrs['altitude']
+        coords['crs'] = attrs['crs']
+    else:
+        coords['latitude'] = device_list[device].latitude
+        coords['longitude'] = device_list[device].longitude
+        coords['altitude'] = device_list[device].latitude
+        coords['crs'] = device_list[device].crs
+        coords['disdrodb_id'] = device_list[device].disdrodb_id
 
-    coords['latitude'] = device_list[device].latitude
-    coords['longitude'] = device_list[device].longitude
-    coords['altitude'] = device_list[device].latitude
-    coords['crs'] = device_list[device].crs
-    coords['disdrodb_id'] = device_list[device].disdrodb_id
+        attrs['latitude'] = device_list[device].latitude
+        attrs['longitude'] = device_list[device].longitude
+        attrs['altitude'] = device_list[device].latitude
+        attrs['crs'] = device_list[device].crs
+        attrs['disdrodb_id'] = device_list[device].disdrodb_id
 
-    attrs['latitude'] = device_list[device].latitude
-    attrs['longitude'] = device_list[device].longitude
-    attrs['altitude'] = device_list[device].latitude
-    attrs['crs'] = device_list[device].crs
-    attrs['disdrodb_id'] = device_list[device].disdrodb_id
-
-    # coords['latitude'] = attrs['latitude']
-    # coords['longitude'] = attrs['longitude']
-    # coords['altitude'] = attrs['altitude']
-    # coords['crs'] = attrs['crs']
 
     ##-----------------------------------------------------------
     # Create xarray Dataset
@@ -208,7 +214,10 @@ def L1_process(device, verbose, processed_path, campaign_name, L0_processing, la
     ##-----------------------------------------------------------    
     # Write to Zarr as intermediate storage 
     if keep_zarr:
-        tmp_zarr_fpath = os.path.join(processed_path + '/' + device + '/L1/' + campaign_name + '.zarr')
+        if device == None:
+            tmp_zarr_fpath = os.path.join(processed_path + '/L1/' + campaign_name + '.zarr')
+        else:
+            tmp_zarr_fpath = os.path.join(processed_path + '/' + device + '/L1/' + campaign_name + '.zarr')
         ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
         zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
         ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
@@ -216,12 +225,27 @@ def L1_process(device, verbose, processed_path, campaign_name, L0_processing, la
     ##-----------------------------------------------------------  
     # Write L1 dataset to netCDF
     # Path for save into device folder
-    path = os.path.join(processed_path + '/' + device)
+    if device == None:
+        path = processed_path
+    else:
+        path = os.path.join(processed_path + '/' + device)
+    
     L1_nc_fpath = path + '/L1/' + campaign_name + '.nc'
     ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
     nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
-
-    if debug_on:
+    
+    try:
+        if debug_on:
+            ds.to_netcdf(L1_nc_fpath, engine="netcdf4")
+        else:
+            ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
+    except ValueError as e:
+        msg = f'Error, try save withouth encoding: {e}'
+        logger.error(msg)
+        print(msg)
         ds.to_netcdf(L1_nc_fpath, engine="netcdf4")
-    else:
-        ds.to_netcdf(L1_nc_fpath, engine="netcdf4", encoding=nc_encoding_dict)
+    except Exception as e:
+        msg = f'Error on save netCDF: {e}'
+        logger.error(msg)
+        print(msg)
+        

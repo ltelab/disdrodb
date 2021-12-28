@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Dec 17 14:31:45 2021
+Created on Tue Dec 28 13:01:54 2021
 
 @author: kimbo
 """
@@ -16,8 +16,6 @@ import time
 import dask.array as da
 import numpy as np 
 import xarray as xr
-import dask.dataframe as dd
-import pandas as pd
 
 
 from disdrodb.io import check_folder_structure
@@ -45,19 +43,6 @@ from disdrodb.sensor import Sensor
 
 from disdrodb.L1 import L1_process
 
-### TODO 4 Kimbo tomorrow
-
-# To think eventually 
-# --> Intermediate storage in Zarr: 74.32s
-# --> Direct writing to netCDF: 61s
-
-## Infer Arrow schema from pandas
-# import pyarrow as pa
-# schema = pa.Schema.from_pandas(df)
-
-# Make template work for Ticino, Payerne, 1 ARM Parsivel, 1 UK Diven, 1 Hymex
-
-
 #-------------------------------------------------------------------------.
 # Click implementation
 
@@ -77,8 +62,8 @@ from disdrodb.L1 import L1_process
 # @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/DAVOS_2009_2"
-processed_path = '/SharedVM/Campagne/ltnas3/Processed/DAVOS_2009_2'
+raw_dir = "/SharedVM/Campagne/ltnas3/Raw/DAVOS_2009_2011"
+processed_path = '/SharedVM/Campagne/ltnas3/Processed/DAVOS_2009_2011'
 L0_processing = False
 L1_processing = True
 force = True
@@ -103,19 +88,30 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     
     '''
     #-------------------------------------------------------------------------.
+    # Hard coded server path
+    # processed_path = '/ltenas3/0_Data/ParsivelDB/Processed/Ticino_2018'
+    
+    #-------------------------------------------------------------------------.
+    # Whether to use pandas or dask 
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
+
+    #-------------------------------------------------------------------------.
     # - Define instrument type 
     sensor_name = ""
     #-------------------------------------------------------------------------.
     ### Define attributes 
     attrs = get_attrs_standards()
     # - Description
-    attrs['title'] = 'Davos_2009_2'
+    attrs['title'] = 'DAVOS_2009_2011'
     attrs['description'] = '' 
     attrs['institution'] = 'Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne' 
     attrs['source'] = ''
     attrs['history'] = ''
     attrs['conventions'] = ''
-    attrs['campaign_name'] = 'Davos_2009_2'
+    attrs['campaign_name'] = 'DAVOS_2009_2011'
     attrs['project_name'] = "",
     
     # - Instrument specs 
@@ -140,9 +136,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     attrs['country'] = "Switzerland"  
     attrs['continent'] = "Europe" 
  
-    attrs['latitude'] = [0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
-    attrs['longitude'] = [0,0,0,0,0] # TODO, Example [1,2,3,4,5]
-    attrs['altitude'] = [0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
+    attrs['latitude'] = [0,0,0]  # TODO, Example [1,2,3,4,5]
+    attrs['longitude'] = [0,0,0] # TODO, Example [1,2,3,4,5]
+    attrs['altitude'] = [0,0,0]  # TODO, Example [1,2,3,4,5]
     
     attrs['latitude_unit'] = "DegreesNorth"   
     attrs['longitude_unit'] = "DegreesEast"   
@@ -167,7 +163,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     attrs['source_data_format'] = 'raw_data'        
     attrs['obs_type'] = 'raw'   # preprocess/postprocessed
     attrs['level'] = 'L0'       # L0, L1, L2, ...    
-    attrs['disdrodb_id'] = [51]   # TODO, Example   [20,21,22,40,41]        
+    attrs['disdrodb_id'] = [50,60,70]   # TODO, Example   [20,21,22,40,41]        
  
     ##------------------------------------------------------------------------. 
     
@@ -207,7 +203,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     # Popolate device list
     device_list = {}
     i = 0
-    for device in glob.glob(os.path.join(raw_dir,"data", "*")):
+    for device in glob.glob(os.path.join(raw_dir,"Raw_data", "*")):
         try:
             device_list[os.path.basename(device)] = Sensor(
                         attrs['disdrodb_id'][i],
@@ -269,7 +265,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     ##------------------------------------------------------.   
     # Process all devices
     
-    all_files = len(glob.glob(os.path.join(raw_dir, 'data', "**/*")))
+    all_files = len(glob.glob(os.path.join(raw_dir, 'Raw_data', "**/*")))
     list_skipped_files = []
     
     msg = f'{all_files} files to process in {raw_dir}'
@@ -277,9 +273,13 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
         print(msg)
     logger.info(msg)
     
+    msg = f'{all_files} files to process in {raw_dir}'
+    if verbose:
+        print(msg)
+    logger.info(msg)
+    
     for device in device_list:
-        device_path = os.path.join(raw_dir,'data', device)
-    # for device in range (0,1):
+        device_path = os.path.join(raw_dir,'Raw_data', device)
         
         # for device in 
         if L0_processing: 
@@ -300,143 +300,85 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             if verbose:
                 print(msg)
             logger.info(msg)
-            # - Retrieve filepaths of raw data files 
-            # file_list = sorted(glob.glob(os.path.join(raw_dir,"*")))
-            # - With campaign path and all the stations files
             
-            file_list = sorted(glob.glob(os.path.join(device_path,"**/*.dat*"), recursive = True))      
-            # file_list = glob.glob(os.path.join(raw_dir,"nan_zip", "*"))
+            file_list = sorted(glob.glob(os.path.join(device_path,"**/*.dat*"), recursive = True))
             
-            if debug_on:
-                file_list = file_list[0:5]
+            if debug_on: 
+                file_list = file_list[0:3]
                 pass
             
             #----------------------------------------------------------------.
-            # - Define raw data headers 
+            # - Define raw data headers
             
-            raw_data_columns = ['id',
-                                'latitude',
-                                'longitude',
-                                'time',
-                                'All_nan',
-                                'sensor_status',
-                                'sensor_heating_current',
-                                'sensor_battery_voltage',
+            # Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","TransmitTime","FieldN","Fieldv","RowData","CommErrorCount"
+    
+            raw_data_columns = ['time',
+                                'id',
+                                'datalogger_temperature',
+                                'datalogger_voltage',
+                                'Unknow_column', #Intensity
+                                'rain_accumulated_32bit',
                                 'weather_code_SYNOP_4680',
                                 'weather_code_SYNOP_4677',
                                 'reflectivity_16bit',
-                                'rain_kinetic_energy',
+                                'mor_visibility',
+                                'laser_amplitude',
                                 'n_particles',
-                                'unknow',
-                                'datalogger_heating_current',
-                                'datalogger_battery_voltage',
-                                'unknow2',
-                                'All_0',
+                                'sensor_temperature',
+                                'sensor_heating_current',
+                                'sensor_battery_voltage',
+                                'sensor_status',
                                 'rain_amount_absolute_32bit',
-                                'error_code',
+                                'Debug_data',
                                 'FieldN',
                                 'FieldV',
-                                'RawData'
+                                'RawData',
+                                'All_0',
                                 ]
             
-            raw_data_columns2 = [
-                "id",
-                "latitude",
-                "longitude",
-                "time",
-                "All_nan",
-                "sensor_battery_voltage",
-                "weather_code_SYNOP_4680",
-                "weather_code_SYNOP_4677",
-                "reflectivity_16bit",
-                "rain_kinetic_energy",
-                "n_particles",
-                "unknow",
-                "datalogger_heating_current",
-                "datalogger_battery_voltage",
-                "unknow2",
-                "All_0",
-                "rain_amount_absolute_32bit",
-                "error_code",
-                "FieldN",
-                "FieldV",
-                "RawData",
-                "sensor_status",
-                "sensor_heating_current",
-            ]
-
-            raw_data_columns_error = ['id', 
-                                'latitude', 
-                                'longitude', 
-                                'time', 
-                                'sensor_battery_voltage', 
-                                'Debug_data', 
-                                'FieldN', 
-                                'FieldV', 
-                                'RawData'
-                                ]
             
-            raw_data_columns2_error = ['id', 
-                                 'latitude', 
-                                 'longitude', 
-                                 'time', 
-                                 'reflectivity_16bit', 
-                                 'All_5000', 
-                                 'n_particles', 
-                                 'sensor_temperature', 
-                                 'sensor_heating_current', 
-                                 'sensor_battery_voltage', 
-                                 'error_code', 
-                                 'FieldN', 
-                                 'FieldV', 
-                                 'RawData', 
-                                 'sensor_status', 
-                                 'rain_rate_32bit'
-                                 ]
-
-
-            
-            time_col = ['time']
+            # time_col = ['time']
             
             check_valid_varname(raw_data_columns)
             
             ##------------------------------------------------------.      
             # Determine dtype based on standards 
             dtype_dict = get_dtype_standards_all_object()
-            
             # dtype_dict = {column: dtype_dict[column] for column in raw_data_columns}
             
-            ##------------------------------------------------------.
-            # Loop over all files
             
             msg = f"{len(file_list)} files to process for {device}"
             if verbose:
                 print(msg)
             logger.info(msg)
             
+            ##------------------------------------------------------.
+            # Define reader options 
+            reader_kwargs = {}
+            reader_kwargs['delimiter'] = '","'
+            reader_kwargs["on_bad_lines"] = 'skip'
+            reader_kwargs["engine"] = 'python'
+            # - Replace custom NA with standard flags 
+            reader_kwargs['na_values'] = ['', 'error', 'NA', 'na']
+            # Define time column
+            # reader_kwargs['parse_dates'] = time_col
+            reader_kwargs["blocksize"] = None
+            
+            ##------------------------------------------------------.
+            # Loop over all files
+            
             list_df = []
             for filename in file_list:
                 
                 try:
-                    # The dat file has 2 different formats, read the Parserror line for know when change format
-                    df = pd.read_csv(filename)
-                    
-                    # If doesn't error, parse normally
-                    
-                    # Temp columns
-                    header_col_1 = ["all","FieldV","RAW_data", "to_drop"]
-                    dtypes_1 = {'all': 'object', 'FieldV': 'object', 'RAW_data': 'object', 'to_drop': 'object'}
-
-                    temp_df = pd.read_csv(filename,
-                                     dtype = dtypes_1,
-                                     names = header_col_1,
-                                     delimiter = ',,',
-                                     engine='python',
-                                     na_values = ['na','Error in data reading!', 'OK",Error in data reading! 0000.000', 'OK,Error in data reading! 0']
-                                     )
+                    df = dd.read_csv(filename,
+                                       names = raw_data_columns,
+                                       dtype = dtype_dict,
+                                      **reader_kwargs
+                                      )
                     
                     # Check if file empty
-                    if len(temp_df.index) == 0:
+                    if len(df.index) == 0:
                         msg = f"{filename} is empty and has been skipped."
                         logger.warning(msg)
                         if verbose: 
@@ -444,172 +386,57 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                         list_skipped_files.append(msg)
                         continue
                     
-                    # If string contain error, drop it
-                    # temp_df = temp_df[~temp_df["all"].str.contains("Error in data reading! 0")]
-
-                    # If fields NaN (the last 3) than another .dat file format
-                    if (
-                        temp_df["FieldV"].isnull().all()
-                        and temp_df["RAW_data"].isnull().all()
-                        and temp_df["to_drop"].isnull().all()
-                    ):
-                        # Split columns
-                        temp_df1 = temp_df["all"].str.split(";", expand=True, n=22).add_prefix("col_")
-                        # There is one different delimeter in a column
-                        temp_df2 = temp_df1["col_5"].str.split(",", n=1, expand=True)
-                        # Drop the split and all 0 columns
-                        temp_df1 = temp_df1.drop(columns=["col_5", "col_22"])
-                        # Put togheter
-                        df = pd.concat([temp_df1, temp_df2], axis=1)
-                        # Assign columns names
-                        df.columns = raw_data_columns2
-                    else:
-                        # Put the N, V and RAW into a separate df
-                        temp_df_2 = temp_df.iloc[:, 1:3]
-                        # Split the 'all' column by ','
-                        temp_df_1 = temp_df["all"].str.split(",", expand=True, n=20).add_prefix("col_")
-                        # Put togheter the dfs
-                        df = pd.concat([temp_df_1, temp_df_2], axis=1)
-                        # Assign columns names
-                        df.columns = raw_data_columns
-
-                    # Invalid values manipulation
-                    df = df.replace({"na": np.nan, 
-                                     "nan": np.nan, 
-                                     "Error in data reading!": np.nan,
-                                     'OK",Error in data reading! 0000.000': np.nan,
-                                     'OK,Error in data reading! 0': np.nan,
-                                     "OK": 0, 
-                                     'OK"': 0})        
+    
+                    # Check column number
+                    if len(df.columns) != len(raw_data_columns):
+                        msg = f"{filename} has wrong columns number, and has been skipped"
+                        logger.warning(msg)
+                        if verbose: 
+                            print(msg)
+                        list_skipped_files.append(msg)
+                        continue
                     
-                    #Save only these colums
-                    df = df[['id', 'time', 'latitude', 'longitude', 'sensor_battery_voltage','FieldN', 'FieldV', 'RawData']]
+                    #-------------------------------------------------------------------------
+                    ### Keep only clean data 
+                    # Remove " on time
+                    df['time'] = df['time'].str[1:]
                     
-                    # TODO implement with dask
-                except pd.errors.ParserError as e:
-                        #Get line error for parserror
-                        skip = int((str(e).split(' ')[10])[0: -1])
-                        df = pd.read_csv(filename,
-                                         nrows = (skip -1), 
-                                         on_bad_lines = 'skip', 
-                                         header=None, 
-                                         prefix='col_',
-                                         low_memory=False
-                                         )
-                        
-                        df = df.drop(columns=['col_4','col_6', 'col_7', 'col_8','col_9', 'col_10', 'col_11', 'col_12', 'col_13', 'col_14', 'col_15','col_16', 'col_17', 'col_18', 'col_23'])
-                        
-                        # df = df.replace({"na": np.nan, "OK": 0})
-                        
-                        df.columns = raw_data_columns_error
-                        
-                        # -----------------------------------
-                        
-                        df2 = pd.read_csv(filename, 
-                                          skiprows = skip, 
-                                          delimiter=';', 
-                                          header=None, 
-                                          prefix='col_',
-                                          low_memory=False
-                                          )
-                        
-                        df3 = df2['col_5'].str.split(',', n=1, expand=True)
-                        
-                        df3.columns = ['sensor_status','rain_rate_32bit']
-
-                        df2 = pd.concat([df2,df3], axis = 1)
-                        
-                        df2 = df2.drop(columns=['col_4', 'col_5', 'col_6', 'col_7', 'col_8', 'col_12', 'col_16', 'col_17', 'col_22'])
-                        
-                        df2.columns = raw_data_columns2_error
-                        
-                        # -------------------------------------------
-                        
-                        df = pd.concat([df,df2], axis = 0)
-                        
-                        df = df.replace({"na": np.nan, 
-                                         "nan": np.nan, 
-                                         "Error in data reading!": np.nan,
-                                         'OK",Error in data reading! 0000.000': np.nan,
-                                         'OK,Error in data reading! 0': np.nan,
-                                         "OK": 0, 
-                                         'OK"': 0})
-                        
-                        # Fill nan latitude and longitude
-                        df['latitude'] = df['latitude'].astype('float32')
-                        
-                        df['latitude'] = df['latitude'].fillna((df['latitude'].mean()))
-                        
-                        df['longitude'] = df['longitude'].astype('float32')
-                        
-                        df['longitude'] = df['longitude'].fillna((df['latitude'].mean()))
-                        
-                        # Drop rows with more than 8 nan
-                        df = df.dropna(thresh =  9, how = 'all')
-                        
-                        # Not null df
-                        df = df[['id','time','latitude','longitude','sensor_battery_voltage','FieldN','FieldV', 'RawData']]
-                        
-                except pd.errors.EmptyDataError:
-                    msg = f'{filename} is empty and has been skipped'
-                    logger.warning(msg)
-                    if verbose: 
-                        print(msg)
-                    list_skipped_files.append(msg)
-                    continue
+                    # Drop debug_data and All_0
+                    df = df.drop(columns=['Debug_data', 'All_0'])
                     
-                except (Exception, ValueError) as e:
-                  msg = f"{filename} has been skipped. The error is {e}"
-                  logger.warning(msg)
-                  if verbose: 
-                      print(msg)
-                  list_skipped_files.append(msg)
-                  
-                # Drop a lot of error lines
-                df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-                  
-                ##------------------------------------------------------.
-                # Cast dataframe to dtypes
-                # Determine dtype based on standards 
-                dtype_dict = get_L0_dtype_standards()
-                # dtype_dict = {column: dtype_dict[column] for column in df.columns}
-
-                for col in df.columns:
-                    try:
-                        df[col] = df[col].astype(dtype_dict[col])
-                    except KeyError:
-                        # If column dtype is not into L0_dtype_standards, assign object
-                        df[col] = df[col].astype('object')
-                        pass
-                    
-                #Parse time
-                df['time'] = df['time'].astype('datetime64[ns]')
-                    
-                ##------------------------------------------------------.
-                # Check dtype
-                if dtype_check:
-                    col_dtype_check(df, filename, verbose)
-                    
-                if debug_on:
-                    print(f' ***** {filename} has {len(df.index)} rows ***** ')
-                    rows_processed = rows_processed + len(df.index)
-                    
-                # ---------------------------------------------------------- 
-                # Append to the list of dataframe 
-                try:
+                    # Drop rows with more than 8 nan
+                    df = df.dropna(thresh =  9, how = 'all')
+                      
+                    ##------------------------------------------------------.
+                    # Cast dataframe to dtypes
+                    # Determine dtype based on standards 
+                    dtype_dict = get_L0_dtype_standards()
+    
+                    for col in df.columns:
+                        try:
+                            df[col] = df[col].astype(dtype_dict[col])
+                        except KeyError:
+                            # If column dtype is not into L0_dtype_standards, assign object
+                            df[col] = df[col].astype('object')
+                            pass
+                        
+                        
+                    ##------------------------------------------------------.
+                    # Check dtype
+                    if dtype_check:
+                        col_dtype_check(df, filename, verbose)
+    
+                    # - Append to the list of dataframe 
                     list_df.append(df)
                     
                     logger.debug(f'{filename} processed successfully')
                     
-                except Exception as e:
+                except (Exception, ValueError) as e:
                   msg = f"{filename} has been skipped. The error is {e}"
                   logger.warning(f'{filename} has been skipped')
                   if verbose: 
                       print(msg)
                   list_skipped_files.append(msg)
-                  continue
-            
-            # ----------------------------------------------------------
             
             msg = f"{len(list_skipped_files)} files on {len(file_list)} for {device} has been skipped."
             if verbose:      
@@ -617,8 +444,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             logger.info('---')
             logger.info(msg)
             logger.info('---')
-             
-            
+                
             ##------------------------------------------------------.
             # Concatenate the dataframe 
             msg = f"Start concat dataframes for device {device}"
@@ -630,7 +456,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 df = dd.concat(list_df, axis=0, ignore_index = True)
                 
                 if debug_on:
-                    print(f' ***** Proccessd rows for {device} are {len(df)} before time duplicates ***** ')   
+                    print(f' ***** Proccessd rows for {device} are {len(df)} before time duplicates ***** ')
                 
                 # Drop duplicated values 
                 df = df.drop_duplicates(subset="time")
@@ -644,8 +470,6 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 msg = f"Can not create concat data files. Error: {e}"
                 logger.exception(msg)
                 raise ValueError(msg)
-                
-              
             
             msg = f"Finish concat dataframes for device {device}"
             if verbose:
@@ -681,7 +505,6 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             
             if debug_on:
                 print(f' ***** {len(df.index)} on {rows_processed} processed rows are saved ***** ')
-            
             ##------------------------------------------------------.   
             # Delete temp variables
             del df
@@ -692,7 +515,6 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
         #### Perform L1 processing ####
         ###############################
         if L1_processing: 
-            
             if debug_on:
                 print()
                 print(' ***** Debug mode ON ***** ')
@@ -702,7 +524,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 print()
                 print(' ***** Lazy mode OFF ***** ')
                 print()
-            
+                
         ##-----------------------------------------------------------
             t_i = time.time()  
             msg =f"L1 processing of device {device} started"
@@ -710,7 +532,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 print(msg)
             logger.info(msg)
             
-            L1_process(device, verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list)
+            L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list, device)
             
             t_f = time.time() - t_i
             msg = "L1 processing of device {} ended in {:.2f}s".format(device, t_f)
@@ -733,8 +555,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     
     close_log()
     
- 
-
+    
 if __name__ == '__main__':
     # main() # when using click 
     main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
