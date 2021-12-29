@@ -15,8 +15,8 @@ import numpy as np
 # from disdrodb.io import col_dtype_check
 
 
-campagna = 'DAVOS_2009_2011'
-path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/70/L0"
+campagna = 'EPFL_Roof_2008'
+path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/01/L0"
 file = campagna + '.parquet'
 file_path = os.path.join(path, file)
 

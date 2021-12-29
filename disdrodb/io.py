@@ -550,7 +550,7 @@ def get_dtype_max_digit():
             'sensor_status': [1],
             'laser_amplitude': [5],
             'error_code': [1],
-            'datalogger_temperature': [3],
+            'datalogger_temperature': [4],
             'datalogger_voltage': [4],
             'datalogger_error': [1],
             
