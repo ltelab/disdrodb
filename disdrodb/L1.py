@@ -249,3 +249,8 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
         logger.error(msg)
         print(msg)
         
+    # Delete variables
+    del ds
+    del da_arr
+    del dd_series
+        

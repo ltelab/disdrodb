@@ -47,32 +47,32 @@ from disdrodb.L1 import L1_process
 #-------------------------------------------------------------------------.
 # Click implementation
 
-@click.command(options_metavar='<options>')
+# @click.command(options_metavar='<options>')
 
-@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-@click.argument('processed_path', metavar ='<processed_path>') #TODO
+# @click.argument('processed_path', metavar ='<processed_path>') #TODO
 
-@click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
-@click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
-@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
-@click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
+# @click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
+# @click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
+# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+# @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 
-# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2008"
-# processed_path = '/SharedVM/Campagne/ltnas3/Processed/EPFL_Roof_2008'
-# L0_processing = True
-# L1_processing = True
-# force = True
-# verbose = True
-# debug_on = True
-# lazy = True
-# keep_zarr = False
-# dtype_check = False
+raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2008"
+processed_path = '/SharedVM/Campagne/ltnas3/Processed/EPFL_Roof_2008'
+L0_processing = True
+L1_processing = True
+force = True
+verbose = True
+debug_on = True
+lazy = True
+keep_zarr = False
+dtype_check = False
 
 
 
@@ -589,5 +589,5 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     
     
 if __name__ == '__main__':
-    main() # when using click 
-    # main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
+    # main() # when using click 
+    main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
