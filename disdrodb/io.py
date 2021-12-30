@@ -48,6 +48,20 @@ def check_processed_folder(raw_dir):
     else:
         return processed_campaign_dir
 
+def check_metadat_folder(processed_path):
+    # Create metadata folder
+    try:
+        metadata_folder_path = os.path.join(processed_path, 'metadata')
+        os.makedirs(metadata_folder_path)
+        logger.debug(f'Created {metadata_folder_path}')
+    except FileExistsError:
+        logger.debug(f'Found {metadata_folder_path}')
+        pass
+    except (Exception) as e:
+        msg = f"Can not create folder metadata inside <metadata_folder_path>. Error: {e}"
+        logger.exception(msg)
+        raise FileNotFoundError(msg)
+
 
 def check_folder_structure(raw_dir, campaign_name, processed_path):
     """Create the folder structure required for data processing"""
@@ -60,11 +74,15 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
     else:
         name_data_folder = 'data'
     
+    # Creation campaing folder
     processed_campaign_dir = check_processed_folder(processed_path)
     
     # Start logger
     global logger
     logger = log(processed_path, 'io')
+    
+    # Creation metadata folder inside campaing processed folder
+    check_metadat_folder(processed_path)
     
     # Check if campaign has device folder
     has_device_folder = False
@@ -85,6 +103,18 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
                     L0_folder_path = os.path.join(station_folder_path, 'L0')
                     os.makedirs(L0_folder_path)
                     logger.debug(f'Created {L0_folder_path}')
+                    # Create info folder inside L0
+                    try:
+                        info_folder_path = os.path.join(L0_folder_path, 'info')
+                        os.makedirs(info_folder_path)
+                        logger.debug(f'Created {info_folder_path}')
+                    except FileExistsError:
+                        logger.debug(f'Found {info_folder_path}')
+                        pass
+                    except (Exception) as e:
+                        msg = f"Can not create folder metadata inside <info_folder_path>. Error: {e}"
+                        logger.exception(msg)
+                        raise FileNotFoundError(msg)
                 except FileExistsError:
                     logger.debug(f'Found {L0_folder_path}')
                     pass
@@ -115,6 +145,18 @@ def check_folder_structure(raw_dir, campaign_name, processed_path):
             L0_folder_path = os.path.join(processed_path, 'L0')
             os.makedirs(L0_folder_path)
             logger.debug(f'Created {L0_folder_path}')
+            # Create info folder inside L0
+            try:
+                info_folder_path = os.path.join(L0_folder_path, 'info')
+                os.makedirs(info_folder_path)
+                logger.debug(f'Created {info_folder_path}')
+            except FileExistsError:
+                logger.debug(f'Found {info_folder_path}')
+                pass
+            except (Exception) as e:
+                msg = f"Can not create folder metadata inside <info_folder_path>. Error: {e}"
+                logger.exception(msg)
+                raise FileNotFoundError(msg)
         except FileExistsError:
             logger.debug(f'Found {L0_folder_path}')
             pass
@@ -152,7 +194,7 @@ def _check_sensor_name(sensor_name):
 
 def _write_to_parquet(df, path, campaign_name, force):  
     # Check if a file already exists (and remove if force=True)
-    fpath = path + '/' + campaign_name + '.parquet'
+    fpath = path + campaign_name + '.parquet'
     if os.path.exists(fpath):
         if not force:
             msg = f"--force is False and a file already exists at:{fpath}"

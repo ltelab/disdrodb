@@ -46,7 +46,7 @@ from disdrodb.sensor import Sensor
 #### Perform L1 processing ####
 ###############################
 
-def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list, device = None):
+def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list, device = None, json_flag = None):
     
     # Start logger
     global logger
@@ -69,7 +69,10 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
     if device == None:
         df_fpath = os.path.join(processed_path + '/L0/' + campaign_name + '.parquet')
     else:
-        df_fpath = os.path.join(processed_path + '/' + device + '/L0/' + campaign_name + '.parquet')
+        if json_flag:
+            df_fpath = os.path.join(processed_path + '/' + os.path.basename(device.path) + '/L0/')
+        else:
+            df_fpath = os.path.join(processed_path + '/' + device + '/L0/' + campaign_name + '.parquet')
     
     if not L0_processing:
         if not os.path.exists(df_fpath):
@@ -99,10 +102,13 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
     ##-----------------------------------------------------------
     # Subset row sample to debug 
     if not lazy and debug_on:
-        df = df.iloc[0:100,:] # df.head(100) 
-        df = df.iloc[0:,:]
+        # df = df.iloc[0:100,:] # df.head(100) 
+        # df = df.iloc[0:,:]
+        if not lazy:
+            msg = ' ***** Debug = True, then only the first 100 rows are read *****'
+        else:
+            msg = ' ***** Debug = True and Lazy = False, then only the first 100 rows are read *****'
         
-        msg = ' ***** Debug = True and Lazy = False, then only the first 100 rows are read *****'
         if verbose:
             print(msg)
         logger.info(msg)
@@ -175,23 +181,36 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
     coords = get_L1_coords(sensor_name=sensor_name)
     coords['time'] = df['time'].values
     
-    if device == None:
-        coords['latitude'] = attrs['latitude']
-        coords['longitude'] = attrs['longitude']
-        coords['altitude'] = attrs['altitude']
-        coords['crs'] = attrs['crs']
-    else:
-        coords['latitude'] = device_list[device].latitude
-        coords['longitude'] = device_list[device].longitude
-        coords['altitude'] = device_list[device].latitude
-        coords['crs'] = device_list[device].crs
-        coords['disdrodb_id'] = device_list[device].disdrodb_id
+    if json_flag:
+            coords['latitude'] = device.latitude
+            coords['longitude'] = device.longitude
+            coords['altitude'] = device.latitude
+            coords['crs'] = device.crs
+            coords['disdrodb_id'] = device.disdrodb_id
 
-        attrs['latitude'] = device_list[device].latitude
-        attrs['longitude'] = device_list[device].longitude
-        attrs['altitude'] = device_list[device].latitude
-        attrs['crs'] = device_list[device].crs
-        attrs['disdrodb_id'] = device_list[device].disdrodb_id
+            attrs['latitude'] = device.latitude
+            attrs['longitude'] = device.longitude
+            attrs['altitude'] = device.latitude
+            attrs['crs'] = device.crs
+            attrs['disdrodb_id'] = device.disdrodb_id
+    else:
+        if device == None:
+            coords['latitude'] = attrs['latitude']
+            coords['longitude'] = attrs['longitude']
+            coords['altitude'] = attrs['altitude']
+            coords['crs'] = attrs['crs']
+        else:
+            coords['latitude'] = device_list[device].latitude
+            coords['longitude'] = device_list[device].longitude
+            coords['altitude'] = device_list[device].latitude
+            coords['crs'] = device_list[device].crs
+            coords['disdrodb_id'] = device_list[device].disdrodb_id
+    
+            attrs['latitude'] = device_list[device].latitude
+            attrs['longitude'] = device_list[device].longitude
+            attrs['altitude'] = device_list[device].latitude
+            attrs['crs'] = device_list[device].crs
+            attrs['disdrodb_id'] = device_list[device].disdrodb_id
 
 
     ##-----------------------------------------------------------
@@ -217,7 +236,10 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
         if device == None:
             tmp_zarr_fpath = os.path.join(processed_path + '/L1/' + campaign_name + '.zarr')
         else:
-            tmp_zarr_fpath = os.path.join(processed_path + '/' + device + '/L1/' + campaign_name + '.zarr')
+            if json_flag:
+                tmp_zarr_fpath = os.path.join(device.path + '/L1/' + campaign_name + '.zarr')
+            else:
+                tmp_zarr_fpath = os.path.join(processed_path + '/' + device + '/L1/' + campaign_name + '.zarr')
         ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
         zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
         ds.to_zarr(tmp_zarr_fpath, encoding=zarr_encoding_dict, mode = "w")
@@ -228,7 +250,10 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
     if device == None:
         path = processed_path
     else:
-        path = os.path.join(processed_path + '/' + device)
+        if json_flag:
+            path = os.path.join(processed_path + '/' + os.path.basename(device.path))
+        else:    
+            path = os.path.join(processed_path + '/' + device)
     
     L1_nc_fpath = path + '/L1/' + campaign_name + '.nc'
     ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!

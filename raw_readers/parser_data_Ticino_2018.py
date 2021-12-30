@@ -76,7 +76,7 @@ from disdrodb.logger import close_log
 # raw_dir = "/SharedVM/Campagne/ltnas3/Raw/Ticino_2018/epfl_parsivel/raw"
 # processed_path = '/SharedVM/Campagne/ltnas3/Processed/Ticino_2018'
 # l0_processing = True
-# l1_processing = False
+# l1_processing = True
 # force = True
 # verbose = True
 # debug_on = True
@@ -204,7 +204,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
     
     ##------------------------------------------------------.   
     # Start log
-    logger = log(processed_path, 'template_dev')
+    logger = log(processed_path, 'parser_Ticino_2018')
     
     msg = '### Script start ###'
     print(msg)
@@ -284,7 +284,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
         # - Replace custom NA with standard flags 
         reader_kwargs['na_values'] = 'na'
         # Define time column
-        reader_kwargs['parse_dates'] = time_col
+        # reader_kwargs['parse_dates'] = time_col
         if lazy:
             reader_kwargs["blocksize"] = None
         
@@ -417,7 +417,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             print(msg)
         logger.info(msg)
         # Path to device folder
-        path = os.path.join(processed_path)
+        path = os.path.join(processed_path + '/L0/')
         # Write to Parquet 
         _write_to_parquet(df, path, campaign_name, force)
         
@@ -457,7 +457,7 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------
             # Check the L0 df is available 
             # Path device folder parquet
-            df_fpath = os.path.join(processed_path + '/' + campaign_name + '.parquet')
+            df_fpath = os.path.join(processed_path + '/L0/' + campaign_name + '.parquet')
             if not l0_processing:
                 if not os.path.exists(df_fpath):
                     msg = "Need to run L0 processing. The {df_fpath} file is not available."
@@ -588,8 +588,8 @@ def main(raw_dir, processed_path, l0_processing, l1_processing, force, verbose, 
             ##-----------------------------------------------------------  
             # Write L1 dataset to netCDF
             # Path for save into device folder
-            path = os.path.join(processed_path)
-            L1_nc_fpath = path + '/' + campaign_name + '.nc'
+            path = os.path.join(processed_path + '/L1/')
+            L1_nc_fpath = path + campaign_name + '.nc'
             ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
             nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
             

@@ -17,6 +17,7 @@ import dask.array as da
 import numpy as np 
 import xarray as xr
 import pandas as pd
+import json
 
 
 from disdrodb.io import check_folder_structure
@@ -40,39 +41,40 @@ from disdrodb.io import get_L1_nc_encodings_standards
 from disdrodb.logger import log
 from disdrodb.logger import close_log
 
-from disdrodb.sensor import Sensor
+from disdrodb.attributes_campaing import Sensor
+from disdrodb.attributes_campaing import Campaign
 
 from disdrodb.L1 import L1_process
 
 #-------------------------------------------------------------------------.
 # Click implementation
 
-# @click.command(options_metavar='<options>')
+@click.command(options_metavar='<options>')
 
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
+@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 
-# @click.argument('processed_path', metavar ='<processed_path>') #TODO
+@click.argument('processed_path', metavar ='<processed_path>')
 
-# @click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
-# @click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
-# @click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
-# @click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
-# @click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
-# @click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
-# @click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
-# @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
+@click.option('--L0_processing',    '--L0',     is_flag=True, show_default=True, default = False,   help = 'Process the campaign in L0_processing')
+@click.option('--L1_processing',    '--L1',     is_flag=True, show_default=True, default = False,   help = "Process the campaign in L1_processing")
+@click.option('--force',            '--f',      is_flag=True, show_default=True, default = False,   help = "Force ...")
+@click.option('--verbose',          '--v',      is_flag=True, show_default=True, default = False,   help = "Verbose ...")
+@click.option('--debug_on',         '--d',      is_flag=True, show_default=True, default = False,   help = "Debug ...")
+@click.option('--lazy',             '--l',      is_flag=True, show_default=True, default = True,    help = "Lazy ...")
+@click.option('--keep_zarr',        '--kz',     is_flag=True, show_default=True, default = False,   help = "Keep zarr ...")
+@click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2008"
-processed_path = '/SharedVM/Campagne/ltnas3/Processed/EPFL_Roof_2008'
-L0_processing = True
-L1_processing = True
-force = True
-verbose = True
-debug_on = True
-lazy = True
-keep_zarr = False
-dtype_check = False
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2008"
+# processed_path = '/SharedVM/Campagne/ltnas3/Processed/EPFL_Roof_2008'
+# L0_processing = True
+# L1_processing = True
+# force = True
+# verbose = True
+# debug_on = True
+# lazy = True
+# keep_zarr = False
+# dtype_check = False
 
 
 
@@ -96,81 +98,75 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     else: 
         import pandas as dd
 
-    #-------------------------------------------------------------------------.
-    # - Define instrument type 
-    sensor_name = ""
-    #-------------------------------------------------------------------------.
-    ### Define attributes 
-    attrs = get_attrs_standards()
-    # - Description
-    attrs['title'] = 'EPFL_Roof_2008'
-    attrs['description'] = '' 
-    attrs['institution'] = 'Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne' 
-    attrs['source'] = ''
-    attrs['history'] = ''
-    attrs['conventions'] = ''
-    attrs['campaign_name'] = 'EPFL_Roof_2008'
-    attrs['project_name'] = "",
+    # #-------------------------------------------------------------------------.
+    # # - Define instrument type 
+    # sensor_name = ""
+    # #-------------------------------------------------------------------------.
+    # ### Define attributes 
+    attrs ={}
+    # attrs = get_attrs_standards()
+    # # - Description
+    # attrs['title'] = 'EPFL_Roof_2008'
+    # attrs['description'] = '' 
+    # attrs['institution'] = 'Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne' 
+    # attrs['source'] = ''
+    # attrs['history'] = ''
+    # attrs['conventions'] = ''
+    # attrs['campaign_name'] = 'EPFL_Roof_2008'
+    # attrs['project_name'] = "",
     
-    # - Instrument specs 
-    attrs['sensor_name'] = "Parsivel"
-    attrs["sensor_long_name"] = 'OTT Hydromet Parsivel'
+    # # - Instrument specs 
+    # attrs['sensor_name'] = "Parsivel"
+    # attrs["sensor_long_name"] = 'OTT Hydromet Parsivel'
     
-    attrs["sensor_beam_width"] = 180     # TODO
-    attrs["sensor_nominal_width"] = 180  # TODO
-    attrs["measurement_interval"] = 30
-    attrs["temporal_resolution"] = 30
+    # attrs["sensor_beam_width"] = 180     # TODO
+    # attrs["sensor_nominal_width"] = 180  # TODO
+    # attrs["measurement_interval"] = 30
+    # attrs["temporal_resolution"] = 30
     
-    attrs["sensor_wavelegth"] = '650 nm'
-    attrs["sensor_serial_number"] = ''
-    attrs["firmware_IOP"] = ''
-    attrs["firmware_DSP"] = ''
+    # attrs["sensor_wavelegth"] = '650 nm'
+    # attrs["sensor_serial_number"] = ''
+    # attrs["firmware_IOP"] = ''
+    # attrs["firmware_DSP"] = ''
     
-    # - Location info 
-    attrs['station_id'] = [] # TODO
-    attrs['station_name'] = [] # TODO
-    attrs['station_number'] = [] # TODO
-    attrs['location'] = [] # TODO
-    attrs['country'] = "Switzerland"  
-    attrs['continent'] = "Europe" 
+    # # - Location info 
+    # attrs['station_id'] = [] # TODO
+    # attrs['station_name'] = [] # TODO
+    # attrs['station_number'] = [] # TODO
+    # attrs['location'] = [] # TODO
+    # attrs['country'] = "Switzerland"  
+    # attrs['continent'] = "Europe" 
  
-    attrs['latitude'] = [0,0,0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
-    attrs['longitude'] = [0,0,0,0,0,0,0] # TODO, Example [1,2,3,4,5]
-    attrs['altitude'] = [0,0,0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
+    # attrs['latitude'] = [0,0,0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
+    # attrs['longitude'] = [0,0,0,0,0,0,0] # TODO, Example [1,2,3,4,5]
+    # attrs['altitude'] = [0,0,0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
     
-    attrs['latitude_unit'] = "DegreesNorth"   
-    attrs['longitude_unit'] = "DegreesEast"   
-    attrs['altitude_unit'] = "MetersAboveSeaLevel"   
+    # attrs['latitude_unit'] = "DegreesNorth"   
+    # attrs['longitude_unit'] = "DegreesEast"   
+    # attrs['altitude_unit'] = "MetersAboveSeaLevel"   
     
-    attrs['crs'] = "WGS84"   
-    attrs['EPSG'] = 4326
-    attrs['proj4_string'] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+    # attrs['crs'] = "WGS84"   
+    # attrs['EPSG'] = 4326
+    # attrs['proj4_string'] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 
-    # - Attribution 
-    attrs['contributors'] = []
-    attrs['authors'] = []
-    attrs['reference'] = ''
-    attrs['documentation'] = ''
-    attrs['website'] = ''
-    attrs['source_repository'] = ''
-    attrs['doi'] = ''    
-    attrs['contact'] = ''    
-    attrs['contact_information'] = 'http://lte.epfl.ch' 
+    # # - Attribution 
+    # attrs['contributors'] = []
+    # attrs['authors'] = []
+    # attrs['reference'] = ''
+    # attrs['documentation'] = ''
+    # attrs['website'] = ''
+    # attrs['source_repository'] = ''
+    # attrs['doi'] = ''    
+    # attrs['contact'] = ''    
+    # attrs['contact_information'] = 'http://lte.epfl.ch' 
     
-    # - DISDRODB attrs 
-    attrs['source_data_format'] = 'raw_data'
-    attrs['obs_type'] = 'raw'   # preprocess/postprocessed
-    attrs['level'] = 'L0'       # L0, L1, L2, ...    
-    attrs['disdrodb_id'] = [1,2,3,40,41,42,43]   # TODO, Example   [20,21,22,40,41]        
+    # # - DISDRODB attrs 
+    # attrs['source_data_format'] = 'raw_data'
+    # attrs['obs_type'] = 'raw'   # preprocess/postprocessed
+    # attrs['level'] = 'L0'       # L0, L1, L2, ...    
+    # attrs['disdrodb_id'] = [1,2,3,40,41,42,43]   # TODO, Example   [20,21,22,40,41]        
  
-    ##------------------------------------------------------------------------. 
-    
-    sensor_name = attrs['sensor_name']
-    
-    
-    ###############################
-    #### Perform L0 processing ####
-    ###############################
+    ##------------------------------------------------------------------------.
     
     ##------------------------------------------------------.   
     # Check the campaign path
@@ -198,67 +194,124 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     logger.info('### Script start ###')
     
     ##------------------------------------------------------.   
-    # Popolate device list
-    device_list = {}
-    i = 0
-    for device in glob.glob(os.path.join(raw_dir,"data", "*")):
-        try:
-            device_list[os.path.basename(device)] = Sensor(
-                        attrs['disdrodb_id'][i],
-                        attrs['sensor_name'],
-                        attrs["sensor_long_name"],
-                        attrs["sensor_beam_width"],
-                        attrs["sensor_nominal_width"],
-                        attrs["measurement_interval"],
-                        attrs["temporal_resolution"],
-                        attrs["sensor_wavelegth"],
-                        attrs["sensor_serial_number"],
-                        attrs["firmware_IOP"],
-                        attrs["firmware_DSP"],
-                        attrs['station_id'],
-                        attrs['station_name'],
-                        attrs['station_number'],
-                        attrs['location'],
-                        attrs['country'],
-                        attrs['continent'],
-                        attrs['latitude'][i],
-                        attrs['longitude'][i],
-                        attrs['altitude'][i],
-                        attrs['latitude_unit'] ,
-                        attrs['longitude_unit'],
-                        attrs['altitude_unit'],
-                        attrs['crs'],
-                        attrs['EPSG'],
-                        attrs['proj4_string'])
-        except IndexError:
-            device_list[os.path.basename(device)] = Sensor(
-                        os.path.basename(device),
-                        attrs['sensor_name'],
-                        attrs["sensor_long_name"],
-                        attrs["sensor_beam_width"],
-                        attrs["sensor_nominal_width"],
-                        attrs["measurement_interval"],
-                        attrs["temporal_resolution"],
-                        attrs["sensor_wavelegth"],
-                        attrs["sensor_serial_number"],
-                        attrs["firmware_IOP"],
-                        attrs["firmware_DSP"],
-                        attrs['station_id'],
-                        attrs['station_name'],
-                        attrs['station_number'],
-                        attrs['location'],
-                        attrs['country'],
-                        attrs['continent'],
-                        attrs['latitude'],
-                        attrs['longitude'],
-                        attrs['altitude'],
-                        attrs['latitude_unit'] ,
-                        attrs['longitude_unit'],
-                        attrs['altitude_unit'],
-                        attrs['crs'],
-                        attrs['EPSG'],
-                        attrs['proj4_string'])
-        i += 1
+    # Get campaing info and popolate device list
+    
+    json_flag = False
+    
+    try:
+        # File path
+        json_path = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2008/EPFL_Roof_2008.json"
+    
+        # Opening JSON file
+        f = open(json_path)
+         
+        # returns JSON object as a dictionary
+        data = json.load(f)
+    
+        # Create campagin with info
+        campaing = Campaign(data['campaing'])
+        
+        # Actual device folder inside RAW
+        device_list = glob.glob(os.path.join(raw_dir,"data", "*"))
+    
+        # Create device list with info
+        device_list_info = []
+        i = 0
+        for d in data['device']:
+            device_list_info.append(Sensor(d,device_list[i]))
+            i += 1
+         
+        # Closing file
+        f.close()
+        
+        # Temp variable for L1 processing JSON (da aggiungere solo come argomento prima di modificare tutti i parser, per ora solo per debug)
+        json_flag = True
+        
+    except Exception as e:
+        msg = f'Something wrong JSON reading: Error: {e}'
+        print(msg)
+        logger.warning(msg)
+        if verbose: 
+            print(msg)
+        #TODO
+    
+    # Check if the devices into JSON are the same like into Raw folder
+    if len(glob.glob(os.path.join(raw_dir,"data", "*"))) != len(device_list_info) + 1: # + 1 is the metadata folder
+        msg = 'Something wrong with devices info inside JSON, wrong devices count!'
+        print(msg)
+        logger.warning(msg)
+        if verbose: 
+            print(msg)
+        device_list = len(glob.glob(os.path.join(raw_dir,"data", "*")))
+        #TODO
+    
+    # Actual device folder inside RAW
+    device_list = glob.glob(os.path.join(raw_dir,"data", "*"))
+    
+    sensor_name = device_list_info[0].sensor_name
+    
+    
+    # OLD device info code
+    # device_list = {}
+    # i = 0
+    # for device in glob.glob(os.path.join(raw_dir,"data", "*")):
+    #     try:
+    #         device_list[os.path.basename(device)] = Sensor(
+    #                     attrs['disdrodb_id'][i],
+    #                     attrs['sensor_name'],
+    #                     attrs["sensor_long_name"],
+    #                     attrs["sensor_beam_width"],
+    #                     attrs["sensor_nominal_width"],
+    #                     attrs["measurement_interval"],
+    #                     attrs["temporal_resolution"],
+    #                     attrs["sensor_wavelegth"],
+    #                     attrs["sensor_serial_number"],
+    #                     attrs["firmware_IOP"],
+    #                     attrs["firmware_DSP"],
+    #                     attrs['station_id'],
+    #                     attrs['station_name'],
+    #                     attrs['station_number'],
+    #                     attrs['location'],
+    #                     attrs['country'],
+    #                     attrs['continent'],
+    #                     attrs['latitude'][i],
+    #                     attrs['longitude'][i],
+    #                     attrs['altitude'][i],
+    #                     attrs['latitude_unit'] ,
+    #                     attrs['longitude_unit'],
+    #                     attrs['altitude_unit'],
+    #                     attrs['crs'],
+    #                     attrs['EPSG'],
+    #                     attrs['proj4_string'])
+    #     except IndexError:
+    #         device_list[os.path.basename(device)] = Sensor(
+    #                     os.path.basename(device),
+    #                     attrs['sensor_name'],
+    #                     attrs["sensor_long_name"],
+    #                     attrs["sensor_beam_width"],
+    #                     attrs["sensor_nominal_width"],
+    #                     attrs["measurement_interval"],
+    #                     attrs["temporal_resolution"],
+    #                     attrs["sensor_wavelegth"],
+    #                     attrs["sensor_serial_number"],
+    #                     attrs["firmware_IOP"],
+    #                     attrs["firmware_DSP"],
+    #                     attrs['station_id'],
+    #                     attrs['station_name'],
+    #                     attrs['station_number'],
+    #                     attrs['location'],
+    #                     attrs['country'],
+    #                     attrs['continent'],
+    #                     attrs['latitude'],
+    #                     attrs['longitude'],
+    #                     attrs['altitude'],
+    #                     attrs['latitude_unit'] ,
+    #                     attrs['longitude_unit'],
+    #                     attrs['altitude_unit'],
+    #                     attrs['crs'],
+    #                     attrs['EPSG'],
+    #                     attrs['proj4_string'])
+    #     i += 1
     
     ##------------------------------------------------------.   
     # Process all devices
@@ -271,13 +324,12 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
         print(msg)
     logger.info(msg)
     
-    msg = f'{all_files} files to process in {raw_dir}'
-    if verbose:
-        print(msg)
-    logger.info(msg)
-    
-    for device in device_list:
-        device_path = os.path.join(raw_dir,'data', device)
+    for device in device_list_info:
+        device_path = device.path
+        
+        ###############################
+        #### Perform L0 processing ####
+        ###############################
         
         # for device in 
         if L0_processing: 
@@ -294,7 +346,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 print()
             
             t_i = time.time() 
-            msg = f"L0 processing of device {device} started"
+            msg = f"L0 processing of device {device.disdrodb_id} started"
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -302,7 +354,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             file_list = sorted(glob.glob(os.path.join(device_path,"**/*.dat*"), recursive = True))
             
             if debug_on: 
-                file_list = file_list[0:5]
+                file_list = file_list[0:1]
                 pass
             
             #----------------------------------------------------------------.
@@ -363,7 +415,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             check_valid_varname(raw_data_columns)
             
             
-            msg = f"{len(file_list)} files to process for {device}"
+            msg = f"{len(file_list)} files to process for {device.disdrodb_id}"
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -465,12 +517,12 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                     
                 except (Exception, ValueError) as e:
                   msg = f"{filename} has been skipped. The error is {e}"
-                  logger.warning(f'{filename} has been skipped')
+                  logger.warning(msg)
                   if verbose: 
                       print(msg)
                   list_skipped_files.append(msg)
             
-            msg = f"{len(list_skipped_files)} files on {len(file_list)} for {device} has been skipped."
+            msg = f"{len(list_skipped_files)} files on {len(file_list)} for {device.disdrodb_id} has been skipped."
             if verbose:      
                 print(msg)
             logger.info('---')
@@ -479,7 +531,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 
             ##------------------------------------------------------.
             # Concatenate the dataframe 
-            msg = f"Start concat dataframes for device {device}"
+            msg = f"Start concat dataframes for device {device.disdrodb_id}"
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -488,7 +540,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 df = dd.concat(list_df, axis=0, ignore_index = True)
                 
                 if debug_on:
-                    print(f' ***** Proccessd rows for {device} are {len(df)} before time duplicates ***** ')
+                    print(f' ***** Proccessd rows for {device.disdrodb_id} are {len(df)} before time duplicates ***** ')
                 
                 # Drop duplicated values 
                 df = df.drop_duplicates(subset="time")
@@ -496,30 +548,30 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 df = df.sort_values(by="time")
                 
                 if debug_on:
-                    print(f' ***** Proccessd rows for {device} are {len(df)} after time duplicates ***** ') 
+                    print(f' ***** Proccessd rows for {device.disdrodb_id} are {len(df)} after time duplicates ***** ') 
                 
             except (AttributeError, TypeError) as e:
                 msg = f"Can not create concat data files. Error: {e}"
                 logger.exception(msg)
                 raise ValueError(msg)
             
-            msg = f"Finish concat dataframes for device {device}"
+            msg = f"Finish concat dataframes for device {device.disdrodb_id}"
             if verbose:
                 print(msg)
             logger.info(msg)
                 
             ##------------------------------------------------------.                                   
             # Write to Parquet 
-            msg = f"Starting conversion to parquet file for device {device}"
+            msg = f"Starting conversion to parquet file for device {device.disdrodb_id}"
             if verbose:
                 print(msg)
             logger.info(msg)
             # Path to device folder
-            path = os.path.join(processed_path + '/' + device + '/L0/')
+            path = os.path.join(processed_path + '/' + os.path.basename(device.path) + '/L0/')
             # Write to Parquet 
             _write_to_parquet(df, path, campaign_name, force)
             
-            msg = f"Finish conversion to parquet file for device {device}"
+            msg = f"Finish conversion to parquet file for device {device.disdrodb_id}"
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -559,12 +611,14 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 
         ##-----------------------------------------------------------
             t_i = time.time()  
-            msg =f"L1 processing of device {device} started"
+            msg =f"L1 processing of device {device.disdrodb_id} started"
             if verbose:
                 print(msg)
             logger.info(msg)
             
-            L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list, device)
+            json_flag = True
+            
+            L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list, device, json_flag)
             
             t_f = time.time() - t_i
             msg = "L1 processing of device {} ended in {:.2f}s".format(device, t_f)
@@ -589,5 +643,5 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     
     
 if __name__ == '__main__':
-    # main() # when using click 
-    main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
+    main() # when using click 
+    # main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, debug_on, lazy, keep_zarr, dtype_check)
