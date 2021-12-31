@@ -15,8 +15,8 @@ import numpy as np
 # from disdrodb.io import col_dtype_check
 
 
-campagna = 'EPFL_Roof_2008'
-path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/01/L0"
+campagna = 'EPFL_Roof_2011'
+path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/10/L0"
 file = campagna + '.parquet'
 file_path = os.path.join(path, file)
 
@@ -24,8 +24,8 @@ df = dd.read_parquet(file_path)
 
 df = df.compute()
 
-campagna = 'Ticino_2018'
-path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/"
+campagna = 'EPFL_Roof_2011'
+path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/11/L0"
 file = campagna + '.parquet'
 file_path = os.path.join(path, file)
 
@@ -49,25 +49,25 @@ df2 = df2.compute()
 # col_dtype_check(df, path, verbose=True)
 
 
-n_timesteps = df.shape[0]
+# n_timesteps = df.shape[0]
 
-dict_data = {}
+# dict_data = {}
 
-nbins_dict = {"FieldN": 32,
-              "FieldV": 32,
-              "RawData": 1024,
-             }
+# nbins_dict = {"FieldN": 32,
+#               "FieldV": 32,
+#               "RawData": 1024,
+#              }
 
-n_bins_dict = nbins_dict
+# n_bins_dict = nbins_dict
 
-for key, n_bins in n_bins_dict.items(): 
+# for key, n_bins in n_bins_dict.items(): 
 
-    # Pandas/Numpy based 
-    np_arr_str =  df[key].values.astype(str)
-    list_arr_str = np.char.split(np_arr_str,",")
-    arr_str = np.stack(list_arr_str, axis=0) 
-    arr = arr_str[:, 0:n_bins]
-    arr = arr.astype(float)                
-    if key == 'RawData':
-        arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
-    dict_data[key] = arr
+#     # Pandas/Numpy based 
+#     np_arr_str =  df[key].values.astype(str)
+#     list_arr_str = np.char.split(np_arr_str,",")
+#     arr_str = np.stack(list_arr_str, axis=0) 
+#     arr = arr_str[:, 0:n_bins]
+#     arr = arr.astype(float)                
+#     if key == 'RawData':
+#         arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
+#     dict_data[key] = arr

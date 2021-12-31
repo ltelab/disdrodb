@@ -494,6 +494,7 @@ def get_L0_dtype_standards():
         'A_voltage?' : 'object',
         'All_nan' : 'object',
         'All_5000' : 'object',
+        'End_line' : 'object',
         
     }
     return dtype_dict
