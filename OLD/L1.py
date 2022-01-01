@@ -51,16 +51,13 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
     global logger
     logger = log(processed_path, 'L1')
 
+    if not isinstance(device, int):
+        device_id = device.disdrodb_id
     
     if lazy: 
         import dask.dataframe as dd
     else: 
         import pandas as dd
-
-    msg =f"L1 processing of device {device} started"
-    if verbose:
-        print(msg)
-    logger.info(msg)
 
     ##-----------------------------------------------------------
     # Check the L0 df is available 
@@ -114,7 +111,7 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
        
     ##-----------------------------------------------------------
     # Retrieve raw data matrix 
-    msg = f"Retrieve raw data matrix for device {device}"
+    msg = f"Retrieve raw data matrix for device {device_id}"
     if verbose:
         print(msg)
     logger.info(msg)
@@ -164,7 +161,7 @@ def L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debu
         #     arr = arr.reshape(n_timesteps, n_bins_dict['FieldN'], n_bins_dict['FieldV'])
         # dict_data[key] = arr
 
-    msg = f"Finish retrieve raw data matrix for device {device}"
+    msg = f"Finish retrieve raw data matrix for device {device_id}"
     if verbose:
         print(msg)
     logger.info(msg)

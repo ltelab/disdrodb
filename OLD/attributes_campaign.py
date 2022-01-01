@@ -6,6 +6,16 @@ Created on Wed Dec 29 17:02:42 2021
 @author: kimbo
 """
 
+import json
+import glob
+import os
+
+from disdrodb.logger import log
+from disdrodb.logger import close_log
+
+file_name = 'attributes_campaign'
+
+
 class Campaign:
     def __init__(   self,
                     list_parameters
@@ -66,6 +76,68 @@ class Sensor:
             self.station_number = list_parameters['station_number']
             self.temporal_resolution = list_parameters['temporal_resolution']
             self.path = path
+
+
+def read_JSON(json_path, processed_path, raw_dir, verbose):
+    
+    ##------------------------------------------------------.   
+    # Start logger
+    global logger
+    logger = log(processed_path, file_name)
+    
+    try:
+        # Opening JSON file
+        f = open(json_path)
+         
+        # returns JSON object as a dictionary
+        data = json.load(f)
+    
+        # Create campagin with info
+        campaign = Campaign(data['campaign'])
+        
+        # Actual device folder inside RAW
+        device_list = glob.glob(os.path.join(raw_dir,"data", "*"))
+        
+        a = 3
+    
+        # Create device list with info
+        device_list_info = []
+        i = 0
+        for d in data['device']:
+            device_list_info.append(Sensor(d,device_list[i]))
+            i += 1
+         
+        # Closing file
+        f.close()
+        
+        
+        
+    except json.decoder.JSONDecodeError as e:
+        msg = f'Error on reading JSON: {e}'
+        print(msg)
+        logger.warning(msg)
+        if verbose: 
+            print(msg)
+        
+    except Exception as e:
+        msg = f'Something wrong JSON reading: Error: {e}'
+        print(msg)
+        logger.warning(msg)
+        if verbose: 
+            print(msg)
+        #TODO
+
+    # Check if the devices into JSON are the same like into Raw folder
+    if len(device_list) != len(device_list_info):
+        msg = f'Something wrong with devices info inside JSON (found {len(device_list_info)} devices), wrong devices count (found {len(device_list)} in Raw folder)!'
+        logger.warning(msg)
+        raise ValueError(msg)
+        
+
+    # Temp variable for L1 processing JSON
+    json_flag = True
+    
+    return campaign, device_list_info, device_list
 
 
 """

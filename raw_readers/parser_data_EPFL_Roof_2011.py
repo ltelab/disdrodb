@@ -7,8 +7,7 @@ Created on Tue Dec 28 13:01:54 2021
 """
 
 import os
-os.chdir(os.path.normpath(os.getcwd() + os.sep + os.pardir))
-# os.chdir("/home/kimbo/Documents/disdrodb")
+os.chdir(os.getcwd() + os.sep + os.pardir)
 import glob 
 import shutil
 import click
@@ -41,8 +40,10 @@ from disdrodb.io import get_L1_nc_encodings_standards
 from disdrodb.logger import log
 from disdrodb.logger import close_log
 
-from disdrodb.attributes_campaign import Sensor
-from disdrodb.attributes_campaign import Campaign
+from disdrodb.attributes_campaing import Sensor
+from disdrodb.attributes_campaing import Campaign
+from disdrodb.attributes_campaing import read_JSON
+
 
 from disdrodb.L1 import L1_process
 
@@ -65,9 +66,9 @@ from disdrodb.L1 import L1_process
 @click.option('--dtype_check',        '--dc',     is_flag=True, show_default=True, default = False,   help = "Check if the data are in the standars (max lenght, data range) ...")
 
 
-# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2008"
-# processed_path = '/SharedVM/Campagne/ltnas3/Processed/EPFL_Roof_2008'
-# L0_processing = True
+# raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2011"
+# processed_path = '/SharedVM/Campagne/ltnas3/Processed/EPFL_Roof_2011'
+# L0_processing = False
 # L1_processing = True
 # force = True
 # verbose = True
@@ -98,75 +99,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     else: 
         import pandas as dd
 
-    # #-------------------------------------------------------------------------.
-    # # - Define instrument type 
-    # sensor_name = ""
-    # #-------------------------------------------------------------------------.
+
     # ### Define attributes 
     attrs ={}
-    # attrs = get_attrs_standards()
-    # # - Description
-    # attrs['title'] = 'EPFL_Roof_2008'
-    # attrs['description'] = '' 
-    # attrs['institution'] = 'Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne' 
-    # attrs['source'] = ''
-    # attrs['history'] = ''
-    # attrs['conventions'] = ''
-    # attrs['campaign_name'] = 'EPFL_Roof_2008'
-    # attrs['project_name'] = "",
-    
-    # # - Instrument specs 
-    # attrs['sensor_name'] = "Parsivel"
-    # attrs["sensor_long_name"] = 'OTT Hydromet Parsivel'
-    
-    # attrs["sensor_beam_width"] = 180     # TODO
-    # attrs["sensor_nominal_width"] = 180  # TODO
-    # attrs["measurement_interval"] = 30
-    # attrs["temporal_resolution"] = 30
-    
-    # attrs["sensor_wavelegth"] = '650 nm'
-    # attrs["sensor_serial_number"] = ''
-    # attrs["firmware_IOP"] = ''
-    # attrs["firmware_DSP"] = ''
-    
-    # # - Location info 
-    # attrs['station_id'] = [] # TODO
-    # attrs['station_name'] = [] # TODO
-    # attrs['station_number'] = [] # TODO
-    # attrs['location'] = [] # TODO
-    # attrs['country'] = "Switzerland"  
-    # attrs['continent'] = "Europe" 
- 
-    # attrs['latitude'] = [0,0,0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
-    # attrs['longitude'] = [0,0,0,0,0,0,0] # TODO, Example [1,2,3,4,5]
-    # attrs['altitude'] = [0,0,0,0,0,0,0]  # TODO, Example [1,2,3,4,5]
-    
-    # attrs['latitude_unit'] = "DegreesNorth"   
-    # attrs['longitude_unit'] = "DegreesEast"   
-    # attrs['altitude_unit'] = "MetersAboveSeaLevel"   
-    
-    # attrs['crs'] = "WGS84"   
-    # attrs['EPSG'] = 4326
-    # attrs['proj4_string'] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-
-    # # - Attribution 
-    # attrs['contributors'] = []
-    # attrs['authors'] = []
-    # attrs['reference'] = ''
-    # attrs['documentation'] = ''
-    # attrs['website'] = ''
-    # attrs['source_repository'] = ''
-    # attrs['doi'] = ''    
-    # attrs['contact'] = ''    
-    # attrs['contact_information'] = 'http://lte.epfl.ch' 
-    
-    # # - DISDRODB attrs 
-    # attrs['source_data_format'] = 'raw_data'
-    # attrs['obs_type'] = 'raw'   # preprocess/postprocessed
-    # attrs['level'] = 'L0'       # L0, L1, L2, ...    
-    # attrs['disdrodb_id'] = [1,2,3,40,41,42,43]   # TODO, Example   [20,21,22,40,41]        
- 
-    ##------------------------------------------------------------------------.
     
     ##------------------------------------------------------.   
     # Check the campaign path
@@ -198,120 +133,12 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
     
     json_flag = False
     
-    try:
-        # File path
-        json_path = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2008/EPFL_Roof_2008.json"
+    # File path
+    json_path = "/SharedVM/Campagne/ltnas3/Raw/EPFL_Roof_2011/EPFL_Roof_2011.json"
     
-        # Opening JSON file
-        f = open(json_path)
-         
-        # returns JSON object as a dictionary
-        data = json.load(f)
-    
-        # Create campagin with info
-        campaign = Campaign(data['campaign'])
-        
-        # Actual device folder inside RAW
-        device_list = glob.glob(os.path.join(raw_dir,"data", "*"))
-    
-        # Create device list with info
-        device_list_info = []
-        i = 0
-        for d in data['device']:
-            device_list_info.append(Sensor(d,device_list[i]))
-            i += 1
-         
-        # Closing file
-        f.close()
-        
-        # Temp variable for L1 processing JSON (da aggiungere solo come argomento prima di modificare tutti i parser, per ora solo per debug)
-        json_flag = True
-        
-    except Exception as e:
-        msg = f'Something wrong JSON reading: Error: {e}'
-        print(msg)
-        logger.warning(msg)
-        if verbose: 
-            print(msg)
-        #TODO
-    
-    # Check if the devices into JSON are the same like into Raw folder
-    if len(glob.glob(os.path.join(raw_dir,"data", "*"))) != len(device_list_info) + 1: # + 1 is the metadata folder
-        msg = 'Something wrong with devices info inside JSON, wrong devices count!'
-        print(msg)
-        logger.warning(msg)
-        if verbose: 
-            print(msg)
-        device_list = len(glob.glob(os.path.join(raw_dir,"data", "*")))
-        #TODO
-    
-    # Actual device folder inside RAW
-    device_list = glob.glob(os.path.join(raw_dir,"data", "*"))
+    campaign, device_list_info, device_list = read_JSON(json_path, processed_path, raw_dir, verbose)
     
     sensor_name = device_list_info[0].sensor_name
-    
-    
-    # OLD device info code
-    # device_list = {}
-    # i = 0
-    # for device in glob.glob(os.path.join(raw_dir,"data", "*")):
-    #     try:
-    #         device_list[os.path.basename(device)] = Sensor(
-    #                     attrs['disdrodb_id'][i],
-    #                     attrs['sensor_name'],
-    #                     attrs["sensor_long_name"],
-    #                     attrs["sensor_beam_width"],
-    #                     attrs["sensor_nominal_width"],
-    #                     attrs["measurement_interval"],
-    #                     attrs["temporal_resolution"],
-    #                     attrs["sensor_wavelegth"],
-    #                     attrs["sensor_serial_number"],
-    #                     attrs["firmware_IOP"],
-    #                     attrs["firmware_DSP"],
-    #                     attrs['station_id'],
-    #                     attrs['station_name'],
-    #                     attrs['station_number'],
-    #                     attrs['location'],
-    #                     attrs['country'],
-    #                     attrs['continent'],
-    #                     attrs['latitude'][i],
-    #                     attrs['longitude'][i],
-    #                     attrs['altitude'][i],
-    #                     attrs['latitude_unit'] ,
-    #                     attrs['longitude_unit'],
-    #                     attrs['altitude_unit'],
-    #                     attrs['crs'],
-    #                     attrs['EPSG'],
-    #                     attrs['proj4_string'])
-    #     except IndexError:
-    #         device_list[os.path.basename(device)] = Sensor(
-    #                     os.path.basename(device),
-    #                     attrs['sensor_name'],
-    #                     attrs["sensor_long_name"],
-    #                     attrs["sensor_beam_width"],
-    #                     attrs["sensor_nominal_width"],
-    #                     attrs["measurement_interval"],
-    #                     attrs["temporal_resolution"],
-    #                     attrs["sensor_wavelegth"],
-    #                     attrs["sensor_serial_number"],
-    #                     attrs["firmware_IOP"],
-    #                     attrs["firmware_DSP"],
-    #                     attrs['station_id'],
-    #                     attrs['station_name'],
-    #                     attrs['station_number'],
-    #                     attrs['location'],
-    #                     attrs['country'],
-    #                     attrs['continent'],
-    #                     attrs['latitude'],
-    #                     attrs['longitude'],
-    #                     attrs['altitude'],
-    #                     attrs['latitude_unit'] ,
-    #                     attrs['longitude_unit'],
-    #                     attrs['altitude_unit'],
-    #                     attrs['crs'],
-    #                     attrs['EPSG'],
-    #                     attrs['proj4_string'])
-    #     i += 1
     
     ##------------------------------------------------------.   
     # Process all devices
@@ -354,60 +181,36 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             file_list = sorted(glob.glob(os.path.join(device_path,"**/*.dat*"), recursive = True))
             
             if debug_on: 
-                file_list = file_list[0:1]
+                file_list = file_list[0:10]
                 pass
             
             #----------------------------------------------------------------.
             # - Define raw data headers
             
-            # Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","FieldN","Fieldv","RowData"
-            
-            raw_data_columns = ['time',
-                                'id',
-                                'datalogger_temperature',
-                                'datalogger_voltage',
-                                'Unknow_column', #Intensity
-                                'rain_accumulated_32bit',
-                                'weather_code_SYNOP_4680',
-                                'weather_code_SYNOP_4677',
-                                'reflectivity_16bit',
-                                'mor_visibility',
+
+            raw_data_columns = ['time', 
+          						'id', 
+          						'datalogger_temperature', 
+          						'datalogger_voltage', 
+          						'unknow', 
+          						'rain_accumulated_32bit', 
+          						'weather_code_SYNOP_4680',
+          						'weather_code_SYNOP_4677',
+          						'reflectivity_16bit',
+          						'mor_visibility',
                                 'laser_amplitude',
                                 'n_particles',
                                 'sensor_temperature',
+                                'All_nan',
                                 'sensor_heating_current',
-                                'sensor_battery_voltage',
-                                'sensor_status',
-                                'rain_amount_absolute_32bit',
-                                'Debug_data',
-                                'FieldN',
-                                'FieldV',
-                                'RawData'
-                                ]
-            
-            raw_data_columns_2 = ['time',
-                                'id',
-                                'datalogger_temperature',
-                                'datalogger_voltage',
-                                'Unknow_column', #Intensity
-                                'rain_accumulated_32bit',
-                                'weather_code_SYNOP_4680',
-                                'weather_code_SYNOP_4677',
-                                'reflectivity_16bit',
-                                'mor_visibility',
-                                'laser_amplitude',
-                                'n_particles',
-                                'sensor_temperature',
-                                'sensor_heating_current',
-                                'sensor_battery_voltage',
-                                'sensor_status',
-                                'rain_amount_absolute_32bit',
+                                'All_0',
+                                'unknow2',
                                 'Debug_data',
                                 'FieldN',
                                 'FieldV',
                                 'RawData',
-                                'All_0'
-                                ]
+                                'End_line'
+          						]
             
             
             # time_col = ['time']
@@ -423,15 +226,15 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             ##------------------------------------------------------.
             # Define reader options 
             reader_kwargs = {}
-            reader_kwargs['delimiter'] = '","'
-            reader_kwargs["on_bad_lines"] = 'skip'
             reader_kwargs["engine"] = 'python'
             # - Replace custom NA with standard flags 
-            reader_kwargs['na_values'] = ['', 'error', 'NA', 'na']
+            reader_kwargs['na_values'] = ['', 'error', 'NA', 'na', '-.-']
             # Define time column
             # reader_kwargs['parse_dates'] = time_col
             reader_kwargs["blocksize"] = None
-            reader_kwargs['skiprows'] = 4
+            reader_kwargs['header'] = None
+            reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
+            reader_kwargs['assume_missing'] = True
             
             ##------------------------------------------------------.
             # Loop over all files
@@ -444,12 +247,12 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                 dtype_dict = get_dtype_standards_all_object()
                 
                 try:
-                    df = pd.read_csv(filename,
-                                     delimiter = '","',
-                                     skiprows= 4,
-                                     nrows=100,
-                                     engine='python'
-                                     )
+                    
+                    df = dd.read_csv(filename,
+                                    names = raw_data_columns,
+                                    dtype=dtype_dict,
+                                    **reader_kwargs
+                                    )
                     
                     # Check if file empty
                     if len(df.index) == 0:
@@ -459,38 +262,15 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                             print(msg)
                         list_skipped_files.append(msg)
                         continue
-                    
-                    # Different data columns number
-                    if len(df.columns) == len(raw_data_columns):
-                        df = dd.read_csv(filename,
-                                            names = raw_data_columns,
-                                            dtype = dtype_dict,
-                                          **reader_kwargs
-                                          )
-                    else:
-                        df = dd.read_csv(filename,
-                                            names = raw_data_columns_2,
-                                            dtype = dtype_dict,
-                                          **reader_kwargs
-                                          )
-                        df = df.drop(['All_0'], axis=1)
                         
-                    # Drop rows with NA
-                    df = df.dropna()
+                    # Remove unsused columns
+                    df = df.drop(columns = ['All_nan','Debug_data', 'All_0', 'End_line'])
                     
                     #-------------------------------------------------------------------------
                     ### Keep only clean data 
-                    # Remove " on time
-                    df['time'] = df['time'].str[1:]
-                    df['RawData'] = df['RawData'].str[:-1]
+                    # Drop rows with NA
+                    df = df.dropna()
                     
-                    # Drop Debug_data
-                    df = df.drop(['Debug_data'], axis=1)
-                    
-                    # Drop if Raw_data shorter than 4095 character
-                    df = df.loc[df['RawData'].astype(str).str.len() > 4094]
-                    
-                      
                     ##------------------------------------------------------.
                     # Cast dataframe to dtypes
                     # Determine dtype based on standards 
@@ -503,7 +283,17 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                             # If column dtype is not into L0_dtype_standards, assign object
                             df[col] = df[col].astype('object')
                             pass
-                        
+                        except ValueError: # Work only on df.compute()
+                            # cannot convert float NaN to integer, assign object
+                            msg = f"{filename} on {col} cannot convert float NaN to integer, so cast to object"
+                            logger.warning(msg)
+                            if verbose: 
+                                print(msg)
+                            list_skipped_files.append(msg)
+                            df[col] = df[col].astype('object')
+                            pass
+                    
+                    
                         
                     ##------------------------------------------------------.
                     # Check dtype
@@ -513,6 +303,9 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
                     # - Append to the list of dataframe 
                     list_df.append(df)
                     
+                    msg = f'{filename} processed successfully'
+                    if debug_on:
+                        print(msg)
                     logger.debug(f'{filename} processed successfully')
                     
                 except (Exception, ValueError) as e:
@@ -582,7 +375,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             
             ##------------------------------------------------------.   
             t_f = time.time() - t_i
-            msg = "L0 processing of {} ended in {:.2f}s".format(device, t_f)
+            msg = "L0 processing of {} ended in {:.2f}s".format(device.disdrodb_id, t_f)
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -621,7 +414,7 @@ def main(raw_dir, processed_path, L0_processing, L1_processing, force, verbose, 
             L1_process(verbose, processed_path, campaign_name, L0_processing, lazy, debug_on, sensor_name, attrs, keep_zarr, device_list, device, json_flag)
             
             t_f = time.time() - t_i
-            msg = "L1 processing of device {} ended in {:.2f}s".format(device, t_f)
+            msg = "L1 processing of device {} ended in {:.2f}s".format(device.disdrodb_id, t_f)
             if verbose:
                 print(msg)
             logger.info(msg)
