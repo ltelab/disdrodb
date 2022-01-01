@@ -1,46 +1,49 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Nov 25 10:45:37 2021
 
-@author: kimbo
-"""
+#-----------------------------------------------------------------------------.
+# Copyright (c) 2021-2022 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#-----------------------------------------------------------------------------.
 
-#Logger
-
+import os 
 import time
 import logging
 
-loggers = {}
-
-def log(path, logger_name):
-    
-    global loggers
-    
-    file_name = f'{path}/{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
-    
+def create_logger(log_dir, logger_name):
+    # Define log file filepath 
+    logger_fname = f'{time.strftime("%d-%m-%Y_%H-%M-%S")}_{logger_name}.log'
+    logger_fpath = os.path.join(log_dir, logger_fname)
+    #-------------------------------------------------------------------------.
+    # Define logger format 
     format_type = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     
+    # Define logger level 
     level = logging.DEBUG
+    
+    # Define logging 
+    logging.basicConfig(format=format_type, level=level, filename=logger_fpath) 
+    
+    #-------------------------------------------------------------------------.
 
-    logger = logging.getLogger(logger_name)
-    
-    logger.setLevel(level)
-    
-    formatter = logging.Formatter(format_type)
-    
-    fh = logging.FileHandler(file_name)
-    
-    fh.setFormatter(formatter)
-    
-    if (logger.hasHandlers()):
-        logger.handlers.clear()
-    logger.addHandler(fh)
-
-        
-    return logger
-
-def close_log():
-    for handler in loggers:
+def close_logger(logger):
+    handlers = logger.handlers[:]
+    for handler in handlers:
         handler.close()
-        log.removeHandler(handler)
+        logger.removeHandler(handler)
+    return 
+
+ 
+ 
