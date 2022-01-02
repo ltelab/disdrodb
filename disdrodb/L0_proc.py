@@ -137,18 +137,18 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
     processed_file_counter = 0
     list_skipped_files_msg = []
     list_df = []
-    for filename in file_list:
+    for filepath in file_list:
             # Try to process a raw file 
             try:
                 # Read the data 
-                df = read_raw_data(filepath=filename, 
+                df = read_raw_data(filepath=filepath, 
                                    column_names=column_names,
                                    reader_kwargs=reader_kwargs,
                                    lazy=lazy)
                
                 # Check if file empty
                 if len(df.index) == 0:
-                    msg = f"{filename} is empty and has been skipped."
+                    msg = f"{filepath} is empty and has been skipped."
                     logger.warning(msg)
                     if verbose: 
                         print(msg)
@@ -157,7 +157,7 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                 
                 # Check column number
                 if len(df.columns) != len(column_names):
-                    msg = f"{filename} has wrong columns number, and has been skipped."
+                    msg = f"{filepath} has wrong columns number, and has been skipped."
                     logger.warning(msg)
                     if verbose: 
                         print(msg)
@@ -181,11 +181,17 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                 
                 ##----------------------------------------------------.
                 # Cast dataframe to dtypes
-                # - Determine dtype based on standards 
                 dtype_dict = get_L0_dtype_standards()
-                dtype_dict = {column: dtype_dict[column] for column in df.columns}
-                for k, v in dtype_dict.items():
-                    df[k] = df[k].astype(v)
+                for column in df.columns:
+                    try:
+                        df[column] = df[column].astype(dtype_dict[column])
+                    except KeyError:
+                        # If column dtype is not into get_L0_dtype_standards, assign object
+                        df[column] = df[column].astype('object')                
+                
+                # dtype_dict = {column: dtype_dict[column] for column in df.columns}
+                # for k, v in dtype_dict.items():
+                #     df[k] = df[k].astype(v)
                                             
                 ##----------------------------------------------------.
                 # Append dataframe to the list 
@@ -193,12 +199,12 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                 
                 # Update the logger 
                 processed_file_counter += 1
-                logger.debug(f'{processed_file_counter} / {n_files} processed successfully. File name: {filename}')
+                logger.debug(f'{processed_file_counter} / {n_files} processed successfully. File name: {filepath}')
            
             # If processing of raw file fails  
             except (Exception, ValueError) as e:
               # Update the logger 
-              msg = f"{filename} has been skipped. \n The error is: {e}."
+              msg = f"{filepath} has been skipped. \n The error is: {e}."
               logger.warning(msg)
               if verbose: 
                   print(msg)
