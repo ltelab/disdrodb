@@ -5,28 +5,8 @@ Created on Sat Jan  1 13:42:14 2022
 
 @author: ghiggi
 """  
-
-# logger.py 
-close_logger
-
-####--------------------------------------------------------------------------.
-### TODO List 
-# - min, median max 
-# parser_dev.py file 
-# - read_object, digits 
-# template_parser_dev.py in dev
-
-#### L0 
-dtype_dict = get_L0_dtype_standards()
-  
-for col in df.columns:
-    try:
-        df[col] = df[col].astype(dtype_dict[col])
-    except KeyError:
-        # If column dtype is not into L0_dtype_standards, assign object
-        df[col] = df[col].astype('object')
-        pass
-df = df.replace({"na": np.nan, "nan": np.nan, "OK": 0, 'OK"': 0})      
+#### L0 checks 
+# in dev directory ... 
 
 ####--------------------------------------------------------------------------.
 #### L1_proc.py
@@ -43,11 +23,7 @@ create_L1_summary_statistics
 # - timebar plot with 0,>1, NA, no data rain rate (ARM STYLE) 
 # - timebar data quality 
 
-
-
-
-
-
+####--------------------------------------------------------------------------.
 # reformat_ARM_LPM 
 # reformat_DIVEN_LPM 
 
@@ -64,9 +40,8 @@ attrs['source_data_format'] = 'raw_data'
 attrs['obs_type'] = 'raw'   # preprocess/postprocessed
 attrs['level'] = 'L0'       # L0, L1, L2, ...    
 attrs['disdrodb_id'] = ''   # TODO     
-
  
 ####--------------------------------------------------------------------------.
-### TODO think 
+### Others  
 # - Template work for Ticino, Payerne, 1 ARM Parsivel, 1 UK Diven, 1 Hymex 
 # - Copy metadata yaml to github for syncs and review by external 

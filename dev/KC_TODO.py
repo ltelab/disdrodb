@@ -7,6 +7,14 @@ Created on Sat Jan  1 15:49:35 2022
 """
 ### FIRST RULE: LOGGING STUFFS IS THE LAST STUFF TO CODE !!!!
 
+#### I avoid use of this please ... or show me an example where is necessary 
+df = df.dropna(thresh = (len(df.columns) - 10), how = 'all')  
+df = df.replace({"na": np.nan, "nan": np.nan, "OK": 0, 'OK"': 0})    
+
+#### Employ the L0_parser_dev_template.py for each campaign (in template folder)
+
+#### Create a folder where placing all the parser dev codes (so that I can also test on ltenas3)
+
 ### Push every day !!!! 
 # - Ping me so that I review code 
 

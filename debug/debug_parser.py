@@ -17,5 +17,5 @@ debugging_mode = True
 lazy = True
 write_zarr = True
 write_netcdf = True
-dtype_check = False
+ 
   
