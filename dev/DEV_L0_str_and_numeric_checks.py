@@ -39,6 +39,26 @@ sensor_name = "Parsivel"
  
 infer_df_column_names(df, sensor_name=sensor_name)
 
+from disdrodb.dev_tools import print_df_columns_unique_values
+
+
+idx = 20
+print_df_columns_unique_values(df, column_indices=idx)
+string = df.iloc[1,idx]
+string
+column_names[idx]
+
+get_ndigits(string)
+get_nchar(string)
+get_decimal_ndigits(string)
+get_natural_ndigits(string)
+
+get_possible_keys(dict_digits, get_ndigits(string))
+get_possible_keys(dict_nchar_digits, get_nchar(string))
+
+get_possible_keys(dict_decimal_digits, get_decimal_ndigits(string))
+get_possible_keys(dict_natural_digits, get_natural_ndigits(string))
+
 def get_possible_keys(dict_options, desired_value): 
     list_key_match = []
     for k, v in dict_options.items():
