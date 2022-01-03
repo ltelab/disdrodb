@@ -39,6 +39,7 @@ from disdrodb.io import read_L0_data
 
 # L0_processing
 from disdrodb.check_standards import check_L0_column_names 
+from disdrodb.check_standards import check_L0_standards
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -204,22 +205,25 @@ def main(raw_dir,
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files 
-    # - Enable to standardize raw data files to L0 standards  
+    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None 
     def df_sanitizer_fun(df, lazy=False):
-        # # Import dask or pandas 
-        # if lazy: 
-        #     import dask.dataframe as dd
-        # else: 
-        #     import pandas as dd
+        # Import dask or pandas 
+        if lazy: 
+            import dask.dataframe as dd
+        else: 
+            import pandas as dd
 
         # - Drop datalogger columns 
         columns_to_drop = ['id', 'datalogger_temperature', 'datalogger_voltage', 'datalogger_error']
-        df.drop(columns=columns_to_drop)
+        df = df.drop(columns=columns_to_drop)
         
         # - Drop latitude and longitute (always the same)
         df = df.drop(columns=['latitude', 'longitude'])
-
+        
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+        
         return df  
     
     ##------------------------------------------------------------------------.
@@ -298,7 +302,11 @@ def main(raw_dir,
                                 fpath=fpath,  
                                 force = force,
                                 verbose = verbose)
-             
+            ##------------------------------------------------------. 
+            #### - Check L0 file respects the DISDRODB standards         
+            check_L0_standards(fpath=fpath, 
+                               sensor_name=sensor_name, 
+                               verbose=verbose)
             ##------------------------------------------------------. 
             # End L0 processing 
             t_f = time.time() - t_i

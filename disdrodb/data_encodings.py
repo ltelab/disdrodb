@@ -72,7 +72,7 @@ def get_L0_dtype_standards():
         "altitude" : 'float32',
         
          # Dimensions
-        'time': 'object',
+        'time': 'M8[s]',
         
         #Temp variables
         'temp': 'object',

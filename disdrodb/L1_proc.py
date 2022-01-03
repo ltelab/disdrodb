@@ -140,9 +140,10 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
                  "RawData": (["time", "diameter_bin_center", "velocity_bin_center"], dict_data['RawData']),
                 }
     #-----------------------------------------------------------.
-    # TODO: add other standard data variables 
-    
-    
+    # Define other disdrometer 'auxiliary' variables 
+    aux_columns = df.columns[np.isin(df.columns, ['FieldN','FieldV','RawData','time'], invert=True)]
+    aux_vars = {column: (['time'], df[column].to_dask_array(lengths=True)) for column in aux_columns }
+    data_vars.update(aux_vars)
     
     #-----------------------------------------------------------.
     # Define coordinates for xarray Dataset

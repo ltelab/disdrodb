@@ -53,6 +53,7 @@ from disdrodb.dev_tools import print_df_column_names
 from disdrodb.dev_tools import print_valid_L0_column_names
 from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
+from disdrodb.dev_tools import print_df_summary_stats
 from disdrodb.dev_tools import infer_df_str_column_names
 
 ##------------------------------------------------------------------------. 
@@ -254,6 +255,9 @@ print_df_random_n_rows(df1, n= 5)
 # - Check are equals 
 assert df.equals(df1)
 
+# - Look at values statistics 
+print_df_summary_stats(df)
+
 # - Look at unique values
 print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
  
@@ -305,6 +309,9 @@ if len(df.columns) != len(column_names):
 # Example: drop unrequired columns for L0 
 df = df.drop(columns=['id','latitude', 'longitude'])
 
+# Example: Convert mandatory 'time' column to datetime format 
+df['time'] = pd.to_datetime(df['time'], format='%m-%d-%Y %H:%M:%S')
+
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
@@ -342,11 +349,11 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 # --> df_sanitizer_fun = None  if not necessary ...
 
 def df_sanitizer_fun(df, lazy=False):
-    # # Import dask or pandas 
-    # if lazy: 
-    #     import dask.dataframe as dd
-    # else: 
-    #     import pandas as dd
+    # Import dask or pandas 
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
 
     # - Drop datalogger columns 
     columns_to_drop = ['id', 'datalogger_temperature', 'datalogger_voltage', 'datalogger_error']
@@ -355,6 +362,8 @@ def df_sanitizer_fun(df, lazy=False):
     # - Drop latitude and longitute (always the same)
     df = df.drop(columns=['latitude', 'longitude'])
     
+    # - Convert time column to datetime format
+    df['time'] = dd.to_datetime(df['time'], format='%m-%d-%Y %H:%M:%S')
     return df 
 
 ##------------------------------------------------------. 
