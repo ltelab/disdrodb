@@ -192,10 +192,41 @@ def write_L1_to_netcdf(ds, fpath, sensor_name):
     ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
     nc_encoding_dict = get_L1_nc_encodings_standards(ds, sensor_name=sensor_name)
     ds.to_netcdf(fpath, engine="netcdf4", encoding=nc_encoding_dict)
+
+####--------------------------------------------------------------------------.
+#### Chunks defaults               
+def get_L1_chunks(sensor_name):
+    # TODO: get ds, define chunks as dict, then convert to tuple, check min(max(shape, chunk))
+    check_sensor_name(sensor_name=sensor_name)
+    if sensor_name == "Parsivel":
+        chunks_dict = {'FieldN': (5000,32),
+                       'FieldV': (5000,32),
+                       'RawData': (5000,32,32),
+                      }
+    elif sensor_name == "Parsivel2":
+        logger.exception(f'Not implemented {sensor_name} device')
+        raise NotImplementedError
         
+    elif sensor_name == "ThiesLPM":
+        logger.exception(f'Not implemented {sensor_name} device')
+        raise NotImplementedError
+        
+    else:
+        logger.exception(f'L0 chunks for sensor {sensor_name} are not yet defined')
+        raise ValueError(f'L0 chunks for sensor {sensor_name} are not yet defined')
+    return chunks_dict
+
+def rechunk_L1_dataset(ds, sensor_name):
+    chunks_dict = get_L1_chunks(sensor_name=sensor_name) 
+    for var, chunk in chunks_dict.items():
+       if chunk is not None: 
+           ds[var] = ds[var].chunk(chunk) 
+    return ds 
+
 ####--------------------------------------------------------------------------.        
-#### L1 encodings defaults 
+#### Encodings defaults 
 # TODO correct values 
+# TODO: add offset, scale 
 def _get_default_nc_encoding(chunks, dtype='float32'):
     encoding_kwargs = {} 
     encoding_kwargs['dtype']  = dtype
@@ -219,6 +250,7 @@ def get_L1_nc_encodings_standards(ds, sensor_name):
     # Define variable names 
     vars = ['FieldN', 'FieldV', 'RawData']   
     # TODO: check var names in ds 
+    # Include all vars 
     
     # Get chunks based on sensor type
     chunks_dict = get_L1_chunks(sensor_name=sensor_name) 
@@ -254,35 +286,8 @@ def get_L1_zarr_encodings_standards(sensor_name):
     
     
     return encoding_dict 
+
 ####--------------------------------------------------------------------------.
-#### L1 chunks defaults               
-def get_L1_chunks(sensor_name):
-    check_sensor_name(sensor_name=sensor_name)
-    if sensor_name == "Parsivel":
-        chunks_dict = {'FieldN': (5000,32),
-                       'FieldV': (5000,32),
-                       'RawData': (5000,32,32),
-                      }
-    elif sensor_name == "Parsivel2":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
-        
-    else:
-        logger.exception(f'L0 chunks for sensor {sensor_name} are not yet defined')
-        raise ValueError(f'L0 chunks for sensor {sensor_name} are not yet defined')
-    return chunks_dict
-
-def rechunk_L1_dataset(ds, sensor_name):
-    chunks_dict = get_L1_chunks(sensor_name=sensor_name) 
-    for var, chunk in chunks_dict.items():
-       if chunk is not None: 
-           ds[var] = ds[var].chunk(chunk) 
-    return ds 
-
 #### L1 Summary statistics 
 def create_L1_summary_statistics(ds, processed_dir, station_id, sensor_name):
     # TODO[GG]
