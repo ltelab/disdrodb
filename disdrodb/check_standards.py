@@ -72,7 +72,7 @@ def get_flags(device):
 ####--------------------------------------------------------------------------.
 #### Instrument default string standards 
 # Numbers of digit on the left side of comma (example: 123,45 -> 123)
-def get_field_natural_digits_dict(sensor_name):
+def get_field_ndigits_natural_dict(sensor_name):
     
     if sensor_name == "Parsivel":
         digits_dict = {
@@ -147,7 +147,7 @@ def get_field_natural_digits_dict(sensor_name):
 
 
 # Numbers of digit on the right side of comma (example: 123,45 -> 45)
-def get_field_decimal_digits_dict(sensor_name): 
+def get_field_ndigits_decimals_dict(sensor_name): 
     
     if sensor_name == "Parsivel":
         digits_dict = {
@@ -220,7 +220,7 @@ def get_field_decimal_digits_dict(sensor_name):
     
     pass 
 
-def get_field_digit_dict(sensor_name): 
+def get_field_ndigits_dict(sensor_name): 
     ### TODO: . count as digit 
     if sensor_name == "Parsivel":
         digits_dict = {

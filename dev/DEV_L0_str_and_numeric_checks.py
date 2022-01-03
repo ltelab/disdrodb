@@ -13,7 +13,6 @@ str_reader_kwargs['dtype'] = str # or object
 df = read_raw_data(filepath, column_names=None,  
                    reader_kwargs=str_reader_kwargs, lazy=False)
 
-
 arr = df.iloc[:,1]
 check_constant_nchar(arr) 
 
@@ -40,12 +39,6 @@ sensor_name = "Parsivel"
  
 infer_df_column_names(df, sensor_name=sensor_name)
 
-def checks_type = {
-        
-        
-        }
-
-
 def get_possible_keys(dict_options, desired_value): 
     list_key_match = []
     for k, v in dict_options.items():
@@ -55,10 +48,10 @@ def get_possible_keys(dict_options, desired_value):
     return set_key_match   
 
 def search_possible_columns(string, sensor_name):
-    dict_digits = get_field_nchar_dict(sensor_name)
-    dict_decimal_digits = get_field_ndigits_decimals_dict   
-    dict_natural_digits = get_field_ndigits_natural_dict  
-    dict_nchar_digits = get_field_nchar_dict      
+    dict_digits = get_field_ndigits_dict(sensor_name)
+    dict_nchar_digits = get_field_nchar_dict(sensor_name)   
+    dict_decimal_digits = get_field_ndigits_decimals_dict(sensor_name)  
+    dict_natural_digits = get_field_ndigits_natural_dict(sensor_name)
     set_digits = get_possible_keys(dict_digits, get_ndigits(string))
     set_nchar = get_possible_keys(dict_nchar_digits, get_nchar(string))
     set_decimals = get_possible_keys(dict_decimal_digits, get_decimal_ndigits(string))
@@ -153,6 +146,10 @@ def get_ndigits(string):
 def get_nchar(string):
     return len(string)
 
+
+
+
+
 ##----------------------------------------------------------------------------.
 #### Numeric EDA
 filepath = file_list[0]
@@ -161,6 +158,9 @@ df = read_raw_data(filepath, column_names=column_names,
  
 from disdrodb.dev_tools import print_df_summary_stats
 print_df_summary_stats(df)
+
+# def checks_type = {  # between, isin 
+#         
 
 ## TODO: 
 # Check that min is < expected max 
