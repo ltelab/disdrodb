@@ -189,7 +189,7 @@ def write_L1_to_zarr(ds, fpath, sensor_name):
 
 def write_L1_to_netcdf(ds, fpath, sensor_name):
     ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
-    nc_encoding_dict = get_L1_nc_encodings_standards(sensor_name=sensor_name)
+    nc_encoding_dict = get_L1_nc_encodings_standards(ds, sensor_name=sensor_name)
     ds.to_netcdf(fpath, engine="netcdf4", encoding=nc_encoding_dict)
         
 ####--------------------------------------------------------------------------.        
@@ -214,17 +214,27 @@ def _get_default_zarr_encoding(dtype='float32'):
     encoding_kwargs['compressor']  = compressor 
     return encoding_kwargs
 
-def get_L1_nc_encodings_standards(sensor_name): 
+def get_L1_nc_encodings_standards(ds, sensor_name): 
     # Define variable names 
     vars = ['FieldN', 'FieldV', 'RawData']   
+    # TODO: check var names in ds 
+    
     # Get chunks based on sensor type
     chunks_dict = get_L1_chunks(sensor_name=sensor_name) 
     dtype_dict = get_L1_dtype()
     # Define encodings dictionary 
     encoding_dict = {} 
     for var in vars:
-        encoding_dict[var] = _get_default_nc_encoding(chunks=chunks_dict[var],
-                                                      dtype=dtype_dict[var]) # TODO
+        # TODO[GG] IMPROVE 
+        tmp_encodings = _get_default_nc_encoding(chunks=chunks_dict[var],
+                                                 dtype=dtype_dict[var])
+        tmp_chunksize = tmp_encodings['chunksizes']
+        tmp_da_shape = ds[var].shape
+        
+        tmp_chunksize = [tmp_da_shape[i] if tmp_chunksize[i] > tmp_da_shape[i] else tmp_chunksize[i] for i in range(len(tmp_chunksize))]
+        tmp_encodings['chunksizes'] = tmp_chunksize
+        encoding_dict[var] = tmp_encodings
+        
         # encoding_dict[var]['scale_factor'] = 1.0
         # encoding_dict[var]['add_offset']  = 0.0
         # encoding_dict[var]['_FillValue']  = fill_value
@@ -239,6 +249,9 @@ def get_L1_zarr_encodings_standards(sensor_name):
     encoding_dict = {} 
     for var in vars:
         encoding_dict[var] = _get_default_zarr_encoding(dtype=dtype_dict[var]) # TODO        
+    
+    
+    
     return encoding_dict 
 ####--------------------------------------------------------------------------.
 #### L1 chunks defaults               

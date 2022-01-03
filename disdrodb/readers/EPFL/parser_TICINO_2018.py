@@ -17,15 +17,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-----------------------------------------------------------------------------.
-# TO REMOVE ... only for debug purposes 
-import sys 
-sys.path.append("/home/ghiggi/Projects/disdrodb")
-# export PYTHONPATH="${PYTHONPATH}:/home/ghiggi/Projects/disdrodb"
-import os
-# os.chdir("/home/kimbo/Documents/disdrodb")
-os.chdir("/home/ghiggi/Projects/disdrodb")
-
-#-----------------------------------------------------------------------------.
 import os
 import click
 import time
@@ -67,14 +58,14 @@ from disdrodb.logger import close_logger
 @click.command() # options_metavar='<options>'
 @click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
 @click.argument('processed_dir',                         metavar ='<processed_dir>')  
-@click.option('--l0_processing',  '-l0',     is_flag=True, show_default=True, default = True,   help = "Perform L0 processing")
-@click.option('--l1_processing',  '-l1',     is_flag=True, show_default=True, default = True,   help = "Perform L1 processing")
-@click.option('--write_zarr',     '-zarr',   is_flag=True, show_default=True, default = False,  help = "Write L1 to zarr")
-@click.option('--write_netcdf',   '-nc',     is_flag=True, show_default=True, default = True,   help = "Write L1 netCDF4")
-@click.option('--force',          '-f',      is_flag=True, show_default=True, default = False,  help = "Force overwriting")
-@click.option('--verbose',        '-v',      is_flag=True, show_default=True, default = False,  help = "Verbose")
-@click.option('--debugging_mode', '-d',      is_flag=True, show_default=True, default = False,  help = "Switch to debugging mode")
-@click.option('--lazy',           '-l',      is_flag=True, show_default=True, default = True,   help = "Use dask if lazy=True")
+@click.option('-l0',   '--l0_processing',  type=bool, show_default=True, default = True,   help = "Perform L0 processing")
+@click.option('-l1',   '--l1_processing',  type=bool, show_default=True, default = True,   help = "Perform L1 processing")
+@click.option('-zarr', '--write_zarr',     type=bool, show_default=True, default = False,  help = "Write L1 to zarr")
+@click.option('-nc',   '--write_netcdf',   type=bool, show_default=True, default = True,   help = "Write L1 netCDF4")
+@click.option('-f',    '--force',          type=bool, show_default=True, default = False,  help = "Force overwriting")
+@click.option('-v',    '--verbose',        type=bool, show_default=True, default = False,  help = "Verbose")
+@click.option('-d',    '--debugging_mode', type=bool, show_default=True, default = False,  help = "Switch to debugging mode")
+@click.option('-l',    '--lazy',           type=bool, show_default=True, default = True,   help = "Use dask if lazy=True")
 
 def main(raw_dir,
          processed_dir, 
@@ -141,10 +132,6 @@ def main(raw_dir,
     - The campaign name are set to be UPPER CASE. 
        
     """
-    
-    print(l0_processing)
-    print(l1_processing)
-    exit()
     ####----------------------------------------------------------------------.
     ###########################
     #### CUSTOMIZABLE CODE ####
@@ -214,7 +201,7 @@ def main(raw_dir,
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None # "50MB" 
     
-    ##------------------------------------------------------.
+    ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files 
     # - Enable to standardize raw data files to L0 standards  
@@ -232,11 +219,12 @@ def main(raw_dir,
         
         # - Drop latitude and longitute (always the same)
         df = df.drop(columns=['latitude', 'longitude'])
-        
-        # - Drop rows with half nan values
-        df = df.dropna(thresh = (len(df.columns) - 10), how = 'all')
 
         return df  
+    
+    ##------------------------------------------------------------------------.
+    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    raw_data_glob_pattern =  "*.dat*"   
     
     ####----------------------------------------------------------------------.
     #################### 
@@ -264,7 +252,7 @@ def main(raw_dir,
     #### Loop over station_id directory and process the files 
     list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
     
-    # station_id = list_stations_id[0]  
+    # station_id = list_stations_id[1]  
     for station_id in list_stations_id:
         #---------------------------------------------------------------------. 
         logger.info(f'Processing of station_id {station_id} has started')
@@ -289,7 +277,7 @@ def main(raw_dir,
             
             #-----------------------------------------------------------------.           
             #### - List files to process 
-            glob_pattern = os.path.join("data", station_id, "*.dat*")
+            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
             file_list = get_file_list(raw_dir=raw_dir,
                                       glob_pattern=glob_pattern, 
                                       verbose=verbose, 
@@ -387,5 +375,4 @@ def main(raw_dir,
     
  
 if __name__ == '__main__':
-    main() # when using click 
-    # main(raw_dir, processed_dir, l0_processing, l1_processing, force, verbose, debugging_mode, lazy, keep_zarr, dtype_check)
+    main()  

@@ -6,14 +6,12 @@ Created on Sat Jan  1 17:18:04 2022
 @author: ghiggi
 """
 import os 
-import sys 
+import subprocess
 
 # You need to set the disdrodb repo path in your .bashrc 
 # export PYTHONPATH="${PYTHONPATH}:/home/ghiggi/Projects/disdrodb"
 
-# Temporary in parser file I put the follow  [TO BE REMOVED]
-import sys 
-sys.path.append("/home/ghiggi/Projects/disdrodb")
+#-----------------------------------------------------------------------------.
 
 
 # Set args 
@@ -24,7 +22,7 @@ l0_processing = True
 l1_processing = True
 force = True
 verbose = True
-debug_on = True
+debugging_mode = True
 lazy = True
 write_zarr = True
 write_netcdf = True
@@ -41,13 +39,14 @@ cmd = "".join(["python", " ",
                 "--write_netcdf=", str(write_netcdf), " ", 
                 "--force=", str(force), " ",  
                 "--verbose=", str(verbose), " ",  
-                "--debug_on=", str(debug_on), " ",  
+                "--debugging_mode=", str(debugging_mode), " ",  
                 "--lazy=", str(lazy), " ",  
                 raw_dir, " ",  
                 processed_dir,  
                 ])
-                
-os.system(cmd) 
+
+subprocess.run(cmd, shell=True)  
+# os.system(cmd) 
 
 #-----------------------------------------------------------------------------.
 # TODO: 

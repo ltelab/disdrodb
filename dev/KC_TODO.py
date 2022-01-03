@@ -23,10 +23,6 @@ df = df.replace({"na": np.nan, "nan": np.nan, "OK": 0, 'OK"': 0})
 ####--------------------------------------------------------------------------.
 #### TODO CODING 
 
-## 1. Fix click to work with parser_TICINO_2018.py
-# - check args are correctly passed !!!
-# - I added print(l0_processing); exit() to temporary verify this 
-
 ## 2. Make /scripts/run_EPFL_processing.py work !
 
 ## 3. Launch full parser_TICINO_2018 on ltenas3 
