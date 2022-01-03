@@ -242,7 +242,7 @@ def main(raw_dir,
     create_logger(processed_dir, 'parser_' + campaign_name) 
     # Retrieve logger 
     logger = logging.getLogger(campaign_name)
-    logger.info('### Script start ###')
+    logger.info('### Script started ###')
         
     #-------------------------------------------------------------------------. 
     # Create directory structure 
@@ -255,7 +255,7 @@ def main(raw_dir,
     # station_id = list_stations_id[1]  
     for station_id in list_stations_id:
         #---------------------------------------------------------------------. 
-        logger.info(f'Processing of station_id {station_id} has started')
+        logger.info(f' - Processing of station_id {station_id} has started')
         #---------------------------------------------------------------------. 
         # Retrieve metadata 
         attrs = read_metadata(raw_dir=raw_dir,
@@ -270,7 +270,7 @@ def main(raw_dir,
         if l0_processing: 
             # Start L0 processing 
             t_i = time.time() 
-            msg = "L0 processing of station_id {} has started.".format(station_id)
+            msg = " - L0 processing of station_id {} has started.".format(station_id)
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -302,7 +302,7 @@ def main(raw_dir,
             ##------------------------------------------------------. 
             # End L0 processing 
             t_f = time.time() - t_i
-            msg = "L0 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
+            msg = " - L0 processing of station_id {} ended in {:.2f}s".format(station_id, t_f)
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -318,7 +318,7 @@ def main(raw_dir,
         if l1_processing: 
             # Start L1 processing 
             t_i = time.time() 
-            msg = "L1 processing of station_id {} has started.".format(station_id)
+            msg = " - L1 processing of station_id {} has started.".format(station_id)
             if verbose:
                 print(msg)
             logger.info(msg)
@@ -353,9 +353,10 @@ def main(raw_dir,
             #-----------------------------------------------------------------.
             # End L1 processing 
             t_f = time.time() - t_i
-            msg = "L1 processing of {} ended in {:.2f}s".format(attrs['disdrodb_id'], t_f)
+            msg = " - L1 processing of station_id {} ended in {:.2f}s".format(station_id, t_f)
             if verbose:
                 print(msg)
+                print(" --------------------------------------------------")
             logger.info(msg)
               
             #-----------------------------------------------------------------.

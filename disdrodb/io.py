@@ -258,7 +258,7 @@ def read_L0_data(processed_dir, station_id, lazy=True, verbose=False, debugging_
     # Define fpath 
     fpath = get_L0_fpath(processed_dir, station_id)
     # Log 
-    msg = f'Reading L0 Apache Parquet file at {fpath} started'
+    msg = f' - Reading L0 Apache Parquet file at {fpath} started'
     if verbose:
         print(msg)
     logger.info(msg)
@@ -268,7 +268,7 @@ def read_L0_data(processed_dir, station_id, lazy=True, verbose=False, debugging_
     else: 
        df = pd.read_parquet(fpath)
     # Log
-    msg = f'Reading L0 Apache Parquet file at {fpath} ended'
+    msg = f' - Reading L0 Apache Parquet file at {fpath} ended'
     if verbose:
         print(msg)
     logger.info(msg)

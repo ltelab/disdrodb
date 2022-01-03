@@ -76,7 +76,7 @@ def reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps):
 
 def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
     # Log 
-    msg = "Retrieval of L1 data matrix started."
+    msg = " - Retrieval of L1 data matrix started."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -109,7 +109,7 @@ def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
         # Add array to dictionary 
         dict_data[key] = arr
     # Log 
-    msg = "Retrieval of L1 data matrix finished."
+    msg = " - Retrieval of L1 data matrix finished."
     if verbose:
         print(msg)
     logger.info(msg)

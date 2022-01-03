@@ -54,7 +54,7 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
     # TODO [KIMBO]
     
     # Log
-    msg = f'{n_files} files to process in {raw_dir}'
+    msg = f' - {n_files} files to process in {raw_dir}'
     if verbose:
         print(msg)
     logger.info(msg)
@@ -277,14 +277,14 @@ def _write_to_parquet(df, fpath, force=False):
 
 def write_df_to_parquet(df, fpath, force=False, verbose=False):
     # Log
-    msg = "Conversion to Apache Parquet started." 
+    msg = " - Conversion to Apache Parquet started." 
     if verbose:
         print(msg)
     logger.info(msg)
     # Write to Parquet 
     _write_to_parquet(df=df, fpath=fpath, force=force)
     # Log 
-    msg = "Conversion to Apache Parquet ended."
+    msg = " - Conversion to Apache Parquet ended."
     if verbose:
         print(msg)
     logger.info(msg)
