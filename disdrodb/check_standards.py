@@ -173,7 +173,7 @@ def get_field_ndigits_decimals_dict(sensor_name):
                 'sensor_heating_current': 1,
                 'sensor_battery_voltage': 2,
                 'sensor_status': 0,
-                'laser_amplitude': 5,
+                'laser_amplitude': 0,
                 'error_code': 1, #Not in manual
                 'FieldN': 3,
                 'FieldV': 3,
@@ -206,7 +206,7 @@ def get_field_ndigits_decimals_dict(sensor_name):
                 'sensor_heating_current': 1,
                 'sensor_battery_voltage': 2,
                 'sensor_status': 0,
-                'laser_amplitude': 5,
+                'laser_amplitude': 0,
                 'error_code': 1, #Not in manual
                 'FieldN': 3,
                 'FieldV': 3,
