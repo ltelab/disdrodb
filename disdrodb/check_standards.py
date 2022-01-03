@@ -71,24 +71,159 @@ def get_flags(device):
 
 ####--------------------------------------------------------------------------.
 #### Instrument default string standards 
+# Numbers of digit on the left side of comma (example: 123,45 -> 123)
 def get_field_natural_digits_dict(sensor_name):
+    
+    if sensor_name == "Parsivel":
+        digits_dict = {
+                'datalogger_temperature': 2, #Not in manual
+                'datalogger_voltage': 2, #Not in manual
+                'datalogger_error': 1, #Not in manual
+                # Mandatory
+                'rain_rate_16bit': 4,
+                'rain_rate_32bit': 4,
+                'rain_accumulated_16bit': 4,
+                'rain_accumulated_32bit': 4,
+                'rain_amount_absolute_32bit': 4,
+                'reflectivity_16bit': 2,
+                'reflectivity_32bit': 2,
+                'rain_kinetic_energy': 3,
+                'snowfall_intensity': 4,
+                'mor_visibility': 5,
+                'weather_code_SYNOP_4680': 2,
+                'weather_code_SYNOP_4677': 2,
+                'n_particles': 5,
+                'n_particles_all': 2,
+                'sensor_temperature': 2,
+                'sensor_heating_current': 1,
+                'sensor_battery_voltage': 2,
+                'sensor_status': 1,
+                'laser_amplitude': 5,
+                'error_code': 1, #Not in manual
+                'FieldN': 2,
+                'FieldV': 2,
+                'RawData': 3,
+        }
+    elif sensor_name == "Parsivel2":
+        digits_dict = {
+                'datalogger_temperature': 2, #Not in manual
+                'datalogger_voltage': 2, #Not in manual
+                'datalogger_error': 1, #Not in manual
+                # Mandatory
+                'rain_rate_16bit': 4,
+                'rain_rate_32bit': 4,
+                'rain_accumulated_16bit': 4,
+                'rain_accumulated_32bit': 4,
+                'rain_amount_absolute_32bit': 4,
+                'reflectivity_16bit': 2,
+                'reflectivity_32bit': 2,
+                'rain_kinetic_energy': 3,
+                'snowfall_intensity': 4,
+                'mor_visibility': 5,
+                'weather_code_SYNOP_4680': 2,
+                'weather_code_SYNOP_4677': 2,
+                'n_particles': 5,
+                'n_particles_all': 2,
+                'sensor_temperature': 2,
+                'temperature_PBC': 2,
+                'temperature_right': 2,
+                'temperature_left': 2,
+                'sensor_heating_current': 1,
+                'sensor_battery_voltage': 2,
+                'sensor_status': 1,
+                'laser_amplitude': 5,
+                'error_code': 1, #Not in manual
+                'FieldN': 2,
+                'FieldV': 2,
+                'RawData': 3,
+        }
+        
+    else: 
+        raise NotImplementedError
+            
+    return digits_dict
+    
     pass 
 
+
+# Numbers of digit on the right side of comma (example: 123,45 -> 45)
 def get_field_decimal_digits_dict(sensor_name): 
-    pass
+    
+    if sensor_name == "Parsivel":
+        digits_dict = {
+                'datalogger_temperature': 2, #Not in manual
+                'datalogger_voltage': 1, #Not in manual
+                'datalogger_error': 1, #Not in manual
+                # Mandatory
+                'rain_rate_16bit': 4,
+                'rain_rate_32bit': 3,
+                'rain_accumulated_16bit': 2,
+                'rain_accumulated_32bit': 2,
+                'rain_amount_absolute_32bit': 3,
+                'reflectivity_16bit': 2,
+                'reflectivity_32bit': 3,
+                'rain_kinetic_energy': 3,
+                'snowfall_intensity': 2,
+                'mor_visibility': 0,
+                'weather_code_SYNOP_4680': 0,
+                'weather_code_SYNOP_4677': 0,
+                'n_particles': 0,
+                'n_particles_all': 0,
+                'sensor_temperature': 0,
+                'sensor_heating_current': 1,
+                'sensor_battery_voltage': 2,
+                'sensor_status': 0,
+                'laser_amplitude': 5,
+                'error_code': 1, #Not in manual
+                'FieldN': 3,
+                'FieldV': 3,
+                'RawData': 0,
+        }
+    elif sensor_name == "Parsivel2":
+        digits_dict = {
+                'datalogger_temperature': 2, #Not in manual
+                'datalogger_voltage': 1, #Not in manual
+                'datalogger_error': 1, #Not in manual
+                # Mandatory
+                'rain_rate_16bit': 4,
+                'rain_rate_32bit': 3,
+                'rain_accumulated_16bit': 2,
+                'rain_accumulated_32bit': 2,
+                'rain_amount_absolute_32bit': 3,
+                'reflectivity_16bit': 2,
+                'reflectivity_32bit': 3,
+                'rain_kinetic_energy': 3,
+                'snowfall_intensity': 2,
+                'mor_visibility': 0,
+                'weather_code_SYNOP_4680': 0,
+                'weather_code_SYNOP_4677': 0,
+                'n_particles': 0,
+                'n_particles_all': 0,
+                'sensor_temperature': 0,
+                'temperature_PBC': 0,
+                'temperature_right': 0,
+                'temperature_left': 0,
+                'sensor_heating_current': 1,
+                'sensor_battery_voltage': 2,
+                'sensor_status': 0,
+                'laser_amplitude': 5,
+                'error_code': 1, #Not in manual
+                'FieldN': 3,
+                'FieldV': 3,
+                'RawData': 0,
+        }
+        
+    else: 
+        raise NotImplementedError
+            
+    return digits_dict
+    
+    pass 
 
 def get_field_digit_dict(sensor_name): 
-    pass 
-
-def get_field_nchar_dict(sensor_name):
     ### TODO: . count as digit 
     if sensor_name == "Parsivel":
         digits_dict = {
-                # Optional 
-                # 'id': [8],  # Maybe to change in the future
-                # 'latitude': [9],
-                # 'longitude': [15],
-                # 'time': [19],
                 'datalogger_temperature': 4,
                 'datalogger_voltage': 4,
                 'datalogger_error': 1,
@@ -110,7 +245,7 @@ def get_field_nchar_dict(sensor_name):
                 'sensor_temperature': 3,
                 'sensor_heating_current': 4,
                 'sensor_battery_voltage': 4,
-                'sensor_status': 4,
+                'sensor_status': 0,
                 'laser_amplitude': 5,
                 'error_code': 1,
                 'FieldN': 225,
@@ -119,11 +254,6 @@ def get_field_nchar_dict(sensor_name):
         }
     elif sensor_name == "Parsivel2":
         digits_dict = {
-                # Optional 
-                # 'id': [8],  # Maybe to change in the future
-                # 'latitude': [9],
-                # 'longitude': [15],
-                # 'time': [19],
                 'datalogger_temperature': 4,
                 'datalogger_voltage': 4,
                 'datalogger_error': 1,
@@ -148,7 +278,79 @@ def get_field_nchar_dict(sensor_name):
                 'temperature_left': 3,
                 'sensor_heating_current': 4,
                 'sensor_battery_voltage': 4,
-                'sensor_status': 4,
+                'sensor_status': 0,
+                'laser_amplitude': 5,
+                'error_code': 1,
+                'FieldN': 225,
+                'FieldV': 225,
+                'RawData': 4096,
+        }
+    else: 
+        raise NotImplementedError
+            
+    return digits_dict 
+
+# Numbers of all digit (example: 123,45 -> 123,45)
+def get_field_nchar_dict(sensor_name):
+    ### TODO: . count as digit 
+    if sensor_name == "Parsivel":
+        digits_dict = {
+                'datalogger_temperature': 4,
+                'datalogger_voltage': 4,
+                'datalogger_error': 1,
+                # Mandatory
+                'rain_rate_16bit': 5,
+                'rain_rate_32bit': 7,
+                'rain_accumulated_16bit': 6,
+                'rain_accumulated_32bit': 6,
+                'rain_amount_absolute_32bit': 6,
+                'reflectivity_16bit': 5,
+                'reflectivity_32bit': 5,
+                'rain_kinetic_energy': 6,
+                'snowfall_intensity': 6,
+                'mor_visibility': 5,
+                'weather_code_SYNOP_4680': 2,
+                'weather_code_SYNOP_4677': 2,
+                'n_particles': 5,
+                'n_particles_all': 8,
+                'sensor_temperature': 3,
+                'sensor_heating_current': 3,
+                'sensor_battery_voltage': 3,
+                'sensor_status': 0,
+                'laser_amplitude': 5,
+                'error_code': 1,
+                'FieldN': 225,
+                'FieldV': 225,
+                'RawData': 4096,
+        }
+    elif sensor_name == "Parsivel2":
+        
+        digits_dict = {
+                'datalogger_temperature': 4,
+                'datalogger_voltage': 4,
+                'datalogger_error': 1,
+                # Mandatory
+                'rain_rate_16bit': 5,
+                'rain_rate_32bit': 7,
+                'rain_accumulated_16bit': 6,
+                'rain_accumulated_32bit': 6,
+                'rain_amount_absolute_32bit': 6,
+                'reflectivity_16bit': 5,
+                'reflectivity_32bit': 5,
+                'rain_kinetic_energy': 6,
+                'snowfall_intensity': 6,
+                'mor_visibility': 5,
+                'weather_code_SYNOP_4680': 2,
+                'weather_code_SYNOP_4677': 2,
+                'n_particles': 5,
+                'n_particles_all': 8,
+                'sensor_temperature': 3,
+                'temperature_PBC': 3,
+                'temperature_right': 3,
+                'temperature_left': 3,
+                'sensor_heating_current': 3,
+                'sensor_battery_voltage': 3,
+                'sensor_status': 0,
                 'laser_amplitude': 5,
                 'error_code': 1,
                 'FieldN': 225,
