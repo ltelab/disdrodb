@@ -77,7 +77,7 @@ def print_df_columns_unique_values(df, column_indices=None, column_names=True):
             print(" - Column", i, "(", column, "):")
         else:
             print(" - Column", i, ":")
-        print("     ", df[column].unique().tolist())
+        print("     ", sorted(df[column].unique().tolist()))
     return None        
 
 def get_df_columns_unique_values_dict(df, column_indices=None, column_names=True):
@@ -95,7 +95,7 @@ def get_df_columns_unique_values_dict(df, column_indices=None, column_names=True
             key = column
         else:
             key = "Column " + str(i)         
-        d[key] = df[column].unique().tolist()
+        d[key] = sorted(df[column].unique().tolist())
     # Return 
     return d 
 
