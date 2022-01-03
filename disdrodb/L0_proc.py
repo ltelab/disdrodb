@@ -288,11 +288,7 @@ def write_df_to_parquet(df, fpath, force=False, verbose=False):
     if verbose:
         print(msg)
     logger.info(msg)
-    #-------------------------------------------------------------------------.
-    # Checks L0 standards 
-    # TODO[GG]: if not respect standards, print errors and remove file 
-    df = dd.read_parquet(fpath)
-    check_L0_standards(df)
+    #-------------------------------------------------------------------------.        
     return None 
 
  

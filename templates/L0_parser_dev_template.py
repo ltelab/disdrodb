@@ -53,6 +53,8 @@ from disdrodb.dev_tools import print_df_column_names
 from disdrodb.dev_tools import print_valid_L0_column_names
 from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
+from disdrodb.dev_tools import print_df_summary_stats
+from disdrodb.dev_tools import infer_df_str_column_names
 
 ##------------------------------------------------------------------------. 
 ######################################
@@ -66,6 +68,7 @@ lazy = True
 lazy = False
 verbose = True
 debugging_mode = True 
+sensor_name = "Parsivel"
 
 ####--------------------------------------------------------------------------.
 ############################################# 
@@ -155,31 +158,34 @@ reader_kwargs["blocksize"] = None # "50MB"
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 str_reader_kwargs['dtype'] = str # or object 
-df = read_raw_data(filepath, column_names=None,  
-                   reader_kwargs=str_reader_kwargs, lazy=False)
+df_str = read_raw_data(filepath, column_names=None,  
+                       reader_kwargs=str_reader_kwargs, lazy=False)
 
 # Print first rows
-print_df_first_n_rows(df, n = 1, column_names=False)
-print_df_first_n_rows(df, n = 5, column_names=False)
-print_df_random_n_rows(df, n= 5, column_names=False)  # this likely the more useful 
+print_df_first_n_rows(df_str, n = 1, column_names=False)
+print_df_first_n_rows(df_str, n = 5, column_names=False)
+print_df_random_n_rows(df_str, n= 5, column_names=False)  # this likely the more useful 
 
 # Retrieve number of columns 
-print(len(df.columns))
+print(len(df_str.columns))
  
 # Look at unique values
-print_df_columns_unique_values(df, column_indices=None, column_names=False) # all 
+print_df_columns_unique_values(df_str, column_indices=None, column_names=False) # all 
  
-print_df_columns_unique_values(df, column_indices=0, column_names=False) # single column 
+print_df_columns_unique_values(df_str, column_indices=0, column_names=False) # single column 
 
-print_df_columns_unique_values(df, column_indices=slice(0,15), column_names=False) # a slice of columns 
+print_df_columns_unique_values(df_str, column_indices=slice(0,15), column_names=False) # a slice of columns 
 
-get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=False) # get dictionary
+get_df_columns_unique_values_dict(df_str, column_indices=slice(0,15), column_names=False) # get dictionary
 
 # Retrieve number of columns 
-print(len(df.columns))
- 
-# Copy the following list and start to infer column_names 
-['Unknown' + str(i+1) for i in range(len(df.columns))]
+print(len(df_str.columns))
+
+# Infer columns based on string patterns 
+infer_df_str_column_names(df_str, sensor_name=sensor_name)
+
+# Alternatively an empty list of column_names to infer 
+['Unknown' + str(i+1) for i in range(len(df_str.columns))]
 
 # Print valid column names 
 # - If other names are required, add the key to get_L0_dtype_standards in data_encodings.py 
@@ -249,6 +255,9 @@ print_df_random_n_rows(df1, n= 5)
 # - Check are equals 
 assert df.equals(df1)
 
+# - Look at values statistics 
+print_df_summary_stats(df)
+
 # - Look at unique values
 print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
  
@@ -300,6 +309,9 @@ if len(df.columns) != len(column_names):
 # Example: drop unrequired columns for L0 
 df = df.drop(columns=['id','latitude', 'longitude'])
 
+# Example: Convert mandatory 'time' column to datetime format 
+df['time'] = pd.to_datetime(df['time'], format='%m-%d-%Y %H:%M:%S')
+
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
@@ -337,11 +349,11 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 # --> df_sanitizer_fun = None  if not necessary ...
 
 def df_sanitizer_fun(df, lazy=False):
-    # # Import dask or pandas 
-    # if lazy: 
-    #     import dask.dataframe as dd
-    # else: 
-    #     import pandas as dd
+    # Import dask or pandas 
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
 
     # - Drop datalogger columns 
     columns_to_drop = ['id', 'datalogger_temperature', 'datalogger_voltage', 'datalogger_error']
@@ -350,6 +362,8 @@ def df_sanitizer_fun(df, lazy=False):
     # - Drop latitude and longitute (always the same)
     df = df.drop(columns=['latitude', 'longitude'])
     
+    # - Convert time column to datetime format
+    df['time'] = dd.to_datetime(df['time'], format='%m-%d-%Y %H:%M:%S')
     return df 
 
 ##------------------------------------------------------. 
