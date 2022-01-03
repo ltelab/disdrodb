@@ -4,7 +4,9 @@
 Created on Sat Jan  1 13:42:14 2022
 
 @author: ghiggi
-"""                          
+"""                 
+from disdrodb.dev_tools import print_df_columns_unique_values         
+sensor_name = "Parsivel"
 ##----------------------------------------------------------------------------. 
 #### Character EDA 
 filepath = file_list[0]
@@ -13,6 +15,7 @@ str_reader_kwargs['dtype'] = str # or object
 df = read_raw_data(filepath, column_names=None,  
                    reader_kwargs=str_reader_kwargs, lazy=False)
 
+df = df_str
 arr = df.iloc[:,1]
 check_constant_nchar(arr) 
 
@@ -29,24 +32,19 @@ get_integer_digits(string)     # digits left of the comma
 get_digits(string)
 get_nchar(string)
 
-
-from disdrodb.check_standards import get_field_nchar_dict
-from disdrodb.check_standards import get_field_ndigits_dict
-from disdrodb.check_standards import get_field_ndigits_decimals_dict
-from disdrodb.check_standards import get_field_ndigits_natural_dict
-
-sensor_name = "Parsivel"
+dict_digits = get_field_ndigits_dict(sensor_name)
+dict_nchar_digits = get_field_nchar_dict(sensor_name)   
+dict_decimal_digits = get_field_ndigits_decimals_dict(sensor_name)  
+dict_natural_digits = get_field_ndigits_natural_dict(sensor_name)
  
-infer_df_column_names(df, sensor_name=sensor_name)
-
-from disdrodb.dev_tools import print_df_columns_unique_values
 
 
-idx = 20
+idx = 4
 print_df_columns_unique_values(df, column_indices=idx)
-string = df.iloc[1,idx]
+string = str(df.iloc[1,idx])
 string
 column_names[idx]
+
 
 get_ndigits(string)
 get_nchar(string)
@@ -58,117 +56,8 @@ get_possible_keys(dict_nchar_digits, get_nchar(string))
 
 get_possible_keys(dict_decimal_digits, get_decimal_ndigits(string))
 get_possible_keys(dict_natural_digits, get_natural_ndigits(string))
-
-def get_possible_keys(dict_options, desired_value): 
-    list_key_match = []
-    for k, v in dict_options.items():
-        if v == desired_value:
-            list_key_match.append(k) 
-    set_key_match = set(list_key_match)
-    return set_key_match   
-
-def search_possible_columns(string, sensor_name):
-    dict_digits = get_field_ndigits_dict(sensor_name)
-    dict_nchar_digits = get_field_nchar_dict(sensor_name)   
-    dict_decimal_digits = get_field_ndigits_decimals_dict(sensor_name)  
-    dict_natural_digits = get_field_ndigits_natural_dict(sensor_name)
-    set_digits = get_possible_keys(dict_digits, get_ndigits(string))
-    set_nchar = get_possible_keys(dict_nchar_digits, get_nchar(string))
-    set_decimals = get_possible_keys(dict_decimal_digits, get_decimal_ndigits(string))
-    set_natural = get_possible_keys(dict_natural_digits, get_natural_ndigits(string))
-    possible_keys = set_digits.intersection(set_nchar, set_decimals, set_natural)
-    possible_keys = list(possible_keys)
-    return possible_keys
-
-def infer_df_column_names(df, sensor_name, row_idx = 1):
-    dict_possible_columns = {}
-    for i, column in enumerate(df.columns):
-        print(i)
-        # Get string array 
-        arr = df.iloc[:,i]
-        arr = np.asarray(arr).astype(str)
-        if not arr_has_constant_nchar(arr):
-            print("Column",i, "has non-unique number of characters")
-            continue 
-        # Subset a single string 
-        string = arr[row_idx]
-        possible_columns = search_possible_columns(string, sensor_name=sensor_name)
-        dict_possible_columns[i] = possible_columns
-    return dict_possible_columns
-
-
-
-####--------------------------------------------------------------------------.
-#### Character checks 
-import numpy as np 
-def arr_has_constant_nchar(arr):
-    arr = np.asarray(arr)
-    if arr.dtype.char not in ['O', 'U']:
-        raise TypeError("Expecting object (O) or string (U) dtype.")
-    if arr.dtype.char == 'O': 
-        arr = arr.astype(str)
-    if arr.dtype.char != 'U':
-       raise TypeError("Expecting string (U) dtype.")
-    # Get number of characters (include .)              
-    str_nchars = np.char.str_len(arr)   
-    str_nchars_unique = np.unique(str_nchars)
-    if len(str_nchars_unique) != 1: 
-        return False #         raise ValueError("Non-unique string length !")     
-    else:
-        return True 
-             
  
-def str_is_number(string):
-    try:
-        float(string)
-        return True
-    except ValueError:
-        return False
-    
-def str_is_not_number(string):
-    return not str_is_number(string) 
-
-def str_is_integer(string):
-    try:
-        int(string)
-        return True
-    except ValueError:
-        return False
-    
-def str_has_decimal_digits(string):
-    if len(string.split(".")) == 2: 
-        return True 
-    else:
-        return False 
-        
-def get_decimal_ndigits(string): 
-    if str_has_decimal_digits(string):
-        return len(string.split(".")[1])
-    else:
-        return 0
-    
-def get_natural_ndigits(string): 
-    if str_is_integer(string):
-        return len(string)
-    if str_has_decimal_digits(string): 
-        return len(string.split(".")[0])
-    else:
-        return 0 
-    
-def get_ndigits(string): 
-    if str_is_not_number(string):
-        return 0 
-    if str_has_decimal_digits(string): 
-        return len(string) - 1 # remove . 
-    else: 
-        return len(string) 
-
-def get_nchar(string):
-    return len(string)
-
-
-
-
+infer_df_column_names(df, sensor_name=sensor_name)
 
 ##----------------------------------------------------------------------------.
 #### Numeric EDA
