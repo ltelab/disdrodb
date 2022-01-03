@@ -25,9 +25,6 @@
 
 #-----------------------------------------------------------------------------.
 import os
-# os.chdir("/home/kimbo/Documents/disdrodb")
-os.chdir("/home/ghiggi/Projects/disdrodb")
-
 import logging
 import glob 
 import shutil
