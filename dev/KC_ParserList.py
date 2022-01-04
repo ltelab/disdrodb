@@ -12,6 +12,7 @@ Created on Sat Jan  1 15:49:53 2022
 
 # TICINO_2018
 # PAYERNE_2014
+# EPFL_ROOF_2008
 
 ### List here complicate campaign 
 

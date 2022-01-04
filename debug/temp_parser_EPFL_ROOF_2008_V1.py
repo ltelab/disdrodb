@@ -67,8 +67,8 @@ from disdrodb.dev_tools import infer_df_str_column_names
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/PAYERNE_2014"
-processed_dir = "/SharedVM/Campagne/ltnas3/Processed/PAYERNE_2014"
+raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_ROOF_2008_V1"
+processed_dir = "/SharedVM/Campagne/ltnas3/Processed/EPFL_ROOF_2008_V1"
 
 l0_processing = True
 l1_processing = True
@@ -109,7 +109,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[2]
+station_id = list_stations_id[3]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -132,7 +132,7 @@ file_list = sorted(glob.glob(device_path, recursive = True))
     
 reader_kwargs = {}
 # - Define delimiter
-reader_kwargs['delimiter'] = ','
+reader_kwargs['delimiter'] = '","'
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -163,6 +163,9 @@ reader_kwargs["blocksize"] = None # "50MB"
 # Cast all to string
 reader_kwargs["dtype"] = str
 
+# Skip first 4 rows (it's a header)
+reader_kwargs['skiprows'] = 4
+
 ####--------------------------------------------------------------------------. 
 #################################################### 
 #### 6. Open a single file and explore the data ####
@@ -173,7 +176,6 @@ reader_kwargs["dtype"] = str
 # filepath = file_list[0]
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
-str_reader_kwargs['dtype'] = str # or object 
 df = read_raw_data(filepath, 
                    column_names=None,  
                    reader_kwargs=str_reader_kwargs, 
@@ -217,29 +219,54 @@ get_OTT_Parsivel2_dict()
 #### 7. Define dataframe columns [TO CUSTOMIZE AND MOVE TO PARSER] ###
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
+
+# Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","FieldN","Fieldv","RowData"
+
 column_names = ['time',
-                    'id',
-                    'datalogger_temperature',
-                    'datalogger_voltage',
-                    'rain_accumulated_32bit',
-                    'Unknow',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
-                    'reflectivity_32bit',
-                    'mor_visibility',
-                    'laser_amplitude',
-                    'n_particles',
-                    'sensor_temperature',
-                    'sensor_heating_current',
-                    'sensor_battery_voltage',
-                    'sensor_status',
-                    'rain_amount_absolute_32bit',
-                    'Debug_data',
-                    'FieldN',
-                    'FieldV',
-                    'RawData',
-                    'All_0'
-                    ]
+                'id',
+                'datalogger_temperature',
+                'datalogger_voltage',
+                'rain_rate_32bit',
+                'rain_accumulated_32bit',
+                'weather_code_SYNOP_4680',
+                'weather_code_SYNOP_4677',
+                'reflectivity_16bit',
+                'mor_visibility',
+                'laser_amplitude',
+                'n_particles',
+                'sensor_temperature',
+                'sensor_heating_current',
+                'sensor_battery_voltage',
+                'sensor_status',
+                'rain_amount_absolute_32bit',
+                'Debug_data',
+                'FieldN',
+                'FieldV',
+                'RawData'
+                ]
+
+# column_names_2 = ['time',
+#                 'id',
+#                 'datalogger_temperature',
+#                 'datalogger_voltage',
+#                 'rain_accumulated_32bit',
+#                 'weather_code_SYNOP_4680',
+#                 'weather_code_SYNOP_4677',
+#                 'reflectivity_16bit',
+#                 'mor_visibility',
+#                 'laser_amplitude',
+#                 'n_particles',
+#                 'sensor_temperature',
+#                 'sensor_heating_current',
+#                 'sensor_battery_voltage',
+#                 'sensor_status',
+#                 'rain_amount_absolute_32bit',
+#                 'Debug_data',
+#                 'FieldN',
+#                 'FieldV',
+#                 'RawData',
+#                 'All_0'
+#                 ]
 
 # - Check name validity 
 check_L0_column_names(column_names)
@@ -325,12 +352,15 @@ if len(df.columns) != len(column_names):
 col_to_drop_if_na = ['FieldN','FieldV','RawData']
 df = df.dropna(subset = col_to_drop_if_na)
 
+# Remove " at the beginning of time and end of RawData
+df['time'] = df['time'].str[1:]
+df['RawData'] = df['RawData'].str[:-1]
+
 # Drop rows with less than 4096 char on RawData
 df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 
-# Example: drop unrequired columns for L0 
-df = df.drop(columns = ['All_0', 'Debug_data'])
-
+# Drop Debug_data
+df = df.drop(columns = ['Debug_data'])
 
 
 #---------------------------------------------------------------------------.
@@ -376,15 +406,19 @@ def df_sanitizer_fun(df, lazy=False):
     # else: 
     #     import pandas as dd
 
-    # - Drop useless columns 
+    # Remove " at the beginning of time and end of RawData
+    df['time'] = df['time'].str[1:]
+    df['RawData'] = df['RawData'].str[:-1]
+    
+    # If RawData is nan, drop the row
     col_to_drop_if_na = ['FieldN','FieldV','RawData']
     df = df.dropna(subset = col_to_drop_if_na)
- 
+
     # Drop rows with less than 4096 char on RawData
     df = df.loc[df['RawData'].astype(str).str.len() == 4096]
- 
-    # Example: drop unrequired columns for L0 
-    df = df.drop(columns = ['All_0', 'Debug_data'])
+
+    # Drop Debug_data
+    df = df.drop(columns = ['Debug_data'])
     
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
