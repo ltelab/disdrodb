@@ -49,5 +49,4 @@ df = df.replace({"na": np.nan, "nan": np.nan, "OK": 0, 'OK"': 0})
 
 # 2. Download ARM 
 
-
 # 3. Download GPM 

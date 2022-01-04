@@ -10,4 +10,9 @@ Created on Sat Jan  1 15:49:53 2022
 
 ### List here simple campaign to parse
 
+# TICINO_2018
+# PAYERNE_2014
+
 ### List here complicate campaign 
+
+# DAVOS_2009

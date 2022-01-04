@@ -61,6 +61,7 @@ from disdrodb.dev_tools import print_df_column_names
 from disdrodb.dev_tools import print_valid_L0_column_names
 from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
+from disdrodb.dev_tools import infer_df_str_column_names
 
 ##------------------------------------------------------------------------. 
 ######################################
@@ -108,17 +109,20 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[0]  
+station_id = list_stations_id[0]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
 #### 4. List files to process  [TO CUSTOMIZE AND THEN MOVE TO PARSER] ####
 ##########################################################################
 glob_pattern = os.path.join("data", station_id, "*.dat*") # CUSTOMIZE THIS 
-file_list = get_file_list(raw_dir=raw_dir,
-                          glob_pattern=glob_pattern, 
-                          verbose=verbose, 
-                          debugging_mode=debugging_mode)
+device_path = os.path.join(raw_dir, glob_pattern)
+file_list = sorted(glob.glob(device_path, recursive = True))
+file_list = ['/SharedVM/Campagne/ltnas3/Raw/PAYERNE_2014/data/10/10_ascii_20140324.dat']
+# file_list = get_file_list(raw_dir=raw_dir,
+#                           glob_pattern=glob_pattern, 
+#                           verbose=verbose, 
+#                           debugging_mode=debugging_mode)
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
@@ -166,11 +170,14 @@ reader_kwargs["dtype"] = str
 # - Do not assign column names yet to the columns 
 # - Do not assign a dtype yet to the columns 
 # - Possibily look at multiple files ;)
+# filepath = file_list[0]
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 str_reader_kwargs['dtype'] = str # or object 
-df = read_raw_data(filepath, column_names=None,  
-                   reader_kwargs=str_reader_kwargs, lazy=False)
+df = read_raw_data(filepath, 
+                   column_names=None,  
+                   reader_kwargs=str_reader_kwargs, 
+                   lazy=False)
 
 # Print first rows
 print_df_first_n_rows(df, n = 1, column_names=False)
@@ -204,6 +211,7 @@ from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
 get_OTT_Parsivel_dict()
 get_OTT_Parsivel2_dict()
 
+
 ####---------------------------------------------------------------------------.
 ######################################################################
 #### 7. Define dataframe columns [TO CUSTOMIZE AND MOVE TO PARSER] ###
@@ -211,21 +219,21 @@ get_OTT_Parsivel2_dict()
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 column_names = ['time',
                     'id',
-                    'power_supply_voltage',
-                    'sensor_heating_current',
+                    'datalogger_temperature',
+                    'datalogger_voltage',
                     'rain_accumulated_32bit',
-                    'rain_amount_absolute_32bit',
+                    'Unknow',
                     'weather_code_SYNOP_4680',
                     'weather_code_SYNOP_4677',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'laser_amplitude',
                     'n_particles',
-                    'unknow4', #TODO
-                    'A_voltage?', #TODO
-                    'A_voltage2?', #TODO
+                    'sensor_temperature',
+                    'sensor_heating_current',
+                    'sensor_battery_voltage',
                     'sensor_status',
-                    'rain_rate_32bit',
+                    'rain_amount_absolute_32bit',
                     'Debug_data',
                     'FieldN',
                     'FieldV',
@@ -244,6 +252,8 @@ df = read_raw_data(filepath=filepath,
                    reader_kwargs=reader_kwargs,
                    lazy=False)
     
+
+
 # - Look at the columns and data 
 print_df_column_names(df)
 print_df_random_n_rows(df, n= 5)
@@ -279,7 +289,7 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[0]  # Select also other files here  1,2, ... 
-lazy = False             # Try also with True when work with False 
+lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
@@ -311,8 +321,17 @@ if len(df.columns) != len(column_names):
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
+# If RawData is nan, drop the row
+col_to_drop_if_na = ['FieldN','FieldV','RawData']
+df = df.dropna(subset = col_to_drop_if_na)
+
+# Drop rows with less than 4096 char on RawData
+df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+
 # Example: drop unrequired columns for L0 
 df = df.drop(columns = ['All_0', 'Debug_data'])
+
+
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -357,12 +376,13 @@ def df_sanitizer_fun(df, lazy=False):
     # else: 
     #     import pandas as dd
 
-    # - Drop datalogger columns 
+    # Drop useless columns 
     columns_to_drop = ['All_0', 'Debug_data']
-    df.drop(columns=columns_to_drop)
+    df = df.drop(columns=columns_to_drop)
     
-    # - Drop latitude and longitute (always the same)
-    df = df.drop(columns=['latitude', 'longitude'])
+    # If RawData is nan, drop the row
+    col_to_drop_if_na = ['FieldN','FieldV','RawData',]
+    df = df.dropna(subset = col_to_drop_if_na)
     
     return df 
 
@@ -370,12 +390,12 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = False # True 
-subset_file_list = file_list[0:10]
+lazy = True # True 
+subset_file_list = file_list[:]
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,
-                           df_sanitizer_fun =df_sanitizer_fun, 
+                           df_sanitizer_fun = df_sanitizer_fun, 
                            lazy=lazy)
 
 ##------------------------------------------------------. 
@@ -385,6 +405,9 @@ print_df_column_names(df)
 print_df_random_n_rows(df, n= 5) 
 print_df_columns_unique_values(df, column_indices=2, column_names=True) 
 print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True)  
+
+
+infer_df_str_column_names(df, 'Parsivel')
 
 ####--------------------------------------------------------------------------. 
 ##------------------------------------------------------. 
