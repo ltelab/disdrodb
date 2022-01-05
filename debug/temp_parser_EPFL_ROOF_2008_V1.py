@@ -67,8 +67,8 @@ from disdrodb.dev_tools import infer_df_str_column_names
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_ROOF_2008_V1"
-processed_dir = "/SharedVM/Campagne/ltnas3/Processed/EPFL_ROOF_2008_V1"
+raw_dir = "/SharedVM/Campagne/ltnas3/Raw/EPFL_ROOF_2008/EPFL_ROOF_2008_V1"
+processed_dir = "/SharedVM/Campagne/ltnas3/Processed/EPFL_ROOF_2008/EPFL_ROOF_2008_V1"
 
 l0_processing = True
 l1_processing = True
@@ -118,11 +118,10 @@ station_id = list_stations_id[3]
 glob_pattern = os.path.join("data", station_id, "*.dat*") # CUSTOMIZE THIS 
 device_path = os.path.join(raw_dir, glob_pattern)
 file_list = sorted(glob.glob(device_path, recursive = True))
+#-------------------------------------------------------------------------. 
+# All files into the campaing
+all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"), recursive = True))
 # file_list = ['/SharedVM/Campagne/ltnas3/Raw/PAYERNE_2014/data/10/10_ascii_20140324.dat']
-# file_list = get_file_list(raw_dir=raw_dir,
-#                           glob_pattern=glob_pattern, 
-#                           verbose=verbose, 
-#                           debugging_mode=debugging_mode)
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
@@ -244,29 +243,6 @@ column_names = ['time',
                 'FieldV',
                 'RawData'
                 ]
-
-# column_names_2 = ['time',
-#                 'id',
-#                 'datalogger_temperature',
-#                 'datalogger_voltage',
-#                 'rain_accumulated_32bit',
-#                 'weather_code_SYNOP_4680',
-#                 'weather_code_SYNOP_4677',
-#                 'reflectivity_16bit',
-#                 'mor_visibility',
-#                 'laser_amplitude',
-#                 'n_particles',
-#                 'sensor_temperature',
-#                 'sensor_heating_current',
-#                 'sensor_battery_voltage',
-#                 'sensor_status',
-#                 'rain_amount_absolute_32bit',
-#                 'Debug_data',
-#                 'FieldN',
-#                 'FieldV',
-#                 'RawData',
-#                 'All_0'
-#                 ]
 
 # - Check name validity 
 check_L0_column_names(column_names)
@@ -406,19 +382,21 @@ def df_sanitizer_fun(df, lazy=False):
     # else: 
     #     import pandas as dd
 
-    # Remove " at the beginning of time and end of RawData
-    df['time'] = df['time'].str[1:]
-    df['RawData'] = df['RawData'].str[:-1]
-    
+    # Drop Debug_data
+    df = df.drop(columns = ['Debug_data'])
+
     # If RawData is nan, drop the row
     col_to_drop_if_na = ['FieldN','FieldV','RawData']
     df = df.dropna(subset = col_to_drop_if_na)
+    
+    # Remove " at the end of RawData
+    df['RawData'] = df['RawData'].str.rstrip('"')
 
     # Drop rows with less than 4096 char on RawData
     df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
-    # Drop Debug_data
-    df = df.drop(columns = ['Debug_data'])
+    
+    # Remove " at the beginning of time
+    df['time'] = df['time'].str.lstrip('"')
     
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
@@ -431,6 +409,7 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
 subset_file_list = file_list[:]
+subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,
@@ -450,5 +429,22 @@ infer_df_str_column_names(df, 'Parsivel')
 
 ####--------------------------------------------------------------------------. 
 ##------------------------------------------------------. 
-#### 10. Close logger
-logging.shutdown()
+#### 10. Conversion to parquet
+parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '.parquet')
+
+# Define writing options 
+compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
+row_group_size = 100000 
+engine = "pyarrow"
+
+df2 = df.to_parquet(parquet_dir , 
+                    # schema = 'infer',
+                    engine = engine,
+                    row_group_size = row_group_size,
+                    compression = compression
+                  )
+##------------------------------------------------------. 
+#### 10.1 Read parquet file
+df2 = dd.read_parquet(parquet_dir)
+df2 = df2.compute()
+print(df2)
