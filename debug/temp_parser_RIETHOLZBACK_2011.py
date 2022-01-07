@@ -1,13 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan  6 13:45:34 2022
+Created on Fri Jan  7 02:51:22 2022
 
 @author: kimbo
 """
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 #-----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -41,7 +38,6 @@ import dask.dataframe as dd
 import dask.array as da
 import numpy as np 
 import xarray as xr
-import pyarrow as pa
 
 
 from disdrodb.io import check_directories
@@ -64,12 +60,16 @@ from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
 from disdrodb.dev_tools import infer_df_str_column_names
 
+# L1 processing
+from disdrodb.L1_proc import create_L1_dataset_from_L0 
+from disdrodb.metadata import read_metadata
+
 ##------------------------------------------------------------------------. 
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2011"
-processed_dir = "/SharedVM/Campagne/EPFL/Processed/EPFL_ROOF_2011"
+raw_dir = "/SharedVM/Campagne/EPFL/Raw/RIETHOLZBACK_2011"
+processed_dir = "/SharedVM/Campagne/EPFL/Processed/RIETHOLZBACK_2011"
 
 l0_processing = True
 l1_processing = True
@@ -122,11 +122,7 @@ file_list = sorted(glob.glob(device_path, recursive = True))
 #-------------------------------------------------------------------------. 
 # All files into the campaing
 all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"), recursive = True))
-file_list = ['/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2011/data/10/10_ascii_20110905.dat']
-# file_list = get_file_list(raw_dir=raw_dir,
-#                           glob_pattern=glob_pattern, 
-#                           verbose=verbose, 
-#                           debugging_mode=debugging_mode)
+# file_list = ['/SharedVM/Campagne/ltnas3/Raw/PAYERNE_2014/data/10/10_ascii_20140324.dat']
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
@@ -135,6 +131,8 @@ file_list = ['/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2011/data/10/10_ascii_201109
 # Important: document argument need/behaviour 
     
 reader_kwargs = {}
+# - Define delimiter
+# reader_kwargs['delimiter'] = ''
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -155,7 +153,7 @@ reader_kwargs['compression'] = 'infer'
 #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
 #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
 #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-']
+reader_kwargs['na_values'] = ['na', '', 'error', 'NA']
 
 # - Define max size of dask dataframe chunks (if lazy=True)
 #   - If None: use a single block for each file
@@ -164,12 +162,6 @@ reader_kwargs["blocksize"] = None # "50MB"
 
 # Cast all to string
 reader_kwargs["dtype"] = str
-
-# Different enconding for this campaign
-reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
-
-# Use for Nan value
-# reader_kwargs['assume_missing'] = True
 
 ####--------------------------------------------------------------------------. 
 #################################################### 
@@ -229,7 +221,7 @@ column_names = ['time',
                 'id',
                 'datalogger_temperature',
                 'datalogger_voltage',
-                'rain_rate_32bit',
+                'rain_rate_32bit', #Intensity
                 'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
                 'weather_code_SYNOP_4677',
@@ -246,9 +238,8 @@ column_names = ['time',
                 'FieldN',
                 'FieldV',
                 'RawData',
-                'datalogger_error'
+                'All_0',
                 ]
-
 
 # - Check name validity 
 check_L0_column_names(column_names)
@@ -330,15 +321,19 @@ if len(df.columns) != len(column_names):
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
-# Drop Debug_data
-df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+# Drop Debug_data and All_0
+df = df.drop(columns=['Debug_data', 'All_0'])
 
-# If FieldN or FieldV orRawData is nan, drop the row
+# If RawData is nan, drop the row
 col_to_drop_if_na = ['FieldN','FieldV','RawData']
 df = df.dropna(subset = col_to_drop_if_na)
 
-# Drop not float on rain_rate_32bit
-df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+# Drop rows with less than 4096 char on RawData
+df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+
+# - Convert time column to datetime 
+df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -383,16 +378,16 @@ def df_sanitizer_fun(df, lazy=False):
     # else: 
     #     import pandas as dd
 
-    # Drop Debug_data, datalogger_error and 
-    df = df.drop(columns = ['Debug_data', 'datalogger_error', 'sensor_heating_current'])
+    # Drop Debug_data and All_0
+    df = df.drop(columns=['Debug_data', 'All_0'])
 
-    # If FieldN or FieldV orRawData is nan, drop the row
+    # If RawData is nan, drop the row
     col_to_drop_if_na = ['FieldN','FieldV','RawData']
     df = df.dropna(subset = col_to_drop_if_na)
-    
-    # Drop not float on rain_rate_32bit
-    df = df[dd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
-    
+
+    # Drop rows with less than 4096 char on RawData
+    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
     
@@ -425,14 +420,14 @@ infer_df_str_column_names(df, 'Parsivel')
 ####--------------------------------------------------------------------------. 
 ##------------------------------------------------------. 
 #### 10. Conversion to parquet
-parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '_s10.parquet')
+parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '.parquet')
 
 # Define writing options 
 compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
 row_group_size = 100000 
 engine = "pyarrow"
 
-df2 = df.to_parquet(parquet_dir , 
+df = df.to_parquet(parquet_dir , 
                     # schema = 'infer',
                     engine = engine,
                     row_group_size = row_group_size,
@@ -440,6 +435,19 @@ df2 = df.to_parquet(parquet_dir ,
                   )
 ##------------------------------------------------------. 
 #### 10.1 Read parquet file
-df2 = dd.read_parquet(parquet_dir)
-df2 = df2.compute()
-print(df2)
+df = dd.read_parquet(parquet_dir)
+df = df.compute()
+print(df)
+
+####--------------------------------------------------------------------------. 
+##------------------------------------------------------. 
+#### 11. L1 processing
+#---------------------------------------------------------------------. 
+# Retrieve metadata 
+attrs = read_metadata(raw_dir=raw_dir,
+                      station_id=station_id)
+# Retrieve sensor name
+sensor_name = attrs['sensor_name']
+#-----------------------------------------------------------------.
+#### - Create xarray Dataset
+ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)

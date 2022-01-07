@@ -63,12 +63,16 @@ from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
 from disdrodb.dev_tools import infer_df_str_column_names
 
+# L1 processing
+from disdrodb.L1_proc import create_L1_dataset_from_L0 
+from disdrodb.metadata import read_metadata
+
 ##------------------------------------------------------------------------. 
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/ltnas3/Raw/DAVOS_2009_2011"
-processed_dir = "/SharedVM/Campagne/ltnas3/Processed/DAVOS_2009_2011"
+raw_dir = "/SharedVM/Campagne/EPFL/Raw/DAVOS_2009_2011"
+processed_dir = "/SharedVM/Campagne/EPFL/Processed/DAVOS_2009_2011"
 
 l0_processing = True
 l1_processing = True
@@ -109,7 +113,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[1]
+station_id = list_stations_id[0]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -427,21 +431,34 @@ infer_df_str_column_names(df, 'Parsivel')
 ####--------------------------------------------------------------------------. 
 ##------------------------------------------------------. 
 #### 10. Conversion to parquet
-parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '.parquet')
+parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '_s50.parquet')
 
 # Define writing options 
-compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
-row_group_size = 100000 
-engine = "pyarrow"
+# compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
+# row_group_size = 100000 
+# engine = "pyarrow"
 
-df2 = df.to_parquet(parquet_dir , 
-                    # schema = 'infer',
-                    engine = engine,
-                    row_group_size = row_group_size,
-                    compression = compression
-                  )
+# df = df.to_parquet(parquet_dir , 
+#                     # schema = 'infer',
+#                     engine = engine,
+#                     row_group_size = row_group_size,
+#                     compression = compression
+#                   )
 ##------------------------------------------------------. 
 #### 10.1 Read parquet file
-df2 = dd.read_parquet(parquet_dir)
-df2 = df2.compute()
-print(df2)
+df = dd.read_parquet(parquet_dir)
+df = df.compute()
+print(df)
+
+####--------------------------------------------------------------------------. 
+##------------------------------------------------------. 
+#### 11. L1 processing
+#---------------------------------------------------------------------. 
+# Retrieve metadata 
+attrs = read_metadata(raw_dir=raw_dir,
+                      station_id=station_id)
+# Retrieve sensor name
+sensor_name = attrs['sensor_name']
+#-----------------------------------------------------------------.
+#### - Create xarray Dataset
+ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)

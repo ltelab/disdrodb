@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan  6 15:07:19 2022
+Created on Fri Jan  7 03:10:48 2022
 
 @author: kimbo
 """
@@ -145,14 +145,12 @@ def main(raw_dir,
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter, 
     #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
-    
-    # Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","TransmitTime","FieldN","Fieldv","RowData","CommErrorCount"
 
     column_names = ['time',
                     'id',
                     'datalogger_temperature',
                     'datalogger_voltage',
-                    'rain_rate_32bit',
+                    'rain_rate_32bit', #Intensity
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
                     'weather_code_SYNOP_4677',
@@ -169,7 +167,7 @@ def main(raw_dir,
                     'FieldN',
                     'FieldV',
                     'RawData',
-                    'datalogger_error'
+                    'All_0',
                     ]
     
     # - Check name validity 
@@ -179,6 +177,8 @@ def main(raw_dir,
     #### - Define reader options
     
     reader_kwargs = {}
+    # - Define delimiter
+    # reader_kwargs['delimiter'] = ''
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False  
@@ -199,7 +199,7 @@ def main(raw_dir,
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-']
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA']
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
@@ -208,9 +208,6 @@ def main(raw_dir,
 
     # Cast all to string
     reader_kwargs["dtype"] = str
-
-    # Different enconding for this campaign
-    reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
     
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -224,16 +221,16 @@ def main(raw_dir,
         else: 
             import pandas as dd
         
-        # Drop Debug_data, datalogger_error and sensor_heating_current (all nan)
-        df = df.drop(columns = ['Debug_data', 'datalogger_error', 'sensor_heating_current'])
+        # Drop Debug_data and All_0
+        df = df.drop(columns=['Debug_data', 'All_0'])
 
-        # If FieldN or FieldV orRawData is nan, drop the row
+        # If RawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
         df = df.dropna(subset = col_to_drop_if_na)
-        
-        # Drop not float on rain_rate_32bit
-        df = df[dd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
-        
+
+        # Drop rows with less than 4096 char on RawData
+        df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
         
