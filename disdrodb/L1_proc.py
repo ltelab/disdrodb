@@ -85,8 +85,11 @@ def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
     check_L0_raw_fields_available(df, sensor_name)
     # Retrieve raw fields matrix bins dictionary
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-    # Retrieve number of timesteps 
-    n_timesteps = df.shape[0].compute() 
+    # Retrieve number of timesteps
+    if lazy: 
+        n_timesteps = df.shape[0].compute() 
+    else: 
+        n_timesteps = df.shape[0]
     # Retrieve arrays                
     dict_data = {}
     for key, n_bins in n_bins_dict.items(): 
@@ -142,7 +145,10 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     #-----------------------------------------------------------.
     # Define other disdrometer 'auxiliary' variables 
     aux_columns = df.columns[np.isin(df.columns, ['FieldN','FieldV','RawData','time'], invert=True)]
-    aux_vars = {column: (['time'], df[column].to_dask_array(lengths=True)) for column in aux_columns }
+    if lazy: 
+        aux_vars = {column: (['time'], df[column].to_dask_array(lengths=True)) for column in aux_columns}
+    else:
+        aux_vars = {column: (['time'], df[column].values) for column in aux_columns}
     data_vars.update(aux_vars)
     
     #-----------------------------------------------------------.

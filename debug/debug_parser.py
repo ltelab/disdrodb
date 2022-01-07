@@ -18,4 +18,11 @@ lazy = True
 write_zarr = True
 write_netcdf = True
  
-  
+import os
+os.chdir("/ltenas3/0_Projects/disdrodb")
+
+raw_dir = "/ltenas3/0_Data/ParsivelDB/Raw/EPFL/DAVOS_2009_2011"
+processed_dir = "/ltenas3/0_Data/ParsivelDB/Processed/EPFL/DAVOS_2009_2011"
+
+
+ 
