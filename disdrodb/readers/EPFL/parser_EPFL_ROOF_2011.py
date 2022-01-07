@@ -224,11 +224,12 @@ def main(raw_dir,
         else: 
             import pandas as dd
         
-        # Drop Debug_data
-        df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+        # Drop Debug_data, datalogger_error and 
+        df = df.drop(columns = ['Debug_data', 'datalogger_error', 'sensor_heating_current'])
 
         # If FieldN or FieldV orRawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
+        df = df.dropna(subset = col_to_drop_if_na)
         
         # Drop not float on rain_rate_32bit
         df = df[dd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
