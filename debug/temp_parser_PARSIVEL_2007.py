@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan  7 04:13:26 2022
+Created on Tue Jan 11 11:56:48 2022
 
 @author: kimbo
 """
+
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 #-----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -37,6 +41,7 @@ import dask.dataframe as dd
 import dask.array as da
 import numpy as np 
 import xarray as xr
+import pyarrow as pa
 
 
 from disdrodb.io import check_directories
@@ -59,16 +64,12 @@ from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
 from disdrodb.dev_tools import infer_df_str_column_names
 
-# L1 processing
-from disdrodb.L1_proc import create_L1_dataset_from_L0 
-from disdrodb.metadata import read_metadata
-
 ##------------------------------------------------------------------------. 
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/EPFL/Raw/SAMOYLOV_2017_2019"
-processed_dir = "/SharedVM/Campagne/EPFL/Processed/SAMOYLOV_2017_2019"
+raw_dir = "/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2012"
+processed_dir = "/SharedVM/Campagne/EPFL/Processed/EPFL_ROOF_2012"
 
 l0_processing = True
 l1_processing = True
@@ -115,13 +116,17 @@ station_id = list_stations_id[0]
 ##########################################################################   
 #### 4. List files to process  [TO CUSTOMIZE AND THEN MOVE TO PARSER] ####
 ##########################################################################
-glob_pattern = os.path.join("data", station_id, "*.log*") # CUSTOMIZE THIS 
+glob_pattern = os.path.join("data", station_id, "*.dat*") # CUSTOMIZE THIS 
 device_path = os.path.join(raw_dir, glob_pattern)
 file_list = sorted(glob.glob(device_path, recursive = True))
 #-------------------------------------------------------------------------. 
 # All files into the campaing
-all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.log*"), recursive = True))
-# file_list = ['/SharedVM/Campagne/ltnas3/Raw/PAYERNE_2014/data/10/10_ascii_20140324.dat']
+all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"), recursive = True))
+# file_list = ['/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2011/data/10/10_ascii_20110905.dat']
+# file_list = get_file_list(raw_dir=raw_dir,
+#                           glob_pattern=glob_pattern, 
+#                           verbose=verbose, 
+#                           debugging_mode=debugging_mode)
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
@@ -130,8 +135,6 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.log*"),
 # Important: document argument need/behaviour 
     
 reader_kwargs = {}
-# - Define delimiter
-reader_kwargs['delimiter'] = ';'
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -152,7 +155,7 @@ reader_kwargs['compression'] = 'infer'
 #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
 #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
 #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-reader_kwargs['na_values'] = ['na', '', 'error', 'NA', 'Error in data reading! 0000.000']
+reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-', ' NA',]
 
 # - Define max size of dask dataframe chunks (if lazy=True)
 #   - If None: use a single block for each file
@@ -163,10 +166,10 @@ reader_kwargs["blocksize"] = None # "50MB"
 reader_kwargs["dtype"] = str
 
 # Different enconding for this campaign
-reader_kwargs['encoding'] = 'latin-1'
+# reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
 
-# Skip first row as columns names
-reader_kwargs['header'] = None
+# Use for Nan value
+reader_kwargs['assume_missing'] = True
 
 ####--------------------------------------------------------------------------. 
 #################################################### 
@@ -176,12 +179,12 @@ reader_kwargs['header'] = None
 # - Do not assign a dtype yet to the columns 
 # - Possibily look at multiple files ;)
 # filepath = file_list[0]
-filepath = file_list[2]
+filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 df = read_raw_data(filepath, 
                    column_names=None,  
                    reader_kwargs=str_reader_kwargs, 
-                   lazy=False).add_prefix('col_')
+                   lazy=False)
 
 # Print first rows
 print_df_first_n_rows(df, n = 1, column_names=False)
@@ -223,8 +226,11 @@ get_OTT_Parsivel2_dict()
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
 column_names = ['time',
-                'latitude',
-                'longitude',
+                'id',
+                'datalogger_temperature',
+                'datalogger_voltage',
+                'rain_rate_32bit',
+                'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
                 'weather_code_SYNOP_4677',
                 'reflectivity_32bit',
@@ -234,13 +240,15 @@ column_names = ['time',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
-                'datalogger_error',
+                'sensor_status',
                 'rain_amount_absolute_32bit',
+                'Debug_data',
                 'FieldN',
                 'FieldV',
                 'RawData',
-                'End_line',
+                'datalogger_error'
                 ]
+
 
 # - Check name validity 
 check_L0_column_names(column_names)
@@ -322,22 +330,17 @@ if len(df.columns) != len(column_names):
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
-# Drop Debug_data and All_0
-df = df.drop(columns=['datalogger_error', 'End_line'])
+# Drop Debug_data
+df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
-df = df[df['latitude'].apply(lambda x: type(x) in [int, np.int64, float, np.float64])]
-
-# If RawData is nan, drop the row
-# col_to_drop_if_na = ['FieldN','FieldV','RawData']
-col_to_drop_if_na = ['RawData']
+# If FieldN or FieldV orRawData is nan, drop the row
+col_to_drop_if_na = ['FieldN','FieldV','RawData']
 df = df.dropna(subset = col_to_drop_if_na)
 
-# Drop rows with less than 4096 char on RawData
-# df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
-# - Convert time column to datetime 
-df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
-
+# Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
+df = df.loc[df['FieldN'].astype(str).str.len() == 224]
+df = df.loc[df['FieldV'].astype(str).str.len() == 224]
+df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -382,12 +385,10 @@ def df_sanitizer_fun(df, lazy=False):
     # else: 
     #     import pandas as dd
 
-    # Drop Debug_data and All_0
-    df = df.drop(columns=['datalogger_error', 'End_line'])
+    # Drop Debug_data
+    df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
-    df = df[df['latitude'].apply(lambda x: type(x) in [int, np.int64, float, np.float64])]
-
-    # If RawData is nan, drop the row
+    # If FieldN or FieldV orRawData is nan, drop the row
     col_to_drop_if_na = ['FieldN','FieldV','RawData']
     df = df.dropna(subset = col_to_drop_if_na)
 
@@ -395,9 +396,9 @@ def df_sanitizer_fun(df, lazy=False):
     df = df.loc[df['FieldN'].astype(str).str.len() == 224]
     df = df.loc[df['FieldV'].astype(str).str.len() == 224]
     df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
+    
     # - Convert time column to datetime 
-    df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
+    df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
     
     return df 
 
@@ -428,14 +429,14 @@ infer_df_str_column_names(df, 'Parsivel')
 ####--------------------------------------------------------------------------. 
 ##------------------------------------------------------. 
 #### 10. Conversion to parquet
-parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '.parquet')
+parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '_s10.parquet')
 
 # Define writing options 
 compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
 row_group_size = 100000 
 engine = "pyarrow"
 
-df = df.to_parquet(parquet_dir , 
+df2 = df.to_parquet(parquet_dir , 
                     # schema = 'infer',
                     engine = engine,
                     row_group_size = row_group_size,
@@ -443,19 +444,6 @@ df = df.to_parquet(parquet_dir ,
                   )
 ##------------------------------------------------------. 
 #### 10.1 Read parquet file
-df = dd.read_parquet(parquet_dir)
-df = df.compute()
-print(df)
-
-####--------------------------------------------------------------------------. 
-##------------------------------------------------------. 
-#### 11. L1 processing
-#---------------------------------------------------------------------. 
-# Retrieve metadata 
-attrs = read_metadata(raw_dir=raw_dir,
-                      station_id=station_id)
-# Retrieve sensor name
-sensor_name = attrs['sensor_name']
-#-----------------------------------------------------------------.
-#### - Create xarray Dataset
-ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
+df2 = dd.read_parquet(parquet_dir)
+df2 = df2.compute()
+print(df2)
