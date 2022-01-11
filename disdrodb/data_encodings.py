@@ -101,6 +101,56 @@ def get_L0_dtype_standards():
     }
     return dtype_dict
 
+#### Dictionary to convert ARM netcdf to L1 standard
+# - Use to rename the ARM keys to L1 standard
+def get_ARM_to_l0_dtype_standards(): 
+
+    dict_ARM_to_l0={'time': 'time',
+                    'time_offset': 'time_offset_OldName',
+                    'precip_rate': 'rain_rate_32bit',
+                    'qc_precip_rate': 'qc_precip_rate_OldName',
+                    'weather_code': 'weather_code_SYNOP_4680',
+                    'qc_weather_code': 'qc_weather_code_OldName',
+                    'equivalent_radar_reflectivity_ott': 'reflectivity_32bit',
+                    'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott_OldName',
+                    'number_detected_particles': 'n_particles',
+                    'qc_number_detected_particles': 'qc_number_detected_particles_OldName',
+                    'mor_visibility': 'mor_visibility_OldName',
+                    'qc_mor_visibility': 'qc_mor_visibility_OldName',
+                    'snow_depth_intensity': 'snow_depth_intensity_OldName',
+                    'qc_snow_depth_intensity': 'qc_snow_depth_intensity_OldName',
+                    'laserband_amplitude': 'laser_amplitude',
+                    'qc_laserband_amplitude': 'qc_laserband_amplitude_OldName',
+                    'sensor_temperature': 'sensor_temperature',
+                    'heating_current': 'sensor_heating_current',
+                    'qc_heating_current': 'qc_heating_current_OldName',
+                    'sensor_voltage': 'sensor_battery_voltage',
+                    'qc_sensor_voltage': 'qc_sensor_voltage_OldName',
+                    'class_size_width': 'class_size_width_OldName',
+                    'fall_velocity_calculated': 'fall_velocity_calculated_OldName',
+                    'raw_spectrum': 'raw_spectrum_OldName',
+                    'liquid_water_content': 'liquid_water_content_OldName',
+                    'equivalent_radar_reflectivity': 'equivalent_radar_reflectivity_OldName',
+                    'intercept_parameter': 'intercept_parameter_OldName',
+                    'slope_parameter': 'slope_parameter_OldName',
+                    'median_volume_diameter': 'median_volume_diameter_OldName',
+                    'liquid_water_distribution_mean': 'liquid_water_distribution_mean_OldName',
+                    'number_density_drops': 'number_density_drops_OldName',
+                    'diameter_min': 'diameter_min_OldName',
+                    'diameter_max': 'diameter_max_OldName',
+                    'moment1': 'moment1_OldName',
+                    'moment2': 'moment2_OldName',
+                    'moment3': 'moment3_OldName',
+                    'moment4': 'moment4_OldName',
+                    'moment5': 'moment5_OldName',
+                    'moment6': 'moment6_OldName',
+                    'lat': 'latitude',
+                    'lon': 'longitude',
+                    'alt': 'altitude',
+                    }
+    
+    return dict_ARM_to_l0
+
 def get_L1_dtype():
     # Float 32 or Float 64 (f4, f8)
     # (u)int 8 16, 32, 64   (u/i  1 2 4 8)
