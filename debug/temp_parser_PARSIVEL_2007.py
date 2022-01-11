@@ -68,8 +68,8 @@ from disdrodb.dev_tools import infer_df_str_column_names
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2012"
-processed_dir = "/SharedVM/Campagne/EPFL/Processed/EPFL_ROOF_2012"
+raw_dir = "/SharedVM/Campagne/EPFL/Raw/PARSIVEL_2007"
+processed_dir = "/SharedVM/Campagne/EPFL/Processed/PARSIVEL_2007"
 
 l0_processing = True
 l1_processing = True
@@ -149,7 +149,7 @@ reader_kwargs["engine"] = 'python'
 
 # - Define on-the-fly decompression of on-disk data
 #   - Available: gzip, bz2, zip 
-reader_kwargs['compression'] = 'infer'  
+reader_kwargs['compression'] = 'gzip'  
 
 # - Strings to recognize as NA/NaN and replace with standard NA flags 
 #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
@@ -165,11 +165,17 @@ reader_kwargs["blocksize"] = None # "50MB"
 # Cast all to string
 reader_kwargs["dtype"] = str
 
+# Skip first 4 rows (it's a header)
+reader_kwargs['skiprows'] = 4
+
+# Skip first row as columns names
+reader_kwargs['header'] = None
+
 # Different enconding for this campaign
 # reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
 
 # Use for Nan value
-reader_kwargs['assume_missing'] = True
+# reader_kwargs['assume_missing'] = True
 
 ####--------------------------------------------------------------------------. 
 #################################################### 
@@ -225,10 +231,9 @@ get_OTT_Parsivel2_dict()
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
+
 column_names = ['time',
                 'id',
-                'datalogger_temperature',
-                'datalogger_voltage',
                 'rain_rate_32bit',
                 'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
@@ -242,11 +247,10 @@ column_names = ['time',
                 'sensor_battery_voltage',
                 'sensor_status',
                 'rain_amount_absolute_32bit',
-                'Debug_data',
+                'datalogger_error',
                 'FieldN',
                 'FieldV',
-                'RawData',
-                'datalogger_error'
+                'RawData'
                 ]
 
 
@@ -330,8 +334,8 @@ if len(df.columns) != len(column_names):
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
-# Drop Debug_data
-df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+# Drop datalogger_error
+df = df.drop(columns = ['datalogger_error'])
 
 # If FieldN or FieldV orRawData is nan, drop the row
 col_to_drop_if_na = ['FieldN','FieldV','RawData']
@@ -385,8 +389,8 @@ def df_sanitizer_fun(df, lazy=False):
     # else: 
     #     import pandas as dd
 
-    # Drop Debug_data
-    df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+    # Drop datalogger_error
+    df = df.drop(columns = ['datalogger_error'])
 
     # If FieldN or FieldV orRawData is nan, drop the row
     col_to_drop_if_na = ['FieldN','FieldV','RawData']

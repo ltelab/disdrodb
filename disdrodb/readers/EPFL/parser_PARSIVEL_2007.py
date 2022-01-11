@@ -150,8 +150,6 @@ def main(raw_dir,
 
     column_names = ['time',
                     'id',
-                    'datalogger_temperature',
-                    'datalogger_voltage',
                     'rain_rate_32bit',
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
@@ -165,11 +163,10 @@ def main(raw_dir,
                     'sensor_battery_voltage',
                     'sensor_status',
                     'rain_amount_absolute_32bit',
-                    'Debug_data',
+                    'datalogger_error',
                     'FieldN',
                     'FieldV',
-                    'RawData',
-                    'datalogger_error'
+                    'RawData'
                     ]
     
     # - Check name validity 
@@ -193,7 +190,7 @@ def main(raw_dir,
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip 
-    reader_kwargs['compression'] = 'infer'  
+    reader_kwargs['compression'] = 'gzip'  
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags 
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
@@ -209,8 +206,11 @@ def main(raw_dir,
     # Cast all to string
     reader_kwargs["dtype"] = str
 
-    # Use for Nan value
-    reader_kwargs['assume_missing'] = True
+    # Skip first 4 rows (it's a header)
+    reader_kwargs['skiprows'] = 4
+
+    # Skip first row as columns names
+    reader_kwargs['header'] = None
     
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -224,8 +224,8 @@ def main(raw_dir,
         else: 
             import pandas as dd
         
-        # Drop Debug_data
-        df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+        # Drop datalogger_error
+        df = df.drop(columns = ['datalogger_error'])
 
         # If FieldN or FieldV orRawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
