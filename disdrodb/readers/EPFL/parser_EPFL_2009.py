@@ -238,7 +238,7 @@ def main(raw_dir,
         df = df.loc[df['FieldV'].astype(str).str.len() == 224]
         df = df.loc[df['RawData'].astype(str).str.len() == 4096]
         
-        # Drop non numeric row on id (like 2e+05)
+        # Drop non numeric row on id (like 2e+05), there as to be a better solution, maybe with a counter
         df = df[df.id.str.isnumeric()]
         
         # - Convert time column to datetime 
