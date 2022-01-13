@@ -226,8 +226,8 @@ def main(raw_dir,
         else: 
             import pandas as dd
         
-        # Drop Debug_data
-        df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+        # Drop Debug_data, datalogger_error and id columns
+        df = df.drop(columns = ['Debug_data', 'datalogger_error', 'id'])
 
         # If FieldN or FieldV orRawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
@@ -237,9 +237,6 @@ def main(raw_dir,
         df = df.loc[df['FieldN'].astype(str).str.len() == 224]
         df = df.loc[df['FieldV'].astype(str).str.len() == 224]
         df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-        
-        # Drop non numeric row on id (like 2e+05), there as to be a better solution, maybe with a counter
-        df = df[df.id.str.isnumeric()]
         
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
