@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan 11 12:03:25 2022
+Created on Fri Jan 14 11:40:17 2022
 
 @author: kimbo
 """
@@ -150,8 +150,6 @@ def main(raw_dir,
 
     column_names = ['time',
                     'id',
-                    'datalogger_temperature',
-                    'datalogger_voltage',
                     'rain_rate_32bit',
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
@@ -165,11 +163,10 @@ def main(raw_dir,
                     'sensor_battery_voltage',
                     'sensor_status',
                     'rain_amount_absolute_32bit',
-                    'Debug_data',
+                    'datalogger_error',
                     'FieldN',
                     'FieldV',
                     'RawData',
-                    'datalogger_error'
                     ]
     
     # - Check name validity 
@@ -213,6 +210,9 @@ def main(raw_dir,
 
     # Skip first row as columns names
     reader_kwargs['header'] = None
+
+    # Skip first 4 rows (it's a header)
+    reader_kwargs['skiprows'] = 4
     
     # Use for Nan value
     reader_kwargs['assume_missing'] = True
@@ -230,7 +230,7 @@ def main(raw_dir,
             import pandas as dd
         
         # Drop Debug_data
-        df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+        df = df.drop(columns = ['id'])
 
         # If FieldN or FieldV orRawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
@@ -240,13 +240,12 @@ def main(raw_dir,
         df = df.loc[df['FieldN'].astype(str).str.len() == 224]
         df = df.loc[df['FieldV'].astype(str).str.len() == 224]
         df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-        
+
         # Drop if row has any string
         ignore_list = ['time','FieldN','FieldV','RawData']
         for column in df.columns:
             if column not in ignore_list:
                 df[column] = dd.to_numeric(df[column], errors='coerce')
-                df = df.dropna(subset=[column])
         
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
