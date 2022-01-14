@@ -341,6 +341,12 @@ df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 # Drop non numeric row on id
 df['id'] = pd.to_numeric(df.id, errors='coerce')
 
+# Drop if row has any string
+ignore_list = ['time','FieldN','FieldV','RawData']
+for column in df.columns:
+    if column not in ignore_list:
+        df[column] = dd.to_numeric(df[column], errors='coerce')
+
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
@@ -396,8 +402,11 @@ def df_sanitizer_fun(df, lazy=False):
     df = df.loc[df['FieldV'].astype(str).str.len() == 224]
     df = df.loc[df['RawData'].astype(str).str.len() == 4096]
     
-    # Drop non numeric row on id (like 2e+05)
-    df = df[df.id.str.isnumeric()]
+    # Drop if row has any string
+    ignore_list = ['time','FieldN','FieldV','RawData']
+    for column in df.columns:
+        if column not in ignore_list:
+            df[column] = dd.to_numeric(df[column], errors='coerce')
     
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
@@ -409,7 +418,7 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
-subset_file_list = file_list[:]
+subset_file_list = file_list[:1]
 subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
