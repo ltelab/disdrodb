@@ -407,6 +407,7 @@ def df_sanitizer_fun(df, lazy=False):
     for column in df.columns:
         if column not in ignore_list:
             df[column] = dd.to_numeric(df[column], errors='coerce')
+            df = df.dropna(subset=[column])
     
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
