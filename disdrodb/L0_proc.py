@@ -188,6 +188,8 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                     except KeyError:
                         # If column dtype is not into get_L0_dtype_standards, assign object
                         df[column] = df[column].astype('object')
+                    except ValueError as e:
+                        raise(f"ValueError: The column {column} has {e}")
                 
                 # dtype_dict = {column: dtype_dict[column] for column in df.columns}
                 # for k, v in dtype_dict.items():

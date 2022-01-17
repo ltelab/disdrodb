@@ -181,19 +181,41 @@ str_reader_kwargs = reader_kwargs.copy()
 df = read_raw_data(filepath, 
                    column_names=None,  
                    reader_kwargs=str_reader_kwargs, 
-                   lazy=False)
+                   lazy=True).add_prefix('col_')
 
-df = df.add_prefix('col_')
+# Add prefix to columns
+# df = df.add_prefix('col_')
+# df2 = df2.compute()
+# df = df.compute()
 
-df2 = df['col_2'].str.split(';', expand=True).add_prefix('col_')
+# Split the last column (contain the 37 remain fields)
+df2 = df['col_2'].str.split(';', expand=True, n = 99).add_prefix('col_')
 
-df3 = df2.iloc[:,:35]
 
-df4 = df2.iloc[:,36:67]
+df['col_0'] = dd.to_datetime(df['col_0'], format='%Y%m%d-%H%M%S')
 
-df_FieldN = df2.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1)
-df_FieldV = df2.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1)
-df_RawData = df2.iloc[:,-1:].squeeze().str.split(n=10,expand=True)
+# Split latidude and longitude
+df[['latidude', 'longitude']] = df['col_1'].str.split(pat=".", expand=True, n = 1)
+df3 = df['col_1'].str.split(pat=".", expand=True, n = 2).compute()
+
+# Drop unused columns
+# df = df.drop(['col_1', 'col_2'], axis=1)
+
+# Remove char from rain intensity
+df2['col_0'] = df2['col_0'].str.lstrip("b'")
+
+
+# Add the comma on the FieldN, FieldV and RawData
+df_FieldN = df2.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
+df_FieldV = df2.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
+df_RawData = df2.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'")
+
+# Concat all togheter
+df = dd.concat([df, df2.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1)
+
+# Rename columns
+df.columns = column_names
+
 
 # Print first rows
 print_df_first_n_rows(df, n = 1, column_names=False)
@@ -234,24 +256,87 @@ get_OTT_Parsivel2_dict()
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-# "TIMESTAMP","RECORD","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","FieldN","Fieldv","RowData"
+# "01","Rain intensity 32 bit",8,"mm/h","single_number"
+# "02","Rain amount accumulated 32 bit",7,"mm","single_number"
+# "03","Weather code SYNOP Table 4680",2,"","single_number"
+# "04","Weather code SYNOP Table 4677",2,"","single_number"
+# "05","Weather code METAR Table 4678",5,"","character_string"
+# "06","Weather code NWS",4,"","character_string"
+# "07","Radar reflectivity 32 bit",6,"dBZ","single_number"
+# "08","MOR visibility in precipitation",5,"m","single_number"
+# "09","Sample interval",5,"s","single_number"
+# "10","Signal amplitude of laser",5,"","single_number"
+# "11","Number of particles detected and validated",5,"","single_number"
+# "12","Temperature in sensor housing",3,"degree_Celsius","single_number"
+# "13","Sensor serial number",6,"","character_string"
+# "14","Firmware IOP",6,"","character_string"
+# "15","Firmware DSP",6,"","character_string"
+# "16","Sensor head heating current",4,"A","single_number"
+# "17","Power supply voltage",4,"V","single_number"
+# "18","Sensor status",1,"","single_number"
+# "19","Date/time measuring start",19,"DD.MM.YYYY_hh:mm:ss","character_string"
+# "20","Sensor time",8,"hh:mm:ss","character_string"
+# "21","Sensor date",10,"DD.MM.YYYY","character_string"
+# "22","Station name",4,"","character_string"
+# "23","Station number",4,"","character_string"
+# "24","Rain amount absolute 32 bit",7,"mm","single_number"
+# "25","Error code",3,"","character_string"
+# "26","Temperature PCB",3,"degree_Celsius","single_number"
+# "27","Temperature in right sensor head",3,"degree_Celsius","single_number"
+# "28","Temperature in left sensor head",3,"degree_Celsius","single_number"
+# "30","Rain intensity 16 bit max 30 mm/h",6,"mm/h","single_number"
+# "31","Rain intensity 16 bit max 1200 mm/h",6,"mm/h","single_number"
+# "32","Rain amount accumulated 16 bit",7,"mm","single_number"
+# "33","Radar reflectivity 16 bit",5,"dBZ","single_number"
+# "34","Kinetic energy",7,"J/(m2*h)","single_number"
+# "35","Snowfall intensity",7,"mm/h","single_number"
+# "60","Number of all particles detected",8,"","single_number"
+# "61","List of all particles detected",13,"","list"
+# "90","FieldN",224,"","vector"
+# "91","FieldV",224,"","vector"
+# "93","Raw data",4096,"","matrix"
+
+temp =['col_0','col_1','col_2']
 
 column_names = ['time',
-                'id',
+                'latitude',
+                'longitude',
                 'rain_rate_32bit',
                 'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
                 'weather_code_SYNOP_4677',
+                'weather_code_METAR_4678',
+                'weather_code_NWS',
                 'reflectivity_32bit',
                 'mor_visibility',
+                'Sample interval',
                 'laser_amplitude',
                 'n_particles',
                 'sensor_temperature',
+                'Sensor serial number',
+                'Firmware IOP',
+                'Firmware DSP',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
-                'rain_amount_absolute_32bit',
+                'Date/time measuring start',
+                'Sensor time',
+                'Sensor date',
+                'Station name',
+                'Station number',
+                'rain_amount_absolute_32bit'
                 'datalogger_error',
+                'datalogger_temperature',
+                'Temperature in right sensor head',
+                'Temperature in left sensor head',
+                'rain_rate_16bit',
+                'Rain intensity 16 bit max 1200 mm/h',
+                'rain_accumulated_16bit',
+                'reflectivity_16bit',
+                'rain_kinetic_energy',
+                'snowfall_intensity',
+                'n_particles_all',
+                'List of all particles detected',
                 'FieldN',
                 'FieldV',
                 'RawData',
@@ -264,7 +349,7 @@ check_L0_column_names(column_names)
 # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
 filepath = file_list[0]
 df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
+                   column_names=temp,
                    reader_kwargs=reader_kwargs,
                    lazy=False)
     
@@ -337,6 +422,20 @@ if len(df.columns) != len(column_names):
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
+# Add prefix to columns
+df = df.add_prefix('col_')
+
+# Split the last column (contain the 37 remain fields)
+df2 = df['col_2'].str.split(';', expand=True).add_prefix('col_')
+
+# Add the comma on the FieldN, FieldV and RawData
+df_FieldN = df2.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1)
+df_FieldV = df2.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1)
+df_RawData = df2.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'")
+
+# Concat all togheter
+df = pd.concat([df.iloc[:,:-1], df2.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1)
+
 # Drop Debug_data
 df = df.drop(columns = ['id'])
 
@@ -348,12 +447,6 @@ df = df.dropna(subset = col_to_drop_if_na)
 df = df.loc[df['FieldN'].astype(str).str.len() == 224]
 df = df.loc[df['FieldV'].astype(str).str.len() == 224]
 df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
-# Drop if row has any string
-ignore_list = ['time','FieldN','FieldV','RawData']
-for column in df.columns:
-    if column not in ignore_list:
-        df[column] = dd.to_numeric(df[column], errors='coerce')
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -376,6 +469,8 @@ for column in df.columns:
     except KeyError:
         # If column dtype is not into get_L0_dtype_standards, assign object
         df[column] = df[column].astype('object')
+    except ValueError as e:
+        print(f"The column {column} has {e}")
         
 #---------------------------------------------------------------------------.
 #### 8.4 Check the dataframe looks as desired 
@@ -392,32 +487,43 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 # --> df_sanitizer_fun = None  if not necessary ...
 
 def df_sanitizer_fun(df, lazy=False):
-    # # Import dask or pandas 
-    # if lazy: 
-    #     import dask.dataframe as dd
-    # else: 
-    #     import pandas as dd
-
-    # Drop Debug_data
-    df = df.drop(columns = ['id'])
-
-    # If FieldN or FieldV orRawData is nan, drop the row
-    col_to_drop_if_na = ['FieldN','FieldV','RawData']
-    df = df.dropna(subset = col_to_drop_if_na)
-
-    # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-    df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-    df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
-    # Drop if row has any string
-    ignore_list = ['time','FieldN','FieldV','RawData']
-    for column in df.columns:
-        if column not in ignore_list:
-            df[column] = dd.to_numeric(df[column], errors='coerce')
+    # Import dask or pandas 
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
     
-    # - Convert time column to datetime 
-    df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+    # Add prefix to columns
+    # df = df.add_prefix('col_')
+
+    # Split the last column (contain the 37 remain fields)
+    df2 = df['col_2'].str.split(';', expand=True, n=99).add_prefix('col_')
+
+    df['col_0'] = dd.to_datetime(df['col_0'], format='%Y%m%d-%H%M%S')
+
+    # Split latidude and longitude
+    df[['latidude', 'longitude']] = df['col_1'].str.split(pat=".", expand=True, n = 1)
+
+    # Drop unused columns
+    df = df.drop(['col_1', 'col_2'], axis=1)
+
+    # Remove char from rain intensity
+    df2['col_0'] = df2['col_0'].str.lstrip("b'")
+    
+    # Remove spaces on weather_code_METAR_4678 and weather_code_NWS
+    df2['col_4'] = df2['col_4'].str.strip()
+    df2['col_5'] = df2['col_5'].str.strip()
+
+    # Add the comma on the FieldN, FieldV and RawData
+    df_FieldN = df2.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
+    df_FieldV = df2.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
+    df_RawData = df2.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'")
+
+    # Concat all togheter
+    df = dd.concat([df, df2.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1, ignore_unknown_divisions=True)
+
+    # Rename columns
+    df.columns = column_names
     
     return df 
 
@@ -429,7 +535,7 @@ lazy = True # True
 subset_file_list = file_list[:1]
 subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
-                           column_names=column_names, 
+                           column_names=temp, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
                            lazy=lazy)
