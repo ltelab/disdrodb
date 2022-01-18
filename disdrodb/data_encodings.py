@@ -43,9 +43,9 @@ def get_L0_dtype_standards():
         "n_particles_all": 'object',
         
         "sensor_temperature": 'uint8',
-        "temperature_PBC" : 'object',   #TODO
-        "temperature_right" : 'object', #TODO
-        "temperature_left":'object',    #TODO
+        "sensor_temperature_PBC" : 'object',   #TODO
+        "sensor_temperature_right" : 'object', #TODO
+        "sensor_temperature_left":'object',    #TODO
         
         "sensor_heating_current" : 'float32',
         "sensor_battery_voltage" : 'float32',
@@ -99,19 +99,17 @@ def get_L0_dtype_standards():
         'All_5000' : 'object',
         
         #Disdronet raspberry variables
-        "Sample interval": "uint16",
-        "Sensor serial number": "object",
-        "Firmware IOP": "object",
-        "Firmware DSP": "object",
-        "Date/time measuring start": "object",
-        "Sensor time": "object",
-        "Sensor date": "object",
-        "Station name": "object",
-        "Station number": "object",
-        "Temperature in right sensor head": "object",
-        "Temperature in left sensor head": "object",
-        "Rain intensity 16 bit max 1200 mm/h": "object",
-        'List of all particles detected': 'object'
+        "sample_interval": "uint16",
+        "sensor_serial_number": "object",
+        "firmware_IOP": "object",
+        "firmware_DSP": "object",
+        "date_time_measuring_start": "object",
+        "sensor_time": "object",
+        "sensor_date": "object",
+        "station_name": "object",
+        "station_number": "object",
+        "rain_rate_12bit": "object",
+        'n_particles_all_detected': 'object'
     }
     return dtype_dict
 

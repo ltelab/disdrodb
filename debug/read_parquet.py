@@ -15,9 +15,9 @@ import numpy as np
 # from disdrodb.io import col_dtype_check
 
 
-campagna = 'EPFL_Roof_2011'
-path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/10/L0"
-file = campagna + '.parquet'
+campagna = 'EPFL_Roof_2012'
+path = f"/SharedVM/Campagne/EPFL/Processed/{campagna}/L0"
+file = campagna + '_s40.parquet'
 file_path = os.path.join(path, file)
 
 df = dd.read_parquet(file_path)
@@ -28,7 +28,7 @@ print(df)
 campagna = 'EPFL_Roof_2011'
 path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/11/L0"
 file = campagna + '.parquet'
-file_path = os.path.join(path, file)
+file_path = '/SharedVM/Campagne/DELFT/Processed/TEST_DATA/L0/TEST_DATA_s10.parquet'
 
 df2 = dd.read_parquet(file_path)
 

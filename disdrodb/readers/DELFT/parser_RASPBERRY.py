@@ -186,11 +186,11 @@ def main(raw_dir,
     # "91","FieldV",224,"","vector"
     # "93","Raw data",4096,"","matrix"
 
-    temp =['col_0','col_1','col_2']
-
+    columns_names_temporary =['time','TO_BE_SPLITTED','TO_BE_PARSED']
+    
     column_names = ['time',
-                    'latitude',
-                    'longitude',
+                    'unknow',
+                    'unknow2',
                     'rain_rate_32bit',
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
@@ -199,34 +199,34 @@ def main(raw_dir,
                     'weather_code_NWS',
                     'reflectivity_32bit',
                     'mor_visibility',
-                    'Sample interval',
+                    'sample_interval',
                     'laser_amplitude',
                     'n_particles',
                     'sensor_temperature',
-                    'Sensor serial number',
-                    'Firmware IOP',
-                    'Firmware DSP',
+                    'sensor_serial_number',
+                    'firmware_IOP',
+                    'firmware_DSP',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
-                    'Date/time measuring start',
-                    'Sensor time',
-                    'Sensor date',
-                    'Station name',
-                    'Station number',
-                    'rain_amount_absolute_32bit'
+                    'date_time_measuring_start',
+                    'sensor_time',
+                    'sensor_date',
+                    'station_name',
+                    'station_number',
+                    'rain_amount_absolute_32bit',
                     'datalogger_error',
                     'datalogger_temperature',
-                    'Temperature in right sensor head',
-                    'Temperature in left sensor head',
+                    'sensor_temperature_right',
+                    'sensor_temperature_left',
                     'rain_rate_16bit',
-                    'Rain intensity 16 bit max 1200 mm/h',
+                    'rain_rate_12bit',
                     'rain_accumulated_16bit',
                     'reflectivity_16bit',
                     'rain_kinetic_energy',
                     'snowfall_intensity',
                     'n_particles_all',
-                    'List of all particles detected',
+                    'n_particles_all_detected',
                     'FieldN',
                     'FieldV',
                     'RawData',
@@ -287,39 +287,44 @@ def main(raw_dir,
             import pandas as dd
         
         # Split the last column (contain the 37 remain fields)
-        df2 = df['col_2'].str.split(';', expand=True, n=99).add_prefix('col_')
+        df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
 
-        df['col_0'] = dd.to_datetime(df['col_0'], format='%Y%m%d-%H%M%S')
+        # Cast to datetime
+        df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
 
-        # Split latidude and longitude
-        df[['latidude', 'longitude']] = df['col_1'].str.split(pat=".", expand=True, n = 1)
+        # Split latidude and longitude and drop TO_BE_SPLITTED and TO_BE_PARSED
+        df[['unknow', 'unknow2']] = df['TO_BE_SPLITTED'].str.split(pat=".", expand=True, n = 1)
+        df = df.drop(['TO_BE_SPLITTED', 'TO_BE_PARSED'], axis=1)
 
-        # Drop unused columns
-        df = df.drop(['col_1', 'col_2'], axis=1)
+        # Add names to columns
+        df_to_parse_dict_names = dict(zip(column_names[3:-3],list(df_to_parse.columns)[0:35]))
+        for i in range(len(list(df_to_parse.columns)[35:])):
+            df_to_parse_dict_names[i] = i
+
+        df_to_parse.columns = df_to_parse_dict_names
 
         # Remove char from rain intensity
-        df2['col_0'] = df2['col_0'].str.lstrip("b'")
-        
+        df_to_parse['rain_rate_32bit'] = df_to_parse['rain_rate_32bit'].str.lstrip("b'")
+
         # Remove spaces on weather_code_METAR_4678 and weather_code_NWS
-        df2['col_4'] = df2['col_4'].str.strip()
-        df2['col_5'] = df2['col_5'].str.strip()
+        df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
+        df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
+
+        # ----
 
         # Add the comma on the FieldN, FieldV and RawData
-        df_FieldN = df2.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
-        df_FieldV = df2.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
-        df_RawData = df2.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'")
+        df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldN')
+        df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldV')
+        df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
 
         # Concat all togheter
-        df = dd.concat([df, df2.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1, ignore_unknown_divisions=True)
-
-        # Rename columns
-        df.columns = column_names
+        df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1, ignore_unknown_divisions=True)
         
         return df  
     
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern =  "*.dat*"   
+    raw_data_glob_pattern =  "*.csv*"   
     
     ####----------------------------------------------------------------------.
     #################### 
@@ -381,7 +386,7 @@ def main(raw_dir,
             ##------------------------------------------------------.
             #### - Read all raw data files into a dataframe  
             df = read_L0_raw_file_list(file_list=file_list, 
-                                       column_names=temp, 
+                                       column_names=columns_names_temporary, 
                                        reader_kwargs=reader_kwargs,
                                        df_sanitizer_fun =df_sanitizer_fun, 
                                        lazy=lazy)
