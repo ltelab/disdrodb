@@ -292,7 +292,7 @@ def main(raw_dir,
         # Cast to datetime
         df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
 
-        # Split latidude and longitude and drop TO_BE_SPLITTED and TO_BE_PARSED
+        # It's the epoch time, to drop #TODO
         df[['unknow', 'unknow2']] = df['TO_BE_SPLITTED'].str.split(pat=".", expand=True, n = 1)
         df = df.drop(['TO_BE_SPLITTED', 'TO_BE_PARSED'], axis=1)
 
