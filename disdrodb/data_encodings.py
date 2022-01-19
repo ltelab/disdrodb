@@ -99,6 +99,7 @@ def get_L0_dtype_standards():
         'All_5000' : 'object',
         
         #Disdronet raspberry variables
+        "epoch_time": "float32",
         "sample_interval": "uint16",
         "sensor_serial_number": "object",
         "firmware_IOP": "object",

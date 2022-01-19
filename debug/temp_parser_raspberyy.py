@@ -295,11 +295,10 @@ get_OTT_Parsivel2_dict()
 # "91","FieldV",224,"","vector"
 # "93","Raw data",4096,"","matrix"
 
-columns_names_temporary =['time','TO_BE_SPLITTED','TO_BE_PARSED']
+columns_names_temporary =['time','epoch_time','TO_BE_PARSED']
 
 column_names = ['time',
-                'unknow',
-                'unknow2',
+                'epoch_time',
                 'rain_rate_32bit',
                 'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
@@ -432,12 +431,11 @@ df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
 # Cast to datetime
 df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
 
-# Split latidude and longitude and drop TO_BE_SPLITTED and TO_BE_PARSED
-df[['latidude', 'longitude']] = df['TO_BE_SPLITTED'].str.split(pat=".", expand=True, n = 1)
-df = df.drop(['TO_BE_SPLITTED', 'TO_BE_PARSED'], axis=1)
+# Drop TO_BE_PARSED
+df = df.drop(['TO_BE_PARSED'], axis=1)
 
 # Add names to columns
-df_to_parse_dict_names = dict(zip(column_names[3:-3],list(df_to_parse.columns)[0:35]))
+df_to_parse_dict_names = dict(zip(column_names[2:-3],list(df_to_parse.columns)[0:35]))
 for i in range(len(list(df_to_parse.columns)[35:])):
     df_to_parse_dict_names[i] = i
 
@@ -511,12 +509,11 @@ def df_sanitizer_fun(df, lazy=False):
     # Cast to datetime
     df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
 
-    # Split latidude and longitude and drop TO_BE_SPLITTED and TO_BE_PARSED
-    df[['unknow', 'unknow2']] = df['TO_BE_SPLITTED'].str.split(pat=".", expand=True, n = 1)
-    df = df.drop(['TO_BE_SPLITTED', 'TO_BE_PARSED'], axis=1)
+    # Drop TO_BE_PARSED
+    df = df.drop(['TO_BE_PARSED'], axis=1)
 
     # Add names to columns
-    df_to_parse_dict_names = dict(zip(column_names[3:-3],list(df_to_parse.columns)[0:35]))
+    df_to_parse_dict_names = dict(zip(column_names[2:-3],list(df_to_parse.columns)[0:35]))
     for i in range(len(list(df_to_parse.columns)[35:])):
         df_to_parse_dict_names[i] = i
 
@@ -529,8 +526,6 @@ def df_sanitizer_fun(df, lazy=False):
     df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
     df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
 
-    # ----
-
     # Add the comma on the FieldN, FieldV and RawData
     df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldN')
     df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldV')
@@ -541,13 +536,14 @@ def df_sanitizer_fun(df, lazy=False):
     
     return df 
 
+
 ##------------------------------------------------------. 
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
 subset_file_list = file_list[:1]
-# subset_file_list = all_stations_files
+subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=columns_names_temporary, 
                            reader_kwargs=reader_kwargs,
