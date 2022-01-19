@@ -301,6 +301,7 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[0]  # Select also other files here  1,2, ... 
+filepath = all_stations_files
 lazy = False             # Try also with True when work with False 
 
 #------------------------------------------------------. 
@@ -336,13 +337,16 @@ if len(df.columns) != len(column_names):
 # Drop Debug_data
 df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
+# Drop rows with more than 8 nan
+df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
+
 # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
 df = df.loc[df['FieldN'].astype(str).str.len() == 224]
 df = df.loc[df['FieldV'].astype(str).str.len() == 224]
 df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 
 # Drop not float on rain_rate_32bit
-df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+# df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -394,9 +398,6 @@ def df_sanitizer_fun(df, lazy=False):
     df = df.loc[df['FieldN'].astype(str).str.len() == 224]
     df = df.loc[df['FieldV'].astype(str).str.len() == 224]
     df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
-    # Drop not float on rain_rate_32bit
-    # df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
     
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
