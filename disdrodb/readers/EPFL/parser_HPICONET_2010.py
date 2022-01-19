@@ -230,7 +230,8 @@ def main(raw_dir,
         # Drop Debug_data
         df = df.drop(columns = ['Debug_data', 'datalogger_error'])
         
-        # Drop rows with more than 8 nan
+        # To Gionata: I got some rows with almost all nan but FieldN, FieldV and RawData all 0
+        # Drop rows with more than 8 nan 
         df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
 
         # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
