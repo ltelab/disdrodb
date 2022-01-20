@@ -228,12 +228,20 @@ def main(raw_dir,
         # Drop Debug_data
         df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
+        # If value in col_to_drop_if_na colum is nan, drop the row
+        col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
+                             'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
+                             'laser_amplitude', 'n_particles', 'sensor_temperature',
+                             'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
+                             'rain_amount_absolute_32bit','FieldN','FieldV','RawData']
+        df = df.dropna(subset = col_to_drop_if_na)
+
         # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
         df = df.loc[df['FieldN'].astype(str).str.len() == 224]
         df = df.loc[df['FieldV'].astype(str).str.len() == 224]
         df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-        
-        # - Convert time column to datetime 
+
+         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
         
         return df  
