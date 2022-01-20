@@ -12,9 +12,9 @@ import os
 import xarray as xr
 import netCDF4
 
-campagna = 'DAVOS_2009'
-path = f'/SharedVM/Campagne/EPFL/Processed/{campagna}/50/L1'
-file = campagna + '.nc'
+campagna = 'PARSIVEL_2007'
+path = f'/SharedVM/Campagne/EPFL/Processed/{campagna}/L1'
+file = campagna + '_s10.nc'
 file_path = os.path.join(path, file)
 
 ds1 = xr.open_dataset(file_path)

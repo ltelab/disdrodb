@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 14 11:40:17 2022
+Created on Thu Jan 20 09:37:03 2022
 
 @author: kimbo
 """
@@ -145,90 +145,29 @@ def main(raw_dir,
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter, 
     #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
-    
-    # "01","Rain intensity 32 bit",8,"mm/h","single_number"
-    # "02","Rain amount accumulated 32 bit",7,"mm","single_number"
-    # "03","Weather code SYNOP Table 4680",2,"","single_number"
-    # "04","Weather code SYNOP Table 4677",2,"","single_number"
-    # "05","Weather code METAR Table 4678",5,"","character_string"
-    # "06","Weather code NWS",4,"","character_string"
-    # "07","Radar reflectivity 32 bit",6,"dBZ","single_number"
-    # "08","MOR visibility in precipitation",5,"m","single_number"
-    # "09","Sample interval",5,"s","single_number"
-    # "10","Signal amplitude of laser",5,"","single_number"
-    # "11","Number of particles detected and validated",5,"","single_number"
-    # "12","Temperature in sensor housing",3,"degree_Celsius","single_number"
-    # "13","Sensor serial number",6,"","character_string"
-    # "14","Firmware IOP",6,"","character_string"
-    # "15","Firmware DSP",6,"","character_string"
-    # "16","Sensor head heating current",4,"A","single_number"
-    # "17","Power supply voltage",4,"V","single_number"
-    # "18","Sensor status",1,"","single_number"
-    # "19","Date/time measuring start",19,"DD.MM.YYYY_hh:mm:ss","character_string"
-    # "20","Sensor time",8,"hh:mm:ss","character_string"
-    # "21","Sensor date",10,"DD.MM.YYYY","character_string"
-    # "22","Station name",4,"","character_string"
-    # "23","Station number",4,"","character_string"
-    # "24","Rain amount absolute 32 bit",7,"mm","single_number"
-    # "25","Error code",3,"","character_string"
-    # "26","Temperature PCB",3,"degree_Celsius","single_number"
-    # "27","Temperature in right sensor head",3,"degree_Celsius","single_number"
-    # "28","Temperature in left sensor head",3,"degree_Celsius","single_number"
-    # "30","Rain intensity 16 bit max 30 mm/h",6,"mm/h","single_number"
-    # "31","Rain intensity 16 bit max 1200 mm/h",6,"mm/h","single_number"
-    # "32","Rain amount accumulated 16 bit",7,"mm","single_number"
-    # "33","Radar reflectivity 16 bit",5,"dBZ","single_number"
-    # "34","Kinetic energy",7,"J/(m2*h)","single_number"
-    # "35","Snowfall intensity",7,"mm/h","single_number"
-    # "60","Number of all particles detected",8,"","single_number"
-    # "61","List of all particles detected",13,"","list"
-    # "90","FieldN",224,"","vector"
-    # "91","FieldV",224,"","vector"
-    # "93","Raw data",4096,"","matrix"
-
-    columns_names_temporary =['time','epoch_time','TO_BE_PARSED']
 
     column_names = ['time',
-                    'epoch_time',
+                    'id',
+                    'datalogger_temperature',
+                    'datalogger_voltage',
                     'rain_rate_32bit',
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
                     'weather_code_SYNOP_4677',
-                    'weather_code_METAR_4678',
-                    'weather_code_NWS',
                     'reflectivity_32bit',
                     'mor_visibility',
-                    'sample_interval',
                     'laser_amplitude',
                     'n_particles',
                     'sensor_temperature',
-                    'sensor_serial_number',
-                    'firmware_IOP',
-                    'firmware_DSP',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
-                    'date_time_measuring_start',
-                    'sensor_time',
-                    'sensor_date',
-                    'station_name',
-                    'station_number',
                     'rain_amount_absolute_32bit',
-                    'error_code',
-                    'sensor_temperature_PBC',
-                    'sensor_temperature_right',
-                    'sensor_temperature_left',
-                    'rain_rate_16bit',
-                    'rain_rate_12bit',
-                    'rain_accumulated_16bit',
-                    'reflectivity_16bit',
-                    'rain_kinetic_energy',
-                    'snowfall_intensity',
-                    'n_particles_all',
-                    'n_particles_all_detected',
+                    'Debug_data',
                     'FieldN',
                     'FieldV',
                     'RawData',
+                    'datalogger_error'
                     ]
     
     # - Check name validity 
@@ -238,8 +177,6 @@ def main(raw_dir,
     #### - Define reader options
     
     reader_kwargs = {}
-    # - Define delimiter
-    reader_kwargs['delimiter'] = ';'
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False  
@@ -260,7 +197,7 @@ def main(raw_dir,
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-', ' NA',]
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-']
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
@@ -272,6 +209,9 @@ def main(raw_dir,
 
     # Skip first row as columns names
     reader_kwargs['header'] = None
+    
+    # Use for Nan value
+    reader_kwargs['assume_missing'] = True
     
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -285,42 +225,22 @@ def main(raw_dir,
         else: 
             import pandas as dd
         
-        # Split the last column (contain the 37 remain fields)
-        df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
+        # Drop Debug_data
+        df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
-        # Cast to datetime
-        df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
-
-        # Drop TO_BE_PARSED
-        df = df.drop(['TO_BE_PARSED'], axis=1)
-
-        # Add names to columns
-        df_to_parse_dict_names = dict(zip(column_names[2:-3],list(df_to_parse.columns)[0:35]))
-        for i in range(len(list(df_to_parse.columns)[35:])):
-            df_to_parse_dict_names[i] = i
-
-        df_to_parse.columns = df_to_parse_dict_names
-
-        # Remove char from rain intensity
-        df_to_parse['rain_rate_32bit'] = df_to_parse['rain_rate_32bit'].str.lstrip("b'")
-
-        # Remove spaces on weather_code_METAR_4678 and weather_code_NWS
-        df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
-        df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
-
-        # Add the comma on the FieldN, FieldV and RawData
-        df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldN')
-        df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldV')
-        df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
-
-        # Concat all togheter
-        df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1, ignore_unknown_divisions=True)
+        # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
+        df = df.loc[df['FieldN'].astype(str).str.len() == 224]
+        df = df.loc[df['FieldV'].astype(str).str.len() == 224]
+        df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+        
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
         
         return df  
     
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern =  "*.csv*"   
+    raw_data_glob_pattern =  "*.dat*"   
     
     ####----------------------------------------------------------------------.
     #################### 
@@ -382,7 +302,7 @@ def main(raw_dir,
             ##------------------------------------------------------.
             #### - Read all raw data files into a dataframe  
             df = read_L0_raw_file_list(file_list=file_list, 
-                                       column_names=columns_names_temporary, 
+                                       column_names=column_names, 
                                        reader_kwargs=reader_kwargs,
                                        df_sanitizer_fun =df_sanitizer_fun, 
                                        lazy=lazy)

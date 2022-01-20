@@ -15,12 +15,12 @@ import numpy as np
 # from disdrodb.io import col_dtype_check
 
 
-campagna = 'EPFL_Roof_2012'
+campagna = 'PARSIVEL_2007'
 path = f"/SharedVM/Campagne/EPFL/Processed/{campagna}/L0"
-file = campagna + '_s40.parquet'
+file = campagna + '_s10.parquet'
 file_path = os.path.join(path, file)
 
-df = dd.read_parquet(file_path)
+df = dd.read_parquet('/SharedVM/Campagne/EPFL/Processed/HPICONET_2010/L0/HPICONET_2010_s12.parquet')
 
 df = df.compute()
 print(df)

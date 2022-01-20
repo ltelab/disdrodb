@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Fri Jan 14 13:16:28 2022
+Created on Thu Jan 20 09:12:44 2022
 
 @author: kimbo
 """
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 #-----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -22,9 +25,9 @@ Created on Fri Jan 14 13:16:28 2022
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-----------------------------------------------------------------------------.
 
-### THIS SCRIPT PROVIDE A columns_names_temporaryLATE FOR PARSER FILE DEVELOPMENT 
+### THIS SCRIPT PROVIDE A TEMPLATE FOR PARSER FILE DEVELOPMENT 
 #   FROM RAW DATA FILES 
-# - Please copy such columns_names_temporarylate and modify it for each parser ;) 
+# - Please copy such template and modify it for each parser ;) 
 # - Additional functions/tools to ease parser development are welcome 
 
 #-----------------------------------------------------------------------------.
@@ -37,6 +40,7 @@ import dask.dataframe as dd
 import dask.array as da
 import numpy as np 
 import xarray as xr
+import pyarrow as pa
 
 
 from disdrodb.io import check_directories
@@ -59,15 +63,12 @@ from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
 from disdrodb.dev_tools import infer_df_str_column_names
 
-from disdrodb.L1_proc import create_L1_dataset_from_L0 
-from disdrodb.metadata import read_metadata
-
 ##------------------------------------------------------------------------. 
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/DELFT/Raw/TEST_DATA"
-processed_dir = "/SharedVM/Campagne/DELFT/Processed/TEST_DATA"
+raw_dir = "/SharedVM/Campagne/EPFL/Raw/COMMON_2011"
+processed_dir = "/SharedVM/Campagne/EPFL/Processed/COMMON_2011"
 
 l0_processing = True
 l1_processing = True
@@ -114,13 +115,13 @@ station_id = list_stations_id[0]
 ##########################################################################   
 #### 4. List files to process  [TO CUSTOMIZE AND THEN MOVE TO PARSER] ####
 ##########################################################################
-glob_pattern = os.path.join("data", station_id, "*.csv*") # CUSTOMIZE THIS 
+glob_pattern = os.path.join("data", station_id, "*.dat*") # CUSTOMIZE THIS 
 device_path = os.path.join(raw_dir, glob_pattern)
 file_list = sorted(glob.glob(device_path, recursive = True))
 #-------------------------------------------------------------------------. 
 # All files into the campaing
-all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.csv*"), recursive = True))
-# file_list = ['/SharedVM/Campagne/ltnas3/Raw/PAYERNE_2014/data/10/10_ascii_20140324.dat']
+all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"), recursive = True))
+# file_list = ['/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2011/data/10/10_ascii_20110905.dat']
 # file_list = get_file_list(raw_dir=raw_dir,
 #                           glob_pattern=glob_pattern, 
 #                           verbose=verbose, 
@@ -133,8 +134,6 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.csv*"),
 # Important: document argument need/behaviour 
     
 reader_kwargs = {}
-# - Define delimiter
-reader_kwargs['delimiter'] = ';'
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -155,7 +154,7 @@ reader_kwargs['compression'] = 'infer'
 #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
 #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
 #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-', ' NA',]
+reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-']
 
 # - Define max size of dask dataframe chunks (if lazy=True)
 #   - If None: use a single block for each file
@@ -167,6 +166,9 @@ reader_kwargs["dtype"] = str
 
 # Skip first row as columns names
 reader_kwargs['header'] = None
+
+# Different enconding for this campaign
+# reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
 
 # Use for Nan value
 # reader_kwargs['assume_missing'] = True
@@ -182,39 +184,9 @@ reader_kwargs['header'] = None
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 df = read_raw_data(filepath, 
-                    column_names=None,  
-                    reader_kwargs=str_reader_kwargs, 
-                    lazy=True).add_prefix('col_')
-
-# Add prefix to columns
-# df = df.add_prefix('col_')
-# df_to_parse = df_to_parse.compute()
-# df = df.compute()
-
-# Split the last column (contain the 37 remain fields)
-df_to_parse = df['col_2'].str.split(';', expand=True, n = 99).add_prefix('col_')
-
-
-df['col_0'] = dd.to_datetime(df['col_0'], format='%Y%m%d-%H%M%S')
-
-# Split latidude and longitude
-df[['latidude', 'longitude']] = df['col_1'].str.split(pat=".", expand=True, n = 1)
-df3 = df['col_1'].str.split(pat=".", expand=True, n = 2).compute()
-
-# Drop unused columns
-# df = df.drop(['col_1', 'col_2'], axis=1)
-
-# Remove char from rain intensity
-df_to_parse['col_0'] = df_to_parse['col_0'].str.lstrip("b'")
-
-
-# Add the comma on the FieldN, FieldV and RawData
-df_FieldN = df_to_parse.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
-df_FieldV = df_to_parse.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
-df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'")
-
-# Concat all togheter
-df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1)
+                   column_names=None,  
+                   reader_kwargs=str_reader_kwargs, 
+                   lazy=False)
 
 # Print first rows
 print_df_first_n_rows(df, n = 1, column_names=False)
@@ -255,90 +227,30 @@ get_OTT_Parsivel2_dict()
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-# "01","Rain intensity 32 bit",8,"mm/h","single_number"
-# "02","Rain amount accumulated 32 bit",7,"mm","single_number"
-# "03","Weather code SYNOP Table 4680",2,"","single_number"
-# "04","Weather code SYNOP Table 4677",2,"","single_number"
-# "05","Weather code METAR Table 4678",5,"","character_string"
-# "06","Weather code NWS",4,"","character_string"
-# "07","Radar reflectivity 32 bit",6,"dBZ","single_number"
-# "08","MOR visibility in precipitation",5,"m","single_number"
-# "09","Sample interval",5,"s","single_number"
-# "10","Signal amplitude of laser",5,"","single_number"
-# "11","Number of particles detected and validated",5,"","single_number"
-# "12","Temperature in sensor housing",3,"degree_Celsius","single_number"
-# "13","Sensor serial number",6,"","character_string"
-# "14","Firmware IOP",6,"","character_string"
-# "15","Firmware DSP",6,"","character_string"
-# "16","Sensor head heating current",4,"A","single_number"
-# "17","Power supply voltage",4,"V","single_number"
-# "18","Sensor status",1,"","single_number"
-# "19","Date/time measuring start",19,"DD.MM.YYYY_hh:mm:ss","character_string"
-# "20","Sensor time",8,"hh:mm:ss","character_string"
-# "21","Sensor date",10,"DD.MM.YYYY","character_string"
-# "22","Station name",4,"","character_string"
-# "23","Station number",4,"","character_string"
-# "24","Rain amount absolute 32 bit",7,"mm","single_number"
-# "25","Error code",3,"","character_string"
-# "26","Temperature PCB",3,"degree_Celsius","single_number"
-# "27","Temperature in right sensor head",3,"degree_Celsius","single_number"
-# "28","Temperature in left sensor head",3,"degree_Celsius","single_number"
-# "30","Rain intensity 16 bit max 30 mm/h",6,"mm/h","single_number"
-# "31","Rain intensity 16 bit max 1200 mm/h",6,"mm/h","single_number"
-# "32","Rain amount accumulated 16 bit",7,"mm","single_number"
-# "33","Radar reflectivity 16 bit",5,"dBZ","single_number"
-# "34","Kinetic energy",7,"J/(m2*h)","single_number"
-# "35","Snowfall intensity",7,"mm/h","single_number"
-# "60","Number of all particles detected",8,"","single_number"
-# "61","List of all particles detected",13,"","list"
-# "90","FieldN",224,"","vector"
-# "91","FieldV",224,"","vector"
-# "93","Raw data",4096,"","matrix"
-
-columns_names_temporary =['time','epoch_time','TO_BE_PARSED']
-
 column_names = ['time',
-                'epoch_time',
+                'id',
+                'datalogger_temperature',
+                'datalogger_voltage',
                 'rain_rate_32bit',
                 'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
                 'weather_code_SYNOP_4677',
-                'weather_code_METAR_4678',
-                'weather_code_NWS',
                 'reflectivity_32bit',
                 'mor_visibility',
-                'sample_interval',
                 'laser_amplitude',
                 'n_particles',
                 'sensor_temperature',
-                'sensor_serial_number',
-                'firmware_IOP',
-                'firmware_DSP',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
-                'date_time_measuring_start',
-                'sensor_time',
-                'sensor_date',
-                'station_name',
-                'station_number',
                 'rain_amount_absolute_32bit',
-                'error_code',
-                'sensor_temperature_PBC',
-                'sensor_temperature_right',
-                'sensor_temperature_left',
-                'rain_rate_16bit',
-                'rain_rate_12bit',
-                'rain_accumulated_16bit',
-                'reflectivity_16bit',
-                'rain_kinetic_energy',
-                'snowfall_intensity',
-                'n_particles_all',
-                'n_particles_all_detected',
+                'Debug_data',
                 'FieldN',
                 'FieldV',
                 'RawData',
+                'datalogger_error'
                 ]
+
 
 # - Check name validity 
 check_L0_column_names(column_names)
@@ -347,9 +259,9 @@ check_L0_column_names(column_names)
 # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
 filepath = file_list[0]
 df = read_raw_data(filepath=filepath, 
-                    column_names=columns_names_temporary,
-                    reader_kwargs=reader_kwargs,
-                    lazy=False)
+                   column_names=column_names,
+                   reader_kwargs=reader_kwargs,
+                   lazy=False)
     
 
 
@@ -359,9 +271,9 @@ print_df_random_n_rows(df, n= 5)
 
 # - Check it loads also lazily in dask correctly
 df1 = read_raw_data(filepath=filepath, 
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    lazy=True)
+                   column_names=column_names,
+                   reader_kwargs=reader_kwargs,
+                   lazy=True)
 
 df1 = df1.compute() 
 
@@ -388,24 +300,25 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[0]  # Select also other files here  1,2, ... 
+filepath = all_stations_files
 lazy = False             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
 df = read_raw_data(filepath=filepath, 
-                    column_names=columns_names_temporary,
-                    reader_kwargs=reader_kwargs,
-                    lazy=lazy)
+                   column_names=column_names,
+                   reader_kwargs=reader_kwargs,
+                   lazy=lazy)
 
 #------------------------------------------------------. 
 # Check if file empty
-# if len(df.index) == 0:
-#     raise ValueError(f"{filepath} is empty and has been skipped.")
+if len(df.index) == 0:
+    raise ValueError(f"{filepath} is empty and has been skipped.")
 
-# # Check column number
-# if len(df.columns) != len(column_names):
-#     raise ValueError(f"{filepath} has wrong columns number, and has been skipped.")
+# Check column number
+if len(df.columns) != len(column_names):
+    raise ValueError(f"{filepath} has wrong columns number, and has been skipped.")
 
 #---------------------------------------------------------------------------.  
 #### 8.2 Ad-hoc code [TO CUSTOMIZE]
@@ -420,43 +333,19 @@ df = read_raw_data(filepath=filepath,
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
-# Add prefix to columns
-# df = df.add_prefix('col_')
+# Drop Debug_data
+df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
-# ----
+# Drop rows with more than 8 nan
+# df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
 
-# Split the last column (contain the 37 remain fields)
-df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
+# Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
+df = df.loc[df['FieldN'].astype(str).str.len() == 224]
+df = df.loc[df['FieldV'].astype(str).str.len() == 224]
+df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 
-# Cast to datetime
-df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
-
-# Drop TO_BE_PARSED
-df = df.drop(['TO_BE_PARSED'], axis=1)
-
-# Add names to columns
-df_to_parse_dict_names = dict(zip(column_names[2:-3],list(df_to_parse.columns)[0:35]))
-for i in range(len(list(df_to_parse.columns)[35:])):
-    df_to_parse_dict_names[i] = i
-
-df_to_parse.columns = df_to_parse_dict_names
-
-# Remove char from rain intensity
-df_to_parse['rain_rate_32bit'] = df_to_parse['rain_rate_32bit'].str.lstrip("b'")
-
-# Remove spaces on weather_code_METAR_4678 and weather_code_NWS
-df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
-df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
-
-# ----
-
-# Add the comma on the FieldN, FieldV and RawData
-df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('FieldN')
-df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('FieldV')
-df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
-
-# Concat all togheter
-df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1)
+# Drop not float on rain_rate_32bit
+# df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -479,8 +368,6 @@ for column in df.columns:
     except KeyError:
         # If column dtype is not into get_L0_dtype_standards, assign object
         df[column] = df[column].astype('object')
-    except ValueError as e:
-        print(f"The column {column} has {e}")
         
 #---------------------------------------------------------------------------.
 #### 8.4 Check the dataframe looks as desired 
@@ -497,55 +384,34 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 # --> df_sanitizer_fun = None  if not necessary ...
 
 def df_sanitizer_fun(df, lazy=False):
-    # Import dask or pandas 
-    if lazy: 
-        import dask.dataframe as dd
-    else: 
-        import pandas as dd
+    # # Import dask or pandas 
+    # if lazy: 
+    #     import dask.dataframe as dd
+    # else: 
+    #     import pandas as dd
+
+    # Drop Debug_data
+    df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+
+    # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
+    df = df.loc[df['FieldN'].astype(str).str.len() == 224]
+    df = df.loc[df['FieldV'].astype(str).str.len() == 224]
+    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
     
-    # Split the last column (contain the 37 remain fields)
-    df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
-
-    # Cast to datetime
-    df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
-
-    # Drop TO_BE_PARSED
-    df = df.drop(['TO_BE_PARSED'], axis=1)
-
-    # Add names to columns
-    df_to_parse_dict_names = dict(zip(column_names[2:-3],list(df_to_parse.columns)[0:35]))
-    for i in range(len(list(df_to_parse.columns)[35:])):
-        df_to_parse_dict_names[i] = i
-
-    df_to_parse.columns = df_to_parse_dict_names
-
-    # Remove char from rain intensity
-    df_to_parse['rain_rate_32bit'] = df_to_parse['rain_rate_32bit'].str.lstrip("b'")
-
-    # Remove spaces on weather_code_METAR_4678 and weather_code_NWS
-    df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
-    df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
-
-    # Add the comma on the FieldN, FieldV and RawData
-    df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldN')
-    df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldV')
-    df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
-
-    # Concat all togheter
-    df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1, ignore_unknown_divisions=True)
+    # - Convert time column to datetime 
+    df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
     
     return df 
-
 
 ##------------------------------------------------------. 
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
-subset_file_list = file_list[:1]
+subset_file_list = file_list[:]
 subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
-                           column_names=columns_names_temporary, 
+                           column_names=column_names, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
                            lazy=lazy)
@@ -571,7 +437,7 @@ compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
 row_group_size = 100000 
 engine = "pyarrow"
 
-df_to_parse = df.to_parquet(parquet_dir , 
+df2 = df.to_parquet(parquet_dir , 
                     # schema = 'infer',
                     engine = engine,
                     row_group_size = row_group_size,
@@ -579,60 +445,6 @@ df_to_parse = df.to_parquet(parquet_dir ,
                   )
 ##------------------------------------------------------. 
 #### 10.1 Read parquet file
-df_to_parse = dd.read_parquet(parquet_dir)
-df_to_parse = df_to_parse.compute()
-print(df_to_parse)
-
-
-####--------------------------------------------------------------------------. 
-##------------------------------------------------------. 
-#### 20. Process L1
-
-#-----------------------------------------------------------------.
-#### 20.1 Create xarray Dataset
-attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
-# Retrieve sensor name
-sensor_name = attrs['sensor_name']
-
-ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+df2 = dd.read_parquet(parquet_dir)
+df2 = df2.compute()
+print(df2)
