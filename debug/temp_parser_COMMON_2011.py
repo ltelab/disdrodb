@@ -299,7 +299,7 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0]  # Select also other files here  1,2, ... 
+filepath = file_list[0:1]  # Select also other files here  1,2, ... 
 filepath = all_stations_files
 lazy = False             # Try also with True when work with False 
 
@@ -337,7 +337,11 @@ if len(df.columns) != len(column_names):
 df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
 # Drop rows with more than 8 nan
-# df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
+df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
+
+# If FieldN or FieldV orRawData is nan, drop the row
+# col_to_drop_if_na = ['FieldN','FieldV','RawData']
+# df = df.dropna(subset = col_to_drop_if_na)
 
 # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
 df = df.loc[df['FieldN'].astype(str).str.len() == 224]
@@ -392,6 +396,9 @@ def df_sanitizer_fun(df, lazy=False):
 
     # Drop Debug_data
     df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+    
+    # Drop rows with more than 8 nan
+    df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
 
     # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
     df = df.loc[df['FieldN'].astype(str).str.len() == 224]
