@@ -51,7 +51,7 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
                    raise ValueError(f"'column' {column} has values outside the expected data range.")
     if verbose: 
         if len(list_wrong_columns) > 0: 
-            print("- The following columns have values outside the expected data range:", list_wrong_columns)
+            print(" - The following columns have values outside the expected data range:", list_wrong_columns)
     #-------------------------------------
     # Check categorical data values 
     dict_field_values = get_field_value_options_dict(sensor_name)
@@ -67,7 +67,7 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
                    raise ValueError(msg)
     if verbose: 
         if len(list_wrong_columns) > 0: 
-            print("The followin columns have values outside the expected data range:", list_wrong_columns)
+            print(" - The following columns have values outside the expected data range:", list_wrong_columns)
             [print(msg) for msg in list_msg]
     #-------------------------------------
     # TODO[GG]: 
