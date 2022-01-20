@@ -11,13 +11,20 @@ import dask.dataframe as dd
 import os
 import xarray as xr
 import netCDF4
+from pprint import pprint
 
-campagna = 'PARSIVEL_2007'
+
+campagna = 'HPICONET_2010'
 path = f'/SharedVM/Campagne/EPFL/Processed/{campagna}/L1'
 file = campagna + '_s10.nc'
 file_path = os.path.join(path, file)
 
-ds1 = xr.open_dataset(file_path)
+ds = xr.open_dataset(file_path)
+
+att = ds.attrs
+att.insert(0, att)
+pprint(att)
+
 
 campagna = 'anxldM1.b1.20191201.000000'
 path = "/SharedVM/Campagne/ARM/anxldM1"

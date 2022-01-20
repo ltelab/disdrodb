@@ -233,8 +233,8 @@ def main(raw_dir,
                              'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
                              'laser_amplitude', 'n_particles', 'sensor_temperature',
                              'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
-                             'rain_amount_absolute_32bit','FieldN','FieldV','RawData']
-        df = df.dropna(subset = col_to_drop_if_na)
+                             'rain_amount_absolute_32bit']
+        df = df.dropna(subset = col_to_drop_if_na, how='all')
 
         # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
         df = df.loc[df['FieldN'].astype(str).str.len() == 224]

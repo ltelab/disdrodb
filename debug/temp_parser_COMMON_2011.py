@@ -299,9 +299,9 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0:1]  # Select also other files here  1,2, ... 
+filepath = file_list[0:5]  # Select also other files here  1,2, ... 
 filepath = all_stations_files
-lazy = False             # Try also with True when work with False 
+lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
@@ -334,22 +334,23 @@ if len(df.columns) != len(column_names):
 # del df_tmp 
 
 # Drop Debug_data
-df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+# df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
-# Drop rows with more than 8 nan
-df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
-
-# If FieldN or FieldV orRawData is nan, drop the row
-# col_to_drop_if_na = ['FieldN','FieldV','RawData']
-# df = df.dropna(subset = col_to_drop_if_na)
+# If value in col_to_drop_if_na colum is nan, drop the row
+col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
+                     'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
+                     'laser_amplitude', 'n_particles', 'sensor_temperature',
+                     'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
+                     'rain_amount_absolute_32bit']
+df = df.dropna(subset = col_to_drop_if_na, how='all')
 
 # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
 df = df.loc[df['FieldN'].astype(str).str.len() == 224]
 df = df.loc[df['FieldV'].astype(str).str.len() == 224]
 df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 
-# Drop not float on rain_rate_32bit
-# df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+ # - Convert time column to datetime 
+df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -396,16 +397,21 @@ def df_sanitizer_fun(df, lazy=False):
 
     # Drop Debug_data
     df = df.drop(columns = ['Debug_data', 'datalogger_error'])
-    
-    # Drop rows with more than 8 nan
-    df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
+
+    # If value in col_to_drop_if_na colum is nan, drop the row
+    col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
+                         'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
+                         'laser_amplitude', 'n_particles', 'sensor_temperature',
+                         'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
+                         'rain_amount_absolute_32bit']
+    df = df.dropna(subset = col_to_drop_if_na, how='all')
 
     # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
     df = df.loc[df['FieldN'].astype(str).str.len() == 224]
     df = df.loc[df['FieldV'].astype(str).str.len() == 224]
     df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-    
-    # - Convert time column to datetime 
+
+     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
     
     return df 
