@@ -77,6 +77,8 @@ def get_L0_dtype_standards():
         #Temp variables
         'temp': 'object',
         'TEMPORARY': 'object',
+        'TO_BE_MERGE' :'object',
+        'TO_BE_MERGE2' :'object',
         'TO_BE_PARSED': 'object',
         'TO_BE_SPLITTED': 'object',
         'TO_DEBUG': 'object',

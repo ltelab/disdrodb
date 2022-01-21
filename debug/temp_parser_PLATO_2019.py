@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan 20 09:12:44 2022
+Created on Fri Jan 21 10:11:19 2022
 
 @author: kimbo
 """
@@ -67,8 +67,8 @@ from disdrodb.dev_tools import infer_df_str_column_names
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/EPFL/Raw/COMMON_2011"
-processed_dir = "/SharedVM/Campagne/EPFL/Processed/COMMON_2011"
+raw_dir = "/SharedVM/Campagne/EPFL/Raw/PLATO_2019"
+processed_dir = "/SharedVM/Campagne/EPFL/Processed/PLATO_2019"
 
 l0_processing = True
 l1_processing = True
@@ -78,6 +78,7 @@ debugging_mode = True
 lazy = True
 write_zarr = True
 write_netcdf = True
+
 
 ####--------------------------------------------------------------------------.
 ############################################# 
@@ -115,12 +116,12 @@ station_id = list_stations_id[0]
 ##########################################################################   
 #### 4. List files to process  [TO CUSTOMIZE AND THEN MOVE TO PARSER] ####
 ##########################################################################
-glob_pattern = os.path.join("data", station_id, "*.dat*") # CUSTOMIZE THIS 
+glob_pattern = os.path.join("data", station_id, "*.MIS*") # CUSTOMIZE THIS 
 device_path = os.path.join(raw_dir, glob_pattern)
 file_list = sorted(glob.glob(device_path, recursive = True))
 #-------------------------------------------------------------------------. 
 # All files into the campaing
-all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"), recursive = True))
+all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.MIS*"), recursive = True))
 # file_list = ['/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2011/data/10/10_ascii_20110905.dat']
 # file_list = get_file_list(raw_dir=raw_dir,
 #                           glob_pattern=glob_pattern, 
@@ -166,9 +167,10 @@ reader_kwargs["dtype"] = str
 
 # Skip first row as columns names
 reader_kwargs['header'] = None
+reader_kwargs['skiprows'] = 1
 
 # Different enconding for this campaign
-# reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
+reader_kwargs['encoding'] = 'latin-1'
 
 # Use for Nan value
 # reader_kwargs['assume_missing'] = True
@@ -184,9 +186,9 @@ reader_kwargs['header'] = None
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 df = read_raw_data(filepath, 
-                   column_names=None,  
-                   reader_kwargs=str_reader_kwargs, 
-                   lazy=False)
+                    column_names=None,  
+                    reader_kwargs=str_reader_kwargs, 
+                    lazy=False)
 
 # Print first rows
 print_df_first_n_rows(df, n = 1, column_names=False)
@@ -227,14 +229,17 @@ get_OTT_Parsivel2_dict()
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-column_names = ['time',
-                'id',
-                'datalogger_temperature',
-                'datalogger_voltage',
+# Date,Time,Intensity of precipitation (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Weather code METAR/SPECI,Weather code NWS,Radar reflectivity (dBz),
+# MOR Visibility (m),Signal amplitude of Laserband,Number of detected particles,Temperature in sensor (°C),Heating current (A),Sensor voltage (V),Kinetic Energy,Snow intensity (mm/h)
+
+
+column_names = ['TO_BE_MERGE',
+                'TO_BE_MERGE2',
                 'rain_rate_32bit',
-                'rain_accumulated_32bit',
+                'date_time_measuring_start',
                 'weather_code_SYNOP_4680',
-                'weather_code_SYNOP_4677',
+                'weather_code_METAR_4678',
+                'weather_code_NWS',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'laser_amplitude',
@@ -242,13 +247,8 @@ column_names = ['time',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
-                'sensor_status',
-                'rain_amount_absolute_32bit',
-                'Debug_data',
-                'FieldN',
-                'FieldV',
-                'RawData',
-                'datalogger_error'
+                'rain_kinetic_energy',
+                'snowfall_intensity'
                 ]
 
 
@@ -259,9 +259,9 @@ check_L0_column_names(column_names)
 # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
 filepath = file_list[0]
 df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=False)
+                    column_names=column_names,
+                    reader_kwargs=reader_kwargs,
+                    lazy=False)
     
 
 
@@ -271,9 +271,9 @@ print_df_random_n_rows(df, n= 5)
 
 # - Check it loads also lazily in dask correctly
 df1 = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=True)
+                    column_names=column_names,
+                    reader_kwargs=reader_kwargs,
+                    lazy=True)
 
 df1 = df1.compute() 
 
@@ -307,10 +307,12 @@ lazy = True             # Try also with True when work with False
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
 df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=lazy)
+                    column_names=column_names,
+                    reader_kwargs=reader_kwargs,
+                    lazy=lazy)
 
+
+df = df.compute() 
 #------------------------------------------------------. 
 # Check if file empty
 if len(df.index) == 0:
@@ -333,28 +335,11 @@ if len(df.columns) != len(column_names):
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
-# Drop bad lines on based on Debug_data
-df = df[df.Debug_data.str.contains("Frame") == False]
 
-
-# Drop Debug_data
-# df = df.drop(columns = ['Debug_data', 'datalogger_error'])
-
-# If value in col_to_drop_if_na colum is nan, drop the row
-col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
-                     'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
-                     'laser_amplitude', 'n_particles', 'sensor_temperature',
-                     'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
-                     'rain_amount_absolute_32bit']
-df = df.dropna(subset = col_to_drop_if_na, how='all')
-
-# Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
- # - Convert time column to datetime 
-df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+  # - Merge date and time column and drop TO_BE_MERGE and TO_BE_MERGE2
+df['time'] = pd.to_datetime(df['TO_BE_MERGE'] + df['TO_BE_MERGE2'], format='%Y%m%d%H:%M:%S')
+df = df.drop(columns = ['TO_BE_MERGE', 'TO_BE_MERGE2'])
+df.insert(0, 'time', df.pop("time"))
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -399,27 +384,10 @@ def df_sanitizer_fun(df, lazy=False):
     # else: 
     #     import pandas as dd
     
-    # Drop bad lines on based on Debug_data
-    df = df[df.Debug_data.str.contains("Frame") == False]
-
-    # Drop Debug_data
-    df = df.drop(columns = ['Debug_data', 'datalogger_error'])
-
-    # If value in col_to_drop_if_na colum is nan, drop the row
-    col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
-                         'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
-                         'laser_amplitude', 'n_particles', 'sensor_temperature',
-                         'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
-                         'rain_amount_absolute_32bit']
-    df = df.dropna(subset = col_to_drop_if_na, how='all')
-
-    # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-    df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-    df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
-     # - Convert time column to datetime 
-    df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+    # - Merge date and time column and drop TO_BE_MERGE and TO_BE_MERGE2
+    df['time'] = dd.to_datetime(df['TO_BE_MERGE'] + df['TO_BE_MERGE2'], format='%Y%m%d%H:%M:%S')
+    df = df.drop(columns = ['TO_BE_MERGE', 'TO_BE_MERGE2'])
+    df.insert(0, 'time', df.pop("time"))
     
     return df 
 
@@ -429,7 +397,7 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
 subset_file_list = file_list[:]
-subset_file_list = all_stations_files
+# subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,

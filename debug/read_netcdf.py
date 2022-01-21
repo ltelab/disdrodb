@@ -21,9 +21,7 @@ file_path = os.path.join(path, file)
 
 ds = xr.open_dataset(file_path)
 
-att = ds.attrs
-att.insert(0, att)
-pprint(att)
+pprint(ds.attrs)
 
 
 campagna = 'anxldM1.b1.20191201.000000'

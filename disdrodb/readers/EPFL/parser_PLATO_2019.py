@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan 20 09:37:03 2022
+Created on Fri Jan 21 10:56:13 2022
 
 @author: kimbo
 """
@@ -145,15 +145,17 @@ def main(raw_dir,
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter, 
     #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
-
-    column_names = ['time',
-                    'id',
-                    'datalogger_temperature',
-                    'datalogger_voltage',
+    
+    # Header found: Date,Time,Intensity of precipitation (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Weather code METAR/SPECI,Weather code NWS,Radar reflectivity (dBz), MOR Visibility (m),Signal amplitude of Laserband,Number of detected particles,Temperature in sensor (°C),Heating current (A),Sensor voltage (V),Kinetic Energy,Snow intensity (mm/h)
+    
+    
+    column_names = ['TO_BE_MERGE',
+                    'TO_BE_MERGE2',
                     'rain_rate_32bit',
-                    'rain_accumulated_32bit',
+                    'date_time_measuring_start',
                     'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
+                    'weather_code_METAR_4678',
+                    'weather_code_NWS',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'laser_amplitude',
@@ -161,13 +163,8 @@ def main(raw_dir,
                     'sensor_temperature',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
-                    'sensor_status',
-                    'rain_amount_absolute_32bit',
-                    'Debug_data',
-                    'FieldN',
-                    'FieldV',
-                    'RawData',
-                    'datalogger_error'
+                    'rain_kinetic_energy',
+                    'snowfall_intensity'
                     ]
     
     # - Check name validity 
@@ -209,6 +206,10 @@ def main(raw_dir,
 
     # Skip first row as columns names
     reader_kwargs['header'] = None
+    reader_kwargs['skiprows'] = 1
+
+    # Different enconding for this campaign
+    reader_kwargs['encoding'] = 'latin-1'
     
     # Use for Nan value
     reader_kwargs['assume_missing'] = True
@@ -224,28 +225,11 @@ def main(raw_dir,
             import dask.dataframe as dd
         else: 
             import pandas as dd
-            
-        # Drop bad lines on based on Debug_data
-        df = df[df.Debug_data.str.contains("Frame") == False]
         
-        # Drop Debug_data
-        df = df.drop(columns = ['Debug_data', 'datalogger_error'])
-
-        # If value in col_to_drop_if_na colum is nan, drop the row
-        col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
-                             'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
-                             'laser_amplitude', 'n_particles', 'sensor_temperature',
-                             'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
-                             'rain_amount_absolute_32bit']
-        df = df.dropna(subset = col_to_drop_if_na, how='all')
-
-        # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-        df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-        df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-        df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-
-         # - Convert time column to datetime 
-        df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+        # - Merge date and time column and drop TO_BE_MERGE and TO_BE_MERGE2
+        df['time'] = dd.to_datetime(df['TO_BE_MERGE'] + df['TO_BE_MERGE2'], format='%Y%m%d%H:%M:%S')
+        df = df.drop(columns = ['TO_BE_MERGE', 'TO_BE_MERGE2'])
+        df.insert(0, 'time', df.pop("time"))
         
         return df  
     
