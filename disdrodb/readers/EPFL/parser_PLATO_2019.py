@@ -229,7 +229,6 @@ def main(raw_dir,
         # - Merge date and time column and drop TO_BE_MERGE and TO_BE_MERGE2
         df['time'] = dd.to_datetime(df['TO_BE_MERGE'] + df['TO_BE_MERGE2'], format='%Y%m%d%H:%M:%S')
         df = df.drop(columns = ['TO_BE_MERGE', 'TO_BE_MERGE2'])
-        df.insert(0, 'time', df.pop("time"))
         
         return df  
     
