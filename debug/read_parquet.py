@@ -25,12 +25,14 @@ df = dd.read_parquet('/SharedVM/Campagne/EPFL/Processed/HPICONET_2010/L0/HPICONE
 df = df.compute()
 print(df)
 
-campagna = 'EPFL_Roof_2011'
-path = f"/SharedVM/Campagne/ltnas3/Processed/{campagna}/11/L0"
-file = campagna + '.parquet'
-file_path = '/SharedVM/Campagne/DELFT/Processed/TEST_DATA/L0/TEST_DATA_s10.parquet'
+campagna = 'HPICONET_2010'
+device = 's12'
+path = f"/SharedVM/Campagne/EPFL/Processed/{campagna}/L0"
+file = campagna + '_' + device + '.parquet'
+parquet_path = os.path.join(path, file)
+# file_path = '/SharedVM/Campagne/DELFT/Processed/TEST_DATA/L0/TEST_DATA_s10.parquet'
 
-df2 = dd.read_parquet(file_path)
+df2 = dd.read_parquet(parquet_path)
 
 df2 = df2.compute()
 

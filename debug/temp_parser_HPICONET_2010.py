@@ -110,7 +110,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[0]
+station_id = list_stations_id[2]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -167,6 +167,9 @@ reader_kwargs["dtype"] = str
 
 # Skip first row as columns names
 reader_kwargs['header'] = None
+
+# Skip file with encoding errors
+reader_kwargs['encoding_errors'] = 'ignore'
 
 # Different enconding for this campaign
 # reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
@@ -302,15 +305,18 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[0]  # Select also other files here  1,2, ... 
 filepath = all_stations_files
-lazy = False             # Try also with True when work with False 
+lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=lazy)
+try:
+    df = read_raw_data(filepath=filepath, 
+                       column_names=column_names,
+                       reader_kwargs=reader_kwargs,
+                       lazy=lazy)
+except UnicodeDecodeError:
+    print('file no bueno!')
 
 #------------------------------------------------------. 
 # Check if file empty
@@ -335,7 +341,8 @@ if len(df.columns) != len(column_names):
 # del df_tmp 
 
 # Drop Debug_data
-df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+# df = df.drop(columns = ['Debug_data', 'datalogger_error'])
+df = df.drop(columns = ['Debug_data'])
 
 # Drop rows with more than 8 nan
 df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')

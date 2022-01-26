@@ -26,7 +26,8 @@ import os
 import glob
 import pandas as pd 
 import dask.dataframe as dd
-import logging 
+import logging
+import tarfile
 
 from disdrodb.check_standards import check_L0_standards
 from disdrodb.data_encodings import get_L0_dtype_standards
@@ -69,20 +70,26 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 
 ####---------------------------------------------------------------------------.
 #### Dataframe creation
-def read_raw_data(filepath, column_names, reader_kwargs , lazy=True):
+def read_raw_data(filepath, column_names, reader_kwargs , lazy=True, zipped=False):
     reader_kwargs = reader_kwargs.copy()
-    # Dask 
-    if lazy:
-        reader_kwargs.pop("index_col", None)
-        df = dd.read_csv(filepath,
-                         names = column_names,
-                         **reader_kwargs)
-    # Pandas
-    else:
+    if zipped:
         reader_kwargs.pop("blocksize", None)
         df = pd.read_csv(filepath,
                          names = column_names,
                          **reader_kwargs)
+    else:
+        # Dask 
+        if lazy:
+            reader_kwargs.pop("index_col", None)
+            df = dd.read_csv(filepath,
+                             names = column_names,
+                             **reader_kwargs)
+        # Pandas
+        else:
+            reader_kwargs.pop("blocksize", None)
+            df = pd.read_csv(filepath,
+                             names = column_names,
+                             **reader_kwargs)
     return df 
                                     
 def concatenate_dataframe(list_df, verbose=False, lazy=True):
@@ -119,7 +126,8 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
 def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                           df_sanitizer_fun=None, 
                           lazy=False,
-                          verbose=False):
+                          verbose=False,
+                          zipped=False):
     """Read and parse a list for raw files into a dataframe."""
     ##------------------------------------------------------.
     ### Checks arguments 
@@ -140,11 +148,30 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
     for filepath in file_list:
             # Try to process a raw file 
             try:
-                # Read the data 
-                df = read_raw_data(filepath=filepath, 
-                                   column_names=column_names,
-                                   reader_kwargs=reader_kwargs,
-                                   lazy=lazy)
+                
+                # Open the zip and choose the raw file (for MC3E campaign)
+                if zipped:
+                    tar = tarfile.open(filepath)
+                    for file in tar.getnames():
+                        if file.endswith('raw.txt'):
+                            filepath = file
+                            
+                    # Read the data 
+                    df = read_raw_data(filepath=tar.extractfile(filepath), 
+                                       column_names=column_names,
+                                       reader_kwargs=reader_kwargs,
+                                       lazy=lazy,
+                                       zipped=True)
+                    
+                    # Close zipped file
+                    tar.close()
+                    
+                else:
+                    # Read the data 
+                    df = read_raw_data(filepath=filepath, 
+                                       column_names=column_names,
+                                       reader_kwargs=reader_kwargs,
+                                       lazy=lazy)
                
                 # Check if file empty
                 if len(df.index) == 0:
