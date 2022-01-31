@@ -299,148 +299,148 @@ column_names = ['time',
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
-# - Check name validity 
-check_L0_column_names(column_names)
+# # - Check name validity 
+# check_L0_column_names(column_names)
 
-# - Read data
-# Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
-filepath = file_list[0]
-df = read_raw_data(filepath=filepath, 
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    lazy=False)
+# # - Read data
+# # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
+# filepath = file_list[0]
+# df = read_raw_data(filepath=filepath, 
+#                     column_names=column_names,
+#                     reader_kwargs=reader_kwargs,
+#                     lazy=False)
     
 
 
-# - Look at the columns and data 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5)
+# # - Look at the columns and data 
+# print_df_column_names(df)
+# print_df_random_n_rows(df, n= 5)
 
-# - Check it loads also lazily in dask correctly
-df1 = read_raw_data(filepath=filepath, 
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    lazy=True)
+# # - Check it loads also lazily in dask correctly
+# df1 = read_raw_data(filepath=filepath, 
+#                     column_names=column_names,
+#                     reader_kwargs=reader_kwargs,
+#                     lazy=True)
 
-df1 = df1.compute() 
+# df1 = df1.compute() 
 
-# - Look at the columns and data 
-print_df_column_names(df1)
-print_df_random_n_rows(df1, n= 5) 
+# # - Look at the columns and data 
+# print_df_column_names(df1)
+# print_df_random_n_rows(df1, n= 5) 
 
-# - Check are equals 
-assert df.equals(df1)
+# # - Check are equals 
+# assert df.equals(df1)
 
-# - Look at unique values
-print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
+# # - Look at unique values
+# print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
  
-print_df_columns_unique_values(df, column_indices=0, column_names=True) # single column 
+# print_df_columns_unique_values(df, column_indices=0, column_names=True) # single column 
 
-print_df_columns_unique_values(df, column_indices=slice(0,10), column_names=True) # a slice of columns 
+# print_df_columns_unique_values(df, column_indices=slice(0,10), column_names=True) # a slice of columns 
 
-get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=True) # get dictionary
+# get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=True) # get dictionary
 
-####---------------------------------------------------------------------------.
-#########################################################
-#### 8. Implement ad-hoc processing of the dataframe ####
-#########################################################
-# - This must be done once that reader_kwargs and column_names are correctly defined 
-# - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0]  # Select also other files here  1,2, ... 
-# filepath = all_stations_files
-lazy = False             # Try also with True when work with False 
+# ####---------------------------------------------------------------------------.
+# #########################################################
+# #### 8. Implement ad-hoc processing of the dataframe ####
+# #########################################################
+# # - This must be done once that reader_kwargs and column_names are correctly defined 
+# # - Try the following code with various file and with both lazy=True and lazy=False 
+# filepath = file_list[0]  # Select also other files here  1,2, ... 
+# # filepath = all_stations_files
+# lazy = False             # Try also with True when work with False 
 
-#------------------------------------------------------. 
-#### 8.1 Run following code portion without modifying anthing 
-# - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_data(filepath=filepath, 
-                    column_names=columns_names_temporary,
-                    reader_kwargs=reader_kwargs,
-                    lazy=lazy)
+# #------------------------------------------------------. 
+# #### 8.1 Run following code portion without modifying anthing 
+# # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
+# df = read_raw_data(filepath=filepath, 
+#                     column_names=columns_names_temporary,
+#                     reader_kwargs=reader_kwargs,
+#                     lazy=lazy)
 
 
-#------------------------------------------------------. 
-# Check if file empty
-# if len(df.index) == 0:
-#     raise ValueError(f"{filepath} is empty and has been skipped.")
+# #------------------------------------------------------. 
+# # Check if file empty
+# # if len(df.index) == 0:
+# #     raise ValueError(f"{filepath} is empty and has been skipped.")
 
-# Check column number
-# if len(df.columns) != len(column_names):
-#     raise ValueError(f"{filepath} has wrong columns number, and has been skipped.")
+# # Check column number
+# # if len(df.columns) != len(column_names):
+# #     raise ValueError(f"{filepath} has wrong columns number, and has been skipped.")
 
-#---------------------------------------------------------------------------.  
-#### 8.2 Ad-hoc code [TO CUSTOMIZE]
-# --> Here specify columns to drop, to split and other type of ad-hoc processing     
-# --> This portion of code will need to be enwrapped (in the parser file) 
-#     into a function called df_sanitizer_fun(df, lazy=True). See below ...     
+# #---------------------------------------------------------------------------.  
+# #### 8.2 Ad-hoc code [TO CUSTOMIZE]
+# # --> Here specify columns to drop, to split and other type of ad-hoc processing     
+# # --> This portion of code will need to be enwrapped (in the parser file) 
+# #     into a function called df_sanitizer_fun(df, lazy=True). See below ...     
             
-# # Example: split erroneous columns  
-# df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
-# df = df.drop(columns=['TO_BE_SPLITTED'])
-# df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
-# del df_tmp 
+# # # Example: split erroneous columns  
+# # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
+# # df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# # df = df.drop(columns=['TO_BE_SPLITTED'])
+# # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
+# # del df_tmp 
 
-# - Convert time column to datetime 
-df['time'] = dd.to_datetime(df['time'], format='%Y%m%d%H%M%S')
+# # - Convert time column to datetime 
+# df['time'] = dd.to_datetime(df['time'], format='%Y%m%d%H%M%S')
 
-# Split the last column (contain all the fields)
-df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1032)
+# # Split the last column (contain all the fields)
+# df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1032)
 
-# Drop TO_BE_SPLITTED
-df = df.drop(['TO_BE_SPLITTED'], axis=1)
+# # Drop TO_BE_SPLITTED
+# df = df.drop(['TO_BE_SPLITTED'], axis=1)
 
-# Add the comma on RawData
-df_RawData = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('RawData')
+# # Add the comma on RawData
+# df_RawData = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('RawData')
 
-# Concat all togheter
-df = dd.concat([df, df_to_parse.iloc[:,:9], df_RawData] ,axis=1)
+# # Concat all togheter
+# df = dd.concat([df, df_to_parse.iloc[:,:9], df_RawData] ,axis=1)
 
-# Add names to the columns
-df.columns = column_names
+# # Add names to the columns
+# df.columns = column_names
 
-# Drop rows with less than 4096 on RawData
-df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# # Drop rows with less than 4096 on RawData
+# df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 
-# Drop not float on rain_rate_32bit
-# df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+# # Drop not float on rain_rate_32bit
+# # df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
 
-#---------------------------------------------------------------------------.
-#### 8.3 Run following code portion without modifying anthing 
-# - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
+# #---------------------------------------------------------------------------.
+# #### 8.3 Run following code portion without modifying anthing 
+# # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
 
-# ## Keep only clean data 
-# # - This type of filtering will be done in the background automatically ;) 
-# # Remove rows with bad data 
-# # df = df[df.sensor_status == 0] 
-# # Remove rows with error_code not 000 
-# # df = df[df.error_code == 0]  
+# # ## Keep only clean data 
+# # # - This type of filtering will be done in the background automatically ;) 
+# # # Remove rows with bad data 
+# # # df = df[df.sensor_status == 0] 
+# # # Remove rows with error_code not 000 
+# # # df = df[df.error_code == 0]  
 
-##----------------------------------------------------.
-# Cast dataframe to dtypes
-# - Determine dtype based on standards 
-dtype_dict = get_L0_dtype_standards()
-for column in df.columns:
-    try:
-        df[column] = df[column].astype(dtype_dict[column])
-    except KeyError:
-        # If column dtype is not into get_L0_dtype_standards, assign object
-        df[column] = df[column].astype('object')
+# ##----------------------------------------------------.
+# # Cast dataframe to dtypes
+# # - Determine dtype based on standards 
+# dtype_dict = get_L0_dtype_standards()
+# for column in df.columns:
+#     try:
+#         df[column] = df[column].astype(dtype_dict[column])
+#     except KeyError:
+#         # If column dtype is not into get_L0_dtype_standards, assign object
+#         df[column] = df[column].astype('object')
         
-#---------------------------------------------------------------------------.
-#### 8.4 Check the dataframe looks as desired 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5) 
-print_df_columns_unique_values(df, column_indices=2, column_names=True) 
-print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True)   
+# #---------------------------------------------------------------------------.
+# #### 8.4 Check the dataframe looks as desired 
+# print_df_column_names(df)
+# print_df_random_n_rows(df, n= 5) 
+# print_df_columns_unique_values(df, column_indices=2, column_names=True) 
+# print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True)   
 
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
-if reader_kwargs.get('zipped'):
-    print('lol')
+# if reader_kwargs.get('zipped'):
+#     print('lol')
 
 
 ####------------------------------------------------------------------------------.
@@ -491,8 +491,7 @@ df = read_L0_raw_file_list(file_list=subset_file_list,
                            column_names=columns_names_temporary, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
-                           lazy=lazy,
-                           zipped=True)
+                           lazy=lazy)
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods

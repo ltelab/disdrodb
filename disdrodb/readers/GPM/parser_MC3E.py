@@ -315,7 +315,7 @@ def main(raw_dir,
                                        column_names=columns_names_temporary, 
                                        reader_kwargs=reader_kwargs,
                                        df_sanitizer_fun =df_sanitizer_fun, 
-                                       lazy=lazy)
+                                       lazy=False)
         
             ##------------------------------------------------------.                                   
             #### - Write to Parquet                

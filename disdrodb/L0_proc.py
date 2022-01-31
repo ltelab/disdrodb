@@ -73,10 +73,14 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 def read_raw_data(filepath, column_names, reader_kwargs , lazy=True):
     reader_kwargs = reader_kwargs.copy()
     if reader_kwargs.get('zipped'):
-        reader_kwargs.pop("blocksize", None)
+        # Give error on read_csv, so use a copy and pop the kwargs elements
+        temp_reader_kwargs = reader_kwargs.copy() 
+        temp_reader_kwargs.pop("zipped", None)
+        temp_reader_kwargs.pop("blocksize", None)
+        
         df = pd.read_csv(filepath,
                          names = column_names,
-                         **reader_kwargs)
+                         **temp_reader_kwargs)
     else:
         # Dask 
         if lazy:
@@ -159,8 +163,7 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                     df = read_raw_data(filepath=tar.extractfile(filepath), 
                                        column_names=column_names,
                                        reader_kwargs=reader_kwargs,
-                                       lazy=lazy,
-                                       zipped=True)
+                                       lazy=lazy)
                     
                     # Close zipped file
                     tar.close()
