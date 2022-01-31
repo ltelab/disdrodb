@@ -171,7 +171,10 @@ def main(raw_dir,
     #### - Define reader options
     
     reader_kwargs = {}
-
+    
+    # - Need for zipped raw file (GPM files)
+    reader_kwargs['zipped'] = True
+    
     # - Define delimiter
     reader_kwargs['delimiter'] = ';'
 
@@ -312,8 +315,7 @@ def main(raw_dir,
                                        column_names=columns_names_temporary, 
                                        reader_kwargs=reader_kwargs,
                                        df_sanitizer_fun =df_sanitizer_fun, 
-                                       lazy=lazy,
-                                       zipped=True)
+                                       lazy=lazy)
         
             ##------------------------------------------------------.                                   
             #### - Write to Parquet                

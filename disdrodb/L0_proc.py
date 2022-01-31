@@ -70,9 +70,9 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 
 ####---------------------------------------------------------------------------.
 #### Dataframe creation
-def read_raw_data(filepath, column_names, reader_kwargs , lazy=True, zipped=False):
+def read_raw_data(filepath, column_names, reader_kwargs , lazy=True):
     reader_kwargs = reader_kwargs.copy()
-    if zipped:
+    if reader_kwargs.get('zipped'):
         reader_kwargs.pop("blocksize", None)
         df = pd.read_csv(filepath,
                          names = column_names,
@@ -126,8 +126,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
 def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                           df_sanitizer_fun=None, 
                           lazy=False,
-                          verbose=False,
-                          zipped=False):
+                          verbose=False):
     """Read and parse a list for raw files into a dataframe."""
     ##------------------------------------------------------.
     ### Checks arguments 
@@ -149,8 +148,8 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
             # Try to process a raw file 
             try:
                 
-                # Open the zip and choose the raw file (for MC3E campaign)
-                if zipped:
+                # Open the zip and choose the raw file (for GPM campaign)
+                if reader_kwargs.get('zipped'):
                     tar = tarfile.open(filepath)
                     for file in tar.getnames():
                         if file.endswith('raw.txt'):

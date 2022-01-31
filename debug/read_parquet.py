@@ -14,13 +14,14 @@ import os
 import numpy as np
 # from disdrodb.io import col_dtype_check
 
+# /SharedVM/Campagne/GPM/processed/MC3E/L0/MC3E_sapu01.parquet
 
-campagna = 'PARSIVEL_2007'
-path = f"/SharedVM/Campagne/EPFL/Processed/{campagna}/L0"
-file = campagna + '_s10.parquet'
+campagna = 'MC3E'
+path = f"/SharedVM/Campagne/GPM/processed/{campagna}/L0"
+file = campagna + '_sapu01.parquet'
 file_path = os.path.join(path, file)
 
-df = dd.read_parquet('/SharedVM/Campagne/EPFL/Processed/HPICONET_2010/L0/HPICONET_2010_s12.parquet')
+df = dd.read_parquet(file_path)
 
 df = df.compute()
 print(df)
