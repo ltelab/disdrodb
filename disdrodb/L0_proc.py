@@ -156,7 +156,7 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                 if reader_kwargs.get('zipped'):
                     tar = tarfile.open(filepath)
                     for file in tar.getnames():
-                        if file.endswith('raw.txt'):
+                        if file.endswith('raw.txt') or file.endswith('spectrum.txt'):
                             filepath = file
                             
                     # Read the data 
