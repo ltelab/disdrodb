@@ -73,6 +73,7 @@ from disdrodb.logger import close_logger
 @click.option('-d',    '--debugging_mode', type=bool, show_default=True, default = False,  help = "Switch to debugging mode")
 @click.option('-l',    '--lazy',           type=bool, show_default=True, default = True,   help = "Use dask if lazy=True")
 
+
 def main(raw_dir,
          processed_dir, 
          l0_processing = True, 
@@ -212,6 +213,9 @@ def main(raw_dir,
 
     # Skip file with encoding errors
     reader_kwargs['encoding_errors'] = 'ignore'
+    
+    # Searched file into tar files
+    reader_kwargs['file_name_to_read_zipped'] = 'raw.txt'
     
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Feb  1 12:48:42 2022
+Created on Wed Feb  2 12:47:52 2022
 
 @author: kimbo
 """
@@ -72,7 +72,6 @@ from disdrodb.logger import close_logger
 @click.option('-v',    '--verbose',        type=bool, show_default=True, default = False,  help = "Verbose")
 @click.option('-d',    '--debugging_mode', type=bool, show_default=True, default = False,  help = "Switch to debugging mode")
 @click.option('-l',    '--lazy',           type=bool, show_default=True, default = True,   help = "Use dask if lazy=True")
-
 
 def main(raw_dir,
          processed_dir, 
@@ -147,10 +146,14 @@ def main(raw_dir,
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter, 
     #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
+    
+    columns_names_temporary = ['time', 'TO_BE_PARSED']
 
     column_names = ['time',
-                    'Unknow',
-                    'RawData',
+                    'station_name',
+                    'sensor_status',
+                    'sensor_temperature',
+                    'RawData'
                     ]
     
     # - Check name validity 
@@ -165,7 +168,7 @@ def main(raw_dir,
     reader_kwargs['zipped'] = True
 
     # - Define delimiter
-    reader_kwargs['delimiter'] = '   '
+    reader_kwargs['delimiter'] = ';'
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False  
@@ -203,7 +206,7 @@ def main(raw_dir,
     reader_kwargs['encoding_errors'] = 'ignore'
     
     # Searched file into tar files
-    reader_kwargs['file_name_to_read_zipped'] = 'spectrum.txt'
+    # reader_kwargs['file_name_to_read_zipped'] = 'spectrum.txt'
     
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -218,10 +221,12 @@ def main(raw_dir,
             import pandas as dd
         
         # - Convert time column to datetime 
-        try:
-            df['time'] = dd.to_datetime(df['time'], format='%Y %m %d %H %M %S')
-        except ValueError:
-            df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+        df.iloc[:,0] = dd.to_datetime(df.iloc[:,0], format='%Y%m%d%H%M%S')
+        
+        df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = 3)] ,axis=1)
+        
+        # - Add names to the columns
+        df.columns = column_names
         
         return df  
     
@@ -289,7 +294,7 @@ def main(raw_dir,
             ##------------------------------------------------------.
             #### - Read all raw data files into a dataframe  
             df = read_L0_raw_file_list(file_list=file_list, 
-                                       column_names=column_names, 
+                                       column_names=columns_names_temporary, 
                                        reader_kwargs=reader_kwargs,
                                        df_sanitizer_fun =df_sanitizer_fun, 
                                        lazy=False)

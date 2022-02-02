@@ -77,6 +77,7 @@ def read_raw_data(filepath, column_names, reader_kwargs , lazy=True):
         temp_reader_kwargs = reader_kwargs.copy() 
         temp_reader_kwargs.pop("zipped", None)
         temp_reader_kwargs.pop("blocksize", None)
+        temp_reader_kwargs.pop("file_name_to_read_zipped", None)
         
         df = pd.read_csv(filepath,
                          names = column_names,
@@ -95,6 +96,66 @@ def read_raw_data(filepath, column_names, reader_kwargs , lazy=True):
                              names = column_names,
                              **reader_kwargs)
     return df 
+
+def read_raw_data_zipped(filepath, column_names, reader_kwargs , lazy=True):
+    '''
+    Used because some campaign has tar with multiple files inside, and in some situation only one files has to be read
+    Tar reading work only with pandas
+    '''
+    df = pd.DataFrame()
+    tar = tarfile.open(filepath)
+    
+    file_name_to_read_zipped = reader_kwargs.get('file_name_to_read_zipped')
+    
+    # Loop tar files
+    for file in tar.getnames():
+        # Check if pass only particular file to read
+        if file_name_to_read_zipped is not None:
+            if file.endswith(file_name_to_read_zipped):
+                filepath = file
+            else:
+                continue
+
+    # if file.endswith('raw.txt') or file.endswith('spectrum.txt'):
+        
+
+        try:
+            # If need only to read one file, exit loop file in tar
+            if file_name_to_read_zipped is not None:
+                # Read the data 
+                df = read_raw_data(filepath=tar.extractfile(filepath), 
+                                   column_names=column_names,
+                                   reader_kwargs=reader_kwargs,
+                                   lazy=lazy)
+                break
+            else:
+                # Read the data 
+                df_temp = read_raw_data(filepath=tar.extractfile(file), 
+                                   column_names=column_names,
+                                   reader_kwargs=reader_kwargs,
+                                   lazy=lazy)
+                
+                
+                
+                # Concat all files in tar
+                df = df.append(df_temp)
+            
+            
+        except pd.errors.EmptyDataError:
+            print(f"Is empty, skip file: {file}")
+            pass
+        except pd.errors.ParserError:
+            print(f"Cannot parse, skip file: {file}")
+            pass
+        except UnicodeDecodeError:
+            print(f"Unicode error, skip file: {file}")
+            pass
+            
+    # Close zipped file
+    tar.close()
+    
+    return df 
+    
                                     
 def concatenate_dataframe(list_df, verbose=False, lazy=True):
     # Import dask or pandas 
@@ -154,19 +215,10 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                 
                 # Open the zip and choose the raw file (for GPM campaign)
                 if reader_kwargs.get('zipped'):
-                    tar = tarfile.open(filepath)
-                    for file in tar.getnames():
-                        if file.endswith('raw.txt') or file.endswith('spectrum.txt'):
-                            filepath = file
-                            
-                    # Read the data 
-                    df = read_raw_data(filepath=tar.extractfile(filepath), 
+                    df = read_raw_data_zipped(filepath=filepath, 
                                        column_names=column_names,
                                        reader_kwargs=reader_kwargs,
                                        lazy=lazy)
-                    
-                    # Close zipped file
-                    tar.close()
                     
                 else:
                     # Read the data 

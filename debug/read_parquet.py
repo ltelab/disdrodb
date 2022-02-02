@@ -16,12 +16,12 @@ import numpy as np
 
 # /SharedVM/Campagne/GPM/processed/MC3E/L0/MC3E_sapu01.parquet
 
-campagna = 'MC3E'
+campagna = 'NSSTC'
 path = f"/SharedVM/Campagne/GPM/processed/{campagna}/L0"
 file = campagna + '_sapu01.parquet'
 file_path = os.path.join(path, file)
 
-df = dd.read_parquet(file_path)
+df = dd.read_parquet('/SharedVM/Campagne/GPM/processed/NSSTC/L0/NSSTC_sapu01.parquet')
 
 df = df.compute()
 print(df)
