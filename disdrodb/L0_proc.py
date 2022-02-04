@@ -101,6 +101,7 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs , lazy=True):
     '''
     Used because some campaign has tar with multiple files inside, and in some situation only one files has to be read
     Tar reading work only with pandas
+    Put the only file name to read into file_name_to_read_zipped variable, if file_name_to_read_zipped is none, all the tar contenet will be read and concat into a single dataframe
     '''
     df = pd.DataFrame()
     tar = tarfile.open(filepath)
@@ -115,9 +116,6 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs , lazy=True):
                 filepath = file
             else:
                 continue
-
-    # if file.endswith('raw.txt') or file.endswith('spectrum.txt'):
-        
 
         try:
             # If need only to read one file, exit loop file in tar
@@ -135,20 +133,23 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs , lazy=True):
                                    reader_kwargs=reader_kwargs,
                                    lazy=lazy)
                 
-                
-                
                 # Concat all files in tar
                 df = df.append(df_temp)
             
-            
         except pd.errors.EmptyDataError:
-            print(f"Is empty, skip file: {file}")
+            msg = f"Is empty, skip file: {file}"
+            logger.exception(msg)
+            raise pd.errors.EmptyDataError(msg)
             pass
         except pd.errors.ParserError:
-            print(f"Cannot parse, skip file: {file}")
+            msg = f"Cannot parse, skip file: {file}"
+            logger.exception(msg)
+            raise pd.errors.ParserError(msg)
             pass
         except UnicodeDecodeError:
-            print(f"Unicode error, skip file: {file}")
+            msg = f"Unicode error, skip file: {file}"
+            logger.exception(msg)
+            raise UnicodeDecodeError(msg)
             pass
             
     # Close zipped file
@@ -236,14 +237,15 @@ def read_L0_raw_file_list(file_list, column_names, reader_kwargs,
                     list_skipped_files_msg.append(msg)
                     continue
                 
-                # Check column number
-                if len(df.columns) != len(column_names):
-                    msg = f"{filepath} has wrong columns number, and has been skipped."
-                    logger.warning(msg)
-                    if verbose: 
-                        print(msg)
-                    list_skipped_files_msg.append(msg)
-                    continue
+               # Check column number, ignore if columns_names empty
+                if len(column_names) != 0:
+                    if len(df.columns) != len(column_names):
+                        msg = f"{filepath} has wrong columns number, and has been skipped."
+                        logger.warning(msg)
+                        if verbose: 
+                            print(msg)
+                        list_skipped_files_msg.append(msg)
+                        continue
                 
                 #------------------------------------------------------.
                 # Sanitize the dataframe with a custom function 
