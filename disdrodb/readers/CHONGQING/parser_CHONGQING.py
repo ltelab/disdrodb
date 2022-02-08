@@ -223,47 +223,45 @@ def main(raw_dir,
     df_sanitizer_fun = None 
     def df_sanitizer_fun(df, lazy=lazy):
         
-        # I got error with pandas, see below
-        lazy = False
-        
         # Import dask or pandas 
         if lazy: 
             import dask.dataframe as dd
         else: 
             import pandas as dd
         
-        # Cast to datetime and insert into a series
-        temp_time = df.loc[df.iloc[:,0].astype(str).str.len() == 16].squeeze()
-        temp_time = dd.to_datetime(temp_time, format='%Y.%m.%d;%H:%M')
-
-
+        temp_time = df.loc[df.iloc[:,0].astype(str).str.len() == 16].add_prefix('col_')
+        temp_time['col_0'] = dd.to_datetime(temp_time['col_0'], format='%Y.%m.%d;%H:%M')
+    
+    
         # Insert Raw into a series and drop last line
-        temp_raw = df.loc[df.iloc[:,0].astype(str).str.len() != 16].squeeze()
-        temp_raw = temp_raw.str.lstrip('   ')
+        temp_raw = df.loc[df.iloc[:,0].astype(str).str.len() != 16].add_prefix('col_')
+        temp_raw['col_0'] = temp_raw['col_0'].str.lstrip('   ')
         temp_raw = temp_raw.dropna()
-
-
+    
+    
         # If RawData series is not a 32 multiple, throw error
         if len(temp_raw) % 32 != 0:
             msg = "Wrong column number on RawData, can not parse!"
             raise ValueError(msg)
-
-
+    
+    
         # Series and variable temporary for parsing RawData
-        
-        # I can't make it work with dask
-        import pandas as pd
-        raw = pd.Series(dtype = 'object')
+        if lazy:
+            import pandas as pd
+            raw = pd.DataFrame({'RawData':[]})
+            # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+        else:
+            raw = pd.DataFrame({'RawData':[]})
         temp_string_2 = ''
-
-
+    
+    
         # Parse for RawData
-        for index, value in temp_raw.iteritems():
+        for index, value in temp_raw.iterrows():
             temp_string = ''
             
             if index % 32 != 0:
                 
-                temp_string = value.split(' ')
+                temp_string = value['col_0'].split(' ')
                 
                 # Remove blank string from split
                 temp_string = list(filter(None, temp_string))
@@ -280,37 +278,24 @@ def main(raw_dir,
                 temp_string_2 += temp_string
                 
             else:
-                
-                temp_string_2 = pd.Series(temp_string_2)
-                raw = raw.append(temp_string_2)
+                        
+                raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+                    
                 temp_string_2 = ''
-                
-        # Convert series to dataframe and concat together
-        if lazy: 
-            df_time = temp_time.to_frame()
-            df_raw = raw.to_frame()
-            
-            # Reset all index
-            df_time = df_time.reset_index(drop=True)
-            df_raw = df_raw.reset_index(drop=True)
-            
-            # It give me this error with dask: 
-            # *** ValueError: Unable to concatenate DataFrame with unknown division specifying axis=1
-            # with this -> df = dd.concat([df_time, df_raw], axis=1, ignore_index=True)
-            
-        else: 
-            import pandas as pd
-            
-            df_time = pd.DataFrame(temp_time)
-            df_raw = pd.DataFrame(raw)
-            
-            # Reset all index
-            df_time = df_time.reset_index(drop=True)
-            df_raw = df_raw.reset_index(drop=True)
-            
-            df = pd.concat([df_time, df_raw], axis=1, ignore_index=True)
-        
-
+    
+        if lazy:
+            raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+    
+    
+        # Reset all index
+        temp_time = temp_time.reset_index(drop=True)
+        raw = raw.reset_index(drop=True)
+    
+        if lazy:
+            df = dd.concat([temp_time, raw], axis = 1,  ignore_unknown_divisions=True)
+        else:
+            df = dd.concat([temp_time, raw], axis = 1)
+    
         df.columns = ['time', 'RawData']
         
         return df  

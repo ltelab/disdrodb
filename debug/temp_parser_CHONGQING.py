@@ -110,7 +110,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[0]
+station_id = list_stations_id[4]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -127,7 +127,7 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.txt*"),
 import random
 random_files = []
 
-n = 3
+n = 1
 
 ext = "*.txt*"
 
@@ -291,8 +291,8 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[100]  # Select also other files here  1,2, ... 
-lazy = False             # Try also with True when work with False 
+filepath = file_list[1]  # Select also other files here  1,2, ... 
+lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
@@ -325,15 +325,20 @@ if len(column_names) != 0:
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
+if lazy: 
+    import dask.dataframe as dd
+else: 
+    import pandas as dd
+
 # Cast to datetime and insert into a series
-temp_time = df.loc[df.iloc[:,0].astype(str).str.len() == 16].squeeze()
-temp_time = pd.to_datetime(temp_time, format='%Y.%m.%d;%H:%M')
+temp_time = df.loc[df.iloc[:,0].astype(str).str.len() == 16].add_prefix('col_')
+temp_time['col_0'] = dd.to_datetime(temp_time['col_0'], format='%Y.%m.%d;%H:%M')
 
 
 # Insert Raw into a series and drop last line
-temp_raw = df.loc[df.iloc[:,0].astype(str).str.len() != 16].squeeze()
-temp_raw = temp_raw.str.lstrip('   ')
-temp_raw.dropna(inplace = True)
+temp_raw = df.loc[df.iloc[:,0].astype(str).str.len() != 16].add_prefix('col_')
+temp_raw['col_0'] = temp_raw['col_0'].str.lstrip('   ')
+temp_raw = temp_raw.dropna()
 
 
 # If RawData series is not a 32 multiple, throw error
@@ -343,17 +348,22 @@ if len(temp_raw) % 32 != 0:
 
 
 # Series and variable temporary for parsing RawData
-raw = pd.Series(dtype = 'object')
+if lazy:
+    import pandas as pd
+    raw = pd.DataFrame({'RawData':[]})
+    # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+else:
+    raw = pd.DataFrame({'RawData':[]})
 temp_string_2 = ''
 
 
 # Parse for RawData
-for index, value in temp_raw.iteritems():
+for index, value in temp_raw.iterrows():
     temp_string = ''
     
     if index % 32 != 0:
         
-        temp_string = value.split(' ')
+        temp_string = value['col_0'].split(' ')
         
         # Remove blank string from split
         temp_string = list(filter(None, temp_string))
@@ -370,21 +380,23 @@ for index, value in temp_raw.iteritems():
         temp_string_2 += temp_string
         
     else:
-        
-        temp_string_2 = pd.Series(temp_string_2)
-        raw = raw.append(temp_string_2)
+                
+        raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+            
         temp_string_2 = ''
-        
+
+if lazy:
+    raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+
 
 # Reset all index
-temp_time.reset_index(drop=True, inplace=True)
-raw.reset_index(drop=True, inplace=True)
+temp_time = temp_time.reset_index(drop=True)
+raw = raw.reset_index(drop=True)
 
-# Convert series to dataframe and concat together
-df_time = pd.DataFrame(temp_time)
-df_raw = pd.DataFrame(raw)
-
-df = pd.concat([df_time, df_raw], axis = 1)
+if lazy:
+    df = dd.concat([temp_time, raw], axis = 1,  ignore_unknown_divisions=True)
+else:
+    df = dd.concat([temp_time, raw], axis = 1)
 
 df.columns = ['time', 'RawData']
 
@@ -424,21 +436,21 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 #### 9.1 Define sanitizer function [TO CUSTOMIZE]
 # --> df_sanitizer_fun = None  if not necessary ...
 
-def df_sanitizer_fun(df, lazy=False):
+def df_sanitizer_fun(df, lazy=lazy):
     # # Import dask or pandas 
-    # if lazy: 
-    #     import dask.dataframe as dd
-    # else: 
-    #     import pandas as dd
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
 
     # Cast to datetime and insert into a series
-    temp_time = df.loc[df.iloc[:,0].astype(str).str.len() == 16].squeeze()
-    temp_time = pd.to_datetime(temp_time, format='%Y.%m.%d;%H:%M')
+    temp_time = df.loc[df.iloc[:,0].astype(str).str.len() == 16].add_prefix('col_')
+    temp_time['col_0'] = dd.to_datetime(temp_time['col_0'], format='%Y.%m.%d;%H:%M')
 
 
     # Insert Raw into a series and drop last line
-    temp_raw = df.loc[df.iloc[:,0].astype(str).str.len() != 16].squeeze()
-    temp_raw = temp_raw.str.lstrip('   ')
+    temp_raw = df.loc[df.iloc[:,0].astype(str).str.len() != 16].add_prefix('col_')
+    temp_raw['col_0'] = temp_raw['col_0'].str.lstrip('   ')
     temp_raw = temp_raw.dropna()
 
 
@@ -449,17 +461,22 @@ def df_sanitizer_fun(df, lazy=False):
 
 
     # Series and variable temporary for parsing RawData
-    raw = pd.Series(dtype = 'object')
+    if lazy:
+        import pandas as pd
+        raw = pd.DataFrame({'RawData':[]})
+        # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+    else:
+        raw = pd.DataFrame({'RawData':[]})
     temp_string_2 = ''
 
 
     # Parse for RawData
-    for index, value in temp_raw.iteritems():
+    for index, value in temp_raw.iterrows():
         temp_string = ''
         
         if index % 32 != 0:
             
-            temp_string = value.split(' ')
+            temp_string = value['col_0'].split(' ')
             
             # Remove blank string from split
             temp_string = list(filter(None, temp_string))
@@ -476,21 +493,23 @@ def df_sanitizer_fun(df, lazy=False):
             temp_string_2 += temp_string
             
         else:
-            
-            temp_string_2 = pd.Series(temp_string_2)
-            raw = raw.append(temp_string_2)
+                    
+            raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+                
             temp_string_2 = ''
-            
-    # Convert series to dataframe and concat together
-    df_time = pd.DataFrame(temp_time)
-    df_raw = pd.DataFrame(raw)
-    
-    # Reset all index
-    df_time = df_time.reset_index(drop=True)
-    df_raw = df_raw.reset_index(drop=True)
-    
 
-    df = pd.concat([df_time, df_raw], axis = 1, ignore_index=True)
+    if lazy:
+        raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+
+
+    # Reset all index
+    temp_time = temp_time.reset_index(drop=True)
+    raw = raw.reset_index(drop=True)
+
+    if lazy:
+        df = dd.concat([temp_time, raw], axis = 1,  ignore_unknown_divisions=True)
+    else:
+        df = dd.concat([temp_time, raw], axis = 1)
 
     df.columns = ['time', 'RawData']
     
@@ -501,7 +520,7 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
-# subset_file_list = file_list[0:5]
+subset_file_list = file_list[0:5]
 subset_file_list = random_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
