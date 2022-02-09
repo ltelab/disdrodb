@@ -106,7 +106,7 @@ def get_L0_dtype_standards():
         "sensor_serial_number": "object",
         "firmware_IOP": "object",
         "firmware_DSP": "object",
-        "date_time_measuring_start": "object",
+        "date_time_measurement_start": "object",
         "sensor_time": "object",
         "sensor_date": "object",
         "station_name": "object",
