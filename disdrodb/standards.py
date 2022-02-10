@@ -51,6 +51,36 @@ def get_OTT_Parsivel_diameter_bin_center():
 
 def get_OTT_Parsivel2_diameter_bin_center():
     return get_OTT_Parsivel_diameter_bin_center()
+
+def get_ThiesLPM_diameter_bin_center():
+    """
+    Returns a 22x1 array containing the center of the diameter bin (in mm)
+    of a Thies laser disdrometer. 
+    """
+    classD = np.zeros((22,1))*np.nan
+    classD[0,:] = [0.125]
+    classD[1,:] = [0.250]
+    classD[2,:] = [0.375]
+    classD[3,:] = [0.500]
+    classD[4,:] = [0.750]
+    classD[5,:] = [1.000]
+    classD[6,:] = [1.250]
+    classD[7,:] = [1.500]
+    classD[8,:] = [1.750]
+    classD[9,:] = [2.000]
+    classD[10,:] = [2.500]
+    classD[11,:] = [3.000]
+    classD[12,:] = [3.500]
+    classD[13,:] = [4.000]
+    classD[14,:] = [4.500]
+    classD[15,:] = [5.000]
+    classD[16,:] = [5.500]
+    classD[17,:] = [6.000]
+    classD[18,:] = [6.500]
+    classD[19,:] = [7.000]
+    classD[20,:] = [7.500]
+    classD[21,:] = [8.000]
+    return classD.flatten()
     
 def get_OTT_Parsivel_diameter_bin_bounds():
     """
@@ -96,6 +126,37 @@ def get_OTT_Parsivel_diameter_bin_bounds():
 def get_OTT_Parsivel2_diameter_bin_center():
     return get_OTT_Parsivel_diameter_bin_bounds()
 
+def get_ThiesLPM_diameter_bin_bounds():
+    """
+    Returns a 22x2 array containing the lower/upper dimater limits (in mm)
+    of a Thies laser disdrometer. 
+    """
+    classD = np.zeros((22,2))*np.nan
+    classD[0,:] = [0,0.125]
+    classD[1,:] = [0.125,0.250]
+    classD[2,:] = [0.250,0.375]
+    classD[3,:] = [0.375,0.500]
+    classD[4,:] = [0.500,0.750]
+    classD[5,:] = [0.750,1.000]
+    classD[6,:] = [1.000,1.250]
+    classD[7,:] = [1.250,1.500]
+    classD[8,:] = [1.500,1.750]
+    classD[9,:] = [1.750,2.000]
+    classD[10,:] = [2.000,2.500]
+    classD[11,:] = [2.500,3.000]
+    classD[12,:] = [3.000,3.500]
+    classD[13,:] = [3.500,4.000]
+    classD[14,:] = [4.000,4.500]
+    classD[15,:] = [4.500,5.000]
+    classD[16,:] = [5.000,5.500]
+    classD[17,:] = [5.500,6.000]
+    classD[18,:] = [6.000,6.500]
+    classD[19,:] = [6.500,7.000]
+    classD[20,:] = [7.000,7.500]
+    classD[21,:] = [8.00,999] # To infinite by the documentation
+    
+    return classD 
+
 def get_OTT_Parsivel_velocity_bin_center():
     """
     Returns a 32x1 array containing the center of the diameter bin (in m/s)
@@ -138,6 +199,34 @@ def get_OTT_Parsivel_velocity_bin_center():
 
 def get_OTT_Parsivel2_velocity_bin_center():
     return get_OTT_Parsivel_velocity_bin_center()
+
+def get_ThiesLPM_velocity_bin_center():
+    """
+    Returns a 20x1 array containing the center of the diameter bin (in m/s)
+    of a Thies laser disdrometer. 
+    """
+    classV = np.zeros((20,1))*np.nan
+    classV[0,:] = [0.000]
+    classV[1,:] = [0.200]
+    classV[2,:] = [0.400]
+    classV[3,:] = [0.600]
+    classV[4,:] = [0.800]
+    classV[5,:] = [1.000]
+    classV[6,:] = [1.400]
+    classV[7,:] = [1.800]
+    classV[8,:] = [2.200]
+    classV[9,:] = [2.600]
+    classV[10,:] = [3.000]
+    classV[11,:] = [3.400]
+    classV[12,:] = [4.200]
+    classV[13,:] = [5.000]
+    classV[14,:] = [5.800]
+    classV[15,:] = [6.600]
+    classV[16,:] = [7.400]
+    classV[17,:] = [8.200]
+    classV[18,:] = [9.000]
+    classV[19,:] = [10.000]
+    return classV.flatten()
 
 def get_OTT_Parsivel_velocity_bin_bounds():
     """
@@ -183,6 +272,35 @@ def get_OTT_Parsivel_velocity_bin_bounds():
 # def get_OTT_Parsivel_velocity_bin_bounds(): 
 #     return get_OTT_Parsivel_velocity_bin_bounds()
 
+def get_ThiesLPM_velocity_bin_bounds():
+    """
+    Returns a 20x2 array containing the lower/upper velocity limits (in m/s)
+    of a Thies laser disdrometer. 
+    """
+    classV = np.zeros((20,2))*np.nan
+    classV[0,:] = [0,0.200]
+    classV[1,:] = [0.200,0.400]
+    classV[2,:] = [0.400,0.600]
+    classV[3,:] = [0.600,0.800]
+    classV[4,:] = [0.800,1.000]
+    classV[5,:] = [1.000,1.400]
+    classV[6,:] = [1.400,1.800]
+    classV[7,:] = [1.800,2.200]
+    classV[8,:] = [2.200,2.600]
+    classV[9,:] = [2.600,3.000]
+    classV[10,:] = [3.000,3.400]
+    classV[11,:] = [3.400,4.200]
+    classV[12,:] = [4.200,5.000]
+    classV[13,:] = [5.000,5.800]
+    classV[14,:] = [5.800,6.600]
+    classV[15,:] = [6.600,7.400]
+    classV[16,:] = [7.400,8.200]
+    classV[17,:] = [8.200,9.000]
+    classV[18,:] = [9.000,10.000]
+    classV[19,:] = [10.000,9999]
+    
+    return classV
+
 def get_OTT_Parsivel_diameter_bin_width():
     """
     Returns a 32x1 array containing the width of the diameter bin (in mm)
@@ -211,6 +329,18 @@ def get_OTT_Parsivel2_diameter_bin_width():
                              np.ones(2)*3.000))
     return classD
 
+def get_ThiesLPM_diameter_bin_width():
+    """
+    Returns a 22x1 array containing the width of the diameter bin (in mm)
+    of a Thies laser disdrometer. 
+    """
+    classD = np.concatenate((np.ones(3)*0.125,
+                             np.ones(6)*0.250,
+                             np.ones(12)*0.500,
+                             # 0.500 to Infinite by the documentation
+                             ))
+    return classD
+
 def get_OTT_Parsivel_velocity_bin_width():
     """
     Returns a 32x1 array containing the width of the velocity bin (in m/s)
@@ -237,6 +367,18 @@ def get_OTT_Parsivel2_velocity_bin_width():
                              np.ones(5)*0.800,
                              np.ones(5)*1.600,
                              np.ones(2)*3.200))
+    return classV
+
+def get_ThiesLPM_velocity_bin_width():
+    """
+    Returns a 20x1 array containing the width of the velocity bin (in m/s)
+    of a Thies laser disdrometer.
+    """
+    classV = np.concatenate((np.ones(5)*0.200,
+                             np.ones(6)*0.400,
+                             np.ones(7)*0.800,
+                             np.ones(1)*1.000,
+                             np.ones(1)*10.000))
     return classV
 
 #-----------------------------------------------------------------------------.
@@ -399,7 +541,8 @@ def get_var_explanations():
         Dictionary with the explanation of the variables (keys)
     """ 
     # TODO BE EXPANDED 
-    name_dict = { 'timestep':'Datetime object of the measurement',
+    name_dict = { 
+                'timestep':'Datetime object of the measurement',
                 "rain_rate": "Rainfall rate", 
                 "rain_accumulated_32bit": "Accumulated rain amount over the measurement interval", 
                 "reflectivity_32bit": "Radar reflectivity",
@@ -470,8 +613,7 @@ def get_diameter_bin_center(sensor_name):
     elif sensor_name == "Parsivel2":
         x = get_OTT_Parsivel2_diameter_bin_center()
     elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
+        x = get_ThiesLPM_diameter_bin_center()
     else:
         logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
         raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
@@ -515,8 +657,7 @@ def get_diameter_bin_width(sensor_name):
        raise NotImplementedError
        
    elif sensor_name == "ThiesLPM":
-       logger.exception(f'Not implemented {sensor_name} device')
-       raise NotImplementedError
+       x = get_ThiesLPM_diameter_bin_width()
    else:
        logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
        raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
@@ -531,8 +672,7 @@ def get_velocity_bin_center(sensor_name):
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
+        x = get_ThiesLPM_velocity_bin_center()
     else:
         logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
         raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
@@ -547,8 +687,7 @@ def get_velocity_bin_lower(sensor_name):
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
+        x = get_ThiesLPM_diameter_bin_bounds()[:,0]
     else:
         logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
         raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
@@ -563,8 +702,7 @@ def get_velocity_bin_upper(sensor_name):
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
+        x = get_ThiesLPM_velocity_bin_bounds()[:,1]
     else:
         logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
         raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
@@ -579,8 +717,7 @@ def get_velocity_bin_width(sensor_name):
         raise NotImplementedError
         
     elif sensor_name == "ThiesLPM":
-        logger.exception(f'Not implemented {sensor_name} device')
-        raise NotImplementedError
+        x = get_ThiesLPM_velocity_bin_width()
     else:
         logger.exception(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')
         raise ValueError(f'L0 bin characteristics for sensor {sensor_name} are not yet defined')

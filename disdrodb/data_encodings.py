@@ -166,6 +166,42 @@ def get_ARM_to_l0_dtype_standards():
     
     return dict_ARM_to_l0
 
+#### Dictionary to convert DIVEN netcdf to L1 standard
+# - Use to rename the DIVEN keys to L1 standard
+def get_DIVEN_to_l0_dtype_standards(): 
+
+    dict_DIVEN_to_l0={
+                    "time":"time",
+                    "latitude":"latitude",
+                    "longitude":"longitude",
+                    "diameter":"diameter_OldName",
+                    "fallspeed":"fallspeed_OldName",
+                    "qc_flag":"qc_flag_OldName",
+                    "precipitation_flux":"precipitation_flux_OldName",
+                    "solid_precipitation_flux":"solid_precipitation_flux_OldName",
+                    "precipitation_visibility":"precipitation_visibility_OldName",
+                    "reflectivity":"reflectivity_16bit",
+                    "measurement_quality":"measurement_quality_OldName",
+                    "present_weather_1m":"present_weather_1m_OldName",
+                    "present_weather_5m":"present_weather_5m_OldName",
+                    "hydrometeor_type_1m":"hydrometeor_type_1m_OldName",
+                    "hydrometeor_type_5m":"hydrometeor_type_5m_OldName",
+                    "max_hail_diameter":"max_hail_diameter_OldName",
+                    "particle_count":"n_particles_all",
+                    "year":"year_OldName",
+                    "month":"month_OldName",
+                    "day":"day_OldName",
+                    "hour":"hour_OldName",
+                    "minute":"minute_OldName",
+                    "second":"second_OldName",
+                    "day_of_year":"day_of_year_OldName",
+                    "size_velocity_distribution":"size_velocity_distribution_OldName",
+                    "drop_size_distribution":"drop_size_distribution_OldName",
+                    "drop_velocity_distribution":"drop_velocity_distribution_OldName"
+                    }
+    
+    return dict_DIVEN_to_l0
+
 def get_L1_dtype():
     # Float 32 or Float 64 (f4, f8)
     # (u)int 8 16, 32, 64   (u/i  1 2 4 8)
