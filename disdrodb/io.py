@@ -173,7 +173,7 @@ def check_raw_dir(raw_dir):
     # Check there are metadata file for each station_id in /metadata 
     list_metadata_fpath = glob.glob(os.path.join(metadata_dir, "*.yml"))
     list_metadata_fname = [os.path.basename(fpath) for fpath in list_metadata_fpath]
-    list_metadata_station_id = [fname.strip(".yml")   for fname in list_metadata_fname] 
+    list_metadata_station_id = [fname.strip(".yml") for fname in list_metadata_fname] 
     # - Check there is metadata for each station      
     missing_data_station_idx = np.where(np.isin(list_data_station_id, list_metadata_station_id, invert=True))[0]   
     # - If missing, create the defaults files and raise an error

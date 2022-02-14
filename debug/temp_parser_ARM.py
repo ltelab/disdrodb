@@ -35,7 +35,56 @@ def convert_standards(file_list, verbose):
     from disdrodb.data_encodings import get_ARM_to_l0_dtype_standards
     from disdrodb.standards import get_var_explanations_ARM
     
-    dict_ARM = get_ARM_to_l0_dtype_standards()
+    # dict_ARM = get_ARM_to_l0_dtype_standards()
+    
+    dict_ARM =      {
+                    'time': 'time', # Name for time in Norway campaing
+                    # 'base_time': 'time', # Name for time in ARM Mobile Facility campaing
+                    'time_offset': 'time_offset_OldName',
+                    'precip_rate': 'rain_rate_32bit',
+                    'qc_precip_rate': 'qc_precip_rate_OldName',
+                    'weather_code': 'weather_code_SYNOP_4680',
+                    'qc_weather_code': 'qc_weather_code_OldName',
+                    'equivalent_radar_reflectivity_ott': 'reflectivity_32bit',
+                    'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott_OldName',
+                    'number_detected_particles': 'n_particles',
+                    'qc_number_detected_particles': 'qc_number_detected_particles_OldName',
+                    'mor_visibility': 'mor_visibility_OldName',
+                    'qc_mor_visibility': 'qc_mor_visibility_OldName',
+                    'snow_depth_intensity': 'snow_depth_intensity_OldName',
+                    'qc_snow_depth_intensity': 'qc_snow_depth_intensity_OldName',
+                    'laserband_amplitude': 'laser_amplitude',
+                    'qc_laserband_amplitude': 'qc_laserband_amplitude_OldName',
+                    'sensor_temperature': 'sensor_temperature',
+                    'heating_current': 'sensor_heating_current',
+                    'qc_heating_current': 'qc_heating_current_OldName',
+                    'sensor_voltage': 'sensor_battery_voltage',
+                    'qc_sensor_voltage': 'qc_sensor_voltage_OldName',
+                    'class_size_width': 'class_size_width_OldName',
+                    'fall_velocity_calculated': 'fall_velocity_calculated_OldName',
+                    'raw_spectrum': 'raw_spectrum_OldName',
+                    'liquid_water_content': 'liquid_water_content_OldName',
+                    'equivalent_radar_reflectivity': 'equivalent_radar_reflectivity_OldName',
+                    'intercept_parameter': 'intercept_parameter_OldName',
+                    'slope_parameter': 'slope_parameter_OldName',
+                    'median_volume_diameter': 'median_volume_diameter_OldName',
+                    'liquid_water_distribution_mean': 'liquid_water_distribution_mean_OldName',
+                    'number_density_drops': 'number_density_drops_OldName',
+                    'diameter_min': 'diameter_min_OldName',
+                    'diameter_max': 'diameter_max_OldName',
+                    'moment1': 'moment1_OldName',
+                    'moment2': 'moment2_OldName',
+                    'moment3': 'moment3_OldName',
+                    'moment4': 'moment4_OldName',
+                    'moment5': 'moment5_OldName',
+                    'moment6': 'moment6_OldName',
+                    'lat': 'latitude',
+                    'lon': 'longitude',
+                    'alt': 'altitude',
+                    }
+    
+    # Custom dictonary for the campaign defined in standards
+    dict_campaign = create_standard_dict(file_list[0], dict_ARM, verbose)
     
     # Log
     msg = f"Converting station "
@@ -47,8 +96,9 @@ def convert_standards(file_list, verbose):
         file_name = campaign_name + '_' + station_id + '_' + str(file_list.index(f))
         output_dir = processed_dir + '/L1/' + file_name
         ds = xr.open_dataset(f)
-        ds = ds.rename(dict_ARM)
+        ds = ds.rename(dict_campaign)
         ds.to_netcdf(output_dir, mode='w', format="NETCDF4")
+        ds.close()
         # Log
         msg = f"{file_name} processed successfully"
         if verbose:
@@ -60,17 +110,63 @@ def convert_standards(file_list, verbose):
         print(msg)
     # logger.info(msg) 
     
+def compare_standard_keys(dict_campaing, ds_keys, verbose):
+    '''Compare a list (NetCDF keys) and a dictionary (standard from a campaing keys) and rename it, if a key is missin into the dictionary, take the missing key and add the suffix _OldName.'''
+    dict_standard = {}
+    count_skipped_keys = 0
+    
+    # Loop the NetCDF list
+    for ds_v in ds_keys:
+        # Loop standard dictionary for every element in list
+        for dict_k, dict_v in dict_campaing.items():
+            # If found a match, change the value with the dictionary standard and insert into a new dictionary
+            if dict_k == ds_v:
+                dict_standard[dict_k] = dict_v
+                break
+            else:
+                # If doesn't found a match, insert list value with suffix into a new dictionary
+                dict_standard[ds_v] = ds_v + '_OldName'
+            # I don't kwow how implement counter :D
+            count_skipped_keys += 1
+    
+    # Log
+    if count_skipped_keys != 0:
+        msg = f"Cannot convert keys values: {count_skipped_keys} on {len(ds_keys)}"
+        if verbose:
+            print(msg)
+        # logger.info(msg) 
+    
+    return dict_standard
+
+
+def create_standard_dict(file_path, dict_campaign, verbose):
+    '''Insert a NetCDF keys into a list and return a dictionary compared with a defined standard dictionary (from a campaign)'''
+    # Insert NetCDF keys into a list
+    ds_keys = []
+    
+    ds = xr.open_dataset(file_path)
+    
+    for k in ds.keys():
+        ds_keys.append(k)
+        
+    ds.close()
+    
+    # Compare NetCDF and dictionary keys
+    return compare_standard_keys(dict_campaign, ds_keys, verbose)
+    
     
 # --------------------
 
 
-raw_dir = "/SharedVM/Campagne/ARM/Raw/NORWAY" # Must end with campaign_name upper case
-processed_dir = "/SharedVM/Campagne/ARM/Processed/NORWAY"  # Must end with campaign_name upper case
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/NORWAY"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/NORWAY"
+raw_dir = "/SharedVM/Campagne/ARM/Raw/ARM_MOBILE_FACILITY"
+processed_dir = "/SharedVM/Campagne/ARM/Processed/ARM_MOBILE_FACILITY"
 force = True
 verbose = True
 debugging_mode = True 
 
-raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
+# raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
 
 campaign_name = get_campaign_name(raw_dir)
 
