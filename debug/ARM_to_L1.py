@@ -81,23 +81,31 @@ dict_ARM =      {'time': 'time',
                 'alt': 'altitude',
                 }
 
-campagna = 'mosldM1.b1.20191014.040800'
-path = "/SharedVM/Campagne/ARM/Raw/ARM_MOBILE_FACILITY/data/mosldM1"
-file = campagna + '.cdf'
+campagna = 'nsalpmC1.a1.20170428.235900'
+path = "/SharedVM/Campagne/ARM/Raw/ALASKA/data/nsalpmC1"
+file = campagna + '.nc'
 file_path = os.path.join(path, file)
 
 ds = xr.open_dataset(file_path)
 
+print(list(ds.keys()))
 
 
-# print(list(ds.keys()))
+ds2 = xr.open_dataset('/SharedVM/Campagne/ARM/Processed/ALASKA/L1/ALASKA_nsalpmC1_0')
+print(list(ds2.keys()))
+ds2.close()
 
-ds_keys = []
+import netCDF4
+import numpy as np
+f = netCDF4.Dataset(file_path)
 
-for k in ds.keys():
-    ds_keys.append(k)
+
+# ds_keys = []
+
+# for k in ds.keys():
+#     ds_keys.append(k)
     
-asd = compare_standard_keys(dict_ARM, ds_keys)
+# asd = compare_standard_keys(dict_ARM, ds_keys)
 
 # ds = ds.rename(dict_ARM)
 

@@ -94,7 +94,7 @@ def convert_standards(file_list, verbose):
     
     for f in file_list:
         file_name = campaign_name + '_' + station_id + '_' + str(file_list.index(f))
-        output_dir = processed_dir + '/L1/' + file_name
+        output_dir = processed_dir + '/L1/' + file_name + '.nc'
         ds = xr.open_dataset(f)
         ds = ds.rename(dict_campaign)
         ds.to_netcdf(output_dir, mode='w', format="NETCDF4")
@@ -158,15 +158,15 @@ def create_standard_dict(file_path, dict_campaign, verbose):
 # --------------------
 
 
-# raw_dir = "/SharedVM/Campagne/ARM/Raw/NORWAY"
-# processed_dir = "/SharedVM/Campagne/ARM/Processed/NORWAY"
-raw_dir = "/SharedVM/Campagne/ARM/Raw/ARM_MOBILE_FACILITY"
-processed_dir = "/SharedVM/Campagne/ARM/Processed/ARM_MOBILE_FACILITY"
+raw_dir = "/SharedVM/Campagne/ARM/Raw/ALASKA"
+processed_dir = "/SharedVM/Campagne/ARM/Processed/ALASKA"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/ARM_MOBILE_FACILITY"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/ARM_MOBILE_FACILITY"
 force = True
 verbose = True
 debugging_mode = True 
 
-# raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
+raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
 
 campaign_name = get_campaign_name(raw_dir)
 
@@ -175,7 +175,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 
 station_id = list_stations_id[0]
 
-glob_pattern = os.path.join("data", station_id, "*.cdf") # CUSTOMIZE THIS 
+glob_pattern = os.path.join("data", station_id, "*.nc") # CUSTOMIZE THIS 
 file_list = get_file_list(raw_dir=raw_dir,
                           glob_pattern=glob_pattern, 
                           verbose=verbose, 
