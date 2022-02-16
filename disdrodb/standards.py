@@ -215,17 +215,17 @@ def get_ThiesLPM_velocity_bin_center():
     classV[6,:] = [1.600]
     classV[7,:] = [2.000]
     classV[8,:] = [2.400]
-    classV[9,:] = [2.800]
+    classV[9,:]  = [2.800]
     classV[10,:] = [3.200]
-    classV[11,:] = [3.400]
-    classV[12,:] = [3.800]
-    classV[13,:] = [4.600]
-    classV[14,:] = [5.400]
-    classV[15,:] = [6.200]
-    classV[16,:] = [7.000]
-    classV[17,:] = [7.800]
-    classV[18,:] = [8.600]
-    classV[19,:] = [9.500]
+    classV[11,:] = [3.800]
+    classV[12,:] = [4.600]
+    classV[13,:] = [5.400]
+    classV[14,:] = [6.200]
+    classV[15,:] = [7.000]
+    classV[16,:] = [7.800]
+    classV[17,:] = [8.600]
+    classV[18,:] = [9.500]
+    classV[19,:] = [10.000] # I'm not sure about this
     return classV.flatten()
 
 def get_OTT_Parsivel_velocity_bin_bounds():
@@ -492,6 +492,396 @@ def get_OTT_Parsivel2_dict():
                   "91": "VD", 
                   "93": "N",
                  }
+    return field_dict
+
+#-----------------------------------------------------------------------------.
+
+def get_ThiesLPM_dict():
+    """
+    et a dictionary containing the variable name of Thies.
+   
+    Returns
+    -------
+    field_dict : dictionary
+        Dictionary with the variable name of Thies field numbers.
+    """ 
+    
+    field_dict = {
+                    '01': 'STX (start identifier)', # To delete?
+                    '02': 'Device address (factory setting „00“) (NN)', # To delete?
+                    '03': 'sensor_serial_number',
+                    '04': 'firmware_DSP',
+                    '05': 'Date of the sensor (tt.mm.jj)', # Merge Date of the sensor and Time of the sensor?
+                    '06': 'Time of the sensor (on request) (hh:mm:ss)', # Merge Date of the sensor and Time of the sensor?
+                    '07': '5M SYNOP Tab.4677 (5 minutes mean value) (NN)', # To delete?
+                    '08': '5M SYNOP Tab.4680 (5 minutes mean value) (NN)', # To delete?
+                    '09': '5M METAR Tab.4678 (5 minutes mean value) (AAAAA)', # To delete?
+                    '10': '5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)', # To delete?
+                    '11': 'weather_code_SYNOP_4677',
+                    '12': 'weather_code_SYNOP_4680',
+                    '13': 'weather_code_METAR_4678',
+                    '14': '1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)', # rain_amount_absolute_32bit ?
+                    '15': '1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)', # rain_rate_32bit or rain_rate_16bit ?
+                    '16': '1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)', #snowfall_intensity ?
+                    '17': 'Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)', # rain_accumulated_32bit or rain_accumulated_16bit ?
+                    '18': 'mor_visibility',
+                    '19': 'reflectivity_16bit',
+                    '20': '1M Measuring quality [0...100%] (1 minute value) (NNN)', # To delete?
+                    '21': '1M Maximum diameter hail [mm] (1 minute value) (N.N))', # To delete?
+                    '22': 'sensor_status',
+                    '23': 'Static signal (OK:0, Error:1)', # To delete?
+                    '24': 'Status Laser temperature (analogue) (OK:0, Error:1)', # To delete?
+                    '25': 'Status Laser temperature (digital) (OK:0, Error:1)', # To delete?
+                    '26': 'Status Laser current (analogue) (OK:0, Error:1)', # To delete?
+                    '27': 'Status Laser current (digital) (OK:0, Error:1)', # To delete?
+                    '28': 'Status Sensor supply (OK:0, Error:1)', # To delete?
+                    '29': 'Status Current pane heating laser head (OK:0, warning:1)', # To delete?
+                    '30': 'Status Current pane heating receiver head (OK:0, warning:1)', # To delete?
+                    '31': 'Status Temperature sensor (OK:0, warning:1)', # To delete?
+                    '32': 'Status Heating supply (OK:0, warning:1)', # To delete?
+                    '33': 'Status Current heating housing (OK:0, warning:1)', # To delete?
+                    '34': 'Status Current heating heads (OK:0, warning:1)', # To delete?
+                    '35': 'Status Current heating carriers (OK:0, warning:1)', # To delete?
+                    '36': 'Status Control output laser power (OK:0, warning:1)', # To delete?
+                    '37': 'Reserve Status ( 0)', # To delete?
+                    '38': 'sensor_temperature_PBC',
+                    '39': 'Temperature of laser driver 0-80°C (NN)', # To delete?
+                    '40': 'Mean value laser current [1/100 mA] (NNNN)', # sensor_heating_current ? 
+                    '41': 'Control voltage [mV] (reference value: 4010±5) (NNNN)', # To delete?
+                    '42': 'Optical control output [mV] (2300 … 6500) (NNNN)', # To delete?
+                    '43': 'Voltage sensor supply [1/10V] (NNN)', # sensor_battery_voltage ?
+                    '44': 'Current pane heating laser head [mA] (NNN)', # To delete?
+                    '45': 'Current pane heating receiver head [mA] (NNN)', # To delete?
+                    '46': 'sensor_temperature',
+                    '47': 'Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise “999”) (NNN)', # To delete?
+                    '48': 'Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
+                    '49': 'Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
+                    '50': 'Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
+                    '51': 'n_particles',
+                    '52': '„00000.000“ (internal data)', # To delete?
+                    '53': 'Number of particles < minimal speed (0.15m/s) (NNNNN)', # To delete?
+                    '54': '„00000.000“ (internal data)', # To delete?
+                    '55': 'Number of particles > maximal speed (20m/s) (NNNNN)', # To delete?
+                    '56': '„00000.000“ (internal data)', # To delete? 
+                    '57': 'Number of particles < minimal diameter (0.15mm) (NNNNN)',# To delete? 
+                    '58': '„00000.000“ (internal data)',# To delete?
+                    '59': 'Number of particles no hydrometeor', # To delete?
+                    '60': 'Total volume (gross) of this class', # To delete?
+                    '61': 'Number of particles with unknown classification', # To delete?
+                    '62': 'Total volume (gross) of this class', # To delete?
+                    '63': 'Number of particles class 1', # To delete?
+                    '64': 'Total volume (gross) of class 1', # To delete?
+                    '65': 'Number of particles class 2', # To delete?
+                    '66': 'Total volume (gross) of class 2', # To delete?
+                    '67': 'Number of particles class 3', # To delete?
+                    '68': 'Total volume (gross) of class 3', # To delete?
+                    '69': 'Number of particles class 4', # To delete?
+                    '70': 'Total volume (gross) of class 4', # To delete?
+                    '71': 'Number of particles class 5', # To delete?
+                    '72': 'Total volume (gross) of class 5', # To delete?
+                    '73': 'Number of particles class 6', # To delete?
+                    '74': 'Total volume (gross) of class 6', # To delete?
+                    '75': 'Number of particles class 7', # To delete?
+                    '76': 'Total volume (gross) of class 7', # To delete?
+                    '77': 'Number of particles class 8', # To delete?
+                    '78': 'Total volume (gross) of class 8', # To delete?
+                    '79': 'Number of particles class 9', # To delete?
+                    '80': 'Total volume (gross) of class 9', # To delete?
+                    '81': 'Precipitation spectrum', # To delete?
+                    '520': 'Diameter and speed (NNN)', # To delete?
+                    '521': 'Checksum (AA)', # To delete?
+                    '522': 'CRLF', # To delete?
+                    '523': 'ETX (End identifier)', # To delete?
+        }
+    
+    # By the Thies documentation, there are 2 version, if the id is like “<id>TM00005”, then there are more fields
+    field_dict_id_TM00005 = {
+                    '01': 'STX (start identifier)', # To delete?
+                    '02': 'Device address (factory setting „00“) (NN)', # To delete?
+                    '03': 'sensor_serial_number',
+                    '04': 'firmware_DSP',
+                    '05': 'Date of the sensor (tt.mm.jj)', # Merge Date of the sensor and Time of the sensor?
+                    '06': 'Time of the sensor (on request) (hh:mm:ss)', # Merge Date of the sensor and Time of the sensor?
+                    '07': '5M SYNOP Tab.4677 (5 minutes mean value) (NN)', # To delete?
+                    '08': '5M SYNOP Tab.4680 (5 minutes mean value) (NN)', # To delete?
+                    '09': '5M METAR Tab.4678 (5 minutes mean value) (AAAAA)', # To delete?
+                    '10': '5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)', # To delete?
+                    '11': 'weather_code_SYNOP_4677',
+                    '12': 'weather_code_SYNOP_4680',
+                    '13': 'weather_code_METAR_4678',
+                    '14': '1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)', # rain_amount_absolute_32bit ?
+                    '15': '1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)', # rain_rate_32bit or rain_rate_16bit ?
+                    '16': '1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)', #snowfall_intensity ?
+                    '17': 'Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)', # rain_accumulated_32bit or rain_accumulated_16bit ?
+                    '18': 'mor_visibility',
+                    '19': 'reflectivity_16bit',
+                    '20': '1M Measuring quality [0...100%] (1 minute value) (NNN)', # To delete?
+                    '21': '1M Maximum diameter hail [mm] (1 minute value) (N.N))', # To delete?
+                    '22': 'sensor_status',
+                    '23': 'Static signal (OK:0, Error:1)', # To delete?
+                    '24': 'Status Laser temperature (analogue) (OK:0, Error:1)', # To delete?
+                    '25': 'Status Laser temperature (digital) (OK:0, Error:1)', # To delete?
+                    '26': 'Status Laser current (analogue) (OK:0, Error:1)', # To delete?
+                    '27': 'Status Laser current (digital) (OK:0, Error:1)', # To delete?
+                    '28': 'Status Sensor supply (OK:0, Error:1)', # To delete?
+                    '29': 'Status Current pane heating laser head (OK:0, warning:1)', # To delete?
+                    '30': 'Status Current pane heating receiver head (OK:0, warning:1)', # To delete?
+                    '31': 'Status Temperature sensor (OK:0, warning:1)', # To delete?
+                    '32': 'Status Heating supply (OK:0, warning:1)', # To delete?
+                    '33': 'Status Current heating housing (OK:0, warning:1)', # To delete?
+                    '34': 'Status Current heating heads (OK:0, warning:1)', # To delete?
+                    '35': 'Status Current heating carriers (OK:0, warning:1)', # To delete?
+                    '36': 'Status Control output laser power (OK:0, warning:1)', # To delete?
+                    '37': 'Reserve Status ( 0)', # To delete?
+                    '38': 'sensor_temperature_PBC',
+                    '39': 'Temperature of laser driver 0-80°C (NN)', # To delete?
+                    '40': 'Mean value laser current [1/100 mA] (NNNN)', # sensor_heating_current ? 
+                    '41': 'Control voltage [mV] (reference value: 4010±5) (NNNN)', # To delete?
+                    '42': 'Optical control output [mV] (2300 … 6500) (NNNN)', # To delete?
+                    '43': 'Voltage sensor supply [1/10V] (NNN)', # sensor_battery_voltage ?
+                    '44': 'Current pane heating laser head [mA] (NNN)', # To delete?
+                    '45': 'Current pane heating receiver head [mA] (NNN)', # To delete?
+                    '46': 'sensor_temperature',
+                    '47': 'Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise “999”) (NNN)', # To delete?
+                    '48': 'Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
+                    '49': 'Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
+                    '50': 'Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
+                    '51': 'n_particles',
+                    '52': '„00000.000“ (internal data)', # To delete?
+                    '53': 'Number of particles < minimal speed (0.15m/s) (NNNNN)', # To delete?
+                    '54': '„00000.000“ (internal data)', # To delete?
+                    '55': 'Number of particles > maximal speed (20m/s) (NNNNN)', # To delete?
+                    '56': '„00000.000“ (internal data)', # To delete? 
+                    '57': 'Number of particles < minimal diameter (0.15mm) (NNNNN)',# To delete? 
+                    '58': '„00000.000“ (internal data)',# To delete?
+                    '59': 'Number of particles no hydrometeor', # To delete?
+                    '60': 'Total volume (gross) of this class', # To delete?
+                    '61': 'Number of particles with unknown classification', # To delete?
+                    '62': 'Total volume (gross) of this class', # To delete?
+                    '63': 'Number of particles class 1', # To delete?
+                    '64': 'Total volume (gross) of class 1', # To delete?
+                    '65': 'Number of particles class 2', # To delete?
+                    '66': 'Total volume (gross) of class 2', # To delete?
+                    '67': 'Number of particles class 3', # To delete?
+                    '68': 'Total volume (gross) of class 3', # To delete?
+                    '69': 'Number of particles class 4', # To delete?
+                    '70': 'Total volume (gross) of class 4', # To delete?
+                    '71': 'Number of particles class 5', # To delete?
+                    '72': 'Total volume (gross) of class 5', # To delete?
+                    '73': 'Number of particles class 6', # To delete?
+                    '74': 'Total volume (gross) of class 6', # To delete?
+                    '75': 'Number of particles class 7', # To delete?
+                    '76': 'Total volume (gross) of class 7', # To delete?
+                    '77': 'Number of particles class 8', # To delete?
+                    '78': 'Total volume (gross) of class 8', # To delete?
+                    '79': 'Number of particles class 9', # To delete?
+                    '80': 'Total volume (gross) of class 9', # To delete?
+                    '81': 'Precipitation spectrum', # To delete?
+                    '520': 'Diameter and speed (NNN)', # To delete?
+                    '521': 'Temperature [°C] (NNN.N)', # sensor_temperature ?
+                    '522': 'Relative Air humidity [%r.h.] (NNN.N)', # To delete?
+                    '523': 'Wind speed [m/s] (NN.N)', # To delete?
+                    '524': 'Wind direction [°] (NNN)', # To delete?
+                    '525': 'Checksum (AA)', # To delete?
+                    '526': 'CRLF', # To delete?
+                    '527': 'ETX (End identifier)', # To delete?
+        }
+    
+    
+    return field_dict
+
+#-----------------------------------------------------------------------------.
+
+def get_ThiesLPM_dict_full():
+    """
+    Get a dictionary containing the variable name and information by the Thies documentation.
+   
+    Returns
+    -------
+    field_dict : dictionary
+        Dictionary with all the information about the variables for thies.
+    """ 
+    field_dict = {
+                    {'No': '1', 'Column': '1', 'Len': '1', 'Description': 'STX (start identifier)'},
+                    {'No': '2', 'Column': '2-3', 'Len': '2', 'Description': 'Device address (factory setting „00“) (NN)'},
+                    {'No': '3', 'Column': '5-8', 'Len': '4', 'Description': 'Serial number (NNNN)'},
+                    {'No': '4', 'Column': '10-13', 'Len': '5', 'Description': 'Software-Version (N.NN)'},
+                    {'No': '5', 'Column': '15-22', 'Len': '8', 'Description': 'Date of the sensor (tt.mm.jj)'},
+                    {'No': '6', 'Column': '24-31', 'Len': '8', 'Description': 'Time of the sensor (on request) (hh:mm:ss)'},
+                    {'No': '7', 'Column': '33-34', 'Len': '2', 'Description': '5M SYNOP Tab.4677 (5 minutes mean value) (NN)'},
+                    {'No': '8', 'Column': '36-37', 'Len': '2', 'Description': '5M SYNOP Tab.4680 (5 minutes mean value) (NN)'},
+                    {'No': '9', 'Column': '39-43', 'Len': '5', 'Description': '5M METAR Tab.4678 (5 minutes mean value) (AAAAA)'},
+                    {'No': '10', 'Column': '45-51', 'Len': '7', 'Description': '5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)'},
+                    {'No': '11', 'Column': '53-54', 'Len': '2', 'Description': '1M SYNOP Tab.4677 (1 minute value) (NN)'},
+                    {'No': '12', 'Column': '56-57', 'Len': '2', 'Description': '1M SYNOP Tab.4680 (1 minute value) (NN)'},
+                    {'No': '13', 'Column': '59-63', 'Len': '5', 'Description': '1M METAR Tab.4678 (1 minute value) (AAAAA)'},
+                    {'No': '14', 'Column': '65-71', 'Len': '7', 'Description': '1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)'},
+                    {'No': '15', 'Column': '73-79', 'Len': '7', 'Description': '1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)'},
+                    {'No': '16', 'Column': '81-87', 'Len': '7', 'Description': '1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)'},
+                    {'No': '17', 'Column': '89-95', 'Len': '7', 'Description': 'Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)'},
+                    {'No': '18', 'Column': '97-101', 'Len': '5', 'Description': '1M Visibility in precipitation [0...99999m] (1 minute value) (NNNNN)'},
+                    {'No': '19', 'Column': '103-106', 'Len': '4', 'Description': '1M Radar reflectivity [-9.9...99.9dBZ] (1 minute value) (NN.N)'},
+                    {'No': '20', 'Column': '108-110', 'Len': '3', 'Description': '1M Measuring quality [0...100%] (1 minute value) (NNN)'},
+                    {'No': '21', 'Column': '112-114' '3', 'Description': '1M Maximum diameter hail [mm] (1 minute value) (N.N))'},
+                    {'No': '22', 'Column': '116', 'Len': '1', 'Description': 'Status Laser (OK/on:0, off:1)'},
+                    {'No': '23', 'Column': '118', 'Len': '1', 'Description': 'Static signal (OK:0, Error:1)'},
+                    {'No': '24', 'Column': '120', 'Len': '1', 'Description': 'Status Laser temperature (analogue) (OK:0, Error:1)'},
+                    {'No': '25', 'Column': '122', 'Len': '1', 'Description': 'Status Laser temperature (digital) (OK:0, Error:1)'},
+                    {'No': '26', 'Column': '124', 'Len': '1', 'Description': 'Status Laser current (analogue) (OK:0, Error:1)'},
+                    {'No': '27', 'Column': '126', 'Len': '1', 'Description': 'Status Laser current (digital) (OK:0, Error:1)'},
+                    {'No': '28', 'Column': '128', 'Len': '1', 'Description': 'Status Sensor supply (OK:0, Error:1)'},
+                    {'No': '29', 'Column': '130', 'Len': '1', 'Description': 'Status Current pane heating laser head (OK:0, warning:1)'},
+                    {'No': '30', 'Column': '132', 'Len': '1', 'Description': 'Status Current pane heating receiver head (OK:0, warning:1)'},
+                    {'No': '31', 'Column': '134', 'Len': '1', 'Description': 'Status Temperature sensor (OK:0, warning:1)'},
+                    {'No': '32', 'Column': '136', 'Len': '1', 'Description': 'Status Heating supply (OK:0, warning:1)'},
+                    {'No': '33', 'Column': '138', 'Len': '1', 'Description': 'Status Current heating housing (OK:0, warning:1)'},
+                    {'No': '34', 'Column': '140', 'Len': '1', 'Description': 'Status Current heating heads (OK:0, warning:1)'},
+                    {'No': '35', 'Column': '142', 'Len': '1', 'Description': 'Status Current heating carriers (OK:0, warning:1)'},
+                    {'No': '36', 'Column': '144', 'Len': '1', 'Description': 'Status Control output laser power (OK:0, warning:1)'},
+                    {'No': '37', 'Column': '146', 'Len': '1', 'Description': 'Reserve Status ( 0)'},
+                    {'No': '38', 'Column': '148-150', 'Len': '3', 'Description': 'Interior temperature [°C] (NNN)'},
+                    {'No': '39', 'Column': '152-153', 'Len': '2', 'Description': 'Temperature of laser driver 0-80°C (NN)'},
+                    {'No': '40', 'Column': '155-158', 'Len': '4', 'Description': 'Mean value laser current [1/100 mA] (NNNN)'},
+                    {'No': '41', 'Column': '160-163', 'Len': '4', 'Description': 'Control voltage [mV] (reference value: 4010±5) (NNNN)'},
+                    {'No': '42', 'Column': '165-168', 'Len': '4', 'Description': 'Optical control output [mV] (2300 … 6500) (NNNN)'},
+                    {'No': '43', 'Column': '170-172', 'Len': '3', 'Description': 'Voltage sensor supply [1/10V] (NNN)'},
+                    {'No': '44', 'Column': '174-176', 'Len': '3', 'Description': 'Current pane heating laser head [mA] (NNN)'},
+                    {'No': '45', 'Column': '178-180', 'Len': '3', 'Description': 'Current pane heating receiver head [mA] (NNN)'},
+                    {'No': '46', 'Column': '182-186', 'Len': '5', 'Description': 'Ambient temperature [°C] (NNN.N)'},
+                    {'No': '47', 'Column': '188-190', 'Len': '3', 'Description': 'Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise “999”) (NNN)'},
+                    {'No': '48', 'Column': '192-195', 'Len': '4', 'Description': 'Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)'},
+                    {'No': '49', 'Column': '197-200', 'Len': '4', 'Description': 'Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)'},
+                    {'No': '50', 'Column': '202-205', 'Len': '4', 'Description': 'Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)'},
+                    {'No': '51', 'Column': '207-211', 'Len': '5', 'Description': 'Number of all measured particles (NNNNN)'},
+                    {'No': '52', 'Column': '213-221', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '53', 'Column': '223-227', 'Len': '5', 'Description': 'Number of particles < minimal speed (0.15m/s) (NNNNN)'},
+                    {'No': '54', 'Column': '229-237', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '55', 'Column': '239-243', 'Len': '5', 'Description': 'Number of particles > maximal speed (20m/s) (NNNNN)'},
+                    {'No': '56', 'Column': '245-253', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '57', 'Column': '255-259', 'Len': '5', 'Description': 'Number of particles < minimal diameter (0.15mm) (NNNNN)'},
+                    {'No': '58', 'Column': '261-269', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '59', 'Column': '271-275', 'Len': '5', 'Description': 'Number of particles no hydrometeor'},
+                    {'No': '60', 'Column': '277-285', 'Len': '9', 'Description': 'Total volume (gross) of this class'},
+                    {'No': '61', 'Column': '287-291', 'Len': '5', 'Description': 'Number of particles with unknown classification'},
+                    {'No': '62', 'Column': '293-301', 'Len': '9', 'Description': 'Total volume (gross) of this class'},
+                    {'No': '63', 'Column': '303-307', 'Len': '5', 'Description': 'Number of particles class 1'},
+                    {'No': '64', 'Column': '309-317', 'Len': '9', 'Description': 'Total volume (gross) of class 1'},
+                    {'No': '65', 'Column': '319-323', 'Len': '5', 'Description': 'Number of particles class 2'},
+                    {'No': '66', 'Column': '325-333', 'Len': '9', 'Description': 'Total volume (gross) of class 2'},
+                    {'No': '67', 'Column': '335-339', 'Len': '5', 'Description': 'Number of particles class 3'},
+                    {'No': '68', 'Column': '341-349', 'Len': '9', 'Description': 'Total volume (gross) of class 3'},
+                    {'No': '69', 'Column': '351-355', 'Len': '5', 'Description': 'Number of particles class 4'},
+                    {'No': '70', 'Column': '357-365', 'Len': '9', 'Description': 'Total volume (gross) of class 4'},
+                    {'No': '71', 'Column': '367-371', 'Len': '5', 'Description': 'Number of particles class 5'},
+                    {'No': '72', 'Column': '373-381', 'Len': '9', 'Description': 'Total volume (gross) of class 5'},
+                    {'No': '73', 'Column': '383-387', 'Len': '5', 'Description': 'Number of particles class 6'},
+                    {'No': '74', 'Column': '389-397', 'Len': '9', 'Description': 'Total volume (gross) of class 6'},
+                    {'No': '75', 'Column': '399-403', 'Len': '5', 'Description': 'Number of particles class 7'},
+                    {'No': '76', 'Column': '405-413', 'Len': '9', 'Description': 'Total volume (gross) of class 7'},
+                    {'No': '77', 'Column': '415-419', 'Len': '5', 'Description': 'Number of particles class 8'},
+                    {'No': '78', 'Column': '421-429', 'Len': '9', 'Description': 'Total volume (gross) of class 8'},
+                    {'No': '79', 'Column': '431-435', 'Len': '5', 'Description': 'Number of particles class 9'},
+                    {'No': '80', 'Column': '437-445', 'Len': '9', 'Description': 'Total volume (gross) of class 9'},
+                    {'No': '81', 'Column': '447-449', 'Len': '3', 'Description': 'Precipitation spectrum'},
+                    {'No': '520', 'Column': '2203-2205', 'Len': '3', 'Description': 'Diameter and speed (NNN)'},
+                    {'No': '521', 'Column': '2228-2229', 'Len': '2', 'Description': 'Checksum (AA)'},
+                    {'No': '522', 'Column': '2231-2232', 'Len': '2', 'Description': 'CRLF'},
+                    {'No': '523', 'Column': '2233', 'Len': '1', 'Description': 'ETX (End identifier)'},
+        }
+    
+    # By the Thies documentation, there are 2 version, if the id is like “<id>TM00005”, then there are more fields
+    field_dict_id_TM00005 = {
+                    {'No': '1', 'Column': '1', 'Len': '1', 'Description': 'STX (start identifier)'},
+                    {'No': '2', 'Column': '2-3', 'Len': '2', 'Description': 'Device address (factory setting „00“) (NN)'},
+                    {'No': '3', 'Column': '5-8', 'Len': '4', 'Description': 'Serial number (NNNN)'},
+                    {'No': '4', 'Column': '10-13', 'Len': '5', 'Description': 'Software-Version (N.NN)'},
+                    {'No': '5', 'Column': '15-22', 'Len': '8', 'Description': 'Date of the sensor (tt.mm.jj)'},
+                    {'No': '6', 'Column': '24-31', 'Len': '8', 'Description': 'Time of the sensor (on request) (hh:mm:ss)'},
+                    {'No': '7', 'Column': '33-34', 'Len': '2', 'Description': '5M SYNOP Tab.4677 (5 minutes mean value) (NN)'},
+                    {'No': '8', 'Column': '36-37', 'Len': '2', 'Description': '5M SYNOP Tab.4680 (5 minutes mean value) (NN)'},
+                    {'No': '9', 'Column': '39-43', 'Len': '5', 'Description': '5M METAR Tab.4678 (5 minutes mean value) (AAAAA)'},
+                    {'No': '10', 'Column': '45-51', 'Len': '7', 'Description': '5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)'},
+                    {'No': '11', 'Column': '53-54', 'Len': '2', 'Description': '1M SYNOP Tab.4677 (1 minute value) (NN)'},
+                    {'No': '12', 'Column': '56-57', 'Len': '2', 'Description': '1M SYNOP Tab.4680 (1 minute value) (NN)'},
+                    {'No': '13', 'Column': '59-63', 'Len': '5', 'Description': '1M METAR Tab.4678 (1 minute value) (AAAAA)'},
+                    {'No': '14', 'Column': '65-71', 'Len': '7', 'Description': '1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)'},
+                    {'No': '15', 'Column': '73-79', 'Len': '7', 'Description': '1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)'},
+                    {'No': '16', 'Column': '81-87', 'Len': '7', 'Description': '1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)'},
+                    {'No': '17', 'Column': '89-95', 'Len': '7', 'Description': 'Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)'},
+                    {'No': '18', 'Column': '97-101', 'Len': '5', 'Description': '1M Visibility in precipitation [0...99999m] (1 minute value) (NNNNN)'},
+                    {'No': '19', 'Column': '103-106', 'Len': '4', 'Description': '1M Radar reflectivity [-9.9...99.9dBZ] (1 minute value) (NN.N)'},
+                    {'No': '20', 'Column': '108-110', 'Len': '3', 'Description': '1M Measuring quality [0...100%] (1 minute value) (NNN)'},
+                    {'No': '21', 'Column': '112-114' '3', 'Description': '1M Maximum diameter hail [mm] (1 minute value) (N.N))'},
+                    {'No': '22', 'Column': '116', 'Len': '1', 'Description': 'Status Laser (OK/on:0, off:1)'},
+                    {'No': '23', 'Column': '118', 'Len': '1', 'Description': 'Static signal (OK:0, Error:1)'},
+                    {'No': '24', 'Column': '120', 'Len': '1', 'Description': 'Status Laser temperature (analogue) (OK:0, Error:1)'},
+                    {'No': '25', 'Column': '122', 'Len': '1', 'Description': 'Status Laser temperature (digital) (OK:0, Error:1)'},
+                    {'No': '26', 'Column': '124', 'Len': '1', 'Description': 'Status Laser current (analogue) (OK:0, Error:1)'},
+                    {'No': '27', 'Column': '126', 'Len': '1', 'Description': 'Status Laser current (digital) (OK:0, Error:1)'},
+                    {'No': '28', 'Column': '128', 'Len': '1', 'Description': 'Status Sensor supply (OK:0, Error:1)'},
+                    {'No': '29', 'Column': '130', 'Len': '1', 'Description': 'Status Current pane heating laser head (OK:0, warning:1)'},
+                    {'No': '30', 'Column': '132', 'Len': '1', 'Description': 'Status Current pane heating receiver head (OK:0, warning:1)'},
+                    {'No': '31', 'Column': '134', 'Len': '1', 'Description': 'Status Temperature sensor (OK:0, warning:1)'},
+                    {'No': '32', 'Column': '136', 'Len': '1', 'Description': 'Status Heating supply (OK:0, warning:1)'},
+                    {'No': '33', 'Column': '138', 'Len': '1', 'Description': 'Status Current heating housing (OK:0, warning:1)'},
+                    {'No': '34', 'Column': '140', 'Len': '1', 'Description': 'Status Current heating heads (OK:0, warning:1)'},
+                    {'No': '35', 'Column': '142', 'Len': '1', 'Description': 'Status Current heating carriers (OK:0, warning:1)'},
+                    {'No': '36', 'Column': '144', 'Len': '1', 'Description': 'Status Control output laser power (OK:0, warning:1)'},
+                    {'No': '37', 'Column': '146', 'Len': '1', 'Description': 'Reserve Status ( 0)'},
+                    {'No': '38', 'Column': '148-150', 'Len': '3', 'Description': 'Interior temperature [°C] (NNN)'},
+                    {'No': '39', 'Column': '152-153', 'Len': '2', 'Description': 'Temperature of laser driver 0-80°C (NN)'},
+                    {'No': '40', 'Column': '155-158', 'Len': '4', 'Description': 'Mean value laser current [1/100 mA] (NNNN)'},
+                    {'No': '41', 'Column': '160-163', 'Len': '4', 'Description': 'Control voltage [mV] (reference value: 4010±5) (NNNN)'},
+                    {'No': '42', 'Column': '165-168', 'Len': '4', 'Description': 'Optical control output [mV] (2300 … 6500) (NNNN)'},
+                    {'No': '43', 'Column': '170-172', 'Len': '3', 'Description': 'Voltage sensor supply [1/10V] (NNN)'},
+                    {'No': '44', 'Column': '174-176', 'Len': '3', 'Description': 'Current pane heating laser head [mA] (NNN)'},
+                    {'No': '45', 'Column': '178-180', 'Len': '3', 'Description': 'Current pane heating receiver head [mA] (NNN)'},
+                    {'No': '46', 'Column': '182-186', 'Len': '5', 'Description': 'Ambient temperature [°C] (NNN.N)'},
+                    {'No': '47', 'Column': '188-190', 'Len': '3', 'Description': 'Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise “999”) (NNN)'},
+                    {'No': '48', 'Column': '192-195', 'Len': '4', 'Description': 'Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)'},
+                    {'No': '49', 'Column': '197-200', 'Len': '4', 'Description': 'Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)'},
+                    {'No': '50', 'Column': '202-205', 'Len': '4', 'Description': 'Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)'},
+                    {'No': '51', 'Column': '207-211', 'Len': '5', 'Description': 'Number of all measured particles (NNNNN)'},
+                    {'No': '52', 'Column': '213-221', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '53', 'Column': '223-227', 'Len': '5', 'Description': 'Number of particles < minimal speed (0.15m/s) (NNNNN)'},
+                    {'No': '54', 'Column': '229-237', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '55', 'Column': '239-243', 'Len': '5', 'Description': 'Number of particles > maximal speed (20m/s) (NNNNN)'},
+                    {'No': '56', 'Column': '245-253', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '57', 'Column': '255-259', 'Len': '5', 'Description': 'Number of particles < minimal diameter (0.15mm) (NNNNN)'},
+                    {'No': '58', 'Column': '261-269', 'Len': '9', 'Description': '„00000.000“ (internal data)'},
+                    {'No': '59', 'Column': '271-275', 'Len': '5', 'Description': 'Number of particles no hydrometeor'},
+                    {'No': '60', 'Column': '277-285', 'Len': '9', 'Description': 'Total volume (gross) of this class'},
+                    {'No': '61', 'Column': '287-291', 'Len': '5', 'Description': 'Number of particles with unknown classification'},
+                    {'No': '62', 'Column': '293-301', 'Len': '9', 'Description': 'Total volume (gross) of this class'},
+                    {'No': '63', 'Column': '303-307', 'Len': '5', 'Description': 'Number of particles class 1'},
+                    {'No': '64', 'Column': '309-317', 'Len': '9', 'Description': 'Total volume (gross) of class 1'},
+                    {'No': '65', 'Column': '319-323', 'Len': '5', 'Description': 'Number of particles class 2'},
+                    {'No': '66', 'Column': '325-333', 'Len': '9', 'Description': 'Total volume (gross) of class 2'},
+                    {'No': '67', 'Column': '335-339', 'Len': '5', 'Description': 'Number of particles class 3'},
+                    {'No': '68', 'Column': '341-349', 'Len': '9', 'Description': 'Total volume (gross) of class 3'},
+                    {'No': '69', 'Column': '351-355', 'Len': '5', 'Description': 'Number of particles class 4'},
+                    {'No': '70', 'Column': '357-365', 'Len': '9', 'Description': 'Total volume (gross) of class 4'},
+                    {'No': '71', 'Column': '367-371', 'Len': '5', 'Description': 'Number of particles class 5'},
+                    {'No': '72', 'Column': '373-381', 'Len': '9', 'Description': 'Total volume (gross) of class 5'},
+                    {'No': '73', 'Column': '383-387', 'Len': '5', 'Description': 'Number of particles class 6'},
+                    {'No': '74', 'Column': '389-397', 'Len': '9', 'Description': 'Total volume (gross) of class 6'},
+                    {'No': '75', 'Column': '399-403', 'Len': '5', 'Description': 'Number of particles class 7'},
+                    {'No': '76', 'Column': '405-413', 'Len': '9', 'Description': 'Total volume (gross) of class 7'},
+                    {'No': '77', 'Column': '415-419', 'Len': '5', 'Description': 'Number of particles class 8'},
+                    {'No': '78', 'Column': '421-429', 'Len': '9', 'Description': 'Total volume (gross) of class 8'},
+                    {'No': '79', 'Column': '431-435', 'Len': '5', 'Description': 'Number of particles class 9'},
+                    {'No': '80', 'Column': '437-445', 'Len': '9', 'Description': 'Total volume (gross) of class 9'},
+                    {'No': '81', 'Column': '447-449', 'Len': '3', 'Description': 'Precipitation spectrum'},
+                    {'No': '520', 'Column': '2203-2205', 'Len': '3', 'Description': 'Diameter and speed (NNN)'},
+                    {'No': '521', 'Column': '2207-2211', 'Len': '5', 'Description': 'Temperature [°C] (NNN.N)'},
+                    {'No': '522', 'Column': '2213-2217', 'Len': '5', 'Description': 'Relative Air humidity [%r.h.] (NNN.N)'},
+                    {'No': '523', 'Column': '2219-2222', 'Len': '4', 'Description': 'Wind speed [m/s] (NN.N)'},
+                    {'No': '524', 'Column': '2224-2226', 'Len': '3', 'Description': 'Wind direction [°] (NNN)'},
+                    {'No': '525', 'Column': '2228-2229', 'Len': '2', 'Description': 'Checksum (AA)'},
+                    {'No': '526', 'Column': '2231-2232', 'Len': '2', 'Description': 'CRLF'},
+                    {'No': '527', 'Column': '2233', 'Len': '1', 'Description': 'ETX (End identifier)'},
+        }
+    
     return field_dict
 
 #-----------------------------------------------------------------------------.

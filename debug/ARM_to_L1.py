@@ -81,7 +81,7 @@ dict_ARM =      {'time': 'time',
                 'alt': 'altitude',
                 }
 
-campagna = 'nsalpmC1.a1.20170428.235900'
+campagna = 'nsalpmC1.a1.20170429.000800'
 path = "/SharedVM/Campagne/ARM/Raw/ALASKA/data/nsalpmC1"
 file = campagna + '.nc'
 file_path = os.path.join(path, file)
@@ -89,6 +89,8 @@ file_path = os.path.join(path, file)
 ds = xr.open_dataset(file_path)
 
 print(list(ds.keys()))
+
+print(list(ds.data_vars))
 
 
 ds2 = xr.open_dataset('/SharedVM/Campagne/ARM/Processed/ALASKA/L1/ALASKA_nsalpmC1_0')
@@ -98,7 +100,11 @@ ds2.close()
 import netCDF4
 import numpy as np
 f = netCDF4.Dataset(file_path)
+print(f.__dict__)
 
+asd = f.variables
+
+print(f.__dict__)
 
 # ds_keys = []
 
