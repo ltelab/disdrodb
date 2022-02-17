@@ -26,6 +26,7 @@ import logging
 import zarr
 import numpy as np
 import dask.array as da
+import dask.dataframe as dd
 import xarray as xr
 from disdrodb.check_standards import check_sensor_name
 from disdrodb.check_standards import check_L1_standards
@@ -54,6 +55,37 @@ def get_fieldv_from_raw_spectrum(arr):
     # TODO
     logger.info("Computing fieldv from raw spectrum.")
     return arr[:, 0, :]
+
+
+def check_array_lengths_consistency(df, sensor_name, lazy=True, verbose=False):
+    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    list_unvalid_row_idx = []
+    for key, n_bins in n_bins_dict.items():
+        # Parse the string splitting at ,
+        df_series = df[key].astype(str).str.split(",")
+        # Check all arrays have same length
+        if lazy:
+            arr_lengths = df_series.apply(len, meta=(key, "int64"))
+            arr_lengths = arr_lengths.compute()
+        else:
+            arr_lengths = df_series.apply(len)
+        idx, count = np.unique(arr_lengths, return_counts=True)
+        n_max_vals = idx[np.argmax(count)]
+        # Idenfity rows with unexpected array length
+        unvalid_row_idx = np.where(arr_lengths != n_max_vals)[0]
+        if len(unvalid_row_idx) > 0:
+            list_unvalid_row_idx.append(unvalid_row_idx)
+    # Drop unvalid rows
+    unvalid_row_idx = np.unique(list_unvalid_row_idx)
+    if len(unvalid_row_idx) > 0:
+        if lazy:
+            n_partitions = df.npartitions
+            df = df.compute()
+            df = df.drop(df.index[unvalid_row_idx])
+            df = dd.from_pandas(df, npartitions=n_partitions)
+        else:
+            df = df.drop(df.index[unvalid_row_idx])
+    return df
 
 
 def check_L0_raw_fields_available(df, sensor_name):
@@ -193,6 +225,10 @@ def get_L1_coords(sensor_name):
 def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
+    # Check dataframe row consistency
+    df = check_array_lengths_consistency(
+        df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
+    )
     # Retrieve raw data matrices
     dict_data = retrieve_L1_raw_data_matrix(df, sensor_name, lazy=lazy, verbose=verbose)
     # Define raw data matrix variables for xarray Dataset
