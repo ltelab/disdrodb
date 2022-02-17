@@ -507,188 +507,99 @@ def get_ThiesLPM_dict():
     """ 
     
     field_dict = {
-                    '01': 'STX (start identifier)', # To delete?
-                    '02': 'Device address (factory setting „00“) (NN)', # To delete?
+                    '01': 'start_identifier',
+                    '02': 'device_address',
                     '03': 'sensor_serial_number',
                     '04': 'firmware_DSP',
-                    '05': 'Date of the sensor (tt.mm.jj)', # Merge Date of the sensor and Time of the sensor?
-                    '06': 'Time of the sensor (on request) (hh:mm:ss)', # Merge Date of the sensor and Time of the sensor?
-                    '07': '5M SYNOP Tab.4677 (5 minutes mean value) (NN)', # To delete?
-                    '08': '5M SYNOP Tab.4680 (5 minutes mean value) (NN)', # To delete?
-                    '09': '5M METAR Tab.4678 (5 minutes mean value) (AAAAA)', # To delete?
-                    '10': '5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)', # To delete?
-                    '11': 'weather_code_SYNOP_4677',
-                    '12': 'weather_code_SYNOP_4680',
-                    '13': 'weather_code_METAR_4678',
-                    '14': '1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)', # rain_amount_absolute_32bit ?
-                    '15': '1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)', # rain_rate_32bit or rain_rate_16bit ?
-                    '16': '1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)', #snowfall_intensity ?
-                    '17': 'Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)', # rain_accumulated_32bit or rain_accumulated_16bit ?
-                    '18': 'mor_visibility',
-                    '19': 'reflectivity_16bit',
-                    '20': '1M Measuring quality [0...100%] (1 minute value) (NNN)', # To delete?
-                    '21': '1M Maximum diameter hail [mm] (1 minute value) (N.N))', # To delete?
-                    '22': 'sensor_status',
-                    '23': 'Static signal (OK:0, Error:1)', # To delete?
-                    '24': 'Status Laser temperature (analogue) (OK:0, Error:1)', # To delete?
-                    '25': 'Status Laser temperature (digital) (OK:0, Error:1)', # To delete?
-                    '26': 'Status Laser current (analogue) (OK:0, Error:1)', # To delete?
-                    '27': 'Status Laser current (digital) (OK:0, Error:1)', # To delete?
-                    '28': 'Status Sensor supply (OK:0, Error:1)', # To delete?
-                    '29': 'Status Current pane heating laser head (OK:0, warning:1)', # To delete?
-                    '30': 'Status Current pane heating receiver head (OK:0, warning:1)', # To delete?
-                    '31': 'Status Temperature sensor (OK:0, warning:1)', # To delete?
-                    '32': 'Status Heating supply (OK:0, warning:1)', # To delete?
-                    '33': 'Status Current heating housing (OK:0, warning:1)', # To delete?
-                    '34': 'Status Current heating heads (OK:0, warning:1)', # To delete?
-                    '35': 'Status Current heating carriers (OK:0, warning:1)', # To delete?
-                    '36': 'Status Control output laser power (OK:0, warning:1)', # To delete?
-                    '37': 'Reserve Status ( 0)', # To delete?
-                    '38': 'sensor_temperature_PBC',
-                    '39': 'Temperature of laser driver 0-80°C (NN)', # To delete?
-                    '40': 'Mean value laser current [1/100 mA] (NNNN)', # sensor_heating_current ? 
-                    '41': 'Control voltage [mV] (reference value: 4010±5) (NNNN)', # To delete?
-                    '42': 'Optical control output [mV] (2300 … 6500) (NNNN)', # To delete?
-                    '43': 'Voltage sensor supply [1/10V] (NNN)', # sensor_battery_voltage ?
-                    '44': 'Current pane heating laser head [mA] (NNN)', # To delete?
-                    '45': 'Current pane heating receiver head [mA] (NNN)', # To delete?
-                    '46': 'sensor_temperature',
-                    '47': 'Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise “999”) (NNN)', # To delete?
-                    '48': 'Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
-                    '49': 'Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
-                    '50': 'Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
-                    '51': 'n_particles',
-                    '52': '„00000.000“ (internal data)', # To delete?
-                    '53': 'Number of particles < minimal speed (0.15m/s) (NNNNN)', # To delete?
-                    '54': '„00000.000“ (internal data)', # To delete?
-                    '55': 'Number of particles > maximal speed (20m/s) (NNNNN)', # To delete?
-                    '56': '„00000.000“ (internal data)', # To delete? 
-                    '57': 'Number of particles < minimal diameter (0.15mm) (NNNNN)',# To delete? 
-                    '58': '„00000.000“ (internal data)',# To delete?
-                    '59': 'Number of particles no hydrometeor', # To delete?
-                    '60': 'Total volume (gross) of this class', # To delete?
-                    '61': 'Number of particles with unknown classification', # To delete?
-                    '62': 'Total volume (gross) of this class', # To delete?
-                    '63': 'Number of particles class 1', # To delete?
-                    '64': 'Total volume (gross) of class 1', # To delete?
-                    '65': 'Number of particles class 2', # To delete?
-                    '66': 'Total volume (gross) of class 2', # To delete?
-                    '67': 'Number of particles class 3', # To delete?
-                    '68': 'Total volume (gross) of class 3', # To delete?
-                    '69': 'Number of particles class 4', # To delete?
-                    '70': 'Total volume (gross) of class 4', # To delete?
-                    '71': 'Number of particles class 5', # To delete?
-                    '72': 'Total volume (gross) of class 5', # To delete?
-                    '73': 'Number of particles class 6', # To delete?
-                    '74': 'Total volume (gross) of class 6', # To delete?
-                    '75': 'Number of particles class 7', # To delete?
-                    '76': 'Total volume (gross) of class 7', # To delete?
-                    '77': 'Number of particles class 8', # To delete?
-                    '78': 'Total volume (gross) of class 8', # To delete?
-                    '79': 'Number of particles class 9', # To delete?
-                    '80': 'Total volume (gross) of class 9', # To delete?
-                    '81': 'Precipitation spectrum', # To delete?
-                    '520': 'Diameter and speed (NNN)', # To delete?
-                    '521': 'Checksum (AA)', # To delete?
-                    '522': 'CRLF', # To delete?
-                    '523': 'ETX (End identifier)', # To delete?
+                    '05': 'date_sensor',
+                    '06': 'time_sensor',
+                    '07': 'synop_4677_5min_weather_code',
+                    '08': 'synop_4680_5min_weather_code',
+                    '09': 'metar_4678_5min_weather_code',
+                    '10': 'intensity_total_5min',
+                    '11': 'synop_4677_weather_code',
+                    '12': 'synop_4680_weather_code',
+                    '13': 'metar_4678_weather_code',
+                    '14': 'intensity_total',
+                    '15': 'intensity_liquid',
+                    '16': 'intensity_solid',
+                    '17': 'accum_precip',
+                    '18': 'maximum_visibility',
+                    '19': 'radar_reflectivity',
+                    '20': 'quality_measurement',
+                    '21': 'max_diameter_hail', 
+                    '22': 'laser_status',
+                    '23': 'static_signal',
+                    '24': 'laser_temperature_analog_status',
+                    '25': 'laser_temperature_digital_status',
+                    '26': 'laser_current_analog_status',
+                    '27': 'laser_current_digital_status',
+                    '28': 'sensor_status',
+                    '29': 'pane_heating_laser_head_current', 
+                    '30': 'pane_heating_receiver_head_current', 
+                    '31': 'temperature_sensor_status',
+                    '32': 'status_heating',
+                    '33': 'heating_house_current_status',
+                    '34': 'heating_heads_current_status',
+                    '35': 'heating_carriers_current_status',
+                    '36': 'control_output_laser_power_status',
+                    '37': 'reserve_status',
+                    '38': 'interior_temperature',
+                    '39': 'laser_temperature',
+                    '40': 'mean_laser_current',
+                    '41': 'control_voltage',
+                    '42': 'optical_control_output', 
+                    '43': 'voltage_sensor_supply',
+                    '44': 'pane_heating_laser_head_current',
+                    '45': 'pane_heating_receiver_head_current',
+                    '46': 'ambient_temperature',
+                    '47': 'voltage_heating_supply',
+                    '48': 'heating_house_current',
+                    '49': 'heating_heads_current',
+                    '50': 'heating_carriers_current',
+                    '51': 'number_particles',
+                    '52': 'number_particles_internal_data',
+                    '53': 'number_particles_min_speed',
+                    '54': 'number_particles_min_speed_internal_data',
+                    '55': 'number_particles_max_speed',
+                    '56': 'number_particles_max_speed_internal_data',
+                    '57': 'number_particles_min_diameter',
+                    '58': 'number_particles_min_diameter_internal_data',
+                    '59': 'number_particles_no_hydrometeor',
+                    '60': 'number_particles_no_hydrometeor_internal_data',
+                    '61': 'number_particles_no_classification',
+                    '62': 'number_particles_no_classification_internal_data',
+                    '63': 'number_particles_class_1',
+                    '64': 'number_particles_class_1_internal_data',
+                    '65': 'number_particles_class_2',
+                    '66': 'number_particles_class_2_internal_data',
+                    '67': 'number_particles_class_3',
+                    '68': 'number_particles_class_3_internal_data',
+                    '69': 'number_particles_class_4',
+                    '70': 'number_particles_class_4_internal_data',
+                    '71': 'number_particles_class_5',
+                    '72': 'number_particles_class_5_internal_data',
+                    '73': 'number_particles_class_6',
+                    '74': 'number_particles_class_6_internal_data',
+                    '75': 'number_particles_class_7',
+                    '76': 'number_particles_class_7_internal_data',
+                    '77': 'number_particles_class_8',
+                    '78': 'number_particles_class_8_internal_data',
+                    '79': 'number_particles_class_9',
+                    '80': 'number_particles_class_9_internal_data',
+                    '81': 'precipitation_spectrum',
+                    '520': 'diameter_speed',
+                    '521': 'checksum',
+                    '522': 'crlf',
+                    '523': 'etx',
         }
-    
-    # By the Thies documentation, there are 2 version, if the id is like “<id>TM00005”, then there are more fields
-    field_dict_id_TM00005 = {
-                    '01': 'STX (start identifier)', # To delete?
-                    '02': 'Device address (factory setting „00“) (NN)', # To delete?
-                    '03': 'sensor_serial_number',
-                    '04': 'firmware_DSP',
-                    '05': 'Date of the sensor (tt.mm.jj)', # Merge Date of the sensor and Time of the sensor?
-                    '06': 'Time of the sensor (on request) (hh:mm:ss)', # Merge Date of the sensor and Time of the sensor?
-                    '07': '5M SYNOP Tab.4677 (5 minutes mean value) (NN)', # To delete?
-                    '08': '5M SYNOP Tab.4680 (5 minutes mean value) (NN)', # To delete?
-                    '09': '5M METAR Tab.4678 (5 minutes mean value) (AAAAA)', # To delete?
-                    '10': '5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)', # To delete?
-                    '11': 'weather_code_SYNOP_4677',
-                    '12': 'weather_code_SYNOP_4680',
-                    '13': 'weather_code_METAR_4678',
-                    '14': '1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)', # rain_amount_absolute_32bit ?
-                    '15': '1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)', # rain_rate_32bit or rain_rate_16bit ?
-                    '16': '1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)', #snowfall_intensity ?
-                    '17': 'Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)', # rain_accumulated_32bit or rain_accumulated_16bit ?
-                    '18': 'mor_visibility',
-                    '19': 'reflectivity_16bit',
-                    '20': '1M Measuring quality [0...100%] (1 minute value) (NNN)', # To delete?
-                    '21': '1M Maximum diameter hail [mm] (1 minute value) (N.N))', # To delete?
-                    '22': 'sensor_status',
-                    '23': 'Static signal (OK:0, Error:1)', # To delete?
-                    '24': 'Status Laser temperature (analogue) (OK:0, Error:1)', # To delete?
-                    '25': 'Status Laser temperature (digital) (OK:0, Error:1)', # To delete?
-                    '26': 'Status Laser current (analogue) (OK:0, Error:1)', # To delete?
-                    '27': 'Status Laser current (digital) (OK:0, Error:1)', # To delete?
-                    '28': 'Status Sensor supply (OK:0, Error:1)', # To delete?
-                    '29': 'Status Current pane heating laser head (OK:0, warning:1)', # To delete?
-                    '30': 'Status Current pane heating receiver head (OK:0, warning:1)', # To delete?
-                    '31': 'Status Temperature sensor (OK:0, warning:1)', # To delete?
-                    '32': 'Status Heating supply (OK:0, warning:1)', # To delete?
-                    '33': 'Status Current heating housing (OK:0, warning:1)', # To delete?
-                    '34': 'Status Current heating heads (OK:0, warning:1)', # To delete?
-                    '35': 'Status Current heating carriers (OK:0, warning:1)', # To delete?
-                    '36': 'Status Control output laser power (OK:0, warning:1)', # To delete?
-                    '37': 'Reserve Status ( 0)', # To delete?
-                    '38': 'sensor_temperature_PBC',
-                    '39': 'Temperature of laser driver 0-80°C (NN)', # To delete?
-                    '40': 'Mean value laser current [1/100 mA] (NNNN)', # sensor_heating_current ? 
-                    '41': 'Control voltage [mV] (reference value: 4010±5) (NNNN)', # To delete?
-                    '42': 'Optical control output [mV] (2300 … 6500) (NNNN)', # To delete?
-                    '43': 'Voltage sensor supply [1/10V] (NNN)', # sensor_battery_voltage ?
-                    '44': 'Current pane heating laser head [mA] (NNN)', # To delete?
-                    '45': 'Current pane heating receiver head [mA] (NNN)', # To delete?
-                    '46': 'sensor_temperature',
-                    '47': 'Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise “999”) (NNN)', # To delete?
-                    '48': 'Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
-                    '49': 'Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
-                    '50': 'Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)', # To delete?
-                    '51': 'n_particles',
-                    '52': '„00000.000“ (internal data)', # To delete?
-                    '53': 'Number of particles < minimal speed (0.15m/s) (NNNNN)', # To delete?
-                    '54': '„00000.000“ (internal data)', # To delete?
-                    '55': 'Number of particles > maximal speed (20m/s) (NNNNN)', # To delete?
-                    '56': '„00000.000“ (internal data)', # To delete? 
-                    '57': 'Number of particles < minimal diameter (0.15mm) (NNNNN)',# To delete? 
-                    '58': '„00000.000“ (internal data)',# To delete?
-                    '59': 'Number of particles no hydrometeor', # To delete?
-                    '60': 'Total volume (gross) of this class', # To delete?
-                    '61': 'Number of particles with unknown classification', # To delete?
-                    '62': 'Total volume (gross) of this class', # To delete?
-                    '63': 'Number of particles class 1', # To delete?
-                    '64': 'Total volume (gross) of class 1', # To delete?
-                    '65': 'Number of particles class 2', # To delete?
-                    '66': 'Total volume (gross) of class 2', # To delete?
-                    '67': 'Number of particles class 3', # To delete?
-                    '68': 'Total volume (gross) of class 3', # To delete?
-                    '69': 'Number of particles class 4', # To delete?
-                    '70': 'Total volume (gross) of class 4', # To delete?
-                    '71': 'Number of particles class 5', # To delete?
-                    '72': 'Total volume (gross) of class 5', # To delete?
-                    '73': 'Number of particles class 6', # To delete?
-                    '74': 'Total volume (gross) of class 6', # To delete?
-                    '75': 'Number of particles class 7', # To delete?
-                    '76': 'Total volume (gross) of class 7', # To delete?
-                    '77': 'Number of particles class 8', # To delete?
-                    '78': 'Total volume (gross) of class 8', # To delete?
-                    '79': 'Number of particles class 9', # To delete?
-                    '80': 'Total volume (gross) of class 9', # To delete?
-                    '81': 'Precipitation spectrum', # To delete?
-                    '520': 'Diameter and speed (NNN)', # To delete?
-                    '521': 'Temperature [°C] (NNN.N)', # sensor_temperature ?
-                    '522': 'Relative Air humidity [%r.h.] (NNN.N)', # To delete?
-                    '523': 'Wind speed [m/s] (NN.N)', # To delete?
-                    '524': 'Wind direction [°] (NNN)', # To delete?
-                    '525': 'Checksum (AA)', # To delete?
-                    '526': 'CRLF', # To delete?
-                    '527': 'ETX (End identifier)', # To delete?
-        }
+
     
     
     return field_dict
+
+#-----------------------------------------------------------------------------.
+
 
 #-----------------------------------------------------------------------------.
 
@@ -697,7 +608,7 @@ def get_ThiesLPM_dict_full():
     Get a dictionary containing the variable name and information by the Thies documentation.
    
     Returns
-    -------
+    -------'base_time', 'time_offset', 'time_bounds', 'particle_diameter_bounds', 'particle_fall_velocity_bounds', 'synop_46
     field_dict : dictionary
         Dictionary with all the information about the variables for thies.
     """ 
