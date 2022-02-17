@@ -43,6 +43,16 @@ from disdrodb.standards import get_raw_field_nbins
 
 logger = logging.getLogger(__name__)
 
+def get_fieldn_from_raw_spectrum(arr): 
+    # TODO 
+    logger.info("Computing fieldn from raw spectrum.")
+    return arr[:,:,0]
+
+def get_fieldv_from_raw_spectrum(arr): 
+    # TODO
+    logger.info("Computing fieldv from raw spectrum.")
+    return arr[:,0,:]
+
 def check_L0_raw_fields_available(df, sensor_name): 
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
     raw_vars = np.array(list(n_bins_dict.keys()))
@@ -84,15 +94,21 @@ def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
     # Check L0 raw field availability 
     check_L0_raw_fields_available(df, sensor_name)
     # Retrieve raw fields matrix bins dictionary
-    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)  
     # Retrieve number of timesteps
     if lazy: 
         n_timesteps = df.shape[0].compute() 
     else: 
         n_timesteps = df.shape[0]
-    # Retrieve arrays                
+        
+    # Retrieve available arrays                 
     dict_data = {}
+    unavailable_keys = []
     for key, n_bins in n_bins_dict.items(): 
+        # Check key is available in dataframe
+        if key not in df.columns: 
+            unavailable_keys.append(key)
+            continue 
         # Parse the string splitting at , 
         df_series = df[key].astype(str).str.split(",")
         # Create array 
@@ -111,14 +127,25 @@ def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
             arr = reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps)
         # Add array to dictionary 
         dict_data[key] = arr
+        
+    # Retrieve unavailable keys from raw spectrum 
+    if len(unavailable_keys) > 0: 
+        if "RawData" not in list(dict_data.keys()):
+            raise ValueError("The raw spectrum is required to compute unavaible N_D and N_V.")
+        if "FieldN" in unavailable_keys: 
+            dict_data["FieldN"] = get_fieldn_from_raw_spectrum(dict_data['RawData'])
+        if "FieldV" in unavailable_keys: 
+            dict_data["FieldV"] = get_fieldv_from_raw_spectrum(dict_data['RawData'])
+   
     # Log 
     msg = " - Retrieval of L1 data matrix finished."
     if verbose:
         print(msg)
     logger.info(msg)
     # Return 
-    return dict_data       
+    return dict_data        
 
+    
 def get_L1_coords(sensor_name): 
     check_sensor_name(sensor_name=sensor_name)
     coords = {} 
@@ -131,6 +158,7 @@ def get_L1_coords(sensor_name):
     coords["velocity_bin_upper"] = (["velocity_bin_center"], get_velocity_bin_upper(sensor_name=sensor_name))
     coords["velocity_bin_width"] = (["velocity_bin_center"], get_velocity_bin_width(sensor_name=sensor_name))
     return coords 
+
 
 def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False): 
     # Retrieve sensor name 
@@ -194,10 +222,12 @@ def write_L1_to_zarr(ds, fpath, sensor_name):
     ds.to_zarr(fpath, encoding=zarr_encoding_dict, mode = "w")
     return None 
 
+
 def write_L1_to_netcdf(ds, fpath, sensor_name):
     ds = rechunk_L1_dataset(ds, sensor_name=sensor_name) # very important for fast writing !!!
     nc_encoding_dict = get_L1_nc_encodings_standards(ds, sensor_name=sensor_name)
     ds.to_netcdf(fpath, engine="netcdf4", encoding=nc_encoding_dict)
+
 
 ####--------------------------------------------------------------------------.
 #### Chunks defaults               
@@ -228,6 +258,7 @@ def rechunk_L1_dataset(ds, sensor_name):
        if chunk is not None: 
            ds[var] = ds[var].chunk(chunk) 
     return ds 
+
 
 ####--------------------------------------------------------------------------.        
 #### Encodings defaults 
