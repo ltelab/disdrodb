@@ -38,34 +38,40 @@ def get_campaign_name(base_dir):
     campaign_name = os.path.basename(base_dir).upper()
     return campaign_name
 
-def get_L0_fname(campaign_name, station_id):
-    fname = campaign_name + "_s" + station_id + ".parquet"
+def get_L0_fname(campaign_name, station_id, suffix=''):
+    if suffix != '':
+        suffix = "_" + suffix 
+    fname = campaign_name + "_s" + station_id + suffix + ".parquet"
     return fname
 
-def get_L0_fpath(processed_dir, station_id):
+def get_L0_fpath(processed_dir, station_id, suffix=''):
     campaign_name = get_campaign_name(processed_dir)
-    fname = get_L0_fname(campaign_name, station_id)
+    fname = get_L0_fname(campaign_name, station_id, suffix=suffix)
     fpath = os.path.join(processed_dir, 'L0', fname)
     return fpath
 
-def get_L1_netcdf_fname(campaign_name, station_id):
-    fname = campaign_name + "_s" + station_id + ".nc"
+def get_L1_netcdf_fname(campaign_name, station_id, suffix=''):
+    if suffix != '':
+        suffix = "_" + suffix 
+    fname = campaign_name + "_s" + station_id + suffix + ".nc"
     return fname
 
-def get_L1_netcdf_fpath(processed_dir, station_id):
+def get_L1_netcdf_fpath(processed_dir, station_id, suffix=''):
     campaign_name = get_campaign_name(processed_dir)
-    fname = get_L1_netcdf_fname(campaign_name, station_id)
-    fpath = os.path.join(processed_dir, 'L1', fname)     # TODO: L1_NETCDF
+    fname = get_L1_netcdf_fname(campaign_name, station_id, suffix=suffix)
+    fpath = os.path.join(processed_dir, 'L1', fname)     
     return fpath
 
-def get_L1_zarr_fname(campaign_name, station_id):
-    fname = campaign_name + "_s" + station_id + ".zarr"
+def get_L1_zarr_fname(campaign_name, station_id, suffix=''):
+    if suffix != '':
+        suffix = "_" + suffix 
+    fname = campaign_name + "_s" + station_id + suffix + ".zarr"
     return fname
 
-def get_L1_zarr_fpath(processed_dir, station_id):
+def get_L1_zarr_fpath(processed_dir, station_id, suffix=''):
     campaign_name = get_campaign_name(processed_dir)
-    fname = get_L1_zarr_fname(campaign_name, station_id)
-    fpath = os.path.join(processed_dir, 'L1', fname)     # TODO: L1_ZARR
+    fname = get_L1_zarr_fname(campaign_name, station_id, suffix=suffix)
+    fpath = os.path.join(processed_dir, 'L1', fname)     
     return fpath
 
 ####--------------------------------------------------------------------------.           
