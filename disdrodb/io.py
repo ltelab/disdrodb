@@ -319,8 +319,6 @@ def check_directories(raw_dir, processed_dir, force=False):
 
 def create_directory_structure(raw_dir, processed_dir):
     """Create directory structure for L0 and L1 processing."""
-    campaign_name = os.path.basename(raw_dir).upper()
-
     # Creation metadata folder inside campaing processed folder
     check_metadata_dir(processed_dir)
 

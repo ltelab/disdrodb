@@ -251,8 +251,7 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     else:
         data_vars = {}
     # -----------------------------------------------------------.
-    # Define other disdrometer 'auxiliary' variables
-    # - Varying over time dimension !!!
+    # Define other disdrometer 'auxiliary' variables varying over time dimension
     aux_columns = df.columns[
         np.isin(df.columns, ["FieldN", "FieldV", "RawData", "time"], invert=True)
     ]
@@ -346,17 +345,17 @@ def write_L1_to_netcdf(ds, fpath, sensor_name):
 def get_L1_chunks(sensor_name):
     # TODO: get ds, define chunks as dict, then convert to tuple, check min(max(shape, chunk))
     check_sensor_name(sensor_name=sensor_name)
-    if sensor_name == "Parsivel":
+    if sensor_name == "OTT_Parsivel":
         chunks_dict = {
             "FieldN": (5000, 32),
             "FieldV": (5000, 32),
             "RawData": (5000, 32, 32),
         }
-    elif sensor_name == "Parsivel2":
+    elif sensor_name == "OTT_Parsivel_2":
         logger.exception(f"Not implemented {sensor_name} device")
         raise NotImplementedError
 
-    elif sensor_name == "ThiesLPM":
+    elif sensor_name == "Thies_LPM":
         logger.exception(f"Not implemented {sensor_name} device")
         raise NotImplementedError
 

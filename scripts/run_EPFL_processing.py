@@ -31,10 +31,17 @@ EPFL_dict = {
     "PLATO_2019": "parser_PLATO_2019.py",
 }
 
+parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL"
+raw_dir = "/ltenas3/0_Data/ParsivelDB/EPFL/raw_data" 
+processed_dir = "/ltenas3/0_Data/ParsivelDB/EPFL/raw_data" 
+processed_dir = "/tmp/Processed/"
 
 # Set args
 raw_dir = "/home/ghiggi/Parsivel/TICINO_2018"
 processed_dir = "/tmp/Processed/TICINO_2018"
+
+
+
 
 l0_processing = True
 l1_processing = True
@@ -45,50 +52,24 @@ lazy = True
 write_zarr = True
 write_netcdf = True
 
-
-parser_filepath = (
-    "/home/ghiggi/Projects/disdrodb/disdrodb/readers/EPFL/parser_TICINO_2018.py"
-)
-# parser_TICINO_2018.py [OPTIONS] <raw_dir> <processed_dir>
-cmd_options = "=".join([])
-cmd = "".join(
-    [
-        "python",
-        " ",
-        parser_filepath,
-        " ",
-        "--l0_processing=",
-        str(l0_processing),
-        " ",
-        "--l1_processing=",
-        str(l1_processing),
-        " ",
-        "--write_zarr=",
-        str(write_zarr),
-        " ",
-        "--write_netcdf=",
-        str(write_netcdf),
-        " ",
-        "--force=",
-        str(force),
-        " ",
-        "--verbose=",
-        str(verbose),
-        " ",
-        "--debugging_mode=",
-        str(debugging_mode),
-        " ",
-        "--lazy=",
-        str(lazy),
-        " ",
-        raw_dir,
-        " ",
-        processed_dir,
-    ]
+for campaign_name in EPFL_dict.keys():
+    parser_filepath = os.path.join(parser_dir, EPFL_dict[campaign_name])
 )
 
+get_parser_cmd(parser_filepath,
+               raw_dir,
+               processed_dir,
+               l0_processing=True,
+               l1_processing=True,
+               write_zarr=False,
+               write_netcdf=True,
+               force=False,
+               verbose=False,
+               debugging_mode=False,
+               lazy=True),
 subprocess.run(cmd, shell=True)
 # os.system(cmd)
+
 
 # -----------------------------------------------------------------------------.
 # TODO:
