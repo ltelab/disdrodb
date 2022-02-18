@@ -28,17 +28,32 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def read_config_yml(sensor_name, filename):
+    """Read a config yaml file and return the dictionary."""
+    # Get config path
+    config_sensor_dir_path = get_configs_dir(sensor_name)
+    fpath = os.path.join(config_sensor_dir_path, filename)
+    # Check yaml file exists
+    if not os.path.exists(fpath):
+        msg = f"{filename} not available in {config_sensor_dir_path}"
+        logger.exception(msg)
+        raise ValueError(msg)
+    # Open dictionary
+    with open(fpath, "r") as f:
+        d = yaml.safe_load(f)
+    return d
+
+
 def get_configs_dir(sensor_name):
     """Retrieve configs directory."""
     dir_path = os.path.dirname(__file__)
     config_dir_path = os.path.join(dir_path, "configs")
     config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
     if not os.path.exists(config_sensor_dir_path):
-        print(
-            "Available sensor_name are {}:".format(sorted(os.listdir(config_dir_path)))
-        )
+        list_sensors = sorted(os.listdir(config_dir_path))
+        print(f"Available sensor_name are {list_sensors}")
         raise ValueError(
-            "The config directory for sensor {} is not available. ".format(sensor_name)
+            f"The config directory {config_sensor_dir_path} does not exist."
         )
     return config_sensor_dir_path
 
@@ -53,16 +68,7 @@ def get_available_sensor_name():
 
 def get_variables_dict(sensor_name):
     """Get a dictionary containing the variable name of the sensor field numbers."""
-    config_sensor_dir_path = get_configs_dir(sensor_name)
-    fpath = os.path.join(config_sensor_dir_path, "variables.yml")
-    if not os.path.exists(fpath):
-        msg = "'variables.yml' not available in {}".format(config_sensor_dir_path)
-        logger.exception(msg)
-        raise ValueError(msg)
-    # Open diameter bins dictionary
-    with open(fpath, "r") as f:
-        d = yaml.safe_load(f)
-    return d
+    return read_config_yml(sensor_name=sensor_name, filename="variables.yml")
 
 
 def get_sensor_variables(sensor_name):
@@ -72,63 +78,66 @@ def get_sensor_variables(sensor_name):
 
 def get_units_dict(sensor_name):
     """Get a dictionary containing the unit of each sensor variable."""
-    config_sensor_dir_path = get_configs_dir(sensor_name)
-    fpath = os.path.join(config_sensor_dir_path, "variable_units.yml")
-    if not os.path.exists(fpath):
-        msg = "'variable_units.yml' not available in {}".format(config_sensor_dir_path)
-        logger.exception(msg)
-        raise ValueError(msg)
-    # Open diameter bins dictionary
-    with open(fpath, "r") as f:
-        d = yaml.safe_load(f)
-    return d
+    return read_config_yml(sensor_name=sensor_name, filename="variable_units.yml")
 
 
 def get_explanations_dict(sensor_name):
     """Get a dictionary containing the explanation of each sensor variable."""
-    config_sensor_dir_path = get_configs_dir(sensor_name)
-    fpath = os.path.join(config_sensor_dir_path, "variable_explanations.yml")
-    if not os.path.exists(fpath):
-        msg = "'variable_explanations.yml' not available in {}".format(
-            config_sensor_dir_path
-        )
-        logger.exception(msg)
-        raise ValueError(msg)
-    # Open diameter bins dictionary
-    with open(fpath, "r") as f:
-        d = yaml.safe_load(f)
+    d = read_config_yml(sensor_name=sensor_name, filename="variable_explanations.yml")
     return d
 
 
 def get_diameter_bins_dict(sensor_name):
     """Get dictionary with sensor_name diameter bins information."""
-    config_sensor_dir_path = get_configs_dir(sensor_name)
-    fpath = os.path.join(config_sensor_dir_path, "diameter_bins.yml")
-    if not os.path.exists(fpath):
-        msg = "'diameter_bins.yml' not available in {}".format(config_sensor_dir_path)
-        logger.exception(msg)
-        raise ValueError(msg)
+    d = read_config_yml(sensor_name=sensor_name, filename="diameter_bins.yml")
     # TODO:
     # Check dict contains center, bounds and width keys
-
-    # Open diameter bins dictionary
-    with open(fpath, "r") as f:
-        d = yaml.safe_load(f)
     return d
 
 
 def get_velocity_bins_dict(sensor_name):
     """Get velocity with sensor_name diameter bins information."""
-    config_sensor_dir_path = get_configs_dir(sensor_name)
-    fpath = os.path.join(config_sensor_dir_path, "velocity_bins.yml")
-    if not os.path.exists(fpath):
-        msg = "'velocity_bins.yml' not available in {}".format(config_sensor_dir_path)
-        logger.exception(msg)
-        raise ValueError(msg)
-    # Open diameter bins dictionary
-    with open(fpath, "r") as f:
-        d = yaml.safe_load(f)
+    d = read_config_yml(sensor_name=sensor_name, filename="velocity_bins.yml")
     return d
+
+
+def get_L0_dtype(sensor_name):
+    """Get a dictionary containing the L0 dtype."""
+    d = read_config_yml(sensor_name=sensor_name, filename="L0_dtype.yml")
+    return d
+
+
+def get_L1_netcdf_encoding_dict(sensor_name):
+    """Get a dictionary containing the encoding to write L1 netCDFs."""
+    d = read_config_yml(sensor_name=sensor_name, filename="L1_netcdf_encodings.yml")
+
+    # Ensure chunksize is a list
+    for var in d.keys():
+        if not isinstance(d[var]["chunksizes"], (list, type(None))):
+            d[var]["chunksizes"] = [d[var]["chunksizes"]]
+
+    # Sanitize encodings
+    for var in d.keys():
+        # Ensure contiguous=True if chunksizes is None
+        if isinstance(d[var]["chunksizes"], type(None)) and not d[var]["contiguous"]:
+            # These changes are required to enable netCDF writing
+            d[var]["contiguous"] = True
+            d[var]["fletcher32"] = False
+            d[var]["zlib"] = False
+            print(f"Set contiguous=True for variable {var} because chunksizes=None")
+            print(f"Set fletcher32=False for variable {var} because contiguous=True")
+            print(f"Set zlib=False for variable {var} because contiguous=True")
+        # Ensure contiguous=False if chunksizes is not None
+        if d[var]["contiguous"] and not isinstance(d[var]["chunksizes"], type(None)):
+            d[var]["contiguous"] = False
+            print(
+                f"Set contiguous=False for variable {var} because chunksizes is defined!"
+            )
+
+    return d
+
+
+####-------------------------------------------------------------------------.
 
 
 def get_diameter_bin_center(sensor_name):

@@ -17,7 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 import logging
+import numpy as np
 import pandas as pd
+import numpy as np
+import dask.array as da
+import dask.dataframe as dd
 
 logger = logging.getLogger(__name__)
 
@@ -43,6 +47,42 @@ def check_sensor_name(sensor_name):
 def check_L0_column_names(x):
     # Allow TO_BE_SPLITTED, TO_BE_PARSED
     pass
+
+
+def check_array_lengths_consistency(df, sensor_name, lazy=True, verbose=False):
+    from disdrodb.standards import get_raw_field_nbins
+
+    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    list_unvalid_row_idx = []
+    for key, n_bins in n_bins_dict.items():
+        # Check key is available in dataframe
+        if key not in df.columns:
+            continue
+        # Parse the string splitting at ,
+        df_series = df[key].astype(str).str.split(",")
+        # Check all arrays have same length
+        if lazy:
+            arr_lengths = df_series.apply(len, meta=(key, "int64"))
+            arr_lengths = arr_lengths.compute()
+        else:
+            arr_lengths = df_series.apply(len)
+        idx, count = np.unique(arr_lengths, return_counts=True)
+        n_max_vals = idx[np.argmax(count)]
+        # Idenfity rows with unexpected array length
+        unvalid_row_idx = np.where(arr_lengths != n_max_vals)[0]
+        if len(unvalid_row_idx) > 0:
+            list_unvalid_row_idx.append(unvalid_row_idx)
+    # Drop unvalid rows
+    unvalid_row_idx = np.unique(list_unvalid_row_idx)
+    if len(unvalid_row_idx) > 0:
+        if lazy:
+            n_partitions = df.npartitions
+            df = df.compute()
+            df = df.drop(df.index[unvalid_row_idx])
+            df = dd.from_pandas(df, npartitions=n_partitions)
+        else:
+            df = df.drop(df.index[unvalid_row_idx])
+    return df
 
 
 def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
@@ -104,8 +144,20 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
         logger.info(msg)
 
     # -------------------------------------
+    # Check if raw spectrum and 1D derivate exists
+    list_sprectrum_vars = ["FieldN", "FieldV", "RawData"]
+    unavailable_vars = np.array(list_sprectrum_vars)[
+        np.isin(list_sprectrum_vars, df.columns, invert=True)
+    ]
+    if len(unavailable_vars) > 0:
+        msg = f"The variables {unavailable_vars} are not present in the L0 dataframe."
+        print(msg)
+        logger.info(msg)
+
+    # -------------------------------------
     # Check consistency of array lengths
     # TODO
+    # df = check_array_lengths_consistency(df, sensor_name, lazy=True, verbose=verbose)
 
     # -------------------------------------
     # Add index to dataframe

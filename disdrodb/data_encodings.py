@@ -19,50 +19,26 @@
 
 
 def get_L0_dtype_standards():
+    from disdrodb.standards import get_L0_dtype
+
+    # TODO: TO REFACTOR !!!!
     dtype_dict = {
+        # Disdronet raspberry variables
+        "epoch_time": "float32",
+        "time": "M8[s]",
         "id": "uint32",
-        "rain_rate_16bit": "float32",
-        "rain_rate_32bit": "float32",
-        "rain_accumulated_16bit": "float32",
-        "rain_accumulated_32bit": "float32",
-        "rain_amount_absolute_32bit": "float32",
-        "reflectivity_16bit": "float32",
-        "reflectivity_32bit": "float32",
-        "rain_kinetic_energy": "float32",
-        "snowfall_intensity": "float32",
-        "mor_visibility": "uint16",
-        "weather_code_SYNOP_4680": "uint8",
-        "weather_code_SYNOP_4677": "uint8",
-        "weather_code_METAR_4678": "object",  # TODO
-        "weather_code_NWS": "object",  # TODO
-        "n_particles": "uint32",
-        "n_particles_all": "object",
-        "sensor_temperature": "uint8",
-        "sensor_temperature_PBC": "object",  # TODO
-        "sensor_temperature_right": "object",  # TODO
-        "sensor_temperature_left": "object",  # TODO
-        "sensor_heating_current": "float32",
-        "sensor_battery_voltage": "float32",
+        # Datalogger variables
         "datalogger_heating_current": "float32",
         "datalogger_battery_voltage": "float32",
-        "sensor_status": "uint8",
-        "laser_amplitude": "uint32",
-        "error_code": "uint8",
-        # Custom fields
-        "Unknow_column": "object",
         "datalogger_temperature": "object",
         "datalogger_voltage": "object",
         "datalogger_error": "uint8",
-        # Data fields (TODO)
-        "FieldN": "object",
-        "FieldV": "object",
-        "RawData": "object",
         # Coords
         "latitude": "float32",
         "longitude": "float32",
         "altitude": "float32",
-        # Dimensions
-        "time": "M8[s]",
+        # Custom fields
+        "Unknow_column": "object",
         # Temp variables
         "temp": "object",
         "TEMPORARY": "object",
@@ -88,20 +64,9 @@ def get_L0_dtype_standards():
         "A_voltage?": "object",
         "All_nan": "object",
         "All_5000": "object",
-        # Disdronet raspberry variables
-        "epoch_time": "float32",
-        "sample_interval": "uint16",
-        "sensor_serial_number": "object",
-        "firmware_IOP": "object",
-        "firmware_DSP": "object",
-        "date_time_measurement_start": "object",
-        "sensor_time": "object",
-        "sensor_date": "object",
-        "station_name": "object",
-        "station_number": "object",
-        "rain_rate_12bit": "object",
-        "n_particles_all_detected": "object",
     }
+    d1 = get_L0_dtype(sensor_name="OTT_Parsivel")
+    dtype_dict.update(d1)
     return dtype_dict
 
 

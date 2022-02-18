@@ -83,6 +83,7 @@ from disdrodb.L1_proc import set_raw_fields_arr_dtype
 from disdrodb.L1_proc import check_array_lengths_consistency
 from disdrodb.L1_proc import get_L1_coords
 from disdrodb.L1_proc import create_L1_dataset_from_L0
+from disdrodb.L1_proc import write_L1_to_netcdf
 
 # fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/SAMOYLOV_2017_2019/L0/SAMOYLOV_2017_2019_s01.parquet"
 fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/DAVOS_2009_2011/L0/DAVOS_2009_2011_s50.parquet"
@@ -97,7 +98,7 @@ lazy = True
 lazy = False
 
 verbose = True
-debugging_mode = True
+debugging_mode = False
 sensor_name = "OTT_Parsivel"
 
 attrs = {}
@@ -114,8 +115,9 @@ else:
     df = pd.read_parquet(fpath)
     print(len(df))
 
-df = df.iloc[0:100000]
+# df = df.iloc[0:100000]
 ds = create_L1_dataset_from_L0(df, attrs, lazy=lazy, verbose=verbose)
+write_L1_to_netcdf(ds, fpath="/tmp/try8.nc", sensor_name=sensor_name)
 
 # ------------------------------------------------------------------------------.
 ### DEBUG

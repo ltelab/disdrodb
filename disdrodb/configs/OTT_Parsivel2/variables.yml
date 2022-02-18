@@ -34,6 +34,6 @@
 '35': snowfall_intensity
 '60': n_particles_all
 '61': list_particles
-'90': ND
-'91': VD
-'93': N
+'90': FieldN
+'91': FieldV
+'93': RawData

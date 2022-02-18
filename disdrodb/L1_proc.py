@@ -30,6 +30,7 @@ import dask.dataframe as dd
 import xarray as xr
 from disdrodb.check_standards import check_sensor_name
 from disdrodb.check_standards import check_L1_standards
+from disdrodb.check_standards import check_array_lengths_consistency
 from disdrodb.data_encodings import get_L1_dtype
 
 from disdrodb.standards import get_diameter_bin_center
@@ -55,40 +56,6 @@ def get_fieldv_from_raw_spectrum(arr):
     # TODO
     logger.info("Computing fieldv from raw spectrum.")
     return arr[:, 0, :]
-
-
-def check_array_lengths_consistency(df, sensor_name, lazy=True, verbose=False):
-    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-    list_unvalid_row_idx = []
-    for key, n_bins in n_bins_dict.items():
-        # Check key is available in dataframe
-        if key not in df.columns:
-            continue
-        # Parse the string splitting at ,
-        df_series = df[key].astype(str).str.split(",")
-        # Check all arrays have same length
-        if lazy:
-            arr_lengths = df_series.apply(len, meta=(key, "int64"))
-            arr_lengths = arr_lengths.compute()
-        else:
-            arr_lengths = df_series.apply(len)
-        idx, count = np.unique(arr_lengths, return_counts=True)
-        n_max_vals = idx[np.argmax(count)]
-        # Idenfity rows with unexpected array length
-        unvalid_row_idx = np.where(arr_lengths != n_max_vals)[0]
-        if len(unvalid_row_idx) > 0:
-            list_unvalid_row_idx.append(unvalid_row_idx)
-    # Drop unvalid rows
-    unvalid_row_idx = np.unique(list_unvalid_row_idx)
-    if len(unvalid_row_idx) > 0:
-        if lazy:
-            n_partitions = df.npartitions
-            df = df.compute()
-            df = df.drop(df.index[unvalid_row_idx])
-            df = dd.from_pandas(df, npartitions=n_partitions)
-        else:
-            df = df.drop(df.index[unvalid_row_idx])
-    return df
 
 
 def check_L0_raw_fields_available(df, sensor_name):
@@ -117,9 +84,7 @@ def reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps):
     try:
         arr = arr.reshape(n_timesteps, n_bins_dict["FieldN"], n_bins_dict["FieldV"])
     except Exception as e:
-        msg = (
-            f"It was not possible to reshape RawData matrix to 2D. The error is: \n {e}"
-        )
+        msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
         logger.error(msg)
         print(msg)
         raise ValueError(msg)
@@ -325,122 +290,50 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
 
 ####--------------------------------------------------------------------------.
 #### Writers
-def write_L1_to_zarr(ds, fpath, sensor_name):
-    ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
-    zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
-    ds.to_zarr(fpath, encoding=zarr_encoding_dict, mode="w")
-    return None
+def sanitize_encodings_dict(encoding_dict, ds):
+    for var in ds.data_vars:
+        shape = ds[var].shape
+        chunks = encoding_dict[var]["chunksizes"]
+        if chunks is not None:
+            chunks = [
+                shape[i] if chunks[i] > shape[i] else chunks[i]
+                for i in range(len(chunks))
+            ]
+            encoding_dict[var]["chunksizes"] = chunks
+    return encoding_dict
 
 
-def write_L1_to_netcdf(ds, fpath, sensor_name):
-    ds = rechunk_L1_dataset(
-        ds, sensor_name=sensor_name
-    )  # very important for fast writing !!!
-    nc_encoding_dict = get_L1_nc_encodings_standards(ds, sensor_name=sensor_name)
-    ds.to_netcdf(fpath, engine="netcdf4", encoding=nc_encoding_dict)
-
-
-####--------------------------------------------------------------------------.
-#### Chunks defaults
-def get_L1_chunks(sensor_name):
-    # TODO: get ds, define chunks as dict, then convert to tuple, check min(max(shape, chunk))
-    check_sensor_name(sensor_name=sensor_name)
-    if sensor_name == "OTT_Parsivel":
-        chunks_dict = {
-            "FieldN": (5000, 32),
-            "FieldV": (5000, 32),
-            "RawData": (5000, 32, 32),
-        }
-    elif sensor_name == "OTT_Parsivel_2":
-        logger.exception(f"Not implemented {sensor_name} device")
-        raise NotImplementedError
-
-    elif sensor_name == "Thies_LPM":
-        logger.exception(f"Not implemented {sensor_name} device")
-        raise NotImplementedError
-
-    else:
-        logger.exception(f"L0 chunks for sensor {sensor_name} are not yet defined")
-        raise ValueError(f"L0 chunks for sensor {sensor_name} are not yet defined")
-    return chunks_dict
-
-
-def rechunk_L1_dataset(ds, sensor_name):
-    chunks_dict = get_L1_chunks(sensor_name=sensor_name)
-    for var, chunk in chunks_dict.items():
-        if chunk is not None:
-            ds[var] = ds[var].chunk(chunk)
+def rechunk_dataset(ds, encoding_dict):
+    for var in ds.data_vars:
+        chunks = encoding_dict[var]["chunksizes"]
+        if chunks is not None:
+            ds[var] = ds[var].chunk(chunks)
     return ds
 
 
-####--------------------------------------------------------------------------.
-#### Encodings defaults
-# TODO correct values
-# TODO: add offset, scale
-def _get_default_nc_encoding(chunks, dtype="float32"):
-    encoding_kwargs = {}
-    encoding_kwargs["dtype"] = dtype
-    encoding_kwargs["zlib"] = True
-    encoding_kwargs["complevel"] = 4
-    encoding_kwargs["shuffle"] = True
-    encoding_kwargs["fletcher32"] = False
-    encoding_kwargs["contiguous"] = False
-    encoding_kwargs["chunksizes"] = chunks
+def write_L1_to_netcdf(ds, fpath, sensor_name):
+    from disdrodb.standards import get_L1_netcdf_encoding_dict
 
-    return encoding_kwargs
+    # Get encoding dictionary
+    encoding_dict = get_L1_netcdf_encoding_dict(sensor_name)
+    encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
 
+    # Ensure chunksize smaller than the array shape)
+    encoding_dict = sanitize_encodings_dict(encoding_dict, ds)
 
-def _get_default_zarr_encoding(dtype="float32"):
-    compressor = zarr.Blosc(cname="zstd", clevel=3, shuffle=2)
-    encoding_kwargs = {}
-    encoding_kwargs["dtype"] = dtype
-    encoding_kwargs["compressor"] = compressor
-    return encoding_kwargs
+    # Rechunk variables for fast writing !
+    ds = rechunk_dataset(ds, encoding_dict)
+
+    # Write netcdf
+    ds.to_netcdf(fpath, engine="netcdf4", encoding=encoding_dict)
 
 
-def get_L1_nc_encodings_standards(ds, sensor_name):
-    # Define variable names
-    vars = ["FieldN", "FieldV", "RawData"]
-    # TODO: check var names in ds
-    # Include all vars
-
-    # Get chunks based on sensor type
-    chunks_dict = get_L1_chunks(sensor_name=sensor_name)
-    dtype_dict = get_L1_dtype()
-    # Define encodings dictionary
-    encoding_dict = {}
-    for var in vars:
-        # TODO[GG] IMPROVE
-        tmp_encodings = _get_default_nc_encoding(
-            chunks=chunks_dict[var], dtype=dtype_dict[var]
-        )
-        tmp_chunksize = tmp_encodings["chunksizes"]
-        tmp_da_shape = ds[var].shape
-
-        tmp_chunksize = [
-            tmp_da_shape[i] if tmp_chunksize[i] > tmp_da_shape[i] else tmp_chunksize[i]
-            for i in range(len(tmp_chunksize))
-        ]
-        tmp_encodings["chunksizes"] = tmp_chunksize
-        encoding_dict[var] = tmp_encodings
-
-        # encoding_dict[var]['scale_factor'] = 1.0
-        # encoding_dict[var]['add_offset']  = 0.0
-        # encoding_dict[var]['_FillValue']  = fill_value
-
-    return encoding_dict
-
-
-def get_L1_zarr_encodings_standards(sensor_name):
-    # Define variable names
-    vars = ["FieldN", "FieldV", "RawData"]
-    dtype_dict = get_L1_dtype()
-    # Define encodings dictionary
-    encoding_dict = {}
-    for var in vars:
-        encoding_dict[var] = _get_default_zarr_encoding(dtype=dtype_dict[var])  # TODO
-
-    return encoding_dict
+def write_L1_to_zarr(ds, fpath, sensor_name):
+    pass
+    # ds = rechunk_L1_dataset(ds, sensor_name=sensor_name)
+    # zarr_encoding_dict = get_L1_zarr_encodings_standards(sensor_name=sensor_name)
+    # ds.to_zarr(fpath, encoding=zarr_encoding_dict, mode="w")
+    return None
 
 
 ####--------------------------------------------------------------------------.

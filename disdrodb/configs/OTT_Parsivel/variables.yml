@@ -27,6 +27,6 @@
 '31': rain_rate_12bit
 '32': rain_accumulated_16bit
 '33': reflectivity_16bit
-'90': ND
-'91': VD
-'93': N
+'90': FieldN
+'91': FieldV
+'93': RawData
