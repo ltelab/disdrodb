@@ -114,7 +114,7 @@ else:
     df = pd.read_parquet(fpath)
     print(len(df))
 
-
+df = df.iloc[0:100000]
 ds = create_L1_dataset_from_L0(df, attrs, lazy=lazy, verbose=verbose)
 
 # ------------------------------------------------------------------------------.

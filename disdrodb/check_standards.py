@@ -136,7 +136,7 @@ def check_L2_standards(x):
 # Numbers of digit on the left side of comma (example: 123,45 -> 123)
 def get_field_ndigits_natural_dict(sensor_name):
 
-    if sensor_name == "Parsivel":
+    if sensor_name == "OTT_Parsivel":
         digits_dict = {
             # Mandatory
             "rain_rate_16bit": 4,
@@ -168,7 +168,7 @@ def get_field_ndigits_natural_dict(sensor_name):
             "datalogger_voltage": 0,
             "datalogger_error": 1,
         }
-    elif sensor_name == "Parsivel2":
+    elif sensor_name == "OTT_Parsivel2":
         digits_dict = {
             # Mandatory
             "rain_rate_16bit": 4,
@@ -212,7 +212,7 @@ def get_field_ndigits_natural_dict(sensor_name):
 # Numbers of digit on the right side of comma (example: 123,45 -> 45)
 def get_field_ndigits_decimals_dict(sensor_name):
 
-    if sensor_name == "Parsivel":
+    if sensor_name == "OTT_Parsivel":
         digits_dict = {
             # Mandatory
             "rain_rate_16bit": 4,
@@ -242,7 +242,7 @@ def get_field_ndigits_decimals_dict(sensor_name):
             "datalogger_voltage": 0,
             "datalogger_error": 0,
         }
-    elif sensor_name == "Parsivel2":
+    elif sensor_name == "OTT_Parsivel2":
         digits_dict = {
             # Mandatory
             "rain_rate_16bit": 4,
@@ -286,7 +286,7 @@ def get_field_ndigits_decimals_dict(sensor_name):
 def get_field_ndigits_dict(sensor_name):
     # Do not count .
     # Do count minus sign -
-    if sensor_name == "Parsivel":
+    if sensor_name == "OTT_Parsivel":
         digits_dict = {
             # Mandatory
             "rain_rate_16bit": 8,
@@ -316,7 +316,7 @@ def get_field_ndigits_dict(sensor_name):
             "datalogger_voltage": 0,
             "datalogger_error": 1,
         }
-    elif sensor_name == "Parsivel2":
+    elif sensor_name == "OTT_Parsivel2":
         digits_dict = {
             # Mandatory
             "rain_rate_16bit": 8,
@@ -359,7 +359,7 @@ def get_field_ndigits_dict(sensor_name):
 # Numbers of all digit (example: 123,45 -> 123,45)
 def get_field_nchar_dict(sensor_name):
     ### Count also .
-    if sensor_name == "Parsivel":
+    if sensor_name == "OTT_Parsivel":
         digits_dict = {
             # Mandatory
             "rain_rate_16bit": 5,
@@ -389,7 +389,7 @@ def get_field_nchar_dict(sensor_name):
             "datalogger_voltage": 2,
             "datalogger_error": 1,
         }
-    elif sensor_name == "Parsivel2":
+    elif sensor_name == "OTT_Parsivel2":
 
         digits_dict = {
             # Mandatory
@@ -437,7 +437,7 @@ def get_field_nchar_dict(sensor_name):
 
 
 def get_field_value_options_dict(sensor_name):
-    if sensor_name == "Parsivel":
+    if sensor_name == "OTT_Parsivel":
         value_dict = {
             "sensor_status": [0, 1, 2, 3],
             "error_code": [0, 1, 2],
@@ -447,7 +447,7 @@ def get_field_value_options_dict(sensor_name):
             "datalogger_voltage": ["OK", "KO"],
             "datalogger_error": [0],
         }
-    elif sensor_name == "Parsivel2":
+    elif sensor_name == "OTT_Parsivel2":
         value_dict = {
             "sensor_status": [0, 1, 2, 3],
             "error_code": [0, 1, 2],
@@ -461,7 +461,7 @@ def get_field_value_options_dict(sensor_name):
 
 
 def get_field_value_range_dict(sensor_name):
-    if sensor_name == "Parsivel":
+    if sensor_name == "OTT_Parsivel":
         range_dict = {
             # Mandatory
             "rain_rate_16bit": [0, 9999.999],
@@ -487,7 +487,7 @@ def get_field_value_range_dict(sensor_name):
             "latitude": [-90, 90],
             "longitude": [-180, 180],
         }
-    elif sensor_name == "Parsivel2":
+    elif sensor_name == "OTT_Parsivel2":
         range_dict = {
             # Mandatory
             "rain_rate_16bit": [0, 9999.999],
@@ -525,7 +525,7 @@ def get_field_value_range_dict(sensor_name):
 
 ####--------------------------------------------------------------------------.
 def get_field_error_dict(device):
-    if device == "Parsivel":
+    if device == "OTT_Parsivel":
         flag_dict = {
             "sensor_status": [1, 2, 3],
             "datalogger_error": [1],
