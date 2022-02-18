@@ -23,7 +23,9 @@ logger = logging.getLogger(__name__)
 
 
 def available_sensor_name():
-    sensor_list = ["Parsivel", "Parsivel2", "ThiesLPM"]
+    from disdrodb.standards import get_available_sensor_name
+
+    sensor_list = get_available_sensor_name()
     return sensor_list
 
 
@@ -44,7 +46,9 @@ def check_L0_column_names(x):
 
 
 def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
+    # Read parquet
     df = pd.read_parquet(fpath)
+    # -------------------------------------
     # Check data range
     dict_field_value_range = get_field_value_range_dict(sensor_name)
     list_wrong_columns = []
@@ -83,9 +87,35 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
             )
             [print(msg) for msg in list_msg]
     # -------------------------------------
+    # Check if latitude and longitude are columns of the dataframe
+    # - They should be only provided if the instrument is moving !!!!
+    if "latitude" in df.columns:
+        msg = " - The L0 dataframe has column 'latitude'. "
+        "This should be included only if the sensor is moving. "
+        "Otherwise, specify the 'latitude' in the metadata !"
+        print(msg)
+        logger.info(msg)
+
+    if "longitude" in df.columns:
+        msg = " - The L0 dataframe has column 'longitude'. "
+        "This should be included only if the sensor is moving. "
+        "Otherwise, specify the 'longitude' in the metadata !"
+        print(msg)
+        logger.info(msg)
+
+    # -------------------------------------
+    # Check consistency of array lengths
+    # TODO
+
+    # -------------------------------------
+    # Add index to dataframe
+    # TODO
+
+    # -------------------------------------
     # TODO[GG]:
     # if not respect standards, print errors and remove file (before raising errors)
     # - log, verbose ... L0 conforms to DISDRODB standards ;)
+
     # -------------------------------------
     return
 

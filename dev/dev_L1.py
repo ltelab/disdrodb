@@ -9,6 +9,13 @@ import os
 import pandas as pd
 import dask.dataframe as dd
 
+import numpy as np
+from disdrodb.L1_proc import retrieve_L1_raw_data_matrix
+from disdrodb.standards import get_raw_field_nbins
+from disdrodb.L1_proc import convert_L0_raw_fields_arr_flags
+from disdrodb.L1_proc import set_raw_fields_arr_dtype
+from disdrodb.L1_proc import check_array_lengths_consistency
+
 fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/COMMON_2011/L0/COMMON_2011_s40.parquet"
 
 df = pd.read_parquet(fpath)
@@ -30,6 +37,7 @@ df["RawData"].iloc[0]
 
 
 fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/DAVOS_2009_2011/L0/DAVOS_2009_2011_s50.parquet"
+fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/PLATO_2019/L0/PLATO_2019_s10.parquet"
 
 df = pd.read_parquet(fpath)
 df.columns
@@ -51,7 +59,7 @@ df["RawData"].iloc[0]
 # PLATO_2019
 # - S10 problematic
 
-# RIELTZONACK 2011
+# RIELTZOBACK 2011
 # - S60 problematic
 # - S61, 62, 63, 70
 
@@ -61,39 +69,67 @@ df["RawData"].iloc[0]
 
 # https://docs.dask.org/en/stable/generated/dask.dataframe.from_pandas.html
 
+import os
+import pandas as pd
+import dask.dataframe as dd
 
-fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/SAMOYLOV_2017_2019/L0/SAMOYLOV_2017_2019_s01.parquet"
-l1_processing = True
-lazy = False
-verbose = True
-debugging_mode = True
-
-fpath = get_L0_fpath(processed_dir, station_id)
-
-df = dd.read_parquet(fpath)
-len(df)
-df = check_array_lengths_consistency(df, sensor_name=sensor_name, lazy=True)
-len(df)
-
-df = pd.read_parquet(fpath)
-len(df)
+import numpy as np
+import xarray as xr
 
 from disdrodb.L1_proc import retrieve_L1_raw_data_matrix
 from disdrodb.standards import get_raw_field_nbins
 from disdrodb.L1_proc import convert_L0_raw_fields_arr_flags
 from disdrodb.L1_proc import set_raw_fields_arr_dtype
 from disdrodb.L1_proc import check_array_lengths_consistency
+from disdrodb.L1_proc import get_L1_coords
+from disdrodb.L1_proc import create_L1_dataset_from_L0
+
+# fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/SAMOYLOV_2017_2019/L0/SAMOYLOV_2017_2019_s01.parquet"
+fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/DAVOS_2009_2011/L0/DAVOS_2009_2011_s50.parquet"
+# fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/PLATO_2019/L0/PLATO_2019_s10.parquet"
+fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/HYMEX_2012/L0/HYMEX_2012_s13.parquet"
+fpath = (
+    "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/HPICONET_2010/L0/HPICONET_2010_s12.parquet"
+)
+fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/EPFL_ROOF_2011/L0/EPFL_ROOF_2011_s10.parquet"
+l1_processing = True
+lazy = True
+lazy = False
+
+verbose = True
+debugging_mode = True
+sensor_name = "OTT_Parsivel"
+
+attrs = {}
+attrs["sensor_name"] = sensor_name
+attrs["latitude"] = 2334
+attrs["longitude"] = 232434
+attrs["altitude"] = 342
+attrs["crs"] = "prjjfs"
+
+if lazy:
+    df = dd.read_parquet(fpath)
+    print(len(df))
+else:
+    df = pd.read_parquet(fpath)
+    print(len(df))
 
 
-import numpy as np
+ds = create_L1_dataset_from_L0(df, attrs, lazy=lazy, verbose=verbose)
 
-sensor_name = "Parsivel"  # "OTT_Parsivel"
+# ------------------------------------------------------------------------------.
+### DEBUG
+
+df = check_array_lengths_consistency(df, sensor_name=sensor_name, lazy=lazy)
+print(len(df))
+
+
 dict_data = retrieve_L1_raw_data_matrix(df, sensor_name, lazy=lazy, verbose=verbose)
+
 
 df_series = df[key].astype(str).str.split(",")
 
 np.count(df_series.apply(len))
-
 
 len(df_series.iloc[714])
 

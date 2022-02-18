@@ -134,7 +134,8 @@ def get_velocity_bins_dict(sensor_name):
 def get_diameter_bin_center(sensor_name):
     """Get diameter bin center."""
     diameter_dict = get_diameter_bins_dict(sensor_name)
-    return diameter_dict["center"]
+    diameter_bin_center = list(diameter_dict["center"].values())
+    return diameter_bin_center
 
 
 def get_diameter_bin_lower(sensor_name):
@@ -154,13 +155,15 @@ def get_diameter_bin_upper(sensor_name):
 def get_diameter_bin_width(sensor_name):
     """Get diameter bin width."""
     diameter_dict = get_diameter_bins_dict(sensor_name)
-    return diameter_dict["width"]
+    diameter_bin_width = list(diameter_dict["width"].values())
+    return diameter_bin_width
 
 
 def get_velocity_bin_center(sensor_name):
     """Get velocity bin center."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    return velocity_dict["center"]
+    velocity_bin_center = list(velocity_dict["center"].values())
+    return velocity_bin_center
 
 
 def get_velocity_bin_lower(sensor_name):
@@ -180,7 +183,8 @@ def get_velocity_bin_upper(sensor_name):
 def get_velocity_bin_width(sensor_name):
     """Get velocity bin width."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    return velocity_dict["width"]
+    velocity_bin_width = list(velocity_dict["width"].values())
+    return velocity_bin_width
 
 
 def get_raw_field_nbins(sensor_name):

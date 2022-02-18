@@ -61,6 +61,9 @@ def check_array_lengths_consistency(df, sensor_name, lazy=True, verbose=False):
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
     list_unvalid_row_idx = []
     for key, n_bins in n_bins_dict.items():
+        # Check key is available in dataframe
+        if key not in df.columns:
+            continue
         # Parse the string splitting at ,
         df_series = df[key].astype(str).str.split(",")
         # Check all arrays have same length
@@ -225,43 +228,74 @@ def get_L1_coords(sensor_name):
 def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
-    # Check dataframe row consistency
-    df = check_array_lengths_consistency(
-        df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
-    )
-    # Retrieve raw data matrices
-    dict_data = retrieve_L1_raw_data_matrix(df, sensor_name, lazy=lazy, verbose=verbose)
-    # Define raw data matrix variables for xarray Dataset
-    data_vars = {
-        "FieldN": (["time", "diameter_bin_center"], dict_data["FieldN"]),
-        "FieldV": (["time", "velocity_bin_center"], dict_data["FieldV"]),
-        "RawData": (
-            ["time", "diameter_bin_center", "velocity_bin_center"],
-            dict_data["RawData"],
-        ),
-    }
+    # -----------------------------------------------------------.
+    # Preprocess raw_spectrum, diameter and velocity arrays if available
+    if np.any(np.isin(["FieldN", "FieldV", "RawData"], df.columns)):
+        # Check dataframe row consistency
+        df = check_array_lengths_consistency(
+            df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
+        )
+        # Retrieve raw data matrices
+        dict_data = retrieve_L1_raw_data_matrix(
+            df, sensor_name, lazy=lazy, verbose=verbose
+        )
+        # Define raw data matrix variables for xarray Dataset
+        data_vars = {
+            "FieldN": (["time", "diameter_bin_center"], dict_data["FieldN"]),
+            "FieldV": (["time", "velocity_bin_center"], dict_data["FieldV"]),
+            "RawData": (
+                ["time", "diameter_bin_center", "velocity_bin_center"],
+                dict_data["RawData"],
+            ),
+        }
+    else:
+        data_vars = {}
     # -----------------------------------------------------------.
     # Define other disdrometer 'auxiliary' variables
+    # - Varying over time dimension !!!
     aux_columns = df.columns[
         np.isin(df.columns, ["FieldN", "FieldV", "RawData", "time"], invert=True)
     ]
     if lazy:
-        aux_vars = {
+        aux_data_vars = {
             column: (["time"], df[column].to_dask_array(lengths=True))
             for column in aux_columns
         }
     else:
-        aux_vars = {column: (["time"], df[column].values) for column in aux_columns}
-    data_vars.update(aux_vars)
+        aux_data_vars = {
+            column: (["time"], df[column].values) for column in aux_columns
+        }
+    data_vars.update(aux_data_vars)
+
+    # -----------------------------------------------------------.
+    # Drop lat/lon array if present (TODO: in future L0 should not contain it)
+    if "latitude" in data_vars:
+        _ = data_vars.pop("latitude")
+    if "longitude" in data_vars:
+        _ = data_vars.pop("longitude")
+    if "altitude" in data_vars:
+        _ = data_vars.pop("altitude")
 
     # -----------------------------------------------------------.
     # Define coordinates for xarray Dataset
     coords = get_L1_coords(sensor_name=sensor_name)
     coords["time"] = df["time"].values
-    coords["latitude"] = attrs["latitude"]
-    coords["longitude"] = attrs["longitude"]
-    coords["altitude"] = attrs["altitude"]
     coords["crs"] = attrs["crs"]
+    if "latitude" in data_vars:
+        coords["latitude"] = data_vars["latitude"]
+        _ = data_vars.pop("latitude")
+    else:
+        coords["latitude"] = attrs["latitude"]
+    if "longitude" in data_vars:
+        coords["longitude"] = data_vars["longitude"]
+        _ = data_vars.pop("longitude")
+    else:
+        coords["longitude"] = attrs["longitude"]
+    if "altitude" in data_vars:
+        coords["altitude"] = data_vars["altitude"]
+        _ = data_vars.pop("altitude")
+    else:
+        coords["altitude"] = attrs["altitude"]
 
     # -----------------------------------------------------------
     # Create xarray Dataset
@@ -274,8 +308,7 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     except Exception as e:
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
         logger.error(msg)
-        print(msg)
-        # raise SystemExit
+        raise ValueError(msg)
 
     # -----------------------------------------------------------
     # Check L1 standards

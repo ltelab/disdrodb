@@ -4,44 +4,48 @@
 Created on Sat Jan  1 13:42:14 2022
 
 @author: ghiggi
-"""  
+"""
 ####--------------------------------------------------------------------------.
 #### L1_proc.py
-create_L1_dataset_from_L0 
-# - replace NA flags 
+create_L1_dataset_from_L0
+# - replace NA flags
 
-write_L1_to_zarr    # rechunk before writing 
-# - add zarr encoding 
+write_L1_to_zarr  # rechunk before writing
+# - add zarr encoding
 write_L1_to_netcdf
-# - add nc encoding 
+# - add nc encoding
 
 create_L1_summary_statistics
-# - regularize timeseries 
-# - number of dry/rainy minutes 
-# - timebar plot with 0,>1, NA, no data rain rate (ARM STYLE) 
-# - timebar data quality 
+# - regularize timeseries
+# - number of dry/rainy minutes
+# - timebar plot with 0,>1, NA, no data rain rate (ARM STYLE)
+# - timebar data quality
 
+# TODO STANDARDS:
+# - Check variables keys are same across units, explanations
+# - Check bins width correspond to bounds spacing
+# - Check bins center is average of bounds (raise only warning)
+# - reader_yaml fun ... to compact the code
 
 
 ####--------------------------------------------------------------------------.
-# reformat_ARM_LPM 
-# reformat_DIVEN_LPM 
+# reformat_ARM_LPM
+# reformat_DIVEN_LPM
 
-# metadata.py 
-check_metadata_compliance # check dtype also, raise errors !
+# metadata.py
+check_metadata_compliance  # check dtype also, raise errors !
 
 # L0_proc.py
 # - Filter bad data based on sensor_status/error_code
-# - check df_sanitizer_fun has only lazy and df arguments ! 
-# - Implement file removal in check_L0_standards  
+# - check df_sanitizer_fun has only lazy and df arguments !
+# - Implement file removal in check_L0_standards
 
-# - Add DISDRODB attrs 
-attrs['source_data_format'] = 'raw_data'        
-attrs['obs_type'] = 'raw'   # preprocess/postprocessed
-attrs['level'] = 'L0'       # L0, L1, L2, ...    
-attrs['disdrodb_id'] = ''   # TODO     
- 
+# - Add DISDRODB attrs
+attrs["source_data_format"] = "raw_data"
+attrs["obs_type"] = "raw"  # preprocess/postprocessed
+attrs["level"] = "L0"  # L0, L1, L2, ...
+attrs["disdrodb_id"] = ""  # TODO
+
 ####--------------------------------------------------------------------------.
-### Others  
-# - Template work for Ticino, Payerne, 1 ARM Parsivel, 1 UK Diven, 1 Hymex 
-# - Copy metadata yaml to github for syncs and review by external 
+### Others
+# - Copy metadata yaml to github for syncs and review by external
