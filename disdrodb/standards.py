@@ -76,6 +76,11 @@ def get_sensor_variables(sensor_name):
     return list(get_variables_dict(sensor_name).values())
 
 
+def get_data_format_dict(sensor_name):
+    """Get a dictionary containing the data format of each sensor variable."""
+    return read_config_yml(sensor_name=sensor_name, filename="L0_data_format.yml")
+
+
 def get_units_dict(sensor_name):
     """Get a dictionary containing the unit of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="variable_units.yml")

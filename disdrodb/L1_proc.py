@@ -28,10 +28,10 @@ import numpy as np
 import dask.array as da
 import dask.dataframe as dd
 import xarray as xr
+
 from disdrodb.check_standards import check_sensor_name
 from disdrodb.check_standards import check_L1_standards
 from disdrodb.check_standards import check_array_lengths_consistency
-from disdrodb.data_encodings import get_L1_dtype
 
 from disdrodb.standards import get_diameter_bin_center
 from disdrodb.standards import get_diameter_bin_lower
