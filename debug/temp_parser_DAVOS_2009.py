@@ -95,11 +95,11 @@ campaign_name = get_campaign_name(raw_dir)
 
 #-------------------------------------------------------------------------. 
 # Define logging settings
-create_logger(processed_dir, 'parser_' + campaign_name) 
+# create_logger(processed_dir, 'parser_' + campaign_name) 
 
-# Retrieve logger 
-logger = logging.getLogger(campaign_name)
-logger.info('### Script start ###')
+# # Retrieve logger 
+# logger = logging.getLogger(campaign_name)
+# logger.info('### Script start ###')
     
 #-------------------------------------------------------------------------. 
 # Create directory structure 
@@ -129,10 +129,10 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat.gz*
 
 
 
-filepath = file_list[0]
-filepath = '/SharedVM/lol.dat'
+filepath = file_list[2]
 
-df = pd.read_csv(filepath, compression={'method': 'gzip', 'dict_data': 'gzip'})
+
+
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
@@ -142,7 +142,7 @@ df = pd.read_csv(filepath, compression={'method': 'gzip', 'dict_data': 'gzip'})
     
 reader_kwargs = {}
 # - Define delimiter
-reader_kwargs['delimiter'] = '","'
+reader_kwargs['delimiter'] = ',,'
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -157,7 +157,7 @@ reader_kwargs["engine"] = 'python'
 
 # - Define on-the-fly decompression of on-disk data
 #   - Available: gzip, bz2, zip 
-reader_kwargs['compression'] = 'infer'  
+reader_kwargs['compression'] = 'gzip'  
 
 # - Strings to recognize as NA/NaN and replace with standard NA flags 
 #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
@@ -181,7 +181,7 @@ reader_kwargs["dtype"] = str
 # - Do not assign a dtype yet to the columns 
 # - Possibily look at multiple files ;)
 # filepath = file_list[0]
-filepath = file_list[0]
+filepath = file_list[1]
 str_reader_kwargs = reader_kwargs.copy() 
 df = read_raw_data(filepath, 
                    column_names=None,  
@@ -227,30 +227,32 @@ get_OTT_Parsivel2_dict()
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-# Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","FieldN","Fieldv","RowData"
+columns_names_temporary = ['TO_BE_SPLITTED',
+                            'FieldV',
+                            'RawData',
+                            'All_0'
+                            ]
 
 column_names = ['time',
-                'id',
-                'datalogger_temperature',
-                'datalogger_voltage',
-                'rain_rate_32bit', #Intensity
+                'All_nan',
+                'temp', # Dataloger status
+                'rain_rate_32bit',
                 'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
                 'weather_code_SYNOP_4677',
                 'reflectivity_32bit',
                 'mor_visibility',
+                'sample_interval',
                 'laser_amplitude',
                 'n_particles',
-                'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
                 'rain_amount_absolute_32bit',
-                'Debug_data',
+                'datalogger_error',
                 'FieldN',
                 'FieldV',
-                'RawData',
-                'All_0',
+                'RawData'
                 ]
 
 # - Check name validity 
@@ -258,7 +260,7 @@ check_L0_column_names(column_names)
 
 # - Read data
 # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
-filepath = file_list[0]
+filepath = file_list[1]
 df = read_raw_data(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
@@ -300,14 +302,14 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0]  # Select also other files here  1,2, ... 
-lazy = True             # Try also with True when work with False 
+filepath = file_list[1]  # Select also other files here  1,2, ... 
+lazy = False             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
 df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
+                   column_names=columns_names_temporary,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
 
@@ -334,20 +336,31 @@ if len(df.columns) != len(column_names):
 # del df_tmp 
 
 # Drop Debug_data and All_0
-df = df.drop(columns=['Debug_data', 'All_0'])
+# df = df.drop(columns=['All_0'])
+
+# Split TO_BE_SPLITTED
+df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
+
+# Concat togheter, avoid to save id, latitude and longitude and all_0
+df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1, ignore_unknown_divisions=True)
+
+# Rename columns
+df.columns = column_names
+
+# Drop temp and all_nan
+df = df.drop(columns=["temp", "All_nan"])
+
+# - Convert time column to datetime 
+df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
 # If RawData is nan, drop the row
 col_to_drop_if_na = ['FieldN','FieldV','RawData']
 df = df.dropna(subset = col_to_drop_if_na)
 
-# Remove " at the beginning of time and end of RawData
-df['time'] = df['time'].str.lstrip('"')
-
 # Drop rows with less than 4096 char on RawData
-df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+df = df.loc[df['RawData'].astype(str).str.len() == 4095]
 
-# - Convert time column to datetime 
-df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+
 
 
 #---------------------------------------------------------------------------.
@@ -371,6 +384,8 @@ for column in df.columns:
     except KeyError:
         # If column dtype is not into get_L0_dtype_standards, assign object
         df[column] = df[column].astype('object')
+    except ValueError as e:
+        print(f"{column}")
         
 #---------------------------------------------------------------------------.
 #### 8.4 Check the dataframe looks as desired 
@@ -388,26 +403,35 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 
 def df_sanitizer_fun(df, lazy=False):
     # # Import dask or pandas 
-    # if lazy: 
-    #     import dask.dataframe as dd
-    # else: 
-    #     import pandas as dd
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
 
-    # Drop Debug_data
-    df = df.drop(columns=['Debug_data', 'All_0'])
+    # Split TO_BE_SPLITTED
+    df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
+
+    # Concat togheter, avoid to save id, latitude and longitude and all_0
+    if lazy:
+        df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1, ignore_unknown_divisions=True)
+    else:
+        df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1)
+
+    # Rename columns
+    df.columns = column_names
+
+    # Drop temp and all_nan
+    df = df.drop(columns=["temp", "All_nan"])
+
+    # - Convert time column to datetime 
+    df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
     # If RawData is nan, drop the row
     col_to_drop_if_na = ['FieldN','FieldV','RawData']
     df = df.dropna(subset = col_to_drop_if_na)
 
     # Drop rows with less than 4096 char on RawData
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
-    
-    # Remove " at the beginning of time
-    df['time'] = df['time'].str.lstrip('"')
-    
-    # - Convert time column to datetime 
-    df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+    df = df.loc[df['RawData'].astype(str).str.len() == 4095]
     
     return df 
 
@@ -415,11 +439,11 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = True # True 
-subset_file_list = file_list[:]
+lazy = False # True 
+subset_file_list = file_list[:10]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
-                           column_names=column_names, 
+                           column_names=columns_names_temporary, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
                            lazy=lazy)

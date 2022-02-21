@@ -81,17 +81,30 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
         temp_reader_kwargs.pop("zipped", None)
         temp_reader_kwargs.pop("blocksize", None)
         temp_reader_kwargs.pop("file_name_to_read_zipped", None)
-
+        
         df = pd.read_csv(filepath, names=column_names, **temp_reader_kwargs)
+        
     else:
         # Dask
         if lazy:
             reader_kwargs.pop("index_col", None)
-            df = dd.read_csv(filepath, names=column_names, **reader_kwargs)
+            try:
+                df = dd.read_csv(filepath, names=column_names, **reader_kwargs)
+            except dd.errors.EmptyDataError:
+                msg = f"Is empty, skip file: {filepath}"
+                logger.exception(msg)
+                raise dd.errors.EmptyDataError(msg)
+                pass
         # Pandas
         else:
             reader_kwargs.pop("blocksize", None)
-            df = pd.read_csv(filepath, names=column_names, **reader_kwargs)
+            try:
+                df = pd.read_csv(filepath, names=column_names, **reader_kwargs)
+            except pd.errors.EmptyDataError:
+                msg = f"Is empty, skip file: {filepath}"
+                logger.exception(msg)
+                raise pd.errors.EmptyDataError(msg)
+                pass
     return df
 
 

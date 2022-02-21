@@ -21,6 +21,8 @@ path = f"/SharedVM/Campagne/EPFL/Processed/{campagna}/L0"
 file = campagna + '_s10.parquet'
 file_path = os.path.join(path, file)
 
+file_path = '/SharedVM/Campagne/EPFL/Processed/DAVOS_2009/L0/DAVOS_2009_s50.parquet'
+
 df = dd.read_parquet(file_path)
 
 df = df.compute()
