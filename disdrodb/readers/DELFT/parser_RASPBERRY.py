@@ -120,9 +120,9 @@ def main(raw_dir,
         Whether to print detailed processing information into terminal. 
         The default is False.
     debugging_mode : bool
-        If True, it reduce the amount of data to process.
-        - For L0 processing, it process just 3 raw data files. 
-        - For L1 processing, it take a small subset of the Apache Parquet dataframe. 
+        If True, it reduces the amount of data to process.
+        - For L0 processing, it processes just 3 raw data files.
+        - For L1 processing, it takes a small subset of the Apache Parquet dataframe.
         The default is False.
     lazy : bool
         Whether to perform processing lazily with dask. 
@@ -130,7 +130,7 @@ def main(raw_dir,
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
     
-    Additional informations:
+    Additional information:
     - The campaign name must semantically match between:
        - The ends of raw_dir and processed_dir paths 
        - The attribute 'campaign' within the metadata JSON file. 
@@ -143,7 +143,7 @@ def main(raw_dir,
     ###########################
     #### - Define raw data headers 
     # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter, 
+    # - In all files, the datalogger voltage hasn't the delimiter,
     #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
 
     # "01","Rain intensity 32 bit",8,"mm/h","single_number"
@@ -225,7 +225,7 @@ def main(raw_dir,
                     'rain_kinetic_energy',
                     'snowfall_intensity',
                     'n_particles_all',
-                    'n_particles_all_detected',
+                    'list_particles',
                     'FieldN',
                     'FieldV',
                     'RawData',
@@ -321,6 +321,18 @@ def main(raw_dir,
         df = dd.concat([df, df_to_parse.iloc[:, :35], df_FieldN, df_FieldV, df_RawData], axis=1,
                        ignore_unknown_divisions=True)
 
+        todrop = ['firmware_IOP',
+                  'firmware_DSP',
+                  'date_time_measurement_start',
+                  'sensor_time',
+                  'sensor_date',
+                  'station_name',
+                  'station_number',
+                  'list_particles',
+                  'epoch_time']
+
+        df = df.drop(todrop, axis=1)
+
         return df
 
         ##------------------------------------------------------------------------.
@@ -391,7 +403,9 @@ def main(raw_dir,
                                        column_names=columns_names_temporary,
                                        reader_kwargs=reader_kwargs,
                                        df_sanitizer_fun=df_sanitizer_fun,
-                                       lazy=lazy)
+                                       lazy=lazy,
+                                       sensor_name=sensor_name,
+                                       verbose=verbose)
 
             ##------------------------------------------------------.                                   
             #### - Write to Parquet                
