@@ -15,7 +15,7 @@ rain_accumulated_32bit:
   contiguous: false
   chunksizes: 5000
 weather_code_SYNOP_4680:
-  dtype: uint8
+  dtype: uint32
   zlib: true
   complevel: 3
   shuffle: true
@@ -23,7 +23,7 @@ weather_code_SYNOP_4680:
   contiguous: false
   chunksizes: 5000
 weather_code_SYNOP_4677:
-  dtype: uint8
+  dtype: uint32
   zlib: true
   complevel: 3
   shuffle: true
@@ -87,7 +87,7 @@ n_particles:
   contiguous: false
   chunksizes: 5000
 sensor_temperature:
-  dtype: uint8
+  dtype: int8
   zlib: true
   complevel: 3
   shuffle: true
@@ -198,7 +198,31 @@ error_code:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rain_rate_16bit:
+temperature_PCB:
+  dtype: int8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+temperature_right:
+  dtype: int8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+temperature_left:
+  dtype: int8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rain_rate_16bit_30:
   dtype: float32
   zlib: true
   complevel: 3
@@ -206,8 +230,8 @@ rain_rate_16bit:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rain_rate_12bit:
-  dtype: object
+rain_rate_16bit_1200:
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -224,6 +248,38 @@ rain_accumulated_16bit:
   chunksizes: 5000
 reflectivity_16bit:
   dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rain_kinetic_energy:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+snowfall_intensity:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+n_particles_all:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+list_particles:
+  dtype: object
   zlib: true
   complevel: 3
   shuffle: true

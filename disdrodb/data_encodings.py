@@ -121,7 +121,7 @@ def get_LPM_variables():
     return
 
 
-def get_L0_dtype_standards(sensor_name):
+def get_L0_dtype_standards(sensor_name: str) -> dict:
     from disdrodb.standards import get_L0_dtype
 
     # TODO: TO REFACTOR !!!!
