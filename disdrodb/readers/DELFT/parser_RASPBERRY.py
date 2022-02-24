@@ -5,7 +5,7 @@ Created on Fri Jan 14 11:40:17 2022
 
 @author: kimbo
 """
-#-----------------------------------------------------------------------------.
+# -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
@@ -20,12 +20,12 @@ Created on Fri Jan 14 11:40:17 2022
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#-----------------------------------------------------------------------------.
+# -----------------------------------------------------------------------------.
 import os
 import click
 import time
 import logging
-import xarray as xr 
+import xarray as xr
 
 # Directory 
 from disdrodb.io import check_directories
@@ -38,51 +38,51 @@ from disdrodb.metadata import read_metadata
 # IO 
 from disdrodb.io import get_L0_fpath
 from disdrodb.io import get_L1_netcdf_fpath
-from disdrodb.io import get_L1_zarr_fpath  
+from disdrodb.io import get_L1_zarr_fpath
 from disdrodb.io import read_L0_data
 
 # L0_processing
-from disdrodb.check_standards import check_L0_column_names 
+from disdrodb.check_standards import check_L0_column_names
 from disdrodb.check_standards import check_L0_standards
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
 
 # L1_processing
-from disdrodb.L1_proc import create_L1_dataset_from_L0 
+from disdrodb.L1_proc import create_L1_dataset_from_L0
 from disdrodb.L1_proc import write_L1_to_zarr
 from disdrodb.L1_proc import write_L1_to_netcdf
 from disdrodb.L1_proc import create_L1_summary_statistics
-   
+
 # Logger 
 from disdrodb.logger import create_logger
 from disdrodb.logger import close_logger
 
-#-------------------------------------------------------------------------.
-# CLIck Command Line Interface decorator
-@click.command() # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
-@click.argument('processed_dir',                         metavar ='<processed_dir>')  
-@click.option('-l0',   '--l0_processing',  type=bool, show_default=True, default = True,   help = "Perform L0 processing")
-@click.option('-l1',   '--l1_processing',  type=bool, show_default=True, default = True,   help = "Perform L1 processing")
-@click.option('-zarr', '--write_zarr',     type=bool, show_default=True, default = False,  help = "Write L1 to zarr")
-@click.option('-nc',   '--write_netcdf',   type=bool, show_default=True, default = True,   help = "Write L1 netCDF4")
-@click.option('-f',    '--force',          type=bool, show_default=True, default = False,  help = "Force overwriting")
-@click.option('-v',    '--verbose',        type=bool, show_default=True, default = False,  help = "Verbose")
-@click.option('-d',    '--debugging_mode', type=bool, show_default=True, default = False,  help = "Switch to debugging mode")
-@click.option('-l',    '--lazy',           type=bool, show_default=True, default = True,   help = "Use dask if lazy=True")
 
+# -------------------------------------------------------------------------.
+# CLIck Command Line Interface decorator
+@click.command()  # options_metavar='<options>'
+@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+@click.argument('processed_dir', metavar='<processed_dir>')
+@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+@click.option('-zarr', '--write_zarr', type=bool, show_default=True, default=False, help="Write L1 to zarr")
+@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
-         processed_dir, 
-         l0_processing = True, 
-         l1_processing = True,
-         write_zarr = False,
-         write_netcdf = True,
-         force = False, 
-         verbose = False, 
-         debugging_mode = False, 
-         lazy = True, 
-         ):  
+         processed_dir,
+         l0_processing=True,
+         l1_processing=True,
+         write_zarr=False,
+         write_netcdf=True,
+         force=False,
+         verbose=False,
+         debugging_mode=False,
+         lazy=True,
+         ):
     """Script to process raw data to L0 and L1. \f
     
     Parameters
@@ -120,9 +120,9 @@ def main(raw_dir,
         Whether to print detailed processing information into terminal. 
         The default is False.
     debugging_mode : bool
-        If True, it reduce the amount of data to process.
-        - For L0 processing, it process just 3 raw data files. 
-        - For L1 processing, it take a small subset of the Apache Parquet dataframe. 
+        If True, it reduces the amount of data to process.
+        - For L0 processing, it processes just 3 raw data files.
+        - For L1 processing, it takes a small subset of the Apache Parquet dataframe.
         The default is False.
     lazy : bool
         Whether to perform processing lazily with dask. 
@@ -130,7 +130,7 @@ def main(raw_dir,
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
     
-    Additional informations:
+    Additional information:
     - The campaign name must semantically match between:
        - The ends of raw_dir and processed_dir paths 
        - The attribute 'campaign' within the metadata JSON file. 
@@ -143,9 +143,9 @@ def main(raw_dir,
     ###########################
     #### - Define raw data headers 
     # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter, 
+    # - In all files, the datalogger voltage hasn't the delimiter,
     #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
-    
+
     # "01","Rain intensity 32 bit",8,"mm/h","single_number"
     # "02","Rain amount accumulated 32 bit",7,"mm","single_number"
     # "03","Weather code SYNOP Table 4680",2,"","single_number"
@@ -186,7 +186,7 @@ def main(raw_dir,
     # "91","FieldV",224,"","vector"
     # "93","Raw data",4096,"","matrix"
 
-    columns_names_temporary =['time','epoch_time','TO_BE_PARSED']
+    columns_names_temporary = ['time', 'epoch_time', 'TO_BE_PARSED']
 
     column_names = ['time',
                     'epoch_time',
@@ -225,26 +225,26 @@ def main(raw_dir,
                     'rain_kinetic_energy',
                     'snowfall_intensity',
                     'n_particles_all',
-                    'n_particles_all_detected',
+                    'list_particles',
                     'FieldN',
                     'FieldV',
                     'RawData',
                     ]
-    
+
     # - Check name validity 
     check_L0_column_names(column_names)
-    
+
     ##------------------------------------------------------------------------.
     #### - Define reader options
-    
+
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs['delimiter'] = ';'
 
     # - Avoid first column to become df index !!!
-    reader_kwargs["index_col"] = False  
+    reader_kwargs["index_col"] = False
 
-    # - Define behaviour when encountering bad lines 
+    # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = 'skip'
 
     # - Define parser engine 
@@ -253,40 +253,41 @@ def main(raw_dir,
     reader_kwargs["engine"] = 'python'
 
     # - Define on-the-fly decompression of on-disk data
-    #   - Available: gzip, bz2, zip 
-    reader_kwargs['compression'] = 'infer'  
+    #   - Available: gzip, bz2, zip
+    reader_kwargs['compression'] = 'infer'
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags 
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-', ' NA',]
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-', ' NA', ]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None # "50MB" 
+    reader_kwargs["blocksize"] = None  # "50MB"
 
     # Cast all to string
     reader_kwargs["dtype"] = str
 
     # Skip first row as columns names
     reader_kwargs['header'] = None
-    
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files 
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None 
+    df_sanitizer_fun = None
+
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas 
-        if lazy: 
+        if lazy:
             import dask.dataframe as dd
-        else: 
+        else:
             import pandas as dd
-        
+
         # Split the last column (contain the 37 remain fields)
-        df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
+        df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n=99)
 
         # Cast to datetime
         df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
@@ -295,7 +296,7 @@ def main(raw_dir,
         df = df.drop(['TO_BE_PARSED'], axis=1)
 
         # Add names to columns
-        df_to_parse_dict_names = dict(zip(column_names[2:-3],list(df_to_parse.columns)[0:35]))
+        df_to_parse_dict_names = dict(zip(column_names[2:-3], list(df_to_parse.columns)[0:35]))
         for i in range(len(list(df_to_parse.columns)[35:])):
             df_to_parse_dict_names[i] = i
 
@@ -309,95 +310,114 @@ def main(raw_dir,
         df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
 
         # Add the comma on the FieldN, FieldV and RawData
-        df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldN')
-        df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldV')
-        df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
+        df_FieldN = df_to_parse.iloc[:, 35:67].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
+                                                     meta=(None, 'object')).to_frame('FieldN')
+        df_FieldV = df_to_parse.iloc[:, 67:-1].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
+                                                     meta=(None, 'object')).to_frame('FieldV')
+        df_RawData = df_to_parse.iloc[:, -1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip(
+            "'").to_frame('RawData')
 
         # Concat all togheter
-        df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1, ignore_unknown_divisions=True)
-        
-        return df  
-    
-    ##------------------------------------------------------------------------.
+        df = dd.concat([df, df_to_parse.iloc[:, :35], df_FieldN, df_FieldV, df_RawData], axis=1,
+                       ignore_unknown_divisions=True)
+
+        todrop = ['firmware_IOP',
+                  'firmware_DSP',
+                  'date_time_measurement_start',
+                  'sensor_time',
+                  'sensor_date',
+                  'station_name',
+                  'station_number',
+                  'list_particles',
+                  'epoch_time']
+
+        df = df.drop(todrop, axis=1)
+
+        return df
+
+        ##------------------------------------------------------------------------.
+
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern =  "*.csv*"   
-    
+    raw_data_glob_pattern = "*.csv*"
+
     ####----------------------------------------------------------------------.
     #################### 
     #### FIXED CODE ####
     #################### 
-    #-------------------------------------------------------------------------.    
+    # -------------------------------------------------------------------------.
     # Initial directory checks 
     raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
-    
+
     # Retrieve campaign name 
     campaign_name = get_campaign_name(raw_dir)
 
-    #-------------------------------------------------------------------------. 
+    # -------------------------------------------------------------------------.
     # Define logging settings
-    create_logger(processed_dir, 'parser_' + campaign_name) 
+    create_logger(processed_dir, 'parser_' + campaign_name)
     # Retrieve logger 
     logger = logging.getLogger(campaign_name)
     logger.info('### Script started ###')
-        
-    #-------------------------------------------------------------------------. 
+
+    # -------------------------------------------------------------------------.
     # Create directory structure 
     create_directory_structure(raw_dir, processed_dir)
-                   
-    #-------------------------------------------------------------------------. 
+
+    # -------------------------------------------------------------------------.
     #### Loop over station_id directory and process the files 
     list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
-    
+
     # station_id = list_stations_id[1]  
     for station_id in list_stations_id:
-        #---------------------------------------------------------------------. 
+        # ---------------------------------------------------------------------.
         logger.info(f' - Processing of station_id {station_id} has started')
-        #---------------------------------------------------------------------. 
+        # ---------------------------------------------------------------------.
         # Retrieve metadata 
         attrs = read_metadata(raw_dir=raw_dir,
                               station_id=station_id)
         # Retrieve sensor name
         sensor_name = attrs['sensor_name']
-        
-        #---------------------------------------------------------------------. 
+
+        # ---------------------------------------------------------------------.
         ####################### 
         #### L0 processing ####
         ####################### 
-        if l0_processing: 
+        if l0_processing:
             # Start L0 processing 
-            t_i = time.time() 
+            t_i = time.time()
             msg = " - L0 processing of station_id {} has started.".format(station_id)
             if verbose:
                 print(msg)
             logger.info(msg)
-            
-            #-----------------------------------------------------------------.           
+
+            # -----------------------------------------------------------------.
             #### - List files to process 
             glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
             file_list = get_file_list(raw_dir=raw_dir,
-                                      glob_pattern=glob_pattern, 
-                                      verbose=verbose, 
+                                      glob_pattern=glob_pattern,
+                                      verbose=verbose,
                                       debugging_mode=debugging_mode)
-            
+
             ##------------------------------------------------------.
             #### - Read all raw data files into a dataframe  
-            df = read_L0_raw_file_list(file_list=file_list, 
-                                       column_names=columns_names_temporary, 
+            df = read_L0_raw_file_list(file_list=file_list,
+                                       column_names=columns_names_temporary,
                                        reader_kwargs=reader_kwargs,
-                                       df_sanitizer_fun =df_sanitizer_fun, 
-                                       lazy=lazy)
-        
+                                       df_sanitizer_fun=df_sanitizer_fun,
+                                       lazy=lazy,
+                                       sensor_name=sensor_name,
+                                       verbose=verbose)
+
             ##------------------------------------------------------.                                   
             #### - Write to Parquet                
             fpath = get_L0_fpath(processed_dir, station_id)
             write_df_to_parquet(df=df,
-                                fpath=fpath,  
-                                force = force,
-                                verbose = verbose)
+                                fpath=fpath,
+                                force=force,
+                                verbose=verbose)
             ##------------------------------------------------------. 
             #### - Check L0 file respects the DISDRODB standards         
-            check_L0_standards(fpath=fpath, 
-                               sensor_name=sensor_name, 
+            check_L0_standards(fpath=fpath,
+                               sensor_name=sensor_name,
                                verbose=verbose)
             ##------------------------------------------------------. 
             # End L0 processing 
@@ -406,18 +426,18 @@ def main(raw_dir,
             if verbose:
                 print(msg)
             logger.info(msg)
-            
+
             ##------------------------------------------------------.   
             # Delete temp variables
             del df
-        
-        #---------------------------------------------------------------------.
+
+        # ---------------------------------------------------------------------.
         ####################### 
         #### L1 processing ####
         ####################### 
-        if l1_processing: 
+        if l1_processing:
             # Start L1 processing 
-            t_i = time.time() 
+            t_i = time.time()
             msg = " - L1 processing of station_id {} has started.".format(station_id)
             if verbose:
                 print(msg)
@@ -425,32 +445,32 @@ def main(raw_dir,
             ##----------------------------------------------------------------.
             #### - Read L0 
             df = read_L0_data(processed_dir, station_id, lazy=lazy, verbose=verbose, debugging_mode=debugging_mode)
-                            
-            #-----------------------------------------------------------------.
+
+            # -----------------------------------------------------------------.
             #### - Create xarray Dataset
             ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
-                          
-            #-----------------------------------------------------------------.   
+
+            # -----------------------------------------------------------------.
             #### - Write to Zarr as intermediate storage 
             if write_zarr:
                 fpath = get_L1_zarr_fpath(processed_dir, station_id)
                 write_L1_to_zarr(ds=ds, fpath=fpath, sensor_name=sensor_name)
-                ds = xr.open_zarr(fpath)  
-                
-            #-----------------------------------------------------------------.
+                ds = xr.open_zarr(fpath)
+
+                # -----------------------------------------------------------------.
             #### - Write L1 dataset to netCDF4
             if write_netcdf:
                 fpath = get_L1_netcdf_fpath(processed_dir, station_id)
                 write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
-            
-            #-----------------------------------------------------------------.
+
+            # -----------------------------------------------------------------.
             #### - Compute L1 summary statics 
-            create_L1_summary_statistics(ds, 
+            create_L1_summary_statistics(ds,
                                          processed_dir=processed_dir,
                                          station_id=station_id,
                                          sensor_name=sensor_name)
-            
-            #-----------------------------------------------------------------.
+
+            # -----------------------------------------------------------------.
             # End L1 processing 
             t_f = time.time() - t_i
             msg = " - L1 processing of station_id {} ended in {:.2f}s".format(station_id, t_f)
@@ -458,22 +478,22 @@ def main(raw_dir,
                 print(msg)
                 print(" --------------------------------------------------")
             logger.info(msg)
-              
-            #-----------------------------------------------------------------.
-        #---------------------------------------------------------------------.
-    #-------------------------------------------------------------------------.
+
+            # -----------------------------------------------------------------.
+        # ---------------------------------------------------------------------.
+    # -------------------------------------------------------------------------.
     if verbose:
         print(msg)
     logger.info('---')
     logger.info(msg)
     logger.info('---')
-    
+
     msg = '### Script finish ###'
     print(msg)
     logger.info(msg)
-    
+
     close_logger(logger)
-    
- 
+
+
 if __name__ == '__main__':
     main()
