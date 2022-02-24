@@ -113,7 +113,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[1]
+station_id = list_stations_id[0]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -182,6 +182,7 @@ reader_kwargs["dtype"] = str
 # - Possibily look at multiple files ;)
 # filepath = file_list[0]
 filepath = file_list[1]
+# filepath='/SharedVM/Campagne/EPFL/Raw/DAVOS_2009/DAVOS_2009_V1/data/50/file50_20190404.dat.gz'
 str_reader_kwargs = reader_kwargs.copy() 
 df = read_raw_data(filepath, 
                    column_names=None,  
@@ -303,6 +304,7 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[2]  # Select also other files here  1,2, ... 
+filepath='/SharedVM/Campagne/EPFL/Raw/DAVOS_2009/DAVOS_2009_V1/data/50/file50_20190404.dat.gz'
 lazy = False             # Try also with True when work with False 
 
 #------------------------------------------------------. 
@@ -337,6 +339,13 @@ if len(df.columns) != len(column_names):
 
 # Drop Debug_data and All_0
 # df = df.drop(columns=['All_0'])
+
+# Drop row if contains errors
+df = df[~df.TO_BE_SPLITTED.str.contains("Error in data reading! 0")]
+
+# Check again if file empty
+if len(df.index) == 0:
+    raise ValueError(f"{filepath} is empty and has been skipped.")
 
 # Split TO_BE_SPLITTED
 df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
@@ -408,6 +417,13 @@ def df_sanitizer_fun(df, lazy=False):
         import dask.dataframe as dd
     else: 
         import pandas as dd
+        
+    # Drop row if contains errors
+    df = df[~df.TO_BE_SPLITTED.str.contains("Error in data reading! 0")]
+
+    # Check again if file empty
+    if len(df.index) == 0:
+        raise ValueError(f"{filepath} is empty and has been skipped.")
 
     # Split TO_BE_SPLITTED
     df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
@@ -441,13 +457,14 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = False # True 
-subset_file_list = file_list[:10]
+subset_file_list = file_list[:]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=columns_names_temporary, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
-                           lazy=lazy)
+                           lazy=lazy,
+                           verbose=verbose)
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods

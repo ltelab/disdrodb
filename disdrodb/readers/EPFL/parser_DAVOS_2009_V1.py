@@ -280,6 +280,13 @@ def main(
         else:
             import pandas as dd
 
+        # Drop row if contains errors
+        df = df[~df.TO_BE_SPLITTED.str.contains("Error in data reading! 0")]
+
+        # Check again if file empty
+        if len(df.index) == 0:
+            raise ValueError("Error in all rows. The file has been skipped.")
+
         # Split TO_BE_SPLITTED
         df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
 
@@ -295,15 +302,15 @@ def main(
         # Drop temp and all_nan
         df = df.drop(columns=["temp", "temp1", "temp2"])
 
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+
         # If RawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
         df = df.dropna(subset = col_to_drop_if_na)
 
         # Drop rows with less than 4096 char on RawData
         df = df.loc[df['RawData'].astype(str).str.len() == 4095]
-        
-        # - Convert time column to datetime 
-        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
         return df
 
