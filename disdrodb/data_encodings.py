@@ -121,7 +121,7 @@ def get_LPM_variables():
     return
 
 
-def get_L0_dtype_standards():
+def get_L0_dtype_standards(sensor_name):
     from disdrodb.standards import get_L0_dtype
 
     # TODO: TO REFACTOR !!!!
@@ -173,7 +173,7 @@ def get_L0_dtype_standards():
         "All_nan": "object",
         "All_5000": "object",
     }
-    d1 = get_L0_dtype(sensor_name="OTT_Parsivel")
+    d1 = get_L0_dtype(sensor_name=sensor_name)
     dtype_dict.update(d1)
     return dtype_dict
 
@@ -271,9 +271,9 @@ def get_ARM_LPM_dict():
     return d
 
 
-def get_dtype_standards_all_object():
+def get_dtype_standards_all_object(sensor_name):
     # TODO: move to dev_tools I would say... is not used by any parser right?
-    dtype_dict = get_L0_dtype_standards()
+    dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
     for i in dtype_dict:
         dtype_dict[i] = "object"
 

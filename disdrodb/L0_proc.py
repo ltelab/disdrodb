@@ -212,6 +212,7 @@ def read_L0_raw_file_list(
     file_list,
     column_names,
     reader_kwargs,
+    sensor_name, 
     verbose,
     df_sanitizer_fun=None,
     lazy=False,
@@ -291,7 +292,7 @@ def read_L0_raw_file_list(
 
             # ----------------------------------------------------.
             # Cast dataframe to dtypes
-            dtype_dict = get_L0_dtype_standards()
+            dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
             for column in df.columns:
                 try:
                     df[column] = df[column].astype(dtype_dict[column])
