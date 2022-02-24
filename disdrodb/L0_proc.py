@@ -93,7 +93,7 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
             except dd.errors.EmptyDataError:
                 msg = f"Is empty, skip file: {filepath}"
                 logger.exception(msg)
-                raise dd.errors.EmptyDataError(msg)
+                print(msg)
                 pass
         # Pandas
         else:
@@ -103,7 +103,7 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
             except pd.errors.EmptyDataError:
                 msg = f"Is empty, skip file: {filepath}"
                 logger.exception(msg)
-                raise pd.errors.EmptyDataError(msg)
+                print(msg)
                 pass
     return df
 
@@ -212,9 +212,9 @@ def read_L0_raw_file_list(
     file_list,
     column_names,
     reader_kwargs,
+    verbose,
     df_sanitizer_fun=None,
     lazy=False,
-    verbose=False,
 ):
     """Read and parse a list for raw files into a dataframe."""
     # ------------------------------------------------------.

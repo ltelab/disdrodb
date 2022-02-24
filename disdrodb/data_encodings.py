@@ -144,6 +144,11 @@ def get_L0_dtype_standards():
         "Unknow_column": "object",
         # Temp variables
         "temp": "object",
+        "temp1": "object",
+        "temp2": "object",
+        "temp3": "object",
+        "temp4": "object",
+        
         "TEMPORARY": "object",
         "TO_BE_MERGE": "object",
         "TO_BE_MERGE2": "object",

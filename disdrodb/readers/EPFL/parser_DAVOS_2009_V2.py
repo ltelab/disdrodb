@@ -197,16 +197,12 @@ def main(
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rain_rate_32bit
 
-    columns_names_temporary = ['TO_BE_SPLITTED',
-                                'FieldV',
-                                'RawData',
-                                'All_0'
-                                ]
-
-    column_names = ['time',
-                    'All_nan',
-                    'error_code', # Dataloger status
-                    'rain_rate_32bit',
+    column_names = ['id',
+                    'latitude',
+                    'longitude',
+                    'time',
+                    'temp', # All nan values
+                    'TO_BE_SPLITTED', # Dataloger status and rain_rate_32bit
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
                     'weather_code_SYNOP_4677',
@@ -219,10 +215,11 @@ def main(
                     'sensor_battery_voltage',
                     'sensor_status',
                     'rain_amount_absolute_32bit',
-                    'datalogger_error',
+                    'temp1', # Datalogger error
                     'FieldN',
                     'FieldV',
-                    'RawData'
+                    'RawData',
+                    'temp2', # All 0
                     ]
 
     # - Check name validity
@@ -233,7 +230,7 @@ def main(
 
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs['delimiter'] = ',,'
+    reader_kwargs['delimiter'] = ';'
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False  
@@ -264,9 +261,6 @@ def main(
     # Cast all to string
     reader_kwargs["dtype"] = str
 
-    # Use for Nan value
-    reader_kwargs["assume_missing"] = True
-
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
@@ -281,29 +275,20 @@ def main(
             import pandas as dd
 
         # Split TO_BE_SPLITTED
-        df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
+        df[['datalogger_error','rain_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
 
-        # Concat togheter, avoid to save id, latitude and longitude and all_0
-        if lazy:
-            df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1, ignore_unknown_divisions=True)
-        else:
-            df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1)
-
-        # Rename columns
-        df.columns = column_names
-
-        # Drop temp and all_nan
-        df = df.drop(columns=["All_nan", "error_code", "datalogger_error"])
-
-        # - Convert time column to datetime 
-        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+        # Drop id, latitude, longitude, temps and datalogger_error
+        df = df.drop(columns=["id", "latitude", "longitude","temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
 
         # If RawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
         df = df.dropna(subset = col_to_drop_if_na)
 
         # Drop rows with less than 4096 char on RawData
-        df = df.loc[df['RawData'].astype(str).str.len() == 4095]
+        df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
         return df
 
@@ -373,10 +358,11 @@ def main(
             #### - Read all raw data files into a dataframe
             df = read_L0_raw_file_list(
                 file_list=file_list,
-                column_names=columns_names_temporary,
+                column_names=column_names,
                 reader_kwargs=reader_kwargs,
                 df_sanitizer_fun=df_sanitizer_fun,
                 lazy=lazy,
+                verbose=verbose
             )
 
             ##------------------------------------------------------.
@@ -478,8 +464,8 @@ def main(
 
 if __name__ == "__main__":
     main(
-        raw_dir = "/SharedVM/Campagne/EPFL/Raw/DAVOS_2009",
-        processed_dir = "/SharedVM/Campagne/EPFL/Processed/DAVOS_2009",
+        raw_dir = "/SharedVM/Campagne/EPFL/Raw/DAVOS_2009/DAVOS_2009_V2",
+        processed_dir = "/SharedVM/Campagne/EPFL/Processed/DAVOS_2009/DAVOS_2009_V2",
         l0_processing=True,
         l1_processing=True,
         write_zarr=False,
