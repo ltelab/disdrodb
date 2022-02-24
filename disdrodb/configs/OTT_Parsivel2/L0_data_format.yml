@@ -41,7 +41,7 @@ weather_code_METAR_4678:
   n_naturals: null
   data_range: null
   nan_flags: null
-weather_weather_code_NWS:
+weather_code_NWS:
   n_digits: null
   n_characters: null
   n_decimals: null

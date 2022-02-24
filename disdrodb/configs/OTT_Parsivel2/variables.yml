@@ -3,7 +3,7 @@
 '03': weather_code_SYNOP_4680
 '04': weather_code_SYNOP_4677
 '05': weather_code_METAR_4678
-'06': weather_weather_code_NWS
+'06': weather_code_NWS
 '07': reflectivity_32bit
 '08': mor_visibility
 '09': sample_interval
