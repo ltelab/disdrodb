@@ -8,7 +8,7 @@ Created on Fri Feb 18 13:46:47 2022
 import yaml
 from disdrodb.standards import get_sensor_variables
 
-sensor_name = "OTT_Parsivel"
+sensor_name = "OTT_Parsivel2"
 
 # Defaults encodings
 encoding_kwargs = {}
@@ -27,7 +27,7 @@ encoding_kwargs["chunksizes"] = 5000
 # Define custom encodings
 from disdrodb.data_encodings import get_L0_dtype_standards
 
-dtype_L0 = get_L0_dtype_standards()
+dtype_L0 = get_L0_dtype_standards(sensor_name=sensor_name)
 variables = get_sensor_variables(sensor_name)
 encodings_dict = {}
 for variable in variables:
@@ -43,7 +43,7 @@ encodings_dict["FieldV"]["dtype"] = "float32"
 encodings_dict["weather_code_METAR_4678"]["dtype"] = "str"
 encodings_dict["weather_code_NWS"]["dtype"] = "str"
 
-with open("/home/ghiggi/L1_netcdf_encodings.yml", "w") as f:
+with open("/home/sguzzo/L1_netcdf_encodings.yml", "w") as f:
     yaml.dump(encodings_dict, f, sort_keys=False)
 
 # Open dictionary
