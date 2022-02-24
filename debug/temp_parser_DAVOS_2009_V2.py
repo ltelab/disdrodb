@@ -71,8 +71,8 @@ from disdrodb.metadata import read_metadata
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/EPFL/Raw/DAVOS_2009"
-processed_dir = "/SharedVM/Campagne/EPFL/Processed/DAVOS_2009"
+raw_dir = "/SharedVM/Campagne/EPFL/Raw/DAVOS_2009/DAVOS_2009_V2"
+processed_dir = "/SharedVM/Campagne/EPFL/Processed/DAVOS_2009/DAVOS_2009_V2"
 
 l0_processing = True
 l1_processing = True
@@ -129,7 +129,7 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat.gz*
 
 
 
-filepath = file_list[2]
+filepath = file_list[3]
 
 
 
@@ -142,7 +142,7 @@ filepath = file_list[2]
     
 reader_kwargs = {}
 # - Define delimiter
-reader_kwargs['delimiter'] = ',,'
+reader_kwargs['delimiter'] = ';'
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -181,7 +181,7 @@ reader_kwargs["dtype"] = str
 # - Do not assign a dtype yet to the columns 
 # - Possibily look at multiple files ;)
 # filepath = file_list[0]
-filepath = file_list[1]
+filepath = file_list[2]
 str_reader_kwargs = reader_kwargs.copy() 
 df = read_raw_data(filepath, 
                    column_names=None,  
@@ -227,16 +227,12 @@ get_OTT_Parsivel2_dict()
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-columns_names_temporary = ['TO_BE_SPLITTED',
-                            'FieldV',
-                            'RawData',
-                            'All_0'
-                            ]
-
-column_names = ['time',
-                'All_nan',
-                'temp', # Dataloger status
-                'rain_rate_32bit',
+column_names = ['id',
+                'latitude',
+                'longitude',
+                'time',
+                'temp', # All nan values
+                'TO_BE_SPLITTED', # Dataloger status and rain_rate_32bit
                 'rain_accumulated_32bit',
                 'weather_code_SYNOP_4680',
                 'weather_code_SYNOP_4677',
@@ -249,10 +245,11 @@ column_names = ['time',
                 'sensor_battery_voltage',
                 'sensor_status',
                 'rain_amount_absolute_32bit',
-                'datalogger_error',
+                'temp1', # Datalogger error
                 'FieldN',
                 'FieldV',
-                'RawData'
+                'RawData',
+                'temp2', # All 0
                 ]
 
 # - Check name validity 
@@ -260,7 +257,7 @@ check_L0_column_names(column_names)
 
 # - Read data
 # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
-filepath = file_list[1]
+filepath = file_list[2]
 df = read_raw_data(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
@@ -302,14 +299,14 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[1]  # Select also other files here  1,2, ... 
+filepath = file_list[2]  # Select also other files here  1,2, ... 
 lazy = False             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
 df = read_raw_data(filepath=filepath, 
-                   column_names=columns_names_temporary,
+                   column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
 
@@ -339,26 +336,20 @@ if len(df.columns) != len(column_names):
 # df = df.drop(columns=['All_0'])
 
 # Split TO_BE_SPLITTED
-df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
+df[['datalogger_error','rain_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
 
-# Concat togheter, avoid to save id, latitude and longitude and all_0
-df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1, ignore_unknown_divisions=True)
-
-# Rename columns
-df.columns = column_names
-
-# Drop temp and all_nan
-df = df.drop(columns=["temp", "All_nan"])
-
-# - Convert time column to datetime 
-df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+# Drop id, latitude, longitude, temps and datalogger_error
+df = df.drop(columns=["id", "latitude", "longitude","temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
 
 # If RawData is nan, drop the row
 col_to_drop_if_na = ['FieldN','FieldV','RawData']
 df = df.dropna(subset = col_to_drop_if_na)
 
 # Drop rows with less than 4096 char on RawData
-df = df.loc[df['RawData'].astype(str).str.len() == 4095]
+df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+
+# - Convert time column to datetime 
+df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
 
 
@@ -409,29 +400,20 @@ def df_sanitizer_fun(df, lazy=False):
         import pandas as dd
 
     # Split TO_BE_SPLITTED
-    df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
+    df[['datalogger_error','rain_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
 
-    # Concat togheter, avoid to save id, latitude and longitude and all_0
-    if lazy:
-        df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1, ignore_unknown_divisions=True)
-    else:
-        df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1)
-
-    # Rename columns
-    df.columns = column_names
-
-    # Drop temp and all_nan
-    df = df.drop(columns=["temp", "All_nan"])
-
-    # - Convert time column to datetime 
-    df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+    # Drop id, latitude, longitude, temps and datalogger_error
+    df = df.drop(columns=["id", "latitude", "longitude","temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
 
     # If RawData is nan, drop the row
     col_to_drop_if_na = ['FieldN','FieldV','RawData']
     df = df.dropna(subset = col_to_drop_if_na)
 
     # Drop rows with less than 4096 char on RawData
-    df = df.loc[df['RawData'].astype(str).str.len() == 4095]
+    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+
+    # - Convert time column to datetime 
+    df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
     
     return df 
 
@@ -439,14 +421,16 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = False # True 
-subset_file_list = file_list[:10]
+lazy = True # True 
+subset_file_list = file_list[:30]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
-                           column_names=columns_names_temporary, 
+                           column_names=column_names, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
-                           lazy=lazy)
+                           lazy=lazy,
+                           verbose=verbose
+                           )
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods

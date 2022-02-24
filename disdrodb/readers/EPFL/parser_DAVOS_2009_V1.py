@@ -60,68 +60,68 @@ from disdrodb.logger import close_logger
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-# @click.command()  # options_metavar='<options>'
-# @click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
-# @click.argument("processed_dir", metavar="<processed_dir>")
-# @click.option(
-#     "-l0",
-#     "--l0_processing",
-#     type=bool,
-#     show_default=True,
-#     default=True,
-#     help="Perform L0 processing",
-# )
-# @click.option(
-#     "-l1",
-#     "--l1_processing",
-#     type=bool,
-#     show_default=True,
-#     default=True,
-#     help="Perform L1 processing",
-# )
-# @click.option(
-#     "-zarr",
-#     "--write_zarr",
-#     type=bool,
-#     show_default=True,
-#     default=False,
-#     help="Write L1 to zarr",
-# )
-# @click.option(
-#     "-nc",
-#     "--write_netcdf",
-#     type=bool,
-#     show_default=True,
-#     default=True,
-#     help="Write L1 netCDF4",
-# )
-# @click.option(
-#     "-f",
-#     "--force",
-#     type=bool,
-#     show_default=True,
-#     default=False,
-#     help="Force overwriting",
-# )
-# @click.option(
-#     "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
-# )
-# @click.option(
-#     "-d",
-#     "--debugging_mode",
-#     type=bool,
-#     show_default=True,
-#     default=False,
-#     help="Switch to debugging mode",
-# )
-# @click.option(
-#     "-l",
-#     "--lazy",
-#     type=bool,
-#     show_default=True,
-#     default=True,
-#     help="Use dask if lazy=True",
-# )
+@click.command()  # options_metavar='<options>'
+@click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
+@click.argument("processed_dir", metavar="<processed_dir>")
+@click.option(
+    "-l0",
+    "--l0_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0 processing",
+)
+@click.option(
+    "-l1",
+    "--l1_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L1 processing",
+)
+@click.option(
+    "-zarr",
+    "--write_zarr",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Write L1 to zarr",
+)
+@click.option(
+    "-nc",
+    "--write_netcdf",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Write L1 netCDF4",
+)
+@click.option(
+    "-f",
+    "--force",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Force overwriting",
+)
+@click.option(
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+)
+@click.option(
+    "-d",
+    "--debugging_mode",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Switch to debugging mode",
+)
+@click.option(
+    "-l",
+    "--lazy",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Use dask if lazy=True",
+)
 def main(
     raw_dir,
     processed_dir,
@@ -204,8 +204,8 @@ def main(
                                 ]
 
     column_names = ['time',
-                    'All_nan',
-                    'error_code', # Dataloger status
+                    'temp', # All nan values
+                    'temp1', # Dataloger status
                     'rain_rate_32bit',
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
@@ -219,7 +219,7 @@ def main(
                     'sensor_battery_voltage',
                     'sensor_status',
                     'rain_amount_absolute_32bit',
-                    'datalogger_error',
+                    'temp2', # Datalogger error
                     'FieldN',
                     'FieldV',
                     'RawData'
@@ -280,6 +280,13 @@ def main(
         else:
             import pandas as dd
 
+        # Drop row if contains errors
+        df = df[~df.TO_BE_SPLITTED.str.contains("Error in data reading! 0")]
+
+        # Check again if file empty
+        if len(df.index) == 0:
+            raise ValueError("Error in all rows. The file has been skipped.")
+
         # Split TO_BE_SPLITTED
         df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
 
@@ -293,7 +300,7 @@ def main(
         df.columns = column_names
 
         # Drop temp and all_nan
-        df = df.drop(columns=["All_nan", "error_code", "datalogger_error"])
+        df = df.drop(columns=["temp", "temp1", "temp2"])
 
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
@@ -377,6 +384,7 @@ def main(
                 reader_kwargs=reader_kwargs,
                 df_sanitizer_fun=df_sanitizer_fun,
                 lazy=lazy,
+                verbose=verbose
             )
 
             ##------------------------------------------------------.
@@ -477,15 +485,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main(
-        raw_dir = "/SharedVM/Campagne/EPFL/Raw/DAVOS_2009",
-        processed_dir = "/SharedVM/Campagne/EPFL/Processed/DAVOS_2009",
-        l0_processing=True,
-        l1_processing=True,
-        write_zarr=False,
-        write_netcdf=True,
-        force=True,
-        verbose=True,
-        debugging_mode=True,
-        lazy=True,
-    )
+    main()
