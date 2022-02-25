@@ -25,7 +25,6 @@ import os
 import click
 import time
 import logging
-import xarray as xr 
 
 # Directory 
 from disdrodb.io import check_directories
@@ -34,57 +33,52 @@ from disdrodb.io import create_directory_structure
 
 # Metadata 
 from disdrodb.metadata import read_metadata
+from disdrodb.check_standards import check_sensor_name
 
 # IO 
 from disdrodb.io import get_L0_fpath
 from disdrodb.io import get_L1_netcdf_fpath
-from disdrodb.io import get_L1_zarr_fpath  
 from disdrodb.io import read_L0_data
 
 # L0_processing
-from disdrodb.check_standards import check_L0_column_names 
+from disdrodb.check_standards import check_L0_column_names
 from disdrodb.check_standards import check_L0_standards
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
 
 # L1_processing
-from disdrodb.L1_proc import create_L1_dataset_from_L0 
-from disdrodb.L1_proc import write_L1_to_zarr
+from disdrodb.L1_proc import create_L1_dataset_from_L0
 from disdrodb.L1_proc import write_L1_to_netcdf
 from disdrodb.L1_proc import create_L1_summary_statistics
-   
+
 # Logger 
 from disdrodb.logger import create_logger
 from disdrodb.logger import close_logger
 
 
-#-------------------------------------------------------------------------.
+# -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command() # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar ='<raw_dir>')
-@click.argument('processed_dir',                         metavar ='<processed_dir>')  
-@click.option('-l0',   '--l0_processing',  type=bool, show_default=True, default = True,   help = "Perform L0 processing")
-@click.option('-l1',   '--l1_processing',  type=bool, show_default=True, default = True,   help = "Perform L1 processing")
-@click.option('-zarr', '--write_zarr',     type=bool, show_default=True, default = False,  help = "Write L1 to zarr")
-@click.option('-nc',   '--write_netcdf',   type=bool, show_default=True, default = True,   help = "Write L1 netCDF4")
-@click.option('-f',    '--force',          type=bool, show_default=True, default = False,  help = "Force overwriting")
-@click.option('-v',    '--verbose',        type=bool, show_default=True, default = False,  help = "Verbose")
-@click.option('-d',    '--debugging_mode', type=bool, show_default=True, default = False,  help = "Switch to debugging mode")
-@click.option('-l',    '--lazy',           type=bool, show_default=True, default = True,   help = "Use dask if lazy=True")
-
-
+@click.command()  # options_metavar='<options>'
+@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+@click.argument('processed_dir', metavar='<processed_dir>')
+@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
-         processed_dir, 
-         l0_processing = True, 
-         l1_processing = True,
-         write_zarr = False,
-         write_netcdf = True,
-         force = False, 
-         verbose = False, 
-         debugging_mode = False, 
-         lazy = True, 
-         ):  
+         processed_dir,
+         l0_processing=True,
+         l1_processing=True,
+         write_netcdf=True,
+         force=False,
+         verbose=False,
+         debugging_mode=False,
+         lazy=True,
+         ):
     """Script to process raw data to L0 and L1. \f
     
     Parameters
@@ -108,12 +102,9 @@ def main(raw_dir,
     l1_processing : bool
         Whether to launch processing to generate L1 netCDF4 file(s) from source netCDF or L0 data. 
         The default is True.
-    write_zarr : bool 
-        Whether to save L1 as Zarr archive.
-        At least 1 between write_zarr and write_netcdf must be True.
     write_netcdf: bool 
         Whether to save L1 as netCDF4 archive
-        At least 1 between write_zarr and write_netcdf must be True.
+        Write_netcdf must be True.
     force : bool
         If True, overwrite existing data into destination directories. 
         If False, raise an error if there are already data into destination directories. 
@@ -122,9 +113,9 @@ def main(raw_dir,
         Whether to print detailed processing information into terminal. 
         The default is False.
     debugging_mode : bool
-        If True, it reduce the amount of data to process.
-        - For L0 processing, it process just 3 raw data files. 
-        - For L1 processing, it take a small subset of the Apache Parquet dataframe. 
+        If True, it reduces the amount of data to process.
+        - For L0 processing, it processes just 3 raw data files.
+        - For L1 processing, it takes a small subset of the Apache Parquet dataframe.
         The default is False.
     lazy : bool
         Whether to perform processing lazily with dask. 
@@ -132,7 +123,7 @@ def main(raw_dir,
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
     
-    Additional informations:
+    Additional information:
     - The campaign name must semantically match between:
        - The ends of raw_dir and processed_dir paths 
        - The attribute 'campaign' within the metadata JSON file. 
@@ -290,8 +281,10 @@ def main(raw_dir,
         # Retrieve metadata 
         attrs = read_metadata(raw_dir=raw_dir,
                               station_id=station_id)
+		
         # Retrieve sensor name
         sensor_name = attrs['sensor_name']
+        check_sensor_name(sensor_name)
         
         #---------------------------------------------------------------------. 
         ####################### 
@@ -315,11 +308,13 @@ def main(raw_dir,
             
             ##------------------------------------------------------.
             #### - Read all raw data files into a dataframe  
-            df = read_L0_raw_file_list(file_list=file_list, 
-                                       column_names=columns_names_temporary, 
+            df = read_L0_raw_file_list(file_list=file_list,
+                                       column_names=columns_names_temporary,
                                        reader_kwargs=reader_kwargs,
-                                       df_sanitizer_fun =df_sanitizer_fun, 
-                                       lazy=False)
+                                       df_sanitizer_fun=df_sanitizer_fun,
+                                       lazy=lazy,
+                                       sensor_name=sensor_name,
+                                       verbose=verbose)
         
             ##------------------------------------------------------.                                   
             #### - Write to Parquet                
@@ -363,13 +358,6 @@ def main(raw_dir,
             #-----------------------------------------------------------------.
             #### - Create xarray Dataset
             ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
-                          
-            #-----------------------------------------------------------------.   
-            #### - Write to Zarr as intermediate storage 
-            if write_zarr:
-                fpath = get_L1_zarr_fpath(processed_dir, station_id)
-                write_L1_to_zarr(ds=ds, fpath=fpath, sensor_name=sensor_name)
-                ds = xr.open_zarr(fpath)  
                 
             #-----------------------------------------------------------------.
             #### - Write L1 dataset to netCDF4
