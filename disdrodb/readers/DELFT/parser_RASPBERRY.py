@@ -25,7 +25,6 @@ import os
 import click
 import time
 import logging
-import xarray as xr
 
 # Directory 
 from disdrodb.io import check_directories
@@ -34,11 +33,11 @@ from disdrodb.io import create_directory_structure
 
 # Metadata 
 from disdrodb.metadata import read_metadata
+from disdrodb.check_standards import check_sensor_name
 
 # IO 
 from disdrodb.io import get_L0_fpath
 from disdrodb.io import get_L1_netcdf_fpath
-from disdrodb.io import get_L1_zarr_fpath
 from disdrodb.io import read_L0_data
 
 # L0_processing
@@ -50,7 +49,6 @@ from disdrodb.L0_proc import write_df_to_parquet
 
 # L1_processing
 from disdrodb.L1_proc import create_L1_dataset_from_L0
-from disdrodb.L1_proc import write_L1_to_zarr
 from disdrodb.L1_proc import write_L1_to_netcdf
 from disdrodb.L1_proc import create_L1_summary_statistics
 
@@ -66,7 +64,6 @@ from disdrodb.logger import close_logger
 @click.argument('processed_dir', metavar='<processed_dir>')
 @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
 @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-zarr', '--write_zarr', type=bool, show_default=True, default=False, help="Write L1 to zarr")
 @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
 @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
@@ -76,7 +73,6 @@ def main(raw_dir,
          processed_dir,
          l0_processing=True,
          l1_processing=True,
-         write_zarr=False,
          write_netcdf=True,
          force=False,
          verbose=False,
@@ -106,12 +102,9 @@ def main(raw_dir,
     l1_processing : bool
         Whether to launch processing to generate L1 netCDF4 file(s) from source netCDF or L0 data. 
         The default is True.
-    write_zarr : bool 
-        Whether to save L1 as Zarr archive.
-        At least 1 between write_zarr and write_netcdf must be True.
     write_netcdf: bool 
         Whether to save L1 as netCDF4 archive
-        At least 1 between write_zarr and write_netcdf must be True.
+        Write_netcdf must be True.
     force : bool
         If True, overwrite existing data into destination directories. 
         If False, raise an error if there are already data into destination directories. 
@@ -378,6 +371,7 @@ def main(raw_dir,
                               station_id=station_id)
         # Retrieve sensor name
         sensor_name = attrs['sensor_name']
+        check_sensor_name(sensor_name)
 
         # ---------------------------------------------------------------------.
         ####################### 
@@ -451,13 +445,6 @@ def main(raw_dir,
             # -----------------------------------------------------------------.
             #### - Create xarray Dataset
             ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
-
-            # -----------------------------------------------------------------.
-            #### - Write to Zarr as intermediate storage 
-            if write_zarr:
-                fpath = get_L1_zarr_fpath(processed_dir, station_id)
-                write_L1_to_zarr(ds=ds, fpath=fpath, sensor_name=sensor_name)
-                ds = xr.open_zarr(fpath)
 
                 # -----------------------------------------------------------------.
             #### - Write L1 dataset to netCDF4

@@ -37,10 +37,10 @@ def available_sensor_name():
 
 def check_sensor_name(sensor_name):
     from disdrodb.standards import get_available_sensor_name
+    available_sensor_name =  get_available_sensor_name()
     if not isinstance(sensor_name, str):
         logger.exception("'sensor_name' must be a string'")
         raise TypeError("'sensor_name' must be a string'")
-        available_sensor_name =  get_available_sensor_name()
     if sensor_name not in available_sensor_name:
         msg = f"Valid sensor_name are {available_sensor_name}"
         logger.exception(msg)
