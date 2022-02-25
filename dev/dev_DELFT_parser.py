@@ -13,6 +13,34 @@ df = pd.read_parquet(fpath)
 
 df.columns
 
+
+
+df.iloc[0,:]["n_particles_all"]
+df.iloc[0,:]['FieldN']
+df.iloc[0,:]['FieldV']
+df.iloc[0,:]['RawData']
+
+
+attrs = {}
+sensor_name = "OTT_Parsivel2"
+attrs['sensor_name'] = "OTT_Parsivel2"
+lazy=True
+lazy=False
+verbose=False
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 todrop = ['firmware_IOP',
           'firmware_DSP',
           'date_time_measurement_start',
