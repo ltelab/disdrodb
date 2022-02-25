@@ -188,9 +188,7 @@ def main(raw_dir,
 
     columns_names_temporary = ['time', 'epoch_time', 'TO_BE_PARSED']
 
-    column_names = ['time',
-                    'epoch_time',
-                    'rain_rate_32bit',
+    column_names = ['rain_rate_32bit',
                     'rain_accumulated_32bit',
                     'weather_code_SYNOP_4680',
                     'weather_code_SYNOP_4677',
@@ -225,7 +223,7 @@ def main(raw_dir,
                     'rain_kinetic_energy',
                     'snowfall_intensity',
                     'n_particles_all',
-                    'list_particles',
+                    # 'list_particles',
                     'FieldN',
                     'FieldV',
                     'RawData',
@@ -286,18 +284,16 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # Split the last column (contain the 37 remain fields)
+        # Retrieve time in datetime format
+        df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
+        df_time = df[['time']]
+        
+        # Split the last column (into the 38 variable fields)
         df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n=99)
 
-        # Cast to datetime
-        df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
-
-        # Drop TO_BE_PARSED
-        df = df.drop(['TO_BE_PARSED'], axis=1)
-
-        # Add names to columns
-        df_to_parse_dict_names = dict(zip(column_names[2:-3], list(df_to_parse.columns)[0:35]))
-        for i in range(len(list(df_to_parse.columns)[35:])):
+        # Add names to columns (exlcude last 3: FieldN, FieldV, RawData)
+        df_to_parse_dict_names = dict(zip(column_names, list(df_to_parse.columns)[:len(column_names)-3]))
+        for i in range(len(column_names)-3, len(list(df_to_parse.columns))):
             df_to_parse_dict_names[i] = i
 
         df_to_parse.columns = df_to_parse_dict_names
@@ -308,28 +304,34 @@ def main(raw_dir,
         # Remove spaces on weather_code_METAR_4678 and weather_code_NWS
         df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
         df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
-
+        
         # Add the comma on the FieldN, FieldV and RawData
+        if lazy: 
+            apply_kwargs= {"meta": (None, 'object')}
+        else: 
+            apply_kwargs= {} 
         df_FieldN = df_to_parse.iloc[:, 35:67].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
-                                                     meta=(None, 'object')).to_frame('FieldN')
-        df_FieldV = df_to_parse.iloc[:, 67:-1].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
-                                                     meta=(None, 'object')).to_frame('FieldV')
-        df_RawData = df_to_parse.iloc[:, -1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip(
-            "'").to_frame('RawData')
+                                                     **apply_kwargs).to_frame('FieldN')
+        df_FieldV = df_to_parse.iloc[:, 67:98].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
+                                                     **apply_kwargs).to_frame('FieldV')
+        
+        df_RawData = df_to_parse.iloc[:, 99].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
 
-        # Concat all togheter
-        df = dd.concat([df, df_to_parse.iloc[:, :35], df_FieldN, df_FieldV, df_RawData], axis=1,
-                       ignore_unknown_divisions=True)
-
+        # Concat all dataframe togheter
+        if lazy: 
+            concat_kwargs = {"ignore_unknown_divisions": True}
+        else: 
+            concat_kwargs = {}
+        df = dd.concat([df_time, df_to_parse.iloc[:, :35], df_FieldN, df_FieldV, df_RawData], axis=1, **concat_kwargs)
+        
+        # Drop variables not required in L0 Apache Parquet 
         todrop = ['firmware_IOP',
                   'firmware_DSP',
                   'date_time_measurement_start',
                   'sensor_time',
                   'sensor_date',
                   'station_name',
-                  'station_number',
-                  'list_particles',
-                  'epoch_time']
+                  'station_number']
 
         df = df.drop(todrop, axis=1)
 
