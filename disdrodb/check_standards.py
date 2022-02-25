@@ -30,24 +30,30 @@ logger = logging.getLogger(__name__)
 
 def available_sensor_name():
     from disdrodb.standards import get_available_sensor_name
-
     sensor_list = get_available_sensor_name()
+    raise ValueError("This need to be deprecated in favour of get_available_sensor_name() !") # TODO !!!
     return sensor_list
 
 
 def check_sensor_name(sensor_name):
+    from disdrodb.standards import get_available_sensor_name
     if not isinstance(sensor_name, str):
         logger.exception("'sensor_name' must be a string'")
         raise TypeError("'sensor_name' must be a string'")
-    if sensor_name not in available_sensor_name():
-        msg = f"Valid sensor_name are {available_sensor_name()}"
+        available_sensor_name =  get_available_sensor_name()
+    if sensor_name not in available_sensor_name:
+        msg = f"Valid sensor_name are {available_sensor_name}"
         logger.exception(msg)
         raise ValueError(msg)
     return
 
 
 def check_L0_column_names(x):
-    # Allow TO_BE_SPLITTED, TO_BE_PARSED
+    # TODO: 
+    # check_L0_column_names(column_names, sensor_name) 
+    # --> Move in for loop 
+    # --> Print message with columns to be drop in df_sanitizer 
+    # --> Print message of columns to be derived in df_sanitizer (i.e. time)
     pass
 
 
@@ -96,18 +102,15 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
     list_wrong_columns = []
     for column in df.columns:
         if column in list(dict_field_value_range.keys()):
-            if not df[column].between(*dict_field_value_range[column]).all():
-                list_wrong_columns.append(column)
-                if raise_errors:
-                    raise ValueError(
-                        f"'column' {column} has values outside the expected data range."
-                    )
+            if dict_field_value_range[column] is not None: 
+                if not df[column].between(*dict_field_value_range[column]).all():
+                    list_wrong_columns.append(column)
+                    if raise_errors:
+                        raise ValueError(f"'column' {column} has values outside the expected data range.")
+
     if verbose:
         if len(list_wrong_columns) > 0:
-            print(
-                " - The following columns have values outside the expected data range:",
-                list_wrong_columns,
-            )
+            print(" - This columns have values outside the expected data range:", list_wrong_columns)
     # -------------------------------------
     # Check categorical data values
     dict_field_values = get_field_value_options_dict(sensor_name)
