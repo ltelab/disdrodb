@@ -305,7 +305,7 @@ def main(raw_dir,
             apply_kwargs= {} 
         df_FieldN = df_to_parse.iloc[:, 35:67].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
                                                      **apply_kwargs).to_frame('FieldN')
-        df_FieldV = df_to_parse.iloc[:, 67:98].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
+        df_FieldV = df_to_parse.iloc[:, 67:99].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
                                                      **apply_kwargs).to_frame('FieldV')
         
         df_RawData = df_to_parse.iloc[:, 99].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
