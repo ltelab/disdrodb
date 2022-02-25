@@ -201,7 +201,7 @@ error_code:
   - 0
   - 3
   nan_flags: null
-temperature_PCB:
+sensor_temperature_PCB:
   n_digits: null
   n_characters: null
   n_decimals: null
@@ -210,7 +210,7 @@ temperature_PCB:
   - -99
   - 100
   nan_flags: -99
-temperature_right:
+sensor_temperature_right:
   n_digits: 3
   n_characters: 3
   n_decimals: 0
@@ -219,7 +219,7 @@ temperature_right:
   - -99
   - 100
   nan_flags: -99
-temperature_left:
+sensor_temperature_left:
   n_digits: 3
   n_characters: 3
   n_decimals: 0

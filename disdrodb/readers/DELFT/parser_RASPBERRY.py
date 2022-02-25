@@ -206,11 +206,11 @@ def main(raw_dir,
                     'station_number',
                     'rain_amount_absolute_32bit',
                     'error_code',
-                    'sensor_temperature_PBC',
+                    'sensor_temperature_PCB',
                     'sensor_temperature_right',
                     'sensor_temperature_left',
-                    'rain_rate_16bit',
-                    'rain_rate_12bit',
+                    'rain_rate_16bit_30',
+                    'rain_rate_16bit_1200',
                     'rain_accumulated_16bit',
                     'reflectivity_16bit',
                     'rain_kinetic_energy',
@@ -324,7 +324,9 @@ def main(raw_dir,
                   'sensor_time',
                   'sensor_date',
                   'station_name',
-                  'station_number']
+                  'station_number',
+                  'sensor_serial_number',
+                  ]
 
         df = df.drop(todrop, axis=1)
 
@@ -449,7 +451,7 @@ def main(raw_dir,
                 # -----------------------------------------------------------------.
             #### - Write L1 dataset to netCDF4
             if write_netcdf:
-                fpath = get_L1_netcdf_fpath(processed_dir, station_id)
+                fpath = get_L1_netcdf_fpath(processed_dir, station_id, suffix="")
                 write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
 
             # -----------------------------------------------------------------.

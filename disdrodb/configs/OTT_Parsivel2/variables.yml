@@ -23,9 +23,9 @@
 '23': station_number
 '24': rain_amount_absolute_32bit
 '25': error_code
-'26': temperature_PCB
-'27': temperature_right
-'28': temperature_left
+'26': sensor_temperature_PCB
+'27': sensor_temperature_right
+'28': sensor_temperature_left
 '30': rain_rate_16bit_30
 '31': rain_rate_16bit_1200
 '32': rain_accumulated_16bit

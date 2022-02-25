@@ -33,8 +33,8 @@ l1_processing = True
 force = True
 verbose = True
 debugging_mode = True # da cambiare se vuoi processare piu dei primi 5 files
-lazy = True
-write_zarr = False
+lazy = False
+# write_zarr = False
 write_netcdf = True
 
 #### Process all campaigns
@@ -46,7 +46,6 @@ for campaign_name in DELFT_dict.keys():
         processed_dir=os.path.join(processed_base_dir, campaign_name),
         l0_processing=l0_processing,
         l1_processing=l1_processing,
-        write_zarr=write_zarr,
         write_netcdf=write_netcdf,
         force=force,
         verbose=verbose,
