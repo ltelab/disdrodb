@@ -309,7 +309,7 @@ def main(raw_dir,
                               station_id=station_id)
         # Retrieve sensor name
         sensor_name = attrs['sensor_name']
-        sensor_name = check_sensor_name(sensor_name)
+        check_sensor_name(sensor_name)
         
         #---------------------------------------------------------------------. 
         ####################### 
