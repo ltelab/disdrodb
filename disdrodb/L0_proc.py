@@ -224,7 +224,9 @@ def read_L0_raw_file_list(
         if not callable(df_sanitizer_fun):
             raise ValueError("'df_sanitizer_fun' must be a function.")
         # TODO check df_sanitizer_fun has only lazy and df arguments !
-
+        
+    if isinstance(file_list, str): 
+        file_list = [file_list]
     if len(file_list) == 0:
         raise ValueError("'file_list' must containts at least 1 filepath.")
 
@@ -335,7 +337,12 @@ def read_L0_raw_file_list(
 
     ##----------------------------------------------------------------.
     #### - Concatenate the dataframe
-    df = concatenate_dataframe(list_df, verbose=verbose, lazy=lazy)
+    if len(list_df) == 0: 
+        raise ValueError(f"No dataframe to return. Impossible to parse {file_list}.")
+    if len(list_df) > 1: 
+        df = concatenate_dataframe(list_df, verbose=verbose, lazy=lazy)
+    else: 
+        df = list_df[0]
 
     return df
 

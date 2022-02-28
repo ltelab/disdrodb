@@ -368,10 +368,10 @@ def create_directory_structure(raw_dir, processed_dir):
 #### DISDRODB Readers
 
 
-def check_L0_is_available(processed_dir, station_id):
-    fpath = get_L0_fpath(processed_dir, station_id)
+def check_L0_is_available(processed_dir, station_id, suffix=""):
+    fpath = get_L0_fpath(processed_dir, station_id, suffix=suffix)
     if not os.path.exists(fpath):
-        msg = "Need to run L0 processing first. The Apache Parquet file {fpath} is not available."
+        msg = f"Need to run L0 processing first. The Apache Parquet file {fpath} is not available."
         logger.exception(msg)
         raise ValueError(msg)
     # Log
@@ -379,17 +379,16 @@ def check_L0_is_available(processed_dir, station_id):
     logger.info(msg)
 
 
-def read_L0_data(
-    processed_dir, station_id, lazy=True, verbose=False, debugging_mode=False
-):
+def read_L0_data(processed_dir, station_id, suffix="", 
+                 lazy=True, verbose=False, debugging_mode=False):
     """Read L0 Apache Parquet into dataframe.
 
     If debugging_mode = True, return just a subset of total rows.
     """
     # Check L0 is available
-    check_L0_is_available(processed_dir, station_id)
+    check_L0_is_available(processed_dir, station_id, suffix=suffix)
     # Define fpath
-    fpath = get_L0_fpath(processed_dir, station_id)
+    fpath = get_L0_fpath(processed_dir, station_id, suffix=suffix)
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} started"
     if verbose:
