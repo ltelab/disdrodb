@@ -136,26 +136,26 @@ def main(raw_dir,
     #### - Define raw data headers
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
     column_names = [
         "time",
         "id",
         "datalogger_temperature",
         "datalogger_voltage",
-        "rain_rate_32bit",  # Intensity
-        "rain_accumulated_32bit",
+        "rainfall_rate_32bit",  # Intensity
+        "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
         "weather_code_synop_4677",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
-        "n_particles",
+        "number_particles",
         "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
         "sensor_status",
-        "rain_amount_absolute_32bit",
+        "rainfall_amount_absolute_32bit",
         "debug_data",
         "field_n",
         "field_v",

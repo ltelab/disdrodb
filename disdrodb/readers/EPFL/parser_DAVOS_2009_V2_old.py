@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan 20 09:37:03 2022
+Created on Mon Feb 21 17:31:55 2022
 
 @author: kimbo
 """
@@ -42,7 +42,6 @@ from disdrodb.io import read_L0_data
 
 # L0_processing
 from disdrodb.check_standards import check_L0_column_names
-from disdrodb.check_standards import check_L0_standards
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -139,30 +138,30 @@ def main(raw_dir,
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
-    column_names = [
-        "time",
-        "id",
-        "datalogger_temperature",
-        "datalogger_voltage",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_temperature",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "sensor_status",
-        "rainfall_amount_absolute_32bit",
-        "debug_data",
-        "field_n",
-        "field_v",
-        "raw_data",
-        "datalogger_error",
-    ]
+    column_names = ['id',
+                    'latitude',
+                    'longitude',
+                    'time',
+                    'temp', # All nan values
+                    'TO_BE_SPLITTED', # Dataloger status and rain_rate_32bit
+                    'rain_accumulated_32bit',
+                    'weather_code_SYNOP_4680',
+                    'weather_code_SYNOP_4677',
+                    'reflectivity_32bit',
+                    'mor_visibility',
+                    'sample_interval',
+                    'laser_amplitude',
+                    'n_particles',
+                    'sensor_heating_current',
+                    'sensor_battery_voltage',
+                    'sensor_status',
+                    'rain_amount_absolute_32bit',
+                    'temp1', # Datalogger error
+                    'FieldN',
+                    'FieldV',
+                    'RawData',
+                    'temp2', # All 0
+                    ]
 
     # - Check name validity
     check_L0_column_names(column_names)
@@ -171,41 +170,37 @@ def main(raw_dir,
     #### - Define reader options
 
     reader_kwargs = {}
+    # - Define delimiter
+    reader_kwargs['delimiter'] = ';'
 
     # - Avoid first column to become df index !!!
-    reader_kwargs["index_col"] = False
+    reader_kwargs["index_col"] = False  
 
-    # - Define behaviour when encountering bad lines
-    reader_kwargs["on_bad_lines"] = "skip"
+    # - Define behaviour when encountering bad lines 
+    reader_kwargs["on_bad_lines"] = 'skip'
 
-    # - Define parser engine
+    # - Define parser engine 
     #   - C engine is faster
     #   - Python engine is more feature-complete
-    reader_kwargs["engine"] = "python"
+    reader_kwargs["engine"] = 'python'
 
     # - Define on-the-fly decompression of on-disk data
-    #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
+    #   - Available: gzip, bz2, zip 
+    reader_kwargs['compression'] = 'gzip'  
 
-    # - Strings to recognize as NA/NaN and replace with standard NA flags
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
+    # - Strings to recognize as NA/NaN and replace with standard NA flags 
+    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
+    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA']
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
+    reader_kwargs["blocksize"] = None # "50MB" 
 
     # Cast all to string
     reader_kwargs["dtype"] = str
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # Use for Nan value
-    reader_kwargs["assume_missing"] = True
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -220,43 +215,27 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # Drop bad lines on based on debug_data
-        df = df[~df.debug_data.str.startswith('Frame', na=False)]
+        # Split TO_BE_SPLITTED
+        df[['datalogger_error','rain_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
 
-        # Drop debug_data, datalogger_error and id
-        df = df.drop(columns=["debug_data", "datalogger_error"])
+        # Drop id, latitude, longitude, temps and datalogger_error
+        df = df.drop(columns=["id", "latitude", "longitude","temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
 
-        # If value in col_to_drop_if_na colum is nan, drop the row
-        col_to_drop_if_na = [
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "weather_code_synop_4680",
-            "weather_code_synop_4677",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_temperature",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "sensor_status",
-            "rainfall_amount_absolute_32bit",
-        ]
-        df = df.dropna(subset=col_to_drop_if_na, how="all")
+        # If RawData is nan, drop the row
+        col_to_drop_if_na = ['FieldN','FieldV','RawData']
+        df = df.dropna(subset = col_to_drop_if_na)
 
-        # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-        df = df.loc[df["field_n"].astype(str).str.len() == 224]
-        df = df.loc[df["field_v"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_data"].astype(str).str.len() == 4096]
+        # Drop rows with less than 4096 char on RawData
+        df = df.loc[df['RawData'].astype(str).str.len() == 4096]
 
-        # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.dat*"
+    raw_data_glob_pattern = "*.dat.gz*"
 
     ####----------------------------------------------------------------------.
     ####################
@@ -291,8 +270,7 @@ def main(raw_dir,
         # ---------------------------------------------------------------------.
         # Retrieve metadata
         attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
-        
-        # Retrieve sensor name
+		# Retrieve sensor name
         sensor_name = attrs['sensor_name']
         check_sensor_name(sensor_name)
 
@@ -334,7 +312,7 @@ def main(raw_dir,
             write_df_to_parquet(df=df, fpath=fpath, force=force, verbose=verbose)
             ##------------------------------------------------------.
             #### - Check L0 file respects the DISDRODB standards
-            check_L0_standards(fpath=fpath, sensor_name=sensor_name, verbose=verbose)
+            # check_L0_standards(fpath=fpath, sensor_name=sensor_name, verbose=verbose)
             ##------------------------------------------------------.
             # End L0 processing
             t_f = time.time() - t_i
@@ -375,7 +353,7 @@ def main(raw_dir,
             ds = create_L1_dataset_from_L0(
                 df=df, attrs=attrs, lazy=lazy, verbose=verbose
             )
-
+            
             # -----------------------------------------------------------------.
             #### - Write L1 dataset to netCDF4
             if write_netcdf:

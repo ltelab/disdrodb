@@ -327,3 +327,63 @@ raw_data:
   - 5000
   - 32
   - 32
+  
+number_particles:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+
+rainfall_rate_32bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_accumulated_32bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  
+rainfall_amount_absolute_32bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+
+rainfall_rate_16bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_rate_12bit:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_accumulated_16bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000

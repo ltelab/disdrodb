@@ -91,7 +91,7 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
             try:
                 df = dd.read_csv(filepath, names=column_names, **reader_kwargs)
             except dd.errors.EmptyDataError:
-                msg = f"Is empty, skip file: {filepath}"
+                msg = f" - Is empty, skip file: {filepath}"
                 logger.exception(msg)
                 print(msg)
                 pass
@@ -101,7 +101,7 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
             try:
                 df = pd.read_csv(filepath, names=column_names, **reader_kwargs)
             except pd.errors.EmptyDataError:
-                msg = f"Is empty, skip file: {filepath}"
+                msg = f" - Is empty, skip file: {filepath}"
                 logger.exception(msg)
                 print(msg)
                 pass
@@ -155,17 +155,17 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs, lazy=True):
                 df = df.append(df_temp)
 
         except pd.errors.EmptyDataError:
-            msg = f"Is empty, skip file: {file}"
+            msg = f" - Is empty, skip file: {file}"
             logger.exception(msg)
             raise pd.errors.EmptyDataError(msg)
             pass
         except pd.errors.ParserError:
-            msg = f"Cannot parse, skip file: {file}"
+            msg = f" - Cannot parse, skip file: {file}"
             logger.exception(msg)
             raise pd.errors.ParserError(msg)
             pass
         except UnicodeDecodeError:
-            msg = f"Unicode error, skip file: {file}"
+            msg = f" - Unicode error, skip file: {file}"
             logger.exception(msg)
             raise UnicodeDecodeError(msg)
             pass
@@ -196,7 +196,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
         df = df.sort_values(by="time")
 
     except (AttributeError, TypeError) as e:
-        msg = f"Can not create concat data files. \n Error: {e}"
+        msg = f" - Can not create concat data files. \n Error: {e}"
         logger.exception(msg)
         raise ValueError(msg)
     # Log
@@ -260,7 +260,7 @@ def read_L0_raw_file_list(
 
             # Check if file empty
             if len(df.index) == 0:
-                msg = f"{filepath} is empty and has been skipped."
+                msg = f" - {filepath} is empty and has been skipped."
                 logger.warning(msg)
                 if verbose:
                     print(msg)
@@ -270,7 +270,7 @@ def read_L0_raw_file_list(
             # Check column number, ignore if columns_names empty
             if len(column_names) != 0:
                 if len(df.columns) != len(column_names):
-                    msg = f"{filepath} has wrong columns number, and has been skipped."
+                    msg = f" - {filepath} has wrong columns number, and has been skipped."
                     logger.warning(msg)
                     if verbose:
                         print(msg)
@@ -321,7 +321,7 @@ def read_L0_raw_file_list(
         # If processing of raw file fails
         except (Exception, ValueError) as e:
             # Update the logger
-            msg = f"{filepath} has been skipped. \n The error is: {e}."
+            msg = f" - {filepath} has been skipped. \n -- The error is: {e}."
             logger.warning(msg)
             if verbose:
                 print(msg)
@@ -378,7 +378,7 @@ def _write_to_parquet(df, fpath, force=False):
                 f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
             )
         except (Exception) as e:
-            msg = f"The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
+            msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
             logger.exception(msg)
             raise ValueError(msg)
 
@@ -399,7 +399,7 @@ def _write_to_parquet(df, fpath, force=False):
                 f"The Dask Dataframe has been written as an Apache Parquet file to {fpath}."
             )
         except (Exception) as e:
-            msg = f"The Dask DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
+            msg = f" - The Dask DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
             logger.exception(msg)
             raise ValueError(msg)
     else:

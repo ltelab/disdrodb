@@ -136,34 +136,34 @@ def main(raw_dir,
     #### - Define raw data headers
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
     columns_names_temporary = ['TO_BE_SPLITTED',
-                                'FieldV',
-                                'RawData',
+                                'field_v',
+                                'raw_data',
                                 'All_0'
                                 ]
 
     column_names = ['time',
                     'temp', # All nan values
                     'temp1', # Dataloger status
-                    'rain_rate_32bit',
-                    'rain_accumulated_32bit',
+                    'rainfall_rate_32bit',
+                    'rainfall_accumulated_32bit',
                     'weather_code_SYNOP_4680',
                     'weather_code_SYNOP_4677',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'sample_interval',
                     'laser_amplitude',
-                    'n_particles',
+                    'number_particles',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
-                    'rain_amount_absolute_32bit',
+                    'rainfall_amount_absolute_32bit',
                     'temp2', # Datalogger error
-                    'FieldN',
-                    'FieldV',
-                    'RawData'
+                    'field_n',
+                    'field_v',
+                    'raw_data'
                     ]
 
     # - Check name validity
@@ -246,12 +246,12 @@ def main(raw_dir,
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
-        # If RawData is nan, drop the row
-        col_to_drop_if_na = ['FieldN','FieldV','RawData']
+        # If raw_data is nan, drop the row
+        col_to_drop_if_na = ['field_n','field_v','raw_data']
         df = df.dropna(subset = col_to_drop_if_na)
 
-        # Drop rows with less than 4096 char on RawData
-        df = df.loc[df['RawData'].astype(str).str.len() == 4095]
+        # Drop rows with less than 4096 char on raw_data
+        df = df.loc[df['raw_data'].astype(str).str.len() == 4095]
 
         return df
 
@@ -413,7 +413,7 @@ def main(raw_dir,
     logger.info(msg)
     logger.info("---")
 
-    msg = "### Script finish ###"
+    msg = "\n   ### Script finish ###\n "
     print(msg)
     logger.info(msg)
 
