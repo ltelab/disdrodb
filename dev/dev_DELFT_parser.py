@@ -66,7 +66,7 @@ filepath = fpath
 df = pd.read_csv(fpath)
 
 df.columns
-
+from disdrodb.L0_proc import read_raw_data
 lazy=True
 df = read_raw_data(
     filepath=filepath,
@@ -81,3 +81,12 @@ if df_sanitizer_fun is not None:
 df.compute().iloc[0,:]
 df.iloc[0,:]
 column_names=columns_names_temporary
+
+df1 = df.compute()
+import numpy as np
+
+df1['FieldV'].astype(str).str.split(",")
+df_series = df1["FieldV"].astype(str).str.split(",")
+arr_lengths = df_series.apply(len)
+idx, count = np.unique(arr_lengths, return_counts=True)
+n_max_vals = idx[np.argmax(count)]
