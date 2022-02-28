@@ -54,6 +54,10 @@ from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
 from disdrodb.logger import create_logger
 
+# Metadata 
+from disdrodb.metadata import read_metadata
+from disdrodb.check_standards import check_sensor_name
+
 # DEV TOOOLS 
 from disdrodb.dev_tools import print_df_first_n_rows 
 from disdrodb.dev_tools import print_df_random_n_rows
@@ -128,10 +132,12 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat.gz*
 # file_list = ['/SharedVM/Campagne/ltnas3/Raw/PAYERNE_2014/data/10/10_ascii_20140324.dat']
 
 
+# Retrieve metadata
+attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
 
-filepath = file_list[2]
-
-
+# Retrieve sensor name
+sensor_name = attrs['sensor_name']
+check_sensor_name(sensor_name)
 
 
 ####--------------------------------------------------------------------------. 
@@ -411,7 +417,7 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 #### 9.1 Define sanitizer function [TO CUSTOMIZE]
 # --> df_sanitizer_fun = None  if not necessary ...
 
-def df_sanitizer_fun(df, lazy=False):
+def df_sanitizer_fun(df, lazy=lazy):
     # # Import dask or pandas 
     if lazy: 
         import dask.dataframe as dd
@@ -456,15 +462,16 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = False # True 
-subset_file_list = file_list[:]
+lazy = True # True 
+subset_file_list = file_list[:10]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=columns_names_temporary, 
                            reader_kwargs=reader_kwargs,
-                           df_sanitizer_fun = df_sanitizer_fun, 
-                           lazy=lazy,
-                           verbose=verbose)
+                           df_sanitizer_fun = df_sanitizer_fun,
+                           verbose=verbose,
+                           sensor_name = sensor_name,
+                           lazy=lazy)
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods

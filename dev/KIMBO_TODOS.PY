@@ -13,11 +13,8 @@ Created on Fri Feb 18 10:45:24 2022
 # - date_time_measuring_start? really?
 # - snowfall intensity? exists in Parsivel1 only ...
 
-# COMMOM_2011:  df = df[df.Debug_data.str.contains("Frame") == False]
-# --> Never do == True/False ... use np.invert to change from True to False (and viceversa)
-# --> You can index with array of booleans
-
 ### Rename /ltenas3/0_Data/ParsivelDB to DISDRODB
+#   I don't have the privilege to do that :(
 
 ### Check/adjust the script to run all EPFL Parsers
 
