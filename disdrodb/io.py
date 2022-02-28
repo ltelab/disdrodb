@@ -371,7 +371,7 @@ def create_directory_structure(raw_dir, processed_dir):
 def check_L0_is_available(processed_dir, station_id):
     fpath = get_L0_fpath(processed_dir, station_id)
     if not os.path.exists(fpath):
-        msg = "Need to run L0 processing first. The Apache Parquet file {fpath} is not available."
+        msg = f"Need to run L0 processing first. The Apache Parquet file {fpath} is not available."
         logger.exception(msg)
         raise ValueError(msg)
     # Log
