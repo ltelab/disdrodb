@@ -183,7 +183,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
     else:
         import pandas as dd
     # Log
-    msg = "Concatentation of dataframes started."
+    msg = " - Concatentation of dataframes started."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -200,7 +200,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
         logger.exception(msg)
         raise ValueError(msg)
     # Log
-    msg = "Concatentation of dataframes has finished."
+    msg = " - Concatentation of dataframes has finished."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -326,7 +326,7 @@ def read_L0_raw_file_list(
             list_skipped_files_msg.append(msg)
 
     # Update logger
-    msg = f"{len(list_skipped_files_msg)} of {n_files} have been skipped."
+    msg = f" - {len(list_skipped_files_msg)} of {n_files} have been skipped."
     if verbose:
         print(msg)
     logger.info("---")

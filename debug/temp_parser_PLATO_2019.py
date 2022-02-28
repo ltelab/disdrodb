@@ -299,8 +299,8 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0:5]  # Select also other files here  1,2, ... 
-filepath = all_stations_files
+filepath = file_list[0]  # Select also other files here  1,2, ... 
+# filepath = all_stations_files
 lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
@@ -336,7 +336,7 @@ if len(df.columns) != len(column_names):
 # del df_tmp 
 
 
-  # - Merge date and time column and drop TO_BE_MERGE and TO_BE_MERGE2
+  # - Merge date and time column and drop TO_BE_MERGE and TO_BE_MERGE2 and 
 df['time'] = pd.to_datetime(df['TO_BE_MERGE'] + df['TO_BE_MERGE2'], format='%Y%m%d%H:%M:%S')
 df = df.drop(columns = ['TO_BE_MERGE', 'TO_BE_MERGE2'])
 df.insert(0, 'time', df.pop("time"))

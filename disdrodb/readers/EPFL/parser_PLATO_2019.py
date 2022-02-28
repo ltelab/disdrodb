@@ -220,11 +220,11 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # - Merge date and time column and drop TO_BE_MERGE, TO_BE_MERGE2 and date_time_measuring_start (not need it)
+        # - Merge date and time column and drop TO_BE_MERGE, TO_BE_MERGE2
         df["time"] = dd.to_datetime(
             df["TO_BE_MERGE"] + df["TO_BE_MERGE2"], format="%Y%m%d%H:%M:%S"
         )
-        df = df.drop(columns = ['TO_BE_MERGE', 'TO_BE_MERGE2', 'date_time_measuring_start'])
+        df = df.drop(columns = ['TO_BE_MERGE', 'TO_BE_MERGE2'])
 
         return df
 

@@ -145,8 +145,8 @@ def main(raw_dir,
         "datalogger_voltage",
         "rain_rate_32bit",  # Intensity
         "rain_accumulated_32bit",
-        "weather_code_SYNOP_4680",
-        "weather_code_SYNOP_4677",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
@@ -156,10 +156,10 @@ def main(raw_dir,
         "sensor_battery_voltage",
         "sensor_status",
         "rain_amount_absolute_32bit",
-        "Debug_data",
-        "FieldN",
-        "FieldV",
-        "RawData",
+        "debug_data",
+        "field_n",
+        "field_v",
+        "raw_data",
         "All_0",
     ]
 
@@ -214,15 +214,15 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # Drop Debug_data
-        df = df.drop(columns=["Debug_data", "All_0"])
+        # Drop debug_data
+        df = df.drop(columns=["debug_data", "All_0"])
 
-        # If RawData is nan, drop the row
-        col_to_drop_if_na = ["FieldN", "FieldV", "RawData"]
+        # If raw_data is nan, drop the row
+        col_to_drop_if_na = ["field_n", "field_v", "raw_data"]
         df = df.dropna(subset=col_to_drop_if_na)
 
-        # Drop rows with less than 4096 char on RawData
-        df = df.loc[df["RawData"].astype(str).str.len() == 4096]
+        # Drop rows with less than 4096 char on raw_data
+        df = df.loc[df["raw_data"].astype(str).str.len() == 4096]
 
         # Remove " at the beginning of time
         df["time"] = df["time"].str.lstrip('"')
@@ -388,7 +388,7 @@ def main(raw_dir,
     logger.info(msg)
     logger.info("---")
 
-    msg = "### Script finish ###"
+    msg = "\n   ### Script finish ###"
     print(msg)
     logger.info(msg)
 

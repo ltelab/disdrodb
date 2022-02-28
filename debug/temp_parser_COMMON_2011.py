@@ -54,6 +54,10 @@ from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
 from disdrodb.logger import create_logger
 
+# Metadata 
+from disdrodb.metadata import read_metadata
+from disdrodb.check_standards import check_sensor_name
+
 # DEV TOOOLS 
 from disdrodb.dev_tools import print_df_first_n_rows 
 from disdrodb.dev_tools import print_df_random_n_rows
@@ -127,6 +131,13 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"),
 #                           verbose=verbose, 
 #                           debugging_mode=debugging_mode)
 
+# Retrieve metadata
+attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+
+# Retrieve sensor name
+sensor_name = attrs['sensor_name']
+check_sensor_name(sensor_name)
+
 ####--------------------------------------------------------------------------. 
 #########################################################################
 #### 5. Define reader options [TO CUSTOMIZE AND THEN MOVE TO PARSER] ####
@@ -167,59 +178,6 @@ reader_kwargs["dtype"] = str
 # Skip first row as columns names
 reader_kwargs['header'] = None
 
-# Different enconding for this campaign
-# reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
-
-# Use for Nan value
-# reader_kwargs['assume_missing'] = True
-
-####--------------------------------------------------------------------------. 
-#################################################### 
-#### 6. Open a single file and explore the data ####
-#################################################### 
-# - Do not assign column names yet to the columns 
-# - Do not assign a dtype yet to the columns 
-# - Possibily look at multiple files ;)
-# filepath = file_list[0]
-filepath = file_list[0]
-str_reader_kwargs = reader_kwargs.copy() 
-df = read_raw_data(filepath, 
-                   column_names=None,  
-                   reader_kwargs=str_reader_kwargs, 
-                   lazy=False)
-
-# Print first rows
-print_df_first_n_rows(df, n = 1, column_names=False)
-print_df_first_n_rows(df, n = 5, column_names=False)
-print_df_random_n_rows(df, n= 5, column_names=False)  # this likely the more useful 
-
-# Retrieve number of columns 
-print(len(df.columns))
- 
-# Look at unique values
-# print_df_columns_unique_values(df, column_indices=None, column_names=False) # all 
- 
-# print_df_columns_unique_values(df, column_indices=0, column_names=False) # single column 
-
-# print_df_columns_unique_values(df, column_indices=slice(0,15), column_names=False) # a slice of columns 
-
-# get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=False) # get dictionary
-
-# Retrieve number of columns 
-print(len(df.columns))
- 
-# Copy the following list and start to infer column_names 
-['Unknown' + str(i+1) for i in range(len(df.columns))]
-
-# Print valid column names 
-# - If other names are required, add the key to get_L0_dtype_standards in data_encodings.py 
-print_valid_L0_column_names()
-
-# Instrument manufacturer defaults 
-from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
-get_OTT_Parsivel_dict()
-get_OTT_Parsivel2_dict()
-
 
 ####---------------------------------------------------------------------------.
 ######################################################################
@@ -233,8 +191,8 @@ column_names = ['time',
                 'datalogger_voltage',
                 'rain_rate_32bit',
                 'rain_accumulated_32bit',
-                'weather_code_SYNOP_4680',
-                'weather_code_SYNOP_4677',
+                'weather_code_synop_4680',
+                'weather_code_synop_4677',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'laser_amplitude',
@@ -252,55 +210,14 @@ column_names = ['time',
                 ]
 
 
-# - Check name validity 
-check_L0_column_names(column_names)
-
-# - Read data
-# Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
-filepath = file_list[0]
-df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=False)
-    
-
-
-# - Look at the columns and data 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5)
-
-# - Check it loads also lazily in dask correctly
-df1 = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=True)
-
-df1 = df1.compute() 
-
-# - Look at the columns and data 
-print_df_column_names(df1)
-print_df_random_n_rows(df1, n= 5) 
-
-# - Check are equals 
-assert df.equals(df1)
-
-# - Look at unique values
-print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
- 
-print_df_columns_unique_values(df, column_indices=0, column_names=True) # single column 
-
-print_df_columns_unique_values(df, column_indices=slice(0,10), column_names=True) # a slice of columns 
-
-get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=True) # get dictionary
-
 ####---------------------------------------------------------------------------.
 #########################################################
 #### 8. Implement ad-hoc processing of the dataframe ####
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0:5]  # Select also other files here  1,2, ... 
-filepath = all_stations_files
+filepath = file_list[0]  # Select also other files here  1,2, ... 
+# filepath = all_stations_files
 lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
@@ -334,15 +251,16 @@ if len(df.columns) != len(column_names):
 # del df_tmp 
 
 # Drop bad lines on based on Debug_data
-df = df[df.Debug_data.str.contains("Frame") == False]
+# df = df[df.Debug_data.str.contains("Frame") == False]
+df = df[~df.Debug_data.str.startswith('Frame', na=False)]
 
 
 # Drop Debug_data
 # df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
 # If value in col_to_drop_if_na colum is nan, drop the row
-col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
-                     'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
+col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_synop_4680',
+                     'weather_code_synop_4677', 'reflectivity_32bit', 'mor_visibility',
                      'laser_amplitude', 'n_particles', 'sensor_temperature',
                      'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
                      'rain_amount_absolute_32bit']
@@ -370,20 +288,14 @@ df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
 ##----------------------------------------------------.
 # Cast dataframe to dtypes
 # - Determine dtype based on standards 
-dtype_dict = get_L0_dtype_standards()
-for column in df.columns:
-    try:
-        df[column] = df[column].astype(dtype_dict[column])
-    except KeyError:
-        # If column dtype is not into get_L0_dtype_standards, assign object
-        df[column] = df[column].astype('object')
-        
-#---------------------------------------------------------------------------.
-#### 8.4 Check the dataframe looks as desired 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5) 
-print_df_columns_unique_values(df, column_indices=2, column_names=True) 
-print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True)   
+# dtype_dict = get_L0_dtype_standards()
+# for column in df.columns:
+#     try:
+#         df[column] = df[column].astype(dtype_dict[column])
+#     except KeyError:
+#         # If column dtype is not into get_L0_dtype_standards, assign object
+#         df[column] = df[column].astype('object')
+
 
 ####------------------------------------------------------------------------------.
 ################################################
@@ -392,7 +304,7 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 #### 9.1 Define sanitizer function [TO CUSTOMIZE]
 # --> df_sanitizer_fun = None  if not necessary ...
 
-def df_sanitizer_fun(df, lazy=False):
+def df_sanitizer_fun(df, lazy=lazy):
     # # Import dask or pandas 
     # if lazy: 
     #     import dask.dataframe as dd
@@ -400,14 +312,14 @@ def df_sanitizer_fun(df, lazy=False):
     #     import pandas as dd
     
     # Drop bad lines on based on Debug_data
-    df = df[df.Debug_data.str.contains("Frame") == False]
+    df = df[~df.Debug_data.str.startswith('Frame', na=False)]
 
     # Drop Debug_data
     df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
     # If value in col_to_drop_if_na colum is nan, drop the row
-    col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_SYNOP_4680',
-                         'weather_code_SYNOP_4677', 'reflectivity_32bit', 'mor_visibility',
+    col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_synop_4680',
+                         'weather_code_synop_4677', 'reflectivity_32bit', 'mor_visibility',
                          'laser_amplitude', 'n_particles', 'sensor_temperature',
                          'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
                          'rain_amount_absolute_32bit']
@@ -428,12 +340,14 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
-subset_file_list = file_list[:]
-subset_file_list = all_stations_files
+subset_file_list = file_list[0:5]
+# subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,
-                           df_sanitizer_fun = df_sanitizer_fun, 
+                           df_sanitizer_fun = df_sanitizer_fun,
+                           verbose=verbose,
+                           sensor_name = sensor_name,
                            lazy=lazy)
 
 ##------------------------------------------------------. 

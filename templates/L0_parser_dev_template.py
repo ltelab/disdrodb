@@ -46,6 +46,10 @@ from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
 from disdrodb.logger import create_logger
 
+# Metadata 
+from disdrodb.metadata import read_metadata
+from disdrodb.check_standards import check_sensor_name
+
 # DEV TOOOLS 
 from disdrodb.dev_tools import print_df_first_n_rows 
 from disdrodb.dev_tools import print_df_random_n_rows
@@ -111,6 +115,19 @@ file_list = get_file_list(raw_dir=raw_dir,
                           glob_pattern=glob_pattern, 
                           verbose=verbose, 
                           debugging_mode=debugging_mode)
+
+
+####--------------------------------------------------------------------------.     
+##########################################################################   
+#### 4.1 Retrive metadata from yml files ####
+##########################################################################
+# Retrieve metadata
+attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+
+# Retrieve sensor name
+sensor_name = attrs['sensor_name']
+check_sensor_name(sensor_name)
+
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
