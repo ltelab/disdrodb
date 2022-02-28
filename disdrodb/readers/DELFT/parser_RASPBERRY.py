@@ -398,81 +398,91 @@ def main(raw_dir,
                                       debugging_mode=debugging_mode)
 
             for filepath in file_list:
-                suf = Path(filepath).stem
-                ##------------------------------------------------------.
-                #### - Read all raw data files into a dataframe
-                df = read_L0_raw_file(filepath=filepath,
-                                      column_names=columns_names_temporary,
-                                      reader_kwargs=reader_kwargs,
-                                      df_sanitizer_fun=df_sanitizer_fun,
-                                      lazy=lazy,
-                                      sensor_name=sensor_name,
-                                      verbose=verbose)
 
-                ##------------------------------------------------------.
-                #### - Write to Parquet
-                fpath = get_L0_fpath(processed_dir, station_id, suffix=suf)
-                write_df_to_parquet(df=df,
-                                    fpath=fpath,
-                                    force=force,
-                                    verbose=verbose)
-                ##------------------------------------------------------.
-                #### - Check L0 file respects the DISDRODB standards
-                check_L0_standards(fpath=fpath,
-                                   sensor_name=sensor_name,
-                                   verbose=verbose)
-                ##------------------------------------------------------.
-                # End L0 processing
-                t_f = time.time() - t_i
-                msg = " - L0 processing of station_id {} ended in {:.2f}s".format(station_id, t_f)
-                if verbose:
-                    print(msg)
-                logger.info(msg)
+                try:
+                    suf = Path(filepath).stem
+                    ##------------------------------------------------------.
+                    #### - Read all raw data files into a dataframe
+                    df = read_L0_raw_file_list(file_list=[filepath],
+                                               column_names=columns_names_temporary,
+                                               reader_kwargs=reader_kwargs,
+                                               df_sanitizer_fun=df_sanitizer_fun,
+                                               lazy=lazy,
+                                               sensor_name=sensor_name,
+                                               verbose=verbose)
 
-                ##------------------------------------------------------.
-                # Delete temp variables
-                del df
-
-            # ---------------------------------------------------------------------.
-            #######################
-            #### L1 processing ####
-            #######################
-                if l1_processing:
-                    # Start L1 processing
-                    t_i = time.time()
-                    msg = " - L1 processing of station_id {} has started.".format(station_id)
+                    ##------------------------------------------------------.
+                    #### - Write to Parquet
+                    fpath = get_L0_fpath(processed_dir, station_id, suffix=suf)
+                    write_df_to_parquet(df=df,
+                                        fpath=fpath,
+                                        force=force,
+                                        verbose=verbose)
+                    ##------------------------------------------------------.
+                    #### - Check L0 file respects the DISDRODB standards
+                    check_L0_standards(fpath=fpath,
+                                       sensor_name=sensor_name,
+                                       verbose=verbose)
+                    ##------------------------------------------------------.
+                    # End L0 processing
+                    t_f = time.time() - t_i
+                    msg = " - L0 processing of station_id {} ended in {:.2f}s".format(station_id, t_f)
                     if verbose:
                         print(msg)
                     logger.info(msg)
-                    ##----------------------------------------------------------------.
-                    #### - Read L0
-                    df = read_L0_data(processed_dir, station_id, lazy=lazy, verbose=verbose, debugging_mode=debugging_mode)
 
-                    # -----------------------------------------------------------------.
-                    #### - Create xarray Dataset
-                    ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
+                    ##------------------------------------------------------.
+                    # Delete temp variables
+                    del df
+
+                # ---------------------------------------------------------------------.
+                #######################
+                #### L1 processing ####
+                #######################
+                    if l1_processing:
+                        # Start L1 processing
+                        t_i = time.time()
+                        msg = " - L1 processing of station_id {} has started.".format(station_id)
+                        if verbose:
+                            print(msg)
+                        logger.info(msg)
+                        ##----------------------------------------------------------------.
+                        #### - Read L0
+                        df = read_L0_data(processed_dir,
+                                          station_id,
+                                          suffix=suf,
+                                          lazy=lazy,
+                                          verbose=verbose,
+                                          debugging_mode=debugging_mode)
 
                         # -----------------------------------------------------------------.
-                    #### - Write L1 dataset to netCDF4
-                    if write_netcdf:
-                        fpath = get_L1_netcdf_fpath(processed_dir, station_id, suffix=suf)
-                        write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
+                        #### - Create xarray Dataset
+                        ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
 
-                    # -----------------------------------------------------------------.
-                    #### - Compute L1 summary statics
-                    create_L1_summary_statistics(ds,
-                                                 processed_dir=processed_dir,
-                                                 station_id=station_id,
-                                                 sensor_name=sensor_name)
+                            # -----------------------------------------------------------------.
+                        #### - Write L1 dataset to netCDF4
+                        if write_netcdf:
+                            fpath = get_L1_netcdf_fpath(processed_dir, station_id, suffix=suf)
+                            write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
 
-                    # -----------------------------------------------------------------.
-                    # End L1 processing
-                    t_f = time.time() - t_i
-                    msg = " - L1 processing of station_id {} ended in {:.2f}s".format(station_id, t_f)
-                    if verbose:
-                        print(msg)
-                        print(" --------------------------------------------------")
-                    logger.info(msg)
+                        # -----------------------------------------------------------------.
+                        #### - Compute L1 summary statics
+                        # create_L1_summary_statistics(ds,
+                        #                              processed_dir=processed_dir,
+                        #                              station_id=station_id,
+                        #                              sensor_name=sensor_name)
+
+                        # -----------------------------------------------------------------.
+                        # End L1 processing
+                        t_f = time.time() - t_i
+                        msg = " - L1 processing of station_id {} ended in {:.2f}s".format(station_id, t_f)
+                        if verbose:
+                            print(msg)
+                            print(" --------------------------------------------------")
+                        logger.info(msg)
+
+                except ValueError:
+                    continue
 
             # -----------------------------------------------------------------.
         # ---------------------------------------------------------------------.
