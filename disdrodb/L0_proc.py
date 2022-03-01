@@ -81,9 +81,9 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
         temp_reader_kwargs.pop("zipped", None)
         temp_reader_kwargs.pop("blocksize", None)
         temp_reader_kwargs.pop("file_name_to_read_zipped", None)
-        
+
         df = pd.read_csv(filepath, names=column_names, **temp_reader_kwargs)
-        
+
     else:
         # Dask
         if lazy:
@@ -183,7 +183,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
     else:
         import pandas as dd
     # Log
-    msg = " - Concatentation of dataframes started."
+    msg = "Concatenation of dataframes started."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -200,7 +200,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
         logger.exception(msg)
         raise ValueError(msg)
     # Log
-    msg = " - Concatentation of dataframes has finished."
+    msg = "Concatenation of dataframes has finished."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -209,13 +209,13 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
 
 
 def read_L0_raw_file_list(
-    file_list,
-    column_names,
-    reader_kwargs,
-    sensor_name, 
-    verbose,
-    df_sanitizer_fun=None,
-    lazy=False,
+        file_list,
+        column_names,
+        reader_kwargs,
+        sensor_name,
+        verbose,
+        df_sanitizer_fun=None,
+        lazy=False,
 ):
     """Read and parse a list for raw files into a dataframe."""
     # ------------------------------------------------------.
@@ -228,7 +228,7 @@ def read_L0_raw_file_list(
     if isinstance(file_list, str): 
         file_list = [file_list]
     if len(file_list) == 0:
-        raise ValueError("'file_list' must containts at least 1 filepath.")
+        raise ValueError("'file_list' must contains at least 1 filepath.")
 
     # ------------------------------------------------------.
     # ### - Loop over all raw files
