@@ -399,10 +399,11 @@ def main(raw_dir,
             for filepath in file_list:
 
                 try:
-                    suf = Path(filepath).stem
+                    file_suffix = Path(filepath).stem
+                    logger.info(f"Define file suffix: {file_suffix}")
                     ##------------------------------------------------------.
                     #### - Read all raw data files into a dataframe
-                    df = read_L0_raw_file_list(file_list=[filepath],
+                    df = read_L0_raw_file_list(file_list=filepath,
                                                column_names=columns_names_temporary,
                                                reader_kwargs=reader_kwargs,
                                                df_sanitizer_fun=df_sanitizer_fun,
@@ -412,7 +413,7 @@ def main(raw_dir,
 
                     ##------------------------------------------------------.
                     #### - Write to Parquet
-                    fpath = get_L0_fpath(processed_dir, station_id, suffix=suf)
+                    fpath = get_L0_fpath(processed_dir, station_id, suffix=file_suffix)
                     write_df_to_parquet(df=df,
                                         fpath=fpath,
                                         force=force,
@@ -449,7 +450,7 @@ def main(raw_dir,
                         #### - Read L0
                         df = read_L0_data(processed_dir,
                                           station_id,
-                                          suffix=suf,
+                                          suffix=file_suffix,
                                           lazy=lazy,
                                           verbose=verbose,
                                           debugging_mode=debugging_mode)
@@ -461,7 +462,7 @@ def main(raw_dir,
                             # -----------------------------------------------------------------.
                         #### - Write L1 dataset to netCDF4
                         if write_netcdf:
-                            fpath = get_L1_netcdf_fpath(processed_dir, station_id, suffix=suf)
+                            fpath = get_L1_netcdf_fpath(processed_dir, station_id, suffix=file_suffix)
                             write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
 
                         # -----------------------------------------------------------------.
