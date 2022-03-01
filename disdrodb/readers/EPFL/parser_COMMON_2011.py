@@ -146,8 +146,8 @@ def main(raw_dir,
         "datalogger_voltage",
         "rain_rate_32bit",
         "rain_accumulated_32bit",
-        "weather_code_SYNOP_4680",
-        "weather_code_SYNOP_4677",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
@@ -157,10 +157,10 @@ def main(raw_dir,
         "sensor_battery_voltage",
         "sensor_status",
         "rain_amount_absolute_32bit",
-        "Debug_data",
-        "FieldN",
-        "FieldV",
-        "RawData",
+        "debug_data",
+        "field_n",
+        "field_v",
+        "raw_data",
         "datalogger_error",
     ]
 
@@ -220,18 +220,18 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # Drop bad lines on based on Debug_data
-        df = df[df.Debug_data.str.contains("Frame") == False]
+        # Drop bad lines on based on debug_data
+        df = df[~df.debug_data.str.startswith('Frame', na=False)]
 
-        # Drop Debug_data
-        df = df.drop(columns=["Debug_data", "datalogger_error"])
+        # Drop debug_data, datalogger_error and id
+        df = df.drop(columns=["debug_data", "datalogger_error"])
 
         # If value in col_to_drop_if_na colum is nan, drop the row
         col_to_drop_if_na = [
             "rain_rate_32bit",
             "rain_accumulated_32bit",
-            "weather_code_SYNOP_4680",
-            "weather_code_SYNOP_4677",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
             "reflectivity_32bit",
             "mor_visibility",
             "laser_amplitude",
@@ -245,9 +245,9 @@ def main(raw_dir,
         df = df.dropna(subset=col_to_drop_if_na, how="all")
 
         # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-        df = df.loc[df["FieldN"].astype(str).str.len() == 224]
-        df = df.loc[df["FieldV"].astype(str).str.len() == 224]
-        df = df.loc[df["RawData"].astype(str).str.len() == 4096]
+        df = df.loc[df["field_n"].astype(str).str.len() == 224]
+        df = df.loc[df["field_v"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_data"].astype(str).str.len() == 4096]
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
@@ -411,7 +411,7 @@ def main(raw_dir,
     logger.info(msg)
     logger.info("---")
 
-    msg = "### Script finish ###"
+    msg = "\n   ### Script finish ###"
     print(msg)
     logger.info(msg)
 
