@@ -13,9 +13,6 @@ Created on Fri Feb 18 10:45:24 2022
 # - date_time_measuring_start? really?
 # - snowfall intensity? exists in Parsivel1 only ...
 
-### Rename /ltenas3/0_Data/ParsivelDB to DISDRODB
-#   I don't have the privilege to do that :(
-
 ### Check/adjust the script to run all EPFL Parsers
 
 ### Ensure that for each parser_<campaign_name>.py there is a single data directory !!!
