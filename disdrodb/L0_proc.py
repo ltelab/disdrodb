@@ -183,7 +183,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
     else:
         import pandas as dd
     # Log
-    msg = "Concatenation of dataframes started."
+    msg = " - Concatenation of dataframes started."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -200,7 +200,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
         logger.exception(msg)
         raise ValueError(msg)
     # Log
-    msg = "Concatenation of dataframes has finished."
+    msg = " - Concatenation of dataframes has finished."
     if verbose:
         print(msg)
     logger.info(msg)
