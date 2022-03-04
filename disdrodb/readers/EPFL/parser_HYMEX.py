@@ -217,8 +217,8 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # Drop Debug_data, datalogger_error and 
-        df = df.drop(columns = ['Debug_data', 'datalogger_error', 'sensor_heating_current'])
+        # Drop Debug_data, datalogger_error, sensor_heating_current, id, datalogger_temperature, datalogger_voltage
+        df = df.drop(columns = ['Debug_data', 'datalogger_error', 'sensor_heating_current', 'id', 'datalogger_temperature', 'datalogger_voltage'])
 
         # If FieldN or FieldV orRawData is nan, drop the row
         col_to_drop_if_na = ['FieldN','FieldV','RawData']
@@ -234,7 +234,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.log*"
+    raw_data_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
     ####################
