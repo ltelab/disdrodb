@@ -315,3 +315,151 @@ RawData:
   n_naturals: 0
   data_range: null
   nan_flags: null
+
+# Temp variable names changes. DO NOT DELETE
+
+rainfall_rate_32bit:
+  n_digits: 8
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 4
+  data_range:
+  - 0
+  - 9999.999
+  nan_flags: null
+rainfall_accumulated_32bit:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 2
+  n_naturals: 4
+  data_range:
+  - 0
+  - 300.0
+  nan_flags: null
+weather_code_synop_4680:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_synop_4677:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_metar_4678:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+weather_code_nws:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+
+number_particles:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+  
+rainfall_amount_absolute_32bit:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+  - 0
+  - 999.999
+  nan_flags: null
+  
+sensor_temperature_pcb:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: 
+  - -99
+  - 100
+  nan_flags: -99
+  
+rainfall_rate_16bit_30:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+rainfall_rate_16bit_1200:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+rainfall_accumulated_16bit:
+  n_digits: 7
+  n_characters: 6
+  n_decimals: 2
+  n_naturals: 4
+  data_range:
+  - 0
+  - 300.0
+  nan_flags: null
+  
+snowfall_rate:
+  n_digits: 7
+  n_characters: 6
+  n_decimals: 2
+  n_naturals: 4
+  data_range:
+  - 0
+  - 999.999
+  nan_flags: null
+number_particles_all:
+  n_digits: 8
+  n_characters: 8
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 8192
+  nan_flags: null
+  
+fieldn:
+  n_digits: 0
+  n_characters: 224
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+fieldv:
+  n_digits: 0
+  n_characters: 224
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+rawdata:
+  n_digits: 0
+  n_characters: 4096
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null

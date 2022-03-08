@@ -9,7 +9,7 @@ mor_visibility: 'm'
 sample_interval: 's'
 laser_amplitude: ''
 n_particles: ''
-sensor_temperature: degree celsius
+sensor_temperature: 'degree celsius'
 sensor_serial_number: ''
 firmware_iop: ''
 firmware_dsp: ''

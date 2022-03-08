@@ -60,17 +60,17 @@ from disdrodb.logger import close_logger
 
 
 # -------------------------------------------------------------------------.
-# CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+# Click Command Line Interface decorator
+# @click.command()  # options_metavar='<options>'
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+# @click.argument('processed_dir', metavar='<processed_dir>')
+# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -139,29 +139,29 @@ def main(raw_dir,
     #### - Define raw data headers
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
     column_names = ['time',
                     'id',
                     'datalogger_temperature',
                     'datalogger_voltage',
-                    'rain_rate_32bit',
-                    'rain_accumulated_32bit',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
+                    'rainfall_rate_32bit',
+                    'rainfall_accumulated_32bit',
+                    'weather_code_synop_4680',
+                    'weather_code_synop_4677',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'laser_amplitude',
-                    'n_particles',
+                    'number_particles',
                     'sensor_temperature',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
-                    'rain_amount_absolute_32bit',
-                    'Debug_data',
-                    'FieldN',
-                    'FieldV',
-                    'RawData',
+                    'rainfall_amount_absolute_32bit',
+                    'debug_data',
+                    'fieldn',
+                    'fieldv',
+                    'rawdata',
                     'datalogger_error'
                     ]
 
@@ -217,15 +217,15 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # Drop Debug_data, datalogger_error, sensor_heating_current, id, datalogger_temperature, datalogger_voltage
-        df = df.drop(columns = ['Debug_data', 'datalogger_error', 'sensor_heating_current', 'id', 'datalogger_temperature', 'datalogger_voltage'])
+        # Drop debug_data, datalogger_error, sensor_heating_current, id, datalogger_temperature, datalogger_voltage
+        df = df.drop(columns = ['debug_data', 'datalogger_error', 'sensor_heating_current', 'id', 'datalogger_temperature', 'datalogger_voltage'])
 
-        # If FieldN or FieldV orRawData is nan, drop the row
-        col_to_drop_if_na = ['FieldN','FieldV','RawData']
+        # If fieldn or fieldv orrawdata is nan, drop the row
+        col_to_drop_if_na = ['fieldn','fieldv','rawdata']
         df = df.dropna(subset = col_to_drop_if_na)
         
-        # Drop not float on rain_rate_32bit
-        df = df[dd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+        # Drop not float on rainfall_rate_32bit
+        df = df[dd.to_numeric(df['rainfall_rate_32bit'], errors='coerce').notnull()]
         
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
@@ -397,4 +397,14 @@ def main(raw_dir,
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    main(raw_dir = '/SharedVM/Campagne/EPFL/Raw/HYMEX/SOP_2014',
+             processed_dir = '/SharedVM/Campagne/EPFL/Processed/HYMEX/SOP_2014',
+             l0_processing=True,
+             l1_processing=True,
+             write_netcdf=True,
+             force=True,
+             verbose=True,
+             debugging_mode=True,
+             lazy=False,
+             )

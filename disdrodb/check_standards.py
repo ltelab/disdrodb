@@ -61,6 +61,9 @@ def check_array_lengths_consistency(df, sensor_name, lazy=True, verbose=False):
     from disdrodb.standards import get_raw_field_nbins
 
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    # Temporary for variable names to lowercase
+    n_bins_dict = {k.lower(): v for k, v in n_bins_dict.copy().items()} | n_bins_dict
+    
     list_unvalid_row_idx = []
     for key, n_bins in n_bins_dict.items():
         # Check key is available in dataframe
@@ -150,14 +153,27 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
 
     # -------------------------------------
     # Check if raw spectrum and 1D derivate exists
+    # list_sprectrum_vars = ["FieldN", "FieldV", "RawData"]
+    # unavailable_vars = np.array(list_sprectrum_vars)[
+    #     np.isin(list_sprectrum_vars, df.columns, invert=True)
+    # ]
+    # if len(unavailable_vars) > 0:
+    #         msg = f"The variables {unavailable_vars} are not present in the L0 dataframe."
+    #         print(msg)
+    #         logger.info(msg)
+    
+    # Temporary solution for variable change in lowercase
     list_sprectrum_vars = ["FieldN", "FieldV", "RawData"]
+    list_sprectrum_vars_temp_2 = ["fieldn", "fieldv", "rawdata"]
+    list_sprectrum_vars.extend(list_sprectrum_vars_temp_2)
     unavailable_vars = np.array(list_sprectrum_vars)[
         np.isin(list_sprectrum_vars, df.columns, invert=True)
     ]
     if len(unavailable_vars) > 0:
-        msg = f"The variables {unavailable_vars} are not present in the L0 dataframe."
-        print(msg)
-        logger.info(msg)
+        if not len(unavailable_vars) == 3:
+            msg = f"The variables {unavailable_vars} are not present in the L0 dataframe."
+            print(msg)
+            logger.info(msg)
 
     # -------------------------------------
     # Check consistency of array lengths

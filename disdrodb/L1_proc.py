@@ -59,11 +59,20 @@ def get_fieldv_from_raw_spectrum(arr):
 
 
 def check_L0_raw_fields_available(df, sensor_name):
+    # n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    # raw_vars = np.array(list(n_bins_dict.keys()))
+    # missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
+    # if len(missing_vars) > 0:
+    #     raise ValueError(f"The following L0 raw fields are missing: {missing_vars}")
+    
+    # Temporary for variable names to lowercase
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    n_bins_dict = {k.lower(): v for k, v in n_bins_dict.copy().items()} | n_bins_dict
     raw_vars = np.array(list(n_bins_dict.keys()))
     missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
     if len(missing_vars) > 0:
-        raise ValueError(f"The following L0 raw fields are missing: {missing_vars}")
+        if len(missing_vars) != 3:
+            raise ValueError(f"The following L0 raw fields are missing: {missing_vars}")
 
 
 def convert_L0_raw_fields_arr_flags(arr, key):
@@ -73,7 +82,16 @@ def convert_L0_raw_fields_arr_flags(arr, key):
 
 
 def set_raw_fields_arr_dtype(arr, key):
+    # if key == "RawData":
+    #     arr = arr.astype(int)
+    # else:
+    #     arr = arr.astype(float)
+    # return arr
+    
+    # Temp for variable names to lowercase
     if key == "RawData":
+        arr = arr.astype(int)
+    elif key == "rawdata":
         arr = arr.astype(int)
     else:
         arr = arr.astype(float)
@@ -81,8 +99,20 @@ def set_raw_fields_arr_dtype(arr, key):
 
 
 def reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps):
+    # try:
+    #     arr = arr.reshape(n_timesteps, n_bins_dict["FieldN"], n_bins_dict["FieldV"])
+    # except Exception as e:
+    #     msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
+    #     logger.error(msg)
+    #     print(msg)
+    #     raise ValueError(msg)
+    # return arr
+    
+    # Temp for variable names to lowercase
     try:
         arr = arr.reshape(n_timesteps, n_bins_dict["FieldN"], n_bins_dict["FieldV"])
+    except ValueError:
+        arr = arr.reshape(n_timesteps, n_bins_dict["fieldn"], n_bins_dict["fieldv"])
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
         logger.error(msg)
@@ -130,21 +160,47 @@ def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
         # Set dtype of the matrix
         arr = set_raw_fields_arr_dtype(arr, key=key)
         # For key='RawData', reshape to 2D matrix
+        # if key == "RawData":
+        #     arr = reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps)
+        
+        # Temp for variable names to lowercase
         if key == "RawData":
             arr = reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps)
+        elif key == "rawdata":
+            arr = reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps)
+        
         # Add array to dictionary
         dict_data[key] = arr
 
+    # # Retrieve unavailable keys from raw spectrum
+    # if len(unavailable_keys) > 0:
+    #     if "RawData" not in list(dict_data.keys()):
+    #         raise ValueError(
+    #             "The raw spectrum is required to compute unavaible N_D and N_V."
+    #         )
+    #     if "FieldN" in unavailable_keys:
+    #         dict_data["FieldN"] = get_fieldn_from_raw_spectrum(dict_data["RawData"])
+    #     if "FieldV" in unavailable_keys:
+    #         dict_data["FieldV"] = get_fieldv_from_raw_spectrum(dict_data["RawData"])
+    
+    # Temporary for variable names to lowercase
     # Retrieve unavailable keys from raw spectrum
     if len(unavailable_keys) > 0:
-        if "RawData" not in list(dict_data.keys()):
-            raise ValueError(
-                "The raw spectrum is required to compute unavaible N_D and N_V."
-            )
-        if "FieldN" in unavailable_keys:
-            dict_data["FieldN"] = get_fieldn_from_raw_spectrum(dict_data["RawData"])
-        if "FieldV" in unavailable_keys:
-            dict_data["FieldV"] = get_fieldv_from_raw_spectrum(dict_data["RawData"])
+        if len(unavailable_keys) != 3:
+            if "RawData" or "rawdata" not in list(dict_data.keys()):
+                raise ValueError(
+                    "The raw spectrum is required to compute unavaible N_D and N_V."
+                )
+            if "FieldN" or "fieldn" in unavailable_keys:
+                try:
+                    dict_data["FieldN"] = get_fieldn_from_raw_spectrum(dict_data["RawData"])
+                except:
+                    dict_data["fieldn"] = get_fieldn_from_raw_spectrum(dict_data["rawdata"])
+            if "FieldV" or "fieldn" in unavailable_keys:
+                try:
+                    dict_data["FieldV"] = get_fieldv_from_raw_spectrum(dict_data["RawData"])
+                except:
+                    dict_data["fieldv"] = get_fieldv_from_raw_spectrum(dict_data["rawdata"])
 
     # Log
     msg = " - Retrieval of L1 data matrix finished."
@@ -156,37 +212,50 @@ def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
 
 
 def get_L1_coords(sensor_name):
+    # check_sensor_name(sensor_name=sensor_name)
+    # coords = {}
+    # coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)
+    # coords["diameter_bin_lower"] = (
+    #     ["diameter_bin_center"],
+    #     get_diameter_bin_lower(sensor_name=sensor_name),
+    # )
+    # coords["diameter_bin_upper"] = (
+    #     ["diameter_bin_center"],
+    #     get_diameter_bin_upper(sensor_name=sensor_name),
+    # )
+    # coords["diameter_bin_width"] = (
+    #     ["diameter_bin_center"],
+    #     get_diameter_bin_width(sensor_name=sensor_name),
+    # )
+    # coords["velocity_bin_center"] = (
+    #     ["velocity_bin_center"],
+    #     get_velocity_bin_center(sensor_name=sensor_name),
+    # )
+    # coords["velocity_bin_lower"] = (
+    #     ["velocity_bin_center"],
+    #     get_velocity_bin_lower(sensor_name=sensor_name),
+    # )
+    # coords["velocity_bin_upper"] = (
+    #     ["velocity_bin_center"],
+    #     get_velocity_bin_upper(sensor_name=sensor_name),
+    # )
+    # coords["velocity_bin_width"] = (
+    #     ["velocity_bin_center"],
+    #     get_velocity_bin_width(sensor_name=sensor_name),
+    # )
+    # return coords
+    
     check_sensor_name(sensor_name=sensor_name)
     coords = {}
     coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)
-    coords["diameter_bin_lower"] = (
-        ["diameter_bin_center"],
-        get_diameter_bin_lower(sensor_name=sensor_name),
-    )
-    coords["diameter_bin_upper"] = (
-        ["diameter_bin_center"],
-        get_diameter_bin_upper(sensor_name=sensor_name),
-    )
-    coords["diameter_bin_width"] = (
-        ["diameter_bin_center"],
-        get_diameter_bin_width(sensor_name=sensor_name),
-    )
-    coords["velocity_bin_center"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_center(sensor_name=sensor_name),
-    )
-    coords["velocity_bin_lower"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_lower(sensor_name=sensor_name),
-    )
-    coords["velocity_bin_upper"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_upper(sensor_name=sensor_name),
-    )
-    coords["velocity_bin_width"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_width(sensor_name=sensor_name),
-    )
+    coords["diameter_bin_lower"] = get_diameter_bin_lower(sensor_name=sensor_name)
+    coords["diameter_bin_upper"] = get_diameter_bin_upper(sensor_name=sensor_name)
+    coords["diameter_bin_width"] = get_diameter_bin_width(sensor_name=sensor_name)
+    coords["velocity_bin_center"] = get_velocity_bin_center(sensor_name=sensor_name)
+    coords["velocity_bin_lower"] = get_velocity_bin_lower(sensor_name=sensor_name)
+    coords["velocity_bin_upper"] = get_velocity_bin_upper(sensor_name=sensor_name)
+    coords["velocity_bin_width"] = get_velocity_bin_width(sensor_name=sensor_name)
+    
     return coords
 
 
@@ -213,12 +282,35 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
                 dict_data["RawData"],
             ),
         }
+    # Temp for change valiable names to lowercase
+    elif np.any(np.isin(["fieldn", "fieldv", "rawdata"], df.columns)):
+        # Check dataframe row consistency
+        df = check_array_lengths_consistency(
+            df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
+        )
+        # Retrieve raw data matrices
+        dict_data = retrieve_L1_raw_data_matrix(
+            df, sensor_name, lazy=lazy, verbose=verbose
+        )
+        # Define raw data matrix variables for xarray Dataset
+        data_vars = {
+            "fieldn": (["time", "diameter_bin_center"], dict_data["fieldn"]),
+            "fieldv": (["time", "velocity_bin_center"], dict_data["fieldv"]),
+            "rawdata": (
+                ["time", "diameter_bin_center", "velocity_bin_center"],
+                dict_data["rawdata"],
+            ),
+        }
     else:
         data_vars = {}
+    
+    
     # -----------------------------------------------------------.
     # Define other disdrometer 'auxiliary' variables varying over time dimension
     aux_columns = df.columns[
-        np.isin(df.columns, ["FieldN", "FieldV", "RawData", "time"], invert=True)
+        np.isin(df.columns, ["FieldN", "FieldV", "RawData", 
+                             "fieldn", "fieldv", "rawdata", # Temp for variable name to lowercase
+                             "time"], invert=True)
     ]
     if lazy:
         aux_data_vars = {
