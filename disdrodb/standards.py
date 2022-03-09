@@ -202,18 +202,6 @@ def get_velocity_bin_width(sensor_name):
 
 
 def get_raw_field_nbins(sensor_name):
-    # diameter_dict = get_diameter_bins_dict(sensor_name)
-    # velocity_dict = get_velocity_bins_dict(sensor_name)
-    # n_d = len(diameter_dict["center"])
-    # n_v = len(velocity_dict["center"])
-    # nbins_dict = {
-    #     "FieldN": n_d,
-    #     "FieldV": n_v,
-    #     "RawData": n_d * n_v,
-    # }
-    # return nbins_dict
-    
-    # Temporary for variable names to lowercase
     diameter_dict = get_diameter_bins_dict(sensor_name)
     velocity_dict = get_velocity_bins_dict(sensor_name)
     n_d = len(diameter_dict["center"])
@@ -221,10 +209,7 @@ def get_raw_field_nbins(sensor_name):
     nbins_dict = {
         "FieldN": n_d,
         "FieldV": n_v,
-        "fieldn": n_d,
-        "fieldv": n_v,
         "RawData": n_d * n_v,
-        "rawdata": n_d * n_v,
     }
     return nbins_dict
 

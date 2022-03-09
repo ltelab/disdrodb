@@ -138,7 +138,7 @@ def main(raw_dir,
     #### - Define raw data headers 
     # Notes
     # - In all files, the datalogger voltage hasn't the delimiter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit 
+    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
 
     # "01","Rain intensity 32 bit",8,"mm/h","single_number"
     # "02","Rain amount accumulated 32 bit",7,"mm","single_number"
@@ -182,21 +182,21 @@ def main(raw_dir,
 
     columns_names_temporary = ['time', 'epoch_time', 'TO_BE_PARSED']
 
-    column_names = ['rainfall_rate_32bit',
-                    'rainfall_accumulated_32bit',
-                    'weather_code_synop_4680',
-                    'weather_code_synop_4677',
-                    'weather_code_metar_4678',
-                    'weather_code_nws',
+    column_names = ['rain_rate_32bit',
+                    'rain_accumulated_32bit',
+                    'weather_code_SYNOP_4680',
+                    'weather_code_SYNOP_4677',
+                    'weather_code_METAR_4678',
+                    'weather_code_NWS',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'sample_interval',
                     'laser_amplitude',
-                    'number_particles',
+                    'n_particles',
                     'sensor_temperature',
                     'sensor_serial_number',
-                    'firmware_iop',
-                    'firmware_dsp',
+                    'firmware_IOP',
+                    'firmware_DSP',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
@@ -207,7 +207,7 @@ def main(raw_dir,
                     'station_number',
                     'rain_amount_absolute_32bit',
                     'error_code',
-                    'sensor_temperature_pcb',
+                    'sensor_temperature_PCB',
                     'sensor_temperature_right',
                     'sensor_temperature_left',
                     'rain_rate_16bit_30',
@@ -215,12 +215,12 @@ def main(raw_dir,
                     'rain_accumulated_16bit',
                     'reflectivity_16bit',
                     'rain_kinetic_energy',
-                    'snowfall_rate',
-                    'number_particles_all',
+                    'snowfall_intensity',
+                    'n_particles_all',
                     # 'list_particles',
-                    'fieldn',
-                    'fieldv',
-                    'rawdata',
+                    'FieldN',
+                    'FieldV',
+                    'RawData',
                     ]
 
     # - Check name validity 
@@ -293,11 +293,11 @@ def main(raw_dir,
         df_to_parse.columns = df_to_parse_dict_names
 
         # Remove char from rain intensity
-        df_to_parse['rainfall_rate_32bit'] = df_to_parse['rainfall_rate_32bit'].str.lstrip("b'")
+        df_to_parse['rain_rate_32bit'] = df_to_parse['rain_rate_32bit'].str.lstrip("b'")
 
-        # Remove spaces on weather_code_metar_4678 and weather_code_nws
-        df_to_parse['weather_code_metar_4678'] = df_to_parse['weather_code_metar_4678'].str.strip()
-        df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
+        # Remove spaces on weather_code_METAR_4678 and weather_code_NWS
+        df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
+        df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
         
         # Add the comma on the FieldN, FieldV and RawData
         if lazy: 
@@ -305,11 +305,11 @@ def main(raw_dir,
         else: 
             apply_kwargs= {} 
         df_FieldN = df_to_parse.iloc[:, 35:67].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
-                                                     **apply_kwargs).to_frame('fieldn')
+                                                     **apply_kwargs).to_frame('FieldN')
         df_FieldV = df_to_parse.iloc[:, 67:99].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
-                                                     **apply_kwargs).to_frame('fieldv')
+                                                     **apply_kwargs).to_frame('FieldV')
         
-        df_RawData = df_to_parse.iloc[:, 99].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('rawdata')
+        df_RawData = df_to_parse.iloc[:, 99].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
 
         # Concat all dataframe togheter
         if lazy: 
@@ -319,8 +319,8 @@ def main(raw_dir,
         df = dd.concat([df_time, df_to_parse.iloc[:, :35], df_FieldN, df_FieldV, df_RawData], axis=1, **concat_kwargs)
         
         # Drop variables not required in L0 Apache Parquet 
-        todrop = ['firmware_iop',
-                  'firmware_dsp',
+        todrop = ['firmware_IOP',
+                  'firmware_DSP',
                   'date_time_measurement_start',
                   'sensor_time',
                   'sensor_date',
@@ -493,7 +493,7 @@ def main(raw_dir,
     logger.info(msg)
     logger.info('---')
 
-    msg = "\n   ### Script finish ###"
+    msg = '### Script finish ###'
     print(msg)
     logger.info(msg)
 

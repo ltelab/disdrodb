@@ -58,16 +58,16 @@ from disdrodb.logger import close_logger
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-# @click.command()  # options_metavar='<options>'
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-# @click.argument('processed_dir', metavar='<processed_dir>')
-# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+@click.command()  # options_metavar='<options>'
+@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+@click.argument('processed_dir', metavar='<processed_dir>')
+@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -157,9 +157,9 @@ def main(raw_dir,
         "sensor_status",
         "rainfall_amount_absolute_32bit",
         "debug_data",
-        "fieldn",
-        "fieldv",
-        "rawdata",
+        "field_n",
+        "field_v",
+        "raw_data",
         "All_0",
     ]
 
@@ -215,14 +215,14 @@ def main(raw_dir,
             import pandas as dd
 
         # Drop debug_data
-        df = df.drop(columns=["debug_data", "All_0", "id", "datalogger_temperature", "datalogger_voltage"])
+        df = df.drop(columns=["debug_data", "All_0"])
 
-        # If rawdata is nan, drop the row
-        col_to_drop_if_na = ["fieldn", "fieldv", "rawdata"]
+        # If raw_data is nan, drop the row
+        col_to_drop_if_na = ["field_n", "field_v", "raw_data"]
         df = df.dropna(subset=col_to_drop_if_na)
 
-        # Drop rows with less than 4096 char on rawdata
-        df = df.loc[df["rawdata"].astype(str).str.len() == 4096]
+        # Drop rows with less than 4096 char on raw_data
+        df = df.loc[df["raw_data"].astype(str).str.len() == 4096]
 
         # Remove " at the beginning of time
         df["time"] = df["time"].str.lstrip('"')
@@ -234,7 +234,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    rawdata_glob_pattern = "*.dat*"
+    raw_data_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
     ####################
@@ -287,7 +287,7 @@ def main(raw_dir,
 
             # -----------------------------------------------------------------.
             #### - List files to process
-            glob_pattern = os.path.join("data", station_id, rawdata_glob_pattern)
+            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
             file_list = get_file_list(
                 raw_dir=raw_dir,
                 glob_pattern=glob_pattern,
@@ -396,14 +396,4 @@ def main(raw_dir,
 
 
 if __name__ == "__main__":
-    # main()
-    main(raw_dir = '/SharedVM/Campagne/EPFL/Raw/DAVOS_2009_2011',
-             processed_dir = '/SharedVM/Campagne/EPFL/Processed/DAVOS_2009_2011',
-             l0_processing=True,
-             l1_processing=True,
-             write_netcdf=True,
-             force=True,
-             verbose=True,
-             debugging_mode=True,
-             lazy=True,
-             )
+    main()

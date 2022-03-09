@@ -223,7 +223,7 @@ def main(raw_dir,
             import pandas as dd
 
         # Drop Debug_data
-        df = df.drop(columns=["Debug_data", "datalogger_error", "id", "datalogger_temperature", "datalogger_voltage"])
+        df = df.drop(columns=["Debug_data", "datalogger_error"])
 
         # To Gionata: I got some rows with almost all nan but FieldN, FieldV and RawData all 0
         # Drop rows with more than 8 nan

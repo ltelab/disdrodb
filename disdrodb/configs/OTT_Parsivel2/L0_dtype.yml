@@ -38,33 +38,3 @@ FieldN: 'object'
 FieldV: 'object'
 RawData: 'object'
 
-# Temp variable names changes. DO NOT DELETE
-
-rainfall_rate_32bit: 'float32'
-rainfall_accumulated_32bit: 'float32'
-weather_code_synop_4680: 'uint32'
-weather_code_synop_4677: 'uint32'
-weather_code_metar_4678: 'object'
-weather_code_nws: 'object'
-
-number_particles: 'uint32'
-
-rainfall_amount_absolute_32bit: 'float32'
-
-sensor_temperature_pcb: 'int8'
-
-rainfall_rate_16bit_30: 'float32'
-rainfall_rate_16bit_1200: 'float32'
-rainfall_accumulated_16bit: 'float32'
-
-rainfall_rate_16bit: 'float32'
-rainfall_rate_12bit: 'float32'
-rainfall_accumulated_16bit: 'float32'
-
-rainfall_kinetic_energy: 'float32'
-snowfall_rate: 'float32'
-number_particles_all: 'uint32'
-
-fieldn: 'object'
-fieldv: 'object'
-rawdata: 'object'

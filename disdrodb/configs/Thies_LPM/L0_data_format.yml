@@ -753,7 +753,7 @@ raw_spectrum:
   - null
   - null
   nan_flags: null
-diameter_speed:
+raw_spectrum:
   n_digits: 3
   n_characters: 3
   n_decimals: 3

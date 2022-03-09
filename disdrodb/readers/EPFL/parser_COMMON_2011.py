@@ -59,16 +59,16 @@ from disdrodb.logger import close_logger
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-# @click.command()  # options_metavar='<options>'
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-# @click.argument('processed_dir', metavar='<processed_dir>')
-# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+@click.command()  # options_metavar='<options>'
+@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+@click.argument('processed_dir', metavar='<processed_dir>')
+@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -158,9 +158,9 @@ def main(raw_dir,
         "sensor_status",
         "rainfall_amount_absolute_32bit",
         "debug_data",
-        "fieldn",
-        "fieldv",
-        "rawdata",
+        "field_n",
+        "field_v",
+        "raw_data",
         "datalogger_error",
     ]
 
@@ -224,7 +224,7 @@ def main(raw_dir,
         df = df[~df.debug_data.str.startswith('Frame', na=False)]
 
         # Drop debug_data, datalogger_error and id
-        df = df.drop(columns=["debug_data", "datalogger_error", "id", "datalogger_temperature", "datalogger_voltage"])
+        df = df.drop(columns=["debug_data", "datalogger_error"])
 
         # If value in col_to_drop_if_na colum is nan, drop the row
         col_to_drop_if_na = [
@@ -245,9 +245,9 @@ def main(raw_dir,
         df = df.dropna(subset=col_to_drop_if_na, how="all")
 
         # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-        df = df.loc[df["fieldn"].astype(str).str.len() == 224]
-        df = df.loc[df["fieldv"].astype(str).str.len() == 224]
-        df = df.loc[df["rawdata"].astype(str).str.len() == 4096]
+        df = df.loc[df["field_n"].astype(str).str.len() == 224]
+        df = df.loc[df["field_v"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_data"].astype(str).str.len() == 4096]
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
@@ -419,14 +419,4 @@ def main(raw_dir,
 
 
 if __name__ == "__main__":
-    # main()
-    main(raw_dir = '/SharedVM/Campagne/EPFL/Raw/COMMON_2011',
-             processed_dir = '/SharedVM/Campagne/EPFL/Processed/COMMON_2011',
-             l0_processing=True,
-             l1_processing=True,
-             write_netcdf=True,
-             force=True,
-             verbose=True,
-             debugging_mode=True,
-             lazy=False,
-             )
+    main()
