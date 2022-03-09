@@ -86,7 +86,7 @@ def get_LPM_variables():
     # '49': current_heating_heads # A
     # '50': current_heating_carriers # A
 
-    # '51': number_particles # n_particles_all
+    # '51': number_particles # number_particles_all
     # '52': number_particles_internal_data
     # '53': number_particles_min_speed
     # '54': number_particles_min_speed_internal_data
@@ -203,7 +203,7 @@ def get_DIVEN_dict():
         # Arrays
         "size_velocity_distribution": "raw_spectrum",
         "drop_size_distribution": "FieldD",
-        "drop_velocity_distribution": "FieldN",
+        "drop_velocity_distribution": "raw_drop_concentration",
     }
     return d
 

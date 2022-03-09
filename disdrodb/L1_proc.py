@@ -46,15 +46,15 @@ from disdrodb.standards import get_raw_field_nbins
 logger = logging.getLogger(__name__)
 
 
-def get_fieldn_from_raw_spectrum(arr):
+def get_raw_drop_concentration_from_raw_spectrum(arr):
     # TODO
-    logger.info("Computing fieldn from raw spectrum.")
+    logger.info("Computing raw_drop_concentration from raw spectrum.")
     return arr[:, :, 0]
 
 
-def get_fieldv_from_raw_spectrum(arr):
+def get_raw_drop_average_velocity_from_raw_spectrum(arr):
     # TODO
-    logger.info("Computing fieldv from raw spectrum.")
+    logger.info("Computing raw_drop_average_velocity from raw spectrum.")
     return arr[:, 0, :]
 
 
@@ -67,22 +67,22 @@ def check_L0_raw_fields_available(df, sensor_name):
 
 
 def convert_L0_raw_fields_arr_flags(arr, key):
-    # TODO: FieldN and FieldV --> -9.999, has floating number
+    # TODO: raw_drop_concentration and raw_drop_average_velocity --> -9.999, has floating number
     pass
     return arr
 
 
 def set_raw_fields_arr_dtype(arr, key):
-    if key == "RawData":
+    if key == "raw_drop_number":
         arr = arr.astype(int)
     else:
         arr = arr.astype(float)
     return arr
 
 
-def reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps):
+def reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps):
     try:
-        arr = arr.reshape(n_timesteps, n_bins_dict["FieldN"], n_bins_dict["FieldV"])
+        arr = arr.reshape(n_timesteps, n_bins_dict["raw_drop_concentration"], n_bins_dict["raw_drop_average_velocity"])
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
         logger.error(msg)
@@ -91,7 +91,7 @@ def reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps):
     return arr
 
 
-def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
+def retrieve_L1_raw_drop_number_matrix(df, sensor_name, lazy=True, verbose=False):
     # Log
     msg = " - Retrieval of L1 data matrix started."
     if verbose:
@@ -129,22 +129,22 @@ def retrieve_L1_raw_data_matrix(df, sensor_name, lazy=True, verbose=False):
         arr = convert_L0_raw_fields_arr_flags(arr, key=key)
         # Set dtype of the matrix
         arr = set_raw_fields_arr_dtype(arr, key=key)
-        # For key='RawData', reshape to 2D matrix
-        if key == "RawData":
-            arr = reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps)
+        # For key='raw_drop_number', reshape to 2D matrix
+        if key == "raw_drop_number":
+            arr = reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps)
         # Add array to dictionary
         dict_data[key] = arr
 
     # Retrieve unavailable keys from raw spectrum
     if len(unavailable_keys) > 0:
-        if "RawData" not in list(dict_data.keys()):
+        if "raw_drop_number" not in list(dict_data.keys()):
             raise ValueError(
                 "The raw spectrum is required to compute unavaible N_D and N_V."
             )
-        if "FieldN" in unavailable_keys:
-            dict_data["FieldN"] = get_fieldn_from_raw_spectrum(dict_data["RawData"])
-        if "FieldV" in unavailable_keys:
-            dict_data["FieldV"] = get_fieldv_from_raw_spectrum(dict_data["RawData"])
+        if "raw_drop_concentration" in unavailable_keys:
+            dict_data["raw_drop_concentration"] = get_raw_drop_concentration_from_raw_spectrum(dict_data["raw_drop_number"])
+        if "raw_drop_average_velocity" in unavailable_keys:
+            dict_data["raw_drop_average_velocity"] = get_raw_drop_average_velocity_from_raw_spectrum(dict_data["raw_drop_number"])
 
     # Log
     msg = " - Retrieval of L1 data matrix finished."
@@ -195,22 +195,22 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     sensor_name = attrs["sensor_name"]
     # -----------------------------------------------------------.
     # Preprocess raw_spectrum, diameter and velocity arrays if available
-    if np.any(np.isin(["FieldN", "FieldV", "RawData"], df.columns)):
+    if np.any(np.isin(["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"], df.columns)):
         # Check dataframe row consistency
         df = check_array_lengths_consistency(
             df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
         )
         # Retrieve raw data matrices
-        dict_data = retrieve_L1_raw_data_matrix(
+        dict_data = retrieve_L1_raw_drop_number_matrix(
             df, sensor_name, lazy=lazy, verbose=verbose
         )
         # Define raw data matrix variables for xarray Dataset
         data_vars = {
-            "FieldN": (["time", "diameter_bin_center"], dict_data["FieldN"]),
-            "FieldV": (["time", "velocity_bin_center"], dict_data["FieldV"]),
-            "RawData": (
+            "raw_drop_concentration": (["time", "diameter_bin_center"], dict_data["raw_drop_concentration"]),
+            "raw_drop_average_velocity": (["time", "velocity_bin_center"], dict_data["raw_drop_average_velocity"]),
+            "raw_drop_number": (
                 ["time", "diameter_bin_center", "velocity_bin_center"],
-                dict_data["RawData"],
+                dict_data["raw_drop_number"],
             ),
         }
     else:
@@ -218,7 +218,7 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     # -----------------------------------------------------------.
     # Define other disdrometer 'auxiliary' variables varying over time dimension
     aux_columns = df.columns[
-        np.isin(df.columns, ["FieldN", "FieldV", "RawData", "time"], invert=True)
+        np.isin(df.columns, ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number", "time"], invert=True)
     ]
     if lazy:
         aux_data_vars = {

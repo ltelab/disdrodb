@@ -1,4 +1,4 @@
-rain_rate_32bit:
+rainfall_rate_32bit:
   n_digits: 7
   n_characters: 8
   n_decimals: 3
@@ -7,7 +7,7 @@ rain_rate_32bit:
   - 0
   - 9999.999
   nan_flags: null
-rain_accumulated_32bit:
+rainfall_accumulated_32bit:
   n_digits: 6
   n_characters: 7
   n_decimals: 2
@@ -16,7 +16,7 @@ rain_accumulated_32bit:
   - 0
   - 300.0
   nan_flags: null
-weather_code_SYNOP_4680:
+weather_code_synop_4680:
   n_digits: 2
   n_characters: 2
   n_decimals: 0
@@ -25,7 +25,7 @@ weather_code_SYNOP_4680:
   - 0
   - 99
   nan_flags: null
-weather_code_SYNOP_4677:
+weather_code_synop_4677:
   n_digits: 2
   n_characters: 2
   n_decimals: 0
@@ -34,14 +34,14 @@ weather_code_SYNOP_4677:
   - 0
   - 99
   nan_flags: null
-weather_code_METAR_4678:
+weather_code_metar_4678:
   n_digits: null
   n_characters: null
   n_decimals: null
   n_naturals: null
   data_range: null
   nan_flags: null
-weather_code_NWS:
+weather_code_nws:
   n_digits: null
   n_characters: null
   n_decimals: null
@@ -82,7 +82,7 @@ laser_amplitude:
   - 0
   - 99999
   nan_flags: null
-n_particles:
+number_particles:
   n_digits: 5
   n_characters: 5
   n_decimals: 0
@@ -114,7 +114,7 @@ firmware_iop:
   n_naturals: null
   data_range: null
   nan_flags: null
-firmware_dsp:
+firmware_dps:
   n_digits: null
   n_characters: null
   n_decimals: null
@@ -183,7 +183,7 @@ station_number:
   n_naturals: null
   data_range: null
   nan_flags: null
-rain_amount_absolute_32bit:
+rainfall_amount_absolute_32bit:
   n_digits: 6
   n_characters: 7
   n_decimals: 3
@@ -201,7 +201,7 @@ error_code:
   - 0
   - 3
   nan_flags: null
-rain_rate_16bit:
+rainfall_rate_16_bit:
   n_digits: 8
   n_characters: 5
   n_decimals: 4
@@ -210,14 +210,14 @@ rain_rate_16bit:
   - 0
   - 9999.999
   nan_flags: null
-rain_rate_12bit:
+rainfall_rate_12bit:
   n_digits: null
   n_characters: null
   n_decimals: null
   n_naturals: null
   data_range: null
   nan_flags: null
-rain_accumulated_16bit:
+rainfall_accumulated_16bit:
   n_digits: 7
   n_characters: 6
   n_decimals: 2
@@ -235,21 +235,21 @@ reflectivity_16bit:
   - -9.999
   - 99.999
   nan_flags: -9.999
-FieldN:
+raw_drop_concentration:
   n_digits: 0
   n_characters: 224
   n_decimals: 0
   n_naturals: 0
   data_range: null
   nan_flags: null
-FieldV:
+raw_drop_average_velocity:
   n_digits: 0
   n_characters: 224
   n_decimals: 0
   n_naturals: 0
   data_range: null
   nan_flags: null
-RawData:
+raw_drop_number:
   n_digits: 0
   n_characters: 4096
   n_decimals: 0

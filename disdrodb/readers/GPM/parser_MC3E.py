@@ -137,7 +137,7 @@ def main(raw_dir,
     #### - Define raw data headers 
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter, 
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit 
 
     columns_names_temporary = ['time',
                                'TO_BE_SPLITTED'
@@ -147,13 +147,13 @@ def main(raw_dir,
                     'station_name',
                     'sensor_status',
                     'sensor_temperature',
-                    'n_particles',
-                    'rain_rate_32bit',
+                    'number_particles',
+                    'rainfall_rate_32bit',
                     'reflectivity_16bit',
                     'mor_visibility',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
-                    'RawData',
+                    'weather_code_synop_4680',
+                    'weather_code_synop_4677',
+                    'raw_drop_number',
                     ]
     
     # - Check name validity 
@@ -229,23 +229,23 @@ def main(raw_dir,
         # Drop TO_BE_SPLITTED
         df = df.drop(['TO_BE_SPLITTED'], axis=1)
 
-        # Add the comma on RawData
-        df_RawData = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('RawData')
+        # Add the comma on raw_drop_number
+        df_raw_drop_number = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_number')
 
         # Concat all togheter
-        df = dd.concat([df, df_to_parse.iloc[:,:9], df_RawData] ,axis=1)
+        df = dd.concat([df, df_to_parse.iloc[:,:9], df_raw_drop_number] ,axis=1)
 
         # Add names to the columns
         df.columns = column_names
 
-        # Drop rows with less than 4096 on RawData
-        df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+        # Drop rows with less than 4096 on raw_drop_number
+        df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
         
         return df  
     
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern =  "*.tar"   
+    raw_drop_number_glob_pattern =  "*.tar"   
     
     ####----------------------------------------------------------------------.
     #################### 
@@ -300,7 +300,7 @@ def main(raw_dir,
             
             #-----------------------------------------------------------------.           
             #### - List files to process 
-            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
+            glob_pattern = os.path.join("data", station_id, raw_drop_number_glob_pattern)
             file_list = get_file_list(raw_dir=raw_dir,
                                       glob_pattern=glob_pattern, 
                                       verbose=verbose, 

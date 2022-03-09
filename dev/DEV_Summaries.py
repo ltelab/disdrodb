@@ -11,7 +11,7 @@ ds.coords
 ds.dims
 ds.data_vars
  
-da = ds['FieldV'].compute()
+da = ds['raw_drop_average_velocity'].compute()
 da.dtype
 da.time.dtype
 da.velocity_bin_center

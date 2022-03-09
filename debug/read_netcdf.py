@@ -38,7 +38,7 @@ net = ds.rename(dict_ARM)
 
 # ds['time'] = ds['time'].astype('M8')
 
-# ds['FieldN'].plot(x = 'time', y = 'diameter_bin_center')
+# ds['raw_drop_concentration'].plot(x = 'time', y = 'diameter_bin_center')
 
 # ds.plot(x = 'time', y = 'diameter_bin_center')
 
@@ -52,13 +52,13 @@ ds.close()
 
 dict_ARM_to_l0 =    {'time': 'time',
                     'time_offset': 'time_offset_OldName',
-                    'precip_rate': 'rain_rate_32bit',
+                    'precip_rate': 'rainfall_rate_32bit',
                     'qc_precip_rate': 'qc_precip_rate_OldName',
-                    'weather_code': 'weather_code_SYNOP_4680',
+                    'weather_code': 'weather_code_synop_4680',
                     'qc_weather_code': 'qc_weather_code_OldName',
                     'equivalent_radar_reflectivity_ott': 'reflectivity_32bit',
                     'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott_OldName',
-                    'number_detected_particles': 'n_particles',
+                    'number_detected_particles': 'number_particles',
                     'qc_number_detected_particles': 'qc_number_detected_particles_OldName',
                     'mor_visibility': 'mor_visibility_OldName',
                     'qc_mor_visibility': 'qc_mor_visibility_OldName',

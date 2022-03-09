@@ -473,7 +473,7 @@ current_heating_carriers:
   - null
   nan_flags: 9999
 
-number_particles: # n_particles_all
+number_particles: # number_particles_all
   n_digits: 5
   n_characters: 5
   n_decimals: 5

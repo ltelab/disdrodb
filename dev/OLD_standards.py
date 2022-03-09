@@ -442,21 +442,21 @@ def get_OTT_Parsivel_dict():
         Dictionary with the variable name of OTT Parsivel field numbers.
     """
     field_dict = {
-        "01": "rain_rate_32bit",
-        "02": "rain_accumulated_32bit",
-        "03": "weather_code_SYNOP_4680",
-        "04": "weather_code_SYNOP_4677",
-        "05": "weather_code_METAR_4678",
-        "06": "weather_code_NWS",
+        "01": "rainfall_rate_32bit",
+        "02": "rainfall_accumulated_32bit",
+        "03": "weather_code_synop_4680",
+        "04": "weather_code_synop_4677",
+        "05": "weather_code_metar_4678",
+        "06": "weather_code_nws",
         "07": "reflectivity_32bit",
         "08": "mor_visibility",
         "09": "sample_interval",
         "10": "laser_amplitude",
-        "11": "n_particles",
+        "11": "number_particles",
         "12": "sensor_temperature",
         # "13": "sensor_serial_number",
         # "14": "firmware_iop",
-        # "14": "firmware_dsp",
+        # "14": "firmware_dps",
         "16": "sensor_heating_current",
         "17": "sensor_battery_voltage",
         "18": "sensor_status",
@@ -465,11 +465,11 @@ def get_OTT_Parsivel_dict():
         # "21": "sensor_date",
         # "22": "station_name",
         # "23": "station_number",
-        "24": "rain_amount_absolute_32bit",
+        "24": "rainfall_amount_absolute_32bit",
         "25": "error_code",
-        "30": "rain_rate_16bit",
-        "31": "rain_rate_12bit",
-        "32": "rain_accumulated_16bit",
+        "30": "rainfall_rate_16_bit",
+        "31": "rainfall_rate_12bit",
+        "32": "rainfall_accumulated_16bit",
         "33": "reflectivity_16bit",
         "90": "ND",
         "91": "VD",
@@ -489,21 +489,21 @@ def get_OTT_Parsivel2_dict():
         Dictionary with the variable name of OTT Parsivel2 field numbers.
     """
     field_dict = {
-        "01": "rain_rate_32bit",
-        "02": "rain_accumulated_32bit",
-        "03": "weather_code_SYNOP_4680",
-        "04": "weather_code_SYNOP_4677",
-        "05": "weather_code_METAR_4678",
-        "06": "weather_weather_code_NWS",
+        "01": "rainfall_rate_32bit",
+        "02": "rainfall_accumulated_32bit",
+        "03": "weather_code_synop_4680",
+        "04": "weather_code_synop_4677",
+        "05": "weather_code_metar_4678",
+        "06": "weather_weather_code_nws",
         "07": "reflectivity_32bit",
         "08": "mor_visibility",
         "09": "sample_interval",
         "10": "laser_amplitude",
-        "11": "n_particles",
+        "11": "number_particles",
         "12": "sensor_temperature",
         # "13": "sensor_serial_number",
         # "14": "firmware_iop",
-        # "14": "firmware_dsp",
+        # "14": "firmware_dps",
         "16": "sensor_heating_current",
         "17": "sensor_battery_voltage",
         "18": "sensor_status",
@@ -512,18 +512,18 @@ def get_OTT_Parsivel2_dict():
         # "21": "sensor_date",
         # "22": "station_name",
         # "23": "station_number",
-        "24": "rain_amount_absolute_32bit",
+        "24": "rainfall_amount_absolute_32bit",
         "25": "error_code",
         "26": "temperature_PCB",  # only Parsivel 2
         "27": "temperature_right",  # only Parsivel 2
         "28": "temperature_left",  # only Parsivel 2
-        "30": "rain_rate_16bit_30",  # change from Parsivel
-        "31": "rain_rate_16bit_1200",  # change from Parsivel
-        "32": "rain_accumulated_16bit",
+        "30": "rainfall_rate_16_bit_30",  # change from Parsivel
+        "31": "rainfall_rate_16_bit_1200",  # change from Parsivel
+        "32": "rainfall_accumulated_16bit",
         "33": "reflectivity_16bit",
         "34": "rain_kinetic_energy",  # only Parsivel 2
-        "35": "snowfall_intensity",  # only Parsivel 2
-        "60": "n_particles_all",  # only Parsivel 2
+        "35": "snowfall_rate",  # only Parsivel 2
+        "60": "number_particles_all",  # only Parsivel 2
         "61": "list_particles",  # only Parsivel 2
         "90": "ND",
         "91": "VD",
@@ -550,20 +550,20 @@ def get_ThiesLPM_dict():
         "01": "STX (start identifier)",  # To delete?
         "02": "Device address (factory setting „00“) (NN)",  # To delete?
         "03": "sensor_serial_number",
-        "04": "firmware_DSP",
+        "04": "firmware_dps",
         "05": "Date of the sensor (tt.mm.jj)",  # Merge Date of the sensor and Time of the sensor?
         "06": "Time of the sensor (on request) (hh:mm:ss)",  # Merge Date of the sensor and Time of the sensor?
         "07": "5M SYNOP Tab.4677 (5 minutes mean value) (NN)",  # To delete?
         "08": "5M SYNOP Tab.4680 (5 minutes mean value) (NN)",  # To delete?
         "09": "5M METAR Tab.4678 (5 minutes mean value) (AAAAA)",  # To delete?
         "10": "5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)",  # To delete?
-        "11": "weather_code_SYNOP_4677",
-        "12": "weather_code_SYNOP_4680",
-        "13": "weather_code_METAR_4678",
-        "14": "1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)",  # rain_amount_absolute_32bit ?
-        "15": "1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)",  # rain_rate_32bit or rain_rate_16bit ?
-        "16": "1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)",  # snowfall_intensity ?
-        "17": "Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)",  # rain_accumulated_32bit or rain_accumulated_16bit ?
+        "11": "weather_code_synop_4677",
+        "12": "weather_code_synop_4680",
+        "13": "weather_code_metar_4678",
+        "14": "1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)",  # rainfall_amount_absolute_32bit ?
+        "15": "1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)",  # rainfall_rate_32bit or rainfall_rate_16_bit ?
+        "16": "1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)",  # snowfall_rate ?
+        "17": "Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)",  # rainfall_accumulated_32bit or rainfall_accumulated_16bit ?
         "18": "mor_visibility",
         "19": "reflectivity_16bit",
         "20": "1M Measuring quality [0...100%] (1 minute value) (NNN)",  # To delete?
@@ -597,7 +597,7 @@ def get_ThiesLPM_dict():
         "48": "Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)",  # To delete?
         "49": "Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)",  # To delete?
         "50": "Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)",  # To delete?
-        "51": "n_particles",
+        "51": "number_particles",
         "52": "„00000.000“ (internal data)",  # To delete?
         "53": "Number of particles < minimal speed (0.15m/s) (NNNNN)",  # To delete?
         "54": "„00000.000“ (internal data)",  # To delete?
@@ -639,20 +639,20 @@ def get_ThiesLPM_dict():
         "01": "STX (start identifier)",  # To delete?
         "02": "Device address (factory setting „00“) (NN)",  # To delete?
         "03": "sensor_serial_number",
-        "04": "firmware_DSP",
+        "04": "firmware_dps",
         "05": "Date of the sensor (tt.mm.jj)",  # Merge Date of the sensor and Time of the sensor?
         "06": "Time of the sensor (on request) (hh:mm:ss)",  # Merge Date of the sensor and Time of the sensor?
         "07": "5M SYNOP Tab.4677 (5 minutes mean value) (NN)",  # To delete?
         "08": "5M SYNOP Tab.4680 (5 minutes mean value) (NN)",  # To delete?
         "09": "5M METAR Tab.4678 (5 minutes mean value) (AAAAA)",  # To delete?
         "10": "5M Intensität [mm/h] (5 minutes mean value) (NNN.NNN)",  # To delete?
-        "11": "weather_code_SYNOP_4677",
-        "12": "weather_code_SYNOP_4680",
-        "13": "weather_code_METAR_4678",
-        "14": "1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)",  # rain_amount_absolute_32bit ?
-        "15": "1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)",  # rain_rate_32bit or rain_rate_16bit ?
-        "16": "1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)",  # snowfall_intensity ?
-        "17": "Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)",  # rain_accumulated_32bit or rain_accumulated_16bit ?
+        "11": "weather_code_synop_4677",
+        "12": "weather_code_synop_4680",
+        "13": "weather_code_metar_4678",
+        "14": "1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)",  # rainfall_amount_absolute_32bit ?
+        "15": "1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)",  # rainfall_rate_32bit or rainfall_rate_16_bit ?
+        "16": "1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)",  # snowfall_rate ?
+        "17": "Precipitation amount [mm] (Reset with command „RA“) (NNNN.NN)",  # rainfall_accumulated_32bit or rainfall_accumulated_16bit ?
         "18": "mor_visibility",
         "19": "reflectivity_16bit",
         "20": "1M Measuring quality [0...100%] (1 minute value) (NNN)",  # To delete?
@@ -686,7 +686,7 @@ def get_ThiesLPM_dict():
         "48": "Current heating housing [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)",  # To delete?
         "49": "Current heating heads [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)",  # To delete?
         "50": "Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise “9999”) (NNNN)",  # To delete?
-        "51": "n_particles",
+        "51": "number_particles",
         "52": "„00000.000“ (internal data)",  # To delete?
         "53": "Number of particles < minimal speed (0.15m/s) (NNNNN)",  # To delete?
         "54": "„00000.000“ (internal data)",  # To delete?
@@ -731,7 +731,7 @@ def get_ThiesLPM_dict():
                     '01': 'start_identifier',
                     '02': 'device_address',
                     '03': 'sensor_serial_number',
-                    '04': 'firmware_DSP',
+                    '04': 'firmware_dps',
                     '05': 'date_sensor',
                     '06': 'time_sensor',
                     '07': 'synop_4677_5min_weather_code',
@@ -1224,16 +1224,16 @@ def var_units_dict():
     """
     # TODO BE UPDATED AND EXPANDED
     units_dict = {
-        "rain_rate_32bit": "mm/h",
-        "rain_accumulated_32bit": "mm",
-        "weather_code_SYNOP_4680": "",
-        "weather_code_SYNOP_4677": "",
-        "weather_code_METAR_4678": "",
-        "weather_code_NWS": "",
+        "rainfall_rate_32bit": "mm/h",
+        "rainfall_accumulated_32bit": "mm",
+        "weather_code_synop_4680": "",
+        "weather_code_synop_4677": "",
+        "weather_code_metar_4678": "",
+        "weather_code_nws": "",
         "reflectivity_32bit": "dBZ",
         "mor_visibility": "m",
         "laser_amplitude": "",
-        "n_particles": "",
+        "number_particles": "",
         "sensor_temperature": "degree celsius",
         "sensor_heating_current": "A",
         "sensor_battery_voltage": "V",
@@ -1243,7 +1243,7 @@ def var_units_dict():
         "temperature_right": "degree celsius",
         "temperature_left": "degree celsius",
         "rain_kinetic_energy": "J/(m2*h)",
-        "snowfall_intensity": "mm/h",
+        "snowfall_rate": "mm/h",
         "ND": "1/(m3*mm)",
         "VD": "m/s",
         "N": "",
@@ -1264,15 +1264,15 @@ def get_var_explanations():
     name_dict = {
         "timestep": "Datetime object of the measurement",
         "rain_rate": "Rainfall rate",
-        "rain_accumulated_32bit": "Accumulated rain amount over the measurement interval",
+        "rainfall_accumulated_32bit": "Accumulated rain amount over the measurement interval",
         "reflectivity_32bit": "Radar reflectivity",
         "mor_visibility": "Meteorological Optical Range in precipitation",
         "rain_kinetic_energy": "Rain Kinetic energy",
-        "snowfall_intensity": "Volume equivalent snow depth intensity",
-        "weather_code_SYNOP_4680": "SYNOP weather code according to table 4680 of Parsivel documentation",
-        "weather_code_SYNOP_4677": "SYNOP weather code according to table 4677 of Parsivel documentation",
-        "weather_code_METAR_4678": "METAR/SPECI weather code according to table 4678 of Parsivel documentation",
-        "weather_code_NWS": "NWS weather code according to Parsivel documentation",
+        "snowfall_rate": "Volume equivalent snow depth intensity",
+        "weather_code_synop_4680": "SYNOP weather code according to table 4680 of Parsivel documentation",
+        "weather_code_synop_4677": "SYNOP weather code according to table 4677 of Parsivel documentation",
+        "weather_code_metar_4678": "METAR/SPECI weather code according to table 4678 of Parsivel documentation",
+        "weather_code_nws": "NWS weather code according to Parsivel documentation",
         "laser_amplitude": "Signal amplitude of the laser strip. A way to monitor if windows are dirty or not.",
         "temperature_PCB": "Temperature in printed circuit board",
         "temperature_right": "Temperature in right sensor head",
@@ -1282,8 +1282,8 @@ def get_var_explanations():
         "sensor_battery_voltage": "Power supply voltage. ",
         "sensor_status": "Sensor status",
         "error_code": "Error code",
-        "n_particles": "Number of particles detected and validated",
-        "n_particles_all": "Number of all particles detected",
+        "number_particles": "Number of particles detected and validated",
+        "number_particles_all": "Number of all particles detected",
         "ND": "Particle number concentrations per diameter class",
         "VD": "Average particle velocities for each diameter class",
         "N": "Drop counts per diameter and velocity class",
@@ -1479,9 +1479,9 @@ def get_velocity_bin_width(sensor_name):
 def get_raw_field_nbins(sensor_name):
     if sensor_name == "Parsivel":
         nbins_dict = {
-            "FieldN": 32,
-            "FieldV": 32,
-            "RawData": 1024,
+            "raw_drop_concentration": 32,
+            "raw_drop_average_velocity": 32,
+            "raw_drop_number": 1024,
         }
     elif sensor_name == "Parsivel2":
         logger.exception(f"Not implemented {sensor_name} device")

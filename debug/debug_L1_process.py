@@ -48,7 +48,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_data
+from disdrodb.L0_proc import read_raw_drop_number
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -139,23 +139,23 @@ column_names = ['time',
                     'id',
                     'datalogger_temperature',
                     'datalogger_voltage',
-                    'rain_accumulated_32bit',
+                    'rainfall_accumulated_32bit',
                     'Unknow',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
+                    'weather_code_synop_4680',
+                    'weather_code_synop_4677',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'laser_amplitude',
-                    'n_particles',
+                    'number_particles',
                     'sensor_temperature',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
-                    'rain_amount_absolute_32bit',
+                    'rainfall_amount_absolute_32bit',
                     'Debug_data',
-                    'FieldN',
-                    'FieldV',
-                    'RawData',
+                    'raw_drop_concentration',
+                    'raw_drop_average_velocity',
+                    'raw_drop_number',
                     'All_0'
                     ]
 
@@ -169,11 +169,11 @@ def df_sanitizer_fun(df, lazy=False):
     #     import pandas as dd
 
     # - Drop useless columns 
-    col_to_drop_if_na = ['FieldN','FieldV','RawData']
+    col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
     df = df.dropna(subset = col_to_drop_if_na)
  
-    # Drop rows with less than 4096 char on RawData
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+    # Drop rows with less than 4096 char on raw_drop_number
+    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
  
     # Example: drop unrequired columns for L0 
     df = df.drop(columns = ['All_0', 'Debug_data'])

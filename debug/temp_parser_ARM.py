@@ -20,7 +20,7 @@ import netCDF4
 from disdrodb.io import check_directories
 from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
-from disdrodb.L0_proc import read_raw_data
+from disdrodb.L0_proc import read_raw_drop_number
 from disdrodb.L0_proc import get_file_list
 from disdrodb.logger import create_logger
 from disdrodb.data_encodings import get_ARM_to_l0_dtype_standards
@@ -41,13 +41,13 @@ def convert_standards(file_list, verbose):
                     'time': 'time', # Name for time in Norway campaing
                     # 'base_time': 'time', # Name for time in ARM Mobile Facility campaing
                     'time_offset': 'time_offset_OldName',
-                    'precip_rate': 'rain_rate_32bit',
+                    'precip_rate': 'rainfall_rate_32bit',
                     'qc_precip_rate': 'qc_precip_rate_OldName',
-                    'weather_code': 'weather_code_SYNOP_4680',
+                    'weather_code': 'weather_code_synop_4680',
                     'qc_weather_code': 'qc_weather_code_OldName',
                     'equivalent_radar_reflectivity_ott': 'reflectivity_32bit',
                     'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott_OldName',
-                    'number_detected_particles': 'n_particles',
+                    'number_detected_particles': 'number_particles',
                     'qc_number_detected_particles': 'qc_number_detected_particles_OldName',
                     'mor_visibility': 'mor_visibility_OldName',
                     'qc_mor_visibility': 'qc_mor_visibility_OldName',

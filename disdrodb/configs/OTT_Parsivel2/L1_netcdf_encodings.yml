@@ -1,4 +1,4 @@
-rain_rate_32bit:
+rainfall_rate_32bit:
   dtype: float32
   zlib: true
   complevel: 3
@@ -6,7 +6,7 @@ rain_rate_32bit:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rain_accumulated_32bit:
+rainfall_accumulated_32bit:
   dtype: float32
   zlib: true
   complevel: 3
@@ -14,7 +14,7 @@ rain_accumulated_32bit:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-weather_code_SYNOP_4680:
+weather_code_synop_4680:
   dtype: uint32
   zlib: true
   complevel: 3
@@ -22,7 +22,7 @@ weather_code_SYNOP_4680:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-weather_code_SYNOP_4677:
+weather_code_synop_4677:
   dtype: uint32
   zlib: true
   complevel: 3
@@ -30,7 +30,7 @@ weather_code_SYNOP_4677:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-weather_code_METAR_4678:
+weather_code_metar_4678:
   dtype: str
   zlib: true
   complevel: 3
@@ -38,7 +38,7 @@ weather_code_METAR_4678:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-weather_code_NWS:
+weather_code_nws:
   dtype: str
   zlib: true
   complevel: 3
@@ -78,7 +78,7 @@ laser_amplitude:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-n_particles:
+number_particles:
   dtype: uint32
   zlib: true
   complevel: 3
@@ -110,7 +110,7 @@ firmware_iop:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-firmware_dsp:
+firmware_dps:
   dtype: object
   zlib: true
   complevel: 3
@@ -182,7 +182,7 @@ station_number:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rain_amount_absolute_32bit:
+rainfall_amount_absolute_32bit:
   dtype: float32
   zlib: true
   complevel: 3
@@ -198,7 +198,7 @@ error_code:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-sensor_temperature_PCB:
+sensor_temperature_pcb:
   dtype: int8
   zlib: true
   complevel: 3
@@ -206,7 +206,7 @@ sensor_temperature_PCB:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-sensor_temperature_right:
+sensor_temperature_receiver:
   dtype: int8
   zlib: true
   complevel: 3
@@ -214,7 +214,7 @@ sensor_temperature_right:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-sensor_temperature_left:
+sensor_temperature_trasmitter:
   dtype: int8
   zlib: true
   complevel: 3
@@ -222,7 +222,7 @@ sensor_temperature_left:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rain_rate_16bit_30:
+rainfall_rate_16bit_30:
   dtype: float32
   zlib: true
   complevel: 3
@@ -230,7 +230,7 @@ rain_rate_16bit_30:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rain_rate_16bit_1200:
+rainfall_rate_16bit_1200:
   dtype: float32
   zlib: true
   complevel: 3
@@ -238,7 +238,7 @@ rain_rate_16bit_1200:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rain_accumulated_16bit:
+rainfall_accumulated_16bit:
   dtype: float32
   zlib: true
   complevel: 3
@@ -262,7 +262,7 @@ rain_kinetic_energy:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-snowfall_intensity:
+snowfall_rate:
   dtype: float32
   zlib: true
   complevel: 3
@@ -270,7 +270,7 @@ snowfall_intensity:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-n_particles_all:
+number_particles_all:
   dtype: uint32
   zlib: true
   complevel: 3
@@ -286,7 +286,7 @@ list_particles:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-FieldN:
+raw_drop_concentration:
   dtype: float32
   zlib: true
   complevel: 3
@@ -296,7 +296,7 @@ FieldN:
   chunksizes:
   - 5000
   - 32
-FieldV:
+raw_drop_average_velocity:
   dtype: float32
   zlib: true
   complevel: 3
@@ -306,7 +306,7 @@ FieldV:
   chunksizes:
   - 5000
   - 32
-RawData:
+raw_drop_number:
   dtype: int64
   zlib: true
   complevel: 3
