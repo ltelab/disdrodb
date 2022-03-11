@@ -79,32 +79,32 @@ print(df.shape)
 print(df.columns)
 
 import numpy as np 
-from disdrodb.L1_proc import retrieve_L1_raw_data_matrix 
+from disdrodb.L1_proc import retrieve_L1_raw_drop_number_matrix 
 from disdrodb.L1_proc import create_L1_dataset_from_L0 
 
-np.unique(df['RawData'].astype(str).str.len())
-np.unique(df['FieldN'].astype(str).str.len())  # CHECK TO ADD MAYBE TO DF_SANITIZER
-np.unique(df['FieldV'].astype(str).str.len())
+np.unique(df['raw_drop_number'].astype(str).str.len())
+np.unique(df['raw_drop_concentration'].astype(str).str.len())  # CHECK TO ADD MAYBE TO DF_SANITIZER
+np.unique(df['raw_drop_average_velocity'].astype(str).str.len())
 
 lazy = False
 df = read_L0_data(processed_dir, station_id, lazy=lazy, verbose=verbose, debugging_mode=debugging_mode)
 df_sub = df.iloc[0:100000,:]
-dict_data = retrieve_L1_raw_data_matrix(df_sub, sensor_name, lazy=lazy, verbose=verbose)
+dict_data = retrieve_L1_raw_drop_number_matrix(df_sub, sensor_name, lazy=lazy, verbose=verbose)
 ds = create_L1_dataset_from_L0(df=df_sub, attrs=attrs, lazy=lazy, verbose=verbose)
 
 lazy = True
 df = read_L0_data(processed_dir, station_id, lazy=lazy, verbose=verbose, debugging_mode=debugging_mode)
-dict_data = retrieve_L1_raw_data_matrix(df_sub, sensor_name, lazy=lazy, verbose=verbose)
+dict_data = retrieve_L1_raw_drop_number_matrix(df_sub, sensor_name, lazy=lazy, verbose=verbose)
 ds = create_L1_dataset_from_L0(df=df_sub, attrs=attrs, lazy=lazy, verbose=verbose)
 ds.compute()
 
-df_series = df_sub["RawData"].astype(str).str.split(",").iloc[0]
+df_series = df_sub["raw_drop_number"].astype(str).str.split(",").iloc[0]
 
 df_series.shape
 type(df_series)
 len(df_series[0].values[1])
 
-variable = "RawData"
+variable = "raw_drop_number"
 variable = "sensor_heating_current"
 df_sub.iloc[0,:][variable]
 df_sub[variable] # series 
@@ -114,9 +114,9 @@ df_sub[[variable]].iloc[0]
 np.char.split(df_sub[variable].astype(str).iloc[0], ",")
 
 
-df_sub["RawData"][0].astype(str).str.split(",")[0][0]
+df_sub["raw_drop_number"][0].astype(str).str.split(",")[0][0]
  
-v = df_sub["RawData"][0].values.astype(str)
+v = df_sub["raw_drop_number"][0].values.astype(str)
 a = np.char.split(v, ",")
 len(a[0])
 len(a[1])

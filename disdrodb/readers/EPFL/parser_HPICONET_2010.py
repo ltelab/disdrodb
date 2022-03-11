@@ -137,32 +137,32 @@ def main(raw_dir,
     #### - Define raw data headers
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
-    # Header found: "TIMESTAMP","RECORD","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","FieldN","Fieldv","RowData"
+    # Header found: "TIMESTAMP","RECORD","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","raw_drop_concentration","raw_drop_average_velocity","RowData"
 
     column_names = [
         "time",
         "id",
         "datalogger_temperature",
         "datalogger_voltage",
-        "rain_rate_32bit",
-        "rain_accumulated_32bit",
-        "weather_code_SYNOP_4680",
-        "weather_code_SYNOP_4677",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
-        "n_particles",
+        "number_particles",
         "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
         "sensor_status",
-        "rain_amount_absolute_32bit",
+        "rainfall_amount_absolute_32bit",
         "Debug_data",
-        "FieldN",
-        "FieldV",
-        "RawData",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
         "datalogger_error",
     ]
 
@@ -225,14 +225,14 @@ def main(raw_dir,
         # Drop Debug_data
         df = df.drop(columns=["Debug_data", "datalogger_error"])
 
-        # To Gionata: I got some rows with almost all nan but FieldN, FieldV and RawData all 0
+        # To Gionata: I got some rows with almost all nan but raw_drop_concentration, raw_drop_average_velocity and raw_drop_number all 0
         # Drop rows with more than 8 nan
         df = df.dropna(thresh=(len(df.columns) - 12), how="all")
 
-        # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-        df = df.loc[df["FieldN"].astype(str).str.len() == 224]
-        df = df.loc[df["FieldV"].astype(str).str.len() == 224]
-        df = df.loc[df["RawData"].astype(str).str.len() == 4096]
+        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
@@ -241,7 +241,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.dat*"
+    raw_drop_number_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
     ####################
@@ -294,7 +294,7 @@ def main(raw_dir,
 
             # -----------------------------------------------------------------.
             #### - List files to process
-            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
+            glob_pattern = os.path.join("data", station_id, raw_drop_number_glob_pattern)
             file_list = get_file_list(
                 raw_dir=raw_dir,
                 glob_pattern=glob_pattern,

@@ -15,7 +15,7 @@ Created on Wed Nov 17 15:03:47 2021
 # Name 
 Nd / d / drop_diameter_counts / Field_N # ???
 Vd / v / drop_velocity_counts / Field_V # ???    
-N / n / raw_data  / Field_Raw     # ??? PCM Parsivel conditional matrix
+N / n / raw_drop_number  / Field_Raw     # ??? PCM Parsivel conditional matrix
 
 # 'RawDrops'
 # 'VolumetricDrops'
@@ -39,10 +39,10 @@ N / n / raw_data  / Field_Raw     # ??? PCM Parsivel conditional matrix
 ##----------------------------------------------------------------------------.
 ### Differences between Parsivel and Parsivel2
 # Parsivel1:
-#   11:  Number of detected particles               (n_particles)
+#   11:  Number of detected particles               (number_particles)
 # Parsivel2: 
-#   11:  Number of particle detected and validated  (n_particles)
-#   60:  Number of all particles detected           (n_particles_all)
+#   11:  Number of particle detected and validated  (number_particles)
+#   60:  Number of all particles detected           (number_particles_all)
 
 # Field N (d)
 # - Parsivel1: 1/m3 mm 
@@ -58,7 +58,7 @@ N / n / raw_data  / Field_Raw     # ??? PCM Parsivel conditional matrix
 
 # Only in Parsivel 2 
 # "34": "rain_kinetic_energy" 
-# "35": "snowfall_intensity"
+# "35": "snowfall_rate"
 
 ##----------------------------------------------------------------------------.
 ### Terminology for Parsivel2

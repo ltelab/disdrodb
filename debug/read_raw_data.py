@@ -33,23 +33,23 @@ raw_columns_names = ['time',
 						'datalogger_temperature', 
 						'datalogger_voltage', 
 						'unknow', 
-						'rain_accumulated_32bit', 
-						'weather_code_SYNOP_4680',
-						'weather_code_SYNOP_4677',
+						'rainfall_accumulated_32bit', 
+						'weather_code_synop_4680',
+						'weather_code_synop_4677',
 						'reflectivity_16bit',
 						'mor_visibility',
                         'laser_amplitude',
-                        'n_particles',
+                        'number_particles',
                         'sensor_temperature',
                         'All_nan',
                         'sensor_heating_current',
                         'All_0'
                         'unknow2',
-                        'rain_amount_absolute_32bit',
+                        'rainfall_amount_absolute_32bit',
                         'Debug_data',
-                        'FieldN',
-                        'FieldV',
-                        'RawData',
+                        'raw_drop_concentration',
+                        'raw_drop_average_velocity',
+                        'raw_drop_number',
                         'End_line'
 						]
 
@@ -69,7 +69,7 @@ raw_columns_names = ['time',
 
 df = pd.read_csv(path_raw,
                   # delimiter = '","', 
-                  # names = raw_data_columns,
+                  # names = raw_drop_number_columns,
                   # skiprows= 4,
                   # nrows=10,
                   na_values = ['-.-'],
@@ -82,7 +82,7 @@ df = df.drop(columns = ['col_13','col_17','col_21'])
 
 
 # df['time'] = df['time'].str[1:]
-# df['RawData'] = df['RawData'].str[:-1]
+# df['raw_drop_number'] = df['raw_drop_number'].str[:-1]
 
 # Drop Debug_data
 # df = df.drop(['Debug_data'], axis=1)
@@ -94,7 +94,7 @@ df = df.drop(columns = ['col_13','col_17','col_21'])
 
 # df['id'] = df['id'].astype('uint32')
 # # Drop rows with more than 2 nan (longitute and latitude)
-# df = df.dropna(thresh = (len(raw_data_columns) - 2), how = 'all')
+# df = df.dropna(thresh = (len(raw_drop_number_columns) - 2), how = 'all')
 
 # # Drop all 0 column
 # df = df.drop(columns = ['All_0'])
@@ -140,7 +140,7 @@ for file in file_list:
     try:
         
         df = dd.read_csv(filename,
-                        names = raw_data_columns,
+                        names = raw_drop_number_columns,
                         dtype=dtype_dict,
                         **reader_kwargs
                         )

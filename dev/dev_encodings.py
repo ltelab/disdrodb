@@ -34,14 +34,14 @@ for variable in variables:
     encodings_dict[variable] = encoding_kwargs.copy()
     encodings_dict[variable]["dtype"] = dtype_L0[variable]
 
-encodings_dict["FieldN"]["chunksizes"] = [5000, 32]
-encodings_dict["FieldV"]["chunksizes"] = [5000, 32]
-encodings_dict["RawData"]["chunksizes"] = [5000, 32, 32]
-encodings_dict["RawData"]["dtype"] = "int64"
-encodings_dict["FieldN"]["dtype"] = "float32"
-encodings_dict["FieldV"]["dtype"] = "float32"
-encodings_dict["weather_code_METAR_4678"]["dtype"] = "str"
-encodings_dict["weather_code_NWS"]["dtype"] = "str"
+encodings_dict["raw_drop_concentration"]["chunksizes"] = [5000, 32]
+encodings_dict["raw_drop_average_velocity"]["chunksizes"] = [5000, 32]
+encodings_dict["raw_drop_number"]["chunksizes"] = [5000, 32, 32]
+encodings_dict["raw_drop_number"]["dtype"] = "int64"
+encodings_dict["raw_drop_concentration"]["dtype"] = "float32"
+encodings_dict["raw_drop_average_velocity"]["dtype"] = "float32"
+encodings_dict["weather_code_metar_4678"]["dtype"] = "str"
+encodings_dict["weather_code_nws"]["dtype"] = "str"
 
 with open("/home/sguzzo/L1_netcdf_encodings.yml", "w") as f:
     yaml.dump(encodings_dict, f, sort_keys=False)
@@ -63,7 +63,7 @@ encoding_dict = get_L1_netcdf_encoding_dict(sensor_name)
 
 # def get_L1_zarr_encodings_standards(sensor_name):
 #     # Define variable names
-#     vars = ["FieldN", "FieldV", "RawData"]
+#     vars = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
 #     dtype_dict = get_L1_dtype()
 #     # Define encodings dictionary
 #     encoding_dict = {}

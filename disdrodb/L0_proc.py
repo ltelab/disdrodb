@@ -73,7 +73,7 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 
 ####---------------------------------------------------------------------------.
 #### Dataframe creation
-def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
+def read_raw_drop_number(filepath, column_names, reader_kwargs, lazy=True):
     reader_kwargs = reader_kwargs.copy()
     if reader_kwargs.get("zipped"):
         # Give error on read_csv, so use a copy and pop the kwargs elements
@@ -108,7 +108,7 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
     return df
 
 
-def read_raw_data_zipped(filepath, column_names, reader_kwargs, lazy=True):
+def read_raw_drop_number_zipped(filepath, column_names, reader_kwargs, lazy=True):
     """
     Used because some campaign has tar with multiple files inside,
     and in some situation only one files has to be read.
@@ -135,7 +135,7 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs, lazy=True):
             # If need only to read one file, exit loop file in tar
             if file_name_to_read_zipped is not None:
                 # Read the data
-                df = read_raw_data(
+                df = read_raw_drop_number(
                     filepath=tar.extractfile(filepath),
                     column_names=column_names,
                     reader_kwargs=reader_kwargs,
@@ -144,7 +144,7 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs, lazy=True):
                 break
             else:
                 # Read the data
-                df_temp = read_raw_data(
+                df_temp = read_raw_drop_number(
                     filepath=tar.extractfile(file),
                     column_names=column_names,
                     reader_kwargs=reader_kwargs,
@@ -242,7 +242,7 @@ def read_L0_raw_file_list(
 
             # Open the zip and choose the raw file (for GPM campaign)
             if reader_kwargs.get("zipped"):
-                df = read_raw_data_zipped(
+                df = read_raw_drop_number_zipped(
                     filepath=filepath,
                     column_names=column_names,
                     reader_kwargs=reader_kwargs,
@@ -251,7 +251,7 @@ def read_L0_raw_file_list(
 
             else:
                 # Read the data
-                df = read_raw_data(
+                df = read_raw_drop_number(
                     filepath=filepath,
                     column_names=column_names,
                     reader_kwargs=reader_kwargs,

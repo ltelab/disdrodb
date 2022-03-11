@@ -160,7 +160,7 @@ def main(raw_dir,
         "debug_data",
         "field_n",
         "field_v",
-        "raw_data",
+        "raw_drop_number",
         "datalogger_error",
     ]
 
@@ -244,10 +244,10 @@ def main(raw_dir,
         ]
         df = df.dropna(subset=col_to_drop_if_na, how="all")
 
-        # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
+        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
         df = df.loc[df["field_n"].astype(str).str.len() == 224]
         df = df.loc[df["field_v"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_data"].astype(str).str.len() == 4096]
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
@@ -256,7 +256,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.dat*"
+    raw_drop_number_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
     ####################
@@ -310,7 +310,7 @@ def main(raw_dir,
 
             # -----------------------------------------------------------------.
             #### - List files to process
-            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
+            glob_pattern = os.path.join("data", station_id, raw_drop_number_glob_pattern)
             file_list = get_file_list(
                 raw_dir=raw_dir,
                 glob_pattern=glob_pattern,

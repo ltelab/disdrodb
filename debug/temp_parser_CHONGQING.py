@@ -49,7 +49,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_data
+from disdrodb.L0_proc import read_raw_drop_number
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -195,7 +195,7 @@ reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
 # filepath = file_list[0]
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
-df = read_raw_data(filepath, 
+df = read_raw_drop_number(filepath, 
                    column_names=None,  
                    reader_kwargs=str_reader_kwargs, 
                    lazy=False)
@@ -248,9 +248,9 @@ column_names = []
 check_L0_column_names(column_names)
 
 # - Read data
-# Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
+# Added function read_raw_drop_number_dtype() on L0_proc for read with columns and all dtypes as object
 filepath = file_list[0]
-df = read_raw_data(filepath=filepath, 
+df = read_raw_drop_number(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=False)
@@ -262,7 +262,7 @@ print_df_column_names(df)
 print_df_random_n_rows(df, n= 5)
 
 # - Check it loads also lazily in dask correctly
-df1 = read_raw_data(filepath=filepath, 
+df1 = read_raw_drop_number(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=True)
@@ -297,7 +297,7 @@ lazy = True             # Try also with True when work with False
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_data(filepath=filepath, 
+df = read_raw_drop_number(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
@@ -320,7 +320,7 @@ if len(column_names) != 0:
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
@@ -341,23 +341,23 @@ temp_raw['col_0'] = temp_raw['col_0'].str.lstrip('   ')
 temp_raw = temp_raw.dropna()
 
 
-# If RawData series is not a 32 multiple, throw error
+# If raw_drop_number series is not a 32 multiple, throw error
 if len(temp_raw) % 32 != 0:
-    msg = "Wrong column number on RawData, can not parse!"
+    msg = "Wrong column number on raw_drop_number, can not parse!"
     raise ValueError(msg)
 
 
-# Series and variable temporary for parsing RawData
+# Series and variable temporary for parsing raw_drop_number
 if lazy:
     import pandas as pd
-    raw = pd.DataFrame({'RawData':[]})
+    raw = pd.DataFrame({'raw_drop_number':[]})
     # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
 else:
-    raw = pd.DataFrame({'RawData':[]})
+    raw = pd.DataFrame({'raw_drop_number':[]})
 temp_string_2 = ''
 
 
-# Parse for RawData
+# Parse for raw_drop_number
 for index, value in temp_raw.iterrows():
     temp_string = ''
     
@@ -381,7 +381,7 @@ for index, value in temp_raw.iterrows():
         
     else:
                 
-        raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+        raw = raw.append({'raw_drop_number': temp_string_2},ignore_index=True)
             
         temp_string_2 = ''
 
@@ -398,7 +398,7 @@ if lazy:
 else:
     df = dd.concat([temp_time, raw], axis = 1)
 
-df.columns = ['time', 'RawData']
+df.columns = ['time', 'raw_drop_number']
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -454,23 +454,23 @@ def df_sanitizer_fun(df, lazy=lazy):
     temp_raw = temp_raw.dropna()
 
 
-    # If RawData series is not a 32 multiple, throw error
+    # If raw_drop_number series is not a 32 multiple, throw error
     if len(temp_raw) % 32 != 0:
-        msg = "Wrong column number on RawData, can not parse!"
+        msg = "Wrong column number on raw_drop_number, can not parse!"
         raise ValueError(msg)
 
 
-    # Series and variable temporary for parsing RawData
+    # Series and variable temporary for parsing raw_drop_number
     if lazy:
         import pandas as pd
-        raw = pd.DataFrame({'RawData':[]})
+        raw = pd.DataFrame({'raw_drop_number':[]})
         # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
     else:
-        raw = pd.DataFrame({'RawData':[]})
+        raw = pd.DataFrame({'raw_drop_number':[]})
     temp_string_2 = ''
 
 
-    # Parse for RawData
+    # Parse for raw_drop_number
     for index, value in temp_raw.iterrows():
         temp_string = ''
         
@@ -494,7 +494,7 @@ def df_sanitizer_fun(df, lazy=lazy):
             
         else:
                     
-            raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+            raw = raw.append({'raw_drop_number': temp_string_2},ignore_index=True)
                 
             temp_string_2 = ''
 
@@ -511,7 +511,7 @@ def df_sanitizer_fun(df, lazy=lazy):
     else:
         df = dd.concat([temp_time, raw], axis = 1)
 
-    df.columns = ['time', 'RawData']
+    df.columns = ['time', 'raw_drop_number']
     
     return df 
 

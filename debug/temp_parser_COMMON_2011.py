@@ -48,7 +48,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_data
+from disdrodb.L0_proc import read_raw_drop_number
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -189,23 +189,23 @@ column_names = ['time',
                 'id',
                 'datalogger_temperature',
                 'datalogger_voltage',
-                'rain_rate_32bit',
-                'rain_accumulated_32bit',
+                'rainfall_rate_32bit',
+                'rainfall_accumulated_32bit',
                 'weather_code_synop_4680',
                 'weather_code_synop_4677',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'laser_amplitude',
-                'n_particles',
+                'number_particles',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
-                'rain_amount_absolute_32bit',
+                'rainfall_amount_absolute_32bit',
                 'Debug_data',
-                'FieldN',
-                'FieldV',
-                'RawData',
+                'raw_drop_concentration',
+                'raw_drop_average_velocity',
+                'raw_drop_number',
                 'datalogger_error'
                 ]
 
@@ -223,7 +223,7 @@ lazy = True             # Try also with True when work with False
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_data(filepath=filepath, 
+df = read_raw_drop_number(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
@@ -245,7 +245,7 @@ if len(df.columns) != len(column_names):
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
@@ -259,17 +259,17 @@ df = df[~df.Debug_data.str.startswith('Frame', na=False)]
 # df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
 # If value in col_to_drop_if_na colum is nan, drop the row
-col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_synop_4680',
+col_to_drop_if_na = ['rainfall_rate_32bit', 'rainfall_accumulated_32bit', 'weather_code_synop_4680',
                      'weather_code_synop_4677', 'reflectivity_32bit', 'mor_visibility',
-                     'laser_amplitude', 'n_particles', 'sensor_temperature',
+                     'laser_amplitude', 'number_particles', 'sensor_temperature',
                      'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
-                     'rain_amount_absolute_32bit']
+                     'rainfall_amount_absolute_32bit']
 df = df.dropna(subset = col_to_drop_if_na, how='all')
 
-# Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
+df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
+df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
  # - Convert time column to datetime 
 df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
@@ -318,17 +318,17 @@ def df_sanitizer_fun(df, lazy=lazy):
     df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
     # If value in col_to_drop_if_na colum is nan, drop the row
-    col_to_drop_if_na = ['rain_rate_32bit', 'rain_accumulated_32bit', 'weather_code_synop_4680',
+    col_to_drop_if_na = ['rainfall_rate_32bit', 'rainfall_accumulated_32bit', 'weather_code_synop_4680',
                          'weather_code_synop_4677', 'reflectivity_32bit', 'mor_visibility',
-                         'laser_amplitude', 'n_particles', 'sensor_temperature',
+                         'laser_amplitude', 'number_particles', 'sensor_temperature',
                          'sensor_heating_current', 'sensor_battery_voltage', 'sensor_status',
-                         'rain_amount_absolute_32bit']
+                         'rainfall_amount_absolute_32bit']
     df = df.dropna(subset = col_to_drop_if_na, how='all')
 
-    # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-    df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-    df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+    # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+    df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
      # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')

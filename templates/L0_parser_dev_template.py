@@ -40,7 +40,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_data
+from disdrodb.L0_proc import read_raw_drop_number
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -175,7 +175,7 @@ reader_kwargs["blocksize"] = None # "50MB"
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 str_reader_kwargs['dtype'] = str # or object 
-df_str = read_raw_data(filepath, column_names=None,  
+df_str = read_raw_drop_number(filepath, column_names=None,  
                        reader_kwargs=str_reader_kwargs, lazy=False)
 
 # Print first rows
@@ -224,23 +224,23 @@ column_names = ['id',
                 'time',
                 'datalogger_temperature',
                 'datalogger_voltage',
-                'rain_rate_32bit',
-                'rain_accumulated_32bit',
-                'weather_code_SYNOP_4680',
-                'weather_code_SYNOP_4677',
+                'rainfall_rate_32bit',
+                'rainfall_accumulated_32bit',
+                'weather_code_synop_4680',
+                'weather_code_synop_4677',
                 'reflectivity_16bit',
                 'mor_visibility',
                 'laser_amplitude',  
-                'n_particles',
+                'number_particles',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
-                'rain_amount_absolute_32bit',
+                'rainfall_amount_absolute_32bit',
                 'error_code',
-                'FieldN',
-                'FieldV',
-                'RawData',
+                'raw_drop_concentration',
+                'raw_drop_average_velocity',
+                'raw_drop_number',
                 'datalogger_error'
                 ]
 
@@ -249,7 +249,7 @@ check_L0_column_names(column_names)
 
 # - Read data
 filepath = file_list[0]
-df = read_raw_data(filepath=filepath, 
+df = read_raw_drop_number(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=False)
@@ -259,7 +259,7 @@ print_df_column_names(df)
 print_df_random_n_rows(df, n= 5)  
 
 # - Check it loads also lazily in dask correctly
-df1 = read_raw_data(filepath=filepath, 
+df1 = read_raw_drop_number(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=True)
@@ -296,7 +296,7 @@ lazy = False             # Try also with True when work with False
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_data(filepath=filepath, 
+df = read_raw_drop_number(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
@@ -318,7 +318,7 @@ if len(df.columns) != len(column_names):
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 

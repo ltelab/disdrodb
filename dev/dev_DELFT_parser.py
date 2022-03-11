@@ -15,10 +15,10 @@ df.columns
 
 
 
-df.iloc[0,:]["n_particles_all"]
-df.iloc[0,:]['FieldN']
-df.iloc[0,:]['FieldV']
-df.iloc[0,:]['RawData']
+df.iloc[0,:]["number_particles_all"]
+df.iloc[0,:]['raw_drop_concentration']
+df.iloc[0,:]['raw_drop_average_velocity']
+df.iloc[0,:]['raw_drop_number']
 
 
 attrs = {}
@@ -41,8 +41,8 @@ verbose=False
 
 
 
-todrop = ['firmware_IOP',
-          'firmware_DSP',
+todrop = ['firmware_iop',
+          'firmware_dps',
           'date_time_measurement_start',
           'sensor_time',
           'sensor_date',
@@ -66,9 +66,9 @@ filepath = fpath
 df = pd.read_csv(fpath)
 
 df.columns
-from disdrodb.L0_proc import read_raw_data
+from disdrodb.L0_proc import read_raw_drop_number
 lazy=True
-df = read_raw_data(
+df = read_raw_drop_number(
     filepath=filepath,
     column_names=columns_names_temporary,
     reader_kwargs=reader_kwargs,
@@ -85,8 +85,8 @@ column_names=columns_names_temporary
 df1 = df.compute()
 import numpy as np
 
-df1['FieldV'].astype(str).str.split(",")
-df_series = df1["FieldV"].astype(str).str.split(",")
+df1['raw_drop_average_velocity'].astype(str).str.split(",")
+df_series = df1["raw_drop_average_velocity"].astype(str).str.split(",")
 arr_lengths = df_series.apply(len)
 idx, count = np.unique(arr_lengths, return_counts=True)
 n_max_vals = idx[np.argmax(count)]

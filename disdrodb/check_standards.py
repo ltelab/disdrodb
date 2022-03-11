@@ -150,7 +150,7 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
 
     # -------------------------------------
     # Check if raw spectrum and 1D derivate exists
-    list_sprectrum_vars = ["FieldN", "FieldV", "RawData"]
+    list_sprectrum_vars = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
     unavailable_vars = np.array(list_sprectrum_vars)[
         np.isin(list_sprectrum_vars, df.columns, invert=True)
     ]

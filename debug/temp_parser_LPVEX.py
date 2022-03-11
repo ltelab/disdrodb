@@ -49,7 +49,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_data
+from disdrodb.L0_proc import read_raw_drop_number
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -129,7 +129,7 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.tar"), 
 
 column_names = ['time',
                 'Unknow',
-                'RawData',
+                'raw_drop_number',
                 ]
 
 
@@ -243,7 +243,7 @@ reader_kwargs['encoding_errors'] = 'ignore'
 # # filepath = file_list[0]
 # filepath = file_list[0]
 # str_reader_kwargs = reader_kwargs.copy() 
-# df = read_raw_data(filepath, 
+# df = read_raw_drop_number(filepath, 
 #                    column_names=None,  
 #                    reader_kwargs=str_reader_kwargs, 
 #                    lazy=False)
@@ -295,7 +295,7 @@ reader_kwargs['encoding_errors'] = 'ignore'
 
 column_names = ['time',
                 'Unknow',
-                'RawData',
+                'raw_drop_number',
                 ]
 
 
@@ -307,9 +307,9 @@ column_names = ['time',
 # check_L0_column_names(column_names)
 
 # # - Read data
-# # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
+# # Added function read_raw_drop_number_dtype() on L0_proc for read with columns and all dtypes as object
 # filepath = file_list[0]
-# df = read_raw_data(filepath=filepath, 
+# df = read_raw_drop_number(filepath=filepath, 
 #                     column_names=column_names,
 #                     reader_kwargs=reader_kwargs,
 #                     lazy=False)
@@ -321,7 +321,7 @@ column_names = ['time',
 # print_df_random_n_rows(df, n= 5)
 
 # # - Check it loads also lazily in dask correctly
-# df1 = read_raw_data(filepath=filepath, 
+# df1 = read_raw_drop_number(filepath=filepath, 
 #                     column_names=column_names,
 #                     reader_kwargs=reader_kwargs,
 #                     lazy=True)
@@ -357,7 +357,7 @@ column_names = ['time',
 # #------------------------------------------------------. 
 # #### 8.1 Run following code portion without modifying anthing 
 # # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-# df = read_raw_data(filepath=filepath, 
+# df = read_raw_drop_number(filepath=filepath, 
 #                     column_names=columns_names_temporary,
 #                     reader_kwargs=reader_kwargs,
 #                     lazy=lazy)
@@ -380,7 +380,7 @@ column_names = ['time',
             
 # # # Example: split erroneous columns  
 # # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# # df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# # df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # # df = df.drop(columns=['TO_BE_SPLITTED'])
 # # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # # del df_tmp 
@@ -394,20 +394,20 @@ column_names = ['time',
 # # Drop TO_BE_SPLITTED
 # df = df.drop(['TO_BE_SPLITTED'], axis=1)
 
-# # Add the comma on RawData
-# df_RawData = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('RawData')
+# # Add the comma on raw_drop_number
+# df_raw_drop_number = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_number')
 
 # # Concat all togheter
-# df = dd.concat([df, df_to_parse.iloc[:,:9], df_RawData] ,axis=1)
+# df = dd.concat([df, df_to_parse.iloc[:,:9], df_raw_drop_number] ,axis=1)
 
 # # Add names to the columns
 # df.columns = column_names
 
-# # Drop rows with less than 4096 on RawData
-# df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# # Drop rows with less than 4096 on raw_drop_number
+# df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
-# # Drop not float on rain_rate_32bit
-# # df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+# # Drop not float on rainfall_rate_32bit
+# # df = df[pd.to_numeric(df['rainfall_rate_32bit'], errors='coerce').notnull()]
 
 # #---------------------------------------------------------------------------.
 # #### 8.3 Run following code portion without modifying anthing 
