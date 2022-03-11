@@ -80,7 +80,7 @@ def set_raw_fields_arr_dtype(arr, key):
     return arr
 
 
-def reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps):
+def reshape_L0_raw_drop_number_matrix_to_2D(arr, n_bins_dict, n_timesteps):
     try:
         arr = arr.reshape(n_timesteps, n_bins_dict["raw_drop_concentration"], n_bins_dict["raw_drop_average_velocity"])
     except Exception as e:
@@ -131,7 +131,7 @@ def retrieve_L1_raw_drop_number_matrix(df, sensor_name, lazy=True, verbose=False
         arr = set_raw_fields_arr_dtype(arr, key=key)
         # For key='raw_drop_number', reshape to 2D matrix
         if key == "raw_drop_number":
-            arr = reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps)
+            arr = reshape_L0_raw_drop_number_matrix_to_2D(arr, n_bins_dict, n_timesteps)
         # Add array to dictionary
         dict_data[key] = arr
 
