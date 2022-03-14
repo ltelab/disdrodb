@@ -48,7 +48,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_drop_number
+from disdrodb.L0_proc import read_raw_data
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -66,6 +66,7 @@ from disdrodb.dev_tools import print_valid_L0_column_names
 from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
 from disdrodb.dev_tools import infer_df_str_column_names
+
 
 ##------------------------------------------------------------------------. 
 ######################################
@@ -191,7 +192,7 @@ reader_kwargs['header'] = None
 # filepath = file_list[0]
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
-df = read_raw_drop_number(filepath, 
+df = read_raw_data(filepath, 
                    column_names=None,  
                    reader_kwargs=str_reader_kwargs, 
                    lazy=False)
@@ -285,7 +286,7 @@ lazy = False             # Try also with True when work with False
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_drop_number(filepath=filepath, 
+df = read_raw_data(filepath=filepath, 
                     column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
@@ -348,13 +349,13 @@ df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
 ##----------------------------------------------------.
 # Cast dataframe to dtypes
 # - Determine dtype based on standards 
-# dtype_dict = get_L0_dtype_standards()
-# for column in df.columns:
-#     try:
-#         df[column] = df[column].astype(dtype_dict[column])
-#     except KeyError:
-#         # If column dtype is not into get_L0_dtype_standards, assign object
-#         df[column] = df[column].astype('object')
+dtype_dict = get_L0_dtype_standards(sensor_name)
+for column in df.columns:
+    try:
+        df[column] = df[column].astype(dtype_dict[column])
+    except KeyError:
+        # If column dtype is not into get_L0_dtype_standards, assign object
+        df[column] = df[column].astype('object')
 
 
 ####------------------------------------------------------------------------------.
