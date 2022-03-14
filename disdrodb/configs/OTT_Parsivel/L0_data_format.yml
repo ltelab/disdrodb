@@ -114,7 +114,7 @@ firmware_iop:
   n_naturals: null
   data_range: null
   nan_flags: null
-firmware_dps:
+firmware_dsp:
   n_digits: null
   n_characters: null
   n_decimals: null

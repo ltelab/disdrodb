@@ -257,7 +257,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_drop_number_glob_pattern = "*.dat*"
+    raw_data_glob_pattern= "*.dat*"
 
     ####----------------------------------------------------------------------.
     ####################

@@ -20,7 +20,7 @@ import netCDF4
 from disdrodb.io import check_directories
 from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
-from disdrodb.L0_proc import read_raw_drop_number
+from disdrodb.L0_proc import read_raw_data
 from disdrodb.L0_proc import get_file_list
 from disdrodb.logger import create_logger
 from disdrodb.data_encodings import get_ARM_to_l0_dtype_standards

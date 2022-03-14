@@ -10,7 +10,7 @@ import pandas as pd
 import dask.dataframe as dd
 
 import numpy as np
-from disdrodb.L1_proc import retrieve_L1_raw_drop_number_matrix
+from disdrodb.L1_proc import retrieve_L1_raw_arrays
 from disdrodb.standards import get_raw_field_nbins
 from disdrodb.L1_proc import convert_L0_raw_fields_arr_flags
 from disdrodb.L1_proc import set_raw_fields_arr_dtype
@@ -76,7 +76,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from disdrodb.L1_proc import retrieve_L1_raw_drop_number_matrix
+from disdrodb.L1_proc import retrieve_L1_raw_arrays
 from disdrodb.standards import get_raw_field_nbins
 from disdrodb.L1_proc import convert_L0_raw_fields_arr_flags
 from disdrodb.L1_proc import set_raw_fields_arr_dtype
@@ -126,7 +126,7 @@ df = check_array_lengths_consistency(df, sensor_name=sensor_name, lazy=lazy)
 print(len(df))
 
 
-dict_data = retrieve_L1_raw_drop_number_matrix(df, sensor_name, lazy=lazy, verbose=verbose)
+dict_data = retrieve_L1_raw_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
 
 
 df_series = df[key].astype(str).str.split(",")
@@ -178,7 +178,7 @@ for key, n_bins in n_bins_dict.items():
     arr = set_raw_fields_arr_dtype(arr, key=key)
     # For key='raw_drop_number', reshape to 2D matrix
     if key == "raw_drop_number":
-        arr = reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps)
+        arr = reshape_L0_raw_drop_number(arr, n_bins_dict, n_timesteps)
     # Add array to dictionary
     dict_data[key] = arr
 
@@ -189,9 +189,9 @@ if len(unavailable_keys) > 0:
             "The raw spectrum is required to compute unavaible N_D and N_V."
         )
     if "raw_drop_concentration" in unavailable_keys:
-        dict_data["raw_drop_concentration"] = get_raw_drop_concentration_from_raw_spectrum(dict_data["raw_drop_number"])
+        dict_data["raw_drop_concentration"] = get_drop_concentration(dict_data["raw_drop_number"])
     if "raw_drop_average_velocity" in unavailable_keys:
-        dict_data["raw_drop_average_velocity"] = get_raw_drop_average_velocity_from_raw_spectrum(dict_data["raw_drop_number"])
+        dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(dict_data["raw_drop_number"])
 
 
 # -----------------------------------------------------------------.

@@ -79,7 +79,7 @@ print(df.shape)
 print(df.columns)
 
 import numpy as np 
-from disdrodb.L1_proc import retrieve_L1_raw_drop_number_matrix 
+from disdrodb.L1_proc import retrieve_L1_raw_arrays 
 from disdrodb.L1_proc import create_L1_dataset_from_L0 
 
 np.unique(df['raw_drop_number'].astype(str).str.len())
@@ -89,12 +89,12 @@ np.unique(df['raw_drop_average_velocity'].astype(str).str.len())
 lazy = False
 df = read_L0_data(processed_dir, station_id, lazy=lazy, verbose=verbose, debugging_mode=debugging_mode)
 df_sub = df.iloc[0:100000,:]
-dict_data = retrieve_L1_raw_drop_number_matrix(df_sub, sensor_name, lazy=lazy, verbose=verbose)
+dict_data = retrieve_L1_raw_arrays(df_sub, sensor_name, lazy=lazy, verbose=verbose)
 ds = create_L1_dataset_from_L0(df=df_sub, attrs=attrs, lazy=lazy, verbose=verbose)
 
 lazy = True
 df = read_L0_data(processed_dir, station_id, lazy=lazy, verbose=verbose, debugging_mode=debugging_mode)
-dict_data = retrieve_L1_raw_drop_number_matrix(df_sub, sensor_name, lazy=lazy, verbose=verbose)
+dict_data = retrieve_L1_raw_arrays(df_sub, sensor_name, lazy=lazy, verbose=verbose)
 ds = create_L1_dataset_from_L0(df=df_sub, attrs=attrs, lazy=lazy, verbose=verbose)
 ds.compute()
 

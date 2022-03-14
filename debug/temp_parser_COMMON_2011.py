@@ -48,7 +48,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_drop_number
+from disdrodb.L0_proc import read_raw_data
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -223,7 +223,7 @@ lazy = True             # Try also with True when work with False
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_drop_number(filepath=filepath, 
+df = read_raw_data(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)

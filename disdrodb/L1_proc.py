@@ -46,13 +46,13 @@ from disdrodb.standards import get_raw_field_nbins
 logger = logging.getLogger(__name__)
 
 
-def get_raw_drop_concentration_from_raw_spectrum(arr):
+def get_drop_concentration(arr):
     # TODO
     logger.info("Computing raw_drop_concentration from raw spectrum.")
     return arr[:, :, 0]
 
 
-def get_raw_drop_average_velocity_from_raw_spectrum(arr):
+def get_drop_average_velocity(arr):
     # TODO
     logger.info("Computing raw_drop_average_velocity from raw spectrum.")
     return arr[:, 0, :]
@@ -80,7 +80,7 @@ def set_raw_fields_arr_dtype(arr, key):
     return arr
 
 
-def reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps):
+def reshape_L0_raw_drop_number(arr, n_bins_dict, n_timesteps):
     try:
         arr = arr.reshape(n_timesteps, n_bins_dict["raw_drop_concentration"], n_bins_dict["raw_drop_average_velocity"])
     except Exception as e:
@@ -91,7 +91,7 @@ def reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps):
     return arr
 
 
-def retrieve_L1_raw_drop_number_matrix(df, sensor_name, lazy=True, verbose=False):
+def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
     # Log
     msg = " - Retrieval of L1 data matrix started."
     if verbose:
@@ -131,7 +131,7 @@ def retrieve_L1_raw_drop_number_matrix(df, sensor_name, lazy=True, verbose=False
         arr = set_raw_fields_arr_dtype(arr, key=key)
         # For key='raw_drop_number', reshape to 2D matrix
         if key == "raw_drop_number":
-            arr = reshape_L0_raw_drop_numbermatrix_to_2D(arr, n_bins_dict, n_timesteps)
+            arr = reshape_L0_raw_drop_number(arr, n_bins_dict, n_timesteps)
         # Add array to dictionary
         dict_data[key] = arr
 
@@ -142,9 +142,9 @@ def retrieve_L1_raw_drop_number_matrix(df, sensor_name, lazy=True, verbose=False
                 "The raw spectrum is required to compute unavaible N_D and N_V."
             )
         if "raw_drop_concentration" in unavailable_keys:
-            dict_data["raw_drop_concentration"] = get_raw_drop_concentration_from_raw_spectrum(dict_data["raw_drop_number"])
+            dict_data["raw_drop_concentration"] = get_drop_concentration(dict_data["raw_drop_number"])
         if "raw_drop_average_velocity" in unavailable_keys:
-            dict_data["raw_drop_average_velocity"] = get_raw_drop_average_velocity_from_raw_spectrum(dict_data["raw_drop_number"])
+            dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(dict_data["raw_drop_number"])
 
     # Log
     msg = " - Retrieval of L1 data matrix finished."
@@ -201,7 +201,7 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
             df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
         )
         # Retrieve raw data matrices
-        dict_data = retrieve_L1_raw_drop_number_matrix(
+        dict_data = retrieve_L1_raw_arrays(
             df, sensor_name, lazy=lazy, verbose=verbose
         )
         # Define raw data matrix variables for xarray Dataset

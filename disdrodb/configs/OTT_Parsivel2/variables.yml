@@ -12,7 +12,7 @@
 '12': sensor_temperature
 '13': sensor_serial_number
 '14': firmware_iop
-'15': firmware_dps
+'15': firmware_dsp
 '16': sensor_heating_current
 '17': sensor_battery_voltage
 '18': sensor_status

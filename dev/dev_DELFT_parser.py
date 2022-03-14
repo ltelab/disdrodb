@@ -42,7 +42,7 @@ verbose=False
 
 
 todrop = ['firmware_iop',
-          'firmware_dps',
+          'firmware_dsp',
           'date_time_measurement_start',
           'sensor_time',
           'sensor_date',
@@ -66,9 +66,9 @@ filepath = fpath
 df = pd.read_csv(fpath)
 
 df.columns
-from disdrodb.L0_proc import read_raw_drop_number
+from disdrodb.L0_proc import read_raw_data
 lazy=True
-df = read_raw_drop_number(
+df = read_raw_data(
     filepath=filepath,
     column_names=columns_names_temporary,
     reader_kwargs=reader_kwargs,

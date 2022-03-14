@@ -48,7 +48,7 @@ from disdrodb.io import get_campaign_name
 from disdrodb.io import create_directory_structure
 from disdrodb.check_standards import check_L0_column_names 
 from disdrodb.data_encodings import get_L0_dtype_standards
-from disdrodb.L0_proc import read_raw_drop_number
+from disdrodb.L0_proc import read_raw_data
 from disdrodb.L0_proc import get_file_list
 from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
@@ -190,7 +190,7 @@ reader_kwargs["dtype"] = str
 filepath = file_list[1]
 # filepath='/SharedVM/Campagne/EPFL/Raw/DAVOS_2009/DAVOS_2009_V1/data/50/file50_20190404.dat.gz'
 str_reader_kwargs = reader_kwargs.copy() 
-df = read_raw_drop_number(filepath, 
+df = read_raw_data(filepath, 
                    column_names=None,  
                    reader_kwargs=str_reader_kwargs, 
                    lazy=False)
@@ -266,9 +266,9 @@ column_names = ['time',
 check_L0_column_names(column_names)
 
 # - Read data
-# Added function read_raw_drop_number_dtype() on L0_proc for read with columns and all dtypes as object
+# Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
 filepath = file_list[1]
-df = read_raw_drop_number(filepath=filepath, 
+df = read_raw_data(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=False)
@@ -280,7 +280,7 @@ print_df_column_names(df)
 print_df_random_n_rows(df, n= 5)
 
 # - Check it loads also lazily in dask correctly
-df1 = read_raw_drop_number(filepath=filepath, 
+df1 = read_raw_data(filepath=filepath, 
                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=True)
@@ -316,7 +316,7 @@ lazy = False             # Try also with True when work with False
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_drop_number(filepath=filepath, 
+df = read_raw_data(filepath=filepath, 
                    column_names=columns_names_temporary,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
