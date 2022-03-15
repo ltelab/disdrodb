@@ -196,7 +196,7 @@ def main(raw_dir,
                     'sensor_temperature',
                     'sensor_serial_number',
                     'firmware_iop',
-                    'firmware_dps',
+                    'firmware_dsp',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
@@ -320,7 +320,7 @@ def main(raw_dir,
         
         # Drop variables not required in L0 Apache Parquet 
         todrop = ['firmware_iop',
-                  'firmware_dps',
+                  'firmware_dsp',
                   'date_time_measurement_start',
                   'sensor_time',
                   'sensor_date',
@@ -336,7 +336,7 @@ def main(raw_dir,
         ##------------------------------------------------------------------------.
 
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_drop_number_glob_pattern = "*.csv*"
+    raw_data_glob_pattern= "*.csv*"
 
     ####----------------------------------------------------------------------.
     #################### 
@@ -390,7 +390,7 @@ def main(raw_dir,
 
             # -----------------------------------------------------------------.
             #### - List files to process 
-            glob_pattern = os.path.join("data", station_id, raw_drop_number_glob_pattern)
+            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
             file_list = get_file_list(raw_dir=raw_dir,
                                       glob_pattern=glob_pattern,
                                       verbose=verbose,

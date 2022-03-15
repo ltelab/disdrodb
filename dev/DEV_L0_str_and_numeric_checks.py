@@ -12,7 +12,7 @@ sensor_name = "Parsivel"
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 str_reader_kwargs['dtype'] = str # or object 
-df = read_raw_drop_number(filepath, column_names=None,  
+df = read_raw_data(filepath, column_names=None,  
                    reader_kwargs=str_reader_kwargs, lazy=False)
 
 df = df_str
@@ -61,7 +61,7 @@ infer_df_column_names(df, sensor_name=sensor_name)
 ##----------------------------------------------------------------------------.
 #### Numeric EDA
 filepath = file_list[0]
-df = read_raw_drop_number(filepath, column_names=column_names,  
+df = read_raw_data(filepath, column_names=column_names,  
                    reader_kwargs=reader_kwargs, lazy=False)
  
 from disdrodb.dev_tools import print_df_summary_stats
@@ -77,10 +77,10 @@ print_df_summary_stats(df)
 #     str_reader_kwargs = reader_kwargs.copy() 
 #     str_reader_kwargs['dtype'] = str # or object
 #     # Load numeric df 
-#     numeric_df = read_raw_drop_number(filepath, column_names=column_names,  
+#     numeric_df = read_raw_data(filepath, column_names=column_names,  
 #                                reader_kwargs=reader_kwargs, lazy=lazy)
 #     # Load str df 
-#     str_df = read_raw_drop_number(filepath, column_names=column_names,  
+#     str_df = read_raw_data(filepath, column_names=column_names,  
 #                         reader_kwargs=str_reader_kwargs, lazy=lazy)
 #     #-------------------------------------------------------------------------.
 #     # TODO all checks

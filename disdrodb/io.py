@@ -172,21 +172,21 @@ def check_raw_dir(raw_dir):
         )
 
     # Check there are subfolders corresponding to station to process
-    raw_drop_number_dir = os.path.join(raw_dir, "data")
-    list_data_station_id = os.listdir(raw_drop_number_dir)
+    raw_data_dir= os.path.join(raw_dir, "data")
+    list_data_station_id = os.listdir(raw_data_dir)
     if len(list_data_station_id) == 0:
-        raise ValueError("No station directories within {}".format(raw_drop_number_dir))
+        raise ValueError("No station directories within {}".format(raw_data_dir))
 
     # Check there are data files in each list_data_station_id
-    list_raw_drop_number_station_dir = [
-        os.path.join(raw_drop_number_dir, station_id) for station_id in list_data_station_id
+    list_raw_data_station_dir= [
+        os.path.join(raw_data_dir, station_id) for station_id in list_data_station_id
     ]
     list_nfiles_per_station = [
-        len(glob.glob(os.path.join(path, "*"))) for path in list_raw_drop_number_station_dir
+        len(glob.glob(os.path.join(path, "*"))) for path in list_raw_data_station_dir
     ]
     idx_0_files = np.where(np.array(list_nfiles_per_station) == 0)[0]
     if len(idx_0_files) > 0:
-        empty_station_dir = [list_raw_drop_number_station_dir[idx] for idx in idx_0_files]
+        empty_station_dir = [list_raw_data_station_dir[idx] for idx in idx_0_files]
         raise ValueError(
             "The following data directories are empty: {}".format(empty_station_dir)
         )

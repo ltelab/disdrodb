@@ -53,7 +53,7 @@ def get_attrs_standards():
         "sensor_wavelegth",
         "sensor_serial_number",
         "firmware_iop",
-        "firmware_dps",
+        "firmware_dsp",
         "firmware_version",
         "sensor_beam_width",
         "sensor_nominal_width",

@@ -456,7 +456,7 @@ def get_OTT_Parsivel_dict():
         "12": "sensor_temperature",
         # "13": "sensor_serial_number",
         # "14": "firmware_iop",
-        # "14": "firmware_dps",
+        # "14": "firmware_dsp",
         "16": "sensor_heating_current",
         "17": "sensor_battery_voltage",
         "18": "sensor_status",
@@ -503,7 +503,7 @@ def get_OTT_Parsivel2_dict():
         "12": "sensor_temperature",
         # "13": "sensor_serial_number",
         # "14": "firmware_iop",
-        # "14": "firmware_dps",
+        # "14": "firmware_dsp",
         "16": "sensor_heating_current",
         "17": "sensor_battery_voltage",
         "18": "sensor_status",
@@ -550,7 +550,7 @@ def get_ThiesLPM_dict():
         "01": "STX (start identifier)",  # To delete?
         "02": "Device address (factory setting „00“) (NN)",  # To delete?
         "03": "sensor_serial_number",
-        "04": "firmware_dps",
+        "04": "firmware_dsp",
         "05": "Date of the sensor (tt.mm.jj)",  # Merge Date of the sensor and Time of the sensor?
         "06": "Time of the sensor (on request) (hh:mm:ss)",  # Merge Date of the sensor and Time of the sensor?
         "07": "5M SYNOP Tab.4677 (5 minutes mean value) (NN)",  # To delete?
@@ -639,7 +639,7 @@ def get_ThiesLPM_dict():
         "01": "STX (start identifier)",  # To delete?
         "02": "Device address (factory setting „00“) (NN)",  # To delete?
         "03": "sensor_serial_number",
-        "04": "firmware_dps",
+        "04": "firmware_dsp",
         "05": "Date of the sensor (tt.mm.jj)",  # Merge Date of the sensor and Time of the sensor?
         "06": "Time of the sensor (on request) (hh:mm:ss)",  # Merge Date of the sensor and Time of the sensor?
         "07": "5M SYNOP Tab.4677 (5 minutes mean value) (NN)",  # To delete?
@@ -731,7 +731,7 @@ def get_ThiesLPM_dict():
                     '01': 'start_identifier',
                     '02': 'device_address',
                     '03': 'sensor_serial_number',
-                    '04': 'firmware_dps',
+                    '04': 'firmware_dsp',
                     '05': 'date_sensor',
                     '06': 'time_sensor',
                     '07': 'synop_4677_5min_weather_code',
