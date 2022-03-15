@@ -293,7 +293,7 @@ def main(raw_dir,
 
             # -----------------------------------------------------------------.
             #### - List files to process
-            glob_pattern = os.path.join("data", station_id, raw_drop_number_glob_pattern)
+            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
             file_list = get_file_list(
                 raw_dir=raw_dir,
                 glob_pattern=glob_pattern,
