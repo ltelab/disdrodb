@@ -200,10 +200,10 @@ def get_DIVEN_dict():
         # 'minute'
         # 'second'
         # 'day_of_year'
-        # Arrays
-        "size_velocity_distribution": "raw_spectrum",
-        "drop_size_distribution": "FieldD",
-        "drop_velocity_distribution": "raw_drop_concentration",
+        # Arrays 
+        "size_velocity_distribution": "raw_spectrum", # Not sure about the correct names
+        "drop_size_distribution": "raw_drop_number", # Not sure about the correct names
+        "drop_velocity_distribution": "raw_drop_concentration", # Not sure about the correct names
     }
     return d
 

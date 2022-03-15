@@ -114,7 +114,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[1]
+station_id = list_stations_id[0]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -315,6 +315,7 @@ df = df.drop(columns = ['id',
                         'number_particles_meas', # to_drop
                         'rainfall_rate_32bit_meas', # to_drop
                         'reflectivity_32bit_meas', # to_drop
+                        'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
                         'mor_visibility_meas', # to_drop
                         'rainfall_accumulated_32bit_meas', # to_drop
                         'rain_kinetic_energy_meas',
@@ -372,7 +373,7 @@ def df_sanitizer_fun(df, lazy=lazy):
     else: 
         import pandas as dd
     
-    # # Drop useless columns
+    # Drop useless columns
     df = df.drop(columns = ['id',
                             'disdromter_ID', # to_drop
                             'disdrometer_serial', # to_drop
@@ -383,6 +384,7 @@ def df_sanitizer_fun(df, lazy=lazy):
                             'reflectivity_32bit_meas', # to_drop
                             'mor_visibility_meas', # to_drop
                             'rainfall_accumulated_32bit_meas', # to_drop
+                            'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
                             'rain_kinetic_energy_meas',
                             'D10', # I don't know what to do with this
                             'D25', # I don't know what to do with this
@@ -409,7 +411,7 @@ def df_sanitizer_fun(df, lazy=lazy):
 # - Try first with lazy=False, then lazy=True 
 lazy = False # True 
 subset_file_list = file_list[0]
-subset_file_list = all_stations_files
+subset_file_list = all_stations_files[3]
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,
@@ -420,7 +422,7 @@ df = read_L0_raw_file_list(file_list=subset_file_list,
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods
-df = df.compute() # if lazy = True 
+# df = df.compute() # if lazy = True 
 print_df_column_names(df)
 print_df_random_n_rows(df, n= 5) 
 print_df_columns_unique_values(df, column_indices=2, column_names=True) 
@@ -445,6 +447,14 @@ df2 = df.to_parquet(parquet_dir ,
                     row_group_size = row_group_size,
                     compression = compression
                   )
+# df2 = df3.to_parquet(
+#     parquet_dir,
+#     # schema="infer",
+#     engine=engine,
+#     row_group_size=row_group_size,
+#     compression=compression,
+#     # write_metadata_file=False,
+# )
 ##------------------------------------------------------. 
 #### 10.1 Read parquet file
 df2 = dd.read_parquet(parquet_dir)
