@@ -406,7 +406,10 @@ def main(raw_dir,
         # ---------------------------------------------------------------------.
     # -------------------------------------------------------------------------.
     if verbose:
-        print(msg)
+        try:
+            print(msg)
+        except UnboundLocalError: # Not assigned
+            msg = ''
     logger.info("---")
     logger.info(msg)
     logger.info("---")
