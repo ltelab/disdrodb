@@ -37,6 +37,13 @@ from disdrodb.check_standards import check_sensor_name
 # L0_processing
 from disdrodb.L0_proc import get_file_list
 
+# IO
+from disdrodb.io import get_L0_fpath
+from disdrodb.io import get_L1_netcdf_fpath
+
+# L1_processing
+from disdrodb.L1_proc import write_L1_to_netcdf
+
 ############## 
 
 # raw_dir = '/SharedVM/Campagne/DIVEN/Raw/CAPEL-DEWI'
@@ -60,57 +67,48 @@ def rename_variable_netcdf(file_list, processed_dir, dict_name, campaign_name, s
     '''
     from datetime import date
     
-    # Counter
-    x = 0
+    ds = xr.open_mfdataset(file_list)
     
-    for f in file_list:
+    # Match field between NetCDF and dictionary
+    list_var_names = list(ds.keys())
+    dict_var = {k: dict_name[k] for k in dict_name.keys() & set(list_var_names)}
+    
+    # Rename NetCDF variables
+    try:
+        ds = ds.rename(dict_var)
 
-        # Open NetCDF
-        ds = xr.open_dataset(f)
-    
         # print(list(ds.keys()))
         # print(len(list(ds.keys())))
-    
-        # Match field between NetCDF and dictionary
-        list_var_names = list(ds.keys())
-        dict_var = {k: dict_name[k] for k in dict_name.keys() & set(list_var_names)}
-    
-        # Rename NetCDF variables
-        try:
-            ds = ds.rename(dict_var)
-    
-            # print(list(ds.keys()))
-            # print(len(list(ds.keys())))
-            
-            # Save location path
-            path = processed_dir + '/L1/' + campaign_name + '_' + station_id + '_' + str(date.today()) + '_nr_' + str(x) +'.nc'
-            ds.to_netcdf(path=path)
         
-            # Close NetCDF
-            ds.close()
-        except Exception as e:
-            msg = f"Error in rename variable for {f}. The error is: \n {e}"
-            raise RuntimeError(msg)
-            # To implement when move fuction into another file, temporary solution for now
-            # logger.error(msg)
-            # raise RuntimeError(msg)
+        # Save location path
+        # path = processed_dir + '/L1/' + campaign_name + '_' + station_id + '_' + str(date.today()) + '_nr_' + str(x) +'.nc'
+        # ds_temp.to_netcdf(path=path)
+    
+    except Exception as e:
+        msg = f"Error in rename variable. The error is: \n {e}"
+        raise RuntimeError(msg)
+        # To implement when move fuction into another file, temporary solution for now
+        # logger.error(msg)
+        # raise RuntimeError(msg)
+    
+    # Close NetCDF
+    ds.close()
         
-        # Increment counter
-        x += 1
+    return ds
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
-@click.option('-rn', '--rename_netcdf', type=bool, show_default=True, default=True, help="Rename NetCDF variables by a defined dictionary")
+# @click.command()  # options_metavar='<options>'
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+# @click.argument('processed_dir', metavar='<processed_dir>')
+# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+# @click.option('-rn', '--rename_netcdf', type=bool, show_default=True, default=True, help="Rename NetCDF variables by a defined dictionary")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -198,7 +196,10 @@ def main(raw_dir,
             # Dictionary name
             dict_name = get_DIVEN_dict()
             
-            rename_variable_netcdf(file_list, processed_dir, dict_name, campaign_name, station_id)
+            ds = rename_variable_netcdf(file_list, processed_dir, dict_name, campaign_name, station_id)
+            
+            fpath = get_L1_netcdf_fpath(processed_dir, station_id)
+            write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
             
             # End L0 processing
             t_f = time.time() - t_i
@@ -252,7 +253,18 @@ def main(raw_dir,
 #################################
 
 if __name__ == "__main__":
-    main()
+    # main()
+    main(
+        raw_dir = '/SharedVM/Campagne/DIVEN/Raw/CAPEL-DEWI',
+        processed_dir = '/SharedVM/Campagne/DIVEN/Processed/CAPEL-DEWI',
+        l0_processing=True,
+        l1_processing=True,
+        write_netcdf=False,
+        force=True,
+        verbose=True,
+        debugging_mode=True,
+        lazy=True,
+        rename_netcdf = True)
 
 
 
