@@ -57,17 +57,51 @@ from disdrodb.L1_proc import write_L1_to_netcdf
 
 ### Function ###
 
-def rename_variable_netcdf(file_list, processed_dir, dict_name, campaign_name, station_id):
+def rename_variable_netcdf(file_list, processed_dir, dict_name, attrs):
     '''
     file_list:      List of NetCDF's path with the same ID
     processed_dir:  Save location for the renamed NetCDF
     dict_name:      Dictionary for rename NetCDF's variables (key: old name -> value: new name)
-    campaign_name:  Used for name and path for NetCDF
-    station_id:     Used for name and path for NetCDF
+    attrs:          Info about campaing
     '''
-    from datetime import date
     
+    from disdrodb.L1_proc import get_L1_coords
+    
+    # Open netCDFs
     ds = xr.open_mfdataset(file_list)
+    
+    # Get coords
+    coords = get_L1_coords(attrs['sensor_name'])
+        
+    # Remove lat and long
+    ds = ds.squeeze()
+    
+    # Rename diameter and fallspeed to diameter_bin_center and velocity_bin_center
+    ds = ds.rename_dims({'diameter': 'diameter_bin_center', 'fallspeed': 'velocity_bin_center'})
+    # ds = ds.drop(['diameter', 'fallspeed'])
+    
+    # Assign coords and attrs
+    coords["crs"] = attrs["crs"]
+    coords["altitude"] = attrs["altitude"]
+    ds = ds.assign_coords(coords)
+    ds.attrs = attrs
+    
+    # Drop useless data variables
+    data_vars_to_drop = ['year',
+                         'month',
+                         'day',
+                         'hour',
+                         'minute',
+                         'second',
+                         'day_of_year',
+                         'qc_flag',
+                         'measurement_quality',
+                         'present_weather_5m',
+                         'hydrometeor_type_1m',
+                         'hydrometeor_type_5m',
+                         'max_hail_diameter']
+    
+    ds = ds.drop(data_vars_to_drop)
     
     # Match field between NetCDF and dictionary
     list_var_names = list(ds.keys())
@@ -76,13 +110,6 @@ def rename_variable_netcdf(file_list, processed_dir, dict_name, campaign_name, s
     # Rename NetCDF variables
     try:
         ds = ds.rename(dict_var)
-
-        # print(list(ds.keys()))
-        # print(len(list(ds.keys())))
-        
-        # Save location path
-        # path = processed_dir + '/L1/' + campaign_name + '_' + station_id + '_' + str(date.today()) + '_nr_' + str(x) +'.nc'
-        # ds_temp.to_netcdf(path=path)
     
     except Exception as e:
         msg = f"Error in rename variable. The error is: \n {e}"
@@ -116,7 +143,7 @@ def main(raw_dir,
          write_netcdf=False,
          force=True,
          verbose=True,
-         debugging_mode=True,
+         debugging_mode=False,
          lazy=True,
          rename_netcdf = True
          ):
@@ -196,7 +223,7 @@ def main(raw_dir,
             # Dictionary name
             dict_name = get_DIVEN_dict()
             
-            ds = rename_variable_netcdf(file_list, processed_dir, dict_name, campaign_name, station_id)
+            ds = rename_variable_netcdf(file_list, processed_dir, dict_name, attrs)
             
             fpath = get_L1_netcdf_fpath(processed_dir, station_id)
             write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
@@ -262,7 +289,7 @@ if __name__ == "__main__":
         write_netcdf=False,
         force=True,
         verbose=True,
-        debugging_mode=True,
+        debugging_mode=False,
         lazy=True,
         rename_netcdf = True)
 

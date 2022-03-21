@@ -19,9 +19,9 @@ path = f'/SharedVM/Campagne/EPFL/Processed/{campagna}/L1'
 file = campagna + '_s10.nc'
 file_path = os.path.join(path, file)
 
-file_path = '/SharedVM/Campagne/EPFL/Raw/HYMEX_2013/SOP_2012/Parsivel/NetCDF_SOP2012/EPFL-LTE_Parsivel_10_2012-09-01.nc'
+file_path = '/SharedVM/Campagne/EPFL/Processed/HYMEX/SOP_2014/L1/SOP_2014_s10.nc'
 
-ds = xr.open_dataset(file_path)
+ds2 = xr.open_dataset(file_path)
 
 pprint(ds.attrs)
 
