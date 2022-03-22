@@ -29,11 +29,6 @@ Created on Fri Feb 18 10:45:24 2022
 # Add units and explanations to yaml files
 
 ##---------------------------------------------------------.
-## Refactor data_encodings.py -->
-
-## Add DIVEN and ARM dictionary + Conversion to netCDF
-
-##---------------------------------------------------------.
 ## Add yaml for LPMs
 
 ### Parser for DELFT LPM csv and the 2 other links in slack
