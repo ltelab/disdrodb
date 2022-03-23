@@ -19,9 +19,9 @@ path = f'/SharedVM/Campagne/EPFL/Processed/{campagna}/L1'
 file = campagna + '_s10.nc'
 file_path = os.path.join(path, file)
 
-file_path = '/SharedVM/Campagne/EPFL/Raw/HYMEX_2013/SOP_2012/Parsivel/NetCDF_SOP2012/EPFL-LTE_Parsivel_10_2012-09-01.nc'
+file_path = '/SharedVM/Campagne/EPFL/Processed/HYMEX/SOP_2014/L1/SOP_2014_s10.nc'
 
-ds = xr.open_dataset(file_path)
+ds2 = xr.open_dataset(file_path)
 
 pprint(ds.attrs)
 
@@ -38,7 +38,7 @@ net = ds.rename(dict_ARM)
 
 # ds['time'] = ds['time'].astype('M8')
 
-# ds['FieldN'].plot(x = 'time', y = 'diameter_bin_center')
+# ds['raw_drop_concentration'].plot(x = 'time', y = 'diameter_bin_center')
 
 # ds.plot(x = 'time', y = 'diameter_bin_center')
 
@@ -52,13 +52,13 @@ ds.close()
 
 dict_ARM_to_l0 =    {'time': 'time',
                     'time_offset': 'time_offset_OldName',
-                    'precip_rate': 'rain_rate_32bit',
+                    'precip_rate': 'rainfall_rate_32bit',
                     'qc_precip_rate': 'qc_precip_rate_OldName',
-                    'weather_code': 'weather_code_SYNOP_4680',
+                    'weather_code': 'weather_code_synop_4680',
                     'qc_weather_code': 'qc_weather_code_OldName',
                     'equivalent_radar_reflectivity_ott': 'reflectivity_32bit',
                     'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott_OldName',
-                    'number_detected_particles': 'n_particles',
+                    'number_detected_particles': 'number_particles',
                     'qc_number_detected_particles': 'qc_number_detected_particles_OldName',
                     'mor_visibility': 'mor_visibility_OldName',
                     'qc_mor_visibility': 'qc_mor_visibility_OldName',

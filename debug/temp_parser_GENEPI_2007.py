@@ -225,27 +225,27 @@ get_OTT_Parsivel2_dict()
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-# "TIMESTAMP","RECORD","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","FieldN","Fieldv","RowData"
+# "TIMESTAMP","RECORD","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","raw_drop_concentration","raw_drop_average_velocity","RowData"
 
 column_names = ['time',
                 'id',
-                'rain_rate_32bit',
-                'rain_accumulated_32bit',
-                'weather_code_SYNOP_4680',
-                'weather_code_SYNOP_4677',
+                'rainfall_rate_32bit',
+                'rainfall_accumulated_32bit',
+                'weather_code_synop_4680',
+                'weather_code_synop_4677',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'laser_amplitude',
-                'n_particles',
+                'number_particles',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
-                'rain_amount_absolute_32bit',
+                'rainfall_amount_absolute_32bit',
                 'datalogger_error',
-                'FieldN',
-                'FieldV',
-                'RawData',
+                'raw_drop_concentration',
+                'raw_drop_average_velocity',
+                'raw_drop_number',
                 ]
 
 # - Check name validity 
@@ -323,7 +323,7 @@ if len(df.columns) != len(column_names):
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
@@ -331,17 +331,17 @@ if len(df.columns) != len(column_names):
 # Drop Debug_data
 df = df.drop(columns = ['id'])
 
-# If FieldN or FieldV orRawData is nan, drop the row
-col_to_drop_if_na = ['FieldN','FieldV','RawData']
+# If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
+col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
 df = df.dropna(subset = col_to_drop_if_na)
 
-# Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
+df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
+df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
 # Drop if row has any string
-ignore_list = ['time','FieldN','FieldV','RawData']
+ignore_list = ['time','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
 for column in df.columns:
     if column not in ignore_list:
         df[column] = dd.to_numeric(df[column], errors='coerce')
@@ -392,17 +392,17 @@ def df_sanitizer_fun(df, lazy=False):
     # Drop Debug_data
     df = df.drop(columns = ['id'])
 
-    # If FieldN or FieldV orRawData is nan, drop the row
-    col_to_drop_if_na = ['FieldN','FieldV','RawData']
+    # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
+    col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
     df = df.dropna(subset = col_to_drop_if_na)
 
-    # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-    df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-    df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+    # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+    df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
     # Drop if row has any string
-    ignore_list = ['time','FieldN','FieldV','RawData']
+    ignore_list = ['time','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
     for column in df.columns:
         if column not in ignore_list:
             df[column] = dd.to_numeric(df[column], errors='coerce')

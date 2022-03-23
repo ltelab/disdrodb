@@ -137,7 +137,7 @@ def main(raw_dir,
     #### - Define raw data headers 
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter, 
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit 
 
     # Columns defined into sanitizer
     column_names = []
@@ -208,23 +208,23 @@ def main(raw_dir,
         temp_raw = temp_raw.dropna()
     
     
-        # If RawData series is not a 32 multiple, throw error
+        # If raw_drop_number series is not a 32 multiple, throw error
         if len(temp_raw) % 32 != 0:
-            msg = "Wrong column number on RawData, can not parse!"
+            msg = "Wrong column number on raw_drop_number, can not parse!"
             raise ValueError(msg)
     
     
-        # Series and variable temporary for parsing RawData
+        # Series and variable temporary for parsing raw_drop_number
         if lazy:
             import pandas as pd
-            raw = pd.DataFrame({'RawData':[]})
+            raw = pd.DataFrame({'raw_drop_number':[]})
             # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
         else:
-            raw = pd.DataFrame({'RawData':[]})
+            raw = pd.DataFrame({'raw_drop_number':[]})
         temp_string_2 = ''
     
     
-        # Parse for RawData
+        # Parse for raw_drop_number
         for index, value in temp_raw.iterrows():
             temp_string = ''
             
@@ -248,7 +248,7 @@ def main(raw_dir,
                 
             else:
                         
-                raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+                raw = raw.append({'raw_drop_number': temp_string_2},ignore_index=True)
                     
                 temp_string_2 = ''
     
@@ -265,13 +265,13 @@ def main(raw_dir,
         else:
             df = dd.concat([temp_time, raw], axis = 1)
     
-        df.columns = ['time', 'RawData']
+        df.columns = ['time', 'raw_drop_number']
         
         return df  
     
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern =  "*.txt*"   
+    raw_data_glob_pattern=  "*.txt*"   
     
     ####----------------------------------------------------------------------.
     #################### 

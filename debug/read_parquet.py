@@ -42,12 +42,12 @@ df2 = df2.compute()
 
 
 # df = df.iloc[0:100,:] # df.head(100) 
-# np_arr_str =  df['RawData'].values.astype(str)
+# np_arr_str =  df['raw_drop_number'].values.astype(str)
 # list_arr_str = np.char.split(np_arr_str,",")
 # print(len(list_arr_str[0]))
 
 # df2 = df2.iloc[0:100,:] # df.head(100) 
-# np_arr_str2 =  df2['RawData'].values.astype(str)
+# np_arr_str2 =  df2['raw_drop_number'].values.astype(str)
 # list_arr_str2 =  np.char.split(np_arr_str2,",")
 # print(len(list_arr_str2[0]))
 

@@ -225,20 +225,20 @@ get_OTT_Parsivel2_dict()
 column_names = ['time',
                 'latitude',
                 'longitude',
-                'weather_code_SYNOP_4680',
-                'weather_code_SYNOP_4677',
+                'weather_code_synop_4680',
+                'weather_code_synop_4677',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'laser_amplitude',
-                'n_particles',
+                'number_particles',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'datalogger_error',
-                'rain_amount_absolute_32bit',
-                'FieldN',
-                'FieldV',
-                'RawData',
+                'rainfall_amount_absolute_32bit',
+                'raw_drop_concentration',
+                'raw_drop_average_velocity',
+                'raw_drop_number',
                 'End_line',
                 ]
 
@@ -317,7 +317,7 @@ if len(df.columns) != len(column_names):
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
@@ -327,13 +327,13 @@ df = df.drop(columns=['datalogger_error', 'End_line'])
 
 df = df[df['latitude'].apply(lambda x: type(x) in [int, np.int64, float, np.float64])]
 
-# If RawData is nan, drop the row
-# col_to_drop_if_na = ['FieldN','FieldV','RawData']
-col_to_drop_if_na = ['RawData']
+# If raw_drop_number is nan, drop the row
+# col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+col_to_drop_if_na = ['raw_drop_number']
 df = df.dropna(subset = col_to_drop_if_na)
 
-# Drop rows with less than 4096 char on RawData
-# df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# Drop rows with less than 4096 char on raw_drop_number
+# df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
 # - Convert time column to datetime 
 df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
@@ -387,14 +387,14 @@ def df_sanitizer_fun(df, lazy=False):
 
     df = df[df['latitude'].apply(lambda x: type(x) in [int, np.int64, float, np.float64])]
 
-    # If RawData is nan, drop the row
-    col_to_drop_if_na = ['FieldN','FieldV','RawData']
+    # If raw_drop_number is nan, drop the row
+    col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
     df = df.dropna(subset = col_to_drop_if_na)
 
-    # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-    df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-    df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+    # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+    df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')

@@ -15,7 +15,7 @@ rainfall_accumulated_32bit:
   contiguous: false
   chunksizes: 5000
 weather_code_synop_4680:
-  dtype: uint32
+  dtype: str
   zlib: true
   complevel: 3
   shuffle: true
@@ -55,7 +55,7 @@ reflectivity_32bit:
   contiguous: false
   chunksizes: 5000
 mor_visibility:
-  dtype: uint16
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -79,7 +79,7 @@ laser_amplitude:
   contiguous: false
   chunksizes: 5000
 number_particles:
-  dtype: uint32
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -295,7 +295,7 @@ raw_drop_concentration:
   contiguous: false
   chunksizes:
   - 5000
-  - 32
+  - 22
 raw_drop_average_velocity:
   dtype: float32
   zlib: true
@@ -305,9 +305,9 @@ raw_drop_average_velocity:
   contiguous: false
   chunksizes:
   - 5000
-  - 32
-raw_drop_number:
-  dtype: int64
+  - 20
+raw_spectrum:
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -315,5 +315,15 @@ raw_drop_number:
   contiguous: false
   chunksizes:
   - 5000
-  - 32
-  - 32
+  - 22
+  - 20
+
+# Temp
+precipitation_rate:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000

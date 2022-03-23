@@ -44,7 +44,7 @@ check_metadata_compliance  # check dtype also, raise errors !
 # - Implement file removal in check_L0_standards
 
 # - Add DISDRODB attrs
-attrs["source_data_format"] = "raw_data"
+attrs["source_data_format"] = "raw_drop_number"
 attrs["obs_type"] = "raw"  # preprocess/postprocessed
 attrs["level"] = "L0"  # L0, L1, L2, ...
 attrs["disdrodb_id"] = ""  # TODO

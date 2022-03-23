@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan 11 12:03:25 2022
+Created on Tue Mar 15 09:48:21 2022
 
 @author: kimbo
 """
@@ -25,6 +25,8 @@ import os
 import click
 import time
 import logging
+import xarray as xr
+import numpy as np
 
 # Directory 
 from disdrodb.io import check_directories
@@ -139,79 +141,117 @@ def main(raw_dir,
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
-    # Header found: "TIMESTAMP","RECORD","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","raw_drop_concentration","raw_drop_average_velocity","RowData"
-
-    column_names = [
-        "time",
-        "id",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_temperature",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "sensor_status",
-        "rainfall_amount_absolute_32bit",
-        "datalogger_error",
-        "raw_drop_concentration",
-        "raw_drop_average_velocity",
-        "raw_drop_number",
-    ]
+    # These are the variables included in the datasets:
+    
+    # var			full name										units
+    
+    # Time		time of the record								Y-m-d hh:mm:ss
+    # Event		event ID 										(factor)
+    # ID			disdromter ID 									(factor: T1, T2, P1, P2)
+    # Serial		disdrometer serial number						(factor)
+    # Type		disdrometer type 								(factor: Thi, Par)
+    # Mast		mast ID											(factor: 1, 2)
+    # NP_meas		number of particles detected					(-)
+    # R_meas		rainfall intensity, as outputted by the device	mm h−1
+    # Z_meas		radar reflectivity, as outputted by the device	dB mm6 m−3
+    # E_meas		erosivity, as outputted by the device			J m−2 mm−1
+    # Pcum_meas	cumulative rainfall amount						mm
+    # Ecum_meas	cumulative kinetic energy						J m−2 mm−1
+    # NP			number of particles detected					(-)
+    # ND			particle density								m−3 mm−1
+    # R			rainfall intensity								mm h−1
+    # P			rainfall amount									mm
+    # Z			radar reflectivity								dB mm6 m−3
+    # M			water content									gm−3
+    # E			kinetic energy									J m−2 mm−1
+    # Pcum		cumulative rainfall amount						mm
+    # Ecum		cumulative kinetic energy						J m−2 mm−1
+    # D10			drop diameter’s 10th percentile					mm
+    # D25			drop diameter’s 25th percentile					mm
+    # D50			drop diameter’s 50th percentile					mm
+    # D75			drop diameter’s 75th percentile					mm
+    # D90			drop diameter’s 90th percentile					mm
+    # Dm			mean drop diameter								mm
+    # V10			drop velocity’s 10th percentile					m s−1
+    # V25			drop velocity’s 25th percentile					m s−1
+    # V50			drop velocity’s 50th percentile					m s−1
+    # V75			drop velocity’s 75th percentile					m s−1
+    # V90			drop velocity’s 90th percentile					m s−1
+    # Vm			mean drop velocity								m s−1
+    
+    column_names = ['time',
+                    'id',
+                    'disdromter_ID', # to_drop
+                    'disdrometer_serial', # to_drop
+                    'disdrometer_type', #to_drop
+                    'mast_ID', # to_drop
+                    'number_particles_meas', # to_drop
+                    'rainfall_rate_32bit_meas', # to_drop
+                    'reflectivity_32bit_meas', # to_drop
+                    'mor_visibility_meas', # to_drop
+                    'rainfall_accumulated_32bit_meas', # to_drop
+                    'rain_kinetic_energy_meas',
+                    'number_particles',
+                    'rainfall_rate_32bit',
+                    'reflectivity_32bit',
+                    'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
+                    'rainfall_accumulated_32bit',
+                    'rain_kinetic_energy',
+                    'D10', # I don't know what to do with this
+                    'D25', # I don't know what to do with this
+                    'D50', # I don't know what to do with this
+                    'D75', # I don't know what to do with this
+                    'D90', # I don't know what to do with this
+                    'Dm', # I don't know what to do with this
+                    'V10', # I don't know what to do with this
+                    'V25', # I don't know what to do with this
+                    'V50', # I don't know what to do with this
+                    'V75', # I don't know what to do with this
+                    'V90', # I don't know what to do with this
+                    'Vm', # I don't know what to do with this
+                    ]
 
     # - Check name validity
     check_L0_column_names(column_names)
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
-
     reader_kwargs = {}
 
+    # - Define delimiter
+    reader_kwargs['delimiter'] = ','
+
     # - Avoid first column to become df index !!!
-    reader_kwargs["index_col"] = False
+    reader_kwargs["index_col"] = False  
 
-    # - Define behaviour when encountering bad lines
-    reader_kwargs["on_bad_lines"] = "skip"
+    # - Define behaviour when encountering bad lines 
+    reader_kwargs["on_bad_lines"] = 'skip'
 
-    # - Define parser engine
+    # - Define parser engine 
     #   - C engine is faster
     #   - Python engine is more feature-complete
-    reader_kwargs["engine"] = "python"
+    reader_kwargs["engine"] = 'python'
 
     # - Define on-the-fly decompression of on-disk data
-    #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "gzip"
+    #   - Available: gzip, bz2, zip 
+    reader_kwargs['compression'] = 'infer'  
 
-    # - Strings to recognize as NA/NaN and replace with standard NA flags
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
+    # - Strings to recognize as NA/NaN and replace with standard NA flags 
+    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
+    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-        "-.-",
-        " NA",
-    ]
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-']
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
+    reader_kwargs["blocksize"] = None # "50MB" 
 
     # Cast all to string
     reader_kwargs["dtype"] = str
 
-    # Skip first 4 rows (it's a header)
-    reader_kwargs["skiprows"] = 4
-
     # Skip first row as columns names
-    reader_kwargs["header"] = None
+    reader_kwargs['header'] = None
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -226,26 +266,41 @@ def main(raw_dir,
         else:
             import pandas as dd
 
-        # Drop datalogger_error
-        df = df.drop(columns=["datalogger_error"])
+        # # Drop useless columns
+        df = df.drop(columns = ['id',
+                                'disdromter_ID', # to_drop
+                                'disdrometer_serial', # to_drop
+                                'disdrometer_type', #to_drop
+                                'mast_ID', # to_drop
+                                'number_particles_meas', # to_drop
+                                'rainfall_rate_32bit_meas', # to_drop
+                                'reflectivity_32bit_meas', # to_drop
+                                'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
+                                'mor_visibility_meas', # to_drop
+                                'rainfall_accumulated_32bit_meas', # to_drop
+                                'rain_kinetic_energy_meas',
+                                'D10', # I don't know what to do with this
+                                'D25', # I don't know what to do with this
+                                'D50', # I don't know what to do with this
+                                'D75', # I don't know what to do with this
+                                'D90', # I don't know what to do with this
+                                'Dm', # I don't know what to do with this
+                                'V10', # I don't know what to do with this
+                                'V25', # I don't know what to do with this
+                                'V50', # I don't know what to do with this
+                                'V75', # I don't know what to do with this
+                                'V90', # I don't know what to do with this
+                                'Vm', # I don't know what to do with this
+                                ])
 
-        # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
-        col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
-        df = df.dropna(subset=col_to_drop_if_na)
-
-        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-
-        # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern= "*.dat*"
+    raw_data_glob_pattern= "*.csv*"
 
     ####----------------------------------------------------------------------.
     ####################
@@ -364,7 +419,7 @@ def main(raw_dir,
             ds = create_L1_dataset_from_L0(
                 df=df, attrs=attrs, lazy=lazy, verbose=verbose
             )
-            
+
             # -----------------------------------------------------------------.
             #### - Write L1 dataset to netCDF4
             if write_netcdf:
@@ -400,7 +455,7 @@ def main(raw_dir,
     logger.info(msg)
     logger.info("---")
 
-    msg = "### Script finish ###"
+    msg = "\n   ### Script finish ###"
     print(msg)
     logger.info(msg)
 

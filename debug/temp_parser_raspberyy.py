@@ -208,13 +208,13 @@ df3 = df['col_1'].str.split(pat=".", expand=True, n = 2).compute()
 df_to_parse['col_0'] = df_to_parse['col_0'].str.lstrip("b'")
 
 
-# Add the comma on the FieldN, FieldV and RawData
-df_FieldN = df_to_parse.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
-df_FieldV = df_to_parse.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
-df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'")
+# Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
+df_raw_drop_concentration = df_to_parse.iloc[:,36:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
+df_raw_drop_average_velocity = df_to_parse.iloc[:,68:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object'))
+df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'")
 
 # Concat all togheter
-df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1)
+df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
 
 # Print first rows
 print_df_first_n_rows(df, n = 1, column_names=False)
@@ -291,29 +291,29 @@ get_OTT_Parsivel2_dict()
 # "35","Snowfall intensity",7,"mm/h","single_number"
 # "60","Number of all particles detected",8,"","single_number"
 # "61","List of all particles detected",13,"","list"
-# "90","FieldN",224,"","vector"
-# "91","FieldV",224,"","vector"
+# "90","raw_drop_concentration",224,"","vector"
+# "91","raw_drop_average_velocity",224,"","vector"
 # "93","Raw data",4096,"","matrix"
 
 columns_names_temporary =['time','epoch_time','TO_BE_PARSED']
 
 column_names = ['time',
                 'epoch_time',
-                'rain_rate_32bit',
-                'rain_accumulated_32bit',
-                'weather_code_SYNOP_4680',
-                'weather_code_SYNOP_4677',
-                'weather_code_METAR_4678',
-                'weather_code_NWS',
+                'rainfall_rate_32bit',
+                'rainfall_accumulated_32bit',
+                'weather_code_synop_4680',
+                'weather_code_synop_4677',
+                'weather_code_metar_4678',
+                'weather_code_nws',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'sample_interval',
                 'laser_amplitude',
-                'n_particles',
+                'number_particles',
                 'sensor_temperature',
                 'sensor_serial_number',
-                'firmware_IOP',
-                'firmware_DSP',
+                'firmware_iop',
+                'firmware_dsp',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
@@ -322,22 +322,22 @@ column_names = ['time',
                 'sensor_date',
                 'station_name',
                 'station_number',
-                'rain_amount_absolute_32bit',
+                'rainfall_amount_absolute_32bit',
                 'error_code',
                 'sensor_temperature_PBC',
-                'sensor_temperature_right',
-                'sensor_temperature_left',
-                'rain_rate_16bit',
-                'rain_rate_12bit',
-                'rain_accumulated_16bit',
+                'sensor_temperature_receiver',
+                'sensor_temperature_trasmitter',
+                'rainfall_rate_16_bit',
+                'rainfall_rate_12bit',
+                'rainfall_accumulated_16bit',
                 'reflectivity_16bit',
                 'rain_kinetic_energy',
-                'snowfall_intensity',
-                'n_particles_all',
-                'n_particles_all_detected',
-                'FieldN',
-                'FieldV',
-                'RawData',
+                'snowfall_rate',
+                'number_particles_all',
+                'number_particles_all_detected',
+                'raw_drop_concentration',
+                'raw_drop_average_velocity',
+                'raw_drop_number',
                 ]
 
 # - Check name validity 
@@ -415,7 +415,7 @@ df = read_raw_data(filepath=filepath,
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
@@ -442,21 +442,21 @@ for i in range(len(list(df_to_parse.columns)[35:])):
 df_to_parse.columns = df_to_parse_dict_names
 
 # Remove char from rain intensity
-df_to_parse['rain_rate_32bit'] = df_to_parse['rain_rate_32bit'].str.lstrip("b'")
+df_to_parse['rainfall_rate_32bit'] = df_to_parse['rainfall_rate_32bit'].str.lstrip("b'")
 
-# Remove spaces on weather_code_METAR_4678 and weather_code_NWS
-df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
-df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
+# Remove spaces on weather_code_metar_4678 and weather_code_nws
+df_to_parse['weather_code_metar_4678'] = df_to_parse['weather_code_metar_4678'].str.strip()
+df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
 
 # ----
 
-# Add the comma on the FieldN, FieldV and RawData
-df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('FieldN')
-df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('FieldV')
-df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
+# Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
+df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
+df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
+df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
 # Concat all togheter
-df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1)
+df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -520,19 +520,19 @@ def df_sanitizer_fun(df, lazy=False):
     df_to_parse.columns = df_to_parse_dict_names
 
     # Remove char from rain intensity
-    df_to_parse['rain_rate_32bit'] = df_to_parse['rain_rate_32bit'].str.lstrip("b'")
+    df_to_parse['rainfall_rate_32bit'] = df_to_parse['rainfall_rate_32bit'].str.lstrip("b'")
 
-    # Remove spaces on weather_code_METAR_4678 and weather_code_NWS
-    df_to_parse['weather_code_METAR_4678'] = df_to_parse['weather_code_METAR_4678'].str.strip()
-    df_to_parse['weather_code_NWS'] = df_to_parse['weather_code_NWS'].str.strip()
+    # Remove spaces on weather_code_metar_4678 and weather_code_nws
+    df_to_parse['weather_code_metar_4678'] = df_to_parse['weather_code_metar_4678'].str.strip()
+    df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
 
-    # Add the comma on the FieldN, FieldV and RawData
-    df_FieldN = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldN')
-    df_FieldV = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('FieldV')
-    df_RawData = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('RawData')
+    # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
+    df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_concentration')
+    df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_average_velocity')
+    df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
     # Concat all togheter
-    df = dd.concat([df, df_to_parse.iloc[:,:35], df_FieldN, df_FieldV, df_RawData] ,axis=1, ignore_unknown_divisions=True)
+    df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
     
     return df 
 

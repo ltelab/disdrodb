@@ -221,23 +221,23 @@ column_names = ['time',
                     'id',
                     'datalogger_temperature',
                     'datalogger_voltage',
-                    'rain_accumulated_32bit',
+                    'rainfall_accumulated_32bit',
                     'Unknow',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
+                    'weather_code_synop_4680',
+                    'weather_code_synop_4677',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'laser_amplitude',
-                    'n_particles',
+                    'number_particles',
                     'sensor_temperature',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
-                    'rain_amount_absolute_32bit',
+                    'rainfall_amount_absolute_32bit',
                     'Debug_data',
-                    'FieldN',
-                    'FieldV',
-                    'RawData',
+                    'raw_drop_concentration',
+                    'raw_drop_average_velocity',
+                    'raw_drop_number',
                     'All_0'
                     ]
 
@@ -316,17 +316,17 @@ if len(df.columns) != len(column_names):
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
-# If RawData is nan, drop the row
-col_to_drop_if_na = ['FieldN','FieldV','RawData']
+# If raw_drop_number is nan, drop the row
+col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
 df = df.dropna(subset = col_to_drop_if_na)
 
-# Drop rows with less than 4096 char on RawData
-df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# Drop rows with less than 4096 char on raw_drop_number
+df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
 # Example: drop unrequired columns for L0 
 df = df.drop(columns = ['All_0', 'Debug_data'])
@@ -377,11 +377,11 @@ def df_sanitizer_fun(df, lazy=False):
     #     import pandas as dd
 
     # - Drop useless columns 
-    col_to_drop_if_na = ['FieldN','FieldV','RawData']
+    col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
     df = df.dropna(subset = col_to_drop_if_na)
  
-    # Drop rows with less than 4096 char on RawData
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+    # Drop rows with less than 4096 char on raw_drop_number
+    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
  
     # Example: drop unrequired columns for L0 
     df = df.drop(columns = ['All_0', 'Debug_data'])

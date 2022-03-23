@@ -1,7 +1,7 @@
 start_identifier: ''
 device_address: ''
 sensor_serial_number: ''
-firmware_DSP: ''
+firmware_dsp: ''
 date_sensor: ''
 time_sensor: ''
 synop_4677_5min_weather_code: ''

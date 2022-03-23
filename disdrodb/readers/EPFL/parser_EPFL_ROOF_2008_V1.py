@@ -136,32 +136,32 @@ def main(raw_dir,
     #### - Define raw data headers
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
-    # Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","TransmitTime","FieldN","Fieldv","RowData","CommErrorCount"
+    # Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","TransmitTime","raw_drop_concentration","raw_drop_average_velocity","RowData","CommErrorCount"
 
     column_names = [
         "time",
         "id",
         "datalogger_temperature",
         "datalogger_voltage",
-        "rain_rate_32bit",
-        "rain_accumulated_32bit",
-        "weather_code_SYNOP_4680",
-        "weather_code_SYNOP_4677",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
-        "n_particles",
+        "number_particles",
         "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
         "sensor_status",
-        "rain_amount_absolute_32bit",
+        "rainfall_amount_absolute_32bit",
         "Debug_data",
-        "FieldN",
-        "FieldV",
-        "RawData",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
     ]
 
     # - Check name validity
@@ -221,15 +221,15 @@ def main(raw_dir,
         # Drop Debug_data
         df = df.drop(columns=["Debug_data"])
 
-        # If RawData is nan, drop the row
-        col_to_drop_if_na = ["FieldN", "FieldV", "RawData"]
+        # If raw_drop_number is nan, drop the row
+        col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
         df = df.dropna(subset=col_to_drop_if_na)
 
-        # Remove " at the end of RawData
-        df["RawData"] = df["RawData"].str.rstrip('"')
+        # Remove " at the end of raw_drop_number
+        df["raw_drop_number"] = df["raw_drop_number"].str.rstrip('"')
 
-        # Drop rows with less than 4096 char on RawData
-        df = df.loc[df["RawData"].astype(str).str.len() == 4096]
+        # Drop rows with less than 4096 char on raw_drop_number
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
         # Remove " at the beginning of time
         df["time"] = df["time"].str.lstrip('"')
@@ -241,7 +241,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.dat*"
+    raw_data_glob_pattern= "*.dat*"
 
     ####----------------------------------------------------------------------.
     ####################

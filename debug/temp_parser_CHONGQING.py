@@ -320,7 +320,7 @@ if len(column_names) != 0:
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
@@ -341,23 +341,23 @@ temp_raw['col_0'] = temp_raw['col_0'].str.lstrip('   ')
 temp_raw = temp_raw.dropna()
 
 
-# If RawData series is not a 32 multiple, throw error
+# If raw_drop_number series is not a 32 multiple, throw error
 if len(temp_raw) % 32 != 0:
-    msg = "Wrong column number on RawData, can not parse!"
+    msg = "Wrong column number on raw_drop_number, can not parse!"
     raise ValueError(msg)
 
 
-# Series and variable temporary for parsing RawData
+# Series and variable temporary for parsing raw_drop_number
 if lazy:
     import pandas as pd
-    raw = pd.DataFrame({'RawData':[]})
+    raw = pd.DataFrame({'raw_drop_number':[]})
     # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
 else:
-    raw = pd.DataFrame({'RawData':[]})
+    raw = pd.DataFrame({'raw_drop_number':[]})
 temp_string_2 = ''
 
 
-# Parse for RawData
+# Parse for raw_drop_number
 for index, value in temp_raw.iterrows():
     temp_string = ''
     
@@ -381,7 +381,7 @@ for index, value in temp_raw.iterrows():
         
     else:
                 
-        raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+        raw = raw.append({'raw_drop_number': temp_string_2},ignore_index=True)
             
         temp_string_2 = ''
 
@@ -398,7 +398,7 @@ if lazy:
 else:
     df = dd.concat([temp_time, raw], axis = 1)
 
-df.columns = ['time', 'RawData']
+df.columns = ['time', 'raw_drop_number']
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -454,23 +454,23 @@ def df_sanitizer_fun(df, lazy=lazy):
     temp_raw = temp_raw.dropna()
 
 
-    # If RawData series is not a 32 multiple, throw error
+    # If raw_drop_number series is not a 32 multiple, throw error
     if len(temp_raw) % 32 != 0:
-        msg = "Wrong column number on RawData, can not parse!"
+        msg = "Wrong column number on raw_drop_number, can not parse!"
         raise ValueError(msg)
 
 
-    # Series and variable temporary for parsing RawData
+    # Series and variable temporary for parsing raw_drop_number
     if lazy:
         import pandas as pd
-        raw = pd.DataFrame({'RawData':[]})
+        raw = pd.DataFrame({'raw_drop_number':[]})
         # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
     else:
-        raw = pd.DataFrame({'RawData':[]})
+        raw = pd.DataFrame({'raw_drop_number':[]})
     temp_string_2 = ''
 
 
-    # Parse for RawData
+    # Parse for raw_drop_number
     for index, value in temp_raw.iterrows():
         temp_string = ''
         
@@ -494,7 +494,7 @@ def df_sanitizer_fun(df, lazy=lazy):
             
         else:
                     
-            raw = raw.append({'RawData': temp_string_2},ignore_index=True)
+            raw = raw.append({'raw_drop_number': temp_string_2},ignore_index=True)
                 
             temp_string_2 = ''
 
@@ -511,7 +511,7 @@ def df_sanitizer_fun(df, lazy=lazy):
     else:
         df = dd.concat([temp_time, raw], axis = 1)
 
-    df.columns = ['time', 'RawData']
+    df.columns = ['time', 'raw_drop_number']
     
     return df 
 

@@ -137,11 +137,11 @@ def main(raw_dir,
     #### - Define raw data headers 
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter, 
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit 
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit 
 
     column_names = ['time',
                     'Unknow',
-                    'RawData',
+                    'raw_drop_number',
                     ]
     
     # - Check name validity 
@@ -218,7 +218,7 @@ def main(raw_dir,
     
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern =  "*.tar"   
+    raw_data_glob_pattern=  "*.tar"   
     
     ####----------------------------------------------------------------------.
     #################### 

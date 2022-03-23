@@ -86,7 +86,7 @@ def get_LPM_variables():
     # '49': current_heating_heads # A
     # '50': current_heating_carriers # A
 
-    # '51': number_particles # n_particles_all
+    # '51': number_particles # number_particles_all
     # '52': number_particles_internal_data
     # '53': number_particles_min_speed
     # '54': number_particles_min_speed_internal_data
@@ -180,10 +180,10 @@ def get_L0_dtype_standards(sensor_name: str) -> dict:
 
 def get_DIVEN_dict():
     d = {
-        "precipitation_flux": "precipitation_rate",
+        "precipitation_flux": "rainfall_rate_16bit_1200", # precipitation_rate, not sure about this
         "solid_precipitation_flux": "snowfall_rate",
         "precipitation_visibility": "mor_visibility",
-        "reflectivity": "reflectivity",
+        "reflectivity": "reflectivity_32bit", # Not sure about this
         "measurement_quality": "quality_index",
         # Weather code
         "present_weather_1m": "weather_code_synop_4680",
@@ -200,10 +200,10 @@ def get_DIVEN_dict():
         # 'minute'
         # 'second'
         # 'day_of_year'
-        # Arrays
-        "size_velocity_distribution": "raw_spectrum",
-        "drop_size_distribution": "FieldD",
-        "drop_velocity_distribution": "FieldN",
+        # Arrays 
+        "size_velocity_distribution": "raw_spectrum", # Not sure about the correct names
+        "drop_size_distribution": "raw_drop_concentration", # Not sure about the correct names
+        "drop_velocity_distribution": "raw_drop_average_velocity", # Not sure about the correct names
     }
     return d
 

@@ -143,23 +143,23 @@ def main(raw_dir,
                     'longitude',
                     'time',
                     'temp', # All nan values
-                    'TO_BE_SPLITTED', # Dataloger status and rain_rate_32bit
-                    'rain_accumulated_32bit',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
+                    'TO_BE_SPLITTED', # Dataloger status and rainfall_rate_32bit
+                    'rainfall_accumulated_32bit',
+                    'weather_code_synop_4680',
+                    'weather_code_synop_4677',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'sample_interval',
                     'laser_amplitude',
-                    'n_particles',
+                    'number_particles',
                     'sensor_heating_current',
                     'sensor_battery_voltage',
                     'sensor_status',
-                    'rain_amount_absolute_32bit',
+                    'rainfall_amount_absolute_32bit',
                     'temp1', # Datalogger error
-                    'FieldN',
-                    'FieldV',
-                    'RawData',
+                    'raw_drop_concentration',
+                    'raw_drop_average_velocity',
+                    'raw_drop_number',
                     'temp2', # All 0
                     ]
 
@@ -216,17 +216,17 @@ def main(raw_dir,
             import pandas as dd
 
         # Split TO_BE_SPLITTED
-        df[['datalogger_error','rain_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
+        df[['datalogger_error','rainfall_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
 
         # Drop id, latitude, longitude, temps and datalogger_error
         df = df.drop(columns=["id", "latitude", "longitude","temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
 
-        # If RawData is nan, drop the row
-        col_to_drop_if_na = ['FieldN','FieldV','RawData']
+        # If raw_drop_number is nan, drop the row
+        col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
         df = df.dropna(subset = col_to_drop_if_na)
 
-        # Drop rows with less than 4096 char on RawData
-        df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+        # Drop rows with less than 4096 char on raw_drop_number
+        df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
@@ -235,7 +235,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.dat.gz*"
+    raw_data_glob_pattern= "*.dat.gz*"
 
     ####----------------------------------------------------------------------.
     ####################

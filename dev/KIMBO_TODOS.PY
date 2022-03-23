@@ -18,13 +18,6 @@ Created on Fri Feb 18 10:45:24 2022
 ### Ensure that for each parser_<campaign_name>.py there is a single data directory !!!
 
 ##---------------------------------------------------------.
-### Change variable names to new standards (i.e. FieldN, FieldV and RawData)
-# --> All variable name to be lowercase!
-# weather_code_SYNOP --> snyop, metar, all to lowercase
-# OTT_Parsivel2: snowfall_intensity → snowfall_rate
-# OTT_Parsivel2 and OTT_Parsivel: rain_* → rainfall_* , n_particles(_all) → number_particles(_all)
-
-##---------------------------------------------------------.
 ## L0_dtype.yaml : why "object"? works also with "str" ?
 
 ## Add synop weather code tables (as yml file) in disdrodb/weather_code folder
@@ -34,11 +27,6 @@ Created on Fri Feb 18 10:45:24 2022
 #  --> You could check for the min,max of each variable already saved to netCDF ... (ds.min() , ds.max())
 
 # Add units and explanations to yaml files
-
-##---------------------------------------------------------.
-## Refactor data_encodings.py -->
-
-## Add DIVEN and ARM dictionary + Conversion to netCDF
 
 ##---------------------------------------------------------.
 ## Add yaml for LPMs

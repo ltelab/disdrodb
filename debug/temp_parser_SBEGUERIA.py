@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Jan 13 09:52:29 2022
+Created on Thu Mar 10 10:06:53 2022
 
 @author: kimbo
 """
-
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
@@ -55,6 +54,10 @@ from disdrodb.L0_proc import read_L0_raw_file_list
 from disdrodb.L0_proc import write_df_to_parquet
 from disdrodb.logger import create_logger
 
+# Metadata 
+from disdrodb.metadata import read_metadata
+from disdrodb.check_standards import check_sensor_name
+
 # DEV TOOOLS 
 from disdrodb.dev_tools import print_df_first_n_rows 
 from disdrodb.dev_tools import print_df_random_n_rows
@@ -64,12 +67,13 @@ from disdrodb.dev_tools import get_df_columns_unique_values_dict
 from disdrodb.dev_tools import print_df_columns_unique_values
 from disdrodb.dev_tools import infer_df_str_column_names
 
+
 ##------------------------------------------------------------------------. 
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/SharedVM/Campagne/EPFL/Raw/PARSIVEL_2007"
-processed_dir = "/SharedVM/Campagne/EPFL/Processed/PARSIVEL_2007"
+raw_dir = "/SharedVM/Campagne/SBEGUERIA/Raw/SBEGUERIA"
+processed_dir = "/SharedVM/Campagne/SBEGUERIA/Processed/SBEGUERIA"
 
 l0_processing = True
 l1_processing = True
@@ -92,11 +96,11 @@ campaign_name = get_campaign_name(raw_dir)
 
 #-------------------------------------------------------------------------. 
 # Define logging settings
-create_logger(processed_dir, 'parser_' + campaign_name) 
+# create_logger(processed_dir, 'parser_' + campaign_name) 
 
-# Retrieve logger 
-logger = logging.getLogger(campaign_name)
-logger.info('### Script start ###')
+# # Retrieve logger 
+# logger = logging.getLogger(campaign_name)
+# logger.info('### Script start ###')
     
 #-------------------------------------------------------------------------. 
 # Create directory structure 
@@ -116,17 +120,24 @@ station_id = list_stations_id[0]
 ##########################################################################   
 #### 4. List files to process  [TO CUSTOMIZE AND THEN MOVE TO PARSER] ####
 ##########################################################################
-glob_pattern = os.path.join("data", station_id, "*.dat*") # CUSTOMIZE THIS 
+glob_pattern = os.path.join("data", station_id, "*.csv*") # CUSTOMIZE THIS 
 device_path = os.path.join(raw_dir, glob_pattern)
 file_list = sorted(glob.glob(device_path, recursive = True))
 #-------------------------------------------------------------------------. 
 # All files into the campaing
-all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"), recursive = True))
+all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.csv*"), recursive = True))
 # file_list = ['/SharedVM/Campagne/EPFL/Raw/EPFL_ROOF_2011/data/10/10_ascii_20110905.dat']
 # file_list = get_file_list(raw_dir=raw_dir,
 #                           glob_pattern=glob_pattern, 
 #                           verbose=verbose, 
 #                           debugging_mode=debugging_mode)
+
+# Retrieve metadata
+attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+
+# Retrieve sensor name
+sensor_name = attrs['sensor_name']
+check_sensor_name(sensor_name)
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
@@ -135,6 +146,9 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.dat*"),
 # Important: document argument need/behaviour 
     
 reader_kwargs = {}
+
+# - Define delimiter
+reader_kwargs['delimiter'] = ','
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -149,13 +163,13 @@ reader_kwargs["engine"] = 'python'
 
 # - Define on-the-fly decompression of on-disk data
 #   - Available: gzip, bz2, zip 
-reader_kwargs['compression'] = 'gzip'  
+reader_kwargs['compression'] = 'infer'  
 
 # - Strings to recognize as NA/NaN and replace with standard NA flags 
 #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
 #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
 #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-', ' NA',]
+reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-']
 
 # - Define max size of dask dataframe chunks (if lazy=True)
 #   - If None: use a single block for each file
@@ -165,17 +179,8 @@ reader_kwargs["blocksize"] = None # "50MB"
 # Cast all to string
 reader_kwargs["dtype"] = str
 
-# Skip first 4 rows (it's a header)
-reader_kwargs['skiprows'] = 4
-
 # Skip first row as columns names
 reader_kwargs['header'] = None
-
-# Different enconding for this campaign
-# reader_kwargs['encoding'] = 'latin-1'  # Important for this campaign
-
-# Use for Nan value
-# reader_kwargs['assume_missing'] = True
 
 ####--------------------------------------------------------------------------. 
 #################################################### 
@@ -192,108 +197,81 @@ df = read_raw_data(filepath,
                    reader_kwargs=str_reader_kwargs, 
                    lazy=False)
 
-# Print first rows
-print_df_first_n_rows(df, n = 1, column_names=False)
-print_df_first_n_rows(df, n = 5, column_names=False)
-print_df_random_n_rows(df, n= 5, column_names=False)  # this likely the more useful 
-
-# Retrieve number of columns 
-print(len(df.columns))
- 
-# Look at unique values
-# print_df_columns_unique_values(df, column_indices=None, column_names=False) # all 
- 
-# print_df_columns_unique_values(df, column_indices=0, column_names=False) # single column 
-
-# print_df_columns_unique_values(df, column_indices=slice(0,15), column_names=False) # a slice of columns 
-
-# get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=False) # get dictionary
-
-# Retrieve number of columns 
-print(len(df.columns))
- 
-# Copy the following list and start to infer column_names 
-['Unknown' + str(i+1) for i in range(len(df.columns))]
-
-# Print valid column names 
-# - If other names are required, add the key to get_L0_dtype_standards in data_encodings.py 
-print_valid_L0_column_names()
-
-# Instrument manufacturer defaults 
-from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
-get_OTT_Parsivel_dict()
-get_OTT_Parsivel2_dict()
-
-
 ####---------------------------------------------------------------------------.
 ######################################################################
 #### 7. Define dataframe columns [TO CUSTOMIZE AND MOVE TO PARSER] ###
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
+# These are the variables included in the datasets:
+
+# var			full name										units
+
+# Time		time of the record								Y-m-d hh:mm:ss
+# Event		event ID 										(factor)
+# ID			disdromter ID 									(factor: T1, T2, P1, P2)
+# Serial		disdrometer serial number						(factor)
+# Type		disdrometer type 								(factor: Thi, Par)
+# Mast		mast ID											(factor: 1, 2)
+# NP_meas		number of particles detected					(-)
+# R_meas		rainfall intensity, as outputted by the device	mm h−1
+# Z_meas		radar reflectivity, as outputted by the device	dB mm6 m−3
+# E_meas		erosivity, as outputted by the device			J m−2 mm−1
+# Pcum_meas	cumulative rainfall amount						mm
+# Ecum_meas	cumulative kinetic energy						J m−2 mm−1
+# NP			number of particles detected					(-)
+# ND			particle density								m−3 mm−1
+# R			rainfall intensity								mm h−1
+# P			rainfall amount									mm
+# Z			radar reflectivity								dB mm6 m−3
+# M			water content									gm−3
+# E			kinetic energy									J m−2 mm−1
+# Pcum		cumulative rainfall amount						mm
+# Ecum		cumulative kinetic energy						J m−2 mm−1
+# D10			drop diameter’s 10th percentile					mm
+# D25			drop diameter’s 25th percentile					mm
+# D50			drop diameter’s 50th percentile					mm
+# D75			drop diameter’s 75th percentile					mm
+# D90			drop diameter’s 90th percentile					mm
+# Dm			mean drop diameter								mm
+# V10			drop velocity’s 10th percentile					m s−1
+# V25			drop velocity’s 25th percentile					m s−1
+# V50			drop velocity’s 50th percentile					m s−1
+# V75			drop velocity’s 75th percentile					m s−1
+# V90			drop velocity’s 90th percentile					m s−1
+# Vm			mean drop velocity								m s−1
 
 column_names = ['time',
                 'id',
-                'rainfall_rate_32bit',
-                'rainfall_accumulated_32bit',
-                'weather_code_synop_4680',
-                'weather_code_synop_4677',
-                'reflectivity_32bit',
-                'mor_visibility',
-                'laser_amplitude',
+                'disdromter_ID', # to_drop
+                'disdrometer_serial', # to_drop
+                'disdrometer_type', #to_drop
+                'mast_ID', # to_drop
+                'number_particles_meas', # to_drop
+                'rainfall_rate_32bit_meas', # to_drop
+                'reflectivity_32bit_meas', # to_drop
+                'mor_visibility_meas', # to_drop
+                'rainfall_accumulated_32bit_meas', # to_drop
+                'rain_kinetic_energy_meas',
                 'number_particles',
-                'sensor_temperature',
-                'sensor_heating_current',
-                'sensor_battery_voltage',
-                'sensor_status',
-                'rainfall_amount_absolute_32bit',
-                'datalogger_error',
-                'raw_drop_concentration',
-                'raw_drop_average_velocity',
-                'raw_drop_number'
+                'rainfall_rate_32bit',
+                'reflectivity_32bit',
+                'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
+                'rainfall_accumulated_32bit',
+                'rain_kinetic_energy',
+                'D10', # I don't know what to do with this
+                'D25', # I don't know what to do with this
+                'D50', # I don't know what to do with this
+                'D75', # I don't know what to do with this
+                'D90', # I don't know what to do with this
+                'Dm', # I don't know what to do with this
+                'V10', # I don't know what to do with this
+                'V25', # I don't know what to do with this
+                'V50', # I don't know what to do with this
+                'V75', # I don't know what to do with this
+                'V90', # I don't know what to do with this
+                'Vm', # I don't know what to do with this
                 ]
-
-
-# - Check name validity 
-check_L0_column_names(column_names)
-
-# - Read data
-# Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
-filepath = file_list[0]
-df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=False)
-    
-
-
-# - Look at the columns and data 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5)
-
-# - Check it loads also lazily in dask correctly
-df1 = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=True)
-
-df1 = df1.compute() 
-
-# - Look at the columns and data 
-print_df_column_names(df1)
-print_df_random_n_rows(df1, n= 5) 
-
-# - Check are equals 
-assert df.equals(df1)
-
-# - Look at unique values
-print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
- 
-print_df_columns_unique_values(df, column_indices=0, column_names=True) # single column 
-
-print_df_columns_unique_values(df, column_indices=slice(0,10), column_names=True) # a slice of columns 
-
-get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=True) # get dictionary
 
 ####---------------------------------------------------------------------------.
 #########################################################
@@ -302,13 +280,14 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[0]  # Select also other files here  1,2, ... 
-lazy = True             # Try also with True when work with False 
+# filepath = all_stations_files
+lazy = False             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
 df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
+                    column_names=column_names,
                    reader_kwargs=reader_kwargs,
                    lazy=lazy)
 
@@ -326,25 +305,36 @@ if len(df.columns) != len(column_names):
 # --> Here specify columns to drop, to split and other type of ad-hoc processing     
 # --> This portion of code will need to be enwrapped (in the parser file) 
 #     into a function called df_sanitizer_fun(df, lazy=True). See below ...     
-            
-# # Example: split erroneous columns  
-# df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
-# df = df.drop(columns=['TO_BE_SPLITTED'])
-# df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
-# del df_tmp 
 
-# Drop datalogger_error
-df = df.drop(columns = ['datalogger_error'])
+# # Drop useless columns
+df = df.drop(columns = ['id',
+                        'disdromter_ID', # to_drop
+                        'disdrometer_serial', # to_drop
+                        'disdrometer_type', #to_drop
+                        'mast_ID', # to_drop
+                        'number_particles_meas', # to_drop
+                        'rainfall_rate_32bit_meas', # to_drop
+                        'reflectivity_32bit_meas', # to_drop
+                        'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
+                        'mor_visibility_meas', # to_drop
+                        'rainfall_accumulated_32bit_meas', # to_drop
+                        'rain_kinetic_energy_meas',
+                        'D10', # I don't know what to do with this
+                        'D25', # I don't know what to do with this
+                        'D50', # I don't know what to do with this
+                        'D75', # I don't know what to do with this
+                        'D90', # I don't know what to do with this
+                        'Dm', # I don't know what to do with this
+                        'V10', # I don't know what to do with this
+                        'V25', # I don't know what to do with this
+                        'V50', # I don't know what to do with this
+                        'V75', # I don't know what to do with this
+                        'V90', # I don't know what to do with this
+                        'Vm', # I don't know what to do with this
+                        ])
 
-# If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
-col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
-df = df.dropna(subset = col_to_drop_if_na)
-
-# Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
-df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
-df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
+# - Convert time column to datetime 
+df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -360,20 +350,14 @@ df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 ##----------------------------------------------------.
 # Cast dataframe to dtypes
 # - Determine dtype based on standards 
-dtype_dict = get_L0_dtype_standards()
+dtype_dict = get_L0_dtype_standards(sensor_name)
 for column in df.columns:
     try:
         df[column] = df[column].astype(dtype_dict[column])
     except KeyError:
         # If column dtype is not into get_L0_dtype_standards, assign object
         df[column] = df[column].astype('object')
-        
-#---------------------------------------------------------------------------.
-#### 8.4 Check the dataframe looks as desired 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5) 
-print_df_columns_unique_values(df, column_indices=2, column_names=True) 
-print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True)   
+
 
 ####------------------------------------------------------------------------------.
 ################################################
@@ -382,25 +366,40 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 #### 9.1 Define sanitizer function [TO CUSTOMIZE]
 # --> df_sanitizer_fun = None  if not necessary ...
 
-def df_sanitizer_fun(df, lazy=False):
-    # # Import dask or pandas 
-    # if lazy: 
-    #     import dask.dataframe as dd
-    # else: 
-    #     import pandas as dd
-
-    # Drop datalogger_error
-    df = df.drop(columns = ['datalogger_error'])
-
-    # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
-    col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
-    df = df.dropna(subset = col_to_drop_if_na)
-
-    # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-    df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
-    df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
-    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
+def df_sanitizer_fun(df, lazy=lazy):
+    # Import dask or pandas 
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
     
+    # Drop useless columns
+    df = df.drop(columns = ['id',
+                            'disdromter_ID', # to_drop
+                            'disdrometer_serial', # to_drop
+                            'disdrometer_type', #to_drop
+                            'mast_ID', # to_drop
+                            'number_particles_meas', # to_drop
+                            'rainfall_rate_32bit_meas', # to_drop
+                            'reflectivity_32bit_meas', # to_drop
+                            'mor_visibility_meas', # to_drop
+                            'rainfall_accumulated_32bit_meas', # to_drop
+                            'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
+                            'rain_kinetic_energy_meas',
+                            'D10', # I don't know what to do with this
+                            'D25', # I don't know what to do with this
+                            'D50', # I don't know what to do with this
+                            'D75', # I don't know what to do with this
+                            'D90', # I don't know what to do with this
+                            'Dm', # I don't know what to do with this
+                            'V10', # I don't know what to do with this
+                            'V25', # I don't know what to do with this
+                            'V50', # I don't know what to do with this
+                            'V75', # I don't know what to do with this
+                            'V90', # I don't know what to do with this
+                            'Vm', # I don't know what to do with this
+                            ])
+
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
     
@@ -410,18 +409,20 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = True # True 
-subset_file_list = file_list[:]
-subset_file_list = all_stations_files
+lazy = False # True 
+subset_file_list = file_list[0]
+subset_file_list = all_stations_files[3]
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,
-                           df_sanitizer_fun = df_sanitizer_fun, 
+                           df_sanitizer_fun = df_sanitizer_fun,
+                           verbose=verbose,
+                           sensor_name = sensor_name,
                            lazy=lazy)
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods
-df = df.compute() # if lazy = True 
+# df = df.compute() # if lazy = True 
 print_df_column_names(df)
 print_df_random_n_rows(df, n= 5) 
 print_df_columns_unique_values(df, column_indices=2, column_names=True) 
@@ -446,6 +447,14 @@ df2 = df.to_parquet(parquet_dir ,
                     row_group_size = row_group_size,
                     compression = compression
                   )
+# df2 = df3.to_parquet(
+#     parquet_dir,
+#     # schema="infer",
+#     engine=engine,
+#     row_group_size=row_group_size,
+#     compression=compression,
+#     # write_metadata_file=False,
+# )
 ##------------------------------------------------------. 
 #### 10.1 Read parquet file
 df2 = dd.read_parquet(parquet_dir)

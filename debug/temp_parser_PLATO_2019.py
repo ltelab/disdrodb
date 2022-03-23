@@ -235,20 +235,20 @@ get_OTT_Parsivel2_dict()
 
 column_names = ['TO_BE_MERGE',
                 'TO_BE_MERGE2',
-                'rain_rate_32bit',
+                'rainfall_rate_32bit',
                 'date_time_measuring_start',
-                'weather_code_SYNOP_4680',
-                'weather_code_METAR_4678',
-                'weather_code_NWS',
+                'weather_code_synop_4680',
+                'weather_code_metar_4678',
+                'weather_code_nws',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'laser_amplitude',
-                'n_particles',
+                'number_particles',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'rain_kinetic_energy',
-                'snowfall_intensity'
+                'snowfall_rate'
                 ]
 
 
@@ -330,7 +330,7 @@ if len(df.columns) != len(column_names):
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 

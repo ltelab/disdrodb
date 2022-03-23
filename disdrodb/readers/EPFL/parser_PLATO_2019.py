@@ -137,27 +137,27 @@ def main(raw_dir,
     #### - Define raw data headers
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rain_rate_32bit
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
     # Header found: Date,Time,Intensity of precipitation (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Weather code METAR/SPECI,Weather code NWS,Radar reflectivity (dBz), MOR Visibility (m),Signal amplitude of Laserband,Number of detected particles,Temperature in sensor (°C),Heating current (A),Sensor voltage (V),Kinetic Energy,Snow intensity (mm/h)
 
     column_names = [
         "TO_BE_MERGE",
         "TO_BE_MERGE2",
-        "rain_rate_32bit",
+        "rainfall_rate_32bit",
         "date_time_measuring_start",
-        "weather_code_SYNOP_4680",
-        "weather_code_METAR_4678",
-        "weather_code_NWS",
+        "weather_code_synop_4680",
+        "weather_code_metar_4678",
+        "weather_code_nws",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
-        "n_particles",
+        "number_particles",
         "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
         "rain_kinetic_energy",
-        "snowfall_intensity",
+        "snowfall_rate",
     ]
 
     # - Check name validity
@@ -230,7 +230,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.MIS*"
+    raw_data_glob_pattern= "*.MIS*"
 
     ####----------------------------------------------------------------------.
     ####################

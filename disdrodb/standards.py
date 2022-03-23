@@ -207,9 +207,9 @@ def get_raw_field_nbins(sensor_name):
     n_d = len(diameter_dict["center"])
     n_v = len(velocity_dict["center"])
     nbins_dict = {
-        "FieldN": n_d,
-        "FieldV": n_v,
-        "RawData": n_d * n_v,
+        "raw_drop_concentration": n_d,
+        "raw_drop_average_velocity": n_v,
+        "raw_drop_number": n_d * n_v,
     }
     return nbins_dict
 

@@ -235,23 +235,23 @@ column_names = ['time',
                 'id',
                 'datalogger_temperature',
                 'datalogger_voltage',
-                'rain_rate_32bit',
-                'rain_accumulated_32bit',
-                'weather_code_SYNOP_4680',
-                'weather_code_SYNOP_4677',
+                'rainfall_rate_32bit',
+                'rainfall_accumulated_32bit',
+                'weather_code_synop_4680',
+                'weather_code_synop_4677',
                 'reflectivity_32bit',
                 'mor_visibility',
                 'laser_amplitude',
-                'n_particles',
+                'number_particles',
                 'sensor_temperature',
                 'sensor_heating_current',
                 'sensor_battery_voltage',
                 'sensor_status',
-                'rain_amount_absolute_32bit',
+                'rainfall_amount_absolute_32bit',
                 'Debug_data',
-                'FieldN',
-                'FieldV',
-                'RawData',
+                'raw_drop_concentration',
+                'raw_drop_average_velocity',
+                'raw_drop_number',
                 'datalogger_error'
                 ]
 
@@ -335,7 +335,7 @@ if len(df.columns) != len(column_names):
             
 # # Example: split erroneous columns  
 # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # df = df.drop(columns=['TO_BE_SPLITTED'])
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
@@ -347,13 +347,13 @@ df = df.drop(columns = ['Debug_data'])
 # Drop rows with more than 8 nan
 df = df.dropna(thresh = (len(df.columns) - 12), how = 'all')
 
-# Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
+df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
+df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
-# Drop not float on rain_rate_32bit
-# df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+# Drop not float on rainfall_rate_32bit
+# df = df[pd.to_numeric(df['rainfall_rate_32bit'], errors='coerce').notnull()]
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -401,10 +401,10 @@ def df_sanitizer_fun(df, lazy=False):
     # Drop Debug_data
     df = df.drop(columns = ['Debug_data', 'datalogger_error'])
 
-    # Drop rows with less than 224 char on FieldN, FieldV and 4096 on RawData
-    df = df.loc[df['FieldN'].astype(str).str.len() == 224]
-    df = df.loc[df['FieldV'].astype(str).str.len() == 224]
-    df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+    # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+    df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
+    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
     
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')

@@ -10,7 +10,7 @@ import pandas as pd
 import dask.dataframe as dd
 
 import numpy as np
-from disdrodb.L1_proc import retrieve_L1_raw_data_matrix
+from disdrodb.L1_proc import retrieve_L1_raw_arrays
 from disdrodb.standards import get_raw_field_nbins
 from disdrodb.L1_proc import convert_L0_raw_fields_arr_flags
 from disdrodb.L1_proc import set_raw_fields_arr_dtype
@@ -20,7 +20,7 @@ fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/COMMON_2011/L0/COMMON_2011_s40.
 
 df = pd.read_parquet(fpath)
 df.columns
-df["RawData"].iloc[0]
+df["raw_drop_number"].iloc[0]
 
 
 ### COMMON S40: Problem writing LO
@@ -41,7 +41,7 @@ fpath = "/home/ghiggi/Downloads/DISDRO_DATA/EPFL/PLATO_2019/L0/PLATO_2019_s10.pa
 
 df = pd.read_parquet(fpath)
 df.columns
-df["RawData"].iloc[0]
+df["raw_drop_number"].iloc[0]
 
 # EPFL_ROOF_2011  # Problem in L1
 # S10 problematic
@@ -76,7 +76,7 @@ import dask.dataframe as dd
 import numpy as np
 import xarray as xr
 
-from disdrodb.L1_proc import retrieve_L1_raw_data_matrix
+from disdrodb.L1_proc import retrieve_L1_raw_arrays
 from disdrodb.standards import get_raw_field_nbins
 from disdrodb.L1_proc import convert_L0_raw_fields_arr_flags
 from disdrodb.L1_proc import set_raw_fields_arr_dtype
@@ -126,7 +126,7 @@ df = check_array_lengths_consistency(df, sensor_name=sensor_name, lazy=lazy)
 print(len(df))
 
 
-dict_data = retrieve_L1_raw_data_matrix(df, sensor_name, lazy=lazy, verbose=verbose)
+dict_data = retrieve_L1_raw_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
 
 
 df_series = df[key].astype(str).str.split(",")
@@ -141,7 +141,7 @@ arr = np.stack(df_series, axis=0)
 
 df_series.iloc[0][-10:]
 
-df["RawData"].iloc[0]
+df["raw_drop_number"].iloc[0]
 # Retrieve raw fields matrix bins dictionary
 n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
 # Retrieve number of timesteps
@@ -154,9 +154,9 @@ else:
 dict_data = {}
 unavailable_keys = []
 
-key = "FieldN"
-key = "FieldV"
-key = "RawData"
+key = "raw_drop_concentration"
+key = "raw_drop_average_velocity"
+key = "raw_drop_number"
 
 for key, n_bins in n_bins_dict.items():
     # Check key is available in dataframe
@@ -176,22 +176,26 @@ for key, n_bins in n_bins_dict.items():
     arr = convert_L0_raw_fields_arr_flags(arr, key=key)
     # Set dtype of the matrix
     arr = set_raw_fields_arr_dtype(arr, key=key)
-    # For key='RawData', reshape to 2D matrix
-    if key == "RawData":
-        arr = reshape_L0_raw_datamatrix_to_2D(arr, n_bins_dict, n_timesteps)
+    # For key='raw_drop_number', reshape to 2D matrix
+    if key == "raw_drop_number":
+<<<<<<< HEAD
+        arr = reshape_L0_raw_drop_number_matrix_to_2D(arr, n_bins_dict, n_timesteps)
+=======
+        arr = reshape_L0_raw_drop_number(arr, n_bins_dict, n_timesteps)
+>>>>>>> variable_names_lowercase
     # Add array to dictionary
     dict_data[key] = arr
 
 # Retrieve unavailable keys from raw spectrum
 if len(unavailable_keys) > 0:
-    if "RawData" not in list(dict_data.keys()):
+    if "raw_drop_number" not in list(dict_data.keys()):
         raise ValueError(
             "The raw spectrum is required to compute unavaible N_D and N_V."
         )
-    if "FieldN" in unavailable_keys:
-        dict_data["FieldN"] = get_fieldn_from_raw_spectrum(dict_data["RawData"])
-    if "FieldV" in unavailable_keys:
-        dict_data["FieldV"] = get_fieldv_from_raw_spectrum(dict_data["RawData"])
+    if "raw_drop_concentration" in unavailable_keys:
+        dict_data["raw_drop_concentration"] = get_drop_concentration(dict_data["raw_drop_number"])
+    if "raw_drop_average_velocity" in unavailable_keys:
+        dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(dict_data["raw_drop_number"])
 
 
 # -----------------------------------------------------------------.
@@ -201,4 +205,4 @@ ds = create_L1_dataset_from_L0(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
 
 df = pd.read_parquet(fpath)
 df.columns
-df["RawData"].iloc[0]
+df["raw_drop_number"].iloc[0]

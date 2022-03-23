@@ -131,7 +131,7 @@ column_names = ['time',
                 'station_name',
                 'sensor_status',
                 'sensor_temperature',
-                'RawData'
+                'raw_drop_number'
                 ]
 
 import tarfile
@@ -321,7 +321,7 @@ reader_kwargs['encoding_errors'] = 'ignore'
 
 column_names = ['time',
                 'Unknow',
-                'RawData',
+                'raw_drop_number',
                 ]
 
 
@@ -406,7 +406,7 @@ column_names = ['time',
             
 # # # Example: split erroneous columns  
 # # df_tmp = df['TO_BE_SPLITTED'].astype(str).str.split(',', n=1, expand=True)
-# # df_tmp.columns = ['datalogger_voltage','rain_rate_32bit']
+# # df_tmp.columns = ['datalogger_voltage','rainfall_rate_32bit']
 # # df = df.drop(columns=['TO_BE_SPLITTED'])
 # # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # # del df_tmp 
@@ -420,20 +420,20 @@ column_names = ['time',
 # # Drop TO_BE_SPLITTED
 # df = df.drop(['TO_BE_SPLITTED'], axis=1)
 
-# # Add the comma on RawData
-# df_RawData = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('RawData')
+# # Add the comma on raw_drop_number
+# df_raw_drop_number = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_number')
 
 # # Concat all togheter
-# df = dd.concat([df, df_to_parse.iloc[:,:9], df_RawData] ,axis=1)
+# df = dd.concat([df, df_to_parse.iloc[:,:9], df_raw_drop_number] ,axis=1)
 
 # # Add names to the columns
 # df.columns = column_names
 
-# # Drop rows with less than 4096 on RawData
-# df = df.loc[df['RawData'].astype(str).str.len() == 4096]
+# # Drop rows with less than 4096 on raw_drop_number
+# df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
-# # Drop not float on rain_rate_32bit
-# # df = df[pd.to_numeric(df['rain_rate_32bit'], errors='coerce').notnull()]
+# # Drop not float on rainfall_rate_32bit
+# # df = df[pd.to_numeric(df['rainfall_rate_32bit'], errors='coerce').notnull()]
 
 # #---------------------------------------------------------------------------.
 # #### 8.3 Run following code portion without modifying anthing 

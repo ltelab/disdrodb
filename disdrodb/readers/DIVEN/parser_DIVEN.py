@@ -46,18 +46,10 @@ from disdrodb.L1_proc import write_L1_to_netcdf
 
 ############## 
 
-# raw_dir = '/SharedVM/Campagne/DIVEN/Raw/CAPEL-DEWI'
-# processed_dir = '/SharedVM/Campagne/DIVEN/Processed/CAPEL-DEWI'
-# force = True
-# rename_netcdf = True
-# verbose = True
-# l0_processing = True
-# l1_processing = True
-# debugging_mode = True
 
 ### Function ###
 
-def rename_variable_netcdf(file_list, processed_dir, dict_name, attrs):
+def reformat_DIVEN_files(file_list, processed_dir, attrs):
     '''
     file_list:      List of NetCDF's path with the same ID
     processed_dir:  Save location for the renamed NetCDF
@@ -66,6 +58,9 @@ def rename_variable_netcdf(file_list, processed_dir, dict_name, attrs):
     '''
     
     from disdrodb.L1_proc import get_L1_coords
+    
+    # Dictionary name
+    dict_name = get_DIVEN_dict()
     
     # Open netCDFs
     ds = xr.open_mfdataset(file_list)
@@ -105,7 +100,7 @@ def rename_variable_netcdf(file_list, processed_dir, dict_name, attrs):
     
     # Match field between NetCDF and dictionary
     list_var_names = list(ds.keys())
-    dict_var = {k: dict_name[k] for k in dict_name.keys() & set(list_var_names)}
+    dict_var = {k: dict_name[k] for k in dict_name.keys() if k in list_var_names}
     
     # Rename NetCDF variables
     try:
@@ -123,6 +118,9 @@ def rename_variable_netcdf(file_list, processed_dir, dict_name, attrs):
         
     return ds
 
+
+### Script ###
+
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
@@ -135,7 +133,6 @@ def rename_variable_netcdf(file_list, processed_dir, dict_name, attrs):
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
 @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
 @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
-@click.option('-rn', '--rename_netcdf', type=bool, show_default=True, default=True, help="Rename NetCDF variables by a defined dictionary")
 def main(raw_dir,
          processed_dir,
          l0_processing=False,
@@ -144,8 +141,7 @@ def main(raw_dir,
          force=True,
          verbose=True,
          debugging_mode=False,
-         lazy=True,
-         rename_netcdf = True
+         lazy=True
          ):
 
 
@@ -201,75 +197,45 @@ def main(raw_dir,
         #######################
         #### Rename NetCDF ####
         #######################
-        if rename_netcdf:
+
             
-            # Start rename processing
-            t_i = time.time()
-            msg = " - Rename NetCDF of station_id {} has started.".format(station_id)
-            if verbose:
-                print(msg)
-            logger.info(msg)
-    
-            # -----------------------------------------------------------------.
-            #### - List files to process
-            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
-            file_list = get_file_list(
-                raw_dir=raw_dir,
-                glob_pattern=glob_pattern,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-            )
-            
-            # Dictionary name
-            dict_name = get_DIVEN_dict()
-            
-            ds = rename_variable_netcdf(file_list, processed_dir, dict_name, attrs)
-            
-            fpath = get_L1_netcdf_fpath(processed_dir, station_id)
-            write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
-            
-            # End L0 processing
-            t_f = time.time() - t_i
-            msg = " - Rename NetCDF processing of station_id {} ended in {:.2f}s".format(
-                station_id, t_f
-            )
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            
-            msg = (" --------------------------------------------------")
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            
-    
-        # ---------------------------------------------------------------------.
-        #######################
-        #### L0 processing ####
-        #######################
-        if l0_processing:
-            
-            msg = (' - Not needed L0 processing, so skipped')
-            
-            if verbose:
-                print(msg)
-                print(" --------------------------------------------------")
-            logger.info(msg)
-    
-        # ---------------------------------------------------------------------.
-        #######################
-        #### L1 processing ####
-        #######################
-        if l1_processing:
-            
-            msg = (' - Not needed L1 processing, so skipped')
-            
-            if verbose:
-                print(msg)
-                print(" --------------------------------------------------")
-            logger.info(msg)
-        # ---------------------------------------------------------------------.
-    # -------------------------------------------------------------------------.
+        # Start rename processing
+        t_i = time.time()
+        msg = " - Rename NetCDF of station_id {} has started.".format(station_id)
+        if verbose:
+            print(msg)
+        logger.info(msg)
+
+        # -----------------------------------------------------------------.
+        #### - List files to process
+        glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
+        file_list = get_file_list(
+            raw_dir=raw_dir,
+            glob_pattern=glob_pattern,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+        )
+        
+        # Rename variable netCDF
+        ds = reformat_DIVEN_files(file_list, processed_dir, attrs)
+        
+        fpath = get_L1_netcdf_fpath(processed_dir, station_id)
+        write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
+        
+        # End L0 processing
+        t_f = time.time() - t_i
+        msg = " - Rename NetCDF processing of station_id {} ended in {:.2f}s".format(
+            station_id, t_f
+        )
+        if verbose:
+            print(msg)
+        logger.info(msg)
+        
+        msg = (" --------------------------------------------------")
+        if verbose:
+            print(msg)
+        logger.info(msg)
+        
     
     msg = "### Script finish ###"
     print("\n  " + msg + "\n")
@@ -281,17 +247,6 @@ def main(raw_dir,
 
 if __name__ == "__main__":
     main()
-    # main(
-    #     raw_dir = '/SharedVM/Campagne/DIVEN/Raw/CAPEL-DEWI',
-    #     processed_dir = '/SharedVM/Campagne/DIVEN/Processed/CAPEL-DEWI',
-    #     l0_processing=True,
-    #     l1_processing=True,
-    #     write_netcdf=False,
-    #     force=True,
-    #     verbose=True,
-    #     debugging_mode=False,
-    #     lazy=True,
-    #     rename_netcdf = True)
 
 
 

@@ -159,7 +159,7 @@ def main(raw_dir,
         "debug_data",
         "field_n",
         "field_v",
-        "raw_data",
+        "raw_drop_number",
         "All_0",
     ]
 
@@ -217,12 +217,12 @@ def main(raw_dir,
         # Drop debug_data
         df = df.drop(columns=["debug_data", "All_0"])
 
-        # If raw_data is nan, drop the row
-        col_to_drop_if_na = ["field_n", "field_v", "raw_data"]
+        # If raw_drop_number is nan, drop the row
+        col_to_drop_if_na = ["field_n", "field_v", "raw_drop_number"]
         df = df.dropna(subset=col_to_drop_if_na)
 
-        # Drop rows with less than 4096 char on raw_data
-        df = df.loc[df["raw_data"].astype(str).str.len() == 4096]
+        # Drop rows with less than 4096 char on raw_drop_number
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
         # Remove " at the beginning of time
         df["time"] = df["time"].str.lstrip('"')
@@ -234,7 +234,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.dat*"
+    raw_data_glob_pattern= "*.dat*"
 
     ####----------------------------------------------------------------------.
     ####################

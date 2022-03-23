@@ -140,7 +140,7 @@ def main(raw_dir,
 
     columns_names_temporary = ['TO_BE_SPLITTED',
                                 'field_v',
-                                'raw_data',
+                                'raw_drop_number',
                                 'All_0'
                                 ]
 
@@ -149,8 +149,8 @@ def main(raw_dir,
                     'temp1', # Dataloger status
                     'rainfall_rate_32bit',
                     'rainfall_accumulated_32bit',
-                    'weather_code_SYNOP_4680',
-                    'weather_code_SYNOP_4677',
+                    'weather_code_synop_4680',
+                    'weather_code_synop_4677',
                     'reflectivity_32bit',
                     'mor_visibility',
                     'sample_interval',
@@ -163,7 +163,7 @@ def main(raw_dir,
                     'temp2', # Datalogger error
                     'field_n',
                     'field_v',
-                    'raw_data'
+                    'raw_drop_number'
                     ]
 
     # - Check name validity
@@ -246,18 +246,18 @@ def main(raw_dir,
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
-        # If raw_data is nan, drop the row
-        col_to_drop_if_na = ['field_n','field_v','raw_data']
+        # If raw_drop_number is nan, drop the row
+        col_to_drop_if_na = ['field_n','field_v','raw_drop_number']
         df = df.dropna(subset = col_to_drop_if_na)
 
-        # Drop rows with less than 4096 char on raw_data
-        df = df.loc[df['raw_data'].astype(str).str.len() == 4095]
+        # Drop rows with less than 4096 char on raw_drop_number
+        df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4095]
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern = "*.dat.gz*"
+    raw_data_glob_pattern= "*.dat.gz*"
 
     ####----------------------------------------------------------------------.
     ####################
