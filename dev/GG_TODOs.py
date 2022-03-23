@@ -56,8 +56,8 @@ attrs["disdrodb_id"] = ""  # TODO
 ####--------------------------------------------------------------------------.
 ### netcdf savings
 # if contiguous = True, zlib and fletcher must be False !
-# if contiguous, complevel has effect? or only if zlib=True?
-# if contiguous, shuffle is performed?
+# if contiguous, complevel has effect ?
+
 
 ####--------------------------------------------------------------------------.
 # Float 32 or Float 64 (f4, f8)
