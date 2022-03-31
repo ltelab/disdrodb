@@ -223,7 +223,7 @@ def main(raw_dir,
         'number_particles_class_8_internal_data',
         'number_particles_class_9',
         'number_particles_class_9_internal_data',
-        'raw_spectrum',
+        'raw_drop_number',
     ]
 
     # - Check name validity
@@ -287,8 +287,8 @@ def main(raw_dir,
         # Rename columns
         df.columns = column_names_2
 
-        # Remove checksum at end of raw_spectrum
-        df['raw_spectrum'] = df['raw_spectrum'].str.slice(stop=1760)
+        # Remove checksum at end of raw_drop_number
+        df['raw_drop_number'] = df['raw_drop_number'].str.slice(stop=1760)
 
         # Time
         df['time'] = df[['time_sensor', 'date_sensor']].apply(lambda x: ' '.join(x), axis=1)

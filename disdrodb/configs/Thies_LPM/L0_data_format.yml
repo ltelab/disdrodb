@@ -744,19 +744,10 @@ number_particles_class_9_internal_data:
   - 00000.000
   - 99999.999
   nan_flags: null
-raw_spectrum:
+raw_drop_number:
   n_digits: 1317
   n_characters: 1756
   n_decimals: 1317
-  n_naturals: 0
-  data_range:
-  - null
-  - null
-  nan_flags: null
-raw_spectrum:
-  n_digits: 3
-  n_characters: 3
-  n_decimals: 3
   n_naturals: 0
   data_range:
   - null

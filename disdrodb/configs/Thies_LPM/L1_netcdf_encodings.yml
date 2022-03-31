@@ -640,7 +640,18 @@ number_particles_class_9_internal_data:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-raw_spectrum: 
+raw_drop_number: 
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes:
+  - 5000
+  - 22
+  - 20
+raw_drop_concentration: 
   dtype: float32
   zlib: true
   complevel: 3
@@ -650,4 +661,13 @@ raw_spectrum:
   chunksizes:
   - 5000
   - 22
+raw_drop_average_velocity: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes:
+  - 5000
   - 20

@@ -99,7 +99,7 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
     logger.info(msg)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
-    check_L0_raw_fields_available(df, sensor_name)
+    # check_L0_raw_fields_available(df, sensor_name)
     # Retrieve raw fields matrix bins dictionary
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
     # Retrieve number of timesteps
@@ -108,6 +108,12 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
     else:
         n_timesteps = df.shape[0]
 
+
+    if sensor_name in ['OTT_Parsivel', 'OTT_Parsivel2']:
+        split_str = ','
+    if sensor_name in ['Thies_LPM']:
+        split_str = ';'
+    
     # Retrieve available arrays
     dict_data = {}
     unavailable_keys = []
@@ -117,7 +123,7 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
             unavailable_keys.append(key)
             continue
         # Parse the string splitting at ,
-        df_series = df[key].astype(str).str.split(",")
+        df_series = df[key].astype(str).str.split(split_str)
         # Create array
         if lazy:
             arr = da.stack(df_series, axis=0)
