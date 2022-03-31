@@ -154,6 +154,7 @@ def check_L0_standards(fpath, sensor_name, raise_errors=False, verbose=True):
     unavailable_vars = np.array(list_sprectrum_vars)[
         np.isin(list_sprectrum_vars, df.columns, invert=True)
     ]
+    # Also if Thies_LPM has list_sprectrum_vars?
     if len(unavailable_vars) > 0:
         msg = f" - The variables {unavailable_vars} are not present in the L0 dataframe."
         print(msg)
@@ -264,6 +265,26 @@ def get_field_value_options_dict(sensor_name):
         value_dict = {
             "sensor_status": [0, 1, 2, 3],
             "error_code": [0, 1, 2],
+            # TODO: weather codes
+            # Faculative/custom fields
+        }
+    elif sensor_name == "Thies_LPM":
+        value_dict = {
+            "laser_status": [0, 1],
+            "laser_temperature_analog_status": [0, 1],
+            "laser_temperature_digital_status": [0, 1],
+            "laser_current_analog_status": [0, 1],
+            "laser_current_digital_status": [0, 1],
+            "sensor_voltage_supply_status": [0, 1],
+            "current_heating_pane_transmitter_head_status": [0, 1],
+            "current_heating_pane_receiver_head_status": [0, 1],
+            "temperature_sensor_status": [0, 1],
+            "current_heating_voltage_supply_status": [0, 1],
+            "current_heating_house_status": [0, 1],
+            "current_heating_heads_status": [0, 1],
+            "current_heating_carriers_status": [0, 1],
+            "control_output_laser_power_status": [0, 1],
+            "reserve_status": [0, 1]
             # TODO: weather codes
             # Faculative/custom fields
         }

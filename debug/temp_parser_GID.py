@@ -193,7 +193,7 @@ str_reader_kwargs = reader_kwargs.copy()
 df = read_raw_data(filepath, 
                    column_names=None,  
                    reader_kwargs=str_reader_kwargs, 
-                   lazy=False)
+                   lazy=True)
 
 ####---------------------------------------------------------------------------.
 ######################################################################
@@ -201,90 +201,90 @@ df = read_raw_data(filepath,
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-column_names = []
+column_names = ['temp']
 
-column_names_2 = ['disdromter_ID',
-                'disdrometer_serial',
-                'disdromter_software_version', # to_drop
-                'date', # to_drop
-                'time', #to_drop
-                '5m_synop_4677', # to_drop
-                '5m_synop_4680', # to_drop
-                '5m_meter_4678', # to_drop
-                '5M Intensität [mm/h]', # to_drop
-                '1m_synop_4677', # to_drop
-                '1m_synop_4680', # to_drop
-                '1m_meter_4678', # to_drop
-                '1M Intensity [mm/h] total precipitation',
-                '1M Intensity [mm/h] liquid precipitation',
-                '1M Intensity [mm/h] solid precipitation',
-                'Precipitation amount [mm]', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
-                'visibility',
-                'reflectivity',
-                '1M Measuring quality [0...100%]', # I don't know what to do with this
-                '1M Maximum diameter hail [mm]', # I don't know what to do with this
-                'Status Laser', # I don't know what to do with this
-                'Static signal', # I don't know what to do with this
-                'Status Laser temperature (analogue)', # I don't know what to do with this
-                'Status Laser temperature (digital)', # I don't know what to do with this
-                'Status Laser current (analogue)', # I don't know what to do with this
-                'Status Laser current (digital)', # I don't know what to do with this
-                'Status Sensor supply', # I don't know what to do with this
-                'Status Current pane heating laser head', # I don't know what to do with this
-                'Status Current pane heating receiver head', # I don't know what to do with this
-                'Status Temperature sensor',
-                'Status Heating supply',
-                'Status Current heating housing',
-                'Status Current heating heads',
-                'Status Current heating carriers',
-                'Status Control output laser power',
-                'Reserve Status',
-                'Interior temperature [°C]',
-                'Temperature of laser driver 0-80°C',
-                'Mean value laser current [1/100 mA]',
-                'Control voltage [mV] (reference value: 4010±5)',
-                'Optical control output [mV] (2300 … 6500)',
-                'Voltage sensor supply [1/10V]',
-                'Current pane heating laser head [mA]',
-                'Current pane heating receiver head [mA]',
-                'Ambient temperature [°C]',
-                'Voltage Heating supply [1/10 V]',
-                'Current heating housing [mA]',
-                'Current heating heads [mA]',
-                'Current heating carriers [mA]',
-                'Number of all measured particles',
-                'internal_data 1',
-                'number_particles min speed 0.15 m/s',
-                'internal_data 2',
-                'number_particles max speed 20 m/s',
-                'internal_data 3',
-                'number_particles min diameter 0.15 mm',
-                'internal_data 4',
-                'number_particles no hydrometeor',
-                'total_volume 1',
-                'number_particles with unknown classification',
-                'total_volume 2',
-                'number_particles class 1',
-                'total_volume class 1',
-                'number_particles class 2',
-                'total_volume class 2',
-                'number_particles class 3',
-                'total_volume class 3',
-                'number_particles class 4',
-                'total_volume class 4',
-                'number_particles class 5',
-                'total_volume class 5',
-                'number_particles class 6',
-                'total_volume class 6',
-                'number_particles class 7',
-                'total_volume class 7',
-                'number_particles class 8',
-                'total_volume class 8',
-                'number_particles class 9',
-                'total_volume class 9',
-                'precipitation spectrum',
-                # 'Checksum',
-                ]
+column_names_2 = [
+    'start_identifier',
+    'sensor_serial_number',
+    'software_version',
+    'date_sensor',
+    'time_sensor',
+    'weather_code_synop_4677_5min',
+    'weather_code_synop_4680_5min',
+    'weather_code_metar_4678_5min',
+    'precipitation_rate_5min',
+    'weather_code_synop_4677',
+    'weather_code_synop_4680',
+    'weather_code_metar_4678',
+    'precipitation_rate',  # intensity_total
+    'rainfall_rate', # intensity_liquid
+    'snowfall_rate', # intensity_solid
+    'precipitation_accumulated',  # accum_precip
+    'mor_visibility',  # maximum_visibility
+    'reflectivity', # radar_reflectivity 
+    'quality_index', # [0-100]
+    'max_hail_diameter',
+    'laser_status',
+    'static_signal',
+    'laser_temperature_analog_status',
+    'laser_temperature_digital_status',
+    'laser_current_analog_status',
+    'laser_current_digital_status',
+    'sensor_voltage_supply_status',
+    'current_heating_pane_transmitter_head_status',
+    'current_heating_pane_receiver_head_status',
+    'temperature_sensor_status',
+    'current_heating_voltage_supply_status',
+    'current_heating_house_status',
+    'current_heating_heads_status',
+    'current_heating_carriers_status',
+    'control_output_laser_power_status',
+    'reserve_status',
+    'temperature_interior',
+    'laser_temperature',
+    'laser_current_average',
+    'control_voltage',
+    'optical_control_voltage_output', # maybe think a bit more on a nicer name # control_output_la
+    'sensor_voltage_supply',
+    'current_heating_pane_transmitter_head',
+    'current_heating_pane_receiver_head',
+    'temperature_ambient',
+    'current_heating_voltage_supply', # V, remove current?
+    'current_heating_house', # A
+    'current_heating_heads', # A 
+    'current_heating_carriers', # A
+    'number_particles', # number_particles_all
+    'number_particles_internal_data',
+    'number_particles_min_speed',
+    'number_particles_min_speed_internal_data',
+    'number_particles_max_speed',
+    'number_particles_max_speed_internal_data',
+    'number_particles_min_diameter',
+    'number_particles_min_diameter_internal_data',
+    'number_particles_no_hydrometeor',
+    'number_particles_no_hydrometeor_internal_data',
+    'number_particles_unknown_classification',
+    'number_particles_unknown_classification_internal_data',
+    'number_particles_class_1',
+    'number_particles_class_1_internal_data',
+    'number_particles_class_2',
+    'number_particles_class_2_internal_data',
+    'number_particles_class_3',
+    'number_particles_class_3_internal_data',
+    'number_particles_class_4',
+    'number_particles_class_4_internal_data',
+    'number_particles_class_5',
+    'number_particles_class_5_internal_data',
+    'number_particles_class_6',
+    'number_particles_class_6_internal_data',
+    'number_particles_class_7',
+    'number_particles_class_7_internal_data',
+    'number_particles_class_8',
+    'number_particles_class_8_internal_data',
+    'number_particles_class_9',
+    'number_particles_class_9_internal_data',
+    'raw_spectrum',
+]
 
 ####---------------------------------------------------------------------------.
 #########################################################
@@ -294,7 +294,7 @@ column_names_2 = ['disdromter_ID',
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[0]  # Select also other files here  1,2, ... 
 # filepath = all_stations_files
-lazy = False             # Try also with True when work with False 
+lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
@@ -320,21 +320,92 @@ if len(df.columns) != len(column_names):
 #     into a function called df_sanitizer_fun(df, lazy=True). See below ...
 
 # Remove last column (checksum)
-df = df[0].str.rsplit(";", n=1, expand=True)
+# df = df['temp'].str.rsplit(";", n=1, expand=True)
+# df.columns = ['temp','checksum']
 
 # Split columns
-df = df[0].str.split(";", n=79, expand=True)
+df = df['temp'].str.split(";", n=79, expand=True)
 
 # Rename columns
 df.columns = column_names_2
 
+# Remove checksum at end of raw_spectrum
+df['raw_spectrum'] = df['raw_spectrum'].str.slice(stop=1760)
+
 # Time
-df['time'] = df[['time', 'date']].apply(lambda x: ' '.join(x), axis=1)
+df['time'] = df[['time_sensor', 'date_sensor']].apply(lambda x: ' '.join(x), axis=1)
 # - Convert time column to datetime 
 df['time'] = dd.to_datetime(df['time'], format='%H:%M:%S %d.%m.%y')
 
-df = df.drop(columns=[ 'date', # to add columns to delete
-    ])
+to_drop = [
+    'start_identifier',
+    'date_sensor',
+    'time_sensor',
+    'weather_code_synop_4677_5min',
+    'weather_code_synop_4680_5min',
+    'weather_code_metar_4678_5min',
+    'quality_index', # [0-100]
+    'max_hail_diameter',
+    'laser_status',
+    'static_signal',
+    'laser_temperature_analog_status',
+    'laser_temperature_digital_status',
+    'laser_current_analog_status',
+    'laser_current_digital_status',
+    'sensor_voltage_supply_status',
+    'current_heating_pane_transmitter_head_status',
+    'current_heating_pane_receiver_head_status',
+    'temperature_sensor_status',
+    'current_heating_voltage_supply_status',
+    'current_heating_house_status',
+    'current_heating_heads_status',
+    'current_heating_carriers_status',
+    'control_output_laser_power_status',
+    'reserve_status',
+    'temperature_interior',
+    'laser_temperature',
+    'laser_current_average',
+    'control_voltage',
+    'optical_control_voltage_output', # maybe think a bit more on a nicer name # control_output_la
+    'sensor_voltage_supply',
+    'current_heating_pane_transmitter_head',
+    'current_heating_pane_receiver_head',
+    'current_heating_voltage_supply', # V, remove current?
+    'current_heating_house', # A
+    'current_heating_heads', # A 
+    'current_heating_carriers', # A
+    'number_particles_internal_data',
+    'number_particles_min_speed',
+    'number_particles_min_speed_internal_data',
+    'number_particles_max_speed',
+    'number_particles_max_speed_internal_data',
+    'number_particles_min_diameter',
+    'number_particles_min_diameter_internal_data',
+    'number_particles_no_hydrometeor',
+    'number_particles_no_hydrometeor_internal_data',
+    'number_particles_unknown_classification',
+    'number_particles_unknown_classification_internal_data',
+    'number_particles_class_1',
+    'number_particles_class_1_internal_data',
+    'number_particles_class_2',
+    'number_particles_class_2_internal_data',
+    'number_particles_class_3',
+    'number_particles_class_3_internal_data',
+    'number_particles_class_4',
+    'number_particles_class_4_internal_data',
+    'number_particles_class_5',
+    'number_particles_class_5_internal_data',
+    'number_particles_class_6',
+    'number_particles_class_6_internal_data',
+    'number_particles_class_7',
+    'number_particles_class_7_internal_data',
+    'number_particles_class_8',
+    'number_particles_class_8_internal_data',
+    'number_particles_class_9',
+    'number_particles_class_9_internal_data',
+    ]
+
+df = df.drop(columns=to_drop)
 
 
 #---------------------------------------------------------------------------.
@@ -374,35 +445,90 @@ def df_sanitizer_fun(df, lazy=lazy):
     else: 
         import pandas as dd
     
-    # Drop useless columns
-    df = df.drop(columns = ['id',
-                            'disdromter_ID', # to_drop
-                            'disdrometer_serial', # to_drop
-                            'disdrometer_type', #to_drop
-                            'mast_ID', # to_drop
-                            'number_particles_meas', # to_drop
-                            'rainfall_rate_32bit_meas', # to_drop
-                            'reflectivity_32bit_meas', # to_drop
-                            'mor_visibility_meas', # to_drop
-                            'rainfall_accumulated_32bit_meas', # to_drop
-                            'temp', # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
-                            'rain_kinetic_energy_meas',
-                            'D10', # I don't know what to do with this
-                            'D25', # I don't know what to do with this
-                            'D50', # I don't know what to do with this
-                            'D75', # I don't know what to do with this
-                            'D90', # I don't know what to do with this
-                            'Dm', # I don't know what to do with this
-                            'V10', # I don't know what to do with this
-                            'V25', # I don't know what to do with this
-                            'V50', # I don't know what to do with this
-                            'V75', # I don't know what to do with this
-                            'V90', # I don't know what to do with this
-                            'Vm', # I don't know what to do with this
-                            ])
+    # Split columns
+    df = df['temp'].str.split(";", n=79, expand=True)
 
+    # Rename columns
+    df.columns = column_names_2
+
+    # Remove checksum at end of raw_spectrum
+    df['raw_spectrum'] = df['raw_spectrum'].str.slice(stop=1760)
+
+    # Time
+    df['time'] = df[['time_sensor', 'date_sensor']].apply(lambda x: ' '.join(x), axis=1)
     # - Convert time column to datetime 
-    df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+    df['time'] = dd.to_datetime(df['time'], format='%H:%M:%S %d.%m.%y')
+
+    to_drop = [
+        'start_identifier',
+        'date_sensor',
+        'time_sensor',
+        'weather_code_metar_4678',
+        'weather_code_synop_4677_5min',
+        'weather_code_synop_4680_5min',
+        'weather_code_metar_4678_5min',
+        'quality_index', # [0-100]
+        'max_hail_diameter',
+        'laser_status',
+        'static_signal',
+        'laser_temperature_analog_status',
+        'laser_temperature_digital_status',
+        'laser_current_analog_status',
+        'laser_current_digital_status',
+        'sensor_voltage_supply_status',
+        'current_heating_pane_transmitter_head_status',
+        'current_heating_pane_receiver_head_status',
+        'temperature_sensor_status',
+        'current_heating_voltage_supply_status',
+        'current_heating_house_status',
+        'current_heating_heads_status',
+        'current_heating_carriers_status',
+        'control_output_laser_power_status',
+        'reserve_status',
+        'temperature_interior',
+        'laser_temperature',
+        'laser_current_average',
+        'control_voltage',
+        'optical_control_voltage_output', # maybe think a bit more on a nicer name # control_output_la
+        'sensor_voltage_supply',
+        'current_heating_pane_transmitter_head',
+        'current_heating_pane_receiver_head',
+        'current_heating_voltage_supply', # V, remove current?
+        'current_heating_house', # A
+        'current_heating_heads', # A 
+        'current_heating_carriers', # A
+        'number_particles_internal_data',
+        'number_particles_min_speed',
+        'number_particles_min_speed_internal_data',
+        'number_particles_max_speed',
+        'number_particles_max_speed_internal_data',
+        'number_particles_min_diameter',
+        'number_particles_min_diameter_internal_data',
+        'number_particles_no_hydrometeor',
+        'number_particles_no_hydrometeor_internal_data',
+        'number_particles_unknown_classification',
+        'number_particles_unknown_classification_internal_data',
+        'number_particles_class_1',
+        'number_particles_class_1_internal_data',
+        'number_particles_class_2',
+        'number_particles_class_2_internal_data',
+        'number_particles_class_3',
+        'number_particles_class_3_internal_data',
+        'number_particles_class_4',
+        'number_particles_class_4_internal_data',
+        'number_particles_class_5',
+        'number_particles_class_5_internal_data',
+        'number_particles_class_6',
+        'number_particles_class_6_internal_data',
+        'number_particles_class_7',
+        'number_particles_class_7_internal_data',
+        'number_particles_class_8',
+        'number_particles_class_8_internal_data',
+        'number_particles_class_9',
+        'number_particles_class_9_internal_data',
+        ]
+
+    df = df.drop(columns=to_drop)
     
     return df 
 
@@ -410,9 +536,9 @@ def df_sanitizer_fun(df, lazy=lazy):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = False # True 
+lazy = True # True 
 subset_file_list = file_list[0]
-subset_file_list = all_stations_files[3]
+# subset_file_list = all_stations_files[3]
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,

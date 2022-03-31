@@ -22,8 +22,8 @@ sensor_serial_number:
   n_decimals: 0
   n_naturals: 4
   data_range:
-  - 0
-  - 9999
+  - null
+  - null
   nan_flags: null
 software_version:
   n_digits: 3
@@ -759,8 +759,8 @@ raw_spectrum:
   n_decimals: 3
   n_naturals: 0
   data_range:
-  - 000
-  - 999
+  - null
+  - null
   nan_flags: null
 
 
