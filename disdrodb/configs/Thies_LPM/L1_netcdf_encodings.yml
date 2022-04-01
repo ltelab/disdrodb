@@ -65,7 +65,7 @@ weather_code_synop_4680_5min:
   contiguous: false
   chunksizes: 5000
 weather_code_metar_4678_5min: 
-  dtype: object
+  dtype: str
   zlib: true
   complevel: 3
   shuffle: true
@@ -97,7 +97,7 @@ weather_code_synop_4680:
   contiguous: false
   chunksizes: 5000
 weather_code_metar_4678: 
-  dtype: object
+  dtype: str
   zlib: true
   complevel: 3
   shuffle: true
@@ -641,7 +641,7 @@ number_particles_class_9_internal_data:
   contiguous: false
   chunksizes: 5000
 raw_drop_number: 
-  dtype: uint32
+  dtype: uint8
   zlib: true
   complevel: 3
   shuffle: true

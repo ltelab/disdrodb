@@ -73,7 +73,7 @@ from disdrodb.logger import close_logger
 # @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
-         l0_processing=True,
+         l0_processing=False,
          l1_processing=True,
          write_netcdf=True,
          force=True,
@@ -291,77 +291,16 @@ def main(raw_dir,
         df['raw_drop_number'] = df['raw_drop_number'].str.slice(stop=1760)
 
         # Time
-        df['time'] = df[['time_sensor', 'date_sensor']].apply(lambda x: ' '.join(x), axis=1)
+        if lazy:
+            df['time'] = df[['time_sensor', 'date_sensor']].apply(lambda x: ' '.join(x), axis=1, meta=(None, 'object'))
+        else:
+            df['time'] = df[['time_sensor', 'date_sensor']].apply(lambda x: ' '.join(x), axis=1)
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%H:%M:%S %d.%m.%y')
 
         to_drop = [
-            'start_identifier',
             'date_sensor',
-            'time_sensor',
-            'weather_code_metar_4678',
-            'weather_code_synop_4677_5min',
-            'weather_code_synop_4680_5min',
-            'weather_code_metar_4678_5min',
-            'quality_index', # [0-100]
-            'max_hail_diameter',
-            'laser_status',
-            'static_signal',
-            'laser_temperature_analog_status',
-            'laser_temperature_digital_status',
-            'laser_current_analog_status',
-            'laser_current_digital_status',
-            'sensor_voltage_supply_status',
-            'current_heating_pane_transmitter_head_status',
-            'current_heating_pane_receiver_head_status',
-            'temperature_sensor_status',
-            'current_heating_voltage_supply_status',
-            'current_heating_house_status',
-            'current_heating_heads_status',
-            'current_heating_carriers_status',
-            'control_output_laser_power_status',
-            'reserve_status',
-            'temperature_interior',
-            'laser_temperature',
-            'laser_current_average',
-            'control_voltage',
-            'optical_control_voltage_output', # maybe think a bit more on a nicer name # control_output_la
-            'sensor_voltage_supply',
-            'current_heating_pane_transmitter_head',
-            'current_heating_pane_receiver_head',
-            'current_heating_voltage_supply', # V, remove current?
-            'current_heating_house', # A
-            'current_heating_heads', # A 
-            'current_heating_carriers', # A
-            'number_particles_internal_data',
-            'number_particles_min_speed',
-            'number_particles_min_speed_internal_data',
-            'number_particles_max_speed',
-            'number_particles_max_speed_internal_data',
-            'number_particles_min_diameter',
-            'number_particles_min_diameter_internal_data',
-            'number_particles_no_hydrometeor',
-            'number_particles_no_hydrometeor_internal_data',
-            'number_particles_unknown_classification',
-            'number_particles_unknown_classification_internal_data',
-            'number_particles_class_1',
-            'number_particles_class_1_internal_data',
-            'number_particles_class_2',
-            'number_particles_class_2_internal_data',
-            'number_particles_class_3',
-            'number_particles_class_3_internal_data',
-            'number_particles_class_4',
-            'number_particles_class_4_internal_data',
-            'number_particles_class_5',
-            'number_particles_class_5_internal_data',
-            'number_particles_class_6',
-            'number_particles_class_6_internal_data',
-            'number_particles_class_7',
-            'number_particles_class_7_internal_data',
-            'number_particles_class_8',
-            'number_particles_class_8_internal_data',
-            'number_particles_class_9',
-            'number_particles_class_9_internal_data',
+            'time_sensor'
             ]
 
         df = df.drop(columns=to_drop)
@@ -536,7 +475,7 @@ if __name__ == "__main__":
     # main()
     main(raw_dir = '/SharedVM/Campagne/GID/RAW/GID',
              processed_dir = '/SharedVM/Campagne/GID/PROCESSED/GID',
-             l0_processing=True,
+             l0_processing=False,
              l1_processing=True,
              write_netcdf=True,
              force=True,

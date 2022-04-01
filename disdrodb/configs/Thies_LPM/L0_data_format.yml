@@ -22,8 +22,8 @@ sensor_serial_number:
   n_decimals: 0
   n_naturals: 4
   data_range:
-  - null
-  - null
+  - 0
+  - 9999
   nan_flags: null
 software_version:
   n_digits: 3
@@ -49,8 +49,8 @@ time_sensor:
   n_decimals: 6
   n_naturals: 0
   data_range:
-  - 00:00:00
-  - 23:59:59
+  - null
+  - null
   nan_flags: null
   
 ###
@@ -393,7 +393,7 @@ optical_control_voltage_output:
   n_decimals: 4
   n_naturals: 0
   data_range:
-  - 2300
+  - 1000
   - 6500
   nan_flags: null
 
@@ -433,8 +433,8 @@ temperature_ambient:
   n_naturals: 1
   data_range:
   - -999.9
-  - 999.9
-  nan_flags: null
+  - 99999.0
+  nan_flags: 99999.0
 
 current_heating_voltage_supply:
   n_digits: 3
