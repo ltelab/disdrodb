@@ -220,8 +220,8 @@ def get_ARM_LPM_dict():
         "synop_4680_5min_weather_code": "weather_code_synop_4680_5min",
         "intensity_total_5min": "precipitation_rate_5min",
         "synop_4677_weather_code": "weather_code_synop_4677",
-        "metar_4678_weather_code": "weather_code_metar_4678_5min",
-        "synop_4680_weather_code": "weather_code_synop_4680_5min",
+        "metar_4678_weather_code": "weather_code_metar_4678",
+        "synop_4680_weather_code": "weather_code_synop_4680",
         "intensity_total": "precipitation_rate",
         "intensity_liquid": "rainfall_rate",
         "intensity_solid": "snowfall_rate",
@@ -267,6 +267,25 @@ def get_ARM_LPM_dict():
         "number_particles_min_diameter": "number_particles_min_diameter",
         "number_particles_min_diameter_internal_data": "number_particles_min_diameter_internal_data",
         "precipitation_spectrum": "raw_spectrum",
+        
+        # ALASKA
+        'lat': 'latitude',
+        'lon': 'longitude',
+        'alt': 'altitude',
+        'base_time': 'base_time____________ToCheck',
+        'time_offset': 'time_offset____________ToCheck',
+        'time_bounds': 'time_bounds____________ToCheck',
+        'particle_diameter_bounds': 'particle_diameter_bounds____________ToCheck',
+        'particle_fall_velocity_bounds': 'particle_fall_velocity_bounds____________ToCheck',
+        'air_temperature': 'air_temperature____________ToCheck',
+    }
+    return d
+
+def get_ARM_LPM_dims_dict():
+    
+    d = {
+        'particle_diameter': 'diameter_bin_center', 
+        'particle_fall_velocity': 'velocity_bin_center'
     }
     return d
 
