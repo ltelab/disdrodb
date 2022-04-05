@@ -38,62 +38,11 @@ def convert_standards(file_list, verbose):
     
     dict_ARM = get_ARM_LPM_dict()
     
-    # dict_ARM =      {
-    #                 'time': 'time', # Name for time in Norway campaing
-    #                 'base_time': 'time', # Name for time in ARM Mobile Facility campaing
-    #                 'time_offset': 'time_offset_OldName',
-    #                 'precip_rate': 'rainfall_rate_32bit',
-    #                 'qc_precip_rate': 'qc_precip_rate_OldName',
-    #                 'weather_code': 'weather_code_synop_4680',
-    #                 'qc_weather_code': 'qc_weather_code_OldName',
-    #                 'equivalent_radar_reflectivity_ott': 'reflectivity_32bit',
-    #                 'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott_OldName',
-    #                 'number_detected_particles': 'number_particles',
-    #                 'qc_number_detected_particles': 'qc_number_detected_particles_OldName',
-    #                 'mor_visibility': 'mor_visibility_OldName',
-    #                 'qc_mor_visibility': 'qc_mor_visibility_OldName',
-    #                 'snow_depth_intensity': 'snow_depth_intensity_OldName',
-    #                 'qc_snow_depth_intensity': 'qc_snow_depth_intensity_OldName',
-    #                 'laserband_amplitude': 'laser_amplitude',
-    #                 'qc_laserband_amplitude': 'qc_laserband_amplitude_OldName',
-    #                 'sensor_temperature': 'sensor_temperature',
-    #                 'heating_current': 'sensor_heating_current',
-    #                 'qc_heating_current': 'qc_heating_current_OldName',
-    #                 'sensor_voltage': 'sensor_battery_voltage',
-    #                 'qc_sensor_voltage': 'qc_sensor_voltage_OldName',
-    #                 'class_size_width': 'class_size_width_OldName',
-    #                 'fall_velocity_calculated': 'fall_velocity_calculated_OldName',
-    #                 'raw_spectrum': 'raw_spectrum_OldName',
-    #                 'liquid_water_content': 'liquid_water_content_OldName',
-    #                 'equivalent_radar_reflectivity': 'equivalent_radar_reflectivity_OldName',
-    #                 'intercept_parameter': 'intercept_parameter_OldName',
-    #                 'slope_parameter': 'slope_parameter_OldName',
-    #                 'median_volume_diameter': 'median_volume_diameter_OldName',
-    #                 'liquid_water_distribution_mean': 'liquid_water_distribution_mean_OldName',
-    #                 'number_density_drops': 'number_density_drops_OldName',
-    #                 'diameter_min': 'diameter_min_OldName',
-    #                 'diameter_max': 'diameter_max_OldName',
-    #                 'moment1': 'moment1_OldName',
-    #                 'moment2': 'moment2_OldName',
-    #                 'moment3': 'moment3_OldName',
-    #                 'moment4': 'moment4_OldName',
-    #                 'moment5': 'moment5_OldName',
-    #                 'moment6': 'moment6_OldName',
-    #                 'lat': 'latitude',
-    #                 'lon': 'longitude',
-    #                 'alt': 'altitude',
-                    
-    #                 # ALASKA
-    #                 'synop_4677_weather_code': 'weather_code_synop_4677',
-    #                 'metar_4678_weather_code': 'weather_code_metar_4678',
-    #                 'synop_4680_weather_code': 'weather_code_synop_4680',
-    #                 }
-    
     # Custom dictonary for the campaign defined in standards
     dict_campaign = create_standard_dict(file_list[0], dict_ARM, verbose)
     
     # Log
-    msg = f"Converting station "
+    msg = f"Converting station {station_id}"
     if verbose:
         print(msg)
     # logger.info(msg) 
@@ -108,7 +57,9 @@ def convert_standards(file_list, verbose):
         dict_var = {k: dict_campaign[k] for k in dict_campaign.keys() if k in list_var_names}
         
         # Dimension dict
-        dict_dims = get_ARM_LPM_dims_dict()
+        list_coords_names = list(ds.indexes)
+        temp_dict_dims = get_ARM_LPM_dims_dict()
+        dict_dims = {k: temp_dict_dims[k] for k in temp_dict_dims if k in list_coords_names}
         
         # Rename NetCDF variables
         try:
@@ -138,7 +89,7 @@ def convert_standards(file_list, verbose):
             print(msg)
         # logger.info(msg)
     # Log
-    msg = f"Station processed successfully"
+    msg = f"Station {station_id} processed successfully"
     if verbose:
         print(msg)
     # logger.info(msg) 
@@ -197,11 +148,27 @@ def create_standard_dict(file_path, dict_campaign, verbose):
     
 # --------------------
 
-
-raw_dir = "/SharedVM/Campagne/ARM/Raw/ALASKA"
-processed_dir = "/SharedVM/Campagne/ARM/Processed/ALASKA"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/ARGENTINA"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/ARGENTINA"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/ANTARTICA"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/ANTARTICA"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/ALASKA"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/ALASKA"
 # raw_dir = "/SharedVM/Campagne/ARM/Raw/ARM_MOBILE_FACILITY"
 # processed_dir = "/SharedVM/Campagne/ARM/Processed/ARM_MOBILE_FACILITY"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/BRAZIL"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/BRAZIL"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/MAR_SUPPLEMENTAL_FACILITY"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/MAR_SUPPLEMENTAL_FACILITY"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/NORWAY"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/NORWAY"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/PORTUGAL"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/PORTUGAL"
+# raw_dir = "/SharedVM/Campagne/ARM/Raw/SOUTHERN_GREAT_PLAINS"
+# processed_dir = "/SharedVM/Campagne/ARM/Processed/SOUTHERN_GREAT_PLAINS"
+raw_dir = "/SharedVM/Campagne/ARM/Raw/SOUTHWEST_PACFIC_OCEAN"
+processed_dir = "/SharedVM/Campagne/ARM/Processed/SOUTHWEST_PACFIC_OCEAN"
+
 force = True
 verbose = True
 debugging_mode = True 
@@ -210,6 +177,8 @@ raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
 
 campaign_name = get_campaign_name(raw_dir)
 
+# Create directory structure
+create_directory_structure(raw_dir, processed_dir)
 
 list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 
@@ -217,7 +186,7 @@ for station_id in list_stations_id:
     
     print(f"Parsing station: {station_id}")
 
-    glob_pattern = os.path.join("data", station_id, "*.nc") # CUSTOMIZE THIS 
+    glob_pattern = os.path.join("data", station_id, "*.cdf") # CUSTOMIZE THIS 
     file_list = get_file_list(raw_dir=raw_dir,
                               glob_pattern=glob_pattern, 
                               verbose=verbose, 

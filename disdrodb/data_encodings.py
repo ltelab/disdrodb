@@ -278,14 +278,64 @@ def get_ARM_LPM_dict():
         'particle_diameter_bounds': 'particle_diameter_bounds____________ToCheck',
         'particle_fall_velocity_bounds': 'particle_fall_velocity_bounds____________ToCheck',
         'air_temperature': 'air_temperature____________ToCheck',
+        
+        # Antartica
+        'qc_time': 'qc_time____________ToDeleteMaybe',
+        'precip_rate': 'rainfall_rate',
+        'weather_code': 'weather_code_synop_4680',
+        'equivalent_radar_reflectivity_ott': 'equivalent_radar_reflectivity_ott____________ToDeleteMaybe',
+        'number_detected_particles': 'number_particles',
+        'mor_visibility': 'mor_visibility',
+        'laserband_amplitude': 'laser_amplitude',
+        'sensor_temperature': 'sensor_temperature_pcb',
+        'heating_current': 'sensor_heating_current',
+        'sensor_voltage': 'sensor_battery_voltage',
+        'class_size_width': 'class_size_width____________ToDeleteMaybe',
+        'fall_velocity_calculated': 'fall_velocity_calculated____________ToDeleteMaybe',
+        'raw_spectrum': 'raw_spectrum',
+        'liquid_water_content': 'liquid_water_content____________ToDeleteMaybe',
+        'equivalent_radar_reflectivity': 'reflectivity_32bit',
+        'intercept_parameter': 'intercept_parameter____________ToDeleteMaybe',
+        'slope_parameter': 'slope_parameter____________ToDeleteMaybe',
+        'median_volume_diameter': 'median_volume_diameter____________ToDeleteMaybe',
+        'liquid_water_distribution_mean': 'liquid_water_distribution_mean____________ToDeleteMaybe',
+        'number_density_drops': 'raw_drop_concentration',
+        'diameter_min': 'diameter_min____________ToDeleteMaybe',
+        'diameter_max': 'diameter_max____________ToDeleteMaybe',
+        'moment1': 'moment1____________ToDeleteMaybe',
+        'moment2': 'moment2____________ToDeleteMaybe',
+        'moment3': 'moment3____________ToDeleteMaybe',
+        'moment4': 'moment4____________ToDeleteMaybe',
+        'moment5': 'moment5____________ToDeleteMaybe',
+        'moment6': 'moment6____________ToDeleteMaybe',
+
+        # Arm Mobile Facility
+        'qc_precip_rate': 'qc_precip_rate____________ToDeleteMaybe',
+        'qc_weather_code': 'qc_weather_code____________ToDeleteMaybe',
+        'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott____________ToDeleteMaybe',
+        'qc_mor_visibility': 'qc_mor_visibility____________ToDeleteMaybe',
+        'snow_depth_intensity': 'snowfall_rate',
+        'qc_snow_depth_intensity': 'qc_snow_depth_intensity____________ToDeleteMaybe',
+        'qc_laserband_amplitude': 'qc_laserband_amplitude____________ToDeleteMaybe',
+        'qc_heating_current': 'qc_heating_current____________ToDeleteMaybe',
+        'qc_sensor_voltage': 'qc_sensor_voltage____________ToDeleteMaybe',
+        
+        # MAR_SUPPLEMENTAL_FACILITY
+        'qc_number_detected_particles': 'qc_number_detected_particles____________ToDeleteMaybe',
+    
     }
     return d
 
 def get_ARM_LPM_dims_dict():
     
     d = {
+        
         'particle_diameter': 'diameter_bin_center', 
-        'particle_fall_velocity': 'velocity_bin_center'
+        'particle_fall_velocity': 'velocity_bin_center',
+        
+        # Antartica
+        'particle_size': 'diameter_bin_center', 
+        'raw_fall_velocity': 'velocity_bin_center',
     }
     return d
 
