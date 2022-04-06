@@ -33,9 +33,6 @@ from disdrodb.data_encodings import get_ARM_LPM_dims_dict
 
 def convert_standards(file_list, verbose):
     
-    # from disdrodb.data_encodings import get_ARM_to_l0_dtype_standards
-    # from disdrodb.standards import get_var_explanations_ARM
-    
     dict_ARM = get_ARM_LPM_dict()
     
     # Custom dictonary for the campaign defined in standards
@@ -76,9 +73,6 @@ def convert_standards(file_list, verbose):
             # logger.error(msg)
             # raise RuntimeError(msg)
     
-        
-        
-        
         # ds = ds.drop(data_vars_to_drop)
         
         ds.to_netcdf(output_dir, mode='w', format="NETCDF4")
@@ -97,30 +91,25 @@ def convert_standards(file_list, verbose):
 def compare_standard_keys(dict_campaing, ds_keys, verbose):
     '''Compare a list (NetCDF keys) and a dictionary (standard from a campaing keys) and rename it, if a key is missin into the dictionary, take the missing key and add the suffix _OldName.'''
     dict_standard = {}
-    count_skipped_keys = 0
+    # Initial list skipped keys
+    list_skipped_keys = []
+
+    # dict_standard = {k: dict_campaing[k] for k in dict_campaing if k in ds_keys}
     
-    # Loop the NetCDF list
+    # Loop keys
     for ds_v in ds_keys:
-        # Loop standard dictionary for every element in list
-        for dict_k, dict_v in dict_campaing.items():
-            # If found a match, change the value with the dictionary standard and insert into a new dictionary
-            if dict_k == ds_v:
-                dict_standard[dict_k] = dict_v
-                break
-            else:
-                # If doesn't found a match, insert list value with suffix into a new dictionary
-                dict_standard[ds_v] = ds_v + '_TO_CHECK_VALUE_INTO_DATA_ENCONDINGS________'
+        try:
+            # Check if key into dict_campaing
+            dict_standard[ds_v] = dict_campaing[ds_v]
+        except KeyError:
+            # If not present, give non standard name and add to list_skipped_keys
+            dict_standard[ds_v] = ds_v + '_________TO_CHECK_VALUE_INTO_DATA_ENCONDINGS'
+            list_skipped_keys.append(ds_v)
+            pass
                 
-                # Testing purpose
-                # dict_standard[ds_v] = 'to_drop'
-                
-            # I don't kwow how implement counter :D
-            # count_skipped_keys += 1
-    
-    count_skipped_keys = 'Not implemented'
     # Log
-    if count_skipped_keys != 0:
-        msg = f"Cannot convert keys values: {count_skipped_keys} on {len(ds_keys)}"
+    if list_skipped_keys:
+        msg = f"Cannot convert keys values: {len(list_skipped_keys)} on {len(ds_keys)} \n Missing keys: {list_skipped_keys}"
         if verbose:
             print(msg)
         # logger.info(msg) 
@@ -140,10 +129,69 @@ def create_standard_dict(file_path, dict_campaign, verbose):
         
     ds.close()
     
+    # Compare NetCDF and dictionary keys
     dict_checked = compare_standard_keys(dict_campaign, ds_keys, verbose)
     
-    # Compare NetCDF and dictionary keys
     return dict_checked
+
+def reformat_ARM_files(file_list, processed_dir, attrs):
+    '''
+    file_list:      List of NetCDF's path with the same ID
+    processed_dir:  Save location for the renamed NetCDF
+    dict_name:      Dictionary for rename NetCDF's variables (key: old name -> value: new name)
+    attrs:          Info about campaing
+    '''
+    
+    from disdrodb.L1_proc import get_L1_coords
+    
+    dict_ARM = get_ARM_LPM_dict()
+    # Custom dictonary for the campaign defined in standards
+    dict_campaign = create_standard_dict(file_list[0], dict_ARM, verbose)
+    
+    # Open netCDFs
+    ds = xr.open_mfdataset(file_list)
+    
+    # Get coords
+    coords = get_L1_coords(attrs['sensor_name'])
+    
+    # Assign coords and attrs
+    coords["crs"] = attrs["crs"]
+    coords["altitude"] = attrs["altitude"]
+    
+    # Match field between NetCDF and dictionary
+    list_var_names = list(ds.keys())
+    dict_var = {k: dict_campaign[k] for k in dict_campaign.keys() if k in list_var_names}
+    
+    # Dimension dict
+    list_coords_names = list(ds.indexes)
+    temp_dict_dims = get_ARM_LPM_dims_dict()
+    dict_dims = {k: temp_dict_dims[k] for k in temp_dict_dims if k in list_coords_names}
+    
+    # Rename NetCDF variables
+    try:
+        ds = ds.rename(dict_var)
+        # Rename dimension
+        ds = ds.rename_dims(dict_dims)
+        # Rename coordinates
+        ds = ds.rename(dict_dims)
+        # Assign coords
+        ds = ds.assign_coords(coords)
+        ds.attrs = attrs
+    
+    except Exception as e:
+        msg = f"Error in rename variable. The error is: \n {e}"
+        raise RuntimeError(msg)
+        # To implement when move fuction into another file, temporary solution for now
+        # logger.error(msg)
+        # raise RuntimeError(msg)
+
+    # data_vars_to_drop = []
+    # ds = ds.drop(data_vars_to_drop)
+    
+    # Close NetCDF
+    ds.close()
+        
+    return ds
     
     
 # --------------------
@@ -180,9 +228,21 @@ campaign_name = get_campaign_name(raw_dir)
 # Create directory structure
 create_directory_structure(raw_dir, processed_dir)
 
+
 list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 
 for station_id in list_stations_id:
+    
+    # Metadata 
+    from disdrodb.metadata import read_metadata
+    from disdrodb.check_standards import check_sensor_name
+    
+    # Retrieve metadata
+    attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+
+    # Retrieve sensor name
+    sensor_name = attrs['sensor_name']
+    check_sensor_name(sensor_name)
     
     print(f"Parsing station: {station_id}")
 
@@ -194,4 +254,5 @@ for station_id in list_stations_id:
     
     
 
-    convert_standards(file_list, verbose)
+    # convert_standards(file_list, verbose)
+    reformat_ARM_files(file_list, processed_dir, attrs)

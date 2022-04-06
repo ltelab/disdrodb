@@ -183,7 +183,7 @@ def get_DIVEN_dict():
         "precipitation_flux": "rainfall_rate_16bit_1200", # precipitation_rate, not sure about this
         "solid_precipitation_flux": "snowfall_rate",
         "precipitation_visibility": "mor_visibility",
-        "reflectivity": "reflectivity_32bit", # Not sure about this
+        "reflectivity": "reflectivity", # Not sure about this
         "measurement_quality": "quality_index",
         # Weather code
         "present_weather_1m": "weather_code_synop_4680",
@@ -201,7 +201,7 @@ def get_DIVEN_dict():
         # 'second'
         # 'day_of_year'
         # Arrays 
-        "size_velocity_distribution": "raw_spectrum", # Not sure about the correct names
+        "size_velocity_distribution": "raw_drop_number", # Not sure about the correct names
         "drop_size_distribution": "raw_drop_concentration", # Not sure about the correct names
         "drop_velocity_distribution": "raw_drop_average_velocity", # Not sure about the correct names
     }
@@ -227,7 +227,7 @@ def get_ARM_LPM_dict():
         "intensity_solid": "snowfall_rate",
         "accum_precip": "precipitation_accumulated",
         "maximum_visibility": "mor_visibility",
-        "radar_reflectivity": "radar_reflectivity",
+        "radar_reflectivity": "reflectivity",
         "quality_measurement": "quality_index",
         "max_diameter_hail": "max_hail_diameter",
         "laser_status": "laser_status",
@@ -239,7 +239,7 @@ def get_ARM_LPM_dict():
         "mean_laser_current": "laser_current_average",
         "laser_current_analog_status": "laser_current_analog_status",
         "laser_current_digital_status": "laser_current_digital_status",
-        "control_voltage": "voltage_control",
+        "control_voltage": "control_voltage",
         "optical_control_output": "optical_control_voltage_output",
         "control_output_laser_power_status": "control_output_laser_power_status",
         "voltage_sensor_supply": "sensor_voltage_supply",
@@ -266,7 +266,7 @@ def get_ARM_LPM_dict():
         "number_particles_max_speed_internal_data": "number_particles_max_speed_internal_data",
         "number_particles_min_diameter": "number_particles_min_diameter",
         "number_particles_min_diameter_internal_data": "number_particles_min_diameter_internal_data",
-        "precipitation_spectrum": "raw_spectrum",
+        "precipitation_spectrum": "raw_drop_number",
         
         # ALASKA
         'lat': 'latitude',
@@ -292,9 +292,9 @@ def get_ARM_LPM_dict():
         'sensor_voltage': 'sensor_battery_voltage',
         'class_size_width': 'class_size_width____________ToDeleteMaybe',
         'fall_velocity_calculated': 'fall_velocity_calculated____________ToDeleteMaybe',
-        'raw_spectrum': 'raw_spectrum',
+        'raw_spectrum': 'raw_drop_number',
         'liquid_water_content': 'liquid_water_content____________ToDeleteMaybe',
-        'equivalent_radar_reflectivity': 'reflectivity_32bit',
+        'equivalent_radar_reflectivity': 'reflectivity',
         'intercept_parameter': 'intercept_parameter____________ToDeleteMaybe',
         'slope_parameter': 'slope_parameter____________ToDeleteMaybe',
         'median_volume_diameter': 'median_volume_diameter____________ToDeleteMaybe',

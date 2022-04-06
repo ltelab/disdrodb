@@ -43,11 +43,18 @@ def check_glob_pattern(pattern):
         raise ValueError("glob_pattern should not start with /")
 
 
-def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
+def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False, extension_file = []):
     # Retrieve filepath list
-    check_glob_pattern(glob_pattern)
-    glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
-    list_fpaths = sorted(glob.glob(glob_fpath_pattern))
+    if not extension_file:
+        check_glob_pattern(glob_pattern)
+        glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
+        list_fpaths = sorted(glob.glob(glob_fpath_pattern))
+    else:
+        list_fpaths = []
+        glob_fpath_pattern = os.path.dirname(os.path.join(raw_dir, glob_pattern))
+        for ext in extension_file:
+           list_fpaths.extend(sorted(glob.glob(os.path.join(glob_fpath_pattern, ext))))
+    
     n_files = len(list_fpaths)
 
     # Check there are files
