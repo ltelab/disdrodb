@@ -209,11 +209,9 @@ def get_DIVEN_dict():
 
 
 def get_ARM_LPM_dict():
-    # 'base_time'
-    # 'time_offset'
-    # 'time_bounds'
-    # 'particle_diameter_bounds'
-    # 'particle_fall_velocity_bounds' ???
+    
+    # _ToConfirmIntoData_encodings
+    
     d = {
         "synop_4677_5min_weather_code": "weather_code_synop_4677_5min",
         "metar_4678_5min_weather_code": "weather_code_metar_4678_5min",
@@ -272,56 +270,57 @@ def get_ARM_LPM_dict():
         'lat': 'latitude',
         'lon': 'longitude',
         'alt': 'altitude',
-        'base_time': 'base_time____________ToCheck',
-        'time_offset': 'time_offset____________ToCheck',
-        'time_bounds': 'time_bounds____________ToCheck',
-        'particle_diameter_bounds': 'particle_diameter_bounds____________ToCheck',
-        'particle_fall_velocity_bounds': 'particle_fall_velocity_bounds____________ToCheck',
-        'air_temperature': 'air_temperature____________ToCheck',
+        'base_time': 'base_time_calculated_ToConfirmIntoData_encodings',
+        'time_offset': 'time_offset_calculated_ToConfirmIntoData_encodings',
+        'time_bounds': 'time_bounds_calculated_ToConfirmIntoData_encodings',
+        'particle_diameter_bounds': 'particle_diameter_bounds_calculated_ToConfirmIntoData_encodings',
+        'particle_fall_velocity_bounds': 'particle_fall_velocity_bounds_calculated_ToConfirmIntoData_encodings',
+        'air_temperature': 'air_temperature_calculated_ToConfirmIntoData_encodings',
+        'particle_fall_velocity_bounds_calculated':'particle_fall_velocity_bounds_calculated_ToConfirmIntoData_encodings',
         
         # Antartica
-        'qc_time': 'qc_time____________ToDeleteMaybe',
+        'qc_time': 'qc_time_calculated_ToConfirmIntoData_encodings',
         'precip_rate': 'rainfall_rate',
         'weather_code': 'weather_code_synop_4680',
-        'equivalent_radar_reflectivity_ott': 'equivalent_radar_reflectivity_ott____________ToDeleteMaybe',
+        'equivalent_radar_reflectivity_ott': 'equivalent_radar_reflectivity_ott_calculated_ToConfirmIntoData_encodings',
         'number_detected_particles': 'number_particles',
         'mor_visibility': 'mor_visibility',
         'laserband_amplitude': 'laser_amplitude',
         'sensor_temperature': 'sensor_temperature_pcb',
         'heating_current': 'sensor_heating_current',
         'sensor_voltage': 'sensor_battery_voltage',
-        'class_size_width': 'class_size_width____________ToDeleteMaybe',
-        'fall_velocity_calculated': 'fall_velocity_calculated____________ToDeleteMaybe',
+        'class_size_width': 'class_size_width_calculated_ToConfirmIntoData_encodings',
+        'fall_velocity_calculated': 'fall_velocity_calculated_ToConfirmIntoData_encodings',
         'raw_spectrum': 'raw_drop_number',
-        'liquid_water_content': 'liquid_water_content____________ToDeleteMaybe',
+        'liquid_water_content': 'liquid_water_content_calculated_ToConfirmIntoData_encodings',
         'equivalent_radar_reflectivity': 'reflectivity',
-        'intercept_parameter': 'intercept_parameter____________ToDeleteMaybe',
-        'slope_parameter': 'slope_parameter____________ToDeleteMaybe',
-        'median_volume_diameter': 'median_volume_diameter____________ToDeleteMaybe',
-        'liquid_water_distribution_mean': 'liquid_water_distribution_mean____________ToDeleteMaybe',
+        'intercept_parameter': 'intercept_parameter_calculated_ToConfirmIntoData_encodings',
+        'slope_parameter': 'slope_parameter_calculated_ToConfirmIntoData_encodings',
+        'median_volume_diameter': 'median_volume_diameter_calculated_ToConfirmIntoData_encodings',
+        'liquid_water_distribution_mean': 'liquid_water_distribution_mean_calculated_ToConfirmIntoData_encodings',
         'number_density_drops': 'raw_drop_concentration',
-        'diameter_min': 'diameter_min____________ToDeleteMaybe',
-        'diameter_max': 'diameter_max____________ToDeleteMaybe',
-        'moment1': 'moment1____________ToDeleteMaybe',
-        'moment2': 'moment2____________ToDeleteMaybe',
-        'moment3': 'moment3____________ToDeleteMaybe',
-        'moment4': 'moment4____________ToDeleteMaybe',
-        'moment5': 'moment5____________ToDeleteMaybe',
-        'moment6': 'moment6____________ToDeleteMaybe',
+        'diameter_min': 'diameter_min_ToConfirmIntoData_encodings',
+        'diameter_max': 'diameter_max_ToConfirmIntoData_encodings',
+        'moment1': 'moment1_ToConfirmIntoData_encodings',
+        'moment2': 'moment2_ToConfirmIntoData_encodings',
+        'moment3': 'moment3_ToConfirmIntoData_encodings',
+        'moment4': 'moment4_ToConfirmIntoData_encodings',
+        'moment5': 'moment5_ToConfirmIntoData_encodings',
+        'moment6': 'moment6_ToConfirmIntoData_encodings',
 
         # Arm Mobile Facility
-        'qc_precip_rate': 'qc_precip_rate____________ToDeleteMaybe',
-        'qc_weather_code': 'qc_weather_code____________ToDeleteMaybe',
-        'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott____________ToDeleteMaybe',
-        'qc_mor_visibility': 'qc_mor_visibility____________ToDeleteMaybe',
+        'qc_precip_rate': 'qc_precip_rate_calculated_ToConfirmIntoData_encodings',
+        'qc_weather_code': 'qc_weather_code_calculated_ToConfirmIntoData_encodings',
+        'qc_equivalent_radar_reflectivity_ott': 'qc_equivalent_radar_reflectivity_ott_calculated_ToConfirmIntoData_encodings',
+        'qc_mor_visibility': 'qc_mor_visibility_calculated_ToConfirmIntoData_encodings',
         'snow_depth_intensity': 'snowfall_rate',
-        'qc_snow_depth_intensity': 'qc_snow_depth_intensity____________ToDeleteMaybe',
-        'qc_laserband_amplitude': 'qc_laserband_amplitude____________ToDeleteMaybe',
-        'qc_heating_current': 'qc_heating_current____________ToDeleteMaybe',
-        'qc_sensor_voltage': 'qc_sensor_voltage____________ToDeleteMaybe',
+        'qc_snow_depth_intensity': 'qc_snow_depth_intensity_calculated_ToConfirmIntoData_encodings',
+        'qc_laserband_amplitude': 'qc_laserband_amplitude_calculated_ToConfirmIntoData_encodings',
+        'qc_heating_current': 'qc_heating_current_calculated_ToConfirmIntoData_encodings',
+        'qc_sensor_voltage': 'qc_sensor_voltage_calculated_ToConfirmIntoData_encodings',
         
         # MAR_SUPPLEMENTAL_FACILITY
-        'qc_number_detected_particles': 'qc_number_detected_particles____________ToDeleteMaybe',
+        'qc_number_detected_particles': 'qc_number_detected_particles_calculated_ToConfirmIntoData_encodings',
     
     }
     return d

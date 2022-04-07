@@ -79,13 +79,11 @@ def get_attrs_standards():
     ]
     attrs = {key: "" for key in list_attrs}
     # TODO: temporary attributes for EPFL development
-    attrs["sensor_name"] = "Parsivel"
+    attrs["sensor_name"] = "OTT_Parsivel"
     attrs["latitude"] = -9999
     attrs["longitude"] = -9999
     attrs["altitude"] = -9999
-    attrs[
-        "institution"
-    ] = "Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne"
+    attrs["institution"] = "Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne"
     attrs["sensor_long_name"] = "OTT Hydromet Parsivel"
     attrs["contact_information"] = "http://lte.epfl.ch"
 
