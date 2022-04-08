@@ -22,6 +22,7 @@ weather_code_synop_4680:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 9999
 weather_code_synop_4677:
   dtype: uint32
   zlib: true
@@ -62,6 +63,7 @@ mor_visibility:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?`
 sample_interval:
   dtype: uint16
   zlib: true
@@ -78,6 +80,7 @@ laser_amplitude:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 0 # It's fine?`
 number_particles:
   dtype: uint32
   zlib: true
@@ -86,6 +89,7 @@ number_particles:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 0 # It's fine?
 sensor_temperature:
   dtype: int8
   zlib: true
@@ -206,6 +210,7 @@ sensor_temperature_pcb:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: -99 # It's fine?
 sensor_temperature_receiver:
   dtype: int8
   zlib: true
@@ -321,6 +326,7 @@ raw_drop_number:
   shuffle: true
   fletcher32: false
   contiguous: false
+  _FillValue: 0 # It's fine?
   chunksizes:
   - 5000
   - 32

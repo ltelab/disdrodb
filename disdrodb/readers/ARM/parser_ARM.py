@@ -109,6 +109,7 @@ def reformat_ARM_files(file_list, processed_dir, attrs, verbose):
     dict_campaign = create_standard_dict(file_list[0], dict_ARM, verbose)
     
     # Open netCDFs
+    file_list = sorted(file_list)
     ds = xr.open_mfdataset(file_list)
     
     # Get coords
@@ -190,7 +191,6 @@ def reformat_ARM_files(file_list, processed_dir, attrs, verbose):
                         'qc_heating_current_calculated_ToConfirmIntoData_encodings',
                         'qc_sensor_voltage_calculated_ToConfirmIntoData_encodings',
                         'qc_number_detected_particles_calculated_ToConfirmIntoData_encodings',
-                        
                         ]
     
     a = list(ds.keys())
@@ -344,8 +344,8 @@ def main(raw_dir,
 
 if __name__ == "__main__":
     main()
-    # main(raw_dir = "/SharedVM/Campagne/ARM/Raw/ANTARTICA",
-    #       processed_dir = "/SharedVM/Campagne/ARM/Processed/ANTARTICA",
+    # main(raw_dir = "/SharedVM/Campagne/ARM/Raw/SOUTHWEST_PACFIC_OCEAN",
+    #     processed_dir = "/SharedVM/Campagne/ARM/Processed/SOUTHWEST_PACFIC_OCEAN",
     #     l0_processing=False,
     #     l1_processing=False,
     #     write_netcdf=False,
