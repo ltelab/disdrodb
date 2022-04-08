@@ -159,7 +159,7 @@ def reformat_ARM_files(file_list, processed_dir, attrs, verbose):
                         'qc_time_calculated_ToConfirmIntoData_encodings',
                         'equivalent_radar_reflectivity_ott_calculated_ToConfirmIntoData_encodings',
                         'class_size_width_calculated_ToConfirmIntoData_encodings',
-                        'fall_velocity_calculated_calculated_ToConfirmIntoData_encodings',
+                        'fall_velocity_calculated_ToConfirmIntoData_encodings',
                         'liquid_water_content_calculated_ToConfirmIntoData_encodings',
                         'intercept_parameter_calculated_ToConfirmIntoData_encodings',
                         'slope_parameter_calculated_ToConfirmIntoData_encodings',
@@ -167,12 +167,20 @@ def reformat_ARM_files(file_list, processed_dir, attrs, verbose):
                         'liquid_water_distribution_mean_calculated_ToConfirmIntoData_encodings',
                         'diameter_min_calculated_ToConfirmIntoData_encodings',
                         'diameter_max_calculated_ToConfirmIntoData_encodings',
+                        'diameter_min_ToConfirmIntoData_encodings',
+                        'diameter_max_ToConfirmIntoData_encodings',
                         'moment1_calculated_ToConfirmIntoData_encodings',
                         'moment2_calculated_ToConfirmIntoData_encodings',
                         'moment3_calculated_ToConfirmIntoData_encodings',
                         'moment4_calculated_ToConfirmIntoData_encodings',
                         'moment5_calculated_ToConfirmIntoData_encodings',
                         'moment6_calculated_ToConfirmIntoData_encodings',
+                        'moment1_ToConfirmIntoData_encodings',
+                        'moment2_ToConfirmIntoData_encodings',
+                        'moment3_ToConfirmIntoData_encodings',
+                        'moment4_ToConfirmIntoData_encodings',
+                        'moment5_ToConfirmIntoData_encodings',
+                        'moment6_ToConfirmIntoData_encodings',
                         'qc_precip_rate_calculated_ToConfirmIntoData_encodings',
                         'qc_weather_code_calculated_ToConfirmIntoData_encodings',
                         'qc_equivalent_radar_reflectivity_ott_calculated_ToConfirmIntoData_encodings',
@@ -182,6 +190,7 @@ def reformat_ARM_files(file_list, processed_dir, attrs, verbose):
                         'qc_heating_current_calculated_ToConfirmIntoData_encodings',
                         'qc_sensor_voltage_calculated_ToConfirmIntoData_encodings',
                         'qc_number_detected_particles_calculated_ToConfirmIntoData_encodings',
+                        
                         ]
     
     a = list(ds.keys())
@@ -335,8 +344,8 @@ def main(raw_dir,
 
 if __name__ == "__main__":
     main()
-    # main(raw_dir = "/SharedVM/Campagne/ARM/Raw/ALASKA",
-    #       processed_dir = "/SharedVM/Campagne/ARM/Processed/ALASKA",
+    # main(raw_dir = "/SharedVM/Campagne/ARM/Raw/ANTARTICA",
+    #       processed_dir = "/SharedVM/Campagne/ARM/Processed/ANTARTICA",
     #     l0_processing=False,
     #     l1_processing=False,
     #     write_netcdf=False,
