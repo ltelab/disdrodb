@@ -161,8 +161,8 @@ mor_visibility: # maximum_visibility
   n_naturals: 0
   data_range:
   - 00000
-  - 99999
-  nan_flags: null
+  - 99998
+  nan_flags: 99999
 reflectivity: # radar_reflectivity
   n_digits: 3
   n_characters: 4
@@ -180,7 +180,7 @@ quality_index:
   data_range:
   - 0
   - 100
-  nan_flags: null
+  nan_flags: 101
 max_hail_diameter:
   n_digits: 2
   n_characters: 3
@@ -356,8 +356,8 @@ temperature_interior:
   n_naturals: 0
   data_range:
   - 0
-  - 999
-  nan_flags: null
+  - 998
+  nan_flags: 999
 
 laser_temperature:
   n_digits: 2
@@ -367,7 +367,7 @@ laser_temperature:
   data_range:
   - 0
   - 80
-  nan_flags: null
+  nan_flags: 99
 laser_current_average:
   n_digits: 4
   n_characters: 4
@@ -375,8 +375,8 @@ laser_current_average:
   n_naturals: 0
   data_range:
   - 0
-  - 9999
-  nan_flags: null
+  - 9998
+  nan_flags: 9999
 
 control_voltage:
   n_digits: 4
@@ -480,8 +480,8 @@ number_particles: # number_particles_all
   n_naturals: 0
   data_range:
   - 0
-  - 99999
-  nan_flags: null
+  - 99998
+  nan_flags: 99999
 number_particles_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -498,8 +498,8 @@ number_particles_min_speed:
   n_naturals: 0
   data_range:
   - 0
-  - 99999
-  nan_flags: null
+  - 99998
+  nan_flags: 99999
 number_particles_min_speed_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -516,8 +516,8 @@ number_particles_max_speed:
   n_naturals: 0
   data_range:
   - 0
-  - 99999
-  nan_flags: null
+  - 99998
+  nan_flags: 99999
 number_particles_max_speed_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -534,8 +534,8 @@ number_particles_min_diameter:
   n_naturals: 0
   data_range:
   - 0
-  - 99999
-  nan_flags: null
+  - 99998
+  nan_flags: 99999
 number_particles_min_diameter_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -752,7 +752,7 @@ raw_drop_number:
   data_range:
   - null
   - null
-  nan_flags: null
+  nan_flags: 0
 
 
 

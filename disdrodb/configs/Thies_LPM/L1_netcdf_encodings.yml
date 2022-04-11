@@ -56,6 +56,7 @@ weather_code_synop_4677_5min:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 weather_code_synop_4680_5min: 
   dtype: uint8
   zlib: true
@@ -64,6 +65,7 @@ weather_code_synop_4680_5min:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 weather_code_metar_4678_5min: 
   dtype: str
   zlib: true
@@ -88,6 +90,7 @@ weather_code_synop_4677:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 weather_code_synop_4680: 
   dtype: uint8
   zlib: true
@@ -96,6 +99,7 @@ weather_code_synop_4680:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 weather_code_metar_4678: 
   dtype: str
   zlib: true
@@ -144,6 +148,7 @@ mor_visibility:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 reflectivity: 
   dtype: float32
   zlib: true
@@ -168,6 +173,7 @@ quality_index:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 101 # It's fine?
 max_hail_diameter: 
   dtype: float32
   zlib: true
@@ -312,6 +318,7 @@ temperature_interior:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 999 # It's fine?
 laser_temperature: 
   dtype: uint16
   zlib: true
@@ -320,6 +327,7 @@ laser_temperature:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99 # It's fine?
 laser_current_average: 
   dtype: uint16
   zlib: true
@@ -328,8 +336,9 @@ laser_current_average:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 9999 # It's fine?
 control_voltage: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -337,7 +346,7 @@ control_voltage:
   contiguous: false
   chunksizes: 5000
 optical_control_voltage_output: 
-  dtype: uint16
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -345,7 +354,7 @@ optical_control_voltage_output:
   contiguous: false
   chunksizes: 5000
 sensor_voltage_supply: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -353,7 +362,7 @@ sensor_voltage_supply:
   contiguous: false
   chunksizes: 5000
 current_heating_pane_transmitter_head: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -361,7 +370,7 @@ current_heating_pane_transmitter_head:
   contiguous: false
   chunksizes: 5000
 current_heating_pane_receiver_head: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -377,7 +386,7 @@ temperature_ambient:
   contiguous: false
   chunksizes: 5000
 current_heating_voltage_supply: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -385,7 +394,7 @@ current_heating_voltage_supply:
   contiguous: false
   chunksizes: 5000
 current_heating_house: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -393,7 +402,7 @@ current_heating_house:
   contiguous: false
   chunksizes: 5000
 current_heating_heads: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -401,7 +410,7 @@ current_heating_heads:
   contiguous: false
   chunksizes: 5000
 current_heating_carriers: 
-  dtype: object
+  dtype: float32
   zlib: true
   complevel: 3
   shuffle: true
@@ -416,6 +425,7 @@ number_particles:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 number_particles_internal_data: 
   dtype: float32
   zlib: true
@@ -432,6 +442,7 @@ number_particles_min_speed:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 number_particles_min_speed_internal_data: 
   dtype: float32
   zlib: true
@@ -448,6 +459,7 @@ number_particles_max_speed:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 number_particles_max_speed_internal_data: 
   dtype: float32
   zlib: true
@@ -464,6 +476,7 @@ number_particles_min_diameter:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 99999 # It's fine?
 number_particles_min_diameter_internal_data: 
   dtype: float32
   zlib: true
@@ -655,6 +668,7 @@ raw_drop_number:
   shuffle: true
   fletcher32: false
   contiguous: false
+  _FillValue: 0 # It's fine?
   chunksizes:
   - 5000
   - 22

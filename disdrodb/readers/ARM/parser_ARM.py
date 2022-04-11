@@ -110,7 +110,9 @@ def reformat_ARM_files(file_list, processed_dir, attrs, verbose):
     
     # Open netCDFs
     file_list = sorted(file_list)
-    ds = xr.open_mfdataset(file_list)
+    # ds = xr.open_mfdataset(file_list)
+    # Temporaray solution to skip netCDF consistency 
+    ds = xr.open_mfdataset(file_list, combine='nested', compat='override')
     
     # Get coords
     coords = get_L1_coords(attrs['sensor_name'])
@@ -230,7 +232,7 @@ def main(raw_dir,
          write_netcdf=False,
          force=True,
          verbose=True,
-         debugging_mode=False,
+         debugging_mode=True,
          lazy=True
          ):
 
@@ -344,8 +346,8 @@ def main(raw_dir,
 
 if __name__ == "__main__":
     main()
-    # main(raw_dir = "/SharedVM/Campagne/ARM/Raw/SOUTHWEST_PACFIC_OCEAN",
-    #     processed_dir = "/SharedVM/Campagne/ARM/Processed/SOUTHWEST_PACFIC_OCEAN",
+    # main(raw_dir = "/SharedVM/Campagne/ARM/Raw/ALASKA",
+    #     processed_dir = "/SharedVM/Campagne/ARM/Processed/ALASKA",
     #     l0_processing=False,
     #     l1_processing=False,
     #     write_netcdf=False,
