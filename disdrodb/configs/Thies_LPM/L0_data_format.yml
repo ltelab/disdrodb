@@ -201,7 +201,7 @@ laser_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK/on:0, off:1)
+  nan_flags: 2 # (OK/on:0, off:1)
 static_signal:
   n_digits: 1
   n_characters: 1
@@ -270,7 +270,7 @@ current_heating_pane_transmitter_head_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: 2 # (OK:0, warning:1)
 current_heating_pane_receiver_head_status:
   n_digits: 1
   n_characters: 1
@@ -279,7 +279,7 @@ current_heating_pane_receiver_head_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: 2 # (OK:0, warning:1)
 
 temperature_sensor_status:
   n_digits: 1
@@ -289,7 +289,7 @@ temperature_sensor_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: 2 # (OK:0, warning:1)
 
 current_heating_voltage_supply_status:
   n_digits: 1
@@ -299,7 +299,7 @@ current_heating_voltage_supply_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: 2 # (OK:0, warning:1)
 current_heating_house_status:
   n_digits: 1
   n_characters: 1
@@ -308,7 +308,7 @@ current_heating_house_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: 2 # (OK:0, warning:1)
 current_heating_heads_status:
   n_digits: 1
   n_characters: 1
@@ -336,7 +336,7 @@ control_output_laser_power_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: 2 # (OK:0, warning:1)
 reserve_status:
   n_digits: 1
   n_characters: 1
