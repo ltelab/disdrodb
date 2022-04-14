@@ -162,7 +162,7 @@ mor_visibility: # maximum_visibility
   data_range:
   - 00000
   - 99998
-  nan_flags: 99999
+  nan_flags: null
 reflectivity: # radar_reflectivity
   n_digits: 3
   n_characters: 4
@@ -180,7 +180,7 @@ quality_index:
   data_range:
   - 0
   - 100
-  nan_flags: 101
+  nan_flags: null
 max_hail_diameter:
   n_digits: 2
   n_characters: 3
@@ -201,7 +201,7 @@ laser_status:
   data_range:
   - 0
   - 1
-  nan_flags: 2 # (OK/on:0, off:1)
+  nan_flags: null # (OK/on:0, off:1)
 static_signal:
   n_digits: 1
   n_characters: 1
@@ -210,7 +210,7 @@ static_signal:
   data_range:
   - 0
   - 1
-  nan_flags: 1 # (OK:0, Error:1)
+  nan_flags: null # (OK:0, Error:1)
 
 
 laser_temperature_analog_status:
@@ -221,7 +221,7 @@ laser_temperature_analog_status:
   data_range:
   - 0
   - 1
-  nan_flags: 1 # (OK:0, Error:1)
+  nan_flags: null # (OK:0, Error:1)
 laser_temperature_digital_status:
   n_digits: 1
   n_characters: 1
@@ -230,7 +230,7 @@ laser_temperature_digital_status:
   data_range:
   - 0
   - 1
-  nan_flags: 1 # (OK:0, Error:1)
+  nan_flags: null # (OK:0, Error:1)
 laser_current_analog_status:
   n_digits: 1
   n_characters: 1
@@ -239,7 +239,7 @@ laser_current_analog_status:
   data_range:
   - 0
   - 1
-  nan_flags: 1 # (OK:0, Error:1)
+  nan_flags: null # (OK:0, Error:1)
 laser_current_digital_status:
   n_digits: 1
   n_characters: 1
@@ -248,7 +248,7 @@ laser_current_digital_status:
   data_range:
   - 0
   - 1
-  nan_flags: 1 # (OK:0, Error:1)
+  nan_flags: null # (OK:0, Error:1)
   
 ### Heating: glass(panes), housing, heads, carriers
 
@@ -260,7 +260,7 @@ sensor_voltage_supply_status:
   data_range:
   - 0
   - 1
-  nan_flags: 1 # (OK:0, Error:1)
+  nan_flags: null # (OK:0, Error:1)
 
 current_heating_pane_transmitter_head_status:
   n_digits: 1
@@ -270,7 +270,7 @@ current_heating_pane_transmitter_head_status:
   data_range:
   - 0
   - 1
-  nan_flags: 2 # (OK:0, warning:1)
+  nan_flags: null # (OK:0, warning:1)
 current_heating_pane_receiver_head_status:
   n_digits: 1
   n_characters: 1
@@ -279,7 +279,7 @@ current_heating_pane_receiver_head_status:
   data_range:
   - 0
   - 1
-  nan_flags: 2 # (OK:0, warning:1)
+  nan_flags: null # (OK:0, warning:1)
 
 temperature_sensor_status:
   n_digits: 1
@@ -289,7 +289,7 @@ temperature_sensor_status:
   data_range:
   - 0
   - 1
-  nan_flags: 2 # (OK:0, warning:1)
+  nan_flags: null # (OK:0, warning:1)
 
 current_heating_voltage_supply_status:
   n_digits: 1
@@ -299,7 +299,7 @@ current_heating_voltage_supply_status:
   data_range:
   - 0
   - 1
-  nan_flags: 2 # (OK:0, warning:1)
+  nan_flags: null # (OK:0, warning:1)
 current_heating_house_status:
   n_digits: 1
   n_characters: 1
@@ -308,7 +308,7 @@ current_heating_house_status:
   data_range:
   - 0
   - 1
-  nan_flags: 2 # (OK:0, warning:1)
+  nan_flags: null # (OK:0, warning:1)
 current_heating_heads_status:
   n_digits: 1
   n_characters: 1
@@ -336,7 +336,7 @@ control_output_laser_power_status:
   data_range:
   - 0
   - 1
-  nan_flags: 2 # (OK:0, warning:1)
+  nan_flags: null # (OK:0, warning:1)
 reserve_status:
   n_digits: 1
   n_characters: 1
@@ -356,8 +356,8 @@ temperature_interior:
   n_naturals: 0
   data_range:
   - 0
-  - 998
-  nan_flags: 999
+  - 999
+  nan_flags: null
 
 laser_temperature:
   n_digits: 2
@@ -367,7 +367,7 @@ laser_temperature:
   data_range:
   - 0
   - 80
-  nan_flags: 99
+  nan_flags: null
 laser_current_average:
   n_digits: 4
   n_characters: 4
@@ -375,8 +375,8 @@ laser_current_average:
   n_naturals: 0
   data_range:
   - 0
-  - 9998
-  nan_flags: 9999
+  - 9999
+  nan_flags: null
 
 control_voltage:
   n_digits: 4
@@ -434,7 +434,7 @@ temperature_ambient:
   data_range:
   - -999.9
   - 99999.0
-  nan_flags: 99999.0
+  nan_flags: null
 
 current_heating_voltage_supply:
   n_digits: 3
@@ -444,7 +444,7 @@ current_heating_voltage_supply:
   data_range:
   - null
   - null
-  nan_flags: 999
+  nan_flags: null
 current_heating_house:
   n_digits: 4
   n_characters: 4
@@ -453,7 +453,7 @@ current_heating_house:
   data_range:
   - null
   - null
-  nan_flags: 9999
+  nan_flags: null
 current_heating_heads:
   n_digits: 4
   n_characters: 4
@@ -462,7 +462,7 @@ current_heating_heads:
   data_range:
   - null
   - null
-  nan_flags: 9999
+  nan_flags: null
 current_heating_carriers:
   n_digits: 4
   n_characters: 4
@@ -471,7 +471,7 @@ current_heating_carriers:
   data_range:
   - null
   - null
-  nan_flags: 9999
+  nan_flags: null
 
 number_particles: # number_particles_all
   n_digits: 5
@@ -480,8 +480,8 @@ number_particles: # number_particles_all
   n_naturals: 0
   data_range:
   - 0
-  - 99998
-  nan_flags: 99999
+  - 99999
+  nan_flags: null
 number_particles_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -498,8 +498,8 @@ number_particles_min_speed:
   n_naturals: 0
   data_range:
   - 0
-  - 99998
-  nan_flags: 99999
+  - 99999
+  nan_flags: null
 number_particles_min_speed_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -516,8 +516,8 @@ number_particles_max_speed:
   n_naturals: 0
   data_range:
   - 0
-  - 99998
-  nan_flags: 99999
+  - 99999
+  nan_flags: null
 number_particles_max_speed_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -534,8 +534,8 @@ number_particles_min_diameter:
   n_naturals: 0
   data_range:
   - 0
-  - 99998
-  nan_flags: 99999
+  - 99999
+  nan_flags: null
 number_particles_min_diameter_internal_data: # By documentation: „00000.000“ (internal data)
   n_digits: 8
   n_characters: 9
@@ -752,7 +752,7 @@ raw_drop_number:
   data_range:
   - null
   - null
-  nan_flags: 0
+  nan_flags: null
 
 
 

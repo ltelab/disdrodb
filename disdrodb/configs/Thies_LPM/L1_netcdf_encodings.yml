@@ -56,7 +56,7 @@ weather_code_synop_4677_5min:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 255
 weather_code_synop_4680_5min: 
   dtype: uint8
   zlib: true
@@ -65,7 +65,7 @@ weather_code_synop_4680_5min:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 255
 weather_code_metar_4678_5min: 
   dtype: str
   zlib: true
@@ -90,7 +90,7 @@ weather_code_synop_4677:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 255
 weather_code_synop_4680: 
   dtype: uint8
   zlib: true
@@ -99,7 +99,7 @@ weather_code_synop_4680:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 255
 weather_code_metar_4678: 
   dtype: str
   zlib: true
@@ -148,7 +148,7 @@ mor_visibility:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 65535
 reflectivity: 
   dtype: float32
   zlib: true
@@ -173,7 +173,7 @@ quality_index:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 101 # It's fine?
+  _FillValue: 255
 max_hail_diameter: 
   dtype: float32
   zlib: true
@@ -190,7 +190,7 @@ laser_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2 
+  _FillValue: 255
 static_signal: 
   dtype: uint8
   zlib: true
@@ -199,7 +199,7 @@ static_signal:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 1
+  _FillValue: 255
 laser_temperature_analog_status: 
   dtype: uint8
   zlib: true
@@ -208,7 +208,7 @@ laser_temperature_analog_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 1
+  _FillValue: 255
 laser_temperature_digital_status: 
   dtype: uint8
   zlib: true
@@ -217,7 +217,7 @@ laser_temperature_digital_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 1
+  _FillValue: 255
 laser_current_analog_status: 
   dtype: uint8
   zlib: true
@@ -226,7 +226,7 @@ laser_current_analog_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 1
+  _FillValue: 255
 laser_current_digital_status: 
   dtype: uint8
   zlib: true
@@ -235,7 +235,7 @@ laser_current_digital_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 1
+  _FillValue: 255
 sensor_voltage_supply_status: 
   dtype: uint8
   zlib: true
@@ -244,7 +244,7 @@ sensor_voltage_supply_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 1
+  _FillValue: 255
 current_heating_pane_transmitter_head_status: 
   dtype: uint8
   zlib: true
@@ -253,7 +253,7 @@ current_heating_pane_transmitter_head_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 current_heating_pane_receiver_head_status: 
   dtype: uint8
   zlib: true
@@ -262,7 +262,7 @@ current_heating_pane_receiver_head_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 temperature_sensor_status: 
   dtype: uint8
   zlib: true
@@ -271,7 +271,7 @@ temperature_sensor_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 current_heating_voltage_supply_status: 
   dtype: uint8
   zlib: true
@@ -280,7 +280,7 @@ current_heating_voltage_supply_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 current_heating_house_status: 
   dtype: uint8
   zlib: true
@@ -289,7 +289,7 @@ current_heating_house_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 current_heating_heads_status: 
   dtype: uint8
   zlib: true
@@ -298,7 +298,7 @@ current_heating_heads_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 current_heating_carriers_status: 
   dtype: uint8
   zlib: true
@@ -307,7 +307,7 @@ current_heating_carriers_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 control_output_laser_power_status: 
   dtype: uint8
   zlib: true
@@ -316,7 +316,7 @@ control_output_laser_power_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 2
+  _FillValue: 255
 reserve_status: 
   dtype: uint8
   zlib: true
@@ -333,7 +333,7 @@ temperature_interior:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 999 # It's fine?
+  _FillValue: 65535
 laser_temperature: 
   dtype: uint16
   zlib: true
@@ -342,7 +342,7 @@ laser_temperature:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99 # It's fine?
+  _FillValue: 65535
 laser_current_average: 
   dtype: uint16
   zlib: true
@@ -351,7 +351,7 @@ laser_current_average:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 9999 # It's fine?
+  _FillValue: 65535
 control_voltage: 
   dtype: float32
   zlib: true
@@ -440,7 +440,7 @@ number_particles:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 65535
 number_particles_internal_data: 
   dtype: float32
   zlib: true
@@ -457,7 +457,7 @@ number_particles_min_speed:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 65535
 number_particles_min_speed_internal_data: 
   dtype: float32
   zlib: true
@@ -474,7 +474,7 @@ number_particles_max_speed:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 65535
 number_particles_max_speed_internal_data: 
   dtype: float32
   zlib: true
@@ -491,7 +491,7 @@ number_particles_min_diameter:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 99999 # It's fine?
+  _FillValue: 65535
 number_particles_min_diameter_internal_data: 
   dtype: float32
   zlib: true
@@ -683,7 +683,7 @@ raw_drop_number:
   shuffle: true
   fletcher32: false
   contiguous: false
-  _FillValue: 0 # It's fine?
+  _FillValue: 255
   chunksizes:
   - 5000
   - 22
