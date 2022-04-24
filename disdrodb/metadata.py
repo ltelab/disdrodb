@@ -50,7 +50,7 @@ def get_attrs_standards():
         # Sensor info
         "sensor_name",
         "sensor_long_name",
-        "sensor_wavelegth",
+        "sensor_wavelength",
         "sensor_serial_number",
         "firmware_iop",
         "firmware_dsp",
@@ -63,7 +63,7 @@ def get_attrs_standards():
         "contributors",
         "authors",
         "institution",
-        "reference",
+        "references",
         "documentation",
         "website",
         "source_repository",
