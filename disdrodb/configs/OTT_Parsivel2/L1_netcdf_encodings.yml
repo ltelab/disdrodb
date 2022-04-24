@@ -246,14 +246,6 @@ rainfall_rate_16bit_1200:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rainfall_rate: 
-  dtype: float32
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
 rainfall_accumulated_16bit:
   dtype: float32
   zlib: true
