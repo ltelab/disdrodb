@@ -229,18 +229,22 @@ sensor_temperature_trasmitter:
   - 100
   nan_flags: null
 rainfall_rate_16_bit_30:
-  n_digits: null
-  n_characters: null
-  n_decimals: null
-  n_naturals: null
-  data_range: null
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 2
+  n_naturals: 3
+  data_range:
+  - 0
+  - 30
   nan_flags: null
 rainfall_rate_16_bit_1200:
-  n_digits: null
-  n_characters: null
-  n_decimals: null
-  n_naturals: null
-  data_range: null
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+  - 0
+  - 1200
   nan_flags: null
 rainfall_accumulated_16bit:
   n_digits: 7

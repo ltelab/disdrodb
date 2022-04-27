@@ -230,7 +230,7 @@ sensor_temperature_trasmitter:
   contiguous: false
   chunksizes: 5000
   _FillValue: 127
-rainfall_rate_16bit_30:
+rainfall_rate_16_bit_30:
   dtype: float32
   zlib: true
   complevel: 3
@@ -238,7 +238,7 @@ rainfall_rate_16bit_30:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-rainfall_rate_16bit_1200:
+rainfall_rate_16_bit_1200:
   dtype: float32
   zlib: true
   complevel: 3
