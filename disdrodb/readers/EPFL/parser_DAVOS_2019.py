@@ -192,7 +192,7 @@ def main(raw_dir,
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', 'Error in data reading! 0000.000']
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', 'Error in data reading! 0000.000', 'Error in data reading! 0002.344']
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
@@ -234,8 +234,9 @@ def main(raw_dir,
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
         
-        # Check again for invalid values
+        # Check again for invalid values 
         df = df[~df.eq("Error in data reading! 0000.000").any(1)]
+        df = df[~df.eq('Error in data reading! 0002.344').any(1)]
         
         return df
 
