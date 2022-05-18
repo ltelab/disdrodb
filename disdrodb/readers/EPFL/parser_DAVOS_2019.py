@@ -157,8 +157,8 @@ def main(raw_dir,
                     'sensor_status',
                     'rainfall_amount_absolute_32bit',
                     'temp1', # Datalogger error
-                    'field_n',
-                    'field_v',
+                    'raw_drop_concentration',
+                    'raw_drop_average_velocity',
                     'raw_drop_number',
                     'temp2', # All 0
                     ]
@@ -192,7 +192,7 @@ def main(raw_dir,
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error', 'NA']
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', 'Error in data reading! 0000.000']
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
@@ -214,15 +214,18 @@ def main(raw_dir,
             import dask.dataframe as dd
         else:
             import pandas as dd
+            
+        # Drop invalid rows
+        df = df.loc[df["id"].astype(str).str.len()<10]
 
         # Split TO_BE_SPLITTED
         df[['datalogger_error','rainfall_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
 
         # Drop id, latitude, longitude, temps and datalogger_error
-        df = df.drop(columns=["id", "latitude", "longitude","temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
+        df = df.drop(columns=["id", "temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
 
         # If raw_drop_number is nan, drop the row
-        col_to_drop_if_na = ['field_n','field_v','raw_drop_number']
+        col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number','latitude', 'longitude']
         df = df.dropna(subset = col_to_drop_if_na)
 
         # Drop rows with less than 4096 char on raw_drop_number
@@ -230,7 +233,10 @@ def main(raw_dir,
 
         # - Convert time column to datetime 
         df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
-
+        
+        # Check again for invalid values
+        df = df[~df.eq("Error in data reading! 0000.000").any(1)]
+        
         return df
 
     ##------------------------------------------------------------------------.
@@ -288,6 +294,13 @@ def main(raw_dir,
 
             # -----------------------------------------------------------------.
             #### - List files to process
+            # The station 52 has .log extension, maybe to change it in the future, for now this temporary solution
+            if station_id == '52':
+                raw_data_glob_pattern = '*.log'
+                reader_kwargs.pop("compression")
+            else:
+                reader_kwargs['compression'] = 'gzip'
+                
             glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
             file_list = get_file_list(
                 raw_dir=raw_dir,
