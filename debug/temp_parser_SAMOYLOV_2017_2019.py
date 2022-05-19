@@ -109,7 +109,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[0]
+station_id = list_stations_id[2]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -176,7 +176,7 @@ reader_kwargs['header'] = None
 # - Do not assign a dtype yet to the columns 
 # - Possibily look at multiple files ;)
 # filepath = file_list[0]
-filepath = file_list[2]
+filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy() 
 df = read_raw_data(filepath, 
                    column_names=None,  
@@ -242,18 +242,53 @@ column_names = ['time',
                 'End_line',
                 ]
 
+column_names_2 =   ['id',
+                    'latitude',
+                    'longitude',
+                    'time',
+                    'all_nan',
+                    'rainfall_rate_32bit',
+                    'rainfall_accumulated_32bit',
+                    'weather_code_synop_4680',
+                    'weather_code_synop_4677',
+                    'reflectivity_32bit',
+                    'mor_visibility',
+                    'laser_amplitude',
+                    'number_particles',
+                    'sensor_temperature',
+                    'sensor_heating_current',
+                    'sensor_battery_voltage',
+                    'All_0',
+                    'rainfall_amount_absolute_32bit',
+                    'datalogger_error',
+                    'raw_drop_concentration',
+                    'raw_drop_average_velocity',
+                    'raw_drop_number',
+                    'End_line'
+                    ]
+
+
+
 # - Check name validity 
 check_L0_column_names(column_names)
 
 # - Read data
 # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
 filepath = file_list[0]
+# df = pd.read_csv(file_list[0], delimiter=';')
 df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
+                    column_names=column_names_2,
+                    reader_kwargs=reader_kwargs,
                    lazy=False)
     
+df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
 
+col_to_drop = ["id", "all_nan", "All_0", 'datalogger_error', 'End_line']
+
+df = df.drop(columns=col_to_drop)
+
+col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+df = df.dropna(subset = col_to_drop_if_na)
 
 # - Look at the columns and data 
 print_df_column_names(df)

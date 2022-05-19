@@ -61,16 +61,16 @@ from disdrodb.logger import close_logger
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+# @click.command()  # options_metavar='<options>'
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+# @click.argument('processed_dir', metavar='<processed_dir>')
+# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -225,27 +225,51 @@ def main(raw_dir,
             import dask.dataframe as dd
         else:
             import pandas as dd
+            
+        # If not station 01 or 02 use a different parser
+        if len(df.columns) != 23:
+            
+            # Drop Debug_data and All_0
+            df = df.drop(columns=["datalogger_error", "End_line"])
+    
+            df = df[
+                df["latitude"].apply(
+                    lambda x: type(x) in [int, np.int64, float, np.float64]
+                )
+            ]
+    
+            # If raw_drop_number is nan, drop the row
+            col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
+            df = df.dropna(subset=col_to_drop_if_na)
+    
+            # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+            df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
+            df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
+            df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+            
+            # - Convert time column to datetime
+            df["time"] = dd.to_datetime(df["time"], format="%d/%m/%Y %H:%M:%S")
+        
+        else:
+            
+            df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
 
-        # Drop Debug_data and All_0
-        df = df.drop(columns=["datalogger_error", "End_line"])
-
-        df = df[
-            df["latitude"].apply(
-                lambda x: type(x) in [int, np.int64, float, np.float64]
-            )
-        ]
-
-        # If raw_drop_number is nan, drop the row
-        col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
-        df = df.dropna(subset=col_to_drop_if_na)
-
-        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-
-        # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%d/%m/%Y %H:%M:%S")
+            col_to_drop = ["id", "all_nan", "All_0", 'datalogger_error', 'End_line']
+            df = df.drop(columns=col_to_drop)
+            
+            col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+            df = df.dropna(subset = col_to_drop_if_na)
+            
+            df['longitude'] = df['longitude'].astype('str').str.len()!=9
+            df['latitude'] = df['latitude'].astype('str').str.len()!=9
+            
+            df['longitude'] = dd.to_numeric(df['longitude'], errors='coerce')
+            df['latitude'] = dd.to_numeric(df['latitude'], errors='coerce')
+            
+            df = df.dropna()
+    
+            # - Convert time column to datetime
+            df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
 
         return df
 
@@ -312,6 +336,33 @@ def main(raw_dir,
                 verbose=verbose,
                 debugging_mode=debugging_mode,
             )
+            
+            # Station 01 and 02 have different format
+            if station_id in list_stations_id[2:]:
+                column_names = ['id',
+                                'latitude',
+                                'longitude',
+                                'time',
+                                'all_nan',
+                                'rainfall_rate_32bit',
+                                'rainfall_accumulated_32bit',
+                                'weather_code_synop_4680',
+                                'weather_code_synop_4677',
+                                'reflectivity_32bit',
+                                'mor_visibility',
+                                'laser_amplitude',
+                                'number_particles',
+                                'sensor_temperature',
+                                'sensor_heating_current',
+                                'sensor_battery_voltage',
+                                'All_0',
+                                'rainfall_amount_absolute_32bit',
+                                'datalogger_error',
+                                'raw_drop_concentration',
+                                'raw_drop_average_velocity',
+                                'raw_drop_number',
+                                'End_line'
+                                ]
 
             ##------------------------------------------------------.
             #### - Read all raw data files into a dataframe  
@@ -414,4 +465,14 @@ def main(raw_dir,
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    main(raw_dir = '/SharedVM/Campagne/EPFL/Raw/SAMOYLOV_2017_2019',
+            processed_dir = '/SharedVM/Campagne/EPFL/Processed/SAMOYLOV_2017_2019',
+            l0_processing=True,
+            l1_processing=False,
+            write_netcdf=False,
+            force=True,
+            verbose=True,
+            debugging_mode=True,
+            lazy=True,
+            )
