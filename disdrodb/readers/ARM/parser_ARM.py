@@ -223,16 +223,16 @@ def reformat_ARM_files(file_list, processed_dir, attrs, verbose):
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-# @click.command()  # options_metavar='<options>'
-# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-# @click.argument('processed_dir', metavar='<processed_dir>')
-# @click.option('-l0', '--l0_processing', type=bool, show_default=False, default=True, help="Perform L0 processing")
-# @click.option('-l1', '--l1_processing', type=bool, show_default=False, default=True, help="Perform L1 processing")
-# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+@click.command()  # options_metavar='<options>'
+@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+@click.argument('processed_dir', metavar='<processed_dir>')
+@click.option('-l0', '--l0_processing', type=bool, show_default=False, default=True, help="Perform L0 processing")
+@click.option('-l1', '--l1_processing', type=bool, show_default=False, default=True, help="Perform L1 processing")
+@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=False,
@@ -353,17 +353,7 @@ def main(raw_dir,
 #################################
 
 if __name__ == "__main__":
-    # main()
-    main(raw_dir = "/SharedVM/Campagne/ARM/Raw/ALASKA",
-        processed_dir = "/SharedVM/Campagne/ARM/Processed/ALASKA",
-        l0_processing=False,
-        l1_processing=False,
-        write_netcdf=False,
-        force=True,
-        verbose=True,
-        debugging_mode=False,
-        lazy=True
-        )
+    main()
 
 
 
