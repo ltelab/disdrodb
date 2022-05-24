@@ -221,7 +221,7 @@ def main(raw_dir,
 
         # Drop Debug_data, datalogger_error and sensor_heating_current (all nan)
         df = df.drop(
-            columns=["Debug_data", "datalogger_error", "sensor_heating_current", "id"]
+            columns=["Debug_data", "datalogger_error", "sensor_heating_current", "id", "datalogger_temperature", "datalogger_voltage"]
         )
 
         # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
