@@ -109,7 +109,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[2]
+station_id = list_stations_id[4]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -168,6 +168,16 @@ reader_kwargs['encoding'] = 'latin-1'
 # Skip first row as columns names
 reader_kwargs['header'] = None
 
+
+# reader_kwargs['date_parser'] = lambda x: pd.to_datetime(x, errors="coerce")
+
+
+# Retrieve metadata 
+attrs = read_metadata(raw_dir=raw_dir,
+                      station_id=station_id)
+# Retrieve sensor name
+sensor_name = attrs['sensor_name']
+
 ####--------------------------------------------------------------------------. 
 #################################################### 
 #### 6. Open a single file and explore the data ####
@@ -175,45 +185,45 @@ reader_kwargs['header'] = None
 # - Do not assign column names yet to the columns 
 # - Do not assign a dtype yet to the columns 
 # - Possibily look at multiple files ;)
+# # filepath = file_list[0]
 # filepath = file_list[0]
-filepath = file_list[0]
-str_reader_kwargs = reader_kwargs.copy() 
-df = read_raw_data(filepath, 
-                   column_names=None,  
-                   reader_kwargs=str_reader_kwargs, 
-                   lazy=False).add_prefix('col_')
+# str_reader_kwargs = reader_kwargs.copy() 
+# df = read_raw_data(filepath, 
+#                    column_names=None,  
+#                    reader_kwargs=str_reader_kwargs, 
+#                    lazy=False).add_prefix('col_')
 
-# Print first rows
-print_df_first_n_rows(df, n = 1, column_names=False)
-print_df_first_n_rows(df, n = 5, column_names=False)
-print_df_random_n_rows(df, n= 5, column_names=False)  # this likely the more useful 
+# # Print first rows
+# print_df_first_n_rows(df, n = 1, column_names=False)
+# print_df_first_n_rows(df, n = 5, column_names=False)
+# print_df_random_n_rows(df, n= 5, column_names=False)  # this likely the more useful 
 
-# Retrieve number of columns 
-print(len(df.columns))
+# # Retrieve number of columns 
+# print(len(df.columns))
  
-# Look at unique values
-# print_df_columns_unique_values(df, column_indices=None, column_names=False) # all 
+# # Look at unique values
+# # print_df_columns_unique_values(df, column_indices=None, column_names=False) # all 
  
-# print_df_columns_unique_values(df, column_indices=0, column_names=False) # single column 
+# # print_df_columns_unique_values(df, column_indices=0, column_names=False) # single column 
 
-# print_df_columns_unique_values(df, column_indices=slice(0,15), column_names=False) # a slice of columns 
+# # print_df_columns_unique_values(df, column_indices=slice(0,15), column_names=False) # a slice of columns 
 
-# get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=False) # get dictionary
+# # get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=False) # get dictionary
 
-# Retrieve number of columns 
-print(len(df.columns))
+# # Retrieve number of columns 
+# print(len(df.columns))
  
-# Copy the following list and start to infer column_names 
-['Unknown' + str(i+1) for i in range(len(df.columns))]
+# # Copy the following list and start to infer column_names 
+# ['Unknown' + str(i+1) for i in range(len(df.columns))]
 
-# Print valid column names 
-# - If other names are required, add the key to get_L0_dtype_standards in data_encodings.py 
-print_valid_L0_column_names()
+# # Print valid column names 
+# # - If other names are required, add the key to get_L0_dtype_standards in data_encodings.py 
+# print_valid_L0_column_names()
 
-# Instrument manufacturer defaults 
-from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
-get_OTT_Parsivel_dict()
-get_OTT_Parsivel2_dict()
+# # Instrument manufacturer defaults 
+# from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+# get_OTT_Parsivel_dict()
+# get_OTT_Parsivel2_dict()
 
 
 ####---------------------------------------------------------------------------.
@@ -221,6 +231,7 @@ get_OTT_Parsivel2_dict()
 #### 7. Define dataframe columns [TO CUSTOMIZE AND MOVE TO PARSER] ###
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
+
 
 column_names = ['time',
                 'latitude',
@@ -236,10 +247,10 @@ column_names = ['time',
                 'sensor_battery_voltage',
                 'datalogger_error',
                 'rainfall_amount_absolute_32bit',
+                'All_0',
                 'raw_drop_concentration',
                 'raw_drop_average_velocity',
                 'raw_drop_number',
-                'End_line',
                 ]
 
 column_names_2 =   ['id',
@@ -267,82 +278,151 @@ column_names_2 =   ['id',
                     'End_line'
                     ]
 
+temp_column_names =  ['temp1',
+                    'temp2',
+                    'temp3',
+                    'temp4',
+                    'temp5',
+                    'temp6',
+                    'temp7',
+                    'temp8',
+                    'temp9',
+                    'temp10',
+                    'temp11',
+                    'temp12',
+                    'temp13',
+                    'temp14',
+                    'temp15',
+                    'temp16',
+                    'temp17',
+                    'temp18',
+                    'temp19',
+                    'temp20',
+                    'temp21',
+                    'temp22',
+                    'temp23']
 
 
-# - Check name validity 
-check_L0_column_names(column_names)
+# # - Check name validity 
+# check_L0_column_names(column_names)
 
-# - Read data
-# Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
-filepath = file_list[0]
-# df = pd.read_csv(file_list[0], delimiter=';')
-df = read_raw_data(filepath=filepath, 
-                    column_names=column_names_2,
-                    reader_kwargs=reader_kwargs,
-                   lazy=False)
+# # - Read data
+# # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
+# filepath = file_list[1]
+# filepath = all_stations_files[13]
+# filepath = all_stations_files[40]
+
+# df = pd.read_csv('/SharedVM/Campagne/EPFL/Raw/SAMOYLOV_2017_2019/data/01/03-08-2017.PARSIVEL01.log', delim_whitespace=True)
+# df = df.iloc[:,1].str.split(';',expand=True, n = 17)
+
+# df = pd.read_csv('/SharedVM/Campagne/EPFL/Raw/SAMOYLOV_2017_2019/data/02/01-08-2017.PARSIVEL2.log', delim_whitespace=True)
+# df = df.iloc[:,1].str.split(';',expand=True, n = 17)
+
+# df = pd.read_csv('/SharedVM/Campagne/EPFL/Raw/SAMOYLOV_2017_2019/data/02/01-08-2017.PARSIVEL2.log', delimiter=';')
+# df2 = pd.read_csv('/SharedVM/Campagne/EPFL/Raw/SAMOYLOV_2017_2019/data/20/02-09-2019.parsivel20.log', delimiter=';')
+
+# df = read_raw_data(filepath=filepath, 
+#                     column_names=column_names_temp_2,
+#                     reader_kwargs=reader_kwargs,
+#                    lazy=False)
+
+# # - If first column is ID, than is a different format
+# if df.iloc[:,0].str.isnumeric().all():
+#     # - Rename columns
+#     df.columns = column_names_2
+#     # - Remove ok from rainfall_rate_32bit
+#     df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
+#     # - Drop useless columns
+#     col_to_drop = ["id", "all_nan", "All_0", 'datalogger_error', 'End_line']
+#     df = df.drop(columns=col_to_drop)
+#     # - Convert time column to datetime 
+#     df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+# else:
+#     # - Drop excedeed columns
+#     df = df.iloc[:,:18]
+#     # - Rename columns
+#     df.columns = column_names
+#     # - Drop useless columns
+#     col_to_drop = ["All_0", 'datalogger_error']
+#     df = df.drop(columns=col_to_drop)
+#     # - Convert time column to datetime 
+#     df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
+
+# # - Drop columns if nan
+# col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+# df = df.dropna(subset = col_to_drop_if_na)
+
+
+
+# # ---------------
+
+# df = df.iloc[:,0].str.split(';',expand=True, n = 22)
+# df.columns = column_names_2
+# df = df.dropna(subset = ['End_line'])
+# df = df.iloc[:,:-1]
     
-df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
+# df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
 
-col_to_drop = ["id", "all_nan", "All_0", 'datalogger_error', 'End_line']
+# col_to_drop = ["id", "all_nan", "All_0", 'datalogger_error', 'End_line']
 
-df = df.drop(columns=col_to_drop)
+# df = df.drop(columns=col_to_drop)
 
-col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
-df = df.dropna(subset = col_to_drop_if_na)
+# col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+# df = df.dropna(subset = col_to_drop_if_na)
 
-# - Look at the columns and data 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5)
+# # - Look at the columns and data 
+# print_df_column_names(df)
+# print_df_random_n_rows(df, n= 5)
 
-# - Check it loads also lazily in dask correctly
-df1 = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=True)
+# # - Check it loads also lazily in dask correctly
+# df1 = read_raw_data(filepath=filepath, 
+#                    column_names=column_names,
+#                    reader_kwargs=reader_kwargs,
+#                    lazy=True)
 
-df1 = df1.compute() 
+# df1 = df1.compute() 
 
-# - Look at the columns and data 
-print_df_column_names(df1)
-print_df_random_n_rows(df1, n= 5) 
+# # - Look at the columns and data 
+# print_df_column_names(df1)
+# print_df_random_n_rows(df1, n= 5) 
 
-# - Check are equals 
-assert df.equals(df1)
+# # - Check are equals 
+# assert df.equals(df1)
 
-# - Look at unique values
-print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
+# # - Look at unique values
+# print_df_columns_unique_values(df, column_indices=None, column_names=True) # all 
  
-print_df_columns_unique_values(df, column_indices=0, column_names=True) # single column 
+# print_df_columns_unique_values(df, column_indices=0, column_names=True) # single column 
 
-print_df_columns_unique_values(df, column_indices=slice(0,10), column_names=True) # a slice of columns 
+# print_df_columns_unique_values(df, column_indices=slice(0,10), column_names=True) # a slice of columns 
 
-get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=True) # get dictionary
+# get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=True) # get dictionary
 
 ####---------------------------------------------------------------------------.
 #########################################################
 #### 8. Implement ad-hoc processing of the dataframe ####
-#########################################################
-# - This must be done once that reader_kwargs and column_names are correctly defined 
-# - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0]  # Select also other files here  1,2, ... 
-lazy = True             # Try also with True when work with False 
+# #########################################################
+# # - This must be done once that reader_kwargs and column_names are correctly defined 
+# # - Try the following code with various file and with both lazy=True and lazy=False 
+# filepath = file_list[0]  # Select also other files here  1,2, ... 
+# lazy = True             # Try also with True when work with False 
+
+# #------------------------------------------------------. 
+# #### 8.1 Run following code portion without modifying anthing 
+# # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
+# df = read_raw_data(filepath=filepath, 
+#                    column_names=column_names,
+#                    reader_kwargs=reader_kwargs,
+#                    lazy=lazy)
 
 #------------------------------------------------------. 
-#### 8.1 Run following code portion without modifying anthing 
-# - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_data(filepath=filepath, 
-                   column_names=column_names,
-                   reader_kwargs=reader_kwargs,
-                   lazy=lazy)
+# # Check if file empty
+# if len(df.index) == 0:
+#     raise ValueError(f"{filepath} is empty and has been skipped.")
 
-#------------------------------------------------------. 
-# Check if file empty
-if len(df.index) == 0:
-    raise ValueError(f"{filepath} is empty and has been skipped.")
-
-# Check column number
-if len(df.columns) != len(column_names):
-    raise ValueError(f"{filepath} has wrong columns number, and has been skipped.")
+# # Check column number
+# if len(df.columns) != len(column_names):
+#     raise ValueError(f"{filepath} has wrong columns number, and has been skipped.")
 
 #---------------------------------------------------------------------------.  
 #### 8.2 Ad-hoc code [TO CUSTOMIZE]
@@ -357,21 +437,21 @@ if len(df.columns) != len(column_names):
 # df = dd.concat([df, df_tmp], axis = 1, ignore_unknown_divisions=True)
 # del df_tmp 
 
-# Drop Debug_data and All_0
-df = df.drop(columns=['datalogger_error', 'End_line'])
+# # Drop Debug_data and All_0
+# df = df.drop(columns=['datalogger_error', 'End_line'])
 
-df = df[df['latitude'].apply(lambda x: type(x) in [int, np.int64, float, np.float64])]
+# df = df[df['latitude'].apply(lambda x: type(x) in [int, np.int64, float, np.float64])]
 
-# If raw_drop_number is nan, drop the row
-# col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
-col_to_drop_if_na = ['raw_drop_number']
-df = df.dropna(subset = col_to_drop_if_na)
+# # If raw_drop_number is nan, drop the row
+# # col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+# col_to_drop_if_na = ['raw_drop_number']
+# df = df.dropna(subset = col_to_drop_if_na)
 
-# Drop rows with less than 4096 char on raw_drop_number
-# df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
+# # Drop rows with less than 4096 char on raw_drop_number
+# # df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
 
-# - Convert time column to datetime 
-df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
+# # - Convert time column to datetime 
+# df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
 
 
 #---------------------------------------------------------------------------.
@@ -388,20 +468,20 @@ df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
 ##----------------------------------------------------.
 # Cast dataframe to dtypes
 # - Determine dtype based on standards 
-dtype_dict = get_L0_dtype_standards()
-for column in df.columns:
-    try:
-        df[column] = df[column].astype(dtype_dict[column])
-    except KeyError:
-        # If column dtype is not into get_L0_dtype_standards, assign object
-        df[column] = df[column].astype('object')
+# dtype_dict = get_L0_dtype_standards()
+# for column in df.columns:
+#     try:
+#         df[column] = df[column].astype(dtype_dict[column])
+#     except KeyError:
+#         # If column dtype is not into get_L0_dtype_standards, assign object
+#         df[column] = df[column].astype('object')
         
 #---------------------------------------------------------------------------.
 #### 8.4 Check the dataframe looks as desired 
-print_df_column_names(df)
-print_df_random_n_rows(df, n= 5) 
-print_df_columns_unique_values(df, column_indices=2, column_names=True) 
-print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True)   
+# print_df_column_names(df)
+# print_df_random_n_rows(df, n= 5) 
+# print_df_columns_unique_values(df, column_indices=2, column_names=True) 
+# print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True)   
 
 ####------------------------------------------------------------------------------.
 ################################################
@@ -410,29 +490,91 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 #### 9.1 Define sanitizer function [TO CUSTOMIZE]
 # --> df_sanitizer_fun = None  if not necessary ...
 
-def df_sanitizer_fun(df, lazy=False):
-    # # Import dask or pandas 
-    # if lazy: 
-    #     import dask.dataframe as dd
-    # else: 
-    #     import pandas as dd
+def df_sanitizer_fun(df, lazy=lazy):
+    # Import dask or pandas 
+    if lazy: 
+        import dask.dataframe as dd
+    else: 
+        import pandas as dd
+    
+    # - Drop all nan in latitude (define in reader_kwargs['na_values'])
+    df = df[~df.iloc[:,1].isna()]
+    if len(df.index) == 0:
+        return df
+    
+    # - If first column is ID, than is a different format
+    
+    if lazy:
+        flag = df.iloc[:,0].str.isnumeric().all().compute()
+    else:
+        flag = df.iloc[:,0].str.isnumeric().all()
+    
+    if flag:
+        # - Rename columns
+        df.columns = column_names_2
+        # - Remove ok from rainfall_rate_32bit
+        if lazy:
+            df["rainfall_rate_32bit"] = df["rainfall_rate_32bit"].str.replace("OK,","")
+        else:
+            # df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
+           # - Suppress SettingWithCopyWarning error (A value is trying to be set on a copy of a slice from a DataFrame)
+           pd.options.mode.chained_assignment = None
+           df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
+        
+        # - Drop useless columns
+        col_to_drop = ["id", "all_nan", "All_0", 'datalogger_error', 'End_line']
+        df = df.drop(columns=col_to_drop)
+        
+        # - Check latutide and longitute
+        df = df.loc[df["latitude"].astype(str).str.len() < 11]
+        df = df.loc[df["longitude"].astype(str).str.len() < 11]
+        
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], errors='coerce')
+        df = df.dropna()
+        if len(df.index) == 0:
+            return df
+        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+    else:
+        # - Drop excedeed columns
+        df = df.iloc[:,:18]
+        # - Rename columns
+        df.columns = column_names
+        # - Drop useless columns
+        col_to_drop = ["All_0", 'datalogger_error']
+        df = df.drop(columns=col_to_drop)
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], errors='coerce')
+        df = df.dropna()
+        if len(df.index) == 0:
+            return df
+        df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
 
-    # Drop Debug_data and All_0
-    df = df.drop(columns=['datalogger_error', 'End_line'])
-
-    df = df[df['latitude'].apply(lambda x: type(x) in [int, np.int64, float, np.float64])]
-
-    # If raw_drop_number is nan, drop the row
-    col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+    # - Drop columns if nan
+    col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
     df = df.dropna(subset = col_to_drop_if_na)
-
-    # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-    df = df.loc[df['raw_drop_concentration'].astype(str).str.len() == 224]
-    df = df.loc[df['raw_drop_average_velocity'].astype(str).str.len() == 224]
-    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
-
-    # - Convert time column to datetime 
-    df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
+    
+    # - Cast dataframe to dtypes
+    dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
+    
+    dtype_dict_not_object = {}
+    for k, v in dtype_dict.items():
+        if v != 'object':
+            dtype_dict_not_object[k] =  v
+    dtype_dict_not_object.pop('time')
+            
+    for column in df.columns:
+        if column in dtype_dict_not_object:
+            df[column] = dd.to_numeric(df[column], errors='coerce')
+            invalid_rows_index = df.loc[df[column].isna()].index
+            if lazy:
+                if invalid_rows_index.size.compute() != 0:
+                    df = df.dropna(subset=[column])
+            else:
+                if invalid_rows_index.size != 0:
+                    df = df.dropna(subset=[column])
+                    # df = df.drop(invalid_rows_index)
+            df[column] = df[column].astype(dtype_dict[column])
     
     return df 
 
@@ -441,11 +583,13 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
-subset_file_list = file_list[:]
-subset_file_list = all_stations_files
+subset_file_list = file_list[:5]
+# subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
-                           column_names=column_names, 
+                           column_names=temp_column_names, 
                            reader_kwargs=reader_kwargs,
+                           sensor_name=sensor_name,
+                           verbose=verbose,
                            df_sanitizer_fun = df_sanitizer_fun, 
                            lazy=lazy)
 

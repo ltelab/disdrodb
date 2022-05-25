@@ -140,27 +140,30 @@ def main(raw_dir,
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
-    column_names = [
-        "time",
-        "latitude",
-        "longitude",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_temperature",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "datalogger_error",
-        "rainfall_amount_absolute_32bit",
-        "raw_drop_concentration",
-        "raw_drop_average_velocity",
-        "raw_drop_number",
-        "End_line",
-    ]
+    
+    column_names =  ['temp1',
+                        'temp2',
+                        'temp3',
+                        'temp4',
+                        'temp5',
+                        'temp6',
+                        'temp7',
+                        'temp8',
+                        'temp9',
+                        'temp10',
+                        'temp11',
+                        'temp12',
+                        'temp13',
+                        'temp14',
+                        'temp15',
+                        'temp16',
+                        'temp17',
+                        'temp18',
+                        'temp19',
+                        'temp20',
+                        'temp21',
+                        'temp22',
+                        'temp23']
 
     # - Check name validity
     check_L0_column_names(column_names)
@@ -220,56 +223,136 @@ def main(raw_dir,
     df_sanitizer_fun = None
 
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
-        if lazy:
+        # Import dask or pandas 
+        if lazy: 
             import dask.dataframe as dd
-        else:
+        else: 
             import pandas as dd
             
-        # If not station 01 or 02 use a different parser
-        if len(df.columns) != 23:
-            
-            # Drop Debug_data and All_0
-            df = df.drop(columns=["datalogger_error", "End_line"])
-    
-            df = df[
-                df["latitude"].apply(
-                    lambda x: type(x) in [int, np.int64, float, np.float64]
-                )
-            ]
-    
-            # If raw_drop_number is nan, drop the row
-            col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
-            df = df.dropna(subset=col_to_drop_if_na)
-    
-            # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-            df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
-            df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
-            df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-            
-            # - Convert time column to datetime
-            df["time"] = dd.to_datetime(df["time"], format="%d/%m/%Y %H:%M:%S")
-        
-        else:
-            
-            df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
+        column_names = ['time',
+                        'latitude',
+                        'longitude',
+                        'weather_code_synop_4680',
+                        'weather_code_synop_4677',
+                        'reflectivity_32bit',
+                        'mor_visibility',
+                        'laser_amplitude',
+                        'number_particles',
+                        'sensor_temperature',
+                        'sensor_heating_current',
+                        'sensor_battery_voltage',
+                        'datalogger_error',
+                        'rainfall_amount_absolute_32bit',
+                        'All_0',
+                        'raw_drop_concentration',
+                        'raw_drop_average_velocity',
+                        'raw_drop_number',
+                        ]
 
+        column_names_2 =   ['id',
+                            'latitude',
+                            'longitude',
+                            'time',
+                            'all_nan',
+                            'rainfall_rate_32bit',
+                            'rainfall_accumulated_32bit',
+                            'weather_code_synop_4680',
+                            'weather_code_synop_4677',
+                            'reflectivity_32bit',
+                            'mor_visibility',
+                            'laser_amplitude',
+                            'number_particles',
+                            'sensor_temperature',
+                            'sensor_heating_current',
+                            'sensor_battery_voltage',
+                            'All_0',
+                            'rainfall_amount_absolute_32bit',
+                            'datalogger_error',
+                            'raw_drop_concentration',
+                            'raw_drop_average_velocity',
+                            'raw_drop_number',
+                            'End_line'
+                            ]
+        
+        # - Drop all nan in latitude (define in reader_kwargs['na_values'])
+        df = df[~df.iloc[:,1].isna()]
+        if len(df.index) == 0:
+            return df
+        
+        # - If first column is ID, than is a different format
+        
+        if lazy:
+            flag = df.iloc[:,0].str.isnumeric().all().compute()
+        else:
+            flag = df.iloc[:,0].str.isnumeric().all()
+        
+        if flag:
+            # - Rename columns
+            df.columns = column_names_2
+            # - Remove ok from rainfall_rate_32bit
+            if lazy:
+                df["rainfall_rate_32bit"] = df["rainfall_rate_32bit"].str.replace("OK,","")
+            else:
+                # df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
+               # - Suppress SettingWithCopyWarning error (A value is trying to be set on a copy of a slice from a DataFrame)
+               dd.options.mode.chained_assignment = None
+               df['rainfall_rate_32bit'] = df['rainfall_rate_32bit'].str.split(',').str[-1]
+            
+            # - Drop useless columns
             col_to_drop = ["id", "all_nan", "All_0", 'datalogger_error', 'End_line']
             df = df.drop(columns=col_to_drop)
             
-            col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
-            df = df.dropna(subset = col_to_drop_if_na)
+            # - Check latutide and longitute
+            df = df.loc[df["latitude"].astype(str).str.len() < 11]
+            df = df.loc[df["longitude"].astype(str).str.len() < 11]
             
-            df['longitude'] = df['longitude'].astype('str').str.len()!=9
-            df['latitude'] = df['latitude'].astype('str').str.len()!=9
-            
-            df['longitude'] = dd.to_numeric(df['longitude'], errors='coerce')
-            df['latitude'] = dd.to_numeric(df['latitude'], errors='coerce')
-            
+            # - Convert time column to datetime 
+            df['time'] = dd.to_datetime(df['time'], errors='coerce')
             df = df.dropna()
-    
-            # - Convert time column to datetime
-            df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+            if len(df.index) == 0:
+                return df
+            df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+        else:
+            # - Drop excedeed columns
+            df = df.iloc[:,:18]
+            # - Rename columns
+            df.columns = column_names
+            # - Drop useless columns
+            col_to_drop = ["All_0", 'datalogger_error']
+            df = df.drop(columns=col_to_drop)
+            # - Convert time column to datetime 
+            df['time'] = dd.to_datetime(df['time'], errors='coerce')
+            df = df.dropna()
+            if len(df.index) == 0:
+                return df
+            df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
+
+        # - Drop columns if nan
+        col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+        df = df.dropna(subset = col_to_drop_if_na)
+        
+        # - Cast dataframe to dtypes
+        from disdrodb.data_encodings import get_L0_dtype_standards
+        dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
+        
+        dtype_dict_not_object = {}
+        for k, v in dtype_dict.items():
+            if v != 'object':
+                dtype_dict_not_object[k] =  v
+        dtype_dict_not_object.pop('time')
+                
+        for column in df.columns:
+            if column in dtype_dict_not_object:
+                df[column] = dd.to_numeric(df[column], errors='coerce')
+                invalid_rows_index = df.loc[df[column].isna()].index
+                if lazy:
+                    if invalid_rows_index.size.compute() != 0:
+                        df = df.dropna(subset=[column])
+                else:
+                    if invalid_rows_index.size != 0:
+                        df = df.dropna(subset=[column])
+                        # df = df.drop(invalid_rows_index)
+                df[column] = df[column].astype(dtype_dict[column])
 
         return df
 
@@ -337,32 +420,6 @@ def main(raw_dir,
                 debugging_mode=debugging_mode,
             )
             
-            # Station 01 and 02 have different format
-            if station_id in list_stations_id[2:]:
-                column_names = ['id',
-                                'latitude',
-                                'longitude',
-                                'time',
-                                'all_nan',
-                                'rainfall_rate_32bit',
-                                'rainfall_accumulated_32bit',
-                                'weather_code_synop_4680',
-                                'weather_code_synop_4677',
-                                'reflectivity_32bit',
-                                'mor_visibility',
-                                'laser_amplitude',
-                                'number_particles',
-                                'sensor_temperature',
-                                'sensor_heating_current',
-                                'sensor_battery_voltage',
-                                'All_0',
-                                'rainfall_amount_absolute_32bit',
-                                'datalogger_error',
-                                'raw_drop_concentration',
-                                'raw_drop_average_velocity',
-                                'raw_drop_number',
-                                'End_line'
-                                ]
 
             ##------------------------------------------------------.
             #### - Read all raw data files into a dataframe  
