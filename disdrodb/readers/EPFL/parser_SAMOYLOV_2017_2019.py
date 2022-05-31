@@ -277,6 +277,26 @@ def main(raw_dir,
         # - Drop all nan in latitude (define in reader_kwargs['na_values'])
         df = df[~df.iloc[:,1].isna()]
         if len(df.index) == 0:
+            df.columns = ['latitude',
+                            'longitude',
+                            'time',
+                            'rainfall_rate_32bit',
+                            'rainfall_accumulated_32bit',
+                            'weather_code_synop_4680',
+                            'weather_code_synop_4677',
+                            'reflectivity_32bit',
+                            'mor_visibility',
+                            'laser_amplitude',
+                            'number_particles',
+                            'sensor_temperature',
+                            'sensor_heating_current',
+                            'sensor_battery_voltage',
+                            'rainfall_amount_absolute_32bit',
+                            'raw_drop_concentration',
+                            'raw_drop_average_velocity',
+                            'raw_drop_number',
+                            ]
+            # df = df.iloc[:,:18]
             return df
         
         # - If first column is ID, than is a different format
@@ -310,9 +330,14 @@ def main(raw_dir,
             df['time'] = dd.to_datetime(df['time'], errors='coerce')
             df = df.dropna()
             if len(df.index) == 0:
+                for col in col_to_drop:
+                    column_names_2.remove(col)
+                df.columns = column_names_2
                 return df
             df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+            
         else:
+            
             # - Drop excedeed columns
             df = df.iloc[:,:18]
             # - Rename columns
@@ -324,12 +349,22 @@ def main(raw_dir,
             df['time'] = dd.to_datetime(df['time'], errors='coerce')
             df = df.dropna()
             if len(df.index) == 0:
+                for col in col_to_drop:
+                    column_names.remove(col)
+                df.columns = column_names
                 return df
             df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
 
         # - Drop columns if nan
         col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
         df = df.dropna(subset = col_to_drop_if_na)
+        
+        # - Drop invalid raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
+        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+        
+        df = df[df['raw_drop_number'].str.contains('0\x100') == False]
         
         # - Cast dataframe to dtypes
         from disdrodb.data_encodings import get_L0_dtype_standards
