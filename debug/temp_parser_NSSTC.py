@@ -127,63 +127,119 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.tar"), 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-column_names = ['time',
-                'station_name',
-                'sensor_status',
-                'sensor_temperature',
-                'raw_drop_number'
-                ]
+# f1 = '/SharedVM/Campagne/GPM/raw/NSSTC/data/apu03/apu03_nsstc_20100609.dat'
+# f2 = '/SharedVM/Campagne/GPM/raw/NSSTC/data/apu03/apu03_nsstc_apu03_2011032901.dat'
 
-import tarfile
+# column_names = ['time',
+#                 'station_name',
+#                 'sensor_status',
+#                 'sensor_temperature',
+#                 'number_particles',
+#                 'rainfall_rate_32bit',
+#                 'reflectivity_32bit',
+#                 'mor_visibility',
+#                 'weather_code_synop_4680',
+#                 'weather_code_synop_4677',
+#                 'raw_drop_number',
+#                 ]
 
-import pandas.errors
 
+# df = pd.read_csv(f1, compression='infer', header=None, sep=';', names = ['time','temp'])
 
-
-def parse(df_temp):
+# if len(df['temp'][0]) < 4109:
+#     n_split = 3
+#     temp_column_names = ['time',
+#                     'station_name',
+#                     'sensor_status',
+#                     'sensor_temperature',
+#                     'raw_drop_number'
+#                     ]
     
-    df_temp.iloc[:,0] = pd.to_datetime(df_temp.iloc[:,0], format='%Y%m%d%H%M%S')
+# else:
+#     n_split = 9
+#     temp_column_names = ['time',
+#                         'station_name',
+#                         'sensor_status',
+#                         'sensor_temperature',
+#                         'number_particles',
+#                         'rainfall_rate_32bit',
+#                         'reflectivity_32bit',
+#                         'mor_visibility',
+#                         'weather_code_synop_4680',
+#                         'weather_code_synop_4677',
+#                         'raw_drop_number',
+#                         ]
     
-    df_temp = pd.concat([df_temp.iloc[:,0], df_temp.iloc[:,1].str.split(',', expand=True, n = 3)] ,axis=1)
+# df = pd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = n_split)] ,axis=1)
+# df.columns = temp_column_names
+
+# if len(temp_column_names) < 6:
+#     import numpy as np
+#     df['number_particles'], df['rainfall_rate_32bit'], df['reflectivity_32bit'], df['mor_visibility'], df['weather_code_synop_4680'], df['weather_code_synop_4677'] = [69,69,69,69,69,69,]
+#     column_names = ['time',
+#                         'station_name',
+#                         'sensor_status',
+#                         'sensor_temperature',
+#                         'number_particles',
+#                         'rainfall_rate_32bit',
+#                         'reflectivity_32bit',
+#                         'mor_visibility',
+#                         'weather_code_synop_4680',
+#                         'weather_code_synop_4677',
+#                         'raw_drop_number',
+#                         ]
+#     df = df.filter(column_names)
+
+# import tarfile
+
+# import pandas.errors
+
+
+
+# def parse(df_temp):
     
-    # Add names to the columns
-    df_temp.columns = column_names
+#     df_temp.iloc[:,0] = pd.to_datetime(df_temp.iloc[:,0], format='%Y%m%d%H%M%S')
     
-    return df_temp
+#     df_temp = pd.concat([df_temp.iloc[:,0], df_temp.iloc[:,1].str.split(',', expand=True, n = 3)] ,axis=1)
+    
+#     # Add names to the columns
+#     df_temp.columns = column_names
+    
+#     return df_temp
 
 
 
-df = pd.DataFrame()
+# df = pd.DataFrame()
 
-for f in all_stations_files[:20]:
-    print('')
-    print(f'--- {f} ---')
-    print('')
-    tar = tarfile.open(f)
-    print("- files found: %s" % (len(tar.getnames())))
-    print('')
-    for file in tar.getnames():
-        print(f'- {file} -')
-        print('')
-        try:
-            df_temp = pd.read_csv(tar.extractfile(file), compression='infer', header=None, sep=';')
+# for f in all_stations_files[:20]:
+#     print('')
+#     print(f'--- {f} ---')
+#     print('')
+#     tar = tarfile.open(f)
+#     print("- files found: %s" % (len(tar.getnames())))
+#     print('')
+#     for file in tar.getnames():
+#         print(f'- {file} -')
+#         print('')
+#         try:
+#             df_temp = pd.read_csv(tar.extractfile(file), compression='infer', header=None, sep=';')
             
-            df_temp = parse(df_temp)
+#             df_temp = parse(df_temp)
             
-            df = df.append(df_temp)
+#             df = df.append(df_temp)
             
             
-        except pd.errors.EmptyDataError:
-            print(f"Is empty, skip file: {file} in {f}")
-            pass
-        except pd.errors.ParserError:
-            print(f"Cannot parse, skip file: {file} in {f}")
-            pass
-        except UnicodeDecodeError:
-            print(f"Unicode error, skip file: {file} in {f}")
-            pass
+#         except pd.errors.EmptyDataError:
+#             print(f"Is empty, skip file: {file} in {f}")
+#             pass
+#         except pd.errors.ParserError:
+#             print(f"Cannot parse, skip file: {file} in {f}")
+#             pass
+#         except UnicodeDecodeError:
+#             print(f"Unicode error, skip file: {file} in {f}")
+#             pass
     
-    tar.close()
+#     tar.close()
 
 
 
@@ -207,7 +263,7 @@ reader_kwargs = {}
 reader_kwargs['zipped'] = True
 
 # - Define delimiter
-reader_kwargs['delimiter'] = '   '
+reader_kwargs['delimiter'] = ';'
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -270,9 +326,9 @@ reader_kwargs['encoding_errors'] = 'ignore'
 # filepath = file_list[0]
 # str_reader_kwargs = reader_kwargs.copy() 
 # df = read_raw_data(filepath, 
-#                    column_names=None,  
-#                    reader_kwargs=str_reader_kwargs, 
-#                    lazy=False)
+#                     column_names=None,  
+#                     reader_kwargs=str_reader_kwargs, 
+#                     lazy=False)
 
 # # Print first rows
 # print_df_first_n_rows(df, n = 1, column_names=False)
@@ -320,8 +376,7 @@ reader_kwargs['encoding_errors'] = 'ignore'
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
 column_names = ['time',
-                'Unknow',
-                'raw_drop_number',
+                'temp',
                 ]
 
 
@@ -334,11 +389,75 @@ column_names = ['time',
 
 # # - Read data
 # # Added function read_raw_data_dtype() on L0_proc for read with columns and all dtypes as object
-# filepath = file_list[0]
+# filepath = file_list[1]
+# filepath = all_stations_files[3]
 # df = read_raw_data(filepath=filepath, 
 #                     column_names=column_names,
 #                     reader_kwargs=reader_kwargs,
 #                     lazy=False)
+
+
+# if df.iloc[:1,1].str.count(',').item() == 1027:
+#     df = df.loc[df['temp'].str.count(',') == 1027]
+#     n_split = 3
+#     temp_column_names = ['time',
+#                     'station_name',
+#                     'sensor_status',
+#                     'sensor_temperature',
+#                     'raw_drop_number'
+#                     ]
+# elif df.iloc[:1,1].str.count(',').item() == 1033:
+#     df = df.loc[df['temp'].str.count(',') == 1033]
+#     n_split = 9
+#     temp_column_names = ['time',
+#                         'station_name',
+#                         'sensor_status',
+#                         'sensor_temperature',
+#                         'number_particles',
+#                         'rainfall_rate_32bit',
+#                         'reflectivity_32bit',
+#                         'mor_visibility',
+#                         'weather_code_synop_4680',
+#                         'weather_code_synop_4677',
+#                         'raw_drop_number',
+#                         ]
+# else:
+#     print('raise error')
+
+
+
+
+
+# df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = n_split)] ,axis=1)
+# df.columns = temp_column_names
+
+# # Add missing column and fill with value set for nan (it give error on Nan values)
+# if len(temp_column_names) == 5:
+#     df['number_particles'] = 0
+#     df['rainfall_rate_32bit'] = -1
+#     df['reflectivity_32bit'] = -1
+#     df['mor_visibility'] = 0
+#     df['weather_code_synop_4680'] = 0
+#     df['weather_code_synop_4677'] = 0
+#     # temp_column_names = ['number_particles',
+#     #                     'rainfall_rate_32bit',
+#     #                     'reflectivity_32bit',
+#     #                     'mor_visibility',
+#     #                     'weather_code_synop_4680',
+#     #                     'weather_code_synop_4677',
+#     #                     ]
+    
+#     # for c in temp_column_names:
+#     #     df[c] = np.nan
+
+# # - Drop invalid raw_drop_number
+# df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+
+# # - Convert time column to datetime
+# try:
+#     df['time'] = dd.to_datetime(df['time'], format='%Y%m%d%H%M%S')
+# except TypeError:
+#     raise TypeError('Error on parse date on df {}').format(df.compute())
     
 
 
@@ -480,18 +599,68 @@ column_names = ['time',
 #### 9.1 Define sanitizer function [TO CUSTOMIZE]
 # --> df_sanitizer_fun = None  if not necessary ...
 
-def df_sanitizer_fun(df, lazy=False):
+def df_sanitizer_fun(df, lazy=lazy):
     # Import dask or pandas 
     if lazy: 
         import dask.dataframe as dd
     else: 
         import pandas as dd
+    
+    # Some rows are corrupted, little check
+    df = df[df['time'].str.len()==14]
+    
+    # Change format after 25 feb 2011 by the documentation (https://ghrc.nsstc.nasa.gov/pub/fieldCampaigns/gpmValidation/relatedProjects/nsstc/parsivel/doc/gpm_parsivel_nsstc_dataset.html).
+    
+    # Count commas on the first row for determine the columns number
+    if df.iloc[:1,1].str.count(',').item() == 1027:
+        df = df.loc[df['temp'].str.count(',') == 1027]
+        n_split = 3
+        temp_column_names = ['time',
+                        'station_name',
+                        'sensor_status',
+                        'sensor_temperature',
+                        'raw_drop_number'
+                        ]
+    elif df.iloc[:1,1].str.count(',').item() == 1033:
+        df = df.loc[df['temp'].str.count(',') == 1033]
+        n_split = 9
+        temp_column_names = ['time',
+                            'station_name',
+                            'sensor_status',
+                            'sensor_temperature',
+                            'number_particles',
+                            'rainfall_rate_32bit',
+                            'reflectivity_32bit',
+                            'mor_visibility',
+                            'weather_code_synop_4680',
+                            'weather_code_synop_4677',
+                            'raw_drop_number',
+                            ]
+    else:
+        # Wrong column number, probrably corrupted file
+        raise SyntaxError('Something wrong with columns number!')
 
-    # - Convert time column to datetime 
+    # Split temp column and rename it
+    df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = n_split)] ,axis=1)
+    df.columns = temp_column_names
+
+    # Add missing column and fill with value set for nan (it give error on Nan values)
+    if len(temp_column_names) == 5:
+        df['number_particles'] = 0
+        df['rainfall_rate_32bit'] = -1
+        df['reflectivity_32bit'] = -1
+        df['mor_visibility'] = 0
+        df['weather_code_synop_4680'] = 0
+        df['weather_code_synop_4677'] = 0
+
+    # - Drop invalid raw_drop_number
+    df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+
+    # - Convert time column to datetime
     try:
-        df['time'] = dd.to_datetime(df['time'], format='%Y %m %d %H %M %S')
-    except ValueError:
-        df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
+        df['time'] = dd.to_datetime(df['time'], format='%Y%m%d%H%M%S')
+    except TypeError:
+        raise TypeError('Error on parse date on df {}').format(df.compute())
     
     return df 
 
@@ -500,13 +669,16 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
-subset_file_list = all_stations_files[:]
+subset_file_list = all_stations_files[29:34]
+# subset_file_list = all_stations_files[10:11]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
-                           lazy=lazy)
+                           lazy=lazy,
+                           sensor_name = 'OTT_Parsivel',
+                           verbose = True)
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods

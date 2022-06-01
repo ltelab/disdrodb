@@ -75,7 +75,7 @@ def main(raw_dir,
          l1_processing=True,
          write_netcdf=True,
          force=False,
-         verbose=False,
+         verbose=True,
          debugging_mode=False,
          lazy=True,
          ):
@@ -212,13 +212,61 @@ def main(raw_dir,
         else: 
             import pandas as dd
         
-        # - Convert time column to datetime 
-        df.iloc[:,0] = dd.to_datetime(df.iloc[:,0], format='%Y%m%d%H%M%S')
+        # Some rows are corrupted, little check
+        df = df[df['time'].str.len()==14]
         
-        df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = 3)] ,axis=1)
+        # Change format after 25 feb 2011 by the documentation (https://ghrc.nsstc.nasa.gov/pub/fieldCampaigns/gpmValidation/relatedProjects/nsstc/parsivel/doc/gpm_parsivel_nsstc_dataset.html).
         
-        # - Add names to the columns
-        df.columns = column_names
+        # Count commas on the first row for determine the columns number
+        if df.iloc[:1,1].str.count(',').item() == 1027:
+            df = df.loc[df['TO_BE_PARSED'].str.count(',') == 1027]
+            n_split = 3
+            temp_column_names = ['time',
+                            'station_name',
+                            'sensor_status',
+                            'sensor_temperature',
+                            'raw_drop_number'
+                            ]
+        elif df.iloc[:1,1].str.count(',').item() == 1033:
+            df = df.loc[df['TO_BE_PARSED'].str.count(',') == 1033]
+            n_split = 9
+            temp_column_names = ['time',
+                                'station_name',
+                                'sensor_status',
+                                'sensor_temperature',
+                                'number_particles',
+                                'rainfall_rate_32bit',
+                                'reflectivity_32bit',
+                                'mor_visibility',
+                                'weather_code_synop_4680',
+                                'weather_code_synop_4677',
+                                'raw_drop_number',
+                                ]
+        else:
+            # Wrong column number, probrably corrupted file
+            raise SyntaxError('Something wrong with columns number!')
+
+        # Split temp column and rename it
+        df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = n_split)] ,axis=1)
+        df.columns = temp_column_names
+
+        # Add missing column and fill with value set for nan (it give error on Nan values)
+        if len(temp_column_names) == 5:
+            df['number_particles'] = 0
+            df['rainfall_rate_32bit'] = -1
+            df['reflectivity_32bit'] = -1
+            df['mor_visibility'] = 0
+            df['weather_code_synop_4680'] = 0
+            df['weather_code_synop_4677'] = 0
+
+        # - Drop invalid raw_drop_number
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+
+        # - Convert time column to datetime
+        try:
+            df['time'] = dd.to_datetime(df['time'], format='%Y%m%d%H%M%S')
+        except TypeError:
+            raise TypeError('Error on parse date on df {}').format(df.compute())
         
         return df  
     
