@@ -641,7 +641,7 @@ def df_sanitizer_fun(df, lazy=lazy):
         raise SyntaxError('Something wrong with columns number!')
 
     # Split temp column and rename it
-    df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = n_split)] ,axis=1)
+    df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = n_split)] ,axis=1, ignore_unknown_divisions=True)
     df.columns = temp_column_names
 
     # Add missing column and fill with value set for nan (it give error on Nan values)
