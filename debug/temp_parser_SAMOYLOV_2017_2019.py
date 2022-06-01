@@ -109,7 +109,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[4]
+station_id = list_stations_id[0]
 
 ####--------------------------------------------------------------------------.     
 ##########################################################################   
@@ -500,6 +500,7 @@ def df_sanitizer_fun(df, lazy=lazy):
     # - Drop all nan in latitude (define in reader_kwargs['na_values'])
     df = df[~df.iloc[:,1].isna()]
     if len(df.index) == 0:
+        df.columns = column_names
         return df
     
     # - If first column is ID, than is a different format
@@ -575,6 +576,7 @@ def df_sanitizer_fun(df, lazy=lazy):
                     df = df.dropna(subset=[column])
                     # df = df.drop(invalid_rows_index)
             df[column] = df[column].astype(dtype_dict[column])
+
     
     return df 
 
@@ -582,8 +584,8 @@ def df_sanitizer_fun(df, lazy=lazy):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = True # True 
-subset_file_list = file_list[:5]
+lazy = False # True 
+subset_file_list = file_list[20:27]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=temp_column_names, 
