@@ -116,32 +116,32 @@ station_id = list_stations_id[0]
 ##########################################################################   
 #### 4. List files to process  [TO CUSTOMIZE AND THEN MOVE TO PARSER] ####
 ##########################################################################
-glob_pattern = os.path.join("data", station_id, "*.tar*") # CUSTOMIZE THIS 
+glob_pattern = os.path.join("data", station_id, "*.zip*") # CUSTOMIZE THIS 
 device_path = os.path.join(raw_dir, glob_pattern)
 file_list = sorted(glob.glob(device_path, recursive = True))
 #-------------------------------------------------------------------------. 
 # All files into the campaing
-all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.tar"), recursive = True))
+all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.zip"), recursive = True))
 
 
 
 # @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-import tarfile
+# import tarfile
 
-df = None
+# df = None
 
-for f in all_stations_files:
-    tar = tarfile.open(f)
-    for file in tar.getnames():
-        if file.endswith('raw.txt'):
-            path = file
+# for f in all_stations_files:
+#     tar = tarfile.open(f)
+#     for file in tar.getnames():
+#         if file.endswith('raw.txt'):
+#             path = file
 
-    df_temp = pd.read_csv(tar.extractfile(path), compression='infer', header=0, sep=' ', error_bad_lines=False)
+#     df_temp = pd.read_csv(tar.extractfile(path), compression='infer', header=0, sep=' ', error_bad_lines=False)
 
-    df = df.append(df_temp)
+#     df = df.append(df_temp)
     
-    tar.close()
+#     tar.close()
    
 
 
@@ -162,7 +162,7 @@ for f in all_stations_files:
 reader_kwargs = {}
 
 # - Need for zipped raw file (GPM files)
-reader_kwargs['zipped'] = True
+# reader_kwargs['zipped'] = True
 
 # - Define delimiter
 reader_kwargs['delimiter'] = ';'
@@ -277,11 +277,11 @@ reader_kwargs['encoding_errors'] = 'ignore'
 ######################################################################
 # - If a column must be splitted in two (i.e. lat_lon), use a name like: TO_SPLIT_lat_lon
 
-columns_names_temporary = ['time',
-                           'TO_BE_SPLITTED'
-                          ]
-
 column_names = ['time',
+                'TO_BE_SPLITTED',
+                ]
+
+columns_names_temporary = ['time',
                 'station_name',
                 'sensor_status',
                 'sensor_temperature',
@@ -310,7 +310,17 @@ column_names = ['time',
 #                     reader_kwargs=reader_kwargs,
 #                     lazy=False)
     
+# # - Convert time column to datetime 
+# df['time'] = dd.to_datetime(df['time'], format='%Y%m%d%H%M%S')
 
+# df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = 9)] ,axis=1).compute()
+
+# df.columns = columns_names_temporary
+
+# df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+
+# col_to_drop = ['station_name']
+# df = df.drop(columns=col_to_drop)
 
 # # - Look at the columns and data 
 # print_df_column_names(df)
@@ -460,23 +470,14 @@ def df_sanitizer_fun(df, lazy=False):
     # - Convert time column to datetime 
     df['time'] = dd.to_datetime(df['time'], format='%Y%m%d%H%M%S')
 
-    # Split the last column (contain all the fields)
-    df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1032)
+    df = dd.concat([df.iloc[:,0], df.iloc[:,1].str.split(',', expand=True, n = 9)] ,axis=1)
 
-    # Drop TO_BE_SPLITTED
-    df = df.drop(['TO_BE_SPLITTED'], axis=1)
+    df.columns = columns_names_temporary
 
-    # Add the comma on raw_drop_number
-    df_raw_drop_number = df_to_parse.iloc[:,9:].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_number')
+    df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
-    # Concat all togheter
-    df = dd.concat([df, df_to_parse.iloc[:,:9], df_raw_drop_number] ,axis=1)
-
-    # Add names to the columns
-    df.columns = column_names
-
-    # Drop rows with less than 4096 on raw_drop_number
-    df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
+    col_to_drop = ['station_name']
+    df = df.drop(columns=col_to_drop)
     
     return df 
 
@@ -484,14 +485,16 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = False # True 
-subset_file_list = all_stations_files[:]
+lazy = True # True 
+subset_file_list = all_stations_files[:20]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
-                           column_names=columns_names_temporary, 
+                           column_names=column_names, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun, 
-                           lazy=lazy)
+                           lazy=lazy,
+                           sensor_name = 'OTT_Parsivel2',
+                           verbose = True)
 
 ##------------------------------------------------------. 
 #### 9.3 Check everything looks goods
