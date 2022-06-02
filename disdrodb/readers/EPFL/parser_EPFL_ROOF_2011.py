@@ -230,6 +230,11 @@ def main(raw_dir,
 
         # Drop not float on rainfall_rate_32bit
         df = df[dd.to_numeric(df["rainfall_rate_32bit"], errors="coerce").notnull()]
+        
+        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
