@@ -261,6 +261,9 @@ def main(raw_dir,
 
         # - Drop invalid raw_drop_number
         df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+        
+        # - Error in enconding raw_drop_number
+        df = df[df['raw_drop_number'].str.contains('0p0') == False]
 
         # - Convert time column to datetime
         try:
