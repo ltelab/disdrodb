@@ -178,7 +178,32 @@ def get_L0_dtype_standards(sensor_name: str) -> dict:
     return dtype_dict
 
 
-def get_DIVEN_dict():
+def get_DELFT_dict():
+    d = {
+        "Meas_Time": "Meas_Time", 
+        "Meas_Interval": "Meas_Interval", 
+        "RR_Intensity": "rainfall_rate_32bit", 
+        "RR_Accumulated": "rainfall_accumulated_32bit", 
+        "RR_Total": "rainfall_amount_absolute_32bit", 
+        "Synop_WaWa": "weather_code_synop_4680", 
+        "Synop_WW": "weather_code_synop_4677", 
+        "Reflectivity": "reflectivity_32bit", 
+        "Visibility": "mor_visibility", 
+        "T_Sensor": "sensor_temperature", 
+        "Sig_Laser": "laser_amplitude", 
+        "N_Particles": "number_particles", 
+        "State_Sensor": "sensor_status", 
+        "E_kin": "rain_kinetic_energy", 
+        "V_Sensor": "sensor_battery_voltage", 
+        "I_Heating": "sensor_heating_current", 
+        "Error_Code": "error_code",
+        "Data_Raw": "raw_drop_number", # Not sure about the correct names
+        "Data_N_Field": "raw_drop_concentration", # Not sure about the correct names
+        "Data_V_Field": "raw_drop_average_velocity", # Not sure about the correct names
+    }
+    return d
+
+def get_DIVEN_dict(): 
     d = {
         "precipitation_flux": "rainfall_rate_16bit_1200", # precipitation_rate, not sure about this
         "solid_precipitation_flux": "snowfall_rate",
@@ -201,12 +226,11 @@ def get_DIVEN_dict():
         # 'second'
         # 'day_of_year'
         # Arrays 
-        "size_velocity_distribution": "raw_drop_number", # Not sure about the correct names
-        "drop_size_distribution": "raw_drop_concentration", # Not sure about the correct names
-        "drop_velocity_distribution": "raw_drop_average_velocity", # Not sure about the correct names
+        "size_velocity_distribution": "raw_drop_number", 
+        "drop_size_distribution": "raw_drop_concentration", 
+        "drop_velocity_distribution": "raw_drop_average_velocity", 
     }
     return d
-
 
 def get_ARM_LPM_dict():
     
