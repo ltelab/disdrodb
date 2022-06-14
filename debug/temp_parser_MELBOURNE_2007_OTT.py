@@ -136,8 +136,8 @@ all_stations_files = sorted(glob.glob(os.path.join(raw_dir, "data", "*/*.txt*"),
 attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
 
 # Retrieve sensor name
-station_name = attrs['station_name']
-# check_station_name(station_name)
+sensor_name = attrs['sensor_name']
+# check_sensor_name(sensor_name)
 
 ####--------------------------------------------------------------------------. 
 #########################################################################
@@ -280,10 +280,10 @@ lazy = False             # Try also with True when work with False
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
 # - This portion of code represent what is done by read_L0_raw_file_list in L0_proc.py
-df = read_raw_data(filepath=filepath, 
-                    column_names=column_names_temp,
-                   reader_kwargs=reader_kwargs,
-                   lazy=lazy)
+# df = read_raw_data(filepath=filepath, 
+#                     column_names=column_names_temp,
+#                    reader_kwargs=reader_kwargs,
+#                    lazy=lazy)
 
 #------------------------------------------------------. 
 # Check if file empty
@@ -316,13 +316,13 @@ df = read_raw_data(filepath=filepath,
 ##----------------------------------------------------.
 # Cast dataframe to dtypes
 # - Determine dtype based on standards 
-dtype_dict = get_L0_dtype_standards(station_name)
-for column in df.columns:
-    try:
-        df[column] = df[column].astype(dtype_dict[column])
-    except KeyError:
-        # If column dtype is not into get_L0_dtype_standards, assign object
-        df[column] = df[column].astype('object')
+# dtype_dict = get_L0_dtype_standards(station_name)
+# for column in df.columns:
+#     try:
+#         df[column] = df[column].astype(dtype_dict[column])
+#     except KeyError:
+#         # If column dtype is not into get_L0_dtype_standards, assign object
+#         df[column] = df[column].astype('object')
 
 
 ####------------------------------------------------------------------------------.
@@ -345,7 +345,8 @@ def df_sanitizer_fun(df, lazy=lazy):
     
     # Save time into df_time
     df_time = df.loc[df['temp'].astype(str).str.len() == 20]
-    df_time['temp'] = pd.to_datetime(df_time['temp'], format='-%Y-%m-%d %H:%M:%S')
+    df_time['temp'] = dd.to_datetime(df_time['temp'], format='-%Y-%m-%d %H:%M:%S')
+    df_time.columns = ['time']
 
 
     # Drop header's log and corrupted rows
@@ -398,15 +399,15 @@ def df_sanitizer_fun(df, lazy=lazy):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = False # True 
-subset_file_list = file_list[0]
-# subset_file_list = all_stations_files[:3]
+lazy = True # True 
+# subset_file_list = file_list[0]
+subset_file_list = all_stations_files[:3]
 df = read_L0_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names_temp, 
                            reader_kwargs=reader_kwargs,
                            df_sanitizer_fun = df_sanitizer_fun,
                            verbose=verbose,
-                           station_name = station_name,
+                           sensor_name = sensor_name,
                            lazy=lazy)
 
 ##------------------------------------------------------. 

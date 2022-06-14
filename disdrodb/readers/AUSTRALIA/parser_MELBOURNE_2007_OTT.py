@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Mon Jun 13 04:57:12 2022
+Created on Tue Jun 14 07:51:55 2022
 
 @author: kimbo
 """
@@ -141,86 +141,23 @@ def main(raw_dir,
     
     column_names_temp = ['temp']
     
-    column_names = ['start_identifier',
-                    'device_address',
-                    'sensor_serial_number',
-                    'date_sensor',
-                    'time_sensor',
-                    'weather_code_synop_4677_5min',
-                    'weather_code_synop_4680_5min',
-                    'weather_code_metar_4678_5min',
-                    'precipitation_rate_5min',
-                    'weather_code_synop_4677',
+    column_names = ['rainfall_rate_32bit',
+                    'rainfall_accumulated_32bit',
                     'weather_code_synop_4680',
+                    'weather_code_synop_4677',
                     'weather_code_metar_4678',
-                    'precipitation_rate',
-                    'rainfall_rate',
-                    'snowfall_rate',
-                    'precipitation_accumulated',
+                    'reflectivity_32bit',
                     'mor_visibility',
-                    'reflectivity',
-                    'quality_index',
-                    'max_hail_diameter',
-                    'laser_status',
-                    'static_signal',
-                    'laser_temperature_analog_status',
-                    'laser_temperature_digital_status',
-                    'laser_current_analog_status',
-                    'laser_current_digital_status',
-                    'sensor_voltage_supply_status',
-                    'current_heating_pane_transmitter_head_status',
-                    'current_heating_pane_receiver_head_status',
-                    'temperature_sensor_status',
-                    'current_heating_voltage_supply_status',
-                    'current_heating_house_status',
-                    'current_heating_heads_status',
-                    'current_heating_carriers_status',
-                    'control_output_laser_power_status',
-                    'reserve_status',
-                    'temperature_interior',
-                    'laser_temperature',
-                    'laser_current_average',
-                    'control_voltage',
-                    'optical_control_voltage_output',
-                    'sensor_voltage_supply',
-                    'current_heating_pane_transmitter_head',
-                    'current_heating_pane_receiver_head',
-                    'temperature_ambient',
-                    'current_heating_voltage_supply',
-                    'current_heating_house',
-                    'current_heating_heads',
-                    'current_heating_carriers',
+                    'laser_amplitude',
                     'number_particles',
-                    'number_particles_internal_data',
-                    'number_particles_min_speed',
-                    'number_particles_min_speed_internal_data',
-                    'number_particles_max_speed',
-                    'number_particles_max_speed_internal_data',
-                    'number_particles_min_diameter',
-                    'number_particles_min_diameter_internal_data',
-                    'number_particles_no_hydrometeor',
-                    'number_particles_no_hydrometeor_internal_data',
-                    'number_particles_unknown_classification',
-                    'number_particles_unknown_classification_internal_data',
-                    'number_particles_class_1',
-                    'number_particles_class_1_internal_data',
-                    'number_particles_class_2',
-                    'number_particles_class_2_internal_data',
-                    'number_particles_class_3',
-                    'number_particles_class_3_internal_data',
-                    'number_particles_class_4',
-                    'number_particles_class_4_internal_data',
-                    'number_particles_class_5',
-                    'number_particles_class_5_internal_data',
-                    'number_particles_class_6',
-                    'number_particles_class_6_internal_data',
-                    'number_particles_class_7',
-                    'number_particles_class_7_internal_data',
-                    'number_particles_class_8',
-                    'number_particles_class_8_internal_data',
-                    'number_particles_class_9',
-                    'number_particles_class_9_internal_data',
-                    'raw_drop_number',
+                    'unknow2',
+                    'datalogger_temperature',
+                    'sensor_status',
+                    'station_name',
+                    'unknow3',
+                    'unknow4',
+                    'error_code',
+                    'TO_BE_SPLITTED',
                     ]
     
     # - Check name validity
@@ -232,7 +169,7 @@ def main(raw_dir,
     reader_kwargs = {}
 
     # - Define delimiter
-    reader_kwargs['delimiter'] = '#'
+    reader_kwargs['delimiter'] = ','
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False  
@@ -266,9 +203,6 @@ def main(raw_dir,
     # Skip first row as columns names
     reader_kwargs['header'] = None
 
-    # Skip first 3 rows
-    reader_kwargs['skiprows'] = 3
-
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
@@ -282,93 +216,47 @@ def main(raw_dir,
         else: 
             import pandas as dd
             
-        # Drop header's log rows
-        df = df.loc[df['temp'].astype(str).str.len() > 30]
+        # Data format:
+        # -2015-01-09 00:02:16
+        # 0000.063;0012.33;51;51;  -DZ; ...
+        
+        # Save time into df_time
+        df_time = df.loc[df['temp'].astype(str).str.len() == 20]
+        df_time['temp'] = dd.to_datetime(df_time['temp'], format='-%Y-%m-%d %H:%M:%S')
+        df_time.columns = ['time']
+
+
+        # Drop header's log and corrupted rows
+        df = df.loc[df['temp'].astype(str).str.len() > 620]
 
         # Split first 80 columns
-        df = df['temp'].str.split(';', n=79, expand=True)
-        
+        df = df['temp'].str.split(';', n=16, expand=True)
+
         df.columns = column_names
 
-        # Clean raw_drop_number (ignore last 5 column)
-        df['raw_drop_number'] = df['raw_drop_number'].str[:1760]
-        
-        # Drop row if start_identifier different than 00
-        df = df.loc[df["start_identifier"].astype(str) == '00']
-        
-        # Merge time
-        df['time'] = df['date_sensor'].astype(str) + ' ' + df['time_sensor']
-        df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
+        # Split raws columns
+        df['raw_drop_concentration'] = df['TO_BE_SPLITTED'].str[:224]
+        df['raw_drop_average_velocity'] = df['TO_BE_SPLITTED'].str[224:448]
+        df['raw_drop_number'] = df['TO_BE_SPLITTED'].str[448:]
 
+        # Concat df and df_time
+        df = df.reset_index(drop=True)
+        df_time = df_time.reset_index(drop=True)
+        df = dd.concat([df_time, df], axis=1)
+
+        df = df.dropna()
+        
         # Columns to drop
-        columns_to_drop = ['start_identifier',
-                        'device_address',
-                        'sensor_serial_number',
-                        'date_sensor',
-                        'time_sensor',
-                        'weather_code_synop_4677_5min',
-                        'weather_code_synop_4680_5min',
-                        'weather_code_metar_4678_5min',
-                        'weather_code_metar_4678',
-                        'quality_index',
-                        'max_hail_diameter',
-                        'laser_status',
-                        'static_signal',
-                        'laser_temperature_analog_status',
-                        'laser_temperature_digital_status',
-                        'laser_current_analog_status',
-                        'laser_current_digital_status',
-                        'sensor_voltage_supply_status',
-                        'current_heating_pane_transmitter_head_status',
-                        'current_heating_pane_receiver_head_status',
-                        'temperature_sensor_status',
-                        'current_heating_voltage_supply_status',
-                        'current_heating_house_status',
-                        'current_heating_heads_status',
-                        'current_heating_carriers_status',
-                        'control_output_laser_power_status',
-                        'reserve_status',
-                        'temperature_interior',
-                        'laser_current_average',
-                        'optical_control_voltage_output',
-                        'sensor_voltage_supply',
-                        'current_heating_pane_transmitter_head',
-                        'current_heating_pane_receiver_head',
-                        'current_heating_voltage_supply',
-                        'current_heating_house',
-                        'current_heating_heads',
-                        'current_heating_carriers',
-                        'number_particles',
-                        'number_particles_internal_data',
-                        'number_particles_min_speed',
-                        'number_particles_min_speed_internal_data',
-                        'number_particles_max_speed',
-                        'number_particles_max_speed_internal_data',
-                        'number_particles_min_diameter',
-                        'number_particles_min_diameter_internal_data',
-                        'number_particles_no_hydrometeor',
-                        'number_particles_no_hydrometeor_internal_data',
-                        'number_particles_unknown_classification',
-                        'number_particles_unknown_classification_internal_data',
-                        'number_particles_class_1',
-                        'number_particles_class_1_internal_data',
-                        'number_particles_class_2',
-                        'number_particles_class_2_internal_data',
-                        'number_particles_class_3',
-                        'number_particles_class_3_internal_data',
-                        'number_particles_class_4',
-                        'number_particles_class_4_internal_data',
-                        'number_particles_class_5',
-                        'number_particles_class_5_internal_data',
-                        'number_particles_class_6',
-                        'number_particles_class_6_internal_data',
-                        'number_particles_class_7',
-                        'number_particles_class_7_internal_data',
-                        'number_particles_class_8',
-                        'number_particles_class_8_internal_data',
-                        'number_particles_class_9',
-                        'number_particles_class_9_internal_data',
-                        ]
+        columns_to_drop = ['TO_BE_SPLITTED',
+                           'unknow2',
+                           'unknow3',
+                           'unknow4',
+                           'error_code',
+                           'station_name',
+                           'sensor_status',
+                           'weather_code_metar_4678',
+                           'datalogger_temperature',
+                           ]
         
         df = df.drop(columns = columns_to_drop)
 
