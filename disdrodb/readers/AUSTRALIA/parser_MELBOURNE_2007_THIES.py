@@ -298,7 +298,11 @@ def main(raw_dir,
         
         # Merge time
         df['time'] = df['date_sensor'].astype(str) + ' ' + df['time_sensor']
-        df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
+        try:
+            df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
+        except ValueError:
+            df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S', errors='coerce')
+            df['time'] = df[dd.notnull(df['time'])]
 
         # Columns to drop
         columns_to_drop = ['start_identifier',
