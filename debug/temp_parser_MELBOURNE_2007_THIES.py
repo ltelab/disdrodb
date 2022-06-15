@@ -312,7 +312,13 @@ df['raw_drop_number'] = df['raw_drop_number'].str[:1760]
 
 # Merge time
 df['time'] = df['date_sensor'].astype(str) + ' ' + df['time_sensor']
-df['time'] = pd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
+# Drop rows with invalid date
+df = df.loc[df["time"].astype(str).str.len() == 17]
+try:
+    df['time'] = pd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
+except ValueError:
+    df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S', errors='coerce')
+    df = df.loc[df.time.notnull()]
 
 # Columns to drop
 columns_to_drop = ['start_identifier',
@@ -582,7 +588,13 @@ def df_sanitizer_fun(df, lazy=lazy):
     
     # Merge time
     df['time'] = df['date_sensor'].astype(str) + ' ' + df['time_sensor']
-    df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
+    # Drop rows with invalid date
+    df = df.loc[df["time"].astype(str).str.len() == 17]
+    try:
+        df['time'] = pd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
+    except ValueError:
+        df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S', errors='coerce')
+        df = df.loc[df.time.notnull()]
 
     # Columns to drop
     columns_to_drop = ['start_identifier',

@@ -298,6 +298,8 @@ def main(raw_dir,
         
         # Merge time
         df['time'] = df['date_sensor'].astype(str) + ' ' + df['time_sensor']
+        # Drop rows with invalid date
+        df = df.loc[df["time"].astype(str).str.len() == 17]
         try:
             df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S')
         except ValueError:
