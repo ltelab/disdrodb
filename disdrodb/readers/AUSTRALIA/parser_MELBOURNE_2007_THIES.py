@@ -377,6 +377,9 @@ def main(raw_dir,
                         ]
         
         df = df.drop(columns = columns_to_drop)
+        
+        # Some values could be nan
+        df = df.dropna()
 
         return df
 

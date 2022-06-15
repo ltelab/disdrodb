@@ -108,7 +108,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[2]
+station_id = list_stations_id[0]
 
 attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
 # Retrieve sensor name
@@ -405,7 +405,7 @@ lazy = False             # Try also with True when work with False
 df = read_raw_data(filepath=filepath, 
                     column_names=columns_names_temporary,
                     reader_kwargs=reader_kwargs,
-                    lazy=lazy)
+                    lazy=lazy).head(n=100)
 
 #------------------------------------------------------. 
 # Check if file empty
@@ -470,6 +470,11 @@ df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r
 
 # Concat all togheter
 df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
+
+# Drop invalid rows
+df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 223]
+df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 223]
+df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -558,7 +563,7 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = True # True 
+lazy = False # True 
 subset_file_list = file_list[:1]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 
