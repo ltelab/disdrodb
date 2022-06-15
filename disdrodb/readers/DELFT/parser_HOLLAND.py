@@ -315,6 +315,11 @@ def main(raw_dir,
         # Concat all togheter
         df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
         
+        # Drop invalid rows
+        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 223]
+        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 223]
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+        
         # Drop variables not required in L0 Apache Parquet 
         todrop = ['firmware_iop',
                   'firmware_dsp',
@@ -323,6 +328,9 @@ def main(raw_dir,
                   'sensor_date',
                   'station_name',
                   'station_number',
+                  'sensor_serial_number',
+                  'epoch_time',
+                  'sample_interval',
                   'sensor_serial_number',
                   ]
 
