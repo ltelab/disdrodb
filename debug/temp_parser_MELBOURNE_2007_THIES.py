@@ -595,6 +595,9 @@ def df_sanitizer_fun(df, lazy=lazy):
     except ValueError:
         df['time'] = dd.to_datetime(df['time'], format='%d.%m.%y %H:%M:%S', errors='coerce')
         df = df.loc[df.time.notnull()]
+        
+    # Drop invalid rows
+    df = df.loc[df["raw_drop_number"].astype(str).str.len() == 1760]
 
     # Columns to drop
     columns_to_drop = ['start_identifier',
