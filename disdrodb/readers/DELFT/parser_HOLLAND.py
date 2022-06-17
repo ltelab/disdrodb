@@ -290,6 +290,7 @@ def main(raw_dir,
             df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
         except ValueError:
             df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S', errors='coerce')
+            print("These dates are invalid: {}".format(df.loc[df.time.null()]))
             df = df.loc[df.time.notnull()]
 
         # Drop TO_BE_PARSED
