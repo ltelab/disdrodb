@@ -148,7 +148,7 @@ sensor_name = attrs['sensor_name']
 reader_kwargs = {}
 
 # - Define delimiter
-reader_kwargs['delimiter'] = ','
+reader_kwargs['delimiter'] = '!'
 
 # - Avoid first column to become df index !!!
 reader_kwargs["index_col"] = False  
@@ -386,10 +386,20 @@ def df_sanitizer_fun(df, lazy=lazy):
     df_time = df_time.reset_index(drop=True)
     df = dd.concat([df_time, df], axis=1)
 
-    df = df.dropna()
+    # Drop last columns (all nan)
+    df = df.dropna(thresh = (len(df.columns) - 19), how = 'all')
     
     # Columns to drop
-    columns_to_drop = ['TO_BE_SPLITTED']
+    columns_to_drop = ['TO_BE_SPLITTED',
+                       'weather_code_metar_4678',
+                       'datalogger_temperature',
+                       'sensor_status',
+                       'station_name',
+                       'error_code',
+                       'unknow2',
+                       'unknow3',
+                       'unknow4',
+                       ]
     
     df = df.drop(columns = columns_to_drop)
     
@@ -399,7 +409,7 @@ def df_sanitizer_fun(df, lazy=lazy):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = True # True 
+lazy = False # True 
 # subset_file_list = file_list[0]
 subset_file_list = all_stations_files[:3]
 df = read_L0_raw_file_list(file_list=subset_file_list, 

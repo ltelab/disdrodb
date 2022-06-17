@@ -59,16 +59,16 @@ from disdrodb.logger import close_logger
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+# @click.command()  # options_metavar='<options>'
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+# @click.argument('processed_dir', metavar='<processed_dir>')
+# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -169,7 +169,7 @@ def main(raw_dir,
     reader_kwargs = {}
 
     # - Define delimiter
-    reader_kwargs['delimiter'] = ','
+    reader_kwargs['delimiter'] = '!'
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False  
@@ -222,7 +222,7 @@ def main(raw_dir,
         
         # Save time into df_time
         df_time = df.loc[df['temp'].astype(str).str.len() == 20]
-        df_time['temp'] = dd.to_datetime(df_time['temp'], format='-%Y-%m-%d %H:%M:%S')
+        df_time['temp'] = dd.to_datetime(df_time['temp'], format='-%Y-%m-%d %H:%M:%S').copy(deep=True)
         df_time.columns = ['time']
 
 
@@ -231,6 +231,25 @@ def main(raw_dir,
 
         # Split first 80 columns
         df = df['temp'].str.split(';', n=16, expand=True)
+        
+        column_names = ['rainfall_rate_32bit',
+                        'rainfall_accumulated_32bit',
+                        'weather_code_synop_4680',
+                        'weather_code_synop_4677',
+                        'weather_code_metar_4678',
+                        'reflectivity_32bit',
+                        'mor_visibility',
+                        'laser_amplitude',
+                        'number_particles',
+                        'unknow2',
+                        'datalogger_temperature',
+                        'sensor_status',
+                        'station_name',
+                        'unknow3',
+                        'unknow4',
+                        'error_code',
+                        'TO_BE_SPLITTED',
+                        ]
 
         df.columns = column_names
 
@@ -244,18 +263,19 @@ def main(raw_dir,
         df_time = df_time.reset_index(drop=True)
         df = dd.concat([df_time, df], axis=1)
 
-        df = df.dropna()
+        # Drop last columns (all nan)
+        df = df.dropna(thresh = (len(df.columns) - 19), how = 'all')
         
         # Columns to drop
         columns_to_drop = ['TO_BE_SPLITTED',
+                           'weather_code_metar_4678',
+                           'datalogger_temperature',
+                           'sensor_status',
+                           'station_name',
+                           'error_code',
                            'unknow2',
                            'unknow3',
                            'unknow4',
-                           'error_code',
-                           'station_name',
-                           'sensor_status',
-                           'weather_code_metar_4678',
-                           'datalogger_temperature',
                            ]
         
         df = df.drop(columns = columns_to_drop)
@@ -428,4 +448,14 @@ def main(raw_dir,
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    main(raw_dir = "/home/kimbo/data/Campagne/Raw/MELBURNE/MELBOURNE_2007_OTT",
+         processed_dir = "/home/kimbo/data/Campagne/Processed/MELBURNE/MELBOURNE_2007_OTT",
+             l0_processing=True,
+             l1_processing=True,
+             write_netcdf=True,
+             force=True,
+             verbose=True,
+             debugging_mode=False,
+             lazy=False,
+             )
