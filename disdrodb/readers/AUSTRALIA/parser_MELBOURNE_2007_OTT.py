@@ -222,7 +222,7 @@ def main(raw_dir,
         
         # Save time into df_time
         df_time = df.loc[df['temp'].astype(str).str.len() == 20]
-        df_time['temp'] = dd.to_datetime(df_time['temp'], format='-%Y-%m-%d %H:%M:%S').copy(deep=True)
+        df_time['temp'] = dd.to_datetime(df_time['temp'], format='-%Y-%m-%d %H:%M:%S')
         df_time.columns = ['time']
 
 
