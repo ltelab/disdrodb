@@ -261,7 +261,7 @@ def main(raw_dir,
         # Concat df and df_time
         df = df.reset_index(drop=True)
         df_time = df_time.reset_index(drop=True)
-        df = dd.concat([df_time, df], axis=1)
+        df = dd.concat([df_time, df], axis=1, ignore_unknown_divisions=True)
 
         # Drop last columns (all nan)
         df = df.dropna(thresh = (len(df.columns) - 19), how = 'all')
