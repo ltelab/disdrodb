@@ -5,8 +5,6 @@ Created on Thu Feb 10 11:27:30 2022
 
 @author: kimbo
 """
-
- 
 import os
 import time
 import click

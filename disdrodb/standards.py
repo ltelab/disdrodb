@@ -84,10 +84,8 @@ def get_data_format_dict(sensor_name):
 
 def get_long_name_dict(sensor_name): 
     """Get a dictionary containing the long name of each sensor variable."""
-    # TODO:
-    # return read_config_yml(sensor_name=sensor_name, filename="variable_longname.yml")
-    return None
-
+    return read_config_yml(sensor_name=sensor_name, filename="variable_longname.yml")
+  
 def get_units_dict(sensor_name):
     """Get a dictionary containing the unit of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="variable_units.yml")
@@ -95,7 +93,7 @@ def get_units_dict(sensor_name):
 
 def get_description_dict(sensor_name):
     """Get a dictionary containing the description of each sensor variable."""
-    d = read_config_yml(sensor_name=sensor_name, filename="variable_descriptions.yml")
+    d = read_config_yml(sensor_name=sensor_name, filename="variable_description.yml")
     return d
 
 
@@ -163,7 +161,7 @@ def set_DISDRODB_L0_attrs(ds, attrs):
     data_format_dict = get_data_format_dict(sensor_name)
     for var in list(ds.data_vars):
         attrs_var = {}
-        # attrs_var['long_name'] = long_name_dict[var] # TODO add 
+        attrs_var['long_name'] = long_name_dict[var] 
         attrs_var['description'] = description_dict[var]
         attrs_var['unit'] = units_dict[var]
         # TODO: 
