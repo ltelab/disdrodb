@@ -229,9 +229,7 @@ def check_raw_dir(raw_dir):
         )
         raise ValueError(msg + " Now have been created to be filled.")
     # - Check not excess metadata compared to present stations
-    excess_metadata_station_idx = np.where(
-        np.isin(list_metadata_station_id, list_data_station_id, invert=True)
-    )[0]
+    excess_metadata_station_idx = np.where(np.isin(list_metadata_station_id, list_data_station_id, invert=True))[0]
     if len(excess_metadata_station_idx) > 0:
         list_excess_station_id = [
             list_metadata_station_id[idx] for idx in excess_metadata_station_idx
@@ -245,8 +243,7 @@ def check_raw_dir(raw_dir):
     # Check metadata compliance
     _ = [check_metadata_compliance(fpath) for fpath in list_metadata_fpath]
     # -------------------------------------------------------------------------.
-
-
+    
 def check_processed_dir(processed_dir, force=False):
     """Check that 'processed_dir' is a valid directory path."""
     if not isinstance(processed_dir, str):
@@ -268,24 +265,6 @@ def check_processed_dir(processed_dir, force=False):
                         processed_dir
                     )
                 )
-
-
-def check_metadata_dir(processed_path):
-    # Create metadata folder
-    try:
-        metadata_folder_path = os.path.join(processed_path, "metadata")
-        os.makedirs(metadata_folder_path)
-        logger.debug(f"Created {metadata_folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {metadata_folder_path}")
-        pass
-    except (Exception) as e:
-        msg = (
-            f"Can not create folder metadata inside <metadata_folder_path>. Error: {e}"
-        )
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
-
 
 def check_campaign_name(raw_dir, processed_dir):
     """Check that 'raw_dir' and 'processed_dir' have same campaign_name."""
@@ -312,17 +291,62 @@ def check_directories(raw_dir, processed_dir, force=False):
     check_campaign_name(raw_dir, processed_dir)
     return raw_dir, processed_dir
 
+def check_metadata_dir(processed_path):
+    # Create metadata folder
+    try:
+        metadata_folder_path = os.path.join(processed_path, "metadata")
+        os.makedirs(metadata_folder_path)
+        logger.debug(f"Created {metadata_folder_path}.")
+    except FileExistsError:
+        logger.debug(f"{metadata_folder_path} already existed.")
+        pass
+    except (Exception) as e:
+        msg = f"Folder metadata can not be created in {metadata_folder_path}>. \n The error is: {e}."
+        logger.exception(msg)
+        raise FileNotFoundError(msg)
 
+def copy_metadata_from_raw_dir(raw_dir, processed_dir):
+    '''Copy yaml files in raw_dir/metadata into processed_dir/metadata'''
+    # Get src and dst metadata directory 
+    raw_metadata_dir = os.path.join(raw_dir, "metadata")
+    processed_metadata_dir = os.path.join(processed_dir, "metadata")
+    # Retrieve metadata fpaths in raw directory
+    raw_metadata_fpaths = glob.glob(os.path.join(raw_metadata_dir, "*.yml"))
+    # Copy all metadata yml files into the "processed" folder
+    for raw_metadata_fpath in raw_metadata_fpaths:
+        # Check if is a files
+        if os.path.isfile(raw_metadata_fpath):
+            metadata_fname = os.path.basename(raw_metadata_fpath)
+            processed_metadata_fpath = os.path.join(processed_metadata_dir, metadata_fname)
+            try:
+                # Copy every file
+                shutil.copy(raw_metadata_fpath, processed_metadata_fpath)
+                msg = f'{metadata_fname} copied into {processed_metadata_dir}.' 
+                logger.info(msg)
+            except (Exception) as e:
+                msg = f'Something went wrong when copying {metadata_fname} into {processed_metadata_dir}.\n The error is: {e}.'
+                logger.error(msg)
+        else:
+            msg = f'Cannot copy {metadata_fname} into {processed_metadata_dir}.'
+            logger.error(msg)
+            raise ValueError(msg)
+    metadata_fnames = [os.path.basename(metadata_fpath) for metadata_fpath in raw_metadata_fpaths]
+    msg = f'The metadata of stations ({metadata_fnames}) have been copied into {processed_metadata_dir}.' 
+    logger.info(msg)
+    
 ####--------------------------------------------------------------------------.
 #### Directory structure
 
 
 def create_directory_structure(raw_dir, processed_dir):
     """Create directory structure for L0 and L1 processing."""
-    # Creation metadata folder inside campaing processed folder
+    #-----------------------------------------------------.
+    ### - Create metadata folder inside processed_dir
     check_metadata_dir(processed_dir)
-
-    # Create info folder inside  processed_dir
+    copy_metadata_from_raw_dir(raw_dir, processed_dir)
+    
+    #-----------------------------------------------------.
+    ### - Create info folder inside processed_dir
     try:
         info_folder_path = os.path.join(processed_dir, "info")
         os.makedirs(info_folder_path)
@@ -334,8 +358,9 @@ def create_directory_structure(raw_dir, processed_dir):
         msg = f"Can not create folder metadata inside <info_folder_path>. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
-
-    # Create info L0 folder inside  processed_dir
+        
+    #-----------------------------------------------------.
+    ### - Create L0 folder inside processed_dir
     try:
         L0_folder_path = os.path.join(processed_dir, "L0")
         os.makedirs(L0_folder_path)
@@ -347,8 +372,10 @@ def create_directory_structure(raw_dir, processed_dir):
         msg = f"Can not create folder L0 inside <station_folder_path>. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
-
-    # Create info L1 folder inside  processed_dir
+        
+    #-----------------------------------------------------.
+    ### Create info L1 folder inside processed_dir
+    # TODO: this comment when refactoring L1 --> L0
     try:
         L1_folder_path = os.path.join(processed_dir, "L1")
         os.makedirs(L1_folder_path)
@@ -360,7 +387,6 @@ def create_directory_structure(raw_dir, processed_dir):
         msg = f"Can not create folder L0 1inside <L1_folder_path>. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
-
     return
 
 

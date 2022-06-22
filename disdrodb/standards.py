@@ -85,7 +85,7 @@ def get_data_format_dict(sensor_name):
 def get_long_name_dict(sensor_name): 
     """Get a dictionary containing the long name of each sensor variable."""
     # TODO:
-    # return read_config_yml(sensor_name=sensor_name, filename="variable_long_name.yml")
+    # return read_config_yml(sensor_name=sensor_name, filename="variable_longname.yml")
     return None
 
 def get_units_dict(sensor_name):
