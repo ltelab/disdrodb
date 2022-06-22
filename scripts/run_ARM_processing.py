@@ -36,7 +36,7 @@ campaign_dict = {
 parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/ARM" # TO CHANGE
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/ARM"
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/ARM"
-processed_base_dir = "/tmp/Processed/ARM"
+processed_base_dir = "/tmp/DISDRODB/ARM"
 
 #### Processing settings
 force = True
@@ -45,7 +45,9 @@ debugging_mode = True
 lazy = True
 
 #### Process all campaigns
+campaign_name = list(campaign_dict.keys())[0]
 for campaign_name in campaign_dict.keys():
+    print("Processing: ", campaign_name)
     parser_filepath = os.path.join(parser_dir, campaign_dict[campaign_name])
     raw_dir = os.path.join(raw_base_dir, campaign_name)
     processed_dir = os.path.join(processed_base_dir, campaign_name)

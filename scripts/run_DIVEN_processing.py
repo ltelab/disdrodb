@@ -5,13 +5,6 @@ Created on Wed Jun 22 15:03:10 2022
 
 @author: ghiggi
 """
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 22 13:38:37 2022
-
-@author: ghiggi
-"""
 import os
 import subprocess
 from disdrodb.utils.parser import get_parser_cmd
@@ -39,18 +32,22 @@ debugging_mode = True
 lazy = True
 
 #### Process all campaigns
+campaign_name = list(campaign_dict.keys())[0]
 for campaign_name in campaign_dict.keys():
+    print("Processing: ", campaign_name)
     parser_filepath = os.path.join(parser_dir, campaign_dict[campaign_name])
+    raw_dir = os.path.join(raw_base_dir, campaign_name)
+    processed_dir = os.path.join(processed_base_dir, campaign_name)
     cmd = get_parser_cmd(
         parser_filepath=parser_filepath,
-        raw_dir=os.path.join(raw_base_dir, campaign_name),
-        processed_dir=os.path.join(processed_base_dir, campaign_name),
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
         lazy=lazy,
     )
-
+    
     subprocess.run(cmd, shell=True)
     # os.system(cmd)
 

@@ -101,7 +101,7 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern= "*/*/*.nc*"
+    raw_data_glob_pattern= "*.nc*"
     
     ####----------------------------------------------------------------------.
     ####################
@@ -128,7 +128,7 @@ def main(raw_dir,
     
     # ---------------------------------------------------------------------.
     #### Loop over each station_id directory and process the files
-    # station_id = list_stations_id[1]
+    # station_id = list_stations_id[0]
     for station_id in list_stations_id:
         # ---------------------------------------------------------------------.
         t_i = time.time()
