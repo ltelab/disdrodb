@@ -58,6 +58,7 @@ def get_L0_fpath(processed_dir, station_id, suffix=""):
 def get_L1_netcdf_fname(campaign_name, station_id, suffix=""):
     if suffix != "":
         suffix = "_" + suffix
+    # TODO: _s make sense with station_id... but if station_name a bit orrible
     fname = campaign_name + "_s" + station_id + suffix + ".nc"
     return fname
 
