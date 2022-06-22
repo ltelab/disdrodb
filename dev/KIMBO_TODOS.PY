@@ -47,7 +47,7 @@ Created on Fri Feb 18 10:45:24 2022
 
 ##---------------------------------------------------------.
 ### Bins 
-# Fix bins structure  (ThiesLPM upperbound)
+ 
 # bnds dimension in netCDF? 
 # NASA bins to be checked  
 # see dev/NASA_bins.py

@@ -201,7 +201,7 @@ error_code:
   - 0
   - 3
   nan_flags: null
-rainfall_rate_16_bit:
+rainfall_rate_16bit:
   n_digits: 8
   n_characters: 5
   n_decimals: 4

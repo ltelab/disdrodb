@@ -174,6 +174,8 @@ def set_DISDRODB_L0_attrs(ds, attrs):
     #----------------------------------  
     # Set coordinate attributes 
     # TODO 
+    # lat/lon - degrees N/E... 
+    # altitude - meters above sea level
     
     #----------------------------------
     # Add DISDRODB processing info 

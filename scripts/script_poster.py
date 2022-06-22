@@ -12,6 +12,13 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 
+from disdrodb.dev.metadata_checks import ( 
+    read_yaml,
+    identify_missing_metadata,
+    identify_missing_coords,
+    )
+
+
 
 ARCHIVE_DIR = "/ltenas3/0_Data/DISDRODB/Raw"
 # ARCHIVE_DIR = "/ltenas3/0_Data/DISDRODB/Processed"
@@ -22,11 +29,20 @@ metadata_fpaths = glob.glob(os.path.join(ARCHIVE_DIR, "*/*/metadata/*.yml"))
  
 metadata_fpaths
 
-def read_yaml(fpath):
-    with open(fpath, "r") as f:
-        attrs = yaml.safe_load(f)
-    return attrs
+ #-----------------------------------------------------------------------------.
+ # TODO 
+ # - station_id 
+ # - station_number --> to be replaced by station_id 
+ # - station_name --> if missing, use station_id 
+ # - raise error if missing campaign_name 
+ # - raise error if missing station_id & station_name  
+ # - Add station_name to all yaml 
 
+identify_missing_metadata(metadata_fpaths, keys="campaign_name")
+identify_missing_coords(metadata_fpaths)
+
+#-----------------------------------------------------------------------------.
+ 
 def get_station_full_name(metadata): 
     campaign_name = metadata.get("campaign_name",'') 
     station_name =  metadata.get("station_name",'')
@@ -48,40 +64,8 @@ def get_station_full_name(metadata):
         fullname = campaign_name + ": " +  station_name + " (S" + station_id + ")"
     return fullname
 
-def identify_missing_metadata(metadata_fpaths, keys):
-    if isinstance(keys, str): 
-        keys = [keys]
-    for key in keys:
-        for fpath in metadata_fpaths:
-           metadata = read_yaml(fpath)
-           if len(metadata.get(key,'')) == 0:
-               print(f"Missing {key} at: ",fpath)
-    return None 
+ 
 
-def identify_missing_coords(metadata_fpaths):
-    for fpath in metadata_fpaths:
-       metadata = read_yaml(fpath)
-       if metadata.get('longitude', -9999) == -9999 or metadata.get('latitude', -9999) == -9999:
-           print(f"Missing lat lon coordinates at: ",fpath)
-       elif metadata.get('longitude', -9999) > 180 or  metadata.get('longitude', -9999) < -180:  
-           print(f"Unvalid longitude at : ",fpath)
-       elif metadata.get('latitude', -9999) > 90 or metadata.get('latitude', -9999) < -90:
-           print(f"Unvalid latitude at : ",fpath)
-       else: 
-           pass
-    return None 
-
-#-----------------------------------------------------------------------------.
-# TODO 
-# - station_id 
-# - station_number --> to be replaced by station_id 
-# - station_name --> if missing, use station_id 
-# - raise error if missing campaign_name 
-# - raise error if missing station_id & station_name  
-# - Add station_name to all yaml 
-
-identify_missing_metadata(metadata_fpaths, keys="campaign_name")
-identify_missing_coords(metadata_fpaths)
 
 # import xarray as xr 
 # ds = xr.open_dataset("/ltenas3/0_Data/DISDRODB/Raw/DELFT/WAGENINGEN/data/10/Disdrometer_20141001.nc")
@@ -197,7 +181,7 @@ for continent, extent in continent_extent_dict.items():
     ax.stock_img()
     plt.scatter(x=gdf['geometry'].x, y=gdf['geometry'].y,
                 color="black",
-                s=1,
+                s=2,
                 alpha=0.5,
                 transform=crs_ref) ## Important
     plt.show()

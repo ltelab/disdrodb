@@ -15,6 +15,8 @@ Created on Wed Jun 22 16:22:02 2022
 
 # - temporal_resolution vs. sample_interval vs. measurement_interval 
 
+# TODO: comparison LACTROS ... atttributes 
+
 
 # GLOBAL 
 # - date_creation
@@ -29,7 +31,9 @@ Created on Wed Jun 22 16:22:02 2022
 # - units
 # - valid_min 
 # - valid_max 
-
+# - flag_values  or valid_flag_values (status, error code ...)
+# - flag_name/meaning
+# - variable_type: coordinate, count, category, quality_flag, quantity, flux  
 
 # COORDS LAT/LON/TIME
 

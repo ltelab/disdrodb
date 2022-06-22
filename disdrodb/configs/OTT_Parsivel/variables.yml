@@ -23,7 +23,7 @@
 '23': station_number
 '24': rainfall_amount_absolute_32bit
 '25': error_code
-'30': rainfall_rate_16_bit
+'30': rainfall_rate_16bit
 '31': rainfall_rate_12bit
 '32': rainfall_accumulated_16bit
 '33': reflectivity_16bit
