@@ -178,11 +178,7 @@ for key, n_bins in n_bins_dict.items():
     arr = set_raw_fields_arr_dtype(arr, key=key)
     # For key='raw_drop_number', reshape to 2D matrix
     if key == "raw_drop_number":
-<<<<<<< HEAD
         arr = reshape_L0_raw_drop_number_matrix_to_2D(arr, n_bins_dict, n_timesteps)
-=======
-        arr = reshape_L0_raw_drop_number(arr, n_bins_dict, n_timesteps)
->>>>>>> variable_names_lowercase
     # Add array to dictionary
     dict_data[key] = arr
 

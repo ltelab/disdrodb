@@ -28,9 +28,9 @@ EPFL_dict = {
     "COMMON_2011": "parser_COMMON_2011.py",
     "RIETHOLZBACK_2011": "parser_RIETHOLZBACK_2011.py",
     "HYMEX_2012": "parser_HYMEX_2012.py",
-    "PAYERNE_2014": "parser_PAYERNE_2014.py",
+    "PARADISO_2014": "parser_PARADISO_2014.py",
     "SAMOYLOV_2017_2019": "parser_SAMOYLOV_2017_2019.py",
-    "TICINO_2018": "parser_TICINO_2018.py",
+    "LOCARNO_2018": "parser_LOCARNO_2018.py",
     "PLATO_2019": "parser_PLATO_2019.py",
 }
 

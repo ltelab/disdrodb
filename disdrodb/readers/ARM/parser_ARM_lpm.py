@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Feb 10 11:27:30 2022
+Created on Wed Apr  6 10:03:26 2022
 
 @author: kimbo
 """
 
- 
 import os
 import time
 import click
@@ -25,7 +24,7 @@ from disdrodb.logger import close_logger
 from disdrodb.metadata import read_metadata
 from disdrodb.check_standards import check_sensor_name
 
-# L0_processing
+# L0 processing
 from disdrodb.L0_proc import get_file_list
 from disdrodb.io import get_L1_netcdf_fpath
 from disdrodb.L1_proc import write_L1_to_netcdf
@@ -52,11 +51,11 @@ def main(raw_dir,
          debugging_mode=False,
          lazy=True
          ):
-
-    # Define functions to reformat DIVEN netCDFs
-    def reformat_DIVEN_files(file_list, attrs):
+ 
+    # Define functions to reformat ARM netCDFs
+    def reformat_ARM_files(file_list, attrs):
         """
-        Reformat DIVEN LPM netCDF files. 
+        Reformat LPM ARM netCDF files. 
         
         Parameters
         ----------
@@ -66,65 +65,83 @@ def main(raw_dir,
             DISDRODB metadata about the station.
         """
         from disdrodb.L1_proc import get_L1_coords
-        from disdrodb.L0.aux import get_DIVEN_dict
+        from disdrodb.L0.aux import get_ARM_LPM_dict
         from disdrodb.standards import set_DISDRODB_L0_attrs 
-     
+        
         sensor_name = attrs['sensor_name']
         # --------------------------------------------------------
         #### Open netCDFs
         file_list = sorted(file_list)
-        ds = xr.open_mfdataset(file_list)
+        try:
+            ds = xr.open_mfdataset(file_list)
+        except ValueError:   
+            # Temporaray solution to skip netCDF consistency 
+            print('Error, no monotonic global indexes along dimension time, than ignore check')
+            # ds = xr.open_mfdataset(file_list, combine='nested', compat='override')
+            ds = xr.open_mfdataset(file_list, 
+                                   combine='nested', 
+                                   compat='override',
+                                   # chunks = {'time':1440}
+                                   )
+        except Exception as e:
+            msg = f"Error in read netCDF dataset. The error is: \n {e}"
+            raise RuntimeError(msg)
         
         # --------------------------------------------------------  
         # Select DISDRODB variable and rename 
-        dict_DIVEN = get_DIVEN_dict(sensor_name=sensor_name)
-        vars_DIVEN = set(dict_DIVEN.keys())
+        dict_ARM = get_ARM_LPM_dict(sensor_name=sensor_name)
+        vars_ARM = set(dict_ARM.keys())
         vars_ds = set(ds.data_vars)
-        vars_selection = vars_ds.intersection(vars_DIVEN)
-        dict_DIVEN_selection = {k: dict_DIVEN[k] for k in vars_selection}
+        vars_selection = vars_ds.intersection(vars_ARM)
+        dict_ARM_selection = {k: dict_ARM[k] for k in vars_selection}
         ds = ds[vars_selection]
-        ds = ds.rename(dict_DIVEN_selection)
+        ds = ds.rename(dict_ARM_selection)
         
-        # --------------------------------------------------------
-        # Rename dimensions  
-        ds = ds.rename_dims({'diameter': 'diameter_bin_center', 'fallspeed': 'velocity_bin_center'})
-        
-        # -------------------------------------------------------- 
+        # --------------------------------------------------------  
+        # Rename dimensions 
+        dict_dims = { 
+            "particle_diameter": "diameter_bin_center",
+            "particle_fall_velocity": "velocity_bin_center",
+        }
+        ds = ds.rename_dims(dict_dims)
+        ds = ds.rename(dict_dims)
+        # --------------------------------------------------------  
         # Update coordinates
-        coords = get_L1_coords(sensor_name)
+        coords = get_L1_coords(attrs['sensor_name'])
         coords["crs"] = attrs["crs"]
         coords["longitude"] = attrs["longitude"]
         coords["latitude"] = attrs["latitude"]
         coords["altitude"] = attrs["altitude"]
-        ds = ds.assign_coords(coords)        
-        ds = ds.drop(["diameter","fallspeed"])
+        ds = ds.drop(["latitude", "longitude", "altitude"])
+        ds = ds.assign_coords(coords)
+        
         # --------------------------------------------------------  
         # Set DISDRODB attributes 
         ds = set_DISDRODB_L0_attrs(ds, attrs) 
         
         # -------------------------------------------------------- 
-        return ds
+        return ds 
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern= "*/*/*.nc*"
-    
-    ####----------------------------------------------------------------------.
+    raw_data_glob_pattern = "*.nc"
+
+    ####-------------------------------------------------------------------.
     ####################
     #### FIXED CODE ####
     ####################
-    # -------------------------------------------------------------------------.
+    # ---------------------------------------------------------------------.
     # Initial directory checks
     raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
     
     # Retrieve campaign name
     campaign_name = get_campaign_name(raw_dir)
     
-    # -------------------------------------------------------------------------.
+    # --------------------------------------------------------------------.
     # Define logging settings
     logger = create_L0_logger(processed_dir, campaign_name)
-    
-    # -------------------------------------------------------------------------.
+ 
+    # ---------------------------------------------------------------------.
     # Create directory structure
     create_directory_structure(raw_dir, processed_dir)
     
@@ -161,36 +178,31 @@ def main(raw_dir,
         
         # -----------------------------------------------------------------.
         #### - Reformat netCDF to DISDRODB standards
-        ds = reformat_DIVEN_files(file_list=file_list, attrs=attrs)
+        ds = reformat_ARM_files(file_list=file_list, attrs=attrs)
         
         # -----------------------------------------------------------------.
         #### - Save to DISDRODB netCDF standard
         fpath = get_L1_netcdf_fpath(processed_dir, station_id)
         write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
-        
+         
+        # -----------------------------------------------------------------.
         # End L0 processing
         t_f = time.time() - t_i
-        msg = " - Rename NetCDF processing of station_id {} ended in {:.2f}s".format(
-            station_id, t_f
-        )
+        msg = " - NetCDF standardization of station_id {} ended in {:.2f}s".format(station_id, t_f)
         if verbose:
             print(msg)
         logger.info(msg)
-        
         msg = (" --------------------------------------------------")
         if verbose:
             print(msg)
         logger.info(msg)
-        
-    
+        # -----------------------------------------------------------------.
+    # -----------------------------------------------------------------.
     msg = "### Script finish ###"
     print("\n  " + msg + "\n")
     logger.info(msg)
     
     close_logger(logger)
-
-#################################
-
-
-
+    # -----------------------------------------------------------------.
+# -----------------------------------------------------------------.
 

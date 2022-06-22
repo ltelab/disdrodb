@@ -5,6 +5,9 @@ Created on Sun Feb 20 18:33:48 2022
 
 @author: ghiggi
 """
+################################################################### 
+### Script helping in initializing the L0_data_format.yml file ####
+################################################################### 
 import os
 import yaml
 from disdrodb.standards import get_sensor_variables
@@ -37,9 +40,7 @@ for var in variables:
     data_dict[var]["nan_flags"] = nan_flags.get(var, None)
 
 
-fpath = os.path.join(
-    "/home/ghiggi/Projects/disdrodb/disdrodb/configs", sensor_name, "L0_data_format.yml"
-)
+fpath = os.path.join("/home/ghiggi/Projects/disdrodb/disdrodb/configs", sensor_name, "L0_data_format.yml")
 with open(fpath, "w") as f:
     yaml.dump(data_dict, f, sort_keys=False)
 

@@ -43,23 +43,48 @@ def check_glob_pattern(pattern):
         raise ValueError("glob_pattern should not start with /")
 
 
-def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False, extension_file = []):
-    # Retrieve filepath list
-    if not extension_file:
-        check_glob_pattern(glob_pattern)
-        glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
-        list_fpaths = sorted(glob.glob(glob_fpath_pattern))
-    else:
-        list_fpaths = []
-        glob_fpath_pattern = os.path.dirname(os.path.join(raw_dir, glob_pattern))
-        for ext in extension_file:
-           list_fpaths.extend(sorted(glob.glob(os.path.join(glob_fpath_pattern, ext))))
-    
-    n_files = len(list_fpaths)
+def _get_file_list(raw_dir, glob_pattern): 
+    check_glob_pattern(glob_pattern)
+    glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
+    list_fpaths = sorted(glob.glob(glob_fpath_pattern))
+    return list_fpaths
 
+def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
+    """
+    Parameters
+    ----------
+    raw_dir : str
+        Directory of the campaign where to search for files.
+    glob_pattern : str or list 
+        glob pattern to search for files. Can also be a list of glob patterns.
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+    debugging_mode : bool, optional
+        If True, it select maximum 3 files for debugging purposes. 
+        The default is False.
+
+    Returns
+    -------
+    list_fpaths : list
+        List of files filepaths.
+
+    """
+    if not isinstance(glob_pattern, (str, list)):
+        raise ValueError("'glob_pattern' must be a str or list of strings.")
+    if isinstance(glob_pattern, str): 
+        glob_pattern = [glob_pattern]
+        
+    # Retrieve filepaths list
+    list_fpaths = [_get_file_list(raw_dir, pattern) for pattern in glob_pattern]
+    list_fpaths = [x for xs in list_fpaths for x in xs] # flatten list 
+    
     # Check there are files
+    n_files = len(list_fpaths)
     if n_files == 0:
-        raise ValueError(f"No file found at {glob_fpath_pattern}.")
+        glob_fpath_patterns = [os.path.join(raw_dir, pattern) for pattern in glob_pattern]
+        raise ValueError(f"No file found at t {glob_fpath_patterns}.")
+        
     # Check there are not directories (or other strange stuffs) in list_fpaths
     # TODO [KIMBO]
 
@@ -71,7 +96,7 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False, ex
 
     # Subset file_list if debugging_mode
     if debugging_mode:
-        max_files = min(5, len(list_fpaths))
+        max_files = min(3, n_files)
         list_fpaths = list_fpaths[0:max_files]
 
     # Return file list

@@ -142,8 +142,19 @@ def get_L1_netcdf_encoding_dict(sensor_name):
     return d
 
 
+def set_DISDRODB_L0_attrs(ds, attrs):
+    # Set global attributes 
+    ds.attrs = attrs
+    # Set coords attributes 
+    
+    # Set variable attributes 
+    
+    return ds
+   
 ####-------------------------------------------------------------------------.
-
+#############################################
+#### Get diameter and velocity bins info ####
+#############################################
 
 def get_diameter_bin_center(sensor_name):
     """Get diameter bin center."""

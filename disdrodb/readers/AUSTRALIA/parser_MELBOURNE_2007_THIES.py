@@ -414,7 +414,8 @@ def main(raw_dir,
 
     # -------------------------------------------------------------------------.
     #### Loop over station_id directory and process the files
-    list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
+    list_stations_id = ['T1', 'T3']
+     
 
     # station_id = list_stations_id[1]
     for station_id in list_stations_id:
