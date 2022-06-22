@@ -133,6 +133,10 @@ file_list = get_file_list(
     debugging_mode=debugging_mode,
 )
 ds = xr.open_mfdataset(file_list)
+ds = reformat_ARM_files(file_list, attrs)  
+
+ds.sensor_temperature
+
 
 #---------------------------------------------------------------------------------------
 ### CHECK open_mfdataset

@@ -23,6 +23,15 @@ import yaml
 
 
 def get_attrs_standards():
+    # TO REMOVE
+    # - station_number
+    # - disdrodb_id 
+    # - temporal_resolution
+    
+    # TO ADD
+    # - comments
+    
+    
     list_attrs = [  # Description
         "title",
         "description",
@@ -34,7 +43,7 @@ def get_attrs_standards():
         # Location
         "station_id",
         "station_name",
-        "station_number",
+        # "station_number",TODO: REMOVE 
         "location",
         "country",
         "continent",
@@ -57,7 +66,7 @@ def get_attrs_standards():
         "firmware_version",
         "sensor_beam_width",
         "sensor_nominal_width",
-        "temporal_resolution",
+        # "temporal_resolution",# TODO REMOVE
         "measurement_interval",
         # Attribution
         "contributors",
@@ -74,18 +83,16 @@ def get_attrs_standards():
         "source_data_format",
         # DISDRO DB attrs
         "obs_type",
-        "level",
-        "disdrodb_id",
     ]
     attrs = {key: "" for key in list_attrs}
     # TODO: temporary attributes for EPFL development
-    attrs["sensor_name"] = "OTT_Parsivel"
+    # attrs["sensor_name"] = "OTT_Parsivel"
     attrs["latitude"] = -9999
     attrs["longitude"] = -9999
     attrs["altitude"] = -9999
-    attrs["institution"] = "Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne"
-    attrs["sensor_long_name"] = "OTT Hydromet Parsivel"
-    attrs["contact_information"] = "http://lte.epfl.ch"
+    # attrs["institution"] = "Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne"
+    # attrs["sensor_long_name"] = "OTT Hydromet Parsivel"
+    # attrs["contact_information"] = "http://lte.epfl.ch"
 
     # Defaults attributes
     attrs["latitude_unit"] = "DegreesNorth"

@@ -28,19 +28,15 @@ campaign_dict = {
        
 #### Define filepaths
 parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/DIVEN" # TO CHANGE
-raw_base_dir = "/ltenas3/0_Data/disdrodb/Raw/UK"
-processed_base_dir = "/ltenas3/0_Data/disdrodb/Processed/UK"
-processed_base_dir = "/tmp/Processed/UK"
+raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/UK"
+processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/UK"
+processed_base_dir = "/tmp/DISDRODB/UK"
 
 #### Processing settings
-l0_processing = True
-l1_processing = True
 force = True
 verbose = True
 debugging_mode = True
 lazy = True
-write_zarr = True
-write_netcdf = True
 
 #### Process all campaigns
 for campaign_name in campaign_dict.keys():
@@ -49,8 +45,6 @@ for campaign_name in campaign_dict.keys():
         parser_filepath=parser_filepath,
         raw_dir=os.path.join(raw_base_dir, campaign_name),
         processed_dir=os.path.join(processed_base_dir, campaign_name),
-        write_zarr=write_zarr,
-        write_netcdf=write_netcdf,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,

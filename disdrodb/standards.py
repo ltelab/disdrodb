@@ -27,7 +27,9 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
+PRODUCT_VERSION = "V0"
+SOFTWARE_VERSION = "V0"
+    
 def read_config_yml(sensor_name, filename):
     """Read a config yaml file and return the dictionary."""
     # Get config path
@@ -80,15 +82,20 @@ def get_data_format_dict(sensor_name):
     """Get a dictionary containing the data format of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="L0_data_format.yml")
 
+def get_long_name_dict(sensor_name): 
+    """Get a dictionary containing the long name of each sensor variable."""
+    # TODO:
+    # return read_config_yml(sensor_name=sensor_name, filename="variable_long_name.yml")
+    return None
 
 def get_units_dict(sensor_name):
     """Get a dictionary containing the unit of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="variable_units.yml")
 
 
-def get_explanations_dict(sensor_name):
-    """Get a dictionary containing the explanation of each sensor variable."""
-    d = read_config_yml(sensor_name=sensor_name, filename="variable_explanations.yml")
+def get_description_dict(sensor_name):
+    """Get a dictionary containing the description of each sensor variable."""
+    d = read_config_yml(sensor_name=sensor_name, filename="variable_descriptions.yml")
     return d
 
 
@@ -143,11 +150,41 @@ def get_L1_netcdf_encoding_dict(sensor_name):
 
 
 def set_DISDRODB_L0_attrs(ds, attrs):
-    # Set global attributes 
+    sensor_name = attrs['sensor_name']
+    #----------------------------------
+    # Set global attributes (from metadata)
     ds.attrs = attrs
-    # Set coords attributes 
     
-    # Set variable attributes 
+    #----------------------------------
+    # Set variable attributes (from config standards)
+    description_dict = get_description_dict(sensor_name)
+    units_dict = get_units_dict(sensor_name)
+    long_name_dict = get_long_name_dict(sensor_name)
+    data_format_dict = get_data_format_dict(sensor_name)
+    for var in list(ds.data_vars):
+        attrs_var = {}
+        # attrs_var['long_name'] = long_name_dict[var] # TODO add 
+        attrs_var['description'] = description_dict[var]
+        attrs_var['unit'] = units_dict[var]
+        # TODO: 
+        # attrs['valid_min'] =  data_format_dict
+        # attrs['valid_max'] =  data_format_dict
+        ds[var].attrs = attrs_var
+        
+    #----------------------------------  
+    # Set coordinate attributes 
+    # TODO 
+    
+    #----------------------------------
+    # Add DISDRODB processing info 
+    import datetime 
+    now = datetime.datetime.now()
+    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    ds.attrs['date_creation'] = current_time
+    ds.attrs['disdrodb_product_version'] = PRODUCT_VERSION 
+    ds.attrs['disdrodb_software_version'] = SOFTWARE_VERSION 
+    ds.attrs['disdrodb_product_level'] = "L0" 
+    # ds.attrs['disdrodb_id'] = # TODO XXXX 
     
     return ds
    

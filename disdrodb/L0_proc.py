@@ -88,16 +88,19 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
     # Check there are not directories (or other strange stuffs) in list_fpaths
     # TODO [KIMBO]
 
+    # Subset file_list if debugging_mode
+    if debugging_mode:
+        max_files = min(3, n_files)
+        list_fpaths = list_fpaths[0:max_files]
+        
     # Log
+    n_files = len(list_fpaths)
     msg = f" - {n_files} files to process in {raw_dir}"
     if verbose:
         print(msg)
     logger.info(msg)
 
-    # Subset file_list if debugging_mode
-    if debugging_mode:
-        max_files = min(3, n_files)
-        list_fpaths = list_fpaths[0:max_files]
+
 
     # Return file list
     return list_fpaths
