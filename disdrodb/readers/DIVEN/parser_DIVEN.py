@@ -8,7 +8,7 @@ Created on Thu Feb 10 11:27:30 2022
 import os
 import time
 import click
-import xarray as xr
+ 
 
 # Directory 
 from disdrodb.io import check_directories
@@ -57,6 +57,7 @@ def main(raw_dir,
         attrs : dict
             DISDRODB metadata about the station.
         """
+        from disdrodb.L0.utils_nc import xr_concat_datasets
         from disdrodb.L1_proc import get_L1_coords
         from disdrodb.L0.aux import get_DIVEN_dict
         from disdrodb.standards import set_DISDRODB_L0_attrs 
@@ -65,7 +66,11 @@ def main(raw_dir,
         # --------------------------------------------------------
         #### Open netCDFs
         file_list = sorted(file_list)
-        ds = xr.open_mfdataset(file_list)
+        try:
+            ds = xr_concat_datasets(file_list)
+        except Exception as e:
+            msg = f"Error in concatenating netCDF datasets. The error is: \n {e}"
+            raise RuntimeError(msg)
         
         # --------------------------------------------------------  
         # Select DISDRODB variable and rename 

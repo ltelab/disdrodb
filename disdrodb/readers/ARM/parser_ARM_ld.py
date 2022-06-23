@@ -9,7 +9,6 @@ Created on Wed Apr  6 10:03:26 2022
 import os
 import time
 import click
-import xarray as xr
 
 # Directory 
 from disdrodb.io import check_directories
@@ -28,6 +27,11 @@ from disdrodb.check_standards import check_sensor_name
 from disdrodb.L0_proc import get_file_list
 from disdrodb.io import get_L1_netcdf_fpath
 from disdrodb.L1_proc import write_L1_to_netcdf
+
+# Set Dask configuration for fast processing 
+# - Processes=True ensure fast reading of source netCDFs
+from dask.distributed import Client
+client = Client(processes=True)
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
@@ -58,6 +62,7 @@ def main(raw_dir,
         attrs : dict
             DISDRODB metadata about the station.
         """
+        from disdrodb.L0.utils_nc import xr_concat_datasets
         from disdrodb.L1_proc import get_L1_coords
         from disdrodb.L0.aux import get_ARM_LPM_dict
         from disdrodb.standards import set_DISDRODB_L0_attrs 
@@ -67,18 +72,9 @@ def main(raw_dir,
         #### Open netCDFs
         file_list = sorted(file_list)
         try:
-            ds = xr.open_mfdataset(file_list)
-        except ValueError:   
-            # Temporaray solution to skip netCDF consistency 
-            print('Error, no monotonic global indexes along dimension time, than ignore check')
-            # ds = xr.open_mfdataset(file_list, combine='nested', compat='override')
-            ds = xr.open_mfdataset(file_list, 
-                                   combine='nested', 
-                                   compat='override', 
-                                   # chunks = {'time':1440}
-                                   )
+            ds = xr_concat_datasets(file_list)
         except Exception as e:
-            msg = f"Error in read netCDF dataset. The error is: \n {e}"
+            msg = f"Error in concatenating netCDF datasets. The error is: \n {e}"
             raise RuntimeError(msg)
         
         # --------------------------------------------------------  

@@ -60,9 +60,9 @@ number_particles_no_hydrometeor: 'Number of particles no hydrometeor'
 number_particles_no_hydrometeor_internal_data: 'Total volume of this class'
 number_particles_unknown_classification: 'Number of particles with unknown classification'
 number_particles_unknown_classification_internal_data: 'Number of particles with unknown classification internal data'
-number_particles_class_1: 'Number of particles class 1
+number_particles_class_1: 'Number of particles class 1'
 number_particles_class_1_internal_data: 'Total volume of class 1'
-number_particles_class_2: 'Number of particles class 2
+number_particles_class_2: 'Number of particles class 2'
 number_particles_class_2_internal_data: 'Total volume of class 2'
 number_particles_class_3: 'Number of particles class 3'
 number_particles_class_3_internal_data: 'Total volume of class 3'
