@@ -266,7 +266,7 @@ raw_drop_number:
   shuffle: true
   fletcher32: false
   contiguous: false
-  _FillValue: 18446744073709551615
+  _FillValue: 18446744073709551614
   chunksizes:
   - 5000
   - 32

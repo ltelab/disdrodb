@@ -66,7 +66,7 @@ def check_variable_keys_consistency(sensor_name):
     encoding_dict = get_L1_netcdf_encoding_dict(sensor_name)
     encoding_vars = set(encoding_dict.keys())
     data_format_vars = set(data_format_dict.keys())
-    #  long_name_vars = set(long_name_dict.keys())
+    long_name_vars = set(long_name_dict.keys())
     units_vars = set(units_dict.keys())
     description_vars = set(description_dict.keys())
      

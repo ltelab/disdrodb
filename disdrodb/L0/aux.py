@@ -90,8 +90,8 @@ def get_DIVEN_dict(sensor_name):
           
         # Arrays 
         "size_velocity_distribution": "raw_drop_number", 
-        "drop_size_distribution": "raw_drop_concentration", 
-        "drop_velocity_distribution": "raw_drop_average_velocity", 
+        # "drop_size_distribution": "raw_drop_concentration", 
+        # "drop_velocity_distribution": "raw_drop_average_velocity", 
     }
     return d
 

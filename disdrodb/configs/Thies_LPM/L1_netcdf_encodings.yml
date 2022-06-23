@@ -157,14 +157,6 @@ reflectivity:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-reflectivity_32bit: 
-  dtype: float32
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
 quality_index: 
   dtype: uint8
   zlib: true
@@ -677,34 +669,34 @@ number_particles_class_9_internal_data:
   contiguous: false
   chunksizes: 5000
 raw_drop_number: 
-  dtype: uint8
+  dtype: uint64
   zlib: true
   complevel: 3
   shuffle: true
   fletcher32: false
   contiguous: false
-  _FillValue: 255
+  _FillValue: 18446744073709551614
   chunksizes:
   - 5000
   - 22
   - 20
-raw_drop_concentration: 
-  dtype: float32
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes:
-  - 5000
-  - 22
-raw_drop_average_velocity: 
-  dtype: float32
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes:
-  - 5000
-  - 20
+# raw_drop_concentration: 
+#   dtype: float32
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes:
+#   - 5000
+#   - 22
+# raw_drop_average_velocity: 
+#   dtype: float32
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes:
+#   - 5000
+#   - 20

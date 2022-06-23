@@ -36,12 +36,12 @@ campaign_dict = {
 parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/ARM" # TO CHANGE
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/ARM"
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/ARM"
-processed_base_dir = "/tmp/DISDRODB/ARM"
+# processed_base_dir = "/tmp/DISDRODB/ARM"
 
 #### Processing settings
 force = True
 verbose = True
-debugging_mode = True
+debugging_mode = False
 lazy = True
 
 #### Process all campaigns
