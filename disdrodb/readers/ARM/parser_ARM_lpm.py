@@ -28,11 +28,6 @@ from disdrodb.L0_proc import get_file_list
 from disdrodb.io import get_L1_netcdf_fpath
 from disdrodb.L1_proc import write_L1_to_netcdf
 
-# Set Dask configuration for fast processing 
-# - Processes=True ensure fast reading of source netCDFs
-from dask.distributed import Client
-client = Client(processes=True)
-
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
@@ -198,4 +193,10 @@ def main(raw_dir,
 # -----------------------------------------------------------------.
 
 if __name__ == "__main__":
+    # Set Dask configuration for fast processing 
+    # - Processes=True ensure fast reading of source netCDFs
+    from dask.distributed import Client
+    client = Client(processes=True)
+    
+    # Run the processing 
     main()
