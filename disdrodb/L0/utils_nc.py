@@ -184,6 +184,7 @@ def xr_concat_datasets(fpaths):
     #--------------------------------------.
     # Concat/merge all netCDFs
     # TODO: check that do not delete inplace in ensure_minimum_set_common_vars
+    # TODO: check there are common vars before doing the try 
     try: 
         #--------------------------------------.
         # Ensure common variables 
@@ -200,7 +201,7 @@ def xr_concat_datasets(fpaths):
                 fpath = fpaths[i] 
                 msg = f"At file {i}/{n_files} ({fpath}), the variables {vars} are missing (compared to first file)."
                 logger.debug(msg)
-                print(msg)
+                
         #--------------------------------------.
         # Log the additional variables compared to first file       
         dict_problem = dict_problems["additional_versus_first"]
@@ -213,7 +214,7 @@ def xr_concat_datasets(fpaths):
                 fpath = fpaths[i] 
                 msg = f"At file {i}/{n_files} ({fpath}), there are the variables {vars} which are missing in the first file."
                 logger.debug(msg)
-                print(msg)
+
         #--------------------------------------.        
         # Log the progressively shrinkage of common variables 
         dict_problem = dict_problems["evolution"]
@@ -223,21 +224,22 @@ def xr_concat_datasets(fpaths):
         if len(dict_problem) != 0: 
             msg = "Here we report the file which led to shrinkage of the set of common variables."
             logger.debug(msg)
-            print(msg)
             for i, removed_vars in dict_problem.items(): 
                 fpath = fpaths[i] 
                 for var in removed_vars: 
                     msg = f"At file {i}/{n_files} ({fpath}), the {var} is removed from the common set of variables."
                     logger.debug(msg)
-                    print(msg)
                        
         #--------------------------------------.
         # Concatenate file 
+        logger.info("Start concatenating with xr.concat.")
         ds = xr.concat(list_ds, dim="time", 
                         coords="minimal", 
                         compat="override")
+        logger.info("Concatenation with xr.concat has been successful.")
     except:
-        msg = "No residual common variable. NetCDF concatenation need to be done with xr.merge."
+        msg = "No residual common variable. Starting netCDF concatenation with xr.merge."
         logger.info(msg)
         ds = xr.merge(list_ds, compat="override", join="outer", combine_attrs="override")
+        logger.info("Concatenation with xr.merge has been successful.")
     return ds 

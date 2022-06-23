@@ -173,6 +173,7 @@ def main(raw_dir,
         # -----------------------------------------------------------------.
         #### - Save to DISDRODB netCDF standard
         fpath = get_L1_netcdf_fpath(processed_dir, station_id)
+        ds = ds.compute()
         write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
          
         # -----------------------------------------------------------------.

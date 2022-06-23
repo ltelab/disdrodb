@@ -18,6 +18,7 @@ from disdrodb.utils.parser import get_parser_cmd
 # ARM_ld --> OTT Parsivel 2 
 # ARM_lpm --> Thies LPM 
 campaign_dict = {
+    "ALASKA": "parser_ARM_lpm.py",
     "ACE_ENA": "parser_ARM_ld.py",
     "AWARE": "parser_ARM_ld.py",
     "CACTI": "parser_ARM_ld.py",
@@ -29,7 +30,7 @@ campaign_dict = {
     "SAIL": "parser_ARM_ld.py",
     "SGP": "parser_ARM_ld.py",
     "TRACER": "parser_ARM_ld.py",
-    "ALASKA": "parser_ARM_lpm.py",
+    
 }     
        
 #### Define filepaths
@@ -61,7 +62,7 @@ for campaign_name in campaign_dict.keys():
         lazy=lazy,
     )
 
-    subprocess.run(cmd, shell=True)
+    print(subprocess.run(cmd, shell=True))
     # os.system(cmd)
 
 # -----------------------------------------------------------------------------.

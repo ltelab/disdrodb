@@ -23,14 +23,6 @@ Created on Wed Jun 22 16:22:02 2022
 # - "sensor_beam_width" vs  "sensor_nominal_width"  
 # - "sensor_beam_length"
 
-
-
-
-
-
-# TODO: comparison LACTROS ... atttributes 
-
-
 # DISDRODB Global 
 # - processing_date
 # - disdrodb_software_version
