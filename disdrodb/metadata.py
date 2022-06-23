@@ -30,7 +30,10 @@ def get_attrs_standards():
     
     # TO ADD
     # - comments
+    # - acknoledgements
+    # - license   
     
+    # sensor_wavelegth --> sensor_wavelength
     
     list_attrs = [  # Description
         "title",
