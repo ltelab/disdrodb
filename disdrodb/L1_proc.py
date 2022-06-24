@@ -22,6 +22,7 @@
 # - Functions to convert L0 Apache parquet files to L1 netCDF or Zarr files
 
 # -----------------------------------------------------------------------------.
+import os
 import logging
 import zarr
 import numpy as np
@@ -328,7 +329,9 @@ def rechunk_dataset(ds, encoding_dict):
 
 def write_L1_to_netcdf(ds, fpath, sensor_name):
     from disdrodb.standards import get_L1_netcdf_encoding_dict
-
+    # Ensure directory exist 
+    os.makedirs(os.path.dirname(fpath), exist_ok=True)
+    
     # Get encoding dictionary
     encoding_dict = get_L1_netcdf_encoding_dict(sensor_name)
     encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}

@@ -260,7 +260,7 @@ raw_drop_average_velocity:
   - 5000
   - 32
 raw_drop_number:
-  dtype: int64
+  dtype: uint64
   zlib: true
   complevel: 3
   shuffle: true

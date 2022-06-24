@@ -25,7 +25,7 @@ def _write_issue_timestamps_docs(f):
     
 def create_issue_yml(fpath, timestamp=None, time_period=None):
     """Write timestamps.yml """
-    log.info(f'Creating issue YAML file at {fpath}')
+    logger.info(f'Creating issue YAML file at {fpath}')
     with open(fpath, "w") as f:
         # Write template for timestamps.yml
         _write_issue_timestamps_docs(f)

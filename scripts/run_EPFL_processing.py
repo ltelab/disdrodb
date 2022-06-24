@@ -36,9 +36,9 @@ EPFL_dict = {
 
 #### Define filepaths
 parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL"
-raw_base_dir = "/ltenas3/0_Data/ParsivelDB/Raw/EPFL"
-processed_base_dir = "/ltenas3/0_Data/ParsivelDB/Processed/EPFL"
-processed_base_dir = "/tmp/Processed/EPFL"
+raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/EPFL"
+processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/EPFL"
+processed_base_dir = "/tmp/DISDRODB/Processed/EPFL"
 
 #### Processing settings
 l0_processing = True
