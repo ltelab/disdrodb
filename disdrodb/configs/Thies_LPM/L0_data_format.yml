@@ -753,7 +753,10 @@ raw_drop_number:
   - null
   - null
   nan_flags: null
-
+# '521': air_temperature
+# '522': relative_humidity
+# '523': wind_speed
+# '524': wind_direction
 
 
 

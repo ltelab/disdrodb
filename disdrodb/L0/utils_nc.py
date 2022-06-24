@@ -71,7 +71,7 @@ def get_common_coords(list_ds):
         coords_ref = set(ds.coords).intersection(coords_ref)
     return coords_ref
         
-def ensure_minimum_set_common_vars(list_ds):
+def get_common_vars(list_ds):
     # Initialize variables in first file 
     vars_init = set(list_ds[0].data_vars)
     n_vars_init = len(vars_init)
@@ -94,8 +94,10 @@ def ensure_minimum_set_common_vars(list_ds):
         vars_intersection_vs_first = vars_ds.intersection(vars_init)
         # Collect information on missing variables (compared to first)
         if len(vars_intersection_vs_first) != n_vars_init: 
-            dict_problems['missing_versus_first'][i] =  vars_init.difference(vars_ds)
-            dict_problems['additional_versus_first'][i] =  vars_ds.difference(vars_init)        
+            if len(vars_init.difference(vars_ds)) > 0:
+                dict_problems['missing_versus_first'][i] = vars_init.difference(vars_ds)
+            if len(vars_ds.difference(vars_init)) > 0:    
+                dict_problems['additional_versus_first'][i] = vars_ds.difference(vars_init)        
         # Check if missing an additional variable compared to past common variables  
         common_vars_ref_new = vars_ds.intersection(common_vars_ref)
         # If missing, collect information on additional missing variable
@@ -104,17 +106,10 @@ def ensure_minimum_set_common_vars(list_ds):
         
         # Redefine variables common to all datasets 
         common_vars_ref = common_vars_ref_new
-    #---------------------------------------------.
-    # Subset list of xr.Dataset to have homogenous variables 
-    # TODO: perform copy here? 
-    # import copy
-    # list_ds = copy.deepcopy(list_ds)
-    if len(common_vars_ref) != 0:
-        for i, ds in enumerate(list_ds):
-            list_ds[i] = ds[common_vars_ref]
+
     #---------------------------------------------.
     # Return results 
-    return list_ds, dict_problems
+    return common_vars_ref, dict_problems
 
 def get_list_ds(fpaths): 
     @dask.delayed
@@ -182,64 +177,81 @@ def xr_concat_datasets(fpaths):
                 logger.info("Such coordinates have been replaced with the one observed in the first file.")
     
     #--------------------------------------.
-    # Concat/merge all netCDFs
-    # TODO: check that do not delete inplace in ensure_minimum_set_common_vars
-    # TODO: check there are common vars before doing the try 
-    try: 
-        #--------------------------------------.
-        # Ensure common variables 
-        list_ds, dict_problems = ensure_minimum_set_common_vars(list_ds) 
-        #--------------------------------------.
-        # Log the missing variables compared to first file
-        dict_problem = dict_problems["missing_versus_first"]
-        n_problems = len(dict_problem) 
-        n_files = len(list_ds)
-        ref = dict_problem.pop("ref")
-        if len(dict_problem) != 0: 
-            msg = f"Difference found in {n_problems}/{n_files} files."
-            for i, vars in dict_problem.items(): 
-                fpath = fpaths[i] 
-                msg = f"At file {i}/{n_files} ({fpath}), the variables {vars} are missing (compared to first file)."
+    # Get set of common_vars  
+    common_vars, dict_problems = get_common_vars(list_ds) 
+    
+    #--------------------------------------.
+    # Log the missing variables compared to first file
+    dict_problem = dict_problems["missing_versus_first"]
+    n_problems = len(dict_problem) 
+    n_files = len(list_ds)
+    ref = dict_problem.pop("ref")
+    if len(dict_problem) != 0: 
+        msg = f"Difference found in {n_problems}/{n_files} files."
+        for i, vars in dict_problem.items(): 
+            fpath = fpaths[i] 
+            msg = f"At file {i}/{n_files} ({fpath}), the variables {vars} are missing (compared to first file)."
+            logger.debug(msg)
+            
+    #--------------------------------------.
+    # Log the additional variables compared to first file       
+    dict_problem = dict_problems["additional_versus_first"]
+    n_problems = len(dict_problem) 
+    n_files = len(list_ds)
+    ref = dict_problem.pop("ref")
+    if len(dict_problem) != 0: 
+        msg = f"Difference found in {n_problems}/{n_files} files."
+        for i, vars in dict_problem.items(): 
+            fpath = fpaths[i] 
+            msg = f"At file {i}/{n_files} ({fpath}), there are the variables {vars} which are missing in the first file."
+            logger.debug(msg)
+
+    #--------------------------------------.        
+    # Log the progressively shrinkage of common variables 
+    dict_problem = dict_problems["evolution"]
+    n_problems = len(dict_problem) 
+    n_files = len(list_ds)
+    ref = dict_problem.pop("ref")
+    if len(dict_problem) != 0: 
+        msg = "Here we report the file which led to shrinkage of the set of common variables."
+        logger.debug(msg)
+        for i, removed_vars in dict_problem.items(): 
+            fpath = fpaths[i] 
+            for var in removed_vars: 
+                msg = f"At file {i}/{n_files} ({fpath}), the {var} is removed from the common set of variables."
                 logger.debug(msg)
                 
-        #--------------------------------------.
-        # Log the additional variables compared to first file       
-        dict_problem = dict_problems["additional_versus_first"]
-        n_problems = len(dict_problem) 
-        n_files = len(list_ds)
-        ref = dict_problem.pop("ref")
-        if len(dict_problem) != 0: 
-            msg = f"Difference found in {n_problems}/{n_files} files."
-            for i, vars in dict_problem.items(): 
-                fpath = fpaths[i] 
-                msg = f"At file {i}/{n_files} ({fpath}), there are the variables {vars} which are missing in the first file."
-                logger.debug(msg)
-
-        #--------------------------------------.        
-        # Log the progressively shrinkage of common variables 
-        dict_problem = dict_problems["evolution"]
-        n_problems = len(dict_problem) 
-        n_files = len(list_ds)
-        ref = dict_problem.pop("ref")
-        if len(dict_problem) != 0: 
-            msg = "Here we report the file which led to shrinkage of the set of common variables."
-            logger.debug(msg)
-            for i, removed_vars in dict_problem.items(): 
-                fpath = fpaths[i] 
-                for var in removed_vars: 
-                    msg = f"At file {i}/{n_files} ({fpath}), the {var} is removed from the common set of variables."
-                    logger.debug(msg)
-                       
-        #--------------------------------------.
-        # Concatenate file 
-        logger.info("Start concatenating with xr.concat.")
-        ds = xr.concat(list_ds, dim="time", 
-                        coords="minimal", 
-                        compat="override")
-        logger.info("Concatenation with xr.concat has been successful.")
-    except:
-        msg = "No residual common variable. Starting netCDF concatenation with xr.merge."
-        logger.info(msg)
-        ds = xr.merge(list_ds, compat="override", join="outer", combine_attrs="override")
-        logger.info("Concatenation with xr.merge has been successful.")
+    #--------------------------------------.                    
+    # Concat/merge all netCDFs
+    # - If there are common variables, use xr.concat 
+    if len(common_vars) > 0:
+        # Ensure common set of variables across xr.Datasets 
+        for i, ds in enumerate(list_ds):
+            list_ds[i] = ds[common_vars]
+        # Try concatenating 
+        try: 
+            logger.info("Start concatenating with xr.concat.")
+            ds = xr.concat(list_ds, dim="time", 
+                            coords="minimal", 
+                            compat="override")
+            logger.info("Concatenation with xr.concat has been successful.")
+        except:  
+            msg = "Concatenation with xr.concat failed."
+            logger.error(msg)
+            raise ValueError(msg)
+    # - Otherwise use xr.merge 
+    else: 
+        try: 
+            logger.info("Start concatenating with xr.merge.")
+            ds = xr.merge(list_ds,
+                          compat="override",
+                          join="outer", 
+                          combine_attrs="override")
+            logger.info("Concatenation with xr.merge has been successful.")
+        except:  
+            msg = "Concatenation with xr.merge failed."
+            logger.error(msg)
+            raise ValueError(msg)
+    #--------------------------------------.          
+    # Return xr.Dataset
     return ds 

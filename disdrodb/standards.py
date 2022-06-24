@@ -180,7 +180,7 @@ def set_DISDRODB_L0_attrs(ds, attrs):
     import datetime 
     now = datetime.datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-    ds.attrs['date_creation'] = current_time
+    ds.attrs['disdrodb_processing_date'] = current_time
     ds.attrs['disdrodb_product_version'] = PRODUCT_VERSION 
     ds.attrs['disdrodb_software_version'] = SOFTWARE_VERSION 
     ds.attrs['disdrodb_product_level'] = "L0" 

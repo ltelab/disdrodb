@@ -24,14 +24,30 @@ import glob
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
-
-from disdrodb.metadata import create_metadata
-from disdrodb.metadata import check_metadata_compliance
-
+from disdrodb.logger import log_info
 logger = logging.getLogger(__name__)
 
 ####---------------------------------------------------------------------------.
 #### Directory/Filepaths Defaults
+def infer_institute_from_fpath(fpath):
+    idx_start = fpath.rfind("DISDRODB")
+    disdrodb_fpath = fpath[idx_start:]
+    institute = disdrodb_fpath.split("/")[2]   
+    return institute 
+
+def infer_campaign_from_fpath(fpath):
+    idx_start = fpath.rfind("DISDRODB")
+    disdrodb_fpath = fpath[idx_start:]
+    campaign = disdrodb_fpath.split("/")[3] 
+    return campaign 
+
+def infer_station_id_from_fpath(fpath):
+    idx_start = fpath.rfind("DISDRODB")
+    disdrodb_fpath = fpath[idx_start:]
+    station_id = disdrodb_fpath.split("/")[5]
+    # Optional strip .yml if fpath point to YAML file 
+    station_id.strip(".yml")  
+    return station_id 
 
 
 def get_campaign_name(base_dir):
@@ -134,8 +150,6 @@ def _remove_if_exists(fpath, force=False):
 
 ####--------------------------------------------------------------------------.
 #### Directory checks
-
-
 def parse_fpath(fpath):
     """Ensure fpath does not end with /."""
     if not isinstance(fpath, str):
@@ -145,7 +159,8 @@ def parse_fpath(fpath):
         fpath = fpath[:-1]
     return fpath
 
-
+####--------------------------------------------------------------------------.
+#### L0 directory checks
 def check_raw_dir(raw_dir):
     """Check validity of raw_dir.
 
@@ -156,6 +171,12 @@ def check_raw_dir(raw_dir):
     4. Check that for each station_id the mandatory metadata are specified.
 
     """
+    from disdrodb.metadata import create_metadata
+    from disdrodb.metadata import check_metadata_compliance
+    from disdrodb.issue import create_issue_yml
+    from disdrodb.issue import check_issue_compliance
+    # -------------------------------------------------------------------------.
+    # Check input argument
     if not isinstance(raw_dir, str):
         raise TypeError("Provide 'raw_dir' as a string'.")
     if not os.path.exists(raw_dir):
@@ -163,7 +184,7 @@ def check_raw_dir(raw_dir):
     if not os.path.isdir(raw_dir):
         raise ValueError("'raw_dir' {} is not a directory.".format(raw_dir))
     # -------------------------------------------------------------------------.
-    # Check there is /data subfolders
+    #### Check there is /data subfolders
     list_subfolders = os.listdir(raw_dir)
     if len(list_subfolders) == 0:
         raise ValueError("There are not subfolders in {}".format(raw_dir))
@@ -171,14 +192,16 @@ def check_raw_dir(raw_dir):
         raise ValueError(
             "'raw_dir' {} should have the /data subfolder.".format(raw_dir)
         )
-
-    # Check there are subfolders corresponding to station to process
+    
+    # -------------------------------------------------------------------------.
+    #### Check there are subfolders corresponding to station to process
     raw_data_dir= os.path.join(raw_dir, "data")
     list_data_station_id = os.listdir(raw_data_dir)
     if len(list_data_station_id) == 0:
         raise ValueError("No station directories within {}".format(raw_data_dir))
-
-    # Check there are data files in each list_data_station_id
+    
+    # -------------------------------------------------------------------------.
+    #### Check there are data files in each list_data_station_id
     list_raw_data_station_dir= [
         os.path.join(raw_data_dir, station_id) for station_id in list_data_station_id
     ]
@@ -191,12 +214,14 @@ def check_raw_dir(raw_dir):
         raise ValueError(
             "The following data directories are empty: {}".format(empty_station_dir)
         )
+        
     # -------------------------------------------------------------------------.
-    # Check there is /metadata subfolders
+    #### Check there is /metadata subfolders
     metadata_dir = os.path.join(raw_dir, "metadata")
     if "metadata" not in list_subfolders:
-        # - Create directory with empty metadata files to be filled.
+        # - Create metadata directory 
         _create_directory(metadata_dir)
+        # - Create default metadata yml file for each station (since the folder didn't existed)
         list_metadata_fpath = [
             os.path.join(metadata_dir, station_id + ".yml")
             for station_id in list_data_station_id
@@ -207,10 +232,11 @@ def check_raw_dir(raw_dir):
         raise ValueError(msg + msg1)
 
     # -------------------------------------------------------------------------.
-    # Check there are metadata file for each station_id in /metadata
+    #### Check there are metadata file for each station_id in /metadata
     list_metadata_fpath = glob.glob(os.path.join(metadata_dir, "*.yml"))
     list_metadata_fname = [os.path.basename(fpath) for fpath in list_metadata_fpath]
     list_metadata_station_id = [fname[:-4] for fname in list_metadata_fname]
+    
     # - Check there is metadata for each station
     missing_data_station_idx = np.where(
         np.isin(list_data_station_id, list_metadata_station_id, invert=True)
@@ -229,6 +255,7 @@ def check_raw_dir(raw_dir):
             list_missing_station_id
         )
         raise ValueError(msg + " Now have been created to be filled.")
+        
     # - Check not excess metadata compared to present stations
     excess_metadata_station_idx = np.where(np.isin(list_metadata_station_id, list_data_station_id, invert=True))[0]
     if len(excess_metadata_station_idx) > 0:
@@ -240,10 +267,67 @@ def check_raw_dir(raw_dir):
                 list_excess_station_id
             )
         )
+        
     # -------------------------------------------------------------------------.
-    # Check metadata compliance
+    #### Check metadata compliance
     _ = [check_metadata_compliance(fpath) for fpath in list_metadata_fpath]
+    
     # -------------------------------------------------------------------------.
+    # Check there is /issue subfolder
+    issue_dir = os.path.join(raw_dir, "issue")
+    if "issue" not in list_subfolders:
+        # - Create issue directory 
+        _create_directory(issue_dir)
+        # - Create issue yml file for each station (since the folder didn't existed)
+        list_issue_fpath = [os.path.join(issue_dir, station_id + ".yml")
+            for station_id in list_data_station_id
+        ]
+        _ = [create_issue_yml(fpath) for fpath in list_metadata_fpath]
+        msg = "The /issue subfolder has been now created to document and then remove timesteps with problematic data."
+        logger.info(msg)
+    # -------------------------------------------------------------------------.
+    #### Check there are issue file for each station_id in /issue 
+    # TODO: inspired by 
+    list_issue_fpath = glob.glob(os.path.join(issue_dir, "*.yml"))
+    list_issue_fname = [os.path.basename(fpath) for fpath in list_issue_fpath]
+    list_issue_station_id = [fname[:-4] for fname in list_issue_fname]
+    
+    # - Check there is issue for each station
+    missing_data_station_idx = np.where(
+        np.isin(list_data_station_id, list_issue_station_id, invert=True)
+    )[0]
+    # - If missing, create the defaults files and raise an error
+    if len(missing_data_station_idx) > 0:
+        list_missing_station_id = [
+            list_data_station_id[idx] for idx in missing_data_station_idx
+        ]
+        list_missing_issue_fpath = [
+            os.path.join(issue_dir, station_id + ".yml")
+            for station_id in list_missing_station_id
+        ]
+        _ = [create_issue_yml(fpath) for fpath in list_missing_issue_fpath]
+        msg = "The issue files for the following station_id were missing: {}".format(
+            list_missing_station_id
+        )
+        
+    # - Check not excess issue compared to present stations
+    excess_issue_station_idx = np.where(np.isin(list_issue_station_id, list_data_station_id, invert=True))[0]
+    if len(excess_issue_station_idx) > 0:
+        list_excess_station_id = [
+            list_issue_station_id[idx] for idx in excess_issue_station_idx
+        ]
+        print(
+            "There are the following issue files without corresponding data: {}".format(
+                list_excess_station_id
+            )
+        )
+        
+    # -------------------------------------------------------------------------.
+    #### Check issue compliance
+    _ = [check_issue_compliance(fpath) for fpath in list_issue_fpath]
+    # TODO: 
+    # -------------------------------------------------------------------------.
+    return None
     
 def check_processed_dir(processed_dir, force=False):
     """Check that 'processed_dir' is a valid directory path."""
@@ -336,7 +420,7 @@ def copy_metadata_from_raw_dir(raw_dir, processed_dir):
     logger.info(msg)
     
 ####--------------------------------------------------------------------------.
-#### Directory structure
+#### L0 directory structure
 
 
 def create_directory_structure(raw_dir, processed_dir):
@@ -392,7 +476,7 @@ def create_directory_structure(raw_dir, processed_dir):
 
 
 ####--------------------------------------------------------------------------.
-#### DISDRODB Readers
+#### DISDRODB L0 Readers
 
 
 def check_L0_is_available(processed_dir, station_id, suffix=""):
@@ -418,9 +502,7 @@ def read_L0_data(processed_dir, station_id, suffix="",
     fpath = get_L0_fpath(processed_dir, station_id, suffix=suffix)
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} started"
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger, msg, verbose)
     # Read
     if lazy:
         df = dd.read_parquet(fpath)
@@ -428,9 +510,7 @@ def read_L0_data(processed_dir, station_id, suffix="",
         df = pd.read_parquet(fpath)
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} ended"
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger, msg, verbose)
     # Subset dataframe if debugging_mode = True
     if debugging_mode:
         if not lazy:
@@ -441,6 +521,4 @@ def read_L0_data(processed_dir, station_id, suffix="",
 
 
 ####--------------------------------------------------------------------------.
-#### TODO: include in create_directory_structure
 
-####--------------------------------------------------------------------------.

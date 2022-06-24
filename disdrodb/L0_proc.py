@@ -32,6 +32,8 @@ import tarfile
 from disdrodb.check_standards import check_L0_standards
 from disdrodb.data_encodings import get_L0_dtype_standards
 from disdrodb.io import _remove_if_exists
+from disdrodb.io import infer_station_id_from_fpath
+from disdrodb.logger import log_info, log_warning, log_debug
 
 logger = logging.getLogger(__name__)
 
@@ -219,9 +221,7 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
         import pandas as dd
     # Log
     msg = " - Concatenation of dataframes started."
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger, msg, verbose)
     # Concatenate the dataframe
     try:
         df = dd.concat(list_df, axis=0, ignore_index=True)
@@ -232,13 +232,11 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
 
     except (AttributeError, TypeError) as e:
         msg = f" - Can not create concat data files. \n Error: {e}"
-        logger.exception(msg)
+        logger.error(msg)
         raise ValueError(msg)
     # Log
     msg = " - Concatenation of dataframes has finished."
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger, msg, verbose)
     # Return dataframe
     return df
 
@@ -266,12 +264,16 @@ def read_L0_raw_file_list(
         raise ValueError("'file_list' must contains at least 1 filepath.")
 
     # ------------------------------------------------------.
-    # ### - Loop over all raw files
+    ### - Get station id from file_list 
+    station_id = infer_station_id_from_fpath(file_list[0]) 
+    
+    # ------------------------------------------------------.
+    ### - Loop over all raw files
     n_files = len(file_list)
     processed_file_counter = 0
     list_skipped_files_msg = []
     list_df = []
-    for filepath in file_list:
+    for filepath in file_list:       
         # Try to process a raw file
         try:
 
@@ -296,9 +298,7 @@ def read_L0_raw_file_list(
             # Check if file empty
             if len(df.index) == 0:
                 msg = f" - {filepath} is empty and has been skipped."
-                logger.warning(msg)
-                if verbose:
-                    print(msg)
+                log_warning(logger, msg, verbose)
                 list_skipped_files_msg.append(msg)
                 continue
 
@@ -306,9 +306,7 @@ def read_L0_raw_file_list(
             if len(column_names) != 0:
                 if len(df.columns) != len(column_names):
                     msg = f" - {filepath} has wrong columns number, and has been skipped."
-                    logger.warning(msg)
-                    if verbose:
-                        print(msg)
+                    log_warning(logger, msg, verbose)
                     list_skipped_files_msg.append(msg)
                     continue
 
@@ -316,17 +314,7 @@ def read_L0_raw_file_list(
             # Sanitize the dataframe with a custom function
             if df_sanitizer_fun is not None:
                 df = df_sanitizer_fun(df, lazy=lazy)
-
-            # ------------------------------------------------------.
-            # Filter bad data
-            # TODO[GG]: might depend on sensor_name !
-            # TODO[GG]: maybe encapsulate in another function
-            # # Remove rows with bad data
-            # df = df[df.sensor_status == 0]
-
-            # # Remove rows with error_code not 000
-            # df = df[df.error_code == 0]
-
+            
             # ----------------------------------------------------.
             # Cast dataframe to dtypes
             dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
@@ -357,15 +345,12 @@ def read_L0_raw_file_list(
         except (Exception, ValueError) as e:
             # Update the logger
             msg = f" - {filepath} has been skipped. \n -- The error is: {e}."
-            logger.warning(msg)
-            if verbose:
-                print(msg)
+            log_warning(logger, msg, verbose)
             list_skipped_files_msg.append(msg)
 
     # Update logger
     msg = f" - {len(list_skipped_files_msg)} of {n_files} have been skipped."
-    if verbose:
-        print(msg)
+    log_info(logger, msg, verbose)
     logger.info("---")
     logger.info(msg)
     logger.info("---")
@@ -378,7 +363,15 @@ def read_L0_raw_file_list(
         df = concatenate_dataframe(list_df, verbose=verbose, lazy=lazy)
     else: 
         df = list_df[0]
-
+    
+    # ------------------------------------------------------.
+    #### - Filter out problematic data reported in issue file
+    # TODO: [TEST IMPLEMENTATION] remove_problematic_timestamp in dev/TODO_issue_code.py
+    # issue_dict = read_issue(raw_dir, station_id)
+    # df = remove_problematic_timestamp(df, issue_dict, verbose)
+    
+    # ------------------------------------------------------.
+    # Return the dataframe 
     return df
 
 
@@ -446,15 +439,11 @@ def _write_to_parquet(df, fpath, force=False):
 def write_df_to_parquet(df, fpath, force=False, verbose=False):
     # Log
     msg = " - Conversion to Apache Parquet started."
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger, msg, verbose)
     # Write to Parquet
     _write_to_parquet(df=df, fpath=fpath, force=force)
     # Log
     msg = " - Conversion to Apache Parquet ended."
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger, msg, verbose)
     # -------------------------------------------------------------------------.
     return None

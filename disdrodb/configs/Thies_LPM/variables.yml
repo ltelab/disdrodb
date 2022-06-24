@@ -98,4 +98,7 @@
 '79': number_particles_class_9
 '80': number_particles_class_9_internal_data
 '81': raw_drop_number
-'520': diameter_speed
+# '521': air_temperature
+# '522': relative_humidity
+# '523': wind_speed
+# '524': wind_direction

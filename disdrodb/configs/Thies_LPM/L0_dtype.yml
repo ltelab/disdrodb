@@ -79,3 +79,7 @@ number_particles_class_8_internal_data: 'float32'
 number_particles_class_9: 'uint16'
 number_particles_class_9_internal_data: 'float32'
 raw_drop_number: 'object'
+# '521': air_temperature
+# '522': relative_humidity
+# '523': wind_speed
+# '524': wind_direction

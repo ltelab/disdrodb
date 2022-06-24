@@ -79,3 +79,7 @@ number_particles_class_8_internal_data: 'Total volume (gross) of class 8'
 number_particles_class_9: 'Number of particles class 9'
 number_particles_class_9_internal_data: 'Total volume (gross) of class 9'
 raw_drop_number: 'Precipitation spectrum'
+# '521': air_temperature
+# '522': relative_humidity
+# '523': wind_speed
+# '524': wind_direction

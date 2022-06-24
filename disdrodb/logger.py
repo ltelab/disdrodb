@@ -64,6 +64,25 @@ def close_logger(logger):
 
 
 #----------------------------
+def log_debug(logger, msg, verbose=False):
+    logger.debug(msg)
+    if verbose:
+        print(' - ' + msg)
+    
+    
+def log_info(logger, msg, verbose=False):
+    logger.info(msg)
+    if verbose:
+        print(' - ' + msg)
+
+
+def log_warning(logger, msg, verbose=False):
+    logger.warning(msg)
+    if verbose:
+        print(' - ' + msg)
+
+
+#----------------------------
 # TO DEPRECATE 
 
 def create_logger(log_dir, logger_name):

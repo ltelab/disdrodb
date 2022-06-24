@@ -107,7 +107,7 @@ def get_attrs_standards():
 
     return attrs
 
-
+# TODO: create_metadata_yml ? similar pattern to create_issue_yml 
 def create_metadata(fpath):
     """Create default YAML metadata file."""
     attrs = get_attrs_standards()
@@ -123,12 +123,6 @@ def read_metadata(raw_dir, station_id):
     return attrs
 
 
-def write_metadata(attrs, fpath):
-    """Write dictionary to YAML file."""
-    with open(fpath, "w") as f:
-        yaml.dump(attrs, f, sort_keys=False)
-
-
 def check_metadata_compliance(raw_dir):
     """Check YAML metadata files compliance."""
     # TODO: MISSING CHECKS
@@ -138,3 +132,9 @@ def check_metadata_compliance(raw_dir):
     # check_sensor_name(sensor_name=sensor_name)
     pass
     return
+
+
+# def write_metadata(attrs, fpath):
+#     """Write dictionary to YAML file."""
+#     with open(fpath, "w") as f:
+#         yaml.dump(attrs, f, sort_keys=False)
