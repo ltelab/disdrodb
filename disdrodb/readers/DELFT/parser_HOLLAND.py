@@ -283,6 +283,9 @@ def main(raw_dir,
         # Some rows hasn't data (header of footer rows)
         df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() > 50]
         
+        # Into device PAR007 there are a lot of corrupted rows
+        df = df[~df['TO_BE_PARSED'].str.contains('000NETDL07')]
+        
         # Split the last column (contain the 37 remain fields)
         df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
 
