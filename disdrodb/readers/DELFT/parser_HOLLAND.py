@@ -287,6 +287,8 @@ def main(raw_dir,
         df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
 
         # Cast to datetime
+        # Some dates are not well formated
+        df = df.loc[df["time"].astype(str).str.len() == 15]
         try:
             df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
         except ValueError:
