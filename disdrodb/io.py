@@ -275,7 +275,7 @@ def check_raw_dir(raw_dir, verbose=False):
         list_issue_fpath = [os.path.join(issue_dir, station_id + ".yml")
             for station_id in list_data_station_id
         ]
-        _ = [create_issue_yml(fpath) for fpath in list_metadata_fpath]
+        _ = [create_issue_yml(fpath) for fpath in list_issue_fpath]
         msg = "The /issue subfolder has been now created to document and then remove timesteps with problematic data."
         logger.info(msg)
     # -------------------------------------------------------------------------.

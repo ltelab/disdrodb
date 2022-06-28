@@ -23,11 +23,11 @@
 
 # -----------------------------------------------------------------------------.
 import os
+import yaml
 import logging
-import zarr
 import numpy as np
+import pandas as pd
 import dask.array as da
-import dask.dataframe as dd
 import xarray as xr
 
 from disdrodb.check_standards import check_sensor_name
@@ -298,9 +298,6 @@ def create_L1_dataset_from_L0(df, attrs, lazy=True, verbose=False):
     # TODO: Replace NA flags
 
     # -----------------------------------------------------------
-    # TODO: Add L1 encoding
-
-    # -----------------------------------------------------------
     return ds
 
 
@@ -357,6 +354,65 @@ def write_L1_to_zarr(ds, fpath, sensor_name):
 ####--------------------------------------------------------------------------.
 #### L1 Summary statistics
 def create_L1_summary_statistics(ds, processed_dir, station_id, sensor_name):
-    # TODO[GG]
-    pass
-    return
+    """Create L0 summary statistics and save it into the station info YAML file."""
+    ###-----------------------------------------------------------------------.
+    # Initialize dictionary
+    stats_dict = {}
+    
+    # Infer the sampling interval looking at the difference between timesteps
+    dt, counts = np.unique(np.diff(ds.time.values), return_counts=True)
+    dt_most_frequent = dt[np.argmax(counts)]
+    dt_most_frequent = dt_most_frequent.astype('m8[s]')
+    inferred_sampling_interval = dt_most_frequent.astype(int)
+    stats_dict['inferred_sampling_interval'] = inferred_sampling_interval
+
+    # Number of years, months, days, minutes 
+    time = ds.time.values
+    n_timesteps = len(time)
+    n_minutes = inferred_sampling_interval/60*n_timesteps
+    n_hours = n_minutes/60 
+    n_days = n_hours/24
+
+    stats_dict['n_timesteps'] = n_timesteps
+    stats_dict['n_minutes'] = n_minutes
+    stats_dict['n_hours'] = n_hours
+    stats_dict['n_days'] = n_days
+
+    # Add start_time and end_time
+    start_time = pd.DatetimeIndex(time[[0]])
+    end_time = pd.DatetimeIndex(time[[-1]])
+    years = np.unique([start_time.year, end_time.year])
+    if len(years) == 1:
+        years_coverage = str(years[0])
+    else: 
+        years_coverage = str(years[0]) + "-" + str(years[-1])
+        
+    stats_dict['years_coverage'] = years_coverage
+    stats_dict['start_time'] = start_time[0].isoformat()
+    stats_dict['end_time'] = end_time[0].isoformat()
+
+    ###-----------------------------------------------------------------------.
+    # TODO: Create and save image with temporal coverage    
+    # --> Colored using quality flag from sensor_status if available ? 
+    
+    ###-----------------------------------------------------------------------.
+    # TODO STATISTICS 
+    # --> Requiring deriving stats from raw spectrum
+
+    # diameter_min, diameter_max, diameter_sum
+    
+    # Total rain events 
+
+    # Total rainy minutes 
+
+    # Total dry minutes 
+
+    # Number of dry/rainy minutes 
+
+    ###-----------------------------------------------------------------------.
+    # Save to info.yaml 
+    info_path = os.path.join(processed_dir, "info", station_id + ".yml")
+    with open(info_path, "w") as f:
+         yaml.dump(stats_dict, f, sort_keys=False)
+         
+    return None

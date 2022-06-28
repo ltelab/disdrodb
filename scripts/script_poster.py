@@ -24,10 +24,8 @@ ARCHIVE_DIR = "/ltenas3/0_Data/DISDRODB/Raw"
 # ARCHIVE_DIR = "/ltenas3/0_Data/DISDRODB/Processed"
 metadata_fpaths = glob.glob(os.path.join(ARCHIVE_DIR, "*/*/metadata/*.yml")) 
 
-# metadata_fpaths = glob.glob(os.path.join(ARCHIVE_DIR, "*/*/*/metadata/*.yml"))   
-
- 
-metadata_fpaths
+# metadata_fpaths
+len(metadata_fpaths)
 
  #-----------------------------------------------------------------------------.
  # TODO 
@@ -102,12 +100,44 @@ for fpath in metadata_fpaths:
    except: 
        pass
    sensor_name_dict[fullname] = sensor_name
-print(sensor_name_dict)
+   
+# print(sensor_name_dict)
 
 sensors, counts = np.unique(list(sensor_name_dict.values()), return_counts=True)
 sensors_stats = dict(zip(sensors, counts))
 sensors_stats = dict(sorted(sensors_stats.items(), key=lambda x: x[1], reverse=True))
 print(sensors_stats)
+
+####--------------------------------------------------------------------------.
+######################################## 
+#### Load literature list of disdro ####
+########################################
+import pandas as pd
+literature_table_fpath = "/ltenas3/0_Data/DISDRODB/DISDRO_List.xlsx"
+df_list = pd.read_excel(literature_table_fpath)
+df_latlon = df_list[['Lat','Lon']]
+df_latlon = df_latlon[df_latlon['Lat'].notnull()]
+
+### Display global coverage 
+import matplotlib.pyplot as plt
+import cartopy.feature as cfeature
+from cartopy import crs as ccrs
+crs_ref = ccrs.PlateCarree() # ccrs.AzimuthalEquidistant()
+crs_proj = ccrs.Robinson() # ccrs.PlateCarree()
+fig, ax = plt.subplots(subplot_kw={'projection': crs_proj})
+ax.set_global()
+# ax.add_feature(cfeature.COASTLINE, edgecolor="black")
+# ax.add_feature(cfeature.BORDERS, edgecolor="black")
+ax.gridlines()
+ax.stock_img()
+
+plt.scatter(x=df_latlon['Lon'], y=df_latlon['Lat'],
+            color="black",
+            s=2,
+            alpha=0.5,
+            transform=crs_ref) 
+
+plt.show()
 
 ####--------------------------------------------------------------------------.
 ############################### 
@@ -141,25 +171,45 @@ gdf = gpd.GeoDataFrame(stations_dict.keys(),
 import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
 from cartopy import crs as ccrs
+alpha = 0.5 
+color_unprocessed = "black"
+color_processed = "#006400" # DarkGreen
+color_processed = "magenta"
+marker = 'o'
 crs_ref = ccrs.PlateCarree() # ccrs.AzimuthalEquidistant()
 crs_proj = ccrs.Robinson() # ccrs.PlateCarree()
-fig, ax = plt.subplots(subplot_kw={'projection': crs_proj})
+
+fig, ax = plt.subplots(subplot_kw={'projection': crs_proj}, figsize=(18,12))
 ax.set_global()
 # ax.add_feature(cfeature.COASTLINE, edgecolor="black")
 # ax.add_feature(cfeature.BORDERS, edgecolor="black")
-ax.gridlines()
+# ax.gridlines()
 ax.stock_img()
 
-plt.scatter(x=gdf['geometry'].x, y=gdf['geometry'].y,
-            color="black",
-            s=2,
-            alpha=0.5,
-            transform=crs_ref) ## Important
+# - Plot unprocessed data
+ax.scatter(x=df_latlon['Lon'], y=df_latlon['Lat'],
+            color=color_unprocessed,
+            edgecolor='None',
+            marker=marker,
+            alpha=alpha,
+            transform=crs_ref) 
 
+# - Plot processed data 
+plt.scatter(x=gdf['geometry'].x, y=gdf['geometry'].y,
+            color=color_processed,
+            edgecolor='None',
+            marker=marker,
+            alpha=alpha,
+            transform=crs_ref)  
+ 
 plt.show()
 
 #------------------------------------------------------------------------------.
-### Display coverage per continent 
+### Display coverage per continent
+marker = 'o'
+alpha = 0.5 
+color_unprocessed = "black"
+color_processed = "magenta"
 continent_extent_dict = {  # [lon_start, lon_end, lat_start, lat_end].
     "Europe": [-10, 25, 36, 60],
     "CONUS": [-125,-74,12, 52], 
@@ -173,16 +223,25 @@ continent_crs_proj_dict = {
 
 for continent, extent in continent_extent_dict.items():
     crs_proj = continent_crs_proj_dict[continent]
-    fig, ax = plt.subplots(subplot_kw={'projection': crs_proj})
+    fig, ax = plt.subplots(subplot_kw={'projection': crs_proj}, figsize=(18,12))
     ax.set_extent(extent)
     # ax.add_feature(cfeature.COASTLINE, edgecolor="black")
     # ax.add_feature(cfeature.BORDERS, edgecolor="black")
     # ax.gridlines()
     ax.stock_img()
+    # - Plot unprocessed data
+    plt.scatter(x=df_latlon['Lon'], y=df_latlon['Lat'],
+                color=color_unprocessed,
+                edgecolor='None',
+                marker=marker, 
+                alpha=alpha,
+                transform=crs_ref) 
+    # - Plot processed data 
     plt.scatter(x=gdf['geometry'].x, y=gdf['geometry'].y,
-                color="black",
-                s=2,
-                alpha=0.5,
+                color=color_processed,
+                edgecolor='None',
+                marker=marker,
+                alpha=alpha,
                 transform=crs_ref) ## Important
     plt.show()
 
@@ -190,3 +249,7 @@ for continent, extent in continent_extent_dict.items():
 # https://scitools.org.uk/cartopy/docs/latest/reference/generated/cartopy.mpl.geoaxes.GeoAxes.html#cartopy.mpl.geoaxes.GeoAxes.background_img
 
 ####--------------------------------------------------------------------------.
+# TODO 
+# - Total number of precipitation hours 
+# - Longest record 
+# --> Above per data source 
