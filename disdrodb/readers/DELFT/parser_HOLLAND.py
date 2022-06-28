@@ -60,16 +60,16 @@ from disdrodb.logger import close_logger
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+# @click.command()  # options_metavar='<options>'
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+# @click.argument('processed_dir', metavar='<processed_dir>')
+# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -77,7 +77,7 @@ def main(raw_dir,
          write_netcdf=True,
          force=False,
          verbose=False,
-         debugging_mode=False,
+         debugging_mode=True,
          lazy=True,
          ):
     """Script to process raw data to L0 and L1. \f
@@ -275,22 +275,22 @@ def main(raw_dir,
 
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas 
-        if lazy:
+        if lazy: 
             import dask.dataframe as dd
-        else:
+        else: 
             import pandas as dd
-
+            
+        # Some rows hasn't data (header of footer rows)
+        df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() > 50]
+        
         # Split the last column (contain the 37 remain fields)
         df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
 
         # Cast to datetime
-        # Drop rows with invalid date
-        df = df.loc[df["time"].astype(str).str.len() == 19]
         try:
             df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
         except ValueError:
             df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S', errors='coerce')
-            print("These dates are invalid: {}".format(df.loc[df.time.null()]))
             df = df.loc[df.time.notnull()]
 
         # Drop TO_BE_PARSED
@@ -311,13 +311,21 @@ def main(raw_dir,
         df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
 
         # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
-        df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_concentration')
-        df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_average_velocity')
+        if lazy: 
+            df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_concentration')
+            df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_average_velocity')
+        else: 
+            df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
+            df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
+        
         df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
         # Concat all togheter
-        df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
-        
+        if lazy:
+            df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
+        else:
+            df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
+
         # Drop invalid rows
         df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 223]
         df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 223]
@@ -508,4 +516,14 @@ def main(raw_dir,
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    main(raw_dir = "/home/kimbo/data/Campagne/DISDRODB/Raw/DELFT",
+         processed_dir = "/home/kimbo/data/Campagne/DISDRODB/Processed/DELFT",
+             l0_processing=True,
+             l1_processing=False,
+             write_netcdf=True,
+             force=True,
+             verbose=True,
+             debugging_mode=True,
+             lazy=True,
+             )
