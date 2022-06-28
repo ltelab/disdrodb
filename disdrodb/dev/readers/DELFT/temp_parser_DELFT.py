@@ -66,8 +66,8 @@ from disdrodb.metadata import read_metadata
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "/home/kimbo/data/Campagne/Raw/HOLLAND/CABAUW"
-processed_dir = "/home/kimbo/data/Campagne/Processed/HOLLAND/CABAUW"
+raw_dir = "/home/kimbo/data/Campagne/DISDRODB/Raw/DELFT"
+processed_dir = "/home/kimbo/data/Campagne/DISDRODB/Processed/DELFT"
 
 l0_processing = True
 l1_processing = True
@@ -108,7 +108,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[0]
+station_id = list_stations_id[3]
 
 attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
 # Retrieve sensor name
@@ -186,7 +186,7 @@ reader_kwargs['header'] = None
 
 filepath = file_list[0]
 
-df = pd.read_csv(filepath, compression='xz', error_bad_lines=False, nrows=100)
+df = pd.read_csv(filepath, compression='xz', error_bad_lines=False)
 
 
 str_reader_kwargs = reader_kwargs.copy() 
@@ -520,11 +520,19 @@ def df_sanitizer_fun(df, lazy=False):
         import dask.dataframe as dd
     else: 
         import pandas as dd
+        
+    # Some rows hasn't data (header of footer rows)
+    df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() > 50]
+    
+    # Into device PAR007 there are a lot of corrupted rows
+    df = df[~df['TO_BE_PARSED'].str.contains('000NETDL07')]
     
     # Split the last column (contain the 37 remain fields)
     df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
 
     # Cast to datetime
+    # Some dates are not well formated
+    df = df.loc[df["time"].astype(str).str.len() == 15]
     try:
         df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
     except ValueError:
@@ -549,13 +557,21 @@ def df_sanitizer_fun(df, lazy=False):
     df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
 
     # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
-    df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_concentration')
-    df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_average_velocity')
+    if lazy: 
+        df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_concentration')
+        df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_average_velocity')
+    else: 
+        df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
+        df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
+    
     df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
     # Concat all togheter
-    df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
-    
+    if lazy:
+        df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
+    else:
+        df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
+
     return df 
 
 
@@ -588,7 +604,7 @@ infer_df_str_column_names(df, 'Parsivel')
 ####--------------------------------------------------------------------------. 
 ##------------------------------------------------------. 
 #### 10. Conversion to parquet
-parquet_dir = os.path.join(processed_dir, 'L0', campaign_name + '_s10.parquet')
+parquet_dir = os.path.join(processed_dir, 'L0A', campaign_name + '_s10.parquet')
 
 # Define writing options 
 compression = 'snappy' # 'gzip', 'brotli, 'lz4', 'zstd'
@@ -601,6 +617,10 @@ df_to_parse = df.to_parquet(parquet_dir ,
                     row_group_size = row_group_size,
                     compression = compression
                   )
+
+from disdrodb.L0_proc import write_df_to_parquet
+write_df_to_parquet(df=df, fpath=parquet_dir, force=force, verbose=verbose)
+
 ##------------------------------------------------------. 
 #### 10.1 Read parquet file
 df_to_parse = dd.read_parquet(parquet_dir)
