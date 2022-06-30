@@ -346,7 +346,7 @@ def check_processed_dir(processed_dir, force=False):
             # Remove content of existing processed_dir
             # TODO: maybe remove also the campaign name directory, not only the content of it
             shutil.rmtree(processed_dir)  # TODO: !! TOO DANGEROUS ??? !!!
-            
+            return
     #------------------------------
     # If avoiding overwriting 
     if not force:

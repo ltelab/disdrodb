@@ -16,9 +16,11 @@ import numpy as np
 
 
 
-file_path = '/home/kimbo/data/Campagne/Processed/MELBURNE/MELBOURNE_2007_THIES/L0/MELBOURNE_2007_THIES_s3.parquet'
+file_path = '/home/kimbo/data/Campagne/DISDRODB/Processed/DELFT/L0A/PAR001/DELFT_sPAR001.parquet'
 
-df = dd.read_parquet(file_path)
+df1 = pd.read_parquet(file_path)
+
+df2 = df1.iloc[0:100]
 
 df = df.compute()
 print(df)

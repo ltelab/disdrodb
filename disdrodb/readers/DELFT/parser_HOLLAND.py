@@ -60,16 +60,16 @@ from disdrodb.logger import close_logger
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+# @click.command()  # options_metavar='<options>'
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+# @click.argument('processed_dir', metavar='<processed_dir>')
+# @click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
+# @click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
+# @click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
 def main(raw_dir,
          processed_dir,
          l0_processing=True,
@@ -280,6 +280,7 @@ def main(raw_dir,
         else: 
             import pandas as dd
             
+        # Station 8 has all raw_drop_number corrupted, so it can't be use
         # Bug on rows 105000 and 110000 for station 7 (000NETDL07 and PAR007 device name) on dask
         if lazy:
             df = df.compute()
@@ -322,7 +323,11 @@ def main(raw_dir,
         # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
         df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
         df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
-        df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
+        # Station 8 has \r\n' at end
+        if (df_to_parse['station_name'] == 'PAR008').any():
+            df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("\\r\\n'").to_frame('raw_drop_number')
+        else:
+            df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
         # Concat all togheter
         df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
@@ -344,6 +349,9 @@ def main(raw_dir,
                   'epoch_time',
                   'sample_interval',
                   'sensor_serial_number',
+                  'sensor_temperature_PBC',
+                  'rainfall_rate_16_bit',
+                  'rainfall_rate_12bit',
                   ]
 
         df = df.drop(todrop, axis=1)
@@ -517,4 +525,14 @@ def main(raw_dir,
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    main(raw_dir = "/home/kimbo/data/Campagne/DISDRODB/Raw/DELFT",
+    processed_dir = "/home/kimbo/data/Campagne/DISDRODB/Processed/DELFT",
+             l0_processing=False,
+             l1_processing=True,
+             write_netcdf=True,
+             force=True,
+             verbose=True,
+             debugging_mode=True,
+             lazy=False,
+             )

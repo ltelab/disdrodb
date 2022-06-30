@@ -108,7 +108,7 @@ list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 ###################################################### 
 #### 3. Select the station for parser development ####
 ######################################################
-station_id = list_stations_id[3]
+station_id = list_stations_id[0]
 
 attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
 # Retrieve sensor name
