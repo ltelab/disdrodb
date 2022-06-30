@@ -359,8 +359,20 @@ df = read_raw_data(filepath=filepath,
                     column_names=columns_names_temporary,
                     reader_kwargs=reader_kwargs,
                     lazy=False)
-    
 
+df = read_raw_data(filepath=filepath, 
+                    column_names=columns_names_temporary,
+                    reader_kwargs=reader_kwargs,
+                    lazy=False).head(n=115000)
+
+df = read_raw_data(filepath=filepath, 
+                    column_names=columns_names_temporary,
+                    reader_kwargs=reader_kwargs,
+                    lazy=False).head(n=100)
+
+reader_kwargs.pop("blocksize", None)
+df = pd.read_csv(filepath, skiprows=100, nrows=10, **reader_kwargs)
+df = pd.read_csv(filepath, skiprows=105000, nrows=5000, header=None)
 
 # - Look at the columns and data 
 print_df_column_names(df)
@@ -397,7 +409,7 @@ get_df_columns_unique_values_dict(df, column_indices=slice(0,15), column_names=T
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
 filepath = file_list[0]  # Select also other files here  1,2, ... 
-lazy = False             # Try also with True when work with False 
+lazy = True             # Try also with True when work with False 
 
 #------------------------------------------------------. 
 #### 8.1 Run following code portion without modifying anthing 
@@ -405,7 +417,9 @@ lazy = False             # Try also with True when work with False
 df = read_raw_data(filepath=filepath, 
                     column_names=columns_names_temporary,
                     reader_kwargs=reader_kwargs,
-                    lazy=lazy).head(n=100)
+                    lazy=lazy)
+
+
 
 #------------------------------------------------------. 
 # Check if file empty
@@ -514,18 +528,22 @@ print_df_columns_unique_values(df, column_indices=slice(0,20), column_names=True
 #### 9.1 Define sanitizer function [TO CUSTOMIZE]
 # --> df_sanitizer_fun = None  if not necessary ...
 
-def df_sanitizer_fun(df, lazy=False):
+def df_sanitizer_fun(df, lazy=lazy):
     # Import dask or pandas 
     if lazy: 
         import dask.dataframe as dd
     else: 
         import pandas as dd
         
-    # Some rows hasn't data (header of footer rows)
+    # Bug on rows 105000 and 110000 for station 7 (000NETDL07 and PAR007 device name) on dask
+    if lazy:
+        df = df.compute()
+    if (df['TO_BE_PARSED'].str.contains('000NETDL07')).any() | (df['TO_BE_PARSED'].str.contains('PAR007')).any():
+        # df = df.loc[105000:110000]
+        df.drop(df.index[105000:110000], axis=0, inplace=True)
+                                                          
+    # Some rows hasn't data (header and footer rows, or corrupted rows)
     df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() > 50]
-    
-    # Into device PAR007 there are a lot of corrupted rows
-    df = df[~df['TO_BE_PARSED'].str.contains('000NETDL07')]
     
     # Split the last column (contain the 37 remain fields)
     df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
@@ -557,20 +575,12 @@ def df_sanitizer_fun(df, lazy=False):
     df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
 
     # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
-    if lazy: 
-        df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_concentration')
-        df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_average_velocity')
-    else: 
-        df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
-        df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
-    
+    df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
+    df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
     df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
     # Concat all togheter
-    if lazy:
-        df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
-    else:
-        df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
+    df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
 
     return df 
 
@@ -579,7 +589,7 @@ def df_sanitizer_fun(df, lazy=False):
 #### 9.2 Launch code as in the parser file 
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
-lazy = False # True 
+lazy = True # True 
 subset_file_list = file_list[:1]
 # subset_file_list = all_stations_files
 df = read_L0_raw_file_list(file_list=subset_file_list, 

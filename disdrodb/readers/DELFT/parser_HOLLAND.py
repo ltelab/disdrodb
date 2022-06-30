@@ -280,11 +280,15 @@ def main(raw_dir,
         else: 
             import pandas as dd
             
-        # Some rows hasn't data (header of footer rows)
+        # Bug on rows 105000 and 110000 for station 7 (000NETDL07 and PAR007 device name) on dask
+        if lazy:
+            df = df.compute()
+        if (df['TO_BE_PARSED'].str.contains('000NETDL07')).any() | (df['TO_BE_PARSED'].str.contains('PAR007')).any():
+            # df = df.loc[105000:110000]
+            df.drop(df.index[105000:110000], axis=0, inplace=True)
+                                                              
+        # Some rows hasn't data (header and footer rows, or corrupted rows)
         df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() > 50]
-        
-        # Into device PAR007 there are a lot of corrupted rows
-        df = df[~df['TO_BE_PARSED'].str.contains('000NETDL07')]
         
         # Split the last column (contain the 37 remain fields)
         df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n = 99)
@@ -316,20 +320,12 @@ def main(raw_dir,
         df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
 
         # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
-        if lazy: 
-            df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_concentration')
-            df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1, meta=(None, 'object')).to_frame('raw_drop_average_velocity')
-        else: 
-            df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
-            df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
-        
+        df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
+        df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
         df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
         # Concat all togheter
-        if lazy:
-            df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1, ignore_unknown_divisions=True)
-        else:
-            df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
+        df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
 
         # Drop invalid rows
         df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 223]
