@@ -59,7 +59,7 @@ def main(raw_dir,
         """
         from disdrodb.L0.utils_nc import xr_concat_datasets
         from disdrodb.L1_proc import get_L1_coords
-        from disdrodb.L0.aux import get_ARM_LPM_dict
+        from disdrodb.L0.auxiliary import get_ARM_LPM_dict
         from disdrodb.standards import set_DISDRODB_L0_attrs 
         
         sensor_name = attrs['sensor_name']
