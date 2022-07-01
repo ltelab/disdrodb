@@ -577,11 +577,39 @@ def df_sanitizer_fun(df, lazy=lazy):
     # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
     df_raw_drop_concentration = df_to_parse.iloc[:,35:67].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_concentration')
     df_raw_drop_average_velocity = df_to_parse.iloc[:,67:-1].apply(lambda x: ','.join(x.dropna().astype(str)),axis=1).to_frame('raw_drop_average_velocity')
-    df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
+    # Station 8 has \r\n' at end
+    if (df_to_parse['station_name'] == 'PAR008').any():
+        df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("\\r\\n'").to_frame('raw_drop_number')
+    else:
+        df_raw_drop_number = df_to_parse.iloc[:,-1:].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
 
     # Concat all togheter
     df = dd.concat([df, df_to_parse.iloc[:,:35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number] ,axis=1)
+    
+    # Drop invalid rows
+    df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 223]
+    df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 223]
+    df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+    
+    # Drop variables not required in L0 Apache Parquet 
+    todrop = ['firmware_iop',
+              'firmware_dsp',
+              'date_time_measurement_start',
+              'sensor_time',
+              'sensor_date',
+              'station_name',
+              'station_number',
+              'sensor_serial_number',
+              'epoch_time',
+              'sample_interval',
+              'sensor_serial_number',
+              'sensor_temperature_PBC',
+              'rainfall_rate_16_bit',
+              'rainfall_rate_12bit',
+              ]
 
+    df = df.drop(todrop, axis=1)
+    
     return df 
 
 
