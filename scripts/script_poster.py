@@ -109,40 +109,10 @@ sensors_stats = dict(sorted(sensors_stats.items(), key=lambda x: x[1], reverse=T
 print(sensors_stats)
 
 ####--------------------------------------------------------------------------.
-######################################## 
-#### Load literature list of disdro ####
-########################################
-import pandas as pd
-literature_table_fpath = "/ltenas3/0_Data/DISDRODB/DISDRO_List.xlsx"
-df_list = pd.read_excel(literature_table_fpath)
-df_latlon = df_list[['Lat','Lon']]
-df_latlon = df_latlon[df_latlon['Lat'].notnull()]
-
-### Display global coverage 
-import matplotlib.pyplot as plt
-import cartopy.feature as cfeature
-from cartopy import crs as ccrs
-crs_ref = ccrs.PlateCarree() # ccrs.AzimuthalEquidistant()
-crs_proj = ccrs.Robinson() # ccrs.PlateCarree()
-fig, ax = plt.subplots(subplot_kw={'projection': crs_proj})
-ax.set_global()
-# ax.add_feature(cfeature.COASTLINE, edgecolor="black")
-# ax.add_feature(cfeature.BORDERS, edgecolor="black")
-ax.gridlines()
-ax.stock_img()
-
-plt.scatter(x=df_latlon['Lon'], y=df_latlon['Lat'],
-            color="black",
-            s=2,
-            alpha=0.5,
-            transform=crs_ref) 
-
-plt.show()
-
-####--------------------------------------------------------------------------.
-############################### 
-#### Plot spatial coverage ####
-############################### 
+##############################################
+#### Define station coordinate dataframes ####
+##############################################
+#### - Processed Data 
 stations_dict = {}
 for fpath in metadata_fpaths:
    metadata = read_yaml(fpath)
@@ -153,6 +123,7 @@ for fpath in metadata_fpaths:
    except: 
        pass
    if lonlat[0] == -9999:
+       print(fpath)
        continue
    stations_dict[fullname] = lonlat
 
@@ -161,17 +132,42 @@ for fpath in metadata_fpaths:
 
 lons =  [t[0] for t in stations_dict.values()]
 lats =  [t[1] for t in stations_dict.values()]  
-gdf = gpd.GeoDataFrame(stations_dict.keys(), 
-                       geometry=gpd.points_from_xy(lons, lats))
+ 
+df_processed_latlon = pd.DataFrame({"Lat": lats, "Lon": lons})
 
-# gdf.plot()
+####--------------------------------------------------------------------------.
+#### - Literature data 
+### Literature list 
+literature_table_fpath = "/ltenas3/0_Data/DISDRODB/DISDRO_List.xlsx"
+df_list = pd.read_excel(literature_table_fpath)
+df_latlon = df_list[['Lat','Lon']]
+df_latlon = df_latlon[df_latlon['Lat'].notnull()]
 
-#------------------------------------------------------------------------------.
-### Display global coverage 
+### IGE list 
+ige_network_fpath = "/ltenas3/0_Data/DISDRODB/TODO_Raw/FRANCE/IGE/IGE_DSD_locations_v2.xlsx"
+df_ige = pd.read_excel(ige_network_fpath)
+df_ige_latlon = df_ige[['Latitude','Longitude']]
+df_ige_latlon.columns = ['Lat','Lon']
+df_processed_latlon = df_processed_latlon.append(df_ige_latlon)
+
+####--------------------------------------------------------------------------.
+#### - Gitter station coordinate for improved display 
+def rand_jitter(arr):
+    thr_degs = 0.1
+    return arr + np.random.randn(len(arr)) * thr_degs
+
+df_latlon['Lat'] = rand_jitter(df_latlon['Lat'])
+df_latlon['Lon'] = rand_jitter(df_latlon['Lon'])
+
+df_processed_latlon['Lat'] = rand_jitter(df_processed_latlon['Lat'])
+df_processed_latlon['Lon'] = rand_jitter(df_processed_latlon['Lon'])
+
+####--------------------------------------------------------------------------.
+#### Display global coverage 
 import matplotlib.pyplot as plt
 import cartopy.feature as cfeature
 from cartopy import crs as ccrs
-alpha = 0.5 
+alpha = 1
 color_unprocessed = "black"
 color_processed = "#006400" # DarkGreen
 color_processed = "magenta"
@@ -195,7 +191,7 @@ ax.scatter(x=df_latlon['Lon'], y=df_latlon['Lat'],
             transform=crs_ref) 
 
 # - Plot processed data 
-plt.scatter(x=gdf['geometry'].x, y=gdf['geometry'].y,
+plt.scatter(x=df_processed_latlon['Lon'], y=df_processed_latlon['Lat'],
             color=color_processed,
             edgecolor='None',
             marker=marker,
@@ -207,7 +203,7 @@ plt.show()
 #------------------------------------------------------------------------------.
 ### Display coverage per continent
 marker = 'o'
-alpha = 0.5 
+alpha = 1
 color_unprocessed = "black"
 color_processed = "magenta"
 continent_extent_dict = {  # [lon_start, lon_end, lat_start, lat_end].
@@ -237,7 +233,7 @@ for continent, extent in continent_extent_dict.items():
                 alpha=alpha,
                 transform=crs_ref) 
     # - Plot processed data 
-    plt.scatter(x=gdf['geometry'].x, y=gdf['geometry'].y,
+    plt.scatter(x=df_processed_latlon['Lon'], y=df_processed_latlon['Lat'],
                 color=color_processed,
                 edgecolor='None',
                 marker=marker,
