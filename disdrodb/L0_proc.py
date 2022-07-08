@@ -395,7 +395,21 @@ def _write_to_parquet(df, fpath, force=False):
     # Save to parquet
     # - If Pandas df
     if isinstance(df, pd.DataFrame):
+        # Wrong path if save with pandas
         try:
+            df.to_parquet(
+                fpath,
+                engine=engine,
+                compression=compression,
+                row_group_size=row_group_size,
+            )
+            logger.info(
+                f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
+            )
+        except FileNotFoundError:
+            # Cannot create the station folder, so has to be created manually
+            from disdrodb.io import _create_directory
+            _create_directory(os.path.dirname(fpath))
             df.to_parquet(
                 fpath,
                 engine=engine,
