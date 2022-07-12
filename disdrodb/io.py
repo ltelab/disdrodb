@@ -21,33 +21,67 @@ import logging
 import os
 import shutil
 import glob
+import re
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
 from disdrodb.logger import log_info, log_warning
+from typing import Literal
 logger = logging.getLogger(__name__)
+
+
+# To do : put that in a config file
+PROCESS_DIR_PATH_ELEMENT = ['DISDRODB','Processed']
+SOURCE_DIR_PATH_ELEMENTS = ['DISDRODB','Raw', 'institute_name', 'campaign_name', 'data', 'station_id', 'file_name']
+
+
+
 
 ####---------------------------------------------------------------------------.
 #### Directory/Filepaths Defaults
 def infer_institute_from_fpath(fpath):
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    institute = disdrodb_fpath.split("/")[2]   
+    institute = get_element_from_file_path(fpath,'institute_name') 
     return institute 
 
 def infer_campaign_from_fpath(fpath):
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    campaign = disdrodb_fpath.split("/")[3] 
+    campaign =  get_element_from_file_path(fpath,'campaign_name')
     return campaign 
 
+
 def infer_station_id_from_fpath(fpath):
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    station_id = disdrodb_fpath.split("/")[5]
-    # Optional strip .yml if fpath point to YAML file 
-    station_id.strip(".yml")  
-    return station_id 
+    station_id = get_element_from_file_path(fpath,'station_id')
+    station_id.strip(".yml")
+    return station_id
+
+
+
+def get_element_from_file_path(fpath : str, element_name : Literal["institute_name","campaign_name","station_id"])  -> str :
+    """
+    Return the name of the institute, the name of the compaign and the id of the station 
+    from the path ...\DISDRODB\Raw\<institute_name>\<campaign_name>\<station_id>\<file_name>
+
+    :param fpath: path
+    :param element_name: name of the requested element. Shoudl be "institute_name", "campaign_name" or "station_id"
+
+    :returns: value of the requested element 
+    :rtype: str
+
+    """
+    absolut_path_from_root_folder = fpath.split(PROCESS_DIR_PATH_ELEMENT[0])[-1].lstrip(os.sep) # Should contain the "DISDRODB" path element
+    list_of_path_element = absolut_path_from_root_folder.split(os.sep)
+    expected_path_length = len(SOURCE_DIR_PATH_ELEMENTS)-1
+    current_path_lenght = len(list_of_path_element)
+
+    assert expected_path_length == current_path_lenght, f"The path {fpath} should contain {expected_path_length} elements, {current_path_lenght} have been found."
+
+    element_value =  [list_of_path_element[i] for i,x in enumerate(SOURCE_DIR_PATH_ELEMENTS) if x == element_name][0]
+
+    return element_value
+
+
+
+
+
 
 
 def get_campaign_name(base_dir):
@@ -322,15 +356,19 @@ def check_processed_dir(processed_dir, force=False):
         raise TypeError("Provide 'processed_dir' as a string'.")
     #------------------------------    
     # Check processed_dir has "DISDRODB/Processed" to avoid deleting precious stuffs 
-    if processed_dir.find("DISDRODB/Processed") == -1: 
-        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*."
+    
+    # pattern to check path for windows and unix 
+    path_pattern = fr"(\\|\/){PROCESS_DIR_PATH_ELEMENT[0]}(\\|\/){PROCESS_DIR_PATH_ELEMENT[1]}(((\\|\/).*)|())"
+
+    if not re.search(path_pattern, processed_dir) : 
+        msg = f"Expecting 'processed_dir' to contain the pattern */{PROCESS_DIR_PATH_ELEMENT[0]}/{PROCESS_DIR_PATH_ELEMENT[1]}/*."
         logger.error(msg)
         raise ValueError(msg)
         
     # Check processed_dir does not end with "DISDRODB/Processed" 
     # - It must contain also the <campaign_name> directory  
-    if processed_dir.endswith("Processed") or processed_dir.endswith("Processed/"):
-        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
+    if processed_dir.endswith(PROCESS_DIR_PATH_ELEMENT[1]) or processed_dir.endswith(f"{PROCESS_DIR_PATH_ELEMENT[1]}/"):
+        msg = f"Expecting 'processed_dir' to contain the pattern */{PROCESS_DIR_PATH_ELEMENT[0]}/{PROCESS_DIR_PATH_ELEMENT[1]}/<campaign_name>."
         logger.error(msg)
         raise ValueError(msg)
 
