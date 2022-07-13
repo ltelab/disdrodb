@@ -1,12 +1,14 @@
-# https://github.com/ltelab/disdrodb ontributing Guide
+# Disdrodb contributing Guide
 
-Hi! Thanks for taking the time to contribute to disdrodb .
+Hi! Thanks for taking the time to contribute to disdrodb.
 
-* You can contribute in many ways *
+You can contribute in many ways :
+
  - Join the [discussion](https://github.com/ltelab/disdrodb/discussions)
 
 
-* Before submitting your contribution, please make sure to take a moment and read through the following guidelines *
+Before submitting your contribution, please make sure to take a moment and read through the following guidelines
+
 - [Code of Conduct](https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md)
 - [Issue Reporting Guidelines](#issue-reporting-guidelines)
 - [Pull Request Guidelines](#pull-request-guidelines)

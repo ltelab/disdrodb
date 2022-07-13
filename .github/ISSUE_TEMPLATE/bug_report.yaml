@@ -40,12 +40,10 @@ body:
     description: |
       examples:
         - **OS**: Ubuntu 20.04
-        - **Node**: 13.14.0
-        - **npm**: 7.6.3
+        - **Python**: 3.8.2
     value: |
         - OS:
-        - Node:
-        - npm:
+        - python:
     render: markdown
   validations:
     required: false
