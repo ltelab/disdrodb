@@ -1,0 +1,258 @@
+rainfall_rate_32bit:
+  n_digits: 7
+  n_characters: 8
+  n_decimals: 3
+  n_naturals: 4
+  data_range:
+  - 0
+  - 9999.999
+  nan_flags: null
+rainfall_accumulated_32bit:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 2
+  n_naturals: 4
+  data_range:
+  - 0
+  - 300.0
+  nan_flags: null
+weather_code_synop_4680:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_synop_4677:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_metar_4678:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+weather_code_nws:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+reflectivity_32bit:
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 3
+  n_naturals: 2
+  data_range:
+  - -9.999
+  - 99.999
+  nan_flags: null
+mor_visibility:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 0
+  n_naturals: 4
+  data_range:
+  - 0
+  - 20000
+  nan_flags: null
+sample_interval:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+laser_amplitude:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+sensor_temperature:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 0
+  n_naturals: 3
+  data_range:
+  - -99
+  - 100
+  nan_flags: null
+sensor_serial_number:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+firmware_iop:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+firmware_dsp:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+sensor_heating_current:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 2
+  n_naturals: 1
+  data_range:
+  - 0
+  - 4.0
+  nan_flags: null
+sensor_battery_voltage:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+  - 0
+  - 30.0
+  nan_flags: null
+sensor_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 0
+  n_naturals: 1
+  data_range:
+  - 0
+  - 3
+  nan_flags: null
+start_time:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+sensor_time:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+sensor_date:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+station_name:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+station_number:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+rainfall_amount_absolute_32bit:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+  - 0
+  - 999.999
+  nan_flags: null
+error_code:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 0
+  n_naturals: 3
+  data_range:
+  - 0
+  - 3
+  nan_flags: null
+rainfall_rate_16bit:
+  n_digits: 8
+  n_characters: 5
+  n_decimals: 4
+  n_naturals: 4
+  data_range:
+  - 0
+  - 9999.999
+  nan_flags: null
+rainfall_rate_12bit:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+rainfall_accumulated_16bit:
+  n_digits: 7
+  n_characters: 6
+  n_decimals: 2
+  n_naturals: 4
+  data_range:
+  - 0
+  - 300.0
+  nan_flags: null
+reflectivity_16bit:
+  n_digits: 4
+  n_characters: 5
+  n_decimals: 2
+  n_naturals: 2
+  data_range:
+  - -9.999
+  - 99.999
+  nan_flags: null
+raw_drop_concentration:
+  n_digits: 0
+  n_characters: 224
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+raw_drop_average_velocity:
+  n_digits: 0
+  n_characters: 224
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+raw_drop_number:
+  n_digits: 0
+  n_characters: 4096
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null

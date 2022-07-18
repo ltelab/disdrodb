@@ -1,0 +1,104 @@
+'01': start_identifier
+'02': device_address
+'03': sensor_serial_number
+'04': software_version
+'05': date_sensor
+'06': time_sensor
+
+'07': weather_code_synop_4677_5min
+'08': weather_code_synop_4680_5min 
+'09': weather_code_metar_4678_5min 
+'10': precipitation_rate_5min  
+'11': weather_code_synop_4677
+'12': weather_code_synop_4680
+'13': weather_code_metar_4678
+'14': precipitation_rate  # intensity_total
+'15': rainfall_rate # intensity_liquid
+'16': snowfall_rate # intensity_solid
+'17': precipitation_accumulated  # accum_precip
+'18': mor_visibility  # maximum_visibility
+'19': reflectivity # radar_reflectivity 
+'20': quality_index # [0-100]
+'21': max_hail_diameter
+ 
+# status 
+'22': laser_status
+'23': static_signal
+
+'24': laser_temperature_analog_status
+'25': laser_temperature_digital_status
+'26': laser_current_analog_status
+'27': laser_current_digital_status
+
+# Heating: glass(panes), housing, heads, carriers
+'28': sensor_voltage_supply_status
+
+'29': current_heating_pane_transmitter_head_status
+'30': current_heating_pane_receiver_head_status
+
+'31': temperature_sensor_status
+
+'32': current_heating_voltage_supply_status
+'33': current_heating_house_status
+'34': current_heating_heads_status
+'35': current_heating_carriers_status
+
+'36': control_output_laser_power_status
+'37': reserve_status
+
+# Values
+'38': temperature_interior 
+
+'39': laser_temperature
+'40': laser_current_average
+
+'41': control_voltage
+'42': optical_control_voltage_output # maybe think a bit more on a nicer name # control_output_laser_voltage
+
+'43': sensor_voltage_supply 
+
+'44': current_heating_pane_transmitter_head 
+'45': current_heating_pane_receiver_head
+
+'46': temperature_ambient
+
+'47': current_heating_voltage_supply # V # remove current?
+'48': current_heating_house # A
+'49': current_heating_heads # A 
+'50': current_heating_carriers # A
+
+'51': number_particles # number_particles_all
+'52': number_particles_internal_data
+'53': number_particles_min_speed
+'54': number_particles_min_speed_internal_data
+'55': number_particles_max_speed
+'56': number_particles_max_speed_internal_data
+'57': number_particles_min_diameter
+'58': number_particles_min_diameter_internal_data
+'59': number_particles_no_hydrometeor
+'60': number_particles_no_hydrometeor_internal_data
+'61': number_particles_unknown_classification
+'62': number_particles_unknown_classification_internal_data
+'63': number_particles_class_1
+'64': number_particles_class_1_internal_data
+'65': number_particles_class_2
+'66': number_particles_class_2_internal_data
+'67': number_particles_class_3
+'68': number_particles_class_3_internal_data
+'69': number_particles_class_4
+'70': number_particles_class_4_internal_data
+'71': number_particles_class_5
+'72': number_particles_class_5_internal_data
+'73': number_particles_class_6
+'74': number_particles_class_6_internal_data
+'75': number_particles_class_7
+'76': number_particles_class_7_internal_data
+'77': number_particles_class_8
+'78': number_particles_class_8_internal_data
+'79': number_particles_class_9
+'80': number_particles_class_9_internal_data
+'81': raw_drop_number
+# '521': air_temperature
+# '522': relative_humidity
+# '523': wind_speed
+# '524': wind_direction

@@ -1,0 +1,702 @@
+start_identifier: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+
+device_address: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+
+sensor_serial_number: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+software_version: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+date_sensor: 
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+time_sensor: 
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+weather_code_synop_4677_5min: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+weather_code_synop_4680_5min: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+weather_code_metar_4678_5min: 
+  dtype: str
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+precipitation_rate_5min: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+weather_code_synop_4677: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+weather_code_synop_4680: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+weather_code_metar_4678: 
+  dtype: str
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+precipitation_rate: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_rate: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+snowfall_rate: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+precipitation_accumulated: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+mor_visibility: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+reflectivity: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+quality_index: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+max_hail_diameter: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+laser_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+static_signal: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+laser_temperature_analog_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+laser_temperature_digital_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+laser_current_analog_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+laser_current_digital_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+sensor_voltage_supply_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+current_heating_pane_transmitter_head_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+current_heating_pane_receiver_head_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+temperature_sensor_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+current_heating_voltage_supply_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+current_heating_house_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+current_heating_heads_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+current_heating_carriers_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+control_output_laser_power_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+reserve_status: 
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+temperature_interior: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+laser_temperature: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+laser_current_average: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+control_voltage: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+optical_control_voltage_output: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+sensor_voltage_supply: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+current_heating_pane_transmitter_head: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+current_heating_pane_receiver_head: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+temperature_ambient: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+current_heating_voltage_supply: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+current_heating_house: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+current_heating_heads: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+current_heating_carriers: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+number_particles_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_min_speed: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+number_particles_min_speed_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_max_speed: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+number_particles_max_speed_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_min_diameter: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+number_particles_min_diameter_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_no_hydrometeor: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_no_hydrometeor_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_unknown_classification: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_unknown_classification_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_1: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_1_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_2: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_2_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_3: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_3_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_4: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_4_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_5: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_5_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_6: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_6_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_7: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_7_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_8: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_8_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_9: 
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_class_9_internal_data: 
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+raw_drop_number: 
+  dtype: uint64
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 18446744073709551614
+  chunksizes:
+  - 5000
+  - 22
+  - 20
+# raw_drop_concentration: 
+#   dtype: float32
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes:
+#   - 5000
+#   - 22
+# raw_drop_average_velocity: 
+#   dtype: float32
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes:
+#   - 5000
+#   - 20

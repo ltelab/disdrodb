@@ -28,9 +28,9 @@ encoding_kwargs["chunksizes"] = 5000
 # add_offset
 
 # Define custom encodings
-from disdrodb.data_encodings import get_L0_dtype_standards
+from disdrodb.L0.standards import get_L0_dtype 
 
-dtype_L0 = get_L0_dtype_standards(sensor_name=sensor_name)
+dtype_L0 = get_L0_dtype(sensor_name=sensor_name)
 variables = get_sensor_variables(sensor_name)
 encodings_dict = {}
 for variable in variables:

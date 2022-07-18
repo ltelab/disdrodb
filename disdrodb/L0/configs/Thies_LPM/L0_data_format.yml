@@ -1,0 +1,809 @@
+start_identifier:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 0
+  n_naturals: 1
+  data_range:
+  - 0
+  - 9
+  nan_flags: null
+device_address:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+sensor_serial_number:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 0
+  n_naturals: 4
+  data_range:
+  - 0
+  - 9999
+  nan_flags: null
+software_version:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+  - 0
+  - 9.99
+  nan_flags: null
+date_sensor:
+  n_digits: 6
+  n_characters: 8
+  n_decimals: 6
+  n_naturals: 0
+  data_range:
+  - 01.01.1990
+  - 31.12.2100
+  nan_flags: null
+time_sensor:
+  n_digits: 6
+  n_characters: 8
+  n_decimals: 6
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+  
+###
+
+weather_code_synop_4677_5min:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_synop_4680_5min:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_metar_4678_5min:
+  n_digits: 0
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+precipitation_rate_5min:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+  - 000.000
+  - 999.999
+  nan_flags: null
+weather_code_synop_4677:
+  n_digits: 0
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_synop_4680:
+  n_digits: 0
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99
+  nan_flags: null
+weather_code_metar_4678:
+  n_digits: 0
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+precipitation_rate: # intensity_total
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+  - 000.000
+  - 999.999
+  nan_flags: null # By the documentation: "Exception: when „not identified precipitation“ is reported (15+16 are then 0)", it mean it's 0 the nan value?
+rainfall_rate: # intensity_liquid
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+  - 000.000
+  - 999.999
+  nan_flags: null
+snowfall_rate: # intensity_solid
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+  - 000.000
+  - 999.999
+  nan_flags: null
+precipitation_accumulated: # accum_precip
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 4
+  n_naturals: 2
+  data_range:
+  - 00.0000
+  - 99.9999
+  nan_flags: null
+mor_visibility: # maximum_visibility
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 00000
+  - 99998
+  nan_flags: null
+reflectivity: # radar_reflectivity
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 2
+  n_naturals: 1
+  data_range:
+  - -9.9
+  - 99.9
+  nan_flags: null
+quality_index:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 3
+  n_naturals: 0
+  data_range:
+  - 0
+  - 100
+  nan_flags: null
+max_hail_diameter:
+  n_digits: 2
+  n_characters: 3
+  n_decimals: 1
+  n_naturals: 1
+  data_range:
+  - 0.0
+  - 9.9
+  nan_flags: null
+  
+### Status
+
+laser_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK/on:0, off:1)
+static_signal:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, Error:1)
+
+
+laser_temperature_analog_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, Error:1)
+laser_temperature_digital_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, Error:1)
+laser_current_analog_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, Error:1)
+laser_current_digital_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, Error:1)
+  
+### Heating: glass(panes), housing, heads, carriers
+
+sensor_voltage_supply_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, Error:1)
+
+current_heating_pane_transmitter_head_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+current_heating_pane_receiver_head_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+
+temperature_sensor_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+
+current_heating_voltage_supply_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+current_heating_house_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+current_heating_heads_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+current_heating_carriers_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+
+control_output_laser_power_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 1
+  nan_flags: null # (OK:0, warning:1)
+reserve_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 1
+  n_naturals: 0
+  data_range:
+  - 0
+  - 0
+  nan_flags: null
+
+### Values
+
+temperature_interior:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 3
+  n_naturals: 0
+  data_range:
+  - 0
+  - 999
+  nan_flags: null
+
+laser_temperature:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 2
+  n_naturals: 0
+  data_range:
+  - 0
+  - 80
+  nan_flags: null
+laser_current_average:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+  - 0
+  - 9999
+  nan_flags: null
+
+control_voltage:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+  - null # (reference value: 4010±5)
+  - null
+  nan_flags: null
+optical_control_voltage_output:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+  - 1000
+  - 6500
+  nan_flags: null
+
+sensor_voltage_supply:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 3
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+
+current_heating_pane_transmitter_head:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 3
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+current_heating_pane_receiver_head:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 3
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+
+temperature_ambient:
+  n_digits: 4
+  n_characters: 5
+  n_decimals: 3
+  n_naturals: 1
+  data_range:
+  - -999.9
+  - 99999.0
+  nan_flags: null
+
+current_heating_voltage_supply:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 3
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+current_heating_house:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+current_heating_heads:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+current_heating_carriers:
+  n_digits: 4
+  n_characters: 4
+  n_decimals: 4
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+
+number_particles: # number_particles_all
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_internal_data: # By documentation: „00000.000“ (internal data)
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_min_speed:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_min_speed_internal_data: # By documentation: „00000.000“ (internal data)
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_max_speed:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_max_speed_internal_data: # By documentation: „00000.000“ (internal data)
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_min_diameter:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_min_diameter_internal_data: # By documentation: „00000.000“ (internal data)
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_no_hydrometeor:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_no_hydrometeor_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_unknown_classification:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_unknown_classification_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+
+number_particles_class_1:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_1_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_2:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_2_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_3:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_3_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_4:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_4_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_5:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_5_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_6:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_6_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_7:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_7_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_8:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_8_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+number_particles_class_9:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 5
+  n_naturals: 0
+  data_range:
+  - 0
+  - 99999
+  nan_flags: null
+number_particles_class_9_internal_data:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 5
+  n_naturals: 3
+  data_range:
+  - 00000.000
+  - 99999.999
+  nan_flags: null
+raw_drop_number:
+  n_digits: 1317
+  n_characters: 1756
+  n_decimals: 1317
+  n_naturals: 0
+  data_range:
+  - null
+  - null
+  nan_flags: null
+# '521': air_temperature
+# '522': relative_humidity
+# '523': wind_speed
+# '524': wind_direction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

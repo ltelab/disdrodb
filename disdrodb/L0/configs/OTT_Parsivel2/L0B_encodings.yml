@@ -1,0 +1,333 @@
+rainfall_rate_32bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_accumulated_32bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+weather_code_synop_4680:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 4294967294
+weather_code_synop_4677:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 4294967294
+weather_code_metar_4678:
+  dtype: str
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+weather_code_nws:
+  dtype: str
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+reflectivity_32bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+mor_visibility:
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65534
+sample_interval:
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65534
+laser_amplitude:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 4294967294
+number_particles:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 4294967294
+sensor_temperature:
+  dtype: int8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 127
+sensor_serial_number:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+firmware_iop:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+firmware_dsp:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+sensor_heating_current:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+sensor_battery_voltage:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+sensor_status:
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 254
+start_time:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+sensor_time:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+sensor_date:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+station_name:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+station_number:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_amount_absolute_32bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+error_code:
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 254
+sensor_temperature_pcb:
+  dtype: int8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 127
+sensor_temperature_receiver:
+  dtype: int8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 127
+sensor_temperature_trasmitter:
+  dtype: int8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 127
+rainfall_rate_16_bit_30:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_rate_16_bit_1200:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_accumulated_16bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+reflectivity_16bit:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rain_kinetic_energy:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+snowfall_rate:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+number_particles_all:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 4294967294
+list_particles:
+  dtype: object
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+raw_drop_concentration:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes:
+  - 5000
+  - 32
+raw_drop_average_velocity:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes:
+  - 5000
+  - 32
+raw_drop_number:
+  dtype: uint64
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 18446744073709551614
+  chunksizes:
+  - 5000
+  - 32
+  - 32
