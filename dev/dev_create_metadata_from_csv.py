@@ -11,8 +11,8 @@ def create_metadata(fpath, data):
     import yaml
     
     with open(fpath, "w+") as f:
-        yaml.dump(data, f, sort_keys=False)
-
+        yaml.safe_dump(data, f, sort_keys=False, allow_unicode=True)
+    
 
 def create_list_path(df, folder_output_path):
     '''Return list of yaml file path from DSD metadata.csv dataframe'''
@@ -81,6 +81,27 @@ def clean_df(df):
     df = df.fillna(value=values)
     df = df.fillna('')
     
+    # Assign dtype to columns
+    col_dtype = {'latitude': 'float',
+                'longitude': 'float',
+                'altitude': 'float',}
+    
+    for col, dtype in col_dtype.items():
+        # Replace , with .
+        try:
+            df[col] = df[col].str.replace(',','.')
+        except AttributeError:
+            # Not need to replace
+            pass
+        
+        try:
+            # df[col] = df[col].astype(dtype)
+            df[col] = pd.to_numeric(df[col])
+        except Exception as e:
+            print('Errors on dtype conversion on column {} for {} dtype'.format(col, dtype))
+        
+        
+    
     return df
 
 def check_csv(source_path):
@@ -105,17 +126,17 @@ import click
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('source_path', type=click.File('rb'))
-@click.argument('folder_output_path')
+# @click.command()  # options_metavar='<options>'
+# @click.argument('source_path', type=click.File('rb'))
+# @click.argument('folder_output_path')
 def main(source_path,
          folder_output_path
          ):
     
-    # Path for DSD metadata.csv
+    # # Path for DSD metadata.csv
     # source_path = '/home/kimbo/Downloads/DSD_metadata.csv'
 
-    # Output folder for the metadata
+    # # Output folder for the metadata
     # folder_output_path = '/home/kimbo/data/metadata_test'
     
     df = check_csv(source_path)
@@ -134,7 +155,10 @@ def main(source_path,
     create_metadata_files(list_path, list_meta)
 
 if __name__ == '__main__':
-    main()
+    # main()
+    main(source_path = '/home/kimbo/Downloads/DSD_metadata.csv',
+             folder_output_path = '/home/kimbo/data/metadata_test'
+             )
 
 
 
