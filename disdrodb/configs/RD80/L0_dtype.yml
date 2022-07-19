@@ -22,16 +22,18 @@ n17: 'uint8'
 n18: 'uint8'
 n19: 'uint8'
 n20: 'uint8'
-RI: '' # Rain intensity (mm/h)
-RA: '' # Rain amount (mm)
-RAT: '' # Total rain amount since start of measurement (mm)
-W: '' # Liquid water content (mm3/m3)
-Wg: '' # Liquid water content (g/m3)
-Z: '' # Radar reflectivity factor (mm6/m3)
-ZdB: '' # Radar reflectivity factor (dB)
-EK: '' # Kinetic energy (J/m2)
-EF: '' # Energy flux (j/(m2.h))
-N0: '' # Number concentration (1/(m3.mm))
-Slope: '' # Slope (1/mm)
-NDi: '' # Number density of drops of the diameter corresponding to a site class i per unit volume (1/(m3.mm))
-Dmax: '' # Largest drop registered during interval t (mm)
+RI: 'float32' # Rain intensity (mm/h)
+RA: 'float32' # Rain amount (mm)
+RAT: 'float32' # Total rain amount since start of measurement (mm)
+
+# Not present but into the documentation
+
+# Wg: 'float32' # Liquid water content (g/m3)
+# float16: 'float32' # Radar reflectivity factor (dB)
+# EK: 'object' # Kinetic energy (J/m2)
+# EF: 'float32' # Energy flux (j/(m2.h))
+# N0: 'float32' # Number concentration (1/(m3.mm))
+# Slope: 'object' # Slope (1/mm)
+# NDi: 'object' # Number density of drops of the diameter corresponding to a site class i per unit volume (1/(m3.mm))
+# Dmax: 'float16' # Largest drop registered during interval t (mm)
+# Lamda: 'float16'
