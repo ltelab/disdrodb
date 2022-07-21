@@ -169,6 +169,9 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
     
     # Enforce all raw files columns with dtype = 'object' 
     dtype = 'object'
+    # To pop to avoid this error: TypeError: dask.dataframe.io.csv.make_reader.<locals>.read() got multiple values for keyword argument 'dtype'
+    reader_kwargs.pop("dtype", None)
+    
     
     # Preprocess the reader_kwargs
     reader_kwargs = reader_kwargs.copy()    
