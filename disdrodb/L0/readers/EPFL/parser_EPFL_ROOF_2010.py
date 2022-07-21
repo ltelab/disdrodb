@@ -21,65 +21,34 @@ Created on Thu Jun  2 03:15:11 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-import os
 import click
-import time
-import logging
-
-# Directory 
-from disdrodb.io import check_directories
-from disdrodb.io import get_campaign_name
-from disdrodb.io import create_directory_structure
-
-# Metadata 
-from disdrodb.metadata import read_metadata
-from disdrodb.check_standards import check_sensor_name
-
-# IO 
-from disdrodb.io import get_L0_fpath
-from disdrodb.io import get_L1_netcdf_fpath
-from disdrodb.io import read_L0_data
-
-# L0_processing
-from disdrodb.check_standards import check_L0_column_names
-from disdrodb.check_standards import check_L0_standards
-from disdrodb.L0_proc import get_file_list
-from disdrodb.L0_proc import read_L0_raw_file_list
-from disdrodb.L0_proc import write_df_to_parquet
-
-# L1_processing
-from disdrodb.L1_proc import create_L1_dataset_from_L0
-from disdrodb.L1_proc import write_L1_to_netcdf
-from disdrodb.L1_proc import create_L1_summary_statistics
-
-# Logger 
-from disdrodb.logger import create_logger
-from disdrodb.logger import close_logger
-
+from disdrodb.L0 import run_L0
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
 @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
 @click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0', '--l0_processing', type=bool, show_default=True, default=True, help="Perform L0 processing")
-@click.option('-l1', '--l1_processing', type=bool, show_default=True, default=True, help="Perform L1 processing")
-@click.option('-nc', '--write_netcdf', type=bool, show_default=True, default=True, help="Write L1 netCDF4")
+@click.option('-L0A', '--L0A_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
+@click.option('-L0B', '--L0B_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
+@click.option('-k', '--keep_L0A', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
 @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
 @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
 @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+@click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
 def main(raw_dir,
          processed_dir,
-         l0_processing=True,
-         l1_processing=True,
-         write_netcdf=True,
+         L0A_processing=True,
+         L0B_processing=True,
+         keep_L0A=False,
          force=False,
          verbose=False,
          debugging_mode=False,
          lazy=True,
+         single_netcdf=True, 
          ):
-    """Script to process raw data to L0 and L1. \f
+    """Script to process raw data to L0A and L0B format. 
     
     Parameters
     ----------
@@ -90,45 +59,48 @@ def main(raw_dir,
         The directory must have the following structure:
         - /data/<station_id>/<raw_files>
         - /metadata/<station_id>.json 
-        For each <station_id> there must be a corresponding JSON file
-        in the metadata subfolder.
+        Important points:
+        - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
+        - The <campaign_name> must semantically match between:
+           - the raw_dir and processed_dir directory paths;
+           - with the key 'campaign_name' within the metadata YAML files. 
+        - The campaign_name are set to be UPPER CASE. 
     processed_dir : str
-        Desired directory path for the processed L0 and L1 products. 
+        Desired directory path for the processed L0A and L0B products. 
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    l0_processing : bool
-        Whether to launch processing to generate L0 Apache Parquet file(s) from raw data.
-        The default is True.
-    l1_processing : bool
-        Whether to launch processing to generate L1 netCDF4 file(s) from source netCDF or L0 data. 
-        The default is True.
-    write_netcdf: bool 
-        Whether to save L1 as netCDF4 archive
-        Write_netcdf must be True.
+    L0A_processing : bool
+      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+      The default is True.
+    L0B_processing : bool
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data. 
+      The default is True.
+    keep_L0A : bool 
+        Whether to keep the L0A files after having generated the L0B netCDF products.
+        The default is False.
     force : bool
         If True, overwrite existing data into destination directories. 
         If False, raise an error if there are already data into destination directories. 
-        The default is False
+        The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal. 
         The default is False.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        - For L0 processing, it processes just 3 raw data files.
-        - For L1 processing, it takes a small subset of the Apache Parquet dataframe.
+        - For L0A processing, it processes just 3 raw data files.
+        - For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
         The default is False.
     lazy : bool
         Whether to perform processing lazily with dask. 
         If lazy=True, it employed dask.array and dask.dataframe.
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
+    single_netcdf : bool
+        Whether to concatenate all raw files into a single L0B netCDF file.
+        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
+        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
+        The default is True.
     
-    Additional information:
-    - The campaign name must semantically match between:
-       - The ends of raw_dir and processed_dir paths 
-       - The attribute 'campaign' within the metadata JSON file. 
-    - The campaign name are set to be UPPER CASE. 
-       
     """
     ####----------------------------------------------------------------------.
     ###########################
@@ -140,32 +112,29 @@ def main(raw_dir,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
     column_names = [
-        "time",
-        "id",
-        "datalogger_temperature",
-        "datalogger_voltage",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_temperature",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "sensor_status",
-        "rainfall_amount_absolute_32bit",
-        "Debug_data",
-        "raw_drop_concentration",
-        "raw_drop_average_velocity",
-        "raw_drop_number",
-        "datalogger_error",
-    ]
-
-    # - Check name validity
-    check_L0_column_names(column_names)
+                    "time",
+                    "id",
+                    "datalogger_temperature",
+                    "datalogger_voltage",
+                    "rainfall_rate_32bit",
+                    "rainfall_accumulated_32bit",
+                    "weather_code_synop_4680",
+                    "weather_code_synop_4677",
+                    "reflectivity_32bit",
+                    "mor_visibility",
+                    "laser_amplitude",
+                    "number_particles",
+                    "sensor_temperature",
+                    "sensor_heating_current",
+                    "sensor_battery_voltage",
+                    "sensor_status",
+                    "rainfall_amount_absolute_32bit",
+                    "Debug_data",
+                    "raw_drop_concentration",
+                    "raw_drop_average_velocity",
+                    "raw_drop_number",
+                    "datalogger_error",
+                    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
@@ -236,167 +205,27 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    raw_data_glob_pattern= "*.dat*"
+    files_glob_pattern= "*.dat*"
 
     ####----------------------------------------------------------------------.
-    ####################
-    #### FIXED CODE ####
-    ####################
-    # -------------------------------------------------------------------------.
-    # Initial directory checks
-    raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
+    #### - Create L0 products  
+    run_L0(
+        raw_dir=raw_dir,  
+        processed_dir=processed_dir,
+        L0A_processing=L0A_processing,
+        L0B_processing=L0B_processing,
+        keep_L0A=keep_L0A,
+        force=force,
+        verbose=verbose,
+        debugging_mode=debugging_mode,
+        lazy=lazy,
+        single_netcdf=single_netcdf,
+        # Custom arguments of the parser 
+        files_glob_pattern = files_glob_pattern, 
+        column_names=column_names,
+        reader_kwargs=reader_kwargs,
+        df_sanitizer_fun=df_sanitizer_fun,
+        )
 
-    # Retrieve campaign name
-    campaign_name = get_campaign_name(raw_dir)
-
-    # -------------------------------------------------------------------------.
-    # Define logging settings
-    create_logger(processed_dir, "parser_" + campaign_name)
-    # Retrieve logger
-    logger = logging.getLogger(campaign_name)
-    logger.info("### Script started ###")
-
-    # -------------------------------------------------------------------------.
-    # Create directory structure
-    create_directory_structure(raw_dir, processed_dir)
-
-    # -------------------------------------------------------------------------.
-    #### Loop over station_id directory and process the files
-    list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
-
-    # station_id = list_stations_id[1]
-    for station_id in list_stations_id:
-        # ---------------------------------------------------------------------.
-        logger.info(f" - Processing of station_id {station_id} has started")
-        # ---------------------------------------------------------------------.
-        # Retrieve metadata
-        attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
-        
-		# Retrieve sensor name
-        sensor_name = attrs['sensor_name']
-        check_sensor_name(sensor_name)
-
-        # ---------------------------------------------------------------------.
-        #######################
-        #### L0 processing ####
-        #######################
-        if l0_processing:
-            # Start L0 processing
-            t_i = time.time()
-            msg = " - L0 processing of station_id {} has started.".format(station_id)
-            if verbose:
-                print(msg)
-            logger.info(msg)
-
-            # -----------------------------------------------------------------.
-            #### - List files to process
-            glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
-            file_list = get_file_list(
-                raw_dir=raw_dir,
-                glob_pattern=glob_pattern,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-            )
-
-            ##------------------------------------------------------.
-            #### - Read all raw data files into a dataframe  
-            df = read_L0_raw_file_list(file_list=file_list,
-                                       column_names=column_names,
-                                       reader_kwargs=reader_kwargs,
-                                       df_sanitizer_fun=df_sanitizer_fun,
-                                       lazy=lazy,
-                                       sensor_name=sensor_name,
-                                       verbose=verbose)
-
-            ##------------------------------------------------------.
-            #### - Write to Parquet
-            fpath = get_L0_fpath(processed_dir, station_id)
-            write_df_to_parquet(df=df, fpath=fpath, force=force, verbose=verbose)
-            ##------------------------------------------------------.
-            #### - Check L0 file respects the DISDRODB standards
-            check_L0_standards(fpath=fpath, sensor_name=sensor_name, verbose=verbose)
-            ##------------------------------------------------------.
-            # End L0 processing
-            t_f = time.time() - t_i
-            msg = " - L0 processing of station_id {} ended in {:.2f}s".format(
-                station_id, t_f
-            )
-            if verbose:
-                print(msg)
-            logger.info(msg)
-
-            ##------------------------------------------------------.
-            # Delete temp variables
-            del df
-
-        # ---------------------------------------------------------------------.
-        #######################
-        #### L1 processing ####
-        #######################
-        if l1_processing:
-            # Start L1 processing
-            t_i = time.time()
-            msg = " - L1 processing of station_id {} has started.".format(station_id)
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            ##----------------------------------------------------------------.
-            #### - Read L0
-            df = read_L0_data(
-                processed_dir,
-                station_id,
-                lazy=lazy,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-            )
-
-            # -----------------------------------------------------------------.
-            #### - Create xarray Dataset
-            ds = create_L1_dataset_from_L0(
-                df=df, attrs=attrs, lazy=lazy, verbose=verbose
-            )
-
-            # -----------------------------------------------------------------.
-            #### - Write L1 dataset to netCDF4
-            if write_netcdf:
-                fpath = get_L1_netcdf_fpath(processed_dir, station_id)
-                write_L1_to_netcdf(ds, fpath=fpath, sensor_name=sensor_name)
-
-            # -----------------------------------------------------------------.
-            #### - Compute L1 summary statics
-            create_L1_summary_statistics(
-                ds,
-                processed_dir=processed_dir,
-                station_id=station_id,
-                sensor_name=sensor_name,
-            )
-
-            # -----------------------------------------------------------------.
-            # End L1 processing
-            t_f = time.time() - t_i
-            msg = " - L1 processing of station_id {} ended in {:.2f}s".format(
-                station_id, t_f
-            )
-            if verbose:
-                print(msg)
-                print(" --------------------------------------------------")
-            logger.info(msg)
-
-            # -----------------------------------------------------------------.
-        # ---------------------------------------------------------------------.
-    # -------------------------------------------------------------------------.
-    if verbose:
-        print(msg)
-    logger.info("---")
-    logger.info(msg)
-    logger.info("---")
-
-    msg = "### Script finish ###"
-    print(msg)
-    logger.info(msg)
-
-    close_logger(logger)
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
