@@ -54,9 +54,9 @@ def run_L0(
         raw_dir,
         processed_dir, 
         # Arguments designing the processing type
-        L0A_processing=True,
-        L0B_processing=True,
-        keep_L0A=True,
+        l0a_processing=True,
+        l0b_processing=True,
+        keep_l0a=True,
         force=False,
         verbose=False,
         debugging_mode=False,
@@ -180,7 +180,7 @@ def run_L0(
         ######################## 
         #### L0A processing ####
         ######################## 
-        if L0A_processing: 
+        if l0a_processing: 
             # Start L0 processing 
             t_i_station = time.time() 
             msg = " - L0A processing of station_id {} has started.".format(station_id)
@@ -260,7 +260,7 @@ def run_L0(
         ########################
         #### L0B processing ####
         ########################
-        if L0B_processing: 
+        if l0b_processing: 
             # Start L1 processing 
             t_i = time.time() 
             msg = " - L0B processing of station_id {} has started.".format(station_id)
@@ -338,7 +338,7 @@ def run_L0(
             #-----------------------------------------------------------------.
         #---------------------------------------------------------------------.
     # Remove L0A directory if keep_L0A = False 
-    if not keep_L0A: 
+    if not keep_l0a: 
         shutil.rmtree(os.path.join(processed_dir, "L0A"))
 
     #-------------------------------------------------------------------------.
