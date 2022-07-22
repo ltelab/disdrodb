@@ -49,13 +49,15 @@ processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/EPFL"
 processed_base_dir = "/tmp/DISDRODB/Processed/EPFL"
 
 #### Processing settings
-l0_processing = True
-l1_processing = True
+L0A_processing = True,
+L0B_processing = True,
+keep_L0A = True,
 force = True
 verbose = True
 debugging_mode = True
 lazy = True
-write_netcdf = True
+single_netcdf = True, 
+
 
 #### Process all campaigns
 for campaign_name in EPFL_dict.keys():
@@ -64,9 +66,9 @@ for campaign_name in EPFL_dict.keys():
         parser_filepath=parser_filepath,
         raw_dir=os.path.join(raw_base_dir, campaign_name),
         processed_dir=os.path.join(processed_base_dir, campaign_name),
-        l0_processing=l0_processing,
-        l1_processing=l1_processing,
-        write_netcdf=write_netcdf,
+        L0A_processing = L0A_processing,
+        L0B_processing = L0B_processing,
+        single_netcdf = single_netcdf, 
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
