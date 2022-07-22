@@ -119,7 +119,8 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
         # Found a campaing (MELBOURNE_2007_OTT) with different different divider, this is a temporary solution
         try:
             if lazy:
-                if not df['raw_drop_concentration'][0].str.contains(split_str).all().compute():
+                # if not df['raw_drop_concentration'][0].str.contains(split_str).all().compute():
+                if df.head().at[1,'raw_drop_concentration'].find(',') == -1:
                     split_str = df['raw_drop_concentration'][0][6]
             else:
                 if not df['raw_drop_concentration'][0].str.contains(split_str).all():
