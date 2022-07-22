@@ -25,9 +25,9 @@ from disdrodb.L0 import run_L0
 @click.command()  # options_metavar='<options>'
 @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
 @click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-L0A', '--L0A_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-L0B', '--L0B_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_L0A', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
+@click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
+@click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
+@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
 @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
 @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
@@ -35,16 +35,16 @@ from disdrodb.L0 import run_L0
 @click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
 def main(raw_dir,
          processed_dir,
-         L0A_processing=True,
-         L0B_processing=True,
-         keep_L0A=False,
+         l0a_processing=True,
+         l0b_processing=True,
+         keep_l0a=False,
          force=False,
          verbose=False,
          debugging_mode=False,
          lazy=True,
          single_netcdf=True, 
          ):
-    """Script to process raw data to L0A and L0B format. 
+    """Script to process raw data to l0a and l0b format. 
     
     Parameters
     ----------
@@ -62,17 +62,17 @@ def main(raw_dir,
            - with the key 'campaign_name' within the metadata YAML files. 
         - The campaign_name are set to be UPPER CASE. 
     processed_dir : str
-        Desired directory path for the processed L0A and L0B products. 
+        Desired directory path for the processed l0a and l0b products. 
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
     L0A_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+      Whether to launch processing to generate l0a Apache Parquet file(s) from raw data.
       The default is True.
     L0B_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data. 
+      Whether to launch processing to generate l0b netCDF4 file(s) from l0a data. 
       The default is True.
-    keep_L0A : bool 
-        Whether to keep the L0A files after having generated the L0B netCDF products.
+    keep_l0a : bool 
+        Whether to keep the l0a files after having generated the l0b netCDF products.
         The default is False.
     force : bool
         If True, overwrite existing data into destination directories. 
@@ -83,8 +83,8 @@ def main(raw_dir,
         The default is False.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        - For L0A processing, it processes just 3 raw data files.
-        - For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
+        - For l0a processing, it processes just 3 raw data files.
+        - For l0b processing, it takes a small subset of the l0a Apache Parquet dataframe.
         The default is False.
     lazy : bool
         Whether to perform processing lazily with dask. 
@@ -92,9 +92,9 @@ def main(raw_dir,
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
     single_netcdf : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
+        Whether to concatenate all raw files into a single l0b netCDF file.
+        If single_netcdf=True, all raw files will be saved into a single l0b netCDF file.
+        If single_netcdf=False, each raw file will be converted into the corresponding l0b netCDF file.
         The default is True.
     
     """
@@ -197,9 +197,9 @@ def main(raw_dir,
     run_L0(
         raw_dir=raw_dir,  
         processed_dir=processed_dir,
-        L0A_processing=L0A_processing,
-        L0B_processing=L0B_processing,
-        keep_L0A=keep_L0A,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
