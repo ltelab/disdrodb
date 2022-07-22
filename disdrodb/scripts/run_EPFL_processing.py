@@ -43,6 +43,7 @@ EPFL_dict = {
 
 #### Define filepaths
 parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL" # TODO: this should change to the current package
+parser_dir = "~/disdrodb/disdrodb/L0/readers/EPFL"
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/EPFL"
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/EPFL"
 processed_base_dir = "/tmp/DISDRODB/Processed/EPFL"
