@@ -26,22 +26,22 @@ from disdrodb.L0 import run_L0
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-L0A', '--L0A_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-L0B', '--L0B_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_L0A', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
-@click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
+# @click.command()  # options_metavar='<options>'
+# @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
+# @click.argument('processed_dir', metavar='<processed_dir>')
+# @click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
+# @click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
+# @click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
+# @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
+# @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
+# @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
+# @click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
+# @click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
 def main(raw_dir,
          processed_dir,
-         L0A_processing=True,
-         L0B_processing=True,
-         keep_L0A=False,
+         l0a_processing=True,
+         l0b_processing=True,
+         keep_l0a=False,
          force=False,
          verbose=False,
          debugging_mode=False,
@@ -114,8 +114,8 @@ def main(raw_dir,
     column_names = [
         "time",
         "id",
-        "datalogger_temperature",
-        "datalogger_voltage",
+        "temp_temperature",
+        "temp_voltage",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
@@ -130,9 +130,9 @@ def main(raw_dir,
         "sensor_status",
         "rainfall_amount_absolute_32bit",
         "debug_data",
-        "field_n",
-        "field_v",
-        "raw_drop_number",
+        'raw_drop_concentration',
+        'raw_drop_average_velocity',
+        'raw_drop_number',
         "datalogger_error",
         ]
 
@@ -193,7 +193,7 @@ def main(raw_dir,
         df = df[~df.debug_data.str.startswith('Frame', na=False)]
 
         # Drop debug_data, datalogger_error and id
-        df = df.drop(columns=["debug_data", "datalogger_error"])
+        df = df.drop(columns=["debug_data", "datalogger_error", "id", "temp_temperature", "temp_voltage"])
 
         # If value in col_to_drop_if_na colum is nan, drop the row
         col_to_drop_if_na = [
@@ -214,10 +214,10 @@ def main(raw_dir,
         df = df.dropna(subset=col_to_drop_if_na, how="all")
 
         # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-        df = df.loc[df["field_n"].astype(str).str.len() == 224]
-        df = df.loc[df["field_v"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
         df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-
+        
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
@@ -232,9 +232,9 @@ def main(raw_dir,
     run_L0(
         raw_dir=raw_dir,  
         processed_dir=processed_dir,
-        L0A_processing=L0A_processing,
-        L0B_processing=L0B_processing,
-        keep_L0A=keep_L0A,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
@@ -248,4 +248,15 @@ def main(raw_dir,
         )
 
 if __name__ == '__main__':
-    main()
+    # main()
+    main(raw_dir = '/home/kimbo/data/Campagne/DISDRODB/Raw/EPFL/COMMON_2011',
+             processed_dir = '/home/kimbo/data/Campagne/DISDRODB/Processed/EPFL/COMMON_2011',
+             l0a_processing=True,
+             l0b_processing=True,
+             keep_l0a=False,
+             force=True,
+             verbose=True,
+             debugging_mode=True,
+             lazy=True,
+             single_netcdf=True, 
+             )
