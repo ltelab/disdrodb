@@ -16,8 +16,9 @@ from disdrodb.L0.utils_cmd import get_parser_cmd
 # -----------------------------------------------------------------------------.
 #### Define campaign dictionary
 EPFL_dict = {
+    "LOCARNO_2018": "parser_LOCARNO_2018.py",
     "PARSIVEL_2007": "parser_PARSIVEL_2007.py",
-    "GENEPI_2007": "parser_GENEPI_2007.py",
+    "GENEPI_2007": "parser_GENEPI_2007.py", # Asked to discard into metadata
     # "EPFL_ROOF_2008V1": "parser_EPFL_ROOF_2008_V1.py",
     # "EPFL_ROOF_2008V2": "parser_EPFL_ROOF_2008_V2.py",
     "EPFL_ROOF_2011": "parser_EPFL_ROOF_2011.py",
@@ -27,15 +28,14 @@ EPFL_dict = {
     "HPICONET_2010": "parser_HPICONET_2010.py",
     "COMMON_2011": "parser_COMMON_2011.py",
     "RIETHOLZBACK_2011": "parser_RIETHOLZBACK_2011.py",
-    "HYMEX_2012": "parser_HYMEX_2012.py",
+    "HYMEX": "parser_HYMEX.py",
     "HYMEX": "parser_HYMEX.py",
     "PARADISO_2014": "parser_PARADISO_2014.py",
     "SAMOYLOV_2017_2019": "parser_SAMOYLOV_2017_2019.py",
     "LOCARNO_2018": "parser_LOCARNO_2018.py",
     "PLATO_2019": "parser_PLATO_2019.py",
-    "DAVOS_2009_V1": "parser_DAVOS_2009_V1.py",
+    "DAVOS_2009": "parser_DAVOS_2009.py",
     "EPFL_ROOF_2010": "parser_EPFL_ROOF_2010.py",
-    "LOCARNO_2018": "parser_LOCARNO_2018.py",
     "PARADISO_2014": "parser_PARADISO_2014.py",
     "RACLETS_2019": "parser_RACLETS_2019.py",
     "SAMOYLOV_2017_2019": "parser_SAMOYLOV_2017_2019.py",
@@ -44,19 +44,25 @@ EPFL_dict = {
 #### Define filepaths
 parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL" # TODO: this should change to the current package
 parser_dir = "~/disdrodb/disdrodb/L0/readers/EPFL"
+
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/EPFL"
+
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/EPFL"
 processed_base_dir = "/tmp/DISDRODB/Processed/EPFL"
 
+parser_dir = "/home/kimbo/Documents/disdrodb/disdrodb/L0/readers/EPFL"
+raw_base_dir = "/home/kimbo/data/Campagne/DISDRODB/Raw/EPFL"
+processed_base_dir = "/home/kimbo/data/Campagne/DISDRODB/Processed/test_script_EPFL"
+
 #### Processing settings
-L0A_processing = True,
-L0B_processing = True,
-keep_L0A = True,
+l0a_processing = True
+l0b_processing = True
+keep_l0a = True
 force = True
 verbose = True
 debugging_mode = True
 lazy = True
-single_netcdf = True, 
+single_netcdf = True
 
 
 #### Process all campaigns
@@ -66,9 +72,10 @@ for campaign_name in EPFL_dict.keys():
         parser_filepath=parser_filepath,
         raw_dir=os.path.join(raw_base_dir, campaign_name),
         processed_dir=os.path.join(processed_base_dir, campaign_name),
-        L0A_processing = L0A_processing,
-        L0B_processing = L0B_processing,
-        single_netcdf = single_netcdf, 
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
+        single_netcdf=single_netcdf, 
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
