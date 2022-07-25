@@ -29,9 +29,9 @@ from disdrodb.L0 import run_L0
 @click.command()  # options_metavar='<options>'
 @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
 @click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-L0A', '--L0A_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-L0B', '--L0B_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_L0A', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
+@click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
+@click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
+@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
 @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
 @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
@@ -39,9 +39,9 @@ from disdrodb.L0 import run_L0
 @click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
 def main(raw_dir,
          processed_dir,
-         L0A_processing=True,
-         L0B_processing=True,
-         keep_L0A=False,
+         l0a_processing=True,
+         l0b_processing=True,
+         keep_l0a=False,
          force=False,
          verbose=False,
          debugging_mode=False,
@@ -320,9 +320,12 @@ def main(raw_dir,
                 df.columns = column_names
                 return df
             df['time'] = dd.to_datetime(df['time'], format='%d/%m/%Y %H:%M:%S')
+            
+        # Drop latitude, longitude
+        df = df.drop(columns=['longitude', 'latitude'])
 
         # - Drop columns if nan
-        col_to_drop_if_na = ['latitude','longitude','raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+        col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
         df = df.dropna(subset = col_to_drop_if_na)
         
         # - Drop invalid raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
@@ -332,28 +335,28 @@ def main(raw_dir,
         
         df = df[df['raw_drop_number'].str.contains('0\x100') == False]
         
-        # - Cast dataframe to dtypes
-        from disdrodb.data_encodings import get_L0_dtype_standards
-        dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
+        # # - Cast dataframe to dtypes
+        # from disdrodb.data_encodings import get_L0_dtype_standards
+        # dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
         
-        dtype_dict_not_object = {}
-        for k, v in dtype_dict.items():
-            if v != 'object':
-                dtype_dict_not_object[k] =  v
-        dtype_dict_not_object.pop('time')
+        # dtype_dict_not_object = {}
+        # for k, v in dtype_dict.items():
+        #     if v != 'object':
+        #         dtype_dict_not_object[k] =  v
+        # dtype_dict_not_object.pop('time')
                 
-        for column in df.columns:
-            if column in dtype_dict_not_object:
-                df[column] = dd.to_numeric(df[column], errors='coerce')
-                invalid_rows_index = df.loc[df[column].isna()].index
-                if lazy:
-                    if invalid_rows_index.size.compute() != 0:
-                        df = df.dropna(subset=[column])
-                else:
-                    if invalid_rows_index.size != 0:
-                        df = df.dropna(subset=[column])
-                        # df = df.drop(invalid_rows_index)
-                df[column] = df[column].astype(dtype_dict[column])
+        # for column in df.columns:
+        #     if column in dtype_dict_not_object:
+        #         df[column] = dd.to_numeric(df[column], errors='coerce')
+        #         invalid_rows_index = df.loc[df[column].isna()].index
+        #         if lazy:
+        #             if invalid_rows_index.size.compute() != 0:
+        #                 df = df.dropna(subset=[column])
+        #         else:
+        #             if invalid_rows_index.size != 0:
+        #                 df = df.dropna(subset=[column])
+        #                 # df = df.drop(invalid_rows_index)
+        #         df[column] = df[column].astype(dtype_dict[column])
 
         return df
 
@@ -366,9 +369,9 @@ def main(raw_dir,
     run_L0(
         raw_dir=raw_dir,  
         processed_dir=processed_dir,
-        L0A_processing=L0A_processing,
-        L0B_processing=L0B_processing,
-        keep_L0A=keep_L0A,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,

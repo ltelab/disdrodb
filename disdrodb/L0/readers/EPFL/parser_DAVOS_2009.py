@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Tue Jan 18 14:30:35 2022
+Created on Mon Feb 21 17:31:55 2022
 
 @author: kimbo
 """
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -33,9 +29,9 @@ from disdrodb.L0 import run_L0
 @click.command()  # options_metavar='<options>'
 @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
 @click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-L0A', '--L0A_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-L0B', '--L0B_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_L0A', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
+@click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
+@click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
+@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
 @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
 @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
@@ -43,9 +39,9 @@ from disdrodb.L0 import run_L0
 @click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
 def main(raw_dir,
          processed_dir,
-         L0A_processing=True,
-         L0B_processing=True,
-         keep_L0A=False,
+         l0a_processing=True,
+         l0b_processing=True,
+         keep_l0a=False,
          force=False,
          verbose=False,
          debugging_mode=False,
@@ -115,70 +111,44 @@ def main(raw_dir,
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
-    # Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","TransmitTime","raw_drop_concentration","raw_drop_average_velocity","RowData","CommErrorCount"
-
-    column_names = [
-                    "time",
-                    "id",
-                    "datalogger_temperature",
-                    "datalogger_voltage",
-                    "rainfall_rate_32bit",
-                    "rainfall_accumulated_32bit",
-                    "weather_code_synop_4680",
-                    "weather_code_synop_4677",
-                    "reflectivity_32bit",
-                    "mor_visibility",
-                    "laser_amplitude",
-                    "number_particles",
-                    "sensor_temperature",
-                    "sensor_heating_current",
-                    "sensor_battery_voltage",
-                    "sensor_status",
-                    "rainfall_amount_absolute_32bit",
-                    "Debug_data",
-                    "raw_drop_concentration",
-                    "raw_drop_average_velocity",
-                    "raw_drop_number",
-                    "datalogger_error",
+    column_names = ['TO_BE_SPLITTED',
+                    'raw_drop_average_velocity',
+                    'raw_drop_number',
+                    'All_0'
                     ]
-    
+
     ##------------------------------------------------------------------------.
     #### - Define reader options
 
     reader_kwargs = {}
+    # - Define delimiter
+    reader_kwargs['delimiter'] = ',,'
 
     # - Avoid first column to become df index !!!
-    reader_kwargs["index_col"] = False
+    reader_kwargs["index_col"] = False  
 
-    # - Define behaviour when encountering bad lines
-    reader_kwargs["on_bad_lines"] = "skip"
+    # - Define behaviour when encountering bad lines 
+    reader_kwargs["on_bad_lines"] = 'skip'
 
-    # - Define parser engine
+    # - Define parser engine 
     #   - C engine is faster
     #   - Python engine is more feature-complete
-    reader_kwargs["engine"] = "python"
+    reader_kwargs["engine"] = 'python'
 
     # - Define on-the-fly decompression of on-disk data
-    #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
+    #   - Available: gzip, bz2, zip 
+    reader_kwargs['compression'] = 'gzip'  
 
-    # - Strings to recognize as NA/NaN and replace with standard NA flags
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
+    # - Strings to recognize as NA/NaN and replace with standard NA flags 
+    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
+    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-        "-.-",
-        " NA",
-    ]
+    reader_kwargs['na_values'] = ['na', '', 'error', 'NA']
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
+    reader_kwargs["blocksize"] = None # "50MB" 
 
     # Cast all to string
     reader_kwargs["dtype"] = str
@@ -198,36 +168,75 @@ def main(raw_dir,
             import dask.dataframe as dd
         else:
             import pandas as dd
+            
+        column_names = ['time',
+                        'temp', # All nan values
+                        'temp1', # Dataloger status
+                        'rainfall_rate_32bit',
+                        'rainfall_accumulated_32bit',
+                        'weather_code_synop_4680',
+                        'weather_code_synop_4677',
+                        'reflectivity_32bit',
+                        'mor_visibility',
+                        'sample_interval',
+                        'laser_amplitude',
+                        'number_particles',
+                        'sensor_heating_current',
+                        'sensor_battery_voltage',
+                        'sensor_status',
+                        'rainfall_amount_absolute_32bit',
+                        'temp2', # Datalogger error
+                        'raw_drop_concentration',
+                        'raw_drop_average_velocity',
+                        'raw_drop_number'
+                        ]
 
-        # Drop Debug_data
-        df = df.drop(columns=["Debug_data", "datalogger_error"])
+        # Drop row if contains errors
+        df = df[~df.TO_BE_SPLITTED.str.contains("Error in data reading! 0")]
 
-        # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
-        col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
-        df = df.dropna(subset=col_to_drop_if_na)
+        # Check again if file empty
+        if len(df.index) == 0:
+            raise ValueError("Error in all rows. The file has been skipped.")
 
-        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+        # Split TO_BE_SPLITTED
+        df_to_parse = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 20)
 
-        # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        # Concat togheter, avoid to save id, latitude and longitude and all_0
+        if lazy:
+            df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1, ignore_unknown_divisions=True)
+        else:
+            df = dd.concat([df_to_parse.iloc[:,3:], df.iloc[:,1:-1]],axis=1)
+
+        # Rename columns
+        df.columns = column_names
+
+        # Drop temp and all_nan
+        df = df.drop(columns=["temp", "temp1", "temp2"])
+
+        # - Convert time column to datetime 
+        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+
+        # If raw_drop_number is nan, drop the row
+        col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+        df = df.dropna(subset = col_to_drop_if_na)
+
+        # Drop rows with less than 4096 char on raw_drop_number
+        df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4095]
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern= "*.dat*"
+    files_glob_pattern= "*.dat.gz*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products  
     run_L0(
         raw_dir=raw_dir,  
         processed_dir=processed_dir,
-        L0A_processing=L0A_processing,
-        L0B_processing=L0B_processing,
-        keep_L0A=keep_L0A,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,

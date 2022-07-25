@@ -29,9 +29,9 @@ from disdrodb.L0 import run_L0
 @click.command()  # options_metavar='<options>'
 @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
 @click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-L0A', '--L0A_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-L0B', '--L0B_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_L0A', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
+@click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
+@click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
+@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
 @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
 @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
@@ -39,9 +39,9 @@ from disdrodb.L0 import run_L0
 @click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
 def main(raw_dir,
          processed_dir,
-         L0A_processing=True,
-         L0B_processing=True,
-         keep_L0A=False,
+         l0a_processing=True,
+         l0b_processing=True,
+         keep_l0a=False,
          force=False,
          verbose=False,
          debugging_mode=False,
@@ -201,7 +201,7 @@ def main(raw_dir,
             import pandas as dd
 
         # Drop Debug_data
-        df = df.drop(columns=["Debug_data", "datalogger_error"])
+        df = df.drop(columns=["Debug_data", "datalogger_error", 'id', 'datalogger_temperature', 'datalogger_voltage'])
 
         # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
         col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
@@ -233,9 +233,9 @@ def main(raw_dir,
     run_L0(
         raw_dir=raw_dir,  
         processed_dir=processed_dir,
-        L0A_processing=L0A_processing,
-        L0B_processing=L0B_processing,
-        keep_L0A=keep_L0A,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
