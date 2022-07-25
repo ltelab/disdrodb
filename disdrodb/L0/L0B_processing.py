@@ -120,7 +120,9 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
         try:
             if lazy:
                 # if not df['raw_drop_concentration'][0].str.contains(split_str).all().compute():
-                if df.head().at[1,'raw_drop_concentration'].find(',') == -1:
+                head = df.head().iloc[0]
+                head = head['raw_drop_concentration']
+                if head.find(',') == -1:
                     split_str = df['raw_drop_concentration'][0][6]
             else:
                 if not df['raw_drop_concentration'][0].str.contains(split_str).all():
