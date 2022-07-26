@@ -19,8 +19,8 @@ EPFL_dict = {
     "LOCARNO_2018": "parser_LOCARNO_2018.py",
     "PARSIVEL_2007": "parser_PARSIVEL_2007.py",
     "GENEPI_2007": "parser_GENEPI_2007.py", # Asked to discard into metadata
-    # "EPFL_ROOF_2008V1": "parser_EPFL_ROOF_2008_V1.py",
-    # "EPFL_ROOF_2008V2": "parser_EPFL_ROOF_2008_V2.py",
+    "EPFL_ROOF_2008_1": "parser_EPFL_ROOF_2008_1.py",
+    "EPFL_ROOF_2008_2": "parser_EPFL_ROOF_2008_2.py",
     "EPFL_ROOF_2011": "parser_EPFL_ROOF_2011.py",
     "EPFL_ROOF_2012": "parser_EPFL_ROOF_2012.py",
     "EPFL_2009": "parser_EPFL_2009.py",
@@ -49,10 +49,6 @@ raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/EPFL"
 
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/EPFL"
 processed_base_dir = "/tmp/DISDRODB/Processed/EPFL"
-
-parser_dir = "/home/kimbo/Documents/disdrodb/disdrodb/L0/readers/EPFL"
-raw_base_dir = "/home/kimbo/data/Campagne/DISDRODB/Raw/EPFL"
-processed_base_dir = "/home/kimbo/data/Campagne/DISDRODB/Processed/test_script_EPFL"
 
 #### Processing settings
 l0a_processing = True
