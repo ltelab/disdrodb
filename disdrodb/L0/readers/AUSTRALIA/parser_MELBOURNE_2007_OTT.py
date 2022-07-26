@@ -29,9 +29,9 @@ from disdrodb.L0 import run_L0
 @click.command()  # options_metavar='<options>'
 @click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
 @click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-L0A', '--L0A_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-L0B', '--L0B_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_L0A', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
+@click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
+@click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
+@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
 @click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
 @click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
 @click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
@@ -39,15 +39,16 @@ from disdrodb.L0 import run_L0
 @click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
 def main(raw_dir,
          processed_dir,
-         L0A_processing=True,
-         L0B_processing=True,
-         keep_L0A=False,
+         l0a_processing=True,
+         l0b_processing=True,
+         keep_l0a=False,
          force=False,
          verbose=False,
          debugging_mode=False,
          lazy=True,
          single_netcdf=True, 
          ):
+
     """Script to process raw data to L0A and L0B format. 
     
     Parameters
@@ -260,9 +261,9 @@ def main(raw_dir,
     run_L0(
         raw_dir=raw_dir,  
         processed_dir=processed_dir,
-        L0A_processing=L0A_processing,
-        L0B_processing=L0B_processing,
-        keep_L0A=keep_L0A,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
@@ -270,7 +271,7 @@ def main(raw_dir,
         single_netcdf=single_netcdf,
         # Custom arguments of the parser 
         files_glob_pattern = files_glob_pattern, 
-        column_names=column_names_temp,
+        column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
         )
