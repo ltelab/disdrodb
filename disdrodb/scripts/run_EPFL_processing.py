@@ -49,7 +49,7 @@ raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/EPFL"
 
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/EPFL"
 processed_base_dir = "/tmp/DISDRODB/Processed/EPFL"
-processed_base_dir = "/home/kcandolf/tmp/Processed/EPFL"
+processed_base_dir = "/home/kcandolf/tmp/DISDRODB/Processed/EPFL"
 
 
 #### Processing settings
