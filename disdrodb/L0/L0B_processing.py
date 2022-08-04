@@ -118,15 +118,10 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
         split_str = ','
         # Found a campaing (MELBOURNE_2007_OTT) with different different divider, this is a temporary solution
         try:
-            if lazy:
-                # if not df['raw_drop_concentration'][0].str.contains(split_str).all().compute():
-                head = df.head().iloc[0]
-                head = head['raw_drop_concentration']
-                if head.find(',') == -1:
-                    split_str = df['raw_drop_concentration'][0][6]
-            else:
-                if not df['raw_drop_concentration'][0].str.contains(split_str).all():
-                    split_str = df['raw_drop_concentration'][0][6]
+            head = df.head().iloc[0]
+            head = head['raw_drop_concentration']
+            if head.find(',') == -1:
+                    split_str = head[6]
         except KeyError:
             msg = "Something wrong with divider for L0B matrix, default divider is ',', tried to parse with {}".format(split_str)
             if verbose:
