@@ -200,7 +200,7 @@ def main(raw_dir,
             import pandas as dd
 
         # Drop Debug_data
-        df = df.drop(columns=["id"])
+        df = df.drop(columns=["id", "datalogger_error"])
 
         # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
         col_to_drop_if_na = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
