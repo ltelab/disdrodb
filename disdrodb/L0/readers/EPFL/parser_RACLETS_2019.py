@@ -138,7 +138,6 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
-
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs['delimiter'] = ';'
@@ -171,6 +170,9 @@ def main(raw_dir,
 
     # Cast all to string
     reader_kwargs["dtype"] = str
+    
+    # - Define encoding
+    reader_kwargs['encoding'] = 'ISO-8859-1'
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
