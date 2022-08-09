@@ -38,3 +38,6 @@ raw_drop_concentration: 'object'
 raw_drop_average_velocity: 'object'
 raw_drop_number: 'object'
 
+# Added for ARTIC_PARSIVEL_2021 (coordinates into RAW data)
+latitude: 'float32'
+longitude: 'float32'
