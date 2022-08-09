@@ -297,7 +297,7 @@ assert df.equals(df1)
 #########################################################
 # - This must be done once that reader_kwargs and column_names are correctly defined 
 # - Try the following code with various file and with both lazy=True and lazy=False 
-filepath = file_list[0]  # Select also other files here  1,2, ... 
+filepath = file_list[10]  # Select also other files here  1,2, ... 
 lazy = False             # Try also with True when work with False 
 
 #------------------------------------------------------. 
@@ -339,19 +339,29 @@ df[['datalogger_error','rainfall_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(
 # Drop id, latitude, longitude, temps and datalogger_error
 df = df.drop(columns=["id", "temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
 
-# Drop rows with less than 4096 char on raw_drop_number
-df = df.loc[df['raw_drop_number'].astype(str).str.len() == 4096]
-
-# If raw_drop_number is nan, drop the row
-col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
-df = df.dropna(subset = col_to_drop_if_na)
-
 # - Convert time column to datetime 
 df['time'] = pd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
 
-# Check again for invalid values 
-df = df[~df.eq("Error in data reading! 0000.000").any(1)]
-df = df[~df.eq('Error in data reading! 0002.344').any(1)]
+# Set nan on raw columns
+import numpy as np
+if lazy:
+    df['raw_drop_concentration'].where(df['raw_drop_concentration'].astype(str).str.len() == 224, np.nan)
+    df['raw_drop_average_velocity'].where(df['raw_drop_average_velocity'].astype(str).str.len() == 224, np.nan)
+    df['raw_drop_number'].where(df['raw_drop_number'].astype(str).str.len() == 4096, np.nan)
+else:
+    df['raw_drop_concentration'].where(df['raw_drop_concentration'].astype(str).str.len() == 224, np.nan, inplace=True)
+    df['raw_drop_average_velocity'].where(df['raw_drop_average_velocity'].astype(str).str.len() == 224, np.nan, inplace=True)
+    df['raw_drop_number'].where(df['raw_drop_number'].astype(str).str.len() == 4096, np.nan, inplace=True)
+    
+    
+# Set NaN rows with corrupted values
+numeric_columns= ['rainfall_accumulated_32bit','rainfall_rate_32bit','mor_visibility','latitude','longitude', 'laser_amplitude', 'number_particles', 'sensor_heating_current', 'sensor_battery_voltage', 'rainfall_amount_absolute_32bit']
+for c in numeric_columns:
+    df[c] = pd.to_numeric(df[c], errors="coerce")
+
+# If raw_drop_number is nan, drop the row
+# col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+# df = df.dropna(subset = col_to_drop_if_na)
 
 #---------------------------------------------------------------------------.
 #### 8.3 Run following code portion without modifying anthing 
@@ -387,21 +397,38 @@ def df_sanitizer_fun(df, lazy=False):
     else:
         import pandas as dd
 
-    # Parse time
-    df['time'] = df['Day'].astype(str) +"-"+ df['Month'].astype(str) +"-"+ df['Year'].astype(str) +" "+ df['Hour_minute'].astype(str) +":"+ df['Second']
-    df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H%M:%S')
+    # Drop invalid rows
+    df = df.loc[df["id"].astype(str).str.len()<10]
 
-    # Drop unrequired columns for L0 
-    df = df.drop(columns=['Unknow_TO_DROP', 'Day', 'Month', 'Year', 'Hour_minute', 'Second'])
+    # Split TO_BE_SPLITTED
+    df[['datalogger_error','rainfall_rate_32bit']] = df['TO_BE_SPLITTED'].str.split(',', expand=True, n = 1)
 
-    # Trim weather_code_metar_4678
-    df['weather_code_metar_4678'] = df['weather_code_metar_4678'].str.strip()
-    
-    # Drop rows with corrupted values
-    df = df[dd.to_numeric(df["rainfall_accumulated_32bit"], errors="coerce").notnull()]
-    df = df[dd.to_numeric(df["rainfall_rate_32bit"], errors="coerce").notnull()]
-    df = df[dd.to_numeric(df["reflectivity_16bit"], errors="coerce").notnull()]
-    df = df[dd.to_numeric(df["mor_visibility"], errors="coerce").notnull()]
+    # Drop id, latitude, longitude, temps and datalogger_error
+    df = df.drop(columns=["id", "temp", "temp1", "temp2", "TO_BE_SPLITTED", "datalogger_error"])
+
+    # - Convert time column to datetime 
+    df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+
+    # Set nan on raw columns
+    import numpy as np
+    if lazy:
+        df['raw_drop_concentration'].where(df['raw_drop_concentration'].astype(str).str.len() == 224, np.nan)
+        df['raw_drop_average_velocity'].where(df['raw_drop_average_velocity'].astype(str).str.len() == 224, np.nan)
+        df['raw_drop_number'].where(df['raw_drop_number'].astype(str).str.len() == 4096, np.nan)
+    else:
+        df['raw_drop_concentration'].where(df['raw_drop_concentration'].astype(str).str.len() == 224, np.nan, inplace=True)
+        df['raw_drop_average_velocity'].where(df['raw_drop_average_velocity'].astype(str).str.len() == 224, np.nan, inplace=True)
+        df['raw_drop_number'].where(df['raw_drop_number'].astype(str).str.len() == 4096, np.nan, inplace=True)
+        
+        
+    # Set NaN rows with corrupted values
+    numeric_columns= ['rainfall_accumulated_32bit','rainfall_rate_32bit','mor_visibility','latitude','longitude', 'laser_amplitude', 'number_particles', 'sensor_heating_current', 'sensor_battery_voltage', 'rainfall_amount_absolute_32bit']
+    for c in numeric_columns:
+        df[c] = dd.to_numeric(df[c], errors="coerce")
+
+    # If raw_drop_number is nan, drop the row
+    # col_to_drop_if_na = ['raw_drop_concentration','raw_drop_average_velocity','raw_drop_number']
+    # df = df.dropna(subset = col_to_drop_if_na)
     
     return df 
 
@@ -410,7 +437,7 @@ def df_sanitizer_fun(df, lazy=False):
 # - Try with increasing number of files 
 # - Try first with lazy=False, then lazy=True 
 lazy = True # True 
-subset_file_list = file_list[0:5]
+subset_file_list = file_list[:]
 df = read_L0A_raw_file_list(file_list=subset_file_list, 
                            column_names=column_names, 
                            reader_kwargs=reader_kwargs,
