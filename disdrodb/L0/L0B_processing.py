@@ -118,7 +118,7 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
         split_str = ','
         # Found a campaing (MELBOURNE_2007_OTT) with different different divider, this is a temporary solution
         try:
-            head = df.head().iloc[0]
+            head = df.head(1)
             head = head['raw_drop_concentration']
             if head.find(',') == -1:
                     split_str = head[6]
