@@ -111,14 +111,7 @@ def main(raw_dir,
     # - In all files, the datalogger voltage hasn't the delimeter, 
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit 
     
-    columns_names_temporary = ['time', 'TO_BE_PARSED']
-
-    # column_names = ['time',
-    #                 'station_name',
-    #                 'sensor_status',
-    #                 'sensor_temperature',
-    #                 'raw_drop_number'
-    #                 ]
+    column_names = ['time', 'TO_BE_PARSED']
     
     ##------------------------------------------------------------------------.
     #### - Define reader options
@@ -260,7 +253,7 @@ def main(raw_dir,
         single_netcdf=single_netcdf,
         # Custom arguments of the parser 
         files_glob_pattern = files_glob_pattern, 
-        column_names=columns_names_temporary,
+        column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
         )
