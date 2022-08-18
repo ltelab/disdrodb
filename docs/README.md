@@ -20,9 +20,16 @@ pip install sphinx
 make clean html
 ```
 
-3. Write new piece of information into the source//*.rst files.
+3. Update the documentation based on the code with the command :
+   
+```sh
+`sphinx-apidoc -f -o source/api .. 
+```
 
-4. Run the following command to populate the build folder.
+4. Write new piece of information into the source//*.rst files.
+
+
+5. Run the following command to populate the build folder.
 
 ```sh
 make html
