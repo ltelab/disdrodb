@@ -18,10 +18,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #-----------------------------------------------------------------------------.
 
-### THIS SCRIPT PROVIDE A TEMPLATE FOR PARSER FILE DEVELOPMENT 
-#   FROM RAW DATA FILES 
-# - Please copy such template and modify it for each parser ;) 
-# - Additional functions/tools to ease parser development are welcome 
+### THIS SCRIPT PROVIDE A TEMPLATE FOR DISDRODB L0 READERS
+# - DISDRODB L0 READERS enable to convert raw text files to standard DISDRODB L0 netCDF4 files. 
+# - Please copy such template and modify it for each reader you develop. 
+# - Additional functions/tools to ease reader development are welcome !!!
 
 #-----------------------------------------------------------------------------.
 import os
