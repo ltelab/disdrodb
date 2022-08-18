@@ -23,7 +23,7 @@ make clean html
 3. Update the documentation based on the code with the command :
    
 ```sh
-`sphinx-apidoc -f -o source/api .. 
+sphinx-apidoc -f -o source/api .. 
 ```
 
 4. Write new piece of information into the source//*.rst files.
