@@ -100,6 +100,14 @@ disdrodb.L0.metadata module
    :undoc-members:
    :show-inheritance:
 
+disdrodb.L0.rl\_test\_doc module
+--------------------------------
+
+.. automodule:: disdrodb.L0.rl_test_doc
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 disdrodb.L0.standards module
 ----------------------------
 
