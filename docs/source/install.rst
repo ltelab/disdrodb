@@ -34,6 +34,22 @@ Disdrodb can be installed into a conda environment
 Pip-based Installation
 ======================
 
+DISDRODB is available from the Python Packaging Index (PyPI).
+
+.. code-block:: bash
+
+   pip install disdrodb
+   
+
+Installation from a local copy of the github repository
+========================================================
+
+* Clone the github repository
+
+.. code-block:: bash
+
+   git clone https://github.com/ltelab/disdrodb.git
+
 
 * Create a virtual environment:
 

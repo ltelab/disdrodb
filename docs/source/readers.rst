@@ -1,6 +1,24 @@
 =========================
-Getting started
+Readers
 =========================
+
+
+DISDRODB supports reading and loading data from many input file formats and schemes. The following sections describe the different way data can be loaded, requested, or added to the DISDRODB project.
+
+
+
+Available Readers
+==================
+
+.. note::
+    RL : Could be nice to have a function that returns all readers 
+
+
+.. code-block:: bash
+
+	from disdrodb import available_readers
+	available_readers()
+	
 
 
 Add a new reader

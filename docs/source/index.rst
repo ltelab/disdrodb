@@ -11,9 +11,9 @@ Welcome to disdroDB's documentation!
    
    overview
    install
-   structure
-   reader
-   
+   contributors_guidelines
+   readers
+      
    Disdrodb API <api/modules>
    :caption: Contents:
 
