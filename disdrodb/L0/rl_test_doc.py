@@ -1,6 +1,6 @@
 import numpy
 
-def take_up_ram(gigabytes : int) -> str :
+def take_up_ram_new(gigabytes : int) -> str :
     """This is a dummy function for documentation testing 
 
     Args:
