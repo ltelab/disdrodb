@@ -6,7 +6,7 @@ dask
 fsspec
 locket==1.0.0
 netCDF4==1.6.0
-numpy==1.23.1
+numpy
 packaging==21.3
 pandas==1.4.3
 partd==1.2.0
