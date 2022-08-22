@@ -12,6 +12,7 @@ Welcome to disdroDB's documentation!
    overview
    install
    contributors_guidelines
+   maintainers_guidelines
    readers
       
    Disdrodb API <api/modules>

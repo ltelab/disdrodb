@@ -163,6 +163,12 @@ must follow.
 5. Push you changes to your fork repository.
 6. Create a new Pull Request in GitHub.
 
+
+.. image:: /static/collaborative_process.png
+
+
+
+
 Fork the repository
 ~~~~~~~~~~~~~~~~~~~
 
@@ -213,10 +219,41 @@ Work on your changes
 
 Here again, respect the Respect the Code Style guide.
 
+
+
 Test of changes
 ~~~~~~~~~~~~~~~
 
-todo
+Evrey changes must be tested !
+
+DISDRDB tests are written using the third-party pytest package. There is usually no need to run all DISDRDB tests, but instead only run the tests related to the component you are working on. All tests are automatically run from the GitHub Pull Request using multiple versions of Python, multiple operating systems, and multiple versions of dependency libraries. If you want to run all DISDRDB tests you will need to install additional dependencies that aren’t needed for regular DISDRDB usage. To install them run:
+
+.. code-block:: bash
+
+	pip install -e .[tests]
+
+
+DISDRDB tests can be executed by running:
+
+.. code-block:: bash
+
+	pytest disdrodb/tests
+
+
+You can also run a specific tests by specifying a sub-directory or module:
+
+.. code-block:: bash
+
+	pytest satpy/tests/reader_tests/<reader_name>.py
+
+
+.. warning:: 
+   If you plan to create a new reader, your pull request must include a test file. This file must be name accordingly to the reader name with the test prefix. The test must simulate the reading of data with a small data sample.
+
+
+
+
+
 
 Push you changes to your fork repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
