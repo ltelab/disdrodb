@@ -150,6 +150,15 @@ Here is an example of a docstring:
          The adjusted lag-2 correlation coefficient.
        """
 
+
+If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extention to automatically create such preformatted docstring. 
+
+You should configure VS code as follow : 
+
+
+.. image:: /static/vs_code_settings.png
+
+
 How to contribute ?
 -------------------
 
