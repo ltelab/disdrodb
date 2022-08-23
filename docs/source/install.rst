@@ -5,9 +5,9 @@ Installation
 .. warning::
     This document is not complete !
 
-    Currently under development. 
-    
-    Do not use it now. 
+    Currently under development.
+
+    Do not use it now.
 
 
 The latest stable version Disdrodb is available on Github repository  `disdrodb <https://github.com/ltelab/disdrodb>`
@@ -19,8 +19,11 @@ The latest stable version Disdrodb is available on Github repository  `disdrodb 
 
 
 
-Conda-based Installation
+Users
 ========================
+
+Conda-based Installation
+.............................................
 
 Disdrodb can be installed into a conda environment
 
@@ -29,8 +32,8 @@ Disdrodb can be installed into a conda environment
 .. code-block:: bash
 
 	conda env create -f environment.yml
-	
-* Activate the disdrodb conda environment 
+
+* Activate the disdrodb conda environment
 
 .. code-block:: bash
 
@@ -40,17 +43,21 @@ Disdrodb can be installed into a conda environment
 
 
 Pip-based Installation
-======================
+..............................
 
 DISDRODB is available from the Python Packaging Index (PyPI).
 
 .. code-block:: bash
 
    pip install disdrodb
-   
+
+
+Developers
+========================
 
 Installation from a local copy of the github repository
-========================================================
+..........................................................................................
+
 
 * Clone the github repository
 
@@ -77,7 +84,7 @@ Installation from a local copy of the github repository
 * load depedencies:
 
 .. code-block:: bash
-   
+
    pip install -r requirements.txt
 
 
