@@ -20,46 +20,46 @@ Structure of the project
 
 Here is the structure of the project : 
 
-| disdrodb/
-| ├── L0/
-|     ├── configs
-|     	├── <type_of_devices>/
-|     		├── *.yml
-|     ├── readers
-|     	├── <type_of_reader>/
-|     		├── *.py 
-|     ├── templates
-|     	├── <type_of_reader>/
-|     		├── *.py
-|     ├── auxiliary.py 
-|     ├── check_configs.py 
-|     ├── check_metadata.py 
-|     ├── check_standards.py 
-|     ├── dev_tools.py 
-|     ├── io.py 
-|     ├── L0A_processing.py
-|     ├── L0B_processing.py 
-|     ├── L0_processing.py 
-|     ├── metadata.py 
-|     ├── standards.py 
-|     ├── utils_cmd.py 
-|     ├── utils_nc.py 
-|     ├── issue.py 
-| ├── L1/
+| 📁 disdrodb/
+| ├── 📁 L0/ : 
+|     ├── 📁 configs
+|     	├── 📁 <type_of_devices>/
+|     		├── 📜 *.yml
+|     ├── 📁 readers 
+|     	├── 📁 <type_of_reader>/
+|     		├── 📜 *.py : Official readers to transform raw data into standardize Apache parquet file.
+|     ├── 📁 templates
+|     	├── 📁 <type_of_reader>/
+|     		├── 📜 *.py : Readers under development. 
+|     ├── 📜 auxiliary.py : Mapping dictionary for ARM and DIVEN standards
+|     ├── 📜 check_configs.py : Config validator (unused ?)
+|     ├── 📜 check_metadata.py : Metadata validator (unused ?)
+|     ├── 📜 check_standards.py : Standard validator
+|     ├── 📜 dev_tools.py : Helper to create format specific readers
+|     ├── 📜 io.py : 
+|     ├── 📜 L0A_processing.py
+|     ├── 📜 L0B_processing.py 
+|     ├── 📜 L0_processing.py 
+|     ├── 📜 metadata.py 
+|     ├── 📜 standards.py 
+|     ├── 📜 utils_cmd.py 
+|     ├── 📜 utils_nc.py 
+|     ├── 📜 issue.py 
+| ├── 📁 L1/
 |     ├── to do
-| ├── L2/
+| ├── 📁 L2/
 |     ├── to do
-| ├── pipepline/
-| ├── api/
-| ├── uils/
-| docs/
-| data/
-| refences/
-| .gitignore
-| LICENSE
-| CONTRIBUTING.md
-| README.md
-| requirements.txt
+| ├── 📁 pipepline/
+| ├── 📁 api/
+| ├── 📁 uils/
+| 📁 docs/
+| 📁 data/
+| 📁refences/
+| 📜 .gitignore
+| 📜 LICENSE
+| 📜 CONTRIBUTING.md
+| 📜 README.md
+| 📜 requirements.txt
 
 
 L0 Files description
@@ -67,9 +67,7 @@ L0 Files description
 
 **configs/\*.yml** : todo
 
-**readers/\*.py** : Current readers (parsers) to transform raw data into a standardize Apache parquet file.  *RL : should use "pasrer" or "reader" -> to rename*
 
-**templates/\*.py** : Template to create new pasrser
 
 **auxiliary.py** : Define dictionary mapping for ARM and DIVEN standard
 
