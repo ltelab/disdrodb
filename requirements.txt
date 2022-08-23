@@ -1,0 +1,9 @@
+click
+h5py
+netCDF4
+pyarrow
+PyYAML
+setuptools
+xarray
+sphinx
+sphinx_rtd_theme
