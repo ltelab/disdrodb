@@ -14,6 +14,7 @@ Welcome to disdroDB's documentation!
    contributors_guidelines
    maintainers_guidelines
    readers
+   tutorial
       
    Disdrodb API <api/modules>
    :caption: Contents:

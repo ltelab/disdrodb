@@ -48,46 +48,43 @@ Copy paste the templates/l0_parser_dev_template into the folder proviously creat
 
 This file will be used as basis for your devlopment. 
 
-.. note::
-    RL : Here again, we should define a nomenclature  
-
 
 
 **Step 3 : Prepare the raw and processes file tree.** 
 
 The input raw folder tree must correspond to : 
 
-| DISDRODB/
-| ├── Raw/
-|    ├── Name of the institution/
-|       ├── Name ot the campaign/
-|           ├── data
-|               ├── ID of the station/ 
-|                  ├── \*.\*  : raw file
-|           ├── info        
-|           ├── issue
-|               ├── <ID of the station>.yml           
-|           ├── metedata
-|               ├── <ID of the station>.yml      
+| 📁 DISDRODB/
+| ├── 📁 Raw/
+|    ├── 📁 Name of the institution/
+|       ├── 📁 Name ot the campaign/
+|           ├── 📁 data
+|               ├── 📁 ID of the station/ 
+|                  ├── 📜 \*.\*  : raw file
+|           ├── 📁 info        
+|           ├── 📁 issue
+|               ├── 📜 <ID of the station>.yml           
+|           ├── 📁 metedata
+|               ├── 📜 <ID of the station>.yml      
 
 
 The output folder tree must correspond to : 
 
-| DISDRODB/
-| ├── Processed/
-|    ├── Name of the institution/
-|       ├── Name ot the campaign/
-|           ├── homogenized data
-|               ├── ID of the station/ 
-|                  ├── \*.paquet
-|                  ├── \*.nc 
-|           ├── metedata
-|               ├── <ID of the station>.yml   
+| 📁 DISDRODB/
+| ├── 📁 Processed/
+|    ├── 📁 Name of the institution/
+|       ├── 📁 Name ot the campaign/
+|           ├── 📁 homogenized data
+|               ├── 📁 ID of the station/ 
+|                  ├── 📜 \*.paquet
+|                  ├── 📜 \*.nc 
+|           ├── 📁 metedata
+|               ├── 📜 <ID of the station>.yml   
 
 
 
 .. note::
-    RL :  This is a proposal. If we can avoid abbreviations such as l0, l1 and use standard nomenclature. 
+    RL :  Could we porpose a cookiecutter to create this folder structure ?
 
 
 
