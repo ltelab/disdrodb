@@ -24,37 +24,50 @@ Here is the structure of the project :
 | ├── 📁 L0/ : 
 |     ├── 📁 configs
 |     	├── 📁 <type_of_devices>/
-|     		├── 📜 *.yml
+|     		├── 📜 diameter_bins.yml : Define bin's diamteter
+|     		├── 📜 L0_data_format.yml : Define attributes format
+|     		├── 📜 L0A_encodings.yml : Define attributes fromat
+|     		├── 📜 L0B_encodings.yml : Define attributes fromat
+|     		├── 📜 variable_description.yml : 
+|     		├── 📜 variable_longname.yml : 
+|     		├── 📜 variable_units.yml : 
+|     		├── 📜 variables.yml : 
+|     		├── 📜 velocity_bins.yml : 
+|     ├── 📁 manuals 
+|       ├── 📜 *.pdf : Disdrometers documentation
 |     ├── 📁 readers 
 |     	├── 📁 <type_of_reader>/
 |     		├── 📜 *.py : Official readers to transform raw data into standardize Apache parquet file.
 |     ├── 📁 templates
 |     	├── 📁 <type_of_reader>/
 |     		├── 📜 *.py : Readers under development. 
+|       ├── 📜 reader_template.py : Template file to start developping a new reader
 |     ├── 📜 auxiliary.py : Mapping dictionary for ARM and DIVEN standards
 |     ├── 📜 check_configs.py : Config validator (unused ?)
 |     ├── 📜 check_metadata.py : Metadata validator (unused ?)
 |     ├── 📜 check_standards.py : Standard validator
 |     ├── 📜 dev_tools.py : Helper to create format specific readers
-|     ├── 📜 io.py : 
-|     ├── 📜 L0A_processing.py
-|     ├── 📜 L0B_processing.py 
-|     ├── 📜 L0_processing.py 
-|     ├── 📜 metadata.py 
-|     ├── 📜 standards.py 
-|     ├── 📜 utils_cmd.py 
-|     ├── 📜 utils_nc.py 
-|     ├── 📜 issue.py 
+|     ├── 📜 io.py : Core functions to read write files / folders
+|     ├── 📜 L0A_processing.py : Core function to process raw data files to L0A format (Parquet)
+|     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF)
+|     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
+|     ├── 📜 metadata.py : Create or read metadata for readers core functions
+|     ├── 📜 standards.py : Retrive devices characteritics
+|     ├── 📜 utils_cmd.py : Tigger L0a and L0b processing for one specific reader
+|     ├── 📜 utils_nc.py : specific functions for ARM and DIVEN standard  
+|     ├── 📜 issue.py : Issue file managment to exclude time related errors while reading raw data
 | ├── 📁 L1/
 |     ├── to do
 | ├── 📁 L2/
 |     ├── to do
 | ├── 📁 pipepline/
+|   ├── 📜 *.py : Scripts to run the full pipepline
 | ├── 📁 api/
 | ├── 📁 uils/
-| 📁 docs/
-| 📁 data/
-| 📁refences/
+|   ├── 📜 logger.py : Logger functions
+| 📁 docs/ : Documentation generated automatically by sphinx. 
+| 📁 data/ : Sample data
+| 📁refences/ : do we really need this folder ? 
 | 📜 .gitignore
 | 📜 LICENSE
 | 📜 CONTRIBUTING.md
@@ -62,40 +75,6 @@ Here is the structure of the project :
 | 📜 requirements.txt
 
 
-L0 Files description
-=====================
-
-**configs/\*.yml** : todo
-
-
-
-**auxiliary.py** : Define dictionary mapping for ARM and DIVEN standard
-
-**check_config.py** : todo
-
-**check_metadata.py** : todo
-
-**check_standards.py** : Data quality function *RL : to move into  utils ?  rename ?*
-
-**dev_tool.py** : Functions to help the developer to create a format specific reader *RL : to move into  utils ?  rename ? Not used in any readers ?*
-
-**io.py** : Functions to translate raw data into into a standardize Apache parquet file *RL : to move into utils, rename ? *
-
-**L0A_processing.py** : Process the translation from raw data into into a standardize Apache parquet file *Move into L0A*
-
-**L0B_processing.py** : Process the translation from standardize Apache parquet file into netCDF. *Move into L0B*
-
-**L0_processing.py** :  *RL : is this file used ? *
-
-**metadata.py** : Create, reader metadata fo reader *Move into utils ?*
-
-**standards.py** : Retrive devices characteritics *Move into utils ?*
-
-**utils_cmd** : todo
-
-**utils_nc** : todo * Define specific functions for ARM and DIVEN standard *RL : to move into specific reader or utils ? *
-
-**issue.py** : Create an Yml issue file to exclue time related error while reading raw data *RL : to move into  utils ? *
 
 
 
