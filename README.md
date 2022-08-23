@@ -22,7 +22,7 @@ Currently:
 - more than 300 sensors have been already processed to DISDRODB L0; 
 - tens of institutions have manifested their interest in adopting the DISDRODB tools and standards. 
 
-Consequently **IT IS TIME TO GET INVOLVED**. If you have ideas, algorithms, data or expertise in the DSD field, just **GET IN TOUCH** !!!
+Consequently **IT IS TIME TO GET INVOLVED**. If you have ideas, algorithms, data or expertise to share, do not hesitate to **GET IN TOUCH** !!!
 
 
 
