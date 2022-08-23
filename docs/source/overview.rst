@@ -46,14 +46,13 @@ Here is the structure of the project :
 |     ├── 📜 check_configs.py : Config validator (unused ?)
 |     ├── 📜 check_metadata.py : Metadata validator (unused ?)
 |     ├── 📜 check_standards.py : Standard validator
-|     ├── 📜 dev_tools.py : Helper to create format specific readers
+|     ├── 📜 template_tools.py : Helper to create format specific readers
 |     ├── 📜 io.py : Core functions to read write files / folders
 |     ├── 📜 L0A_processing.py : Core function to process raw data files to L0A format (Parquet)
 |     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF)
 |     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
 |     ├── 📜 metadata.py : Create or read metadata for readers core functions
 |     ├── 📜 standards.py : Retrive devices characteritics
-|     ├── 📜 utils_cmd.py : Tigger L0a and L0b processing for one specific reader
 |     ├── 📜 utils_nc.py : specific functions for ARM and DIVEN standard  
 |     ├── 📜 issue.py : Issue file managment to exclude time related errors while reading raw data
 | ├── 📁 L1/
@@ -61,6 +60,7 @@ Here is the structure of the project :
 | ├── 📁 L2/
 |     ├── to do
 | ├── 📁 pipepline/
+|   ├── 📜 utils_cmd.py : Tigger L0a and L0b processing for one specific reader
 |   ├── 📜 *.py : Scripts to run the full pipepline
 | ├── 📁 api/
 | ├── 📁 uils/
