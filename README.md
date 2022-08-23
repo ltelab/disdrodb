@@ -11,7 +11,7 @@ The DISDRODB archive is composed of 3 product levels:
 
 The code required to the generate the DISDRODB archive is enclosed in the `production` directory of the repository. 
 
-The code facilitating the analysis and visualization of the DISDRODB archive is available in the `api` direcotry.
+The code facilitating the analysis and visualization of the DISDRODB archive is available in the `api` directory.
 
 The software documentation is available at XXXXX. 
 
