@@ -2,6 +2,14 @@
 Installation
 =========================
 
+.. warning::
+    This document is not complete !
+
+    Currently under development. 
+    
+    Do not use it now. 
+
+
 The latest stable version Disdrodb is available on Github repository  `disdrodb <https://github.com/ltelab/disdrodb>`
 
 .. code-block:: bash

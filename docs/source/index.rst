@@ -6,6 +6,14 @@
 Welcome to disdroDB's documentation!
 =======================================
 
+
+.. warning::
+    This document is not complete !
+
+    Currently under development. 
+    
+    Do not use it now. 
+
 .. toctree::
    :maxdepth: 2
    

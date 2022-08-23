@@ -2,6 +2,12 @@
 Readers
 =========================
 
+.. warning::
+    This document is not complete !
+    
+    Currently under development. 
+    
+    Do not use it now. 
 
 DISDRODB supports reading and loading data from many input file formats and schemes. The following sections describe the different way data can be loaded, requested, or added to the DISDRODB project.
 

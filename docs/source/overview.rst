@@ -4,7 +4,12 @@ Overview
 
 DISDRODB: A global database of raindrop size distribution observations
 
+.. warning::
+    This document is not complete !
 
+    Currently under development. 
+    
+    Do not use it now. 
 
 Motivation
 ================
