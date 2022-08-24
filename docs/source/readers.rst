@@ -1,5 +1,5 @@
 =========================
-Readers
+Readers devlopment
 =========================
 
 .. warning::
@@ -62,7 +62,7 @@ The input raw folder tree must correspond to :
 
 | 📁 DISDRODB/
 | ├── 📁 Raw/
-|    ├── 📁 Name of the institution/
+|    ├── 📁 Name of the institution or country \* /
 |       ├── 📁 Name ot the campaign/
 |           ├── 📁 data
 |               ├── 📁 ID of the station/ 
@@ -74,17 +74,28 @@ The input raw folder tree must correspond to :
 |               ├── 📜 <ID of the station>.yml      
 
 
+\* : *We use the institution name when the campaigns data spans more than 1 country. We use country when all campaigns (or sensor network) are inside a given country.*
+
+.. note:: 
+    For each folder in the /data directory there must be an equally named **metadata.yml** file.
+
+.. note::
+    Issue yml file are optional (and if missing are initialized to be empty).
+
 The output folder tree must correspond to : 
 
 | 📁 DISDRODB/
 | ├── 📁 Processed/
 |    ├── 📁 Name of the institution/
 |       ├── 📁 Name ot the campaign/
-|           ├── 📁 homogenized data
+|           ├── 📁 L0A
 |               ├── 📁 ID of the station/ 
 |                  ├── 📜 \*.paquet
-|                  ├── 📜 \*.nc 
-|           ├── 📁 metedata
+|           ├── 📁 L0B
+|               ├── 📁 ID of the station/ 
+|                  ├── 📜 \*.paquet
+|           ├── 📁 info
+|           ├── 📁 metadata
 |               ├── 📜 <ID of the station>.yml   
 
 
@@ -113,7 +124,17 @@ to continue...
 
 
 
+Tutorial
+=========================
 
+.. warning::
+    This document is not complete !
+    
+    Currently under development. 
+    
+    Do not use it now. 
+
+to do
 
 
 

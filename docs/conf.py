@@ -18,7 +18,7 @@ sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 # -- Project information -----------------------------------------------------
 
-project = 'Disdrodb'
+project = 'disdrodb'
 copyright = 'LTE - Environmental Remote Sensing Lab - EPFL'
 author = 'LTE - Environmental Remote Sensing Lab - EPFL'
 

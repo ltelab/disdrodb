@@ -23,10 +23,9 @@ and read through the following guidelines :
 Issue Reporting Guidelines
 --------------------------
 
--  Always use `issue
+-  Always use one available `issue
    templates <https://github.com/ltelab/disdrodb/issues/new/choose>`__
--  If you don’t find a corresponding issue template please use the
-   template to ask a new template
+-  If you don’t find the required GitHub issue template, please ask for a new template.
 
 Contribution Guidelines
 -----------------------
@@ -38,12 +37,8 @@ well as accept pull requests.
 
 We Use `Github
 Flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__,
-So All Code Changes Happen Through Pull Requests
+So All Code Changes Happen Through Pull Requests.
 
-Pull requests are the best way to propose changes to the codebase (we
-use `Github
-Flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__).
-We actively welcome your pull requests:
 
 First Time Contributors
 -----------------------
@@ -56,7 +51,7 @@ Setting up the development environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You will need python to set up the development environment. See
-`README.md <https://github.com/ltelab/disdrodb/blob/main/README.md>`__
+`the installation guide <https://disdrodb.readthedocs.io/en/latest/install.html>`__
 for further explanations.
 
 Install pre-commit hooks
@@ -71,12 +66,12 @@ root:
    pre-commit install
 
 The pre-commit hooks are scripts executed automatically in every commit
-to identify simple issues with the code. When an issue is identified
+to identify simple code quality issues. When an issue is identified
 (the pre-commit script exits with non-zero status), the hook aborts the
 commit and prints the error. Currently, DISDRODB only tests that the
 code to be committed complies with black’s format style. In case that
-the commit is aborted, you only need to run black in the entire source
-code. This can be done by running ``black .`` or
+the commit is aborted, you only need to run black agains you code.
+This can be done by running ``black .`` or
 ``pre-commit run --all-files``. The latter is recommended since it
 indicates if the commit contained any formatting errors (that are
 automatically corrected).
@@ -88,7 +83,7 @@ hook by running:
 
    pre-commit autoupdate
 
-Respect the Code Style guide
+Code Style guide
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 We follow the pep8 and the python-guide writing style
@@ -98,15 +93,11 @@ We follow the pep8 and the python-guide writing style
 
 To ensure a minimal style consistency, we use
 `black <https://black.readthedocs.io/en/stable/>`__ to auto-format to
-the source code. The black configuration used in the pysteps project is
+the source code. The black configuration used in the DISDRODB project is
 defined in the pyproject.toml, and it is automatically detected by
-black.
+black (see above).
 
-Black can be run using the following command :
 
-::
-
-   pre-commit run --all-file
 
 **Docstrings**
 
@@ -162,8 +153,7 @@ You should configure VS code as follow :
 How to contribute ?
 -------------------
 
-Here is a brief overview of the contribution steps that each DISDRODB
-must follow.
+Here is a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
 
 1. Fork the repository.
 2. Create a new branch for each contribution.
@@ -181,7 +171,7 @@ must follow.
 Fork the repository
 ~~~~~~~~~~~~~~~~~~~
 
-Once you have set the development environment, the next step is creating
+Once you have set the development environment (see `Setting up the development environment`_), the next step is creating
 your local copy of the repository, where you will commit your
 modifications. The steps to follow are:
 
@@ -202,58 +192,54 @@ Done!, now you have a local copy of disdrodb git repository.
 Create a new branch
 ~~~~~~~~~~~~~~~~~~~
 
-As a collaborator, all the new contributions you want should be made in
-a new branch under your forked repository. Working on the master branch
+Each contribution should be made in a separate new branch of your forked repository. For example, if you plan to contribute with new readers, please create a branch for every single reader.
+Working on the main branch
 is reserved for Core Contributors only. Core Contributors are developers
 that actively work and maintain the repository. They are the only ones
-who accept pull requests and push commits directly to the pysteps
+who accept pull requests and push commits directly to the DISDRODB
 repository.
 
 For more information on how to create and work with branches, see
 `“Branches in a
 Nutshell” <https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell>`__
-in the Git documentation
+in the Git documentation.
 
-Branch name must be define as follow :
+Please define the name of your branch based on the scope of the contribution. Try to strictly stick to the following guidelines:
 
--  Add a reader: ``reader-<institute>-<campaign>``
--  Fix a bug: ``bugfix-<some_key>-<word>``
--  Improve the doc: ``doc-<some_key>-<word>``
--  Add a new feature: ``feature-<some_key>-<word>``
--  Refactor some code: ``refactor-<some_key>-<word>``
--  Optimize some code: ``optimize-<some_key>-<word>``
+-  If you add a reader, use : ``reader-<institute>-<campaign>``
+-  If you fix a bug: ``bugfix-<some_key>-<word>``
+-  If you improve the documentation: ``doc-<some_key>-<word>``
+-  If you add a new feature: ``feature-<some_key>-<word>``
+-  If you refactor some code: ``refactor-<some_key>-<word>``
+-  If you optimize some code: ``optimize-<some_key>-<word>``
 
 Work on your changes
 ~~~~~~~~~~~~~~~~~~~~
 
-Here again, respect the Respect the Code Style guide.
+Here again, respect the `Code Style guide`_.
 
 
 
 Test of changes
 ~~~~~~~~~~~~~~~
 
-Evrey changes must be tested !
+Every changes must be tested !
 
-DISDRDB tests are written using the third-party pytest package. There is usually no need to run all DISDRDB tests, but instead only run the tests related to the component you are working on. All tests are automatically run from the GitHub Pull Request using multiple versions of Python, multiple operating systems, and multiple versions of dependency libraries. If you want to run all DISDRDB tests you will need to install additional dependencies that aren’t needed for regular DISDRDB usage. To install them run:
+DISDORDB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. There is usually no need to run all DISDORDB tests, 
+but instead only run the tests related to the component you are working on. All tests are automatically run from the GitHub 
+Pull Request using multiple versions of Python, multiple operating systems, and multiple versions of dependency libraries. 
+If you want to run all DISDORDB tests you will need to install additional dependencies that aren’t needed for regular DISDORDB usage. To install them run:
 
 .. code-block:: bash
 
-	pip install -e .[tests]
+	pip install pytest
 
 
-DISDRDB tests can be executed by running:
+DISDORDB tests can be executed by running:
 
 .. code-block:: bash
 
 	pytest disdrodb/tests
-
-
-You can also run a specific tests by specifying a sub-directory or module:
-
-.. code-block:: bash
-
-	pytest satpy/tests/reader_tests/<reader_name>.py
 
 
 .. warning:: 
@@ -261,14 +247,11 @@ You can also run a specific tests by specifying a sub-directory or module:
 
 
 
-
-
-
 Push you changes to your fork repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 During this process, pre-commit hooks will be run. Your commit will be
-allowed only if quality requirements are fulfil.
+allowed only if quality requirements are fulfilled.
 
 If you encounter errors, Black can be run using the following command :
 
@@ -276,11 +259,13 @@ If you encounter errors, Black can be run using the following command :
 
    pre-commit run --all-file
 
-We follow a commit message convention, to have consistent git messages.
+We follow a `commit message convention <https://www.conventionalcommits.org/en/v1.0.0/>`__, to have consistent git messages.
 The goal is to increase readability and ease of contribution
 
 -  we use
    `commit-lint <https://github.com/conventional-changelog/commitlint>`__
+
+
 
 Create a new Pull Request in GitHub.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -298,8 +283,7 @@ a Pull request to the DISDRODB main branch.
       use*\ `Kap <https://getkap.co/>`__\ *or*\ `Licecap <https://www.cockos.com/licecap/>`__\ *to
       record your screen.*
 
--  If your team uses the particular template provided for pull requests,
-   fill it.
+-  Please use the pertinent template for the pull request, and fill it out accurately.
 
 -  It’s OK to have multiple small commits as you work on the PR - GitHub
    will automatically squash it before merging.
@@ -336,12 +320,10 @@ Code review checklist
 -  When you’re done with the changes after a code review, do another
    self review of the code and write a comment to notify the reviewer,
    that the pull request is ready for another iteration.
--  Review all the review comments and make sure they are all addressed
-   before the next review iteration.
+-  Resolve all the review comments, making sure they are all addressed before another review iteration.
 -  Make sure you don’t have similar issues anywhere else in your pull
    request.
--  If you’re not going to follow any of the code review recommendations,
-   please add a comment explaining why.
+-  If you’re not going to follow a code review recommendations, please add a comment explaining why you think the reviewer suggestion is not relevant.
 -  Avoid writing comment like “done” of “fixed” on each code review
    comment. Reviewers assume you’ll do all suggested changes, unless you
    have a reason not to do some of them.
@@ -358,5 +340,5 @@ We also welcome financial contributions. Please contact us directly.
 Credits
 -------
 
-Thank you to all the people who have already contributed to DISDRDB
+Thank you to all the people who have already contributed to DISDORDB
 repository!

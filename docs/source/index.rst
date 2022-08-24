@@ -19,12 +19,12 @@ Welcome to disdroDB's documentation!
    
    overview
    install
+   readers
    contributors_guidelines
    maintainers_guidelines
-   readers
-   tutorial
+   
       
-   Disdrodb API <api/modules>
+   disdrodb API <api/modules>
    :caption: Contents:
 
   

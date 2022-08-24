@@ -37,35 +37,34 @@ Here is the structure of the project :
 |     	├── 📁 <type_of_reader>/
 |           ├── 📜 \*.py *Official readers to transform raw data into standardize Apache parquet file.*
 |     ├── 📁 templates
-|     	├── 📁 <type_of_reader>/
+|     	├── 📁 <sensor_name>/
 |     		├── 📜 \*.py *Templates for readers development.*
 |       ├── 📜 reader_template.py *Template file to start developing a new reader*
 |     ├── 📜 auxiliary.py *Mapping dictionary for ARM and DIVEN standards*
-|     ├── 📜 check_configs.py : Config validator (unused ?)
+|     ├── 📜 check_configs.py : Sensor configs validator
 |     ├── 📜 check_metadata.py : Metadata validator (unused ?)
 |     ├── 📜 check_standards.py : Standard validator
-|     ├── 📜 template_tools.py : Helper to create format specific readers
+|     ├── 📜 template_tools.py : Helper to create format station readers
 |     ├── 📜 io.py : Core functions to read write files / folders
 |     ├── 📜 L0A_processing.py : Core function to process raw data files to L0A format (Parquet)
 |     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF)
 |     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
 |     ├── 📜 metadata.py : Create or read metadata for readers core functions
-|     ├── 📜 standards.py : Retrive devices characteritics
-|     ├── 📜 utils_nc.py : specific functions for ARM and DIVEN standard
-|     ├── 📜 issue.py : Issue file management to exclude time related errors while reading raw data
+|     ├── 📜 standards.py : Implement functions to encode the L0 sensor specifications defined in L0.configs
+|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF data files of specific institute/networks
+|     ├── 📜 issue.py : Issue file management to exclude erroneous timestamps or time periods while reading and processing the raw data
 | ├── 📁 L1/
 |     ├── to do
 | ├── 📁 L2/
 |     ├── to do
 | ├── 📁 pipepline/
-|   ├── 📜 utils_cmd.py : Tigger L0a and L0b processing for one specific reader
+|   ├── 📜 utils_cmd.py : Trigger L0A and L0B processing for one specific reader
 |   ├── 📜 \*.py : Scripts to run the full pipepline
 | ├── 📁 api/
 | ├── 📁 uils/
 |   ├── 📜 logger.py : Logger functions
 | 📁 docs/ *Documentation (generated with sphinx)*
 | 📁 data/ *Sample data*
-| 📁refences/ : do we really need this folder ?
 | 📜 .gitignore
 | 📜 LICENSE
 | 📜 CONTRIBUTING.md

@@ -50,7 +50,6 @@ Examples of breaking changes include:
 Examples of non-breaking changes include:
 
 - Adding or removing an optional endpoint or field
-- Adding or removing enum values
 - Modifying documentation or spec language that doesn't affect the behavior of the API directly
 
 One implication of this policy is that clients should be prepared to ignore the presence of unexpected fields in responses and unexpected values for enums. This is necessary to preserve compatibility between PATCH versions within the same MINOR version range, since optional fields and enum values can be added as non-breaking changes.
@@ -59,11 +58,13 @@ One implication of this policy is that clients should be prepared to ignore the 
 Ongoing version support
 -----------------------------------
 
-DISDRODB major releases move the community forward, focusing on spec stabilization and major feature additions, rather than backwards-compatibility. DISDRODB minor releases will be backwards compatible. We strongly recommend adopting the latest release of DISDRODB into production within 6 months for major releases, and 4 months for minor releases.
+DISDRODB major releases aims to move the community forward, focusing on specifications stabilization and major feature additions, rather than backwards-compatibility. DISDRODB minor releases will be backwards compatible. We strongly recommend adopting the latest release of DISDRODB into production within 6 months for major releases, and 4 months for minor releases.
 
-The `LTE <https://https://www.epfl.ch/labs/lte/>`_ supports DISDRODB releases for 2 years. Recommended versions are supported and maintained by the `LTE <https://https://www.epfl.ch/labs/lte/>`_  and our community – we provide updated guidance and documentation, track issues, and provide bug fixes and critical updates in the form of hotfixes for these versions. Releases that are 2 years or older are deprecated.
+The `LTE <https://https://www.epfl.ch/labs/lte/>`_ does not garanty any period of support or maintenance. Recommended versions are supported and maintained by the `LTE <https://https://www.epfl.ch/labs/lte/>`_  and our community – we provide updated guidance and documentation, track issues, and provide bug fixes and critical updates in the form of hotfixes for these versions. Releases that are 2 years or older may be considered as deprecated.
 
-Refer to the list of Recommended Releases to see current releases and more details. To Do : add such list
+Refer to the list of Recommended Releases to see current releases and more details. 
+
+
 
 
 Documentation pipepline
@@ -83,7 +84,7 @@ After editing the source files there the documentation can be generated locally:
 	sphinx-build -b html source build
 
 
-The output of the make command should be checked for warnings and errors. If code has been changed (new functions or classes) then the API documentation files should be regenerated before running the above command:
+The output of the previous command should be checked for warnings and errors. If the code is changed (new functions or classes) then the disdrodb.api documentation files should be regenerated before running the above command:
 
 .. code-block:: bash
 
@@ -94,7 +95,7 @@ Automatic (Github) documentation creation
 ------------------------------------------
 
 
-One webhook is defined in the reopsitory to trigger the publication process to readthedoc.io. 
+One webhook is defined in the repository to trigger the publication process to readthedoc.io. 
 
 This webhook is linked to the DISDRODB core developper XXX.
 
@@ -103,14 +104,14 @@ This webhook is linked to the DISDRODB core developper XXX.
 Ghiggi Gionata owns the readthedoc account.  
 
 
-Package releases pipepline
+Package releases pipeline
 ============================
 
-One github action is defined to trigger the packaging and the upload on pypi.org.
+One  `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is defined to trigger the packaging and the upload on `pypi.org <https://pypi.org/project/disdrodb/>`_.
 
 .. image:: /static/package_pipepline.png
 
-The pypi project is shared beween the core contributors
+The pypi project is shared beween the core contributors.
 
 
 
@@ -118,7 +119,7 @@ Reviewing process
 ============================
 
 
-
+To do : define test process
 
 
 

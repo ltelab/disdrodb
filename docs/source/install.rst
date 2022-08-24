@@ -10,22 +10,62 @@ Installation
     Do not use it now.
 
 
-The latest stable version Disdrodb is available on Github repository  `disdrodb <https://github.com/ltelab/disdrodb>`
+We define here two types of installation :
 
-.. code-block:: bash
+- `Installation for users`_ : for users who want to process data.
+  
+- `Installation for Developers`_: for contributors who want to enrich the project (eg. add a new reader).
+  
 
-    git clone git@github.com:ltelab/disdrodb.git
-    cd disdrodb
 
 
-
-Users
+Installation for users
 ========================
 
 Conda-based Installation
 .............................................
 
-Disdrodb can be installed into a conda environment
+Disdrodb can be installed into a conda environment as follow :
+
+
+.. code-block:: bash
+
+	conda install -c conda-forge disdrodb
+
+   
+
+Pip-based Installation
+..............................
+
+Disdrodb is available from the Python Packaging Index (PyPI) as follow :
+
+
+.. code-block:: bash
+
+   pip install disdrodb
+
+
+
+
+
+Installation for developers
+============================
+
+
+The latest stable version disdrodb is available on Github repository  `disdrodb <https://github.com/ltelab/disdrodb>`_.
+
+According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal github account. 
+
+Installation from a local copy of the github repository
+
+.. code-block:: bash
+
+    git clone https://github.com/<your-account>/disdrodb.git
+    cd disdrodb
+
+
+Conda
+..............................
 
 * Install the dependencies using conda:
 
@@ -40,30 +80,8 @@ Disdrodb can be installed into a conda environment
 	conda activate disdrodb
 
 
-
-
-Pip-based Installation
+Pip
 ..............................
-
-DISDRODB is available from the Python Packaging Index (PyPI).
-
-.. code-block:: bash
-
-   pip install disdrodb
-
-
-Developers
-========================
-
-Installation from a local copy of the github repository
-..........................................................................................
-
-
-* Clone the github repository
-
-.. code-block:: bash
-
-   git clone https://github.com/ltelab/disdrodb.git
 
 
 * Create a virtual environment:
@@ -80,12 +98,18 @@ Installation from a local copy of the github repository
    cd venv/Script
    activate
 
+.. warning:: 
+   To do : Validate this pocess on others OS than Windows
 
-* load depedencies:
+
+* load dependencies:
 
 .. code-block:: bash
 
    pip install -r requirements.txt
+
+
+
 
 
 
