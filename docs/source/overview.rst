@@ -33,8 +33,8 @@ Here is the structure of the project :
 |     ├── 📁 manuals
 |       ├── 📜 \*.pdf  *Disdrometers documentation*
 |     ├── 📁 readers|     	
-|     		├── 📁 <type_of_reader>/
-|     		├── 📜 \*.py *Official readers to transform raw data into standardize Apache parquet file.*
+|     	├── 📁 <type_of_reader>/
+|           ├── 📜 \*.py *Official readers to transform raw data into standardize Apache parquet file.*
 |     ├── 📁 templates
 |     	├── 📁 <type_of_reader>/
 |     		├── 📜 \*.py *Templates for readers development.*
