@@ -5,8 +5,8 @@ Created on Tue Jun 21 10:56:11 2022
 
 @author: ghiggi
 """
-# ARM LPM Alaska 
-import os 
+# ARM LPM Alaska
+import os
 import glob
 import xarray as xr
 
@@ -18,7 +18,7 @@ ds1 = xr.open_dataset(fpath1)
 
 
 ds
-ds1 
+ds1
 
 ds.data_vars
 ds1.data_vars
@@ -28,13 +28,13 @@ ds1.coords
 
 ds.attrs
 ds1.attrs
-# Check vars difference 
-vars1 = set(ds.data_vars) 
+# Check vars difference
+vars1 = set(ds.data_vars)
 vars2 = set(ds1.data_vars)
 vars1.difference(vars2)
 vars2.difference(vars1)
 
-# Check bins 
+# Check bins
 ds.particle_diameter_bounds
 ds.particle_fall_velocity_bounds
 
@@ -46,35 +46,39 @@ ds.lat
 ds.lon
 ds.alt
 
- 
+
 # FULL CHECK
 campaigns = ["ALASKA"]
 base_dir = "/ltenas3/0_Data/DISDRODB/Raw/ARM/"
 
 fpath = "/ltenas3/0_Data/DISDRODB/Raw/ARM/ALASKA/data/nsalpmC1/nsalpmC1.a1.20170429.000800.nc"
 ds_ref = xr.open_dataset(fpath)
-vars_ref = set(ds_ref.data_vars) 
+vars_ref = set(ds_ref.data_vars)
 
-list_stations_pattern = [os.path.join(base_dir, campaign, "data/*") for campaign in campaigns]
+list_stations_pattern = [
+    os.path.join(base_dir, campaign, "data/*") for campaign in campaigns
+]
 list_stations_fpaths = [glob.glob(p) for p in list_stations_pattern]
-list_stations_fpaths = [x for xs in list_stations_fpaths for x in xs] # flatten list 
+list_stations_fpaths = [x for xs in list_stations_fpaths for x in xs]  # flatten list
 
-list_station_file_example = [glob.glob(os.path.join(d, "*.nc"))[0] for d in list_stations_fpaths]
+list_station_file_example = [
+    glob.glob(os.path.join(d, "*.nc"))[0] for d in list_stations_fpaths
+]
 assert len(list_station_file_example) == len(list_stations_fpaths)
 
-# Look at variables changes  
+# Look at variables changes
 for f in list_station_file_example:
     print(f)
     ds = xr.open_dataset(f)
-    var_set = set(ds.data_vars) 
+    var_set = set(ds.data_vars)
     diff_var = vars_ref.difference(var_set)
-    if len(diff_var) != 0: 
-        print(diff_var) 
-    diff_var = var_set.difference(vars_ref)
-    if len(diff_var) != 0: 
+    if len(diff_var) != 0:
         print(diff_var)
-      
-# Look at attributes 
+    diff_var = var_set.difference(vars_ref)
+    if len(diff_var) != 0:
+        print(diff_var)
+
+# Look at attributes
 for f in list_station_file_example:
     print(f)
     ds = xr.open_dataset(f)
@@ -88,7 +92,7 @@ for f in list_station_file_example:
     ds = xr.open_dataset(f)
     print(list(ds.coords))
 
-# Look at lat/lon/alt coordinates 
+# Look at lat/lon/alt coordinates
 for f in list_station_file_example:
     print(f)
     ds = xr.open_dataset(f)
@@ -99,21 +103,22 @@ for f in list_station_file_example:
 # Encodings
 from disdrodb.metadata import read_metadata
 from disdrodb.L0_proc import get_file_list
+
 verbose = False
 debugging_mode = True
 force = True
 
-raw_dir = "/ltenas3/0_Data/DISDRODB/Raw/ARM/ALASKA"   
+raw_dir = "/ltenas3/0_Data/DISDRODB/Raw/ARM/ALASKA"
 processed_dir = "/tmp/Processed/ARM/ALASKA"
 
 list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 station_id = list_stations_id[1]
-     
-        
-attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
-sensor_name = attrs['sensor_name']
 
-glob_pattern= os.path.join("data", station_id, "*.nc")
+
+attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+sensor_name = attrs["sensor_name"]
+
+glob_pattern = os.path.join("data", station_id, "*.nc")
 
 file_list = get_file_list(
     raw_dir=raw_dir,
@@ -121,18 +126,5 @@ file_list = get_file_list(
     verbose=verbose,
     debugging_mode=debugging_mode,
 )
-    
+
 ds = xr.open_mfdataset(file_list)
-
-
-
-
-  
-        
- 
- 
- 
- 
- 
-
- 
