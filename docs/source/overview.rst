@@ -30,6 +30,7 @@ Here is the structure of the project :
 |     ├── 📁 configs
 |     	├── 📁 <type_of_devices>/   *e.g Parsivel*
 |     		├── 📜 \*.yml   *Define attributes formats*
+|     		├── 📜 readme.md  *Describes config files*
 |     ├── 📁 manuals
 |       ├── 📜 \*.pdf  *Disdrometers documentation*
 |     ├── 📁 readers|     	
