@@ -37,7 +37,7 @@ Here is the structure of the project :
 |     		├── 📜 \*.py *Official readers to transform raw data into standardize Apache parquet file.*
 |     ├── 📁 templates
 |     	├── 📁 <type_of_reader>/
-|     		├── 📜 \*.py *Readers under development.*
+|     		├── 📜 \*.py *Templates for readers development.*
 |       ├── 📜 reader_template.py *Template file to start developing a new reader*
 |     ├── 📜 auxiliary.py *Mapping dictionary for ARM and DIVEN standards*
 |     ├── 📜 check_configs.py : Config validator (unused ?)
