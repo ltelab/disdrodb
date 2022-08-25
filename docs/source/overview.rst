@@ -42,7 +42,7 @@ Here is the structure of the project :
 |       ├── 📜 reader_template.py *Template file to start developing a new reader*
 |     ├── 📜 auxiliary.py *Mapping dictionary for ARM and DIVEN standards*
 |     ├── 📜 check_configs.py : Sensor configs validator
-|     ├── 📜 check_metadata.py : Metadata validator (unused ?)
+|     ├── 📜 check_metadata.py : Metadata validator
 |     ├── 📜 check_standards.py : Standard validator
 |     ├── 📜 template_tools.py : Helper to create format station readers
 |     ├── 📜 io.py : Core functions to read write files / folders
