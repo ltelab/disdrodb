@@ -102,7 +102,7 @@ Pip
    To do : Validate this pocess on others OS than Windows
 
 
-* load dependencies:
+* Load dependencies:
 
 .. code-block:: bash
 
