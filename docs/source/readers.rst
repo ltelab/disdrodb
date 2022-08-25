@@ -93,7 +93,8 @@ The output folder tree must correspond to :
 
 |       ├── 📁 Name ot the campaign/
 |           ├── 📁 L0A
-|               ├── 📁 ID of the station/ 
+|               ├── 📁 <ID of the station>/ 
+
 |                  ├── 📜 \*.paquet
 |           ├── 📁 L0B
 |               ├── 📁 ID of the station/ 
