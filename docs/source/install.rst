@@ -56,7 +56,7 @@ The latest disdrodb stable version is available on the Github repository `disdro
 
 According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal github account. 
 
-Installation from a local copy of the github repository
+* Install a local copy of the forked repository:
 
 .. code-block:: bash
 
