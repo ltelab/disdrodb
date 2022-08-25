@@ -47,7 +47,7 @@ Here is the structure of the project :
 |     ├── 📜 template_tools.py : Helpers to create station readers
 |     ├── 📜 io.py : Core functions to read write files / folders
 |     ├── 📜 L0A_processing.py : Core function to process raw data files to L0A format (Parquet)
-|     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF)
+|     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF4)
 |     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
 |     ├── 📜 metadata.py : Create or read metadata for readers core functions
 |     ├── 📜 standards.py : Implement functions to encode the L0 sensor specifications defined in L0.configs
