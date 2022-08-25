@@ -159,7 +159,7 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 2. Create a new branch for each contribution.
 3. Work on your changes.
 4. Test your changes.
-5. Push you changes to your fork repository.
+5. Push your local changes to your fork repository.
 6. Create a new Pull Request in GitHub.
 
 
