@@ -28,7 +28,7 @@ Here is the structure of the project :
 | 📁 disdrodb/
 | ├── 📁 L0/    *Raw data*
 |     ├── 📁 configs
-|     	├── 📁 <type_of_devices>/   *e.g Parsivel*
+|     	├── 📁 <type_of_devices>/   *e.g OTT_Parsivel*
 |     		├── 📜 \*.yml   *Define attributes formats*
 |     		├── 📜 readme.md  *Describes config files*
 |     ├── 📁 manuals
