@@ -51,7 +51,7 @@ Here is the structure of the project :
 |     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
 |     ├── 📜 metadata.py : Create or read metadata files for readers core functions
 |     ├── 📜 standards.py : Implement functions to encode the L0 sensor specifications defined in L0.configs
-|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF data files of specific institute/networks
+|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF4 data files of specific institute/networks
 |     ├── 📜 issue.py : Issue file management to exclude erroneous timestamps or time periods while reading and processing the raw data
 | ├── 📁 L1/
 |     ├── to do
