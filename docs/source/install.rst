@@ -52,7 +52,7 @@ Installation for developers
 ============================
 
 
-The latest stable version disdrodb is available on Github repository  `disdrodb <https://github.com/ltelab/disdrodb>`_.
+The latest disdrodb stable version is available on the Github repository `disdrodb <https://github.com/ltelab/disdrodb>`_.
 
 According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal github account. 
 
