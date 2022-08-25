@@ -75,7 +75,8 @@ The input raw folder tree must correspond to :
 |               ├── 📜 <ID of the station>.yml      
 
 
-\* : *We use the institution name when the campaigns data spans more than 1 country. We use country when all campaigns (or sensor network) are inside a given country.*
+\* : *We use the institution name when campaign data spans more than 1 country. We use country when all campaigns (or sensor networks) are inside a given country.*
+
 
 .. note:: 
     For each folder in the /data directory there must be an equally named **metadata.yml** file.
