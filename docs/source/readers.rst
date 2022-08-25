@@ -65,7 +65,8 @@ The input raw folder tree must correspond to :
 |    ├── 📁 Name of the institution or country \* /
 |       ├── 📁 Name ot the campaign/
 |           ├── 📁 data
-|               ├── 📁 ID of the station/ 
+|               ├── 📁 <ID of the station>/ 
+
 |                  ├── 📜 \*.\*  : raw file
 |           ├── 📁 info        
 |           ├── 📁 issue
