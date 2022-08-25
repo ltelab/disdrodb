@@ -82,7 +82,8 @@ The input raw folder tree must correspond to :
     For each folder in the /data directory there must be an equally named **metadata.yml** file.
 
 .. note::
-    Issue yml file are optional (and if missing are initialized to be empty).
+   The **issue.yml** files are optional (and if missing are initialized to be empty).
+
 
 The output folder tree must correspond to : 
 
