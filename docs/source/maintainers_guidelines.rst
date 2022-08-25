@@ -67,7 +67,7 @@ Refer to the list of Recommended Releases to see current releases and more detai
 
 
 
-Documentation pipepline
+Documentation pipeline
 ========================
 
 DISDRODB’s documentation is built using Sphinx. All documentation lives in the docs/ directory of the project repository. 
