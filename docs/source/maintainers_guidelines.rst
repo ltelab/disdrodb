@@ -84,7 +84,7 @@ After editing the source files there the documentation can be generated locally:
 	sphinx-build -b html source build
 
 
-The output of the previous command should be checked for warnings and errors. If the code is changed (new functions or classes) then the disdrodb.api documentation files should be regenerated before running the above command:
+The output of the previous command should be checked for warnings and errors. If the code is changed (new functions or classes) then the disdrodb documentation files should be regenerated before running the above command:
 
 .. code-block:: bash
 
