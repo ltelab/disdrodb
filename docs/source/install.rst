@@ -25,7 +25,7 @@ Installation for users
 Conda-based installation
 .............................................
 
-Disdrodb can be installed into a conda environment as follow :
+disdrodb can be installed into a conda environment as follow :
 
 
 .. code-block:: bash
