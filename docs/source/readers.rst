@@ -89,7 +89,8 @@ The output folder tree must correspond to :
 
 | 📁 DISDRODB/
 | ├── 📁 Processed/
-|    ├── 📁 Name of the institution/
+|    ├── 📁 Name of the institution or country/
+
 |       ├── 📁 Name ot the campaign/
 |           ├── 📁 L0A
 |               ├── 📁 ID of the station/ 
