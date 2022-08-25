@@ -43,13 +43,13 @@ In the DISDRODB spec, a breaking change is any change that requires either consu
 
 Examples of breaking changes include:
 
-- Adding or removing a required endpoint or field
-- Adding or removing a request parameter
-- Changing the data type or semantics of an existing field, including clarifying previously-ambiguous requirements
+- Adding a feature to process a new sensor
+- Adding a feature to create new DISDRODB L1 and L2 products/fields;
+- Adding a feature providing new functionality to the DISDRODB API.
+
 
 Examples of non-breaking changes include:
 
-- Adding or removing an optional endpoint or field
 - Modifying documentation or spec language that doesn't affect the behavior of the API directly
 
 One implication of this policy is that clients should be prepared to ignore the presence of unexpected fields in responses and unexpected values for enums. This is necessary to preserve compatibility between PATCH versions within the same MINOR version range, since optional fields and enum values can be added as non-breaking changes.
