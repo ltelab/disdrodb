@@ -34,7 +34,7 @@ disdrodb can be installed into a conda environment as follow :
 
    
 
-Pip-based Installation
+Pip-based installation
 ..............................
 
 Disdrodb is available from the Python Packaging Index (PyPI) as follow :
