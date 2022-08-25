@@ -65,7 +65,8 @@ The input raw folder tree must correspond to :
 |    ├── 📁 Name of the institution or country \* /
 |       ├── 📁 Name ot the campaign/
 |           ├── 📁 data
-|               ├── 📁 ID of the station/ 
+|               ├── 📁 <ID of the station>/ 
+
 |                  ├── 📜 \*.\*  : raw file
 |           ├── 📁 info        
 |           ├── 📁 issue
@@ -74,22 +75,26 @@ The input raw folder tree must correspond to :
 |               ├── 📜 <ID of the station>.yml      
 
 
-\* : *We use the institution name when the campaigns data spans more than 1 country. We use country when all campaigns (or sensor network) are inside a given country.*
+\* : *We use the institution name when campaign data spans more than 1 country. We use country when all campaigns (or sensor networks) are inside a given country.*
+
 
 .. note:: 
     For each folder in the /data directory there must be an equally named **metadata.yml** file.
 
 .. note::
-    Issue yml file are optional (and if missing are initialized to be empty).
+   The **issue.yml** files are optional (and if missing are initialized to be empty).
+
 
 The output folder tree must correspond to : 
 
 | 📁 DISDRODB/
 | ├── 📁 Processed/
-|    ├── 📁 Name of the institution/
+|    ├── 📁 Name of the institution or country/
+
 |       ├── 📁 Name ot the campaign/
 |           ├── 📁 L0A
-|               ├── 📁 ID of the station/ 
+|               ├── 📁 <ID of the station>/ 
+
 |                  ├── 📜 \*.paquet
 |           ├── 📁 L0B
 |               ├── 📁 ID of the station/ 

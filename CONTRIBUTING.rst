@@ -340,5 +340,5 @@ We also welcome financial contributions. Please contact us directly.
 Credits
 -------
 
-Thank you to all the people who have already contributed to DISDORDB
+Thank you to all the people who have already contributed to DISDRODB.
 repository!

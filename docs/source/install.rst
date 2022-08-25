@@ -14,7 +14,7 @@ We define here two types of installation :
 
 - `Installation for users`_ : for users who want to process data.
   
-- `Installation for Developers`_: for contributors who want to enrich the project (eg. add a new reader).
+- `Installation for developers`_: for contributors who want to enrich the project (eg. add a new reader).
   
 
 
@@ -22,10 +22,10 @@ We define here two types of installation :
 Installation for users
 ========================
 
-Conda-based Installation
+Conda-based installation
 .............................................
 
-Disdrodb can be installed into a conda environment as follow :
+disdrodb can be installed into a conda environment as follow :
 
 
 .. code-block:: bash
@@ -34,10 +34,10 @@ Disdrodb can be installed into a conda environment as follow :
 
    
 
-Pip-based Installation
+Pip-based installation
 ..............................
 
-Disdrodb is available from the Python Packaging Index (PyPI) as follow :
+disdrodb is available from the Python Packaging Index (PyPI) as follow :
 
 
 .. code-block:: bash
@@ -52,11 +52,11 @@ Installation for developers
 ============================
 
 
-The latest stable version disdrodb is available on Github repository  `disdrodb <https://github.com/ltelab/disdrodb>`_.
+The latest disdrodb stable version is available on the Github repository `disdrodb <https://github.com/ltelab/disdrodb>`_.
 
 According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal github account. 
 
-Installation from a local copy of the github repository
+* Install a local copy of the forked repository:
 
 .. code-block:: bash
 
@@ -102,7 +102,7 @@ Pip
    To do : Validate this pocess on others OS than Windows
 
 
-* load dependencies:
+* Load dependencies:
 
 .. code-block:: bash
 

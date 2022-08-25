@@ -28,30 +28,30 @@ Here is the structure of the project :
 | 📁 disdrodb/
 | ├── 📁 L0/    *Raw data*
 |     ├── 📁 configs
-|     	├── 📁 <type_of_devices>/   *e.g Parsivel*
+|     	├── 📁 <type_of_devices>/   *e.g OTT_Parsivel*
 |     		├── 📜 \*.yml   *Define attributes formats*
 |     		├── 📜 readme.md  *Describes config files*
 |     ├── 📁 manuals
 |       ├── 📜 \*.pdf  *Disdrometers documentation*
 |     ├── 📁 readers|     	
 |     	├── 📁 <type_of_reader>/
-|           ├── 📜 \*.py *Official readers to transform raw data into standardize Apache parquet file.*
+|           ├── 📜 \*.py *Official readers to transform raw data into standardized netCDF4 files.*
 |     ├── 📁 templates
 |     	├── 📁 <sensor_name>/
 |     		├── 📜 \*.py *Templates for readers development.*
 |       ├── 📜 reader_template.py *Template file to start developing a new reader*
 |     ├── 📜 auxiliary.py *Mapping dictionary for ARM and DIVEN standards*
 |     ├── 📜 check_configs.py : Sensor configs validator
-|     ├── 📜 check_metadata.py : Metadata validator (unused ?)
-|     ├── 📜 check_standards.py : Standard validator
-|     ├── 📜 template_tools.py : Helper to create format station readers
+|     ├── 📜 check_metadata.py : Metadata validator
+|     ├── 📜 check_standards.py : Standards validator
+|     ├── 📜 template_tools.py : Helpers to create station readers
 |     ├── 📜 io.py : Core functions to read write files / folders
 |     ├── 📜 L0A_processing.py : Core function to process raw data files to L0A format (Parquet)
-|     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF)
+|     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF4)
 |     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
-|     ├── 📜 metadata.py : Create or read metadata for readers core functions
+|     ├── 📜 metadata.py : Create or read metadata files for readers core functions
 |     ├── 📜 standards.py : Implement functions to encode the L0 sensor specifications defined in L0.configs
-|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF data files of specific institute/networks
+|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF4 data files of specific institute/networks
 |     ├── 📜 issue.py : Issue file management to exclude erroneous timestamps or time periods while reading and processing the raw data
 | ├── 📁 L1/
 |     ├── to do

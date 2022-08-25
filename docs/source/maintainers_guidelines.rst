@@ -60,14 +60,14 @@ Ongoing version support
 
 DISDRODB major releases aims to move the community forward, focusing on specifications stabilization and major feature additions, rather than backwards-compatibility. DISDRODB minor releases will be backwards compatible. We strongly recommend adopting the latest release of DISDRODB into production within 6 months for major releases, and 4 months for minor releases.
 
-The `LTE <https://https://www.epfl.ch/labs/lte/>`_ does not garanty any period of support or maintenance. Recommended versions are supported and maintained by the `LTE <https://https://www.epfl.ch/labs/lte/>`_  and our community – we provide updated guidance and documentation, track issues, and provide bug fixes and critical updates in the form of hotfixes for these versions. Releases that are 2 years or older may be considered as deprecated.
+The `LTE <https://https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of support or maintenance. Recommended versions are supported and maintained by the `LTE <https://https://www.epfl.ch/labs/lte/>`_  and our community – we provide updated guidance and documentation, track issues, and provide bug fixes and critical updates in the form of hotfixes for these versions. Releases that are 2 years or older may be considered as deprecated.
 
 Refer to the list of Recommended Releases to see current releases and more details. 
 
 
 
 
-Documentation pipepline
+Documentation pipeline
 ========================
 
 DISDRODB’s documentation is built using Sphinx. All documentation lives in the docs/ directory of the project repository. 
@@ -84,7 +84,7 @@ After editing the source files there the documentation can be generated locally:
 	sphinx-build -b html source build
 
 
-The output of the previous command should be checked for warnings and errors. If the code is changed (new functions or classes) then the disdrodb.api documentation files should be regenerated before running the above command:
+The output of the previous command should be checked for warnings and errors. If the code is changed (new functions or classes) then the disdrodb documentation files should be regenerated before running the above command:
 
 .. code-block:: bash
 
