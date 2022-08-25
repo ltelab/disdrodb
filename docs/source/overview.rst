@@ -43,7 +43,7 @@ Here is the structure of the project :
 |     ├── 📜 auxiliary.py *Mapping dictionary for ARM and DIVEN standards*
 |     ├── 📜 check_configs.py : Sensor configs validator
 |     ├── 📜 check_metadata.py : Metadata validator
-|     ├── 📜 check_standards.py : Standard validator
+|     ├── 📜 check_standards.py : Standards validator
 |     ├── 📜 template_tools.py : Helper to create format station readers
 |     ├── 📜 io.py : Core functions to read write files / folders
 |     ├── 📜 L0A_processing.py : Core function to process raw data files to L0A format (Parquet)
