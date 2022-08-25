@@ -14,7 +14,7 @@ We define here two types of installation :
 
 - `Installation for users`_ : for users who want to process data.
   
-- `Installation for Developers`_: for contributors who want to enrich the project (eg. add a new reader).
+- `Installation for developers`_: for contributors who want to enrich the project (eg. add a new reader).
   
 
 
