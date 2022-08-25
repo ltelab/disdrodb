@@ -22,7 +22,7 @@ We define here two types of installation :
 Installation for users
 ========================
 
-Conda-based Installation
+Conda-based installation
 .............................................
 
 Disdrodb can be installed into a conda environment as follow :
