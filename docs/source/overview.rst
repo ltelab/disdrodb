@@ -35,7 +35,7 @@ Here is the structure of the project :
 |       ├── 📜 \*.pdf  *Disdrometers documentation*
 |     ├── 📁 readers|     	
 |     	├── 📁 <type_of_reader>/
-|           ├── 📜 \*.py *Official readers to transform raw data into standardize Apache parquet file.*
+|           ├── 📜 \*.py *Official readers to transform raw data into standardized netCDF4 files.*
 |     ├── 📁 templates
 |     	├── 📁 <sensor_name>/
 |     		├── 📜 \*.py *Templates for readers development.*
