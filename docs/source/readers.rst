@@ -1,5 +1,6 @@
 =========================
-Readers devlopment
+Readers development
+
 =========================
 
 .. warning::
