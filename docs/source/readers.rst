@@ -38,7 +38,8 @@ Add a new reader
 
 **Step 1 : Create the file structure for the reader.**
 
-Go under the reader folder and add yours (or use an exsiting one).
+Go under the reader folder and add yours (or use an existing one).
+
 
 This folder must be named with the name of this institution. 
 
