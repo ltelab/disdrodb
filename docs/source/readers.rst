@@ -52,7 +52,8 @@ This folder must be named with the name of this institution.
 
 Copy paste the templates/l0_parser_dev_template into the folder proviously created. 
 
-This file will be used as basis for your devlopment. 
+This file will be used as basis for your development. 
+
 
 
 
