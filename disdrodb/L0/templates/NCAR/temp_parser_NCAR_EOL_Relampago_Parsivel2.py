@@ -296,7 +296,7 @@ reader_kwargs["encoding"] = "ISO-8859-1"
 # print_valid_L0_column_names(sensor_name)
 
 # Instrument manufacturer defaults
-# from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+
 # get_OTT_Parsivel_dict()
 # get_OTT_Parsivel2_dict()
 

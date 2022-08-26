@@ -67,8 +67,7 @@ from disdrodb.L0.L0B_processing import create_L0B_from_L0A
 # Wrong dependency, to be changed
 from disdrodb.data_encodings import get_L0_dtype_standards
 
-# Wrong dependency, to be changed
-from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+
 
 ##------------------------------------------------------------------------.
 ######################################
@@ -235,7 +234,7 @@ sensor_name = attrs["sensor_name"]
 # print_valid_L0_column_names()
 
 # # Instrument manufacturer defaults
-# from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+
 # get_OTT_Parsivel_dict()
 # get_OTT_Parsivel2_dict()
 

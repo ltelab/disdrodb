@@ -322,7 +322,7 @@ filepath = file_list[0]
 # print_valid_L0_column_names()
 
 # # Instrument manufacturer defaults
-# from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+
 # get_OTT_Parsivel_dict()
 # get_OTT_Parsivel2_dict()
 

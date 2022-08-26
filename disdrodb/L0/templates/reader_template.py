@@ -66,8 +66,7 @@ from disdrodb.L0.check_standards import check_sensor_name, check_L0A_column_name
 # Logger
 from disdrodb.utils.logger import create_logger
 
-# Wrong dependency, to be changed
-from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+
 
 ##------------------------------------------------------------------------.
 ######################################

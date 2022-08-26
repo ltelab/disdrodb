@@ -72,8 +72,7 @@ from disdrodb.utils.logger import create_logger
 # Wrong dependency, to be changed
 from disdrodb.data_encodings import get_L0_dtype_standards
 
-# Wrong dependency, to be changed
-from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+
 
 ##------------------------------------------------------------------------.
 ######################################
