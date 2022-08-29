@@ -13,25 +13,25 @@ dir_path = "/ltenas3/0_Data/DISDRODB/TODO_Raw/DENMARK/EROSION/data"
 fpaths = glob.glob(os.path.join(dir_path, "*.nc"))
 fpath = fpaths[1]
 
-# A bit slow to open ... just to let you know 
-for fpath in fpaths: 
+# A bit slow to open ... just to let you know
+for fpath in fpaths:
     ds = xr.open_dataset(fpath, chunks="auto")
-    print(ds.attrs["northBoundLatitude"]) # lat 
-    print(ds.attrs["eastBoundLongitude"]) # lon
-    print(ds.attrs) # lon 
+    print(ds.attrs["northBoundLatitude"])  # lat
+    print(ds.attrs["eastBoundLongitude"])  # lon
+    print(ds.attrs)  # lon
 
 
 # Check all data has been downloaded and source info added to metadata !!!
 
 # Disdrometer data Open Access of raw data and quality controlled (QC) data
 # Risø - on the ground next to the tall met mast
-# Raw: https://doi.org/10.11583/DTU.14501577.v1 
+# Raw: https://doi.org/10.11583/DTU.14501577.v1
 # QC: https://doi.org/10.11583/DTU.14501592
- 
-# Extract the same info for the others 
+
+# Extract the same info for the others
 
 # Risø - on the top of the tall met mast
-# Raw: https://doi.org/10.11583/DTU.14501598.v1 -_> Location 
+# Raw: https://doi.org/10.11583/DTU.14501598.v1 -_> Location
 # QC: https://doi.org/10.11583/DTU.14501601.v1
 
 

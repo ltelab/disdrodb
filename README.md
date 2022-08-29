@@ -1,63 +1,57 @@
-# DISDRO API - An API to query didsdrometer data.
+# DISDRODB - A package to standardize, process and analyze global disdrometer data.
 
-The code in this repository provides an API to query, filter and visualize disdrometer data.
-Documentation is available at XXXXX
 
-ATTENTION: The code is subject to changes in the coming  months.
+DISDRODB is part of an initial effort to index, collect and homogenize drop size distribution (DSD) data sets across the globe,
+as well as to establish a global standard for disdrometers observations data sharing. 
+DISDRODB standards are being established following FAIR data best practices and Climate & Forecast (CF) conventions, and will facilitate the preprocessing, analysis and visualization of disdrometer data.  
 
-The folder `tutorials` (will) provide jupyter notebooks describing various features of DISDRODB API.
+The DISDRODB archive is composed of 3 product levels:
+- L0 provides the raw sensors measurements converted into a standardized netCDF4 format.
+- L1 provides L0 homogenized and quality-checked data.
+- L2 provides scientific products derived from the L1 data.
 
-- How to contribute a custom parser to DISDRODB [[`parser_development.ipynb`]]
-- Downloading current DISDRODB dataset [[`download.ipynb`]]
-- Read and filter DISDRODB [[`read_and_filter.ipynb`]]
-- Exploratory Data Analysis of DISDRODB [[`eda.ipynb`]]
+The code required to the generate the DISDRODB archive is enclosed in the `production` directory of the repository. 
 
-[`download.ipynb`]: https://nbviewer.jupyter.org/github/deepsphere/deepsphere-weather/blob/outputs/tutorials/spherical_grids.ipynb
-[`eda.ipynb`]: https://nbviewer.jupyter.org/github/deepsphere/deepsphere-weather/blob/outputs/tutorials/interpolation_pooling.ipynb
+The code facilitating the analysis and visualization of the DISDRODB archive is available in the `api` directory.
 
-The folder `templates` provide parser template to contribute your data to DISDRODB.
+
+The software documentation is available at XXXXX. 
+
+Currently: 
+- only the DISDRODB L0 product generation has been implemented;
+- the pipeline for DISDRODB L1 and L2 product generation is in development;
+- the DISDRODB API is in development; 
+- more than 300 sensors have been already processed to DISDRODB L0; 
+- tens of institutions have manifested their interest in adopting the DISDRODB tools and standards. 
+
+Consequently **IT IS TIME TO GET INVOLVED**. If you have ideas, algorithms, data or expertise to share, do not hesitate to **GET IN TOUCH** !!!
+
+
+
 
 ## Installation
 
-For a local installation, follow the below instructions.
 
-1. Clone this repository.
-   
-   ```sh
-   git clone git@github.com:ltelab/disdrodb.git
-   cd disdrodb
-   ```
+DISDRODB can be installed from PyPI with pip: 
 
-2. Install the dependencies using conda:
-   
-   ```sh
-   conda env create -f environment.yml
-   ```
+  ```sh
+  pip install disdrodb
+  ```
+  
+In future, it will become available from conda-forge for conda installations:   
 
-3. Activate the mascdb conda environment 
-   
-   ```sh
-   conda activate disdrodb
-   ```
-
-4. Just for info... to update the environment.yml: 
-   
-   ```sh
-   conda env export > environment.yml
-   ```
-
-## References
-
-- [Slides](https://docs.google.com/presentation/d/1X_MJIXGMGpmXeZh-W6PIgzeO1_0p_ZOAh-ikKNUFQcE/edit?usp=sharing)
-- [Manuscript](https://XXXX)
-- [Presentation](https://XXXX)
-
+  ```sh
+  conda install -c conda-forge disdrodb
+  ```
+ 
 ## Contributors
 
 * [Gionata Ghiggi](https://people.epfl.ch/gionata.ghiggi)
-* [Kim Candolfi]
+* [Kim Candolfi](https://github.com/KimCandolfi)
+* [Régis Longchamp](https://people.epfl.ch/regis.longchamp)
+* [Charlotte Gisèle Weil](https://people.epfl.ch/charlotte.weil)
 * [Jacopo Grazioli](https://people.epfl.ch/jacopo.grazioli) 
-* [Alexis Berne]
+* [Alexis Berne](https://people.epfl.ch/alexis.berne?lang=en)
 
 ## License
 

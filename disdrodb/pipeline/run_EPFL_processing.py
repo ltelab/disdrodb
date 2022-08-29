@@ -7,7 +7,7 @@ Created on Sat Jan  1 17:18:04 2022
 """
 import os
 import subprocess
-from disdrodb.L0.utils_cmd import get_parser_cmd
+from disdrodb.pipeline.utils_cmd import get_parser_cmd
 
 # You need to set the disdrodb repo path in your .bashrc
 # export PYTHONPATH="${PYTHONPATH}:/home/ghiggi/Projects/disdrodb"
