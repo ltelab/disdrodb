@@ -1,5 +1,6 @@
 # DISDRODB - A package to standardize, process and analyze global disdrometer data.
 
+
 DISDRODB is part of an initial effort to index, collect and homogenize drop size distribution (DSD) data sets across the globe,
 as well as to establish a global standard for disdrometers observations data sharing. 
 DISDRODB standards are being established following FAIR data best practices and Climate & Forecast (CF) conventions, and will facilitate the preprocessing, analysis and visualization of disdrometer data.  
@@ -12,6 +13,7 @@ The DISDRODB archive is composed of 3 product levels:
 The code required to the generate the DISDRODB archive is enclosed in the `production` directory of the repository. 
 
 The code facilitating the analysis and visualization of the DISDRODB archive is available in the `api` directory.
+
 
 The software documentation is available at XXXXX. 
 
@@ -26,7 +28,9 @@ Consequently **IT IS TIME TO GET INVOLVED**. If you have ideas, algorithms, data
 
 
 
+
 ## Installation
+
 
 DISDRODB can be installed from PyPI with pip: 
 
