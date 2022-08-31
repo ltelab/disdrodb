@@ -15,7 +15,7 @@ The code required to the generate the DISDRODB archive is enclosed in the `produ
 The code facilitating the analysis and visualization of the DISDRODB archive is available in the `api` directory.
 
 
-The software documentation is available at XXXXX. 
+The software documentation is available at [https://disdrodb.readthedocs.io/en/latest/](https://disdrodb.readthedocs.io/en/latest/). 
 
 Currently: 
 - only the DISDRODB L0 product generation has been implemented;
