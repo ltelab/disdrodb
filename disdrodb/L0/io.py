@@ -19,6 +19,7 @@
 # -----------------------------------------------------------------------------.
 import logging
 import os
+import re
 import shutil
 import glob
 import numpy as np
@@ -42,9 +43,24 @@ def infer_campaign_from_fpath(fpath):
     return campaign 
 
 def infer_station_id_from_fpath(fpath):
+    """
+    Get the station ID from the path of the input raw data. 
+
+    Parameters
+    ----------
+    fpath : str
+        Path of the raw file.
+
+    Returns
+    -------
+    str
+        Station ID
+    """
+    path_pattern = r"(\\|\/)"
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
-    station_id = disdrodb_fpath.split("/")[5]
+    list_path_elements = re.split(path_pattern, disdrodb_fpath)
+    station_id = list_path_elements[10]
     # Optional strip .yml if fpath point to YAML file 
     station_id.strip(".yml")  
     return station_id 
@@ -315,21 +331,21 @@ def check_raw_dir(raw_dir, verbose=False):
     # TODO: MISSING IMPLEMENTATION OF check_issue_compliance
     # -------------------------------------------------------------------------.
     return None
-    
+
 def check_processed_dir(processed_dir, force=False):
     """Check that 'processed_dir' is a valid directory path."""
     if not isinstance(processed_dir, str):
         raise TypeError("Provide 'processed_dir' as a string'.")
     #------------------------------    
     # Check processed_dir has "DISDRODB/Processed" to avoid deleting precious stuffs 
-    if processed_dir.find("DISDRODB/Processed") == -1: 
-        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*."
+    if processed_dir.find("DISDRODB/Processed") == -1 and processed_dir.find("DISDRODB\\Processed") == -1 : 
+        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*. or *\DISDRODB\Processed\*."
         logger.error(msg)
         raise ValueError(msg)
         
     # Check processed_dir does not end with "DISDRODB/Processed" 
     # - It must contain also the <campaign_name> directory  
-    if processed_dir.endswith("Processed") or processed_dir.endswith("Processed/"):
+    if processed_dir.endswith("Processed") or processed_dir.endswith("Processed/") or processed_dir.endswith("Processed\\"):
         msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
         logger.error(msg)
         raise ValueError(msg)

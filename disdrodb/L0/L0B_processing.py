@@ -120,16 +120,18 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
         try:
             head = df.head(1)
             head = head['raw_drop_concentration']
-            if head.find(',') == -1:
+            if not isinstance(head, pd.Series):
+                if head.find(',') == -1:
                     split_str = head[6]
         except KeyError:
-            msg = "Something wrong with divider for L0B matrix, default divider is ',', tried to parse with {}".format(split_str)
+            msg = "Something wrong with dt divider is ',', tried to parse with {}".format(split_str)
             if verbose:
                 print(msg)
             logger.info(msg)
     if sensor_name in ['Thies_LPM']:
         split_str = ';'
     
+    split_str = ','
     # Retrieve available arrays
     dict_data = {}
     unavailable_keys = []

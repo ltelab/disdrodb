@@ -68,8 +68,7 @@ from disdrodb.L0.metadata import read_metadata
 
 from disdrodb.L0.standards import get_L0A_dtype, g
 
-# Wrong dependency, to be changed
-from disdrodb.standards import get_OTT_Parsivel_dict, get_OTT_Parsivel2_dict
+
 
 # Wrong dependency, to be changed
 from disdrodb.data_encodings import get_L0_dtype_standards
