@@ -25,8 +25,14 @@
 
 # -----------------------------------------------------------------------------.
 import os
+import sys
 import logging
 import pandas as pd
+
+
+
+
+sys.path.insert(0,os.getcwd())
 
 # Directory
 from disdrodb.L0.io import (
@@ -68,19 +74,28 @@ from disdrodb.utils.logger import create_logger
 
 
 
+
+
+
+
 ##------------------------------------------------------------------------.
 ######################################
 #### 1. Define campaign filepaths ####
 ######################################
-raw_dir = "<local_path>"  # Must end with campaign_name upper case
-processed_dir = "<local_path>"  # Must end with campaign_name upper case
+raw_dir = os.path.join(os.getcwd(),"data/DISDRODB\Raw/INSTITUTION_or_COUNTRY/CAMPAIGN")  # Must end with campaign_name upper case
+processed_dir = os.path.join(os.getcwd(),"data/DISDRODB/Processed/INSTITUTION_or_COUNTRY/CAMPAIGN") # Must end with campaign_name upper case
 force = False
 force = True
 lazy = True
-lazy = False
+# lazy = False
 verbose = True
 debugging_mode = True
 sensor_name = "Parsivel"
+
+
+
+
+
 
 ####--------------------------------------------------------------------------.
 #############################################
@@ -88,6 +103,9 @@ sensor_name = "Parsivel"
 #############################################
 # Initial directory checks
 raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
+
+
+
 
 # Retrieve campaign name
 campaign_name = get_campaign_name(raw_dir)
@@ -185,45 +203,46 @@ reader_kwargs["blocksize"] = None  # "50MB"
 filepath = file_list[0]
 str_reader_kwargs = reader_kwargs.copy()
 str_reader_kwargs["dtype"] = str  # or object
+
+
 df_str = read_raw_data(
     filepath, column_names=None, reader_kwargs=str_reader_kwargs, lazy=False
 )
 
+
 # Print first rows
-print_df_first_n_rows(df_str, n=1, column_names=False)
-print_df_first_n_rows(df_str, n=5, column_names=False)
-print_df_random_n_rows(df_str, n=5, with_column_names=False)  # this likely the more useful
-
+# print_df_first_n_rows(df_str, n=0, column_names=False)
+# print_df_first_n_rows(df_str, n=5, column_names=False)
+# print_df_random_n_rows(df_str, n=5, column_names=False)  # this likely the more useful
 # Retrieve number of columns
-print(len(df_str.columns))
-
+# print(len(df_str.columns))
 # Look at unique values
-print_df_columns_unique_values(df_str, column_indices=None, column_names=False)  # all
+# print_df_columns_unique_values(df_str, column_indices=None, column_names=False)  # all
 
-print_df_columns_unique_values(
-    df_str, column_indices=0, column_names=False
-)  # single column
+# print_df_columns_unique_values(
+#     df_str, column_indices=0, column_names=False
+# )  # single column
 
-print_df_columns_unique_values(
-    df_str, column_indices=slice(0, 15), column_names=False
-)  # a slice of columns
+# print_df_columns_unique_values(
+#     df_str, column_indices=slice(0, 15), column_names=False
+# )  # a slice of columns
 
-get_df_columns_unique_values_dict(
-    df_str, column_indices=slice(0, 15), column_names=False
-)  # get dictionary
+# get_df_columns_unique_values_dict(
+#     df_str, column_indices=slice(0, 15), column_names=False
+# )  # get dictionary
 
-# Retrieve number of columns
-print(len(df_str.columns))
+# # Retrieve number of columns
+# print(len(df_str.columns))
 
-# Infer columns based on string patterns
-infer_df_str_column_names(df_str, sensor_name=sensor_name)
+# # Infer columns based on string patterns
+# infer_df_str_column_names(df_str, sensor_name=sensor_name)
 
-# Alternatively an empty list of column_names to infer
-["Unknown" + str(i + 1) for i in range(len(df_str.columns))]
+# # Alternatively an empty list of column_names to infer
+# ["Unknown" + str(i + 1) for i in range(len(df_str.columns))]
 
-# Print valid column names
-# - If other names are required, add the key to disdrodb/L0/configs/<sensor_name>/L0A_dtype.yml
-print_valid_L0_column_names(sensor_name)
+# # Print valid column names
+# # - If other names are required, add the key to disdrodb/L0/configs/<sensor_name>/L0A_dtype.yml
+# print_valid_L0_column_names(sensor_name)
 
 
 ####---------------------------------------------------------------------------.
@@ -242,7 +261,7 @@ column_names = [
     "rainfall_accumulated_32bit",
     "weather_code_synop_4680",
     "weather_code_synop_4677",
-    "reflectivity_16bit",
+    "reflectivity_32bit",
     "mor_visibility",
     "laser_amplitude",
     "number_particles",
@@ -259,7 +278,9 @@ column_names = [
 ]
 
 # - Check name validity
-check_column_names(column_names,sensor_name)
+# check_column_names(column_names,sensor_name)
+
+
 
 # - Read data
 filepath = file_list[0]
@@ -271,8 +292,8 @@ df = read_raw_data(
 )
 
 # - Look at the columns and data
-print_df_column_names(df)
-print_df_random_n_rows(df, n=5)
+# print_df_column_names(df)
+# print_df_random_n_rows(df, n=5)
 
 # - Check it loads also lazily in dask correctly
 df1 = read_raw_data(
@@ -281,8 +302,8 @@ df1 = read_raw_data(
 df1 = df1.compute()
 
 # - Look at the columns and data
-print_df_column_names(df1)
-print_df_random_n_rows(df1, n=5)
+# print_df_column_names(df1)
+# print_df_random_n_rows(df1, n=5)
 
 # - Check are equals
 assert df.equals(df1)
@@ -290,14 +311,14 @@ assert df.equals(df1)
 # - Look at values statistics
 # print_df_summary_stats(df)
 
-# - Look at unique values
-print_df_columns_unique_values(df, column_indices=None, column_names=True)  # all
+# # - Look at unique values
+# print_df_columns_unique_values(df, column_indices=None, column_names=True)  # all
 
-print_df_columns_unique_values(df, column_indices=0, column_names=True)  # single column
+# print_df_columns_unique_values(df, column_indices=0, column_names=True)  # single column
 
-print_df_columns_unique_values(
-    df, column_indices=slice(0, 10), column_names=True
-)  # a slice of columns
+# print_df_columns_unique_values(
+#     df, column_indices=slice(0, 10), column_names=True
+# )  # a slice of columns
 
 get_df_columns_unique_values_dict(
     df, column_indices=slice(0, 15), column_names=True
@@ -342,7 +363,7 @@ if len(df.columns) != len(column_names):
 # del df_tmp
 
 # Example: drop unrequired columns for L0
-df = df.drop(columns=["id", "latitude", "longitude"])
+df = df.drop(columns=["id", "latitude", "longitude","datalogger_error",'datalogger_voltage','datalogger_temperature'])
 
 # Example: Convert mandatory 'time' column to datetime format
 df["time"] = pd.to_datetime(df["time"], format="%m-%d-%Y %H:%M:%S")
@@ -362,10 +383,10 @@ df = cast_column_dtypes(df, sensor_name=sensor_name)
 
 # ---------------------------------------------------------------------------.
 #### 8.4 Check the dataframe looks as desired
-print_df_column_names(df)
-print_df_random_n_rows(df, n=5)
-print_df_columns_unique_values(df, column_indices=2, column_names=True)
-print_df_columns_unique_values(df, column_indices=slice(0, 20), column_names=True)
+# print_df_column_names(df)
+# print_df_random_n_rows(df, n=5)
+# print_df_columns_unique_values(df, column_indices=2, column_names=True)
+# print_df_columns_unique_values(df, column_indices=slice(0, 20), column_names=True)
 
 ####------------------------------------------------------------------------------.
 ################################################
@@ -382,17 +403,22 @@ def df_sanitizer_fun(df, lazy=False):
     else:
         import pandas as dd
 
+
     # - Drop datalogger columns
     columns_to_drop = [
         "id",
+        "datalogger_temperature",
+        "datalogger_voltage",
+        "datalogger_error",
+        "longitude",
+        "latitude"
     ]
+
     df = df.drop(columns=columns_to_drop)
-
-    # - Drop latitude and longitute (always the same)
-    df = df.drop(columns=["latitude", "longitude"])
-
+    
     # - Convert time column to datetime format
-    df["time"] = dd.to_datetime(df["time"], format="%m-%d-%Y %H:%M:%S")
+    df["time"] = dd.to_datetime(df["time"], format="%m-%d-%Y %H:%M:%S")  
+    
     return df
 
 
@@ -416,9 +442,10 @@ df = read_L0A_raw_file_list(
 #### 9.3 Check everything looks goods
 if lazy :
     df = df.compute()  # if lazy = True
-print_df_column_names(df)
-print_df_random_n_rows(df, n=5)
-print_df_columns_unique_values(df, column_indices=2, column_names=True)
-print_df_columns_unique_values(df, column_indices=slice(0, 20), column_names=True)
+# print_df_column_names(df)
+# print_df_random_n_rows(df, n=5)
+# print_df_columns_unique_values(df, column_indices=2, column_names=True)
+# print_df_columns_unique_values(df, column_indices=slice(0, 17), column_names=True)
 
 ####--------------------------------------------------------------------------.
+

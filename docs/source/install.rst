@@ -83,23 +83,36 @@ Conda
 Pip
 ..............................
 
+* For MS windows users : 
+	* Create a virtual environment:
 
-* Create a virtual environment:
+
+		.. code-block:: bash
+
+		   python -m venv venv
+
+	* activate virtual environment
+
+		.. code-block:: bash
+
+		   cd venv/Script
+		   activate
 
 
-.. code-block:: bash
+* For Linux / Mas OS users : 
+	* Create a virtual environment:
 
-   python -m venv venv
 
-* activate virtual environment
+		.. code-block:: bash
 
-.. code-block:: bash
+		   virtualenv -p python3 venv
 
-   cd venv/Script
-   activate
+	* activate virtual environment
 
-.. warning:: 
-   To do : Validate this pocess on others OS than Windows
+		.. code-block:: bash
+
+		   source venv/bin/activate
+
 
 
 * Load dependencies:
