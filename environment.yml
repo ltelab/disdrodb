@@ -13,4 +13,5 @@ dependencies:
   - sphinx
   - sphinx_rtd_theme
   - jupyter
+  - nbsphinx
 

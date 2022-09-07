@@ -7,4 +7,5 @@ setuptools
 xarray
 sphinx
 sphinx_rtd_theme
+nbsphinx
 jupyter
