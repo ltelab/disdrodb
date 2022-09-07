@@ -213,7 +213,7 @@ df_str = read_raw_data(
 # Print first rows
 # print_df_first_n_rows(df_str, n=0, column_names=False)
 # print_df_first_n_rows(df_str, n=5, column_names=False)
-# print_df_random_n_rows(df_str, n=5, column_names=False)  # this likely the more useful
+print_df_random_n_rows(df_str, n=5, column_names=False)  # this likely the more useful
 # Retrieve number of columns
 # print(len(df_str.columns))
 # Look at unique values
@@ -242,7 +242,7 @@ df_str = read_raw_data(
 
 # # Print valid column names
 # # - If other names are required, add the key to disdrodb/L0/configs/<sensor_name>/L0A_dtype.yml
-# print_valid_L0_column_names(sensor_name)
+print_valid_L0_column_names(sensor_name)
 
 
 ####---------------------------------------------------------------------------.
@@ -292,7 +292,7 @@ df = read_raw_data(
 )
 
 # - Look at the columns and data
-# print_df_column_names(df)
+print_df_column_names(df)
 # print_df_random_n_rows(df, n=5)
 
 # - Check it loads also lazily in dask correctly
@@ -309,7 +309,7 @@ df1 = df1.compute()
 assert df.equals(df1)
 
 # - Look at values statistics
-# print_df_summary_stats(df)
+print_df_summary_stats(df)
 
 # # - Look at unique values
 # print_df_columns_unique_values(df, column_indices=None, column_names=True)  # all
@@ -386,7 +386,7 @@ df = cast_column_dtypes(df, sensor_name=sensor_name)
 # print_df_column_names(df)
 # print_df_random_n_rows(df, n=5)
 # print_df_columns_unique_values(df, column_indices=2, column_names=True)
-# print_df_columns_unique_values(df, column_indices=slice(0, 20), column_names=True)
+print_df_columns_unique_values(df, column_indices=slice(0, 20), column_names=True)
 
 ####------------------------------------------------------------------------------.
 ################################################

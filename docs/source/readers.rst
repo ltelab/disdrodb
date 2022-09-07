@@ -2,6 +2,7 @@
 Readers development
 =========================
 
+
 .. warning::
     This document is not complete !
 
@@ -211,6 +212,35 @@ Once ready, `the reader can be run <#running-a-reader>`_ .
 
 
 Adding a new reader : Tutorial
+################################################
+
+Please visit the following page to access to the tutorial notebook : 
+
+
+.. toctree::
+   :maxdepth: 1
+
+   data_analysis
+
+If you want to access to this notebook interactivally, you have to run jupyter notebook as follow : 
+
+1. Go to the disdrodb folder
+
+2. Start jupyter notebook 
+
+	.. code-block:: bash
+
+		python -m notebook
+
+	
+	*Make sure to be within your project virtual environment or conda environment.* 
+	
+3. Navigate to ``disdrodb\L0\templates\data_analysis.ipynb``
+
+
+
+
+Adding a new reader : Tutorial (old)
 ################################################
 
 In this tutorial, we will create a new reader based on a lightweight data sample.

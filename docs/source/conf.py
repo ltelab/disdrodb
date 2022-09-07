@@ -12,6 +12,7 @@
 #
 import os
 import sys
+import shutil
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('../..'))
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
@@ -23,6 +24,15 @@ copyright = 'LTE - Environmental Remote Sensing Lab - EPFL'
 author = 'LTE - Environmental Remote Sensing Lab - EPFL'
 
 
+# Copy tutorial notebook
+root_path = os.path.dirname(os.path.dirname(os.getcwd()))
+
+in_path = os.path.join(root_path,'disdrodb','L0','templates','data_analysis.ipynb')
+out_path = os.path.join(os.getcwd(),'data_analysis.ipynb')
+
+shutil.copyfile(in_path, out_path)
+
+
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -31,8 +41,12 @@ author = 'LTE - Environmental Remote Sensing Lab - EPFL'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinx.ext.autosectionlabel',
+    'nbsphinx'
 ]
+
+
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
