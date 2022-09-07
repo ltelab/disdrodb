@@ -154,3 +154,6 @@ train_interactive.py
 tmp_fig.py
 log.txt
 
+
+docs\source\data_analysis.ipynb
+
