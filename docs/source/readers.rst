@@ -240,7 +240,7 @@ If you want to access to this notebook interactivally, you have to run jupyter n
 
 
 
-Adding a new reader : Tutorial (old)
+Adding a new reader : Tutorial (old - to be deleted )
 ################################################
 
 In this tutorial, we will create a new reader based on a lightweight data sample.
