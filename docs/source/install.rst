@@ -13,9 +13,9 @@ Installation
 We define here two types of installation :
 
 - `Installation for users`_ : for users who want to process data.
-  
+
 - `Installation for developers`_: for contributors who want to enrich the project (eg. add a new reader).
-  
+
 
 
 
@@ -32,7 +32,7 @@ disdrodb can be installed into a conda environment as follow :
 
 	conda install -c conda-forge disdrodb
 
-   
+
 
 Pip-based installation
 ..............................
@@ -54,7 +54,7 @@ Installation for developers
 
 The latest disdrodb stable version is available on the Github repository `disdrodb <https://github.com/ltelab/disdrodb>`_.
 
-According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal github account. 
+According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal github account.
 
 * Install a local copy of the forked repository:
 
@@ -83,47 +83,28 @@ Conda
 Pip
 ..............................
 
-* For MS windows users : 
-	* Create a virtual environment:
-
-
-		.. code-block:: bash
-
-		   python -m venv venv
-
-	* activate virtual environment
-
-		.. code-block:: bash
-
-		   cd venv/Script
-		   activate
-
-
-* For Linux / Mas OS users : 
-	* Create a virtual environment:
-
-
-		.. code-block:: bash
-
-		   virtualenv -p python3 venv
-
-	* activate virtual environment
-
-		.. code-block:: bash
-
-		   source venv/bin/activate
-
-
-
 * Load dependencies:
 
 .. code-block:: bash
 
    pip install -r requirements.txt
 
+* (Optional) We recommend you install in a virtual environment, for example with venv:
 
+	* Windows: Create a virtual environment with venv:
 
+		.. code-block:: bash
 
+		   python -m venv venv
+		   cd venv/Script
+		   activate
+
+	* Mac/Linux: Create a virtual environment with venv:
+
+		.. code-block:: bash
+
+		   virtualenv -p python3 venv
+		   source venv/bin/activate
 
 
 
