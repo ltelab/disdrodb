@@ -214,7 +214,7 @@ Once ready, `the reader can be run <#running-a-reader>`_ .
 Adding a new reader : Tutorial
 ################################################
 
-Please visit the following page to access to the tutorial notebook : 
+Please visit the following page to access a read only tutorial notebook : 
 
 
 .. toctree::
@@ -222,20 +222,28 @@ Please visit the following page to access to the tutorial notebook :
 
    data_analysis
 
-If you want to access to this notebook interactivally, you have to run jupyter notebook as follow : 
+If you want interactive notebook, you need to run jupyter notebook in your local machine. Proceed as follow : 
 
-1. Go to the disdrodb folder
+1. Make sure you have the latest version of the code in your local folder. See the git clone command in the `Installation for developers <https://disdrodb.readthedocs.io/en/latest/install.html#installation-for-developers>`_ section.
 
-2. Start jupyter notebook 
+2. Enter your project virtual environment or conda environment.  Please, refer to the `Installation for developers <https://disdrodb.readthedocs.io/en/latest/install.html#installation-for-developers>`_ section if needed.
+
+3. Navigate to the disdrodb folder
+
+4. Start jupyter notebook 
 
 	.. code-block:: bash
 
 		python -m notebook
 
-	
-	*Make sure to be within your project virtual environment or conda environment.* 
-	
-3. Navigate to ``disdrodb\L0\templates\data_analysis.ipynb``
+	It starts your default web browser with jupyter notebook main page. 
+
+
+5. Navigate to ``disdrodb\L0\templates`` and double click on `data_analysis.ipynb`.
+
+6. You can now start using the tutorial notebook.
+
+
 
 
 
