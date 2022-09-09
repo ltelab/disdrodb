@@ -173,7 +173,7 @@ Data processed folder
 Step 2 : Read and analyse the data
 ******************************************************************
 
-Once the data structure is ready, you can start analyzing its content. To do so, we provide you with tools in ``disdrodb\L0\templates\reader_preparation.ipynb``.
+Once the data structure is ready, you can start analyzing its content. To do so, we provide you with tools in ``disdrodb\L0\readers\reader_preparation.ipynb``.
 Copy the notebook and adapt it to your own data.
 
 .. note::
@@ -238,7 +238,7 @@ If you want interactive notebook, you need to run jupyter notebook in your local
 	It starts your default web browser with jupyter notebook main page.
 
 
-5. Navigate to ``disdrodb\L0\templates`` and double click on `reader_preparation.ipynb`.
+5. Navigate to ``disdrodb\L0\readers`` and double click on `reader_preparation.ipynb`.
 
 6. You can now start using the tutorial notebook.
 

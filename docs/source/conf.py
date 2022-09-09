@@ -27,8 +27,8 @@ author = 'LTE - Environmental Remote Sensing Lab - EPFL'
 # Copy tutorial notebook
 root_path = os.path.dirname(os.path.dirname(os.getcwd()))
 
-in_path = os.path.join(root_path,'disdrodb','L0','templates','data_analysis.ipynb')
-out_path = os.path.join(os.getcwd(),'data_analysis.ipynb')
+in_path = os.path.join(root_path,'disdrodb','L0','readers','reader_preparation.ipynb')
+out_path = os.path.join(os.getcwd(),'reader_preparation.ipynb')
 
 shutil.copyfile(in_path, out_path)
 

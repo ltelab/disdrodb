@@ -33,13 +33,10 @@ Here is the structure of the project :
 |     		├── 📜 readme.md  *Describes config files*
 |     ├── 📁 manuals
 |       ├── 📜 \*.pdf  *Disdrometers documentation*
-|     ├── 📁 readers|     	
+|     ├── 📁 readers|
 |     	├── 📁 <type_of_reader>/
 |           ├── 📜 \*.py *Official readers to transform raw data into standardized netCDF4 files.*
-|     ├── 📁 templates
-|     	├── 📁 <sensor_name>/
-|     		├── 📜 \*.py *Templates for readers development.*
-|       ├── 📜 reader_template.py *Template file to start developing a new reader*
+|       ├── 📜 reader_preparation.ipynb *Template file to start developing a new reader*
 |     ├── 📜 auxiliary.py *Mapping dictionary for ARM and DIVEN standards*
 |     ├── 📜 check_configs.py : Sensor configs validator
 |     ├── 📜 check_metadata.py : Metadata validator
