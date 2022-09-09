@@ -1,4 +1,4 @@
-name: disdrodb
+name: disdrodb-dev
 channels:
   - conda-forge
   - defaults
@@ -15,4 +15,3 @@ dependencies:
   - jupyter
   - nbsphinx
   - dask
-

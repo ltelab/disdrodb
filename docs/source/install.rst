@@ -77,7 +77,7 @@ Conda
 
 .. code-block:: bash
 
-	conda activate disdrodb
+	conda activate disdrodb-dev
 
 
 Pip
