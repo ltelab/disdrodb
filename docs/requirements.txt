@@ -15,3 +15,5 @@ PyYAML
 six
 toolz
 xarray
+nbsphinx
+jupyter

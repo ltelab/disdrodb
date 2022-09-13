@@ -166,6 +166,24 @@ def cast_column_dtypes(df, sensor_name):
 
 
 def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
+    """Read raw data into a dataframe
+
+    Parameters
+    ----------
+    filepath : str
+        Raw file path
+    column_names : list
+        Column names
+    reader_kwargs : dict
+        Dask or Pandas reading parameters
+    lazy : bool, optional
+        If lazy = True, load the raw file using dask, If false, uses pandas.
+
+    Returns
+    -------
+    pandas.DataFrame or dask.DataFrame
+        Pandas or dask dataframe 
+    """
     
     # Enforce all raw files columns with dtype = 'object' 
     dtype = 'object'
@@ -350,7 +368,7 @@ def read_L0A_raw_file_list(
             # Sanitize the dataframe with a custom function
             if df_sanitizer_fun is not None:
                 df = df_sanitizer_fun(df, lazy=lazy)
-            
+
             #-------------------------------------------------------.
             # TODO: Make a check to detect that the number of columns does not vary !!!!
             # - Might facilitate identification of buzzy stuffs 

@@ -15,12 +15,14 @@ from disdrodb.L0.check_standards import (
     get_field_ndigits_natural_dict,
 )
 
+
+
 def check_column_names(column_names, sensor_name): 
     "Checks that the columnn names respects DISDRODB standards."
-    if isinstance(column_names, list):
+    if not isinstance(column_names, list):
         raise TypeError("'column_names' must be a list of strings.")
     # Get valid columns 
-    dtype_dict = get_L0_dtype(sensor_name)
+    dtype_dict = get_L0A_dtype(sensor_name)
     valid_columns = list(dtype_dict)
     valid_columns = valid_columns + ['time']
     # --------------------------------------------
@@ -29,9 +31,9 @@ def check_column_names(column_names, sensor_name):
     valid_columns = set(valid_columns)  
     # --------------------------------------------
     # Raise warning if there are columns not respecting DISDRODB standards 
-    unvalid_columns = list(column_names.difference(valid_columns))
-    if len(unvalid_columns) > 0:
-        print("The following columns do no met the DISDRODB standards: {unvalid_columns}.")
+    invalid_columns = list(column_names.difference(valid_columns))
+    if len(invalid_columns) > 0:
+        print(f"The following columns do no met the DISDRODB standards: {invalid_columns}.")
         print("Please remove such columns within the df_sanitizer_fun")
     # --------------------------------------------
     # Check time column is present 
@@ -61,27 +63,61 @@ def print_df_first_n_rows(df, n=5, column_names=True):
     return None
 
 
-def print_df_random_n_rows(df, n=5, column_names=True):
-    columns = list(df.columns)
+def print_df_random_n_rows(df, n=5, with_column_names=True):
+    """Print the content of the dataframe by column, randomly chosen 
+
+    Parameters
+    ----------
+    df : dataframe
+        The dataframe
+    n : int, optional
+        The number of row to print, by default 5
+    with_column_names : bool, optional
+        If true, print the column name, by default True
+
+    Returns
+    -------
+    None
+        Nothing
+    """
+    
     df = df.copy()
     df = df.sample(n=n)
+
+    if with_column_names :
+        columns = list(df.columns)
+
     for i in range(len(df.columns)):
-        if column_names:
-            print(" - Column", i, "(", columns[i], "):")
+        row_content = df.iloc[0 : (n + 1), i].values
+        if with_column_names:
+            columns = list(df.columns)
+            print(f"- Column {i} ({columns[i]}) : {row_content}")
         else:
-            print(" - Column", i, ":")
-        print("     ", df.iloc[0 : (n + 1), i].values)
+            print(f"- Column {i} : {row_content}")
+
     return None
 
 
 def print_df_column_names(df):
+    """Print dataframe columns names 
+
+    Parameters
+    ----------
+    df : dataframe
+        The dataframe
+
+    Returns
+    -------
+    None
+        Nothing
+    """
     for i, column in enumerate(df.columns):
         print(" - Column", i, ":", column)
     return None
 
 
 def print_valid_L0_column_names(sensor_name):
-    print(list(get_L0_dtype(sensor_name)))
+    print(list(get_L0A_dtype(sensor_name)))
     return None
 
 
@@ -197,16 +233,32 @@ def print_df_with_any_nan_rows(df):
 ####--------------------------------------------------------------------------.
 #### Character checks
 def arr_has_constant_nchar(arr):
+    """Check if the content of an array has a constant number of characters
+
+    Parameters
+    ----------
+    arr : numpy.ndarray
+        The array to analyse
+
+    Returns
+    -------
+    booleen 
+        True if the number of character is constant 
+
+    """
     arr = np.asarray(arr)
-    if arr.dtype.char not in ["O", "U"]:
-        raise TypeError("Expecting object (O) or string (U) dtype.")
-    if arr.dtype.char == "O":
+    # Get unique character code
+    unique_character_code = arr.dtype.char
+
+    if unique_character_code == "O": # If (Python) objects
         arr = arr.astype(str)
-    if arr.dtype.char != "U":
-        raise TypeError("Expecting string (U) dtype.")
+    elif unique_character_code != "U" : # or if not Unicode string
+        raise TypeError("Expecting object (O) or string (U) dtype.")
+        
     # Get number of characters (include .)
     str_nchars = np.char.str_len(arr)
     str_nchars_unique = np.unique(str_nchars)
+
     if len(str_nchars_unique) != 1:
         return False  # raise ValueError("Non-unique string length !")
     else:
@@ -293,17 +345,38 @@ def search_possible_columns(string, sensor_name):
 
 
 def infer_df_str_column_names(df, sensor_name, row_idx=1):
+    """Try to guess the columns names base on sting patterns. 
+
+    Parameters
+    ----------
+    df : numpy.ndarray
+        The array to analyse
+    sensor_name : str
+        name of the sensor
+    row_idx : int, optional
+        The row ID of the array, by default 1
+
+    Returns
+    -------
+    dict
+        Dictionary with the keys being the column id and the values being the guessed column names
+    """
     dict_possible_columns = {}
     for i, column in enumerate(df.columns):
-        print(i)
+        
         # Get string array
         arr = df.iloc[:, i]
         arr = np.asarray(arr).astype(str)
+
+        # check is the array contains a constant number of character
         if not arr_has_constant_nchar(arr):
-            print("Column", i, "has non-unique number of characters")
-            continue
+            print("Column", i, "has non-unique number of characters")       
+        
         # Subset a single string
         string = arr[row_idx]
+
+        # Try to guess the column 
         possible_columns = search_possible_columns(string, sensor_name=sensor_name)
         dict_possible_columns[i] = possible_columns
+    
     return dict_possible_columns
