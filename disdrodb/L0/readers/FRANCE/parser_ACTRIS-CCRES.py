@@ -160,13 +160,31 @@ def main(
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-    column_names = ["TO_SPLIT"]
+    column_names = [
+        "date",
+        "time",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "laser_amplitude",
+        "number_particles",
+        "sensor_temperature",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
+        "rain_kinetic_energy",
+        "snowfall_rate",
+        "weather_code_synop_4680",
+        "weather_code_metar_4678",
+        "weather_code_nws",
+        "raw_drop_number",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
+    reader_kwargs["delimiter"] = "\\n|;"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
@@ -217,31 +235,6 @@ def main(
             import pandas as dd
 
         import numpy as np
-
-        # Split into columns and assign name
-        df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
-
-        column_names = [
-            "date",
-            "time",
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_temperature",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "rain_kinetic_energy",
-            "snowfall_rate",
-            "weather_code_synop_4680",
-            "weather_code_metar_4678",
-            "weather_code_nws",
-            "raw_drop_number",
-        ]
-
-        df.columns = column_names
 
         # Parse time
         df["time"] = df["date"] + "-" + df["time"]
