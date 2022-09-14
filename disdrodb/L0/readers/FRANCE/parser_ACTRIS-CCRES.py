@@ -63,7 +63,7 @@ from disdrodb.L0 import run_L0
     help="Force overwriting",
 )
 @click.option(
-    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose",
 )
 @click.option(
     "-d",
@@ -200,6 +200,9 @@ def main(
     # Define encoding
     reader_kwargs["encoding"] = "latin1"
 
+    # Skip the first row (header)
+    reader_kwargs["skiprows"] = 1
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
@@ -213,21 +216,16 @@ def main(
         else:
             import pandas as dd
 
-        # Remove header columns
-        df = df[
-            ~df.eq(
-                "Date;Time;Intensity of precipitation (mm/h);Precipitation since start (mm);Radar reflectivity (dBz);MOR Visibility (m);Signal amplitude of Laserband;Number of detected particles;Temperature in sensor (°C);Heating current (A);Sensor voltage (V);Kinetic Energy;Snow intensity (mm/h);Weather code SYNOP WaWa;Weather code METAR/SPECI;Weather code NWS;Spectrum"
-            ).any(1)
-        ]
+        import numpy as np
 
         # Split into columns and assign name
         df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
 
         column_names = [
             "date",
-            "time_temp",
+            "time",
             "rainfall_rate_32bit",
-            "precipitation_since_start_TO_DROP",
+            "rainfall_accumulated_32bit",
             "reflectivity_32bit",
             "mor_visibility",
             "laser_amplitude",
@@ -236,39 +234,33 @@ def main(
             "sensor_heating_current",
             "sensor_battery_voltage",
             "rain_kinetic_energy",
+            "snowfall_rate",
             "weather_code_synop_4680",
             "weather_code_metar_4678",
             "weather_code_nws",
-            "I_DONT_KNOW_WHAT_IS",
             "raw_drop_number",
         ]
 
         df.columns = column_names
 
-        # Drop precipitation_since_start_TO_DROP and I_DONT_KNOW_WHAT_IS column
-        df = df.drop(
-            columns=["precipitation_since_start_TO_DROP", "I_DONT_KNOW_WHAT_IS"]
-        )
-
         # Parse time
-        df["time"] = df["date"] + "-" + df["time_temp"]
+        df["time"] = df["date"] + "-" + df["time"]
         df["time"] = dd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S")
-        df = df.drop(columns=["date", "time_temp"])
+        df = df.drop(columns=["date"])
 
-        # Set NaN into <SPECTRUM>ZERO</SPECTRUM> in raw_drop_number
-        import numpy as np
-
+        # Set NaN into <SPECTRUM>ZERO</SPECTRUM> in raw_drop_number if no drops are detected
         df["raw_drop_number"] = df["raw_drop_number"].replace(
             "<SPECTRUM>ZERO</SPECTRUM>", np.NaN
         )
+
+        # Remove <SPECTRUM> on raw_drop_number
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
 
         # Cannot implement dask for this loop, so only pandas for now
         for i, v in df.iterrows():
             # Check if v is NaN
             if not v["raw_drop_number"] != v["raw_drop_number"]:
-
-                v["raw_drop_number"] = v["raw_drop_number"].replace("<SPECTRUM>", "")
-                v["raw_drop_number"] = v["raw_drop_number"].replace("</SPECTRUM>", "")
 
                 # Add 0 digits to raw_drop_number
                 temp_raw = v["raw_drop_number"].split(";")
@@ -289,7 +281,7 @@ def main(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.txt*"  # There is only one file without extension
+    files_glob_pattern = "*.txt"  # There is only one file without extension
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products
