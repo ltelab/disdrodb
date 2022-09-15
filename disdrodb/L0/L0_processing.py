@@ -45,7 +45,7 @@ from disdrodb.utils.logger import log_info, log_warning
 # TODO: 
 # - Add verbose and logs to disdrodb.io function !!!
 
-#------------------------------------------------------------------.
+#-----------------------------------------------------------------------------.
 def click_L0_readers_options(function):
     function = click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')(function)
     function = click.argument('processed_dir', metavar='<processed_dir>')(function)
@@ -60,6 +60,7 @@ def click_L0_readers_options(function):
     return function 
 
 
+#-----------------------------------------------------------------------------.
 def run_L0(
     # Arguments custom to each reader
     column_names,

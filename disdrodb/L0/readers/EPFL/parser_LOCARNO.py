@@ -27,9 +27,9 @@ from disdrodb.L0 import click_L0_readers_options
 def main(
     raw_dir,
     processed_dir,
-    L0A_processing=True,
-    L0B_processing=True,
-    keep_L0A=False,
+    l0a_processing=True,
+    l0b_processing=True,
+    keep_l0a=False,
     force=False,
     verbose=False,
     debugging_mode=False,
@@ -57,13 +57,13 @@ def main(
         Desired directory path for the processed L0A and L0B products.
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    L0A_processing : bool
+    l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
-    L0B_processing : bool
+    l0b_processing : bool
       Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
       The default is True.
-    keep_L0A : bool
+    keep_l0a : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     force : bool
