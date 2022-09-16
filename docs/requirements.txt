@@ -17,3 +17,4 @@ toolz
 xarray
 nbsphinx
 jupyter
+pre-commit
