@@ -3,13 +3,11 @@
 *~
 .DS_Store
 .vscode
-test*
 .Rhistory
 
 # Folders
 /dask-worker-space/
 /0_Docs/
-.idea/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
