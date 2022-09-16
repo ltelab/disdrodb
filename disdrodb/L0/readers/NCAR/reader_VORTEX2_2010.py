@@ -296,7 +296,7 @@ def main(
         df["time"] = dd.to_datetime(
             df["sensor_date"] + "-" + df["sensor_time"], format="%d.%m.%Y-%H:%M:%S"
         )
-        df = df.drop(columns=["sensor_date", "sensor_time"])
+        df = df.drop(columns=["sensor_date", "sensor_time", "start_time"])
 
         # Reformat weather codes
         if "weather_code_metar_4678" in df.columns:

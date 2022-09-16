@@ -30,14 +30,13 @@ logger = logging.getLogger(__name__)
 
 PRODUCT_VERSION = "V0"
 SOFTWARE_VERSION = "V0"
+EPOCH = u"seconds since 1970-01-01 00:00:00"  
 
-# TODO: 
-# - get_L0_dtype,
-# - get_L1_netcdfencoding_dict --> get_encodings(sensor_name)
-# - _get_encodings_key
-# - get_encodings_dtype 
-# - get_encodings_chunk 
-# - get_encodings_ ....
+ 
+# Notes:
+# - L0A_encodings currently specify only the dtype. This could be expanded in the future.
+# - disdrodb.configs ... the netcdf chunk size could be an option to be specified
+ 
 
 def read_config_yml(sensor_name, filename):
     """Read a config yaml file and return the dictionary."""
@@ -94,7 +93,8 @@ def get_data_format_dict(sensor_name):
 def get_long_name_dict(sensor_name): 
     """Get a dictionary containing the long name of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="variable_longname.yml")
-  
+
+
 def get_units_dict(sensor_name):
     """Get a dictionary containing the unit of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="variable_units.yml")
@@ -120,16 +120,18 @@ def get_velocity_bins_dict(sensor_name):
 
 
 def get_L0A_dtype(sensor_name):
-    """Get a dictionary containing the L0 dtype."""
+    """Get a dictionary containing the L0A dtype."""
     # Note: This function could extract the info from get_L0A_encodings_dict in future.
     d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
     return d
 
+
 def get_L0A_encodings_dict(sensor_name):
-    """Get a dictionary containing the L0 dtype."""
-    # L0A_encodings currently specify only the dtype ... could be expanded in future.
+    """Get a dictionary containing the L0A encodings."""
+    # - L0A_encodings currently specify only the dtype. This could be expanded in the future.
     d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
     return d
+
 
 def get_L0B_encodings_dict(sensor_name):
     """Get a dictionary containing the encoding to write L0B netCDFs."""
@@ -161,6 +163,13 @@ def get_L0B_encodings_dict(sensor_name):
     return d
 
 
+def get_time_encoding():    
+    encoding = {}
+    encoding['units'] = EPOCH
+    encoding['calendar'] = 'proleptic_gregorian'
+    return encoding 
+
+
 def set_DISDRODB_L0_attrs(ds, attrs):
     sensor_name = attrs['sensor_name']
     #----------------------------------
@@ -172,7 +181,7 @@ def set_DISDRODB_L0_attrs(ds, attrs):
     description_dict = get_description_dict(sensor_name)
     units_dict = get_units_dict(sensor_name)
     long_name_dict = get_long_name_dict(sensor_name)
-    data_format_dict = get_data_format_dict(sensor_name)
+    # data_format_dict = get_data_format_dict(sensor_name)
     for var in list(ds.data_vars):
         attrs_var = {}
         attrs_var['long_name'] = long_name_dict[var] 
@@ -201,6 +210,7 @@ def set_DISDRODB_L0_attrs(ds, attrs):
     
     return ds
    
+    
 ####-------------------------------------------------------------------------.
 #############################################
 #### Get diameter and velocity bins info ####
