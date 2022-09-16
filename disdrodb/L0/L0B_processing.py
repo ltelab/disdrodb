@@ -46,6 +46,7 @@ from disdrodb.L0.standards import (
     get_velocity_bin_width,
     get_raw_field_nbins,
     get_L0B_encodings_dict,
+    get_time_encoding,
 )
 
 logger = logging.getLogger(__name__)
@@ -137,9 +138,9 @@ def reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps):
     return arr
 
 
-def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
+def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
     # Log
-    msg = " - Retrieval of L1 data matrix started."
+    msg = " - Retrieval of L0B data matrix started."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -246,6 +247,13 @@ def get_coords(sensor_name):
     return coords
 
 
+def convert_object_variables_to_string(ds):
+    for var in ds.data_vars:
+        if pd.api.types.is_object_dtype(ds[var]):
+            ds[var] = ds[var].astype(str)
+    return ds 
+
+
 def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -262,7 +270,7 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
             df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
         )
         # Retrieve raw data matrices
-        dict_data = retrieve_L1_raw_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
+        dict_data = retrieve_L0B_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
         # Define raw data matrix variables for xarray Dataset
         data_vars = {
             "raw_drop_concentration": (
@@ -347,7 +355,10 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
         logger.error(msg)
         raise ValueError(msg)
-
+     
+    # Ensure variables with dtype object are converted to string
+    ds = convert_object_variables_to_string(ds)
+    
     # -----------------------------------------------------------
     # Check L0B standards
     check_L0B_standards(ds)
@@ -376,28 +387,43 @@ def sanitize_encodings_dict(encoding_dict, ds):
 
 def rechunk_dataset(ds, encoding_dict):
     for var in ds.data_vars:
-        chunks = encoding_dict[var]["chunksizes"]
+        chunks = encoding_dict[var].pop("chunksizes")
         if chunks is not None:
             ds[var] = ds[var].chunk(chunks)
     return ds
 
 
+def set_encodings(ds, sensor_name): 
+    # Get encoding dictionary
+    encoding_dict = get_L0B_encodings_dict(sensor_name)
+    encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
+    
+    # Ensure chunksize smaller than the array shape
+    encoding_dict = sanitize_encodings_dict(encoding_dict, ds)
+    
+    # Rechunk variables for fast writing !
+    # - This pop the chunksize argument from the encoding dict ! 
+    ds = rechunk_dataset(ds, encoding_dict)
+    
+    # Set time encoding 
+    ds['time'].encoding.update(get_time_encoding())
+     
+    # Set the variable encodings 
+    for var in ds.data_vars:
+        ds[var].encoding.update(encoding_dict[var])
+    
+    return ds 
+    
+
 def write_L0B(ds, fpath, sensor_name):
     # Ensure directory exist
     os.makedirs(os.path.dirname(fpath), exist_ok=True)
 
-    # Get encoding dictionary
-    encoding_dict = get_L0B_encodings_dict(sensor_name)
-    encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
-
-    # Ensure chunksize smaller than the array shape)
-    encoding_dict = sanitize_encodings_dict(encoding_dict, ds)
-
-    # Rechunk variables for fast writing !
-    ds = rechunk_dataset(ds, encoding_dict)
-
+    # Set encodings
+    ds = set_encodings(ds, sensor_name)
+ 
     # Write netcdf
-    ds.to_netcdf(fpath, engine="netcdf4", encoding=encoding_dict)
+    ds.to_netcdf(fpath, engine="netcdf4") # , encoding=encoding_dict)
 
 
 ####--------------------------------------------------------------------------.
