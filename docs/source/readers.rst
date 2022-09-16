@@ -219,7 +219,7 @@ Please visit the following page to access a read only tutorial notebook :
 .. toctree::
    :maxdepth: 1
 
-   data_analysis
+   reader_preparation
 
 If you want interactive notebook, you need to run jupyter notebook in your local machine. Proceed as follow :
 

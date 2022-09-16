@@ -206,12 +206,20 @@ in the Git documentation.
 
 Please define the name of your branch based on the scope of the contribution. Try to strictly stick to the following guidelines:
 
--  If you add a reader, use : ``reader-<institute>-<campaign>``
+-  If you add a reader, use : ``reader-<data_source*>-<campaign>``
 -  If you fix a bug: ``bugfix-<some_key>-<word>``
 -  If you improve the documentation: ``doc-<some_key>-<word>``
 -  If you add a new feature: ``feature-<some_key>-<word>``
 -  If you refactor some code: ``refactor-<some_key>-<word>``
 -  If you optimize some code: ``optimize-<some_key>-<word>``
+
+
+\* Guidelines for the `data_source` :
+
+- 	We use the institution name when campaign data spans more than 1 country (i.e. ARM, GPM)
+- 	We use the country name when all campaigns (or sensor networks) are inside a given country.
+
+
 
 Work on your changes
 ~~~~~~~~~~~~~~~~~~~~
