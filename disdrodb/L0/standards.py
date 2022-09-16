@@ -247,28 +247,40 @@ def get_diameter_bin_width(sensor_name):
 def get_velocity_bin_center(sensor_name):
     """Get velocity bin center."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    velocity_bin_center = list(velocity_dict["center"].values())
+    if velocity_dict is not None: 
+        velocity_bin_center = list(velocity_dict["center"].values())
+    else:
+        return None
     return velocity_bin_center
 
 
 def get_velocity_bin_lower(sensor_name):
     """Get velocity bin lower bound."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    lower_bounds = [v[0] for v in velocity_dict["bounds"].values()]
+    if velocity_dict is not None: 
+        lower_bounds = [v[0] for v in velocity_dict["bounds"].values()]
+    else:
+        return None
     return lower_bounds
 
 
 def get_velocity_bin_upper(sensor_name):
     """Get velocity bin upper bound."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    upper_bounds = [v[1] for v in velocity_dict["bounds"].values()]
+    if velocity_dict is not None: 
+        upper_bounds = [v[1] for v in velocity_dict["bounds"].values()]
+    else:
+        return None
     return upper_bounds
 
 
 def get_velocity_bin_width(sensor_name):
     """Get velocity bin width."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    velocity_bin_width = list(velocity_dict["width"].values())
+    if velocity_dict is not None: 
+        velocity_bin_width = list(velocity_dict["width"].values())
+    else:
+        return None
     return velocity_bin_width
 
 
@@ -276,13 +288,43 @@ def get_raw_field_nbins(sensor_name):
     diameter_dict = get_diameter_bins_dict(sensor_name)
     velocity_dict = get_velocity_bins_dict(sensor_name)
     n_d = len(diameter_dict["center"])
-    n_v = len(velocity_dict["center"])
-    nbins_dict = {
-        "raw_drop_concentration": n_d,
-        "raw_drop_average_velocity": n_v,
-        "raw_drop_number": n_d * n_v,
-    }
+    # For instruments measuring size and velocity (i.e. OTT Parsivel, ThiesLPM)
+    if velocity_dict is not None:
+        n_v = len(velocity_dict["center"])
+        nbins_dict = {
+            "raw_drop_concentration": n_d,
+            "raw_drop_average_velocity": n_v,
+            "raw_drop_number": n_d * n_v,
+        }
+     # For instruments measuring only size (i.e. RD80)
+    else: 
+        nbins_dict = {
+            "raw_drop_number": n_d,
+        }
     return nbins_dict
 
+
+def get_raw_field_dim_order(sensor_name):
+    # TODO: this should go into a config file ... 
+    # TODO: also think to set dimensions as diameter and velocity ... TO DISCUSS
+    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "ThiesLPM"]:
+        dim_dict = {
+            "raw_drop_concentration":  ['diameter_bin_center'],
+            "raw_drop_average_velocity": ['velocity_bin_center'],
+            "raw_drop_number": ["diameter_bin_center", "velocity_bin_center"],
+        }
+    elif sensor_name in ["RD80"]: 
+        dim_dict = {
+            "raw_drop_number": ["diameter_bin_center"]
+        }
+    else: 
+        raise NotImplementedError() 
+    return dim_dict
+
+
+def get_raw_spectrum_ndims(sensor_name):
+    encoding_dict = get_L0B_encodings_dict(sensor_name)
+    ndim = len(encoding_dict["raw_drop_number"]['chunksizes']) - 1
+    return ndim
 
 # -----------------------------------------------------------------------------.
