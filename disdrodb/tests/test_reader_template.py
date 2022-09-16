@@ -5,8 +5,8 @@ Created on Thu Sep 15 22:57:09 2022
 
 @author: ghiggi
 """
-from disdrodb.L0.L0A_processing import read_raw_data
-from disdrodb.L0.L0B_processing import retrieve_L1_raw_arrays, create_L0B_from_L0A
+from disdrodb.L0.L0A_processing import read_raw_data, cast_column_dtypes
+from disdrodb.L0.L0B_processing import retrieve_L0B_arrays, create_L0B_from_L0A, set_encodings
 
 lazy = False  # should we test also True !
 
@@ -37,8 +37,22 @@ attrs["crs"] = "dummy"
 df = read_raw_data(filepath, column_names, reader_kwargs, lazy=lazy)
 df = df_sanitizer_fun(df, lazy=lazy)
 print(df)
+df = cast_column_dtypes(df, sensor_name)
+print(df)
 
-dict_data = retrieve_L1_raw_arrays(df, sensor_name, lazy=lazy, verbose=False)
+dict_data = retrieve_L0B_arrays(df, sensor_name, lazy=lazy, verbose=False)
 
 # Note: here the dtype of the 1D variable is object. Expected.
-ds = create_L0B_from_L0A(df, attrs, lazy=True, verbose=False)
+ds = create_L0B_from_L0A(df, attrs, lazy=lazy, verbose=False)
+print(ds)
+
+# Check chunked dataset
+ds_encoded = set_encodings(ds.copy(), sensor_name)
+print(ds_encoded)
+
+# Write unencoded 
+ds.to_netcdf("/tmp/dummy1.nc")
+
+# Write encoded 
+ds_encoded.to_netcdf("/tmp/dummy2.nc")
+

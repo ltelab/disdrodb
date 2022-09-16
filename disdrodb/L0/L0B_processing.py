@@ -33,7 +33,7 @@ import xarray as xr
 from disdrodb.L0.check_standards import (
     check_sensor_name,
     check_L0B_standards,
-    check_array_lengths_consistency,
+   # check_array_lengths_consistency,
 )
 from disdrodb.L0.standards import (
     get_diameter_bin_center,
@@ -45,22 +45,25 @@ from disdrodb.L0.standards import (
     get_velocity_bin_upper,
     get_velocity_bin_width,
     get_raw_field_nbins,
+    get_raw_field_dim_order,
+    get_raw_spectrum_ndims,
     get_L0B_encodings_dict,
+    get_time_encoding,
 )
 
 logger = logging.getLogger(__name__)
 
 
-def get_drop_concentration(arr):
-    # TODO
-    logger.info("Computing raw_drop_concentration from raw spectrum.")
-    return arr[:, :, 0]
+# def get_drop_concentration(arr):
+#     # TODO
+#     logger.info("Computing raw_drop_concentration from raw spectrum.")
+#     return arr[:, :, 0]
 
 
-def get_drop_average_velocity(arr):
-    # TODO
-    logger.info("Computing raw_drop_average_velocity from raw spectrum.")
-    return arr[:, 0, :]
+# def get_drop_average_velocity(arr):
+#     # TODO
+#     logger.info("Computing raw_drop_average_velocity from raw spectrum.")
+#     return arr[:, 0, :]
 
 
 def check_L0_raw_fields_available(df, sensor_name):
@@ -137,9 +140,9 @@ def reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps):
     return arr
 
 
-def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
+def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
     # Log
-    msg = " - Retrieval of L1 data matrix started."
+    msg = " - Retrieval of L0B data matrix started."
     if verbose:
         print(msg)
     logger.info(msg)
@@ -149,7 +152,13 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
 
     # Retrieve raw fields matrix bins dictionary
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-
+    
+    # Retrieve dimension order dictionary
+    dims_dict = get_raw_field_dim_order(sensor_name)
+    
+    # Retrieve dimension of the raw_drop_number field 
+    n_dim_spectrum = get_raw_spectrum_ndims(sensor_name)
+    
     # Retrieve number of timesteps
     if lazy:
         n_timesteps = df.shape[0].compute()
@@ -178,29 +187,35 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
         else:
             arr = np.stack(list_arr, axis=0)
 
-        # For key='raw_drop_number', reshape to 2D matrix
-        if key == "raw_drop_number":
+        # For key='raw_drop_number', if 2D ... reshape to 2D matrix
+        # - This applies i.e for OTT_Parsivels and ThiesLPM 
+        # - This does not apply to RD80 
+        if key == "raw_drop_number" and n_dim_spectrum == 2:
             arr = reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps)
 
-        # Add array to dictionary
-        dict_data[key] = arr
-
+        # Define dictionary to pass to xr.Dataset 
+        dims_order = ["time"] + dims_dict[key]
+        dict_data[key] = (dims_order, arr)
+    
+    #-------------------------------------------------------------------------.
     # Retrieve unavailable keys from the raw spectrum field
-    if len(unavailable_keys) > 0:
-        if "raw_drop_number" not in list(dict_data.keys()):
-            raise ValueError(
-                """The raw spectrum is required to compute the unavailables
-                'raw_drop_concentration' and 'raw_drop_average_velocity' fields."""
-            )
-        if "raw_drop_concentration" in unavailable_keys:
-            dict_data["raw_drop_concentration"] = get_drop_concentration(
-                dict_data["raw_drop_number"]
-            )
-        if "raw_drop_average_velocity" in unavailable_keys:
-            dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(
-                dict_data["raw_drop_number"]
-            )
-
+    # TODO: This should be performed when the xarray object is created ! 
+    # if len(unavailable_keys) > 0:
+    #     if "raw_drop_number" not in list(dict_data.keys()):
+    #         raise ValueError(
+    #             """The raw spectrum is required to compute the unavailables
+    #             'raw_drop_concentration' and 'raw_drop_average_velocity' fields."""
+    #         )
+    #     if "raw_drop_concentration" in unavailable_keys and n_dim_spectrum == 2:
+    #         # TODO: can this be computed for RD80 ? 
+    #         dict_data["raw_drop_concentration"] = get_drop_concentration(
+    #             dict_data["raw_drop_number"]
+    #         )
+    #     if "raw_drop_average_velocity" in unavailable_keys and n_dim_spectrum == 2:
+    #         dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(
+    #             dict_data["raw_drop_number"]
+    #         )
+    #-------------------------------------------------------------------------.
     # Log
     msg = " - Retrieval of L0B data matrices finished."
     if verbose:
@@ -214,6 +229,7 @@ def retrieve_L1_raw_arrays(df, sensor_name, lazy=True, verbose=False):
 def get_coords(sensor_name):
     check_sensor_name(sensor_name=sensor_name)
     coords = {}
+    # Retrieve diameter coords
     coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)
     coords["diameter_bin_lower"] = (
         ["diameter_bin_center"],
@@ -227,23 +243,32 @@ def get_coords(sensor_name):
         ["diameter_bin_center"],
         get_diameter_bin_width(sensor_name=sensor_name),
     )
-    coords["velocity_bin_center"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_center(sensor_name=sensor_name),
-    )
-    coords["velocity_bin_lower"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_lower(sensor_name=sensor_name),
-    )
-    coords["velocity_bin_upper"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_upper(sensor_name=sensor_name),
-    )
-    coords["velocity_bin_width"] = (
-        ["velocity_bin_center"],
-        get_velocity_bin_width(sensor_name=sensor_name),
-    )
+    # Retrieve velocity coords (if available)
+    if   get_velocity_bin_center(sensor_name=sensor_name) is not None:
+        coords["velocity_bin_center"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_center(sensor_name=sensor_name),
+        )
+        coords["velocity_bin_lower"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_lower(sensor_name=sensor_name),
+        )
+        coords["velocity_bin_upper"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_upper(sensor_name=sensor_name),
+        )
+        coords["velocity_bin_width"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_width(sensor_name=sensor_name),
+        )
     return coords
+
+
+def convert_object_variables_to_string(ds):
+    for var in ds.data_vars:
+        if pd.api.types.is_object_dtype(ds[var]):
+            ds[var] = ds[var].astype(str)
+    return ds 
 
 
 def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
@@ -257,43 +282,20 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
             df.columns,
         )
     ):
-        # Check dataframe row consistency
-        df = check_array_lengths_consistency(
-            df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
-        )
-        # Retrieve raw data matrices
-        dict_data = retrieve_L1_raw_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
-        # Define raw data matrix variables for xarray Dataset
-        data_vars = {
-            "raw_drop_concentration": (
-                ["time", "diameter_bin_center"],
-                dict_data["raw_drop_concentration"],
-            ),
-            "raw_drop_average_velocity": (
-                ["time", "velocity_bin_center"],
-                dict_data["raw_drop_average_velocity"],
-            ),
-            "raw_drop_number": (
-                ["time", "diameter_bin_center", "velocity_bin_center"],
-                dict_data["raw_drop_number"],
-            ),
-        }
+        # Retrieve dictionary of raw data matrices for xarray Dataset
+        data_vars = retrieve_L0B_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
     else:
         data_vars = {}
     # -----------------------------------------------------------.
     # Define other disdrometer 'auxiliary' variables varying over time dimension
-    aux_columns = df.columns[
-        np.isin(
-            df.columns,
-            [
-                "raw_drop_concentration",
-                "raw_drop_average_velocity",
-                "raw_drop_number",
-                "time",
-            ],
-            invert=True,
-        )
+    valid_core_fields =  [
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+        "time",
+        # longitude and latitude too for moving sensors
     ]
+    aux_columns = df.columns[np.isin(df.columns, valid_core_fields, invert=True)]
     if lazy:
         aux_data_vars = {
             column: (["time"], df[column].to_dask_array(lengths=True))
@@ -347,7 +349,10 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
         logger.error(msg)
         raise ValueError(msg)
-
+     
+    # Ensure variables with dtype object are converted to string
+    ds = convert_object_variables_to_string(ds)
+    
     # -----------------------------------------------------------
     # Check L0B standards
     check_L0B_standards(ds)
@@ -376,28 +381,43 @@ def sanitize_encodings_dict(encoding_dict, ds):
 
 def rechunk_dataset(ds, encoding_dict):
     for var in ds.data_vars:
-        chunks = encoding_dict[var]["chunksizes"]
+        chunks = encoding_dict[var].pop("chunksizes")
         if chunks is not None:
             ds[var] = ds[var].chunk(chunks)
     return ds
 
 
+def set_encodings(ds, sensor_name): 
+    # Get encoding dictionary
+    encoding_dict = get_L0B_encodings_dict(sensor_name)
+    encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
+    
+    # Ensure chunksize smaller than the array shape
+    encoding_dict = sanitize_encodings_dict(encoding_dict, ds)
+    
+    # Rechunk variables for fast writing !
+    # - This pop the chunksize argument from the encoding dict ! 
+    ds = rechunk_dataset(ds, encoding_dict)
+    
+    # Set time encoding 
+    ds['time'].encoding.update(get_time_encoding())
+     
+    # Set the variable encodings 
+    for var in ds.data_vars:
+        ds[var].encoding.update(encoding_dict[var])
+    
+    return ds 
+    
+
 def write_L0B(ds, fpath, sensor_name):
     # Ensure directory exist
     os.makedirs(os.path.dirname(fpath), exist_ok=True)
 
-    # Get encoding dictionary
-    encoding_dict = get_L0B_encodings_dict(sensor_name)
-    encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
-
-    # Ensure chunksize smaller than the array shape)
-    encoding_dict = sanitize_encodings_dict(encoding_dict, ds)
-
-    # Rechunk variables for fast writing !
-    ds = rechunk_dataset(ds, encoding_dict)
-
+    # Set encodings
+    ds = set_encodings(ds, sensor_name)
+ 
     # Write netcdf
-    ds.to_netcdf(fpath, engine="netcdf4", encoding=encoding_dict)
+    ds.to_netcdf(fpath, engine="netcdf4") # , encoding=encoding_dict)
 
 
 ####--------------------------------------------------------------------------.
