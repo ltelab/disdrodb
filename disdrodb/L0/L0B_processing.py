@@ -282,12 +282,8 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
             df.columns,
         )
     ):
-        # Check dataframe row consistency
-        # df = check_array_lengths_consistency(
-        #     df, sensor_name=sensor_name, lazy=lazy, verbose=verbose
-        # )
         # Retrieve dictionary of raw data matrices for xarray Dataset
-        data_vars = retrieve_L1_raw_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
+        data_vars = retrieve_L0B_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
     else:
         data_vars = {}
     # -----------------------------------------------------------.
