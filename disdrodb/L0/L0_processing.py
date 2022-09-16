@@ -9,19 +9,20 @@ import os
 import time
 import glob 
 import shutil
+import click
 # Directory
 from disdrodb.L0.io import (
     check_directories,
     get_campaign_name,
     create_directory_structure,
-    get_L0A_dir, 
-    get_L0A_fpath, 
+    get_L0A_dir,
+    get_L0A_fpath,
     get_L0B_fpath,
     read_L0A_dataframe,
 )
 # Metadata 
 from disdrodb.L0.metadata import read_metadata
-# Standards 
+# Standards
 from disdrodb.L0.check_standards import check_sensor_name, check_L0A_standards
 # L0A_processing
 from disdrodb.L0.L0A_processing import (
@@ -35,7 +36,7 @@ from disdrodb.L0.L0B_processing import (
     write_L0B,
     create_summary_statistics,
 )
-# Logger 
+# Logger
 from disdrodb.utils.logger import create_L0_logger, close_logger
 from disdrodb.utils.logger import log_info, log_warning
 
@@ -44,25 +45,40 @@ from disdrodb.utils.logger import log_info, log_warning
 # TODO: 
 # - Add verbose and logs to disdrodb.io function !!!
 
-#------------------------------------------------------------------.
+#-----------------------------------------------------------------------------.
+def click_L0_readers_options(function):
+    function = click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')(function)
+    function = click.argument('processed_dir', metavar='<processed_dir>')(function)
+    function = click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")(function)
+    function = click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")(function)
+    function = click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")(function)
+    function = click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")(function)
+    function = click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")(function)
+    function = click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")(function)
+    function = click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")(function)
+    function = click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")(function)
+    return function 
+
+
+#-----------------------------------------------------------------------------.
 def run_L0(
-        # Arguments custom to each reader
-        column_names,
-        reader_kwargs,
-        files_glob_pattern,
-        df_sanitizer_fun, 
-        raw_dir,
-        processed_dir, 
-        # Arguments designing the processing type
-        l0a_processing=True,
-        l0b_processing=True,
-        keep_l0a=True,
-        force=False,
-        verbose=False,
-        debugging_mode=False,
-        lazy=True,
-        single_netcdf=True,
-        ):
+    # Arguments custom to each reader
+    column_names,
+    reader_kwargs,
+    files_glob_pattern,
+    df_sanitizer_fun, 
+    raw_dir,
+    processed_dir, 
+    # Arguments designing the processing type
+    l0a_processing=True,
+    l0b_processing=True,
+    keep_l0a=True,
+    force=False,
+    verbose=False,
+    debugging_mode=False,
+    lazy=True,
+    single_netcdf=True,
+    ):
     """Core function to process raw data files to L0A and L0B format. 
     
     Parameters

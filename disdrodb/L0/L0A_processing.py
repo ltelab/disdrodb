@@ -114,6 +114,22 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 
 ####---------------------------------------------------------------------------.
 #### Dataframe creation
+def preprocess_reader_kwargs(reader_kwargs, lazy=True):
+    # Remove dtype key
+    # - The dtype is enforced to be 'object' in the read function !
+    reader_kwargs.pop("dtype", None)
+
+    # Preprocess the reader_kwargs
+    reader_kwargs = reader_kwargs.copy()
+    if reader_kwargs.get("zipped"): # TODO: to provide example of this case for testing. I guess could be refactored
+        reader_kwargs.pop("zipped", None)
+        reader_kwargs.pop("blocksize", None)
+        reader_kwargs.pop("file_name_to_read_zipped", None)
+    if lazy:
+        reader_kwargs.pop("index_col", None)
+    if not lazy:
+        reader_kwargs.pop("blocksize", None)
+    return reader_kwargs
 
 
 def concatenate_dataframe(list_df, verbose=False, lazy=True):
@@ -184,23 +200,11 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
     pandas.DataFrame or dask.DataFrame
         Pandas or dask dataframe 
     """
+    # Preprocess reader_kwargs
+    reader_kwargs = preprocess_reader_kwargs(reader_kwargs, lazy=lazy)
     
     # Enforce all raw files columns with dtype = 'object' 
     dtype = 'object'
-    # To pop to avoid this error: TypeError: dask.dataframe.io.csv.make_reader.<locals>.read() got multiple values for keyword argument 'dtype'
-    reader_kwargs.pop("dtype", None)
-    
-    
-    # Preprocess the reader_kwargs
-    reader_kwargs = reader_kwargs.copy()    
-    if reader_kwargs.get("zipped"): # TODO: to provide example of this case for testing. I guess could be refactored
-        reader_kwargs.pop("zipped", None)
-        reader_kwargs.pop("blocksize", None)
-        reader_kwargs.pop("file_name_to_read_zipped", None)
-    if lazy:
-        reader_kwargs.pop("index_col", None)
-    if not lazy: 
-        reader_kwargs.pop("blocksize", None)
         
     # Read with pandas or dask 
     # - Dask
