@@ -76,24 +76,16 @@ You can use either conda or pip :
 	* Create the `disdrodb-dev` conda environment:
 
 	.. code-block:: bash
-		conda create --name disdrodb_dev python=3.9 --no-default-packages
-		
-		conda env create -f environment.yml
+	
+		conda create --name disdrodb-dev python=3.9 --no-default-packages
 
 	* Activate the disdrodb conda environment:
 
 	.. code-block:: bash
 
 		conda activate disdrodb-dev
-		
-	* Go inside your disdrodb local repository:	
 	
-	.. code-block:: bash
-
-		cd /path/to/your/local/disdro/repository
-	
-	
-	* Install the required dependencies:
+	* Check you are inside the disdrodb local repository, and install the required dependencies with:
 	
 	.. code-block:: bash
 
