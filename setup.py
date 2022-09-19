@@ -25,8 +25,8 @@ setup(
     # Always use forward '/', even on Windows
     # See https://setuptools.readthedocs.io/en/latest/userguide/datafiles.html#data-files-support
     package_data={'disdrodb': ['L0/configs/*/*.yaml',
-                              'L0/readers/*/*.py,
-			      ]},
+                               'L0/readers/*/*.py',
+			       ]},
     install_requires=[
         "click",
         "h5py",
