@@ -32,10 +32,9 @@ Contribution Guidelines
 
 **We Develop with Github !**
 
-We use github to host code, to track issues and feature requests, as
-well as accept pull requests.
+We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
-We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__,
+We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__.
 So all code changes happen through Pull Requests (PRs).
 
 
@@ -49,15 +48,13 @@ First Time Contributors
 Setting up the development environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You will need python to set up the development environment. See
-`the installation guide <https://disdrodb.readthedocs.io/en/latest/install.html>`__
+You will need python to set up the development environment. See `the installation guide <https://disdrodb.readthedocs.io/en/latest/install.html>`__
 for further explanations.
 
 Install pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
-After setting up your development environment, install the git
-pre-commit hook by executing the following command in the repository’s
+After setting up your development environment, install the git pre-commit hook by executing the following command in the repository’s
 root:
 
 ::
