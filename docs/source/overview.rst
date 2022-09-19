@@ -33,10 +33,10 @@ Here is the structure of the project :
 |     ├── 📁 manuals 
 |       ├── 📜 \*.pdf: Official disdrometers documentation
 |     ├── 📁 readers
-|     	├── 📁 `<DATA_SOURCE>` : e.g. GPM, ARM, EPFL, ...
+|     	├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
 |           ├── 📜 \reader_<campaign_name>.py : Readers to transform raw data into DISDRODB L0 products
 |       ├── 📜 reader_preparation.ipynb : Jupyter Notebook template to start developing a new reader
-|     ├── 📜 auxiliary.py : Mapping dictionary for some `DATA_SOURCE` standards (e.g. ARM)*
+|     ├── 📜 auxiliary.py : Mapping dictionary for some `data_source` standards (e.g. ARM)*
 |     ├── 📜 check_configs.py : Sensor configs validator
 |     ├── 📜 check_metadata.py : Metadata validator
 |     ├── 📜 check_standards.py : Standards validator
@@ -47,7 +47,7 @@ Here is the structure of the project :
 |     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
 |     ├── 📜 metadata.py : Create or read metadata files  
 |     ├── 📜 standards.py : Implement functions to encode the L0 sensor specifications defined in L0.configs
-|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF4 data files of specific `DATA_SOURCE`
+|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF4 data files of specific `data_source`
 |     ├── 📜 issue.py : Issue file management to exclude erroneous timestamps or time periods while reading and processing the raw data
 | ├── 📁 L1/
 |     ├── Code not yet implemented. It will contain software to homogenize and quality check DISDRODB L0 products
@@ -55,7 +55,7 @@ Here is the structure of the project :
 |     ├── Code not yet implemented. It will contain software to produce DISDRODB L2 products (i.e. DSD parameters, ...)
 | ├── 📁 pipeline/
 |   ├── 📜 utils_cmd.py : Trigger L0A and L0B processing for specific L0 readers
-|   ├── 📜 \*.py : Scripts to process data of specific `DATA_SOURCE`
+|   ├── 📜 \*.py : Scripts to process data of specific `data_source`
 | ├── 📁 api/
 | ├── 📁 uils/
 |   ├── 📜 logger.py : Logger functions
