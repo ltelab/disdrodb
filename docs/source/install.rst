@@ -22,28 +22,26 @@ We define here two types of installation :
 Installation for users
 ========================
 
-Conda-based installation
-.............................................
-
-disdrodb can be installed into a conda environment as follow :
-
-
-.. code-block:: bash
-
-	conda install -c conda-forge disdrodb
-
-
-
 Pip-based installation
 ..............................
 
-disdrodb is available from the Python Packaging Index (PyPI) as follow :
+disdrodb is available from the `Python Packaging Index (PyPI) <https://pypi.org/>`__ as follow:
 
 
 .. code-block:: bash
 
    pip install disdrodb
 
+
+Conda-based installation is not yet available !!!
+.............................................
+
+In future, it will be possible to install disdrodb using the following command:
+
+
+.. code-block:: bash
+
+	conda install -c conda-forge disdrodb
 
 
 
@@ -57,7 +55,7 @@ The latest disdrodb stable version is available on the Github repository `disdro
 Clone the repository from github
 .........................................
 
-According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal github account.
+According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal GitHub account.
 
 * Install a local copy of the forked repository:
 
@@ -72,20 +70,73 @@ Install the python developing environment
 
 You can use either conda or pip : 
 
-* **Conda**
+* **Conda (Option 1)**
 
 
-	* Install the dependencies using conda:
+	* Create the `disdrodb-dev` conda environment:
+
+	.. code-block:: bash
+		conda create --name disdrodb_dev python=3.9 --no-default-packages
+		
+		conda env create -f environment.yml
+
+	* Activate the disdrodb conda environment:
 
 	.. code-block:: bash
 
-		conda env create -f environment.yml
+		conda activate disdrodb-dev
+		
+	* Go inside your disdrodb local repository:	
+	
+	.. code-block:: bash
+
+		cd /path/to/your/local/disdro/repository
+	
+	
+	* Install the required dependencies:
+	
+	.. code-block:: bash
+
+		pip install -r requirements.txt
+	
+	.. warning::
+		Note: In future, when the conda disdrodb feedstock installation will be set up, the following code should be used instead: 
+	
+		.. code-block:: bash
+	
+	     		conda install --only-deps disdrodb
+		
+	* Install disdrodb 
+	
+	.. code-block:: bash
+	
+		pip install -e .
+	
+		
+* **Conda (Option 2)**
+
+
+	* Create the `disdrodb-dev` conda environment and install the required dependencies:
+
+	.. code-block:: bash
+
+		conda env create -f environment.yml 
+	
+	.. warning::
+		
+		Note: This command takes quite some time at the moment ... 
 
 	* Activate the disdrodb conda environment
 
 	.. code-block:: bash
 
 		conda activate disdrodb-dev
+		
+	* Manually add the path of your local copy of disdrodb to the ``PYTHONPATH`` environment variable. 
+	  In Linux operating systems, you could add the following line to your ``.bashrc`` file located in the ``/home/<your_username>`` directory: 
+	  
+	  .. code-block:: bash
+	  	export PYTHONPATH="${PYTHONPATH}:/path/to/your/local/repo/of/disdrodb/"
 
 
 * **Pip**
@@ -124,7 +175,7 @@ pre-commit hook by executing the following command in the repository’s
 root:
 
 ::
-
+   pip install pre-commit 
    pre-commit install
 
 The pre-commit hooks are scripts executed automatically in every commit
