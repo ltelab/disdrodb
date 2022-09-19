@@ -26,16 +26,16 @@ Structure of the project
 Here is the structure of the project :
 
 | 📁 disdrodb/
-| ├── 📁 L0/    *Raw data*
-|     ├── 📁 configs
-|     	├── 📁 `<sensor_name>`  *e.g. OTT_Parsivel, Thies_LPM, RD80*
-|     		├── 📜 \*.yml   *Define sensor characteristics*
-|     ├── 📁 manuals
-|       ├── 📜 \*.pdf  *Official disdrometers documentation*
-|     ├── 📁 readers|
-|     	├── 📁 `<DATA_SOURCE>`  *e.g. GPM, ARM, EPFL, ...*
-|           ├── 📜 \reader_<campaign_name>.py *Official readers to transform raw data into DISDRODB standardized netCDF4 files.*
-|       ├── 📜 reader_preparation.ipynb *Jupyter Notebook template to start developing a new reader*
+| ├── 📁 L0 : Contains the software to produce the DISDRODB L0 products   
+|     ├── 📁 configs : Contains the specifications of various types of disdrometers
+|     	├── 📁 `<sensor_name>` : e.g. OTT_Parsivel, Thies_LPM, RD80
+|     		├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
+|     ├── 📁 manuals 
+|       ├── 📜 \*.pdf: Official disdrometers documentation
+|     ├── 📁 readers
+|     	├── 📁 `<DATA_SOURCE>` : e.g. GPM, ARM, EPFL, ...
+|           ├── 📜 \reader_<campaign_name>.py : Readers to transform raw data into DISDRODB L0 products
+|       ├── 📜 reader_preparation.ipynb : Jupyter Notebook template to start developing a new reader
 |     ├── 📜 auxiliary.py : Mapping dictionary for some `DATA_SOURCE` standards (e.g. ARM)*
 |     ├── 📜 check_configs.py : Sensor configs validator
 |     ├── 📜 check_metadata.py : Metadata validator
