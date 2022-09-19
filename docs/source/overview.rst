@@ -53,9 +53,9 @@ Here is the structure of the project :
 |     ├── Code not yet implemented. It will contain software to homogenize and quality check DISDRODB L0 products
 | ├── 📁 L2/
 |     ├── Code not yet implemented. It will contain software to produce DISDRODB L2 products (i.e. DSD parameters, ...)
-| ├── 📁 pipepline/
-|   ├── 📜 utils_cmd.py : Trigger L0A and L0B processing for one specific reader
-|   ├── 📜 \*.py : Scripts to run the full pipepline
+| ├── 📁 pipeline/
+|   ├── 📜 utils_cmd.py : Trigger L0A and L0B processing for specific L0 readers
+|   ├── 📜 \*.py : Scripts to process data of specific *DATA_SOURCE*
 | ├── 📁 api/
 | ├── 📁 uils/
 |   ├── 📜 logger.py : Logger functions
