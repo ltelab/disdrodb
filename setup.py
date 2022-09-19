@@ -29,7 +29,8 @@ setup(
         "pyarrow",
         "PyYAML",
         "setuptools",
-        "xarray"
+        "xarray",
+	"dask", 
         ],
     keywords=["python", "disdrometer"],
     classifiers=[
