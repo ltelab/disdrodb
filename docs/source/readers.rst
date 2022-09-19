@@ -10,8 +10,6 @@ Readers development
 
     Do not use it now.
 
-	Note that we use the words "parser" and "reader" interchangeably.
-
 DISDRODB supports reading and loading data from many input file formats and schemes. The following sections describe the different way data can be loaded, requested, or added to the DISDRODB project.
 
 
@@ -106,9 +104,11 @@ There are a couple of optional parameters that can added to the previous command
 Adding a new reader
 ########################
 
+Adding a new reader to DISDRODB requires the following 3 steps: 
+
 * `Step 1 <#step-1-set-the-folder-structure-for-raw-and-processed-datasets>`_ : Set the folder structure for raw and processed datasets
-* `Step 2 <#step-2-read-and-analyse-the-data>`_ :  Read and analyse the data
-* `Step 3 <#step-3-create-the-reader>`_ :  Create the reader
+* `Step 2 <#step-2-analyse-the-data-and-define-the-reader-components>`_ :  Read and analyse the data
+* `Step 3 <#step-3-create-and-share-your-reader>`_ :  Create the reader
 
 
 See also the step-by-step `tutorial <#adding-a-new-reader-tutorial>`_   that will demonstrate in detail all these steps with a sample lightweight dataset.
@@ -122,98 +122,101 @@ The raw and processed data folder must follow strictly the following structure:
 Raw data folder
 ======================
 
-| 📁 DISDRODB/
-| ├── 📁 Raw/
-|    ├── 📁 NAME_OF_INSTITUTION_OR_COUNTRY/
-|       ├── 📁 NAME_OF_CAMPAIGN/
+| 📁 DISDRODB
+| ├── 📁 Raw
+|    ├── 📁 `<data_source>`
+|       ├── 📁 `<campaign_name>`
 |           ├── 📁 data
-|               ├── 📁 <ID of the station>/
-|                  ├── 📜 \*.\*  : raw file
+|               ├── 📁 `<station_name>`
+|                  ├── 📜 \*.\*  : raw files
 |           ├── 📁 info
 |           ├── 📁 issue
-|               ├── 📜 <ID of the station>.yml
+|               ├── 📜 <station_name>.yml
 |           ├── 📁 metadata
-|               ├── 📜 <ID of the station>.yml
+|               ├── 📜 <station_name>.yml
 
 
 .. note::
-	Guidelines for the **Name of the institution or country** folder :
+	Guidelines for the naming of the **<data_source>** directory :
 
 	* We use the institution name when campaign data spans more than 1 country.
 	* We use country when all campaigns (or sensor networks) are inside a given country.
 
 .. note::
-    For each folder in the /data directory (for each station) there must be an equally named **\*.yml** file in the metadata folder. This file contains information of the station (e.g. type of device, position, ...). We recommend you copy-paste an existing one to get the correct structure.
+    For each folder in the `/data` directory (for each station) there must be an equally named **\*.yml** file in the `/metadata` folder. 
+    The **metadata YAML** file contains relevant information of the station (e.g. type of device, position, ...) which are required for the correct processing and integration into the DISDRODB database.
+    We recommend you to copy-paste an existing metadata YAML file to get the correct structure.
+    
+    .. warning::
+    	TODO: Add section explaining all the metadata keys 
+	
+    	TODO: Add an empty metadata yaml somewhere in the repo and link to it! 
 
 .. note::
-    The **issue.yml** files are optional (and if missing are initialized to be empty). These files allow the reader to skip the loading of the data according to time-periods (for example, due to temporal device failures). `Step 2 <#step-2-read-and-analyse-the-data>`_ will guide you through the analysis of your data in order to possibly found (and remove) these errors.
+    The **issue YAML** files are optional (and if missing are initialized to be empty).
+    These files allow the reader to skip the loading of the data according to time-periods (for example, due to temporal device failures).
+    `Step 2 <#step-2-read-and-analyse-the-data>`_ will guide you through the analysis of your data in order to possibly found (and remove) these errors.
 
 
 
 Data processed folder
 ======================
 
-| 📁 DISDRODB/
-| ├── 📁 Processed/
-|    ├── 📁 NAME_OF_INSTITUTION_OR_COUNTRY/
-|       ├── 📁 NAME_OF_CAMPAIGN/
+| 📁 DISDRODB
+| ├── 📁 Processed
+|    ├── 📁 `<data_source>`
+|       ├── 📁 `<campaign_name>`
 |           ├── 📁 L0A
-|               ├── 📁 <ID of the station>/
-|                  ├── 📜 \*.paquet
+|               ├── 📁 `<station_name>`
+|                  ├── 📜 \*.parquet
 |           ├── 📁 L0B
-|               ├── 📁 ID of the station/
-|                  ├── 📜 \*.paquet
+|               ├── 📁 `<station_name>`
+|                  ├── 📜 \*.parquet
 |           ├── 📁 info
 |           ├── 📁 metadata
-|               ├── 📜 <ID of the station>.yml
+|               ├── 📜 <station_name>.yml
 
 
 
 
-Step 2 : Read and analyse the data
+Step 2 : Analyse the data and define the reader components
 ******************************************************************
 
-Once the data structure is ready, you can start analyzing its content. To do so, we provide you with tools in ``disdrodb\L0\readers\reader_preparation.ipynb``.
-Copy the notebook and adapt it to your own data.
+Once the data structure is ready, you can start analyzing its content. 
+To do so, we provide you with a jupyter notebook at ``disdrodb\L0\readers\reader_preparation.ipynb`` that should facilitate the task.
+We highly suggest to copy the notebook and adapt it to your own data.
 
-.. note::
-	**Why do we need temp_parser_<NAME_OF_CAMPAIGN>.py ?**
-	This file is designed to help the creation of a new reader.
-	The input raw structure and content can be very different from one measurement to another.
-	Therefore, we have to uniform it in order to match the common data model. ``temp_parser_<NAME_OF_CAMPAIGN>.py`` give us some tools to parameterize and modify and visualize the initial raw file.
+In this notebook, we guide you through the definition of 4 relevant DISDRODB reader components: 
 
+* The ``files_glob_pattern`` to search for the data files within the ``.../data/<station_name>`` directory.
+    
+* The ``reader_kwargs`` dictionary guides the pandas / dask dataframe creation. 
 
+For more information on the possible key-value arguments, read the `pandas <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
+and/or `pandas <https://docs.dask.org/en/stable/generated/dask.dataframe.read_csv.html>`_  documentation.
+ 
+* The ``column_names`` list defines the column names of the readed raw text file. 
 
-In this file, you must first define some parameters (e.g. path of your data, loading parameters). Once the row data is loaded, you can comment and uncomment print functions to be sure your data is correctly shaped.
+* The ``df_sanitizer_fun()`` function that defines the processing to apply on the readed dataframe in order for the dataframe to match the DISDRODB   standards.
 
-Relevent elements :
-
-* The ``reader_kwargs`` dictionary that guides panda / dask reading
-* The ``column_names`` list that defines the raw column names (according to the output model, see ``disdrodb\L0\configs\<type of device>\L0A_encodings.yml``)
-* The ``df_sanitizer_fun()`` function that defines the processes to apply on the dataframe in order for the data to match the output data model.
-
-Once your are happy with the state of your data, all these elements can be tranfered into the reader in `Step 3 <#step-3-create-the-reader>`_ .
-
-
+The dataframe which is returned by the ``df_sanitizer_fun`` must have only columns compliants with the DISDRODB standards ! 
+ 
+When this 4 components are correctly defined, they can be transcripted into the `reader_template.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/reader_template.py>`_ file which is now almost ready to be shared with the community.
 
 
-Step 3 : Create the reader
+Step 3 : Create and share your reader
 ******************************************************************
 
-In this final step, the new reader is created and will be published to the community. It is therefore important to follow the initial file structure in order to guaranty consistencies between readers.
+If you arrived at this final step, it means that your reader is now almost ready to be shared with the community. 
+However, in order to guaranty consistencies between readers, it is very important to follow a specific nomenclature.
 
-To do so, copy and paste ``disdrodb\L0\readers\parser_template.py`` into  ``\readers\<Name of the institution or country>\parser_<Name ot the campaign>.py`` and start digging  into it.
-
-The relevant elements that have been defined  in `Step 2 <#step-2-read-and-analyse-the-data>`_  must be retranscripted here.
-
-Once ready, `the reader can be run <#running-a-reader>`_ .
+Therefore, rename your modified `reader_template.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/reader_template.py>`_ file as ``reader_<CAMPAIGN_NAME>.py`` and copy it into the directory ``\disdrodb\LO\readers\<DATA_SOURCE>\``.
 
 
-
-Adding a new reader : Tutorial
+Tutorial - Reader preparation step-by-step
 ################################################
 
-Please visit the following page to access a read only tutorial notebook :
+Please visit the following page to access a read-only tutorial notebook:
 
 
 .. toctree::
@@ -221,7 +224,7 @@ Please visit the following page to access a read only tutorial notebook :
 
    reader_preparation
 
-If you want interactive notebook, you need to run jupyter notebook in your local machine. Proceed as follow :
+If you want to run an interactive notebook, you need to run jupyter notebook in your local machine. Proceed as follow :
 
 1. Make sure you have the latest version of the code in your local folder. See the git clone command in the `Installation for developers <https://disdrodb.readthedocs.io/en/latest/install.html#installation-for-developers>`_ section.
 
@@ -229,21 +232,23 @@ If you want interactive notebook, you need to run jupyter notebook in your local
 
 3. Navigate to the disdrodb folder
 
-4. Start jupyter notebook
+4. Start jupyter notebook with 
 
 	.. code-block:: bash
 
 		python -m notebook
+	
+	or 
+	
+	.. code-block:: bash
 
-	It starts your default web browser with jupyter notebook main page.
+		jupyter notebook
+
+	This will open your default web browser with jupyter notebook on the main page.
 
 
-5. Navigate to ``disdrodb\L0\readers`` and double click on `reader_preparation.ipynb`.
+5. Navigate to ``disdrodb\L0\readers`` and double click on the ``reader_preparation.ipynb``.
 
 6. You can now start using the tutorial notebook.
-
-
-
-
 
 
