@@ -35,9 +35,8 @@ Contribution Guidelines
 We use github to host code, to track issues and feature requests, as
 well as accept pull requests.
 
-We Use `Github
-Flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__,
-So All Code Changes Happen Through Pull Requests.
+We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__,
+So all code changes happen through Pull Requests (PRs).
 
 
 First Time Contributors
@@ -142,7 +141,7 @@ Here is an example of a docstring:
        """
 
 
-If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extention to automatically create such preformatted docstring. 
+If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension to automatically create such preformatted docstring. 
 
 You should configure VS code as follow : 
 
@@ -187,7 +186,7 @@ modifications. The steps to follow are:
 
    git clone https://github.com/<your-account>/disdrodb.git
 
-Done!, now you have a local copy of disdrodb git repository.
+Done! Now you have a local copy of the disdrodb repository.
 
 Create a new branch
 ~~~~~~~~~~~~~~~~~~~
@@ -233,17 +232,16 @@ Test of changes
 
 Every changes must be tested !
 
-DISDORDB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. There is usually no need to run all DISDORDB tests, 
-but instead only run the tests related to the component you are working on. All tests are automatically run from the GitHub 
-Pull Request using multiple versions of Python, multiple operating systems, and multiple versions of dependency libraries. 
-If you want to run all DISDORDB tests you will need to install additional dependencies that aren’t needed for regular DISDORDB usage. To install them run:
+DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. There is usually no need to run all DISDRODB tests, 
+but instead only run the tests related to the component you are working on. All tests are automatically run from the GitHub Pull Request using multiple versions of Python, multiple operating systems, and multiple versions of dependency libraries. 
+If you want to run all DISDRODB tests you will need to install additional dependencies that aren’t needed for regular DISDRODB usage. To install them run:
 
 .. code-block:: bash
 
 	pip install pytest
 
 
-DISDORDB tests can be executed by running:
+DISDRODB tests can be executed by running:
 
 .. code-block:: bash
 
@@ -268,28 +266,22 @@ If you encounter errors, Black can be run using the following command :
    pre-commit run --all-file
 
 We follow a `commit message convention <https://www.conventionalcommits.org/en/v1.0.0/>`__, to have consistent git messages.
-The goal is to increase readability and ease of contribution
-
--  we use
-   `commit-lint <https://github.com/conventional-changelog/commitlint>`__
+The goal is to increase readability and ease of contribution. We use `commit-lint <https://github.com/conventional-changelog/commitlint>`__
 
 
 
 Create a new Pull Request in GitHub.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once your code has been uploaded into your DISTRODB fork, you can create
-a Pull request to the DISDRODB main branch.
+Once your code has been uploaded into your DISDRODB fork, you can create
+a Pull Request (PR) to the DISDRODB main branch.
 
 **Recommendation for the pull request**
 
--  Add screenshots or GIFs for any UI changes. This will help the person
-   reviewing your code to understand what you’ve changed and how it
+-  Add screenshots or GIFs for any UI changes. This will help the person reviewing your code to understand what you’ve changed and how it
    works.
 
-   -  *Hint:
-      use*\ `Kap <https://getkap.co/>`__\ *or*\ `Licecap <https://www.cockos.com/licecap/>`__\ *to
-      record your screen.*
+   -  *Hint: use * \ `Kap <https://getkap.co/>`__\  * or * \ `Licecap <https://www.cockos.com/licecap/>`__\  * to record your screen.*
 
 -  Please use the pertinent template for the pull request, and fill it out accurately.
 
