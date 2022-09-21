@@ -22,6 +22,11 @@ setup(
     long_description_content_type="text/markdown",
     long_description=long_description,
     packages=find_packages(),
+    # Always use forward '/', even on Windows
+    # See https://setuptools.readthedocs.io/en/latest/userguide/datafiles.html#data-files-support
+    package_data={'disdrodb': ['L0/configs/*/*.yaml',
+                               #'L0/readers/*/*.py', 
+			       ]},
     install_requires=[
         "click",
         "h5py",
@@ -29,7 +34,8 @@ setup(
         "pyarrow",
         "PyYAML",
         "setuptools",
-        "xarray"
+        "xarray",
+	"dask", 
         ],
     keywords=["python", "disdrometer"],
     classifiers=[

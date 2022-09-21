@@ -15,3 +15,4 @@ dependencies:
   - jupyter
   - nbsphinx
   - dask
+  - pre-commit

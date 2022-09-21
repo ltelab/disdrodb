@@ -26,37 +26,36 @@ Structure of the project
 Here is the structure of the project :
 
 | 📁 disdrodb/
-| ├── 📁 L0/    *Raw data*
-|     ├── 📁 configs
-|     	├── 📁 <type_of_devices>/   *e.g OTT_Parsivel*
-|     		├── 📜 \*.yml   *Define attributes formats*
-|     		├── 📜 readme.md  *Describes config files*
-|     ├── 📁 manuals
-|       ├── 📜 \*.pdf  *Disdrometers documentation*
-|     ├── 📁 readers|
-|     	├── 📁 <type_of_reader>/
-|           ├── 📜 \*.py *Official readers to transform raw data into standardized netCDF4 files.*
-|       ├── 📜 reader_preparation.ipynb *Template file to start developing a new reader*
-|     ├── 📜 auxiliary.py *Mapping dictionary for ARM and DIVEN standards*
+| ├── 📁 L0 : Contains the software to produce the DISDRODB L0 products   
+|     ├── 📁 configs : Contains the specifications of various types of disdrometers
+|     	├── 📁 `<sensor_name>` : e.g. OTT_Parsivel, Thies_LPM, RD80
+|     		├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
+|     ├── 📁 manuals 
+|       ├── 📜 \*.pdf: Official disdrometers documentation
+|     ├── 📁 readers
+|     	├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
+|           ├── 📜 \reader_<campaign_name>.py : Readers to transform raw data into DISDRODB L0 products
+|       ├── 📜 reader_preparation.ipynb : Jupyter Notebook template to start developing a new reader
+|     ├── 📜 auxiliary.py : Mapping dictionary for some `data_source` standards (e.g. ARM)*
 |     ├── 📜 check_configs.py : Sensor configs validator
 |     ├── 📜 check_metadata.py : Metadata validator
 |     ├── 📜 check_standards.py : Standards validator
 |     ├── 📜 template_tools.py : Helpers to create station readers
-|     ├── 📜 io.py : Core functions to read write files / folders
+|     ├── 📜 io.py : Core functions to read/write files and create/remove directories
 |     ├── 📜 L0A_processing.py : Core function to process raw data files to L0A format (Parquet)
 |     ├── 📜 L0B_processing.py : Core function to process raw data files to L0B format (netCDF4)
 |     ├── 📜 L0_processing.py : Core function to process raw data files to L0A and L0B formats
-|     ├── 📜 metadata.py : Create or read metadata files for readers core functions
+|     ├── 📜 metadata.py : Create or read metadata files  
 |     ├── 📜 standards.py : Implement functions to encode the L0 sensor specifications defined in L0.configs
-|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF4 data files of specific institute/networks
+|     ├── 📜 utils_nc.py : Utilty function to process raw netCDF4 data files of specific `data_source`
 |     ├── 📜 issue.py : Issue file management to exclude erroneous timestamps or time periods while reading and processing the raw data
 | ├── 📁 L1/
-|     ├── to do
+|     ├── Code not yet implemented. It will contain software to homogenize and quality check DISDRODB L0 products
 | ├── 📁 L2/
-|     ├── to do
-| ├── 📁 pipepline/
-|   ├── 📜 utils_cmd.py : Trigger L0A and L0B processing for one specific reader
-|   ├── 📜 \*.py : Scripts to run the full pipepline
+|     ├── Code not yet implemented. It will contain software to produce DISDRODB L2 products (i.e. DSD parameters, ...)
+| ├── 📁 pipeline/
+|   ├── 📜 utils_cmd.py : Trigger L0A and L0B processing for specific L0 readers
+|   ├── 📜 \*.py : Scripts to process data of specific `data_source`
 | ├── 📁 api/
 | ├── 📁 uils/
 |   ├── 📜 logger.py : Logger functions
