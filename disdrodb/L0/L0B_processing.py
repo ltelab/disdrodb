@@ -33,7 +33,7 @@ import xarray as xr
 from disdrodb.L0.check_standards import (
     check_sensor_name,
     check_L0B_standards,
-   # check_array_lengths_consistency,
+    # check_array_lengths_consistency,
 )
 from disdrodb.L0.standards import (
     get_diameter_bin_center,
@@ -152,13 +152,13 @@ def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
 
     # Retrieve raw fields matrix bins dictionary
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-    
+
     # Retrieve dimension order dictionary
     dims_dict = get_raw_field_dim_order(sensor_name)
-    
-    # Retrieve dimension of the raw_drop_number field 
+
+    # Retrieve dimension of the raw_drop_number field
     n_dim_spectrum = get_raw_spectrum_ndims(sensor_name)
-    
+
     # Retrieve number of timesteps
     if lazy:
         n_timesteps = df.shape[0].compute()
@@ -188,18 +188,18 @@ def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
             arr = np.stack(list_arr, axis=0)
 
         # For key='raw_drop_number', if 2D ... reshape to 2D matrix
-        # - This applies i.e for OTT_Parsivels and ThiesLPM 
-        # - This does not apply to RD80 
+        # - This applies i.e for OTT_Parsivels and ThiesLPM
+        # - This does not apply to RD80
         if key == "raw_drop_number" and n_dim_spectrum == 2:
             arr = reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps)
 
-        # Define dictionary to pass to xr.Dataset 
+        # Define dictionary to pass to xr.Dataset
         dims_order = ["time"] + dims_dict[key]
         dict_data[key] = (dims_order, arr)
-    
-    #-------------------------------------------------------------------------.
+
+    # -------------------------------------------------------------------------.
     # Retrieve unavailable keys from the raw spectrum field
-    # TODO: This should be performed when the xarray object is created ! 
+    # TODO: This should be performed when the xarray object is created !
     # if len(unavailable_keys) > 0:
     #     if "raw_drop_number" not in list(dict_data.keys()):
     #         raise ValueError(
@@ -207,7 +207,7 @@ def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
     #             'raw_drop_concentration' and 'raw_drop_average_velocity' fields."""
     #         )
     #     if "raw_drop_concentration" in unavailable_keys and n_dim_spectrum == 2:
-    #         # TODO: can this be computed for RD80 ? 
+    #         # TODO: can this be computed for RD80 ?
     #         dict_data["raw_drop_concentration"] = get_drop_concentration(
     #             dict_data["raw_drop_number"]
     #         )
@@ -215,7 +215,7 @@ def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
     #         dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(
     #             dict_data["raw_drop_number"]
     #         )
-    #-------------------------------------------------------------------------.
+    # -------------------------------------------------------------------------.
     # Log
     msg = " - Retrieval of L0B data matrices finished."
     if verbose:
@@ -244,7 +244,7 @@ def get_coords(sensor_name):
         get_diameter_bin_width(sensor_name=sensor_name),
     )
     # Retrieve velocity coords (if available)
-    if   get_velocity_bin_center(sensor_name=sensor_name) is not None:
+    if get_velocity_bin_center(sensor_name=sensor_name) is not None:
         coords["velocity_bin_center"] = (
             ["velocity_bin_center"],
             get_velocity_bin_center(sensor_name=sensor_name),
@@ -268,7 +268,7 @@ def convert_object_variables_to_string(ds):
     for var in ds.data_vars:
         if pd.api.types.is_object_dtype(ds[var]):
             ds[var] = ds[var].astype(str)
-    return ds 
+    return ds
 
 
 def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
@@ -288,7 +288,7 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
         data_vars = {}
     # -----------------------------------------------------------.
     # Define other disdrometer 'auxiliary' variables varying over time dimension
-    valid_core_fields =  [
+    valid_core_fields = [
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
@@ -349,10 +349,10 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
         logger.error(msg)
         raise ValueError(msg)
-     
+
     # Ensure variables with dtype object are converted to string
     ds = convert_object_variables_to_string(ds)
-    
+
     # -----------------------------------------------------------
     # Check L0B standards
     check_L0B_standards(ds)
@@ -387,27 +387,27 @@ def rechunk_dataset(ds, encoding_dict):
     return ds
 
 
-def set_encodings(ds, sensor_name): 
+def set_encodings(ds, sensor_name):
     # Get encoding dictionary
     encoding_dict = get_L0B_encodings_dict(sensor_name)
     encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
-    
+
     # Ensure chunksize smaller than the array shape
     encoding_dict = sanitize_encodings_dict(encoding_dict, ds)
-    
+
     # Rechunk variables for fast writing !
-    # - This pop the chunksize argument from the encoding dict ! 
+    # - This pop the chunksize argument from the encoding dict !
     ds = rechunk_dataset(ds, encoding_dict)
-    
-    # Set time encoding 
-    ds['time'].encoding.update(get_time_encoding())
-     
-    # Set the variable encodings 
+
+    # Set time encoding
+    ds["time"].encoding.update(get_time_encoding())
+
+    # Set the variable encodings
     for var in ds.data_vars:
         ds[var].encoding.update(encoding_dict[var])
-    
-    return ds 
-    
+
+    return ds
+
 
 def write_L0B(ds, fpath, sensor_name):
     # Ensure directory exist
@@ -415,9 +415,9 @@ def write_L0B(ds, fpath, sensor_name):
 
     # Set encodings
     ds = set_encodings(ds, sensor_name)
- 
+
     # Write netcdf
-    ds.to_netcdf(fpath, engine="netcdf4") # , encoding=encoding_dict)
+    ds.to_netcdf(fpath, engine="netcdf4")  # , encoding=encoding_dict)
 
 
 ####--------------------------------------------------------------------------.

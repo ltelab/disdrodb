@@ -18,7 +18,7 @@ from disdrodb.pipeline.utils_cmd import get_parser_cmd
 EPFL_dict = {
     "LOCARNO_2018": "parser_LOCARNO_2018.py",
     "PARSIVEL_2007": "parser_PARSIVEL_2007.py",
-    "GENEPI_2007": "parser_GENEPI_2007.py", # Asked to discard into metadata
+    "GENEPI_2007": "parser_GENEPI_2007.py",  # Asked to discard into metadata
     "EPFL_ROOF_2008_1": "parser_EPFL_ROOF_2008_1.py",
     "EPFL_ROOF_2008_2": "parser_EPFL_ROOF_2008_2.py",
     "EPFL_ROOF_2011": "parser_EPFL_ROOF_2011.py",
@@ -42,7 +42,7 @@ EPFL_dict = {
 }
 
 #### Define filepaths
-parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL" # TODO: this should change to the current package
+parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL"  # TODO: this should change to the current package
 parser_dir = "~/disdrodb/disdrodb/L0/readers/EPFL"
 
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/EPFL"
@@ -73,7 +73,7 @@ for campaign_name in EPFL_dict.keys():
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
         keep_l0a=keep_l0a,
-        single_netcdf=single_netcdf, 
+        single_netcdf=single_netcdf,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,

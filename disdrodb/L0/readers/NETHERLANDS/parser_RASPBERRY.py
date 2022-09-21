@@ -27,29 +27,81 @@ from disdrodb.L0 import run_L0
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
-@click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
-def main(raw_dir,
-         processed_dir,
-         l0a_processing=True,
-         l0b_processing=True,
-         keep_l0a=False,
-         force=False,
-         verbose=False,
-         debugging_mode=False,
-         lazy=True,
-         single_netcdf=True, 
-         ):
-    """Script to process raw data to L0A and L0B format. 
-    
+@click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
+@click.argument("processed_dir", metavar="<processed_dir>")
+@click.option(
+    "-l0a",
+    "--l0a_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0A processing",
+)
+@click.option(
+    "-l0b",
+    "--l0b_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0B processing",
+)
+@click.option(
+    "-k",
+    "--keep_l0a",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Whether to keep the l0a Parquet file",
+)
+@click.option(
+    "-f",
+    "--force",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Force overwriting",
+)
+@click.option(
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+)
+@click.option(
+    "-d",
+    "--debugging_mode",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Switch to debugging mode",
+)
+@click.option(
+    "-l",
+    "--lazy",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Use dask if lazy=True",
+)
+@click.option(
+    "-s",
+    "--single_netcdf",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Produce single netCDF",
+)
+def main(
+    raw_dir,
+    processed_dir,
+    l0a_processing=True,
+    l0b_processing=True,
+    keep_l0a=False,
+    force=False,
+    verbose=False,
+    debugging_mode=False,
+    lazy=True,
+    single_netcdf=True,
+):
+    """Script to process raw data to L0A and L0B format.
+
     Parameters
     ----------
     raw_dir : str
@@ -58,32 +110,32 @@ def main(raw_dir,
         Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
         The directory must have the following structure:
         - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.json 
+        - /metadata/<station_id>.json
         Important points:
         - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
         - The <campaign_name> must semantically match between:
            - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files. 
-        - The campaign_name are set to be UPPER CASE. 
+           - with the key 'campaign_name' within the metadata YAML files.
+        - The campaign_name are set to be UPPER CASE.
     processed_dir : str
-        Desired directory path for the processed L0A and L0B products. 
+        Desired directory path for the processed L0A and L0B products.
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
     L0A_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
     L0B_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data. 
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
       The default is True.
-    keep_L0A : bool 
+    keep_L0A : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     force : bool
-        If True, overwrite existing data into destination directories. 
-        If False, raise an error if there are already data into destination directories. 
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
         The default is False.
     verbose : bool
-        Whether to print detailed processing information into terminal. 
+        Whether to print detailed processing information into terminal.
         The default is False.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
@@ -91,7 +143,7 @@ def main(raw_dir,
         - For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
         The default is False.
     lazy : bool
-        Whether to perform processing lazily with dask. 
+        Whether to perform processing lazily with dask.
         If lazy=True, it employed dask.array and dask.dataframe.
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
@@ -100,16 +152,16 @@ def main(raw_dir,
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
-    
+
     """
     ####----------------------------------------------------------------------.
     ###########################
     #### CUSTOMIZABLE CODE ####
     ###########################
-    #### - Define raw data headers 
+    #### - Define raw data headers
     # Notes
     # - In all files, the datalogger voltage hasn't the delimiter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit 
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
 
     # "01","Rain intensity 32 bit",8,"mm/h","single_number"
     # "02","Rain amount accumulated 32 bit",7,"mm","single_number"
@@ -151,76 +203,84 @@ def main(raw_dir,
     # "91","raw_drop_average_velocity",224,"","vector"
     # "93","Raw data",4096,"","matrix"
 
-    columns_names_temporary = ['time', 'epoch_time', 'TO_BE_PARSED']
+    columns_names_temporary = ["time", "epoch_time", "TO_BE_PARSED"]
 
-    column_names = ['rainfall_rate_32bit',
-                    'rainfall_accumulated_32bit',
-                    'weather_code_synop_4680',
-                    'weather_code_synop_4677',
-                    'weather_code_metar_4678',
-                    'weather_code_nws',
-                    'reflectivity_32bit',
-                    'mor_visibility',
-                    'sample_interval',
-                    'laser_amplitude',
-                    'number_particles',
-                    'sensor_temperature',
-                    'sensor_serial_number',
-                    'firmware_iop',
-                    'firmware_dsp',
-                    'sensor_heating_current',
-                    'sensor_battery_voltage',
-                    'sensor_status',
-                    'date_time_measurement_start',
-                    'sensor_time',
-                    'sensor_date',
-                    'station_name',
-                    'station_number',
-                    'rainfall_amount_absolute_32bit',
-                    'error_code',
-                    'sensor_temperature_pcb',
-                    'sensor_temperature_receiver',
-                    'sensor_temperature_trasmitter',
-                    'rainfall_rate_16_bit_30',
-                    'rainfall_rate_16_bit_1200',
-                    'rainfall_accumulated_16bit',
-                    'reflectivity_16bit',
-                    'rain_kinetic_energy',
-                    'snowfall_rate',
-                    'number_particles_all',
-                    # 'list_particles',
-                    'raw_drop_concentration',
-                    'raw_drop_average_velocity',
-                    'raw_drop_number',
-                    ]
+    column_names = [
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
+        "weather_code_metar_4678",
+        "weather_code_nws",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "sample_interval",
+        "laser_amplitude",
+        "number_particles",
+        "sensor_temperature",
+        "sensor_serial_number",
+        "firmware_iop",
+        "firmware_dsp",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
+        "sensor_status",
+        "date_time_measurement_start",
+        "sensor_time",
+        "sensor_date",
+        "station_name",
+        "station_number",
+        "rainfall_amount_absolute_32bit",
+        "error_code",
+        "sensor_temperature_pcb",
+        "sensor_temperature_receiver",
+        "sensor_temperature_trasmitter",
+        "rainfall_rate_16_bit_30",
+        "rainfall_rate_16_bit_1200",
+        "rainfall_accumulated_16bit",
+        "reflectivity_16bit",
+        "rain_kinetic_energy",
+        "snowfall_rate",
+        "number_particles_all",
+        # 'list_particles',
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
 
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs['delimiter'] = ';'
+    reader_kwargs["delimiter"] = ";"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
-    reader_kwargs["on_bad_lines"] = 'skip'
+    reader_kwargs["on_bad_lines"] = "skip"
 
-    # - Define parser engine 
+    # - Define parser engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
-    reader_kwargs["engine"] = 'python'
+    reader_kwargs["engine"] = "python"
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    reader_kwargs['compression'] = 'infer'
+    reader_kwargs["compression"] = "infer"
 
-    # - Strings to recognize as NA/NaN and replace with standard NA flags 
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
+    # - Strings to recognize as NA/NaN and replace with standard NA flags
+    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
+    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error', 'NA', '-.-', ' NA', ]
+    reader_kwargs["na_values"] = [
+        "na",
+        "",
+        "error",
+        "NA",
+        "-.-",
+        " NA",
+    ]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
@@ -231,71 +291,100 @@ def main(raw_dir,
     reader_kwargs["dtype"] = str
 
     # Skip first row as columns names
-    reader_kwargs['header'] = None
+    reader_kwargs["header"] = None
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files 
+    # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None
 
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas 
+        # Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
 
         # Retrieve time in datetime format
-        df['time'] = dd.to_datetime(df['time'], format='%Y%m%d-%H%M%S')
-        df_time = df[['time']]
-        
+        df["time"] = dd.to_datetime(df["time"], format="%Y%m%d-%H%M%S")
+        df_time = df[["time"]]
+
         # Split the last column (into the 38 variable fields)
-        df_to_parse = df['TO_BE_PARSED'].str.split(';', expand=True, n=99)
+        df_to_parse = df["TO_BE_PARSED"].str.split(";", expand=True, n=99)
 
         # Add names to columns (exlcude last 3: raw_drop_concentration, raw_drop_average_velocity, raw_drop_number)
-        df_to_parse_dict_names = dict(zip(column_names, list(df_to_parse.columns)[:len(column_names)-3]))
-        for i in range(len(column_names)-3, len(list(df_to_parse.columns))):
+        df_to_parse_dict_names = dict(
+            zip(column_names, list(df_to_parse.columns)[: len(column_names) - 3])
+        )
+        for i in range(len(column_names) - 3, len(list(df_to_parse.columns))):
             df_to_parse_dict_names[i] = i
 
         df_to_parse.columns = df_to_parse_dict_names
 
         # Remove char from rain intensity
-        df_to_parse['rainfall_rate_32bit'] = df_to_parse['rainfall_rate_32bit'].str.lstrip("b'")
+        df_to_parse["rainfall_rate_32bit"] = df_to_parse[
+            "rainfall_rate_32bit"
+        ].str.lstrip("b'")
 
         # Remove spaces on weather_code_metar_4678 and weather_code_nws
-        df_to_parse['weather_code_metar_4678'] = df_to_parse['weather_code_metar_4678'].str.strip()
-        df_to_parse['weather_code_nws'] = df_to_parse['weather_code_nws'].str.strip()
-        
+        df_to_parse["weather_code_metar_4678"] = df_to_parse[
+            "weather_code_metar_4678"
+        ].str.strip()
+        df_to_parse["weather_code_nws"] = df_to_parse["weather_code_nws"].str.strip()
+
         # Add the comma on the raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
-        if lazy: 
-            apply_kwargs= {"meta": (None, 'object')}
-        else: 
-            apply_kwargs= {} 
-        df_raw_drop_concentration = df_to_parse.iloc[:, 35:67].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
-                                                     **apply_kwargs).to_frame('raw_drop_concentration')
-        df_raw_drop_average_velocity = df_to_parse.iloc[:, 67:99].apply(lambda x: ','.join(x.dropna().astype(str)), axis=1,
-                                                     **apply_kwargs).to_frame('raw_drop_average_velocity')
-        
-        df_raw_drop_number = df_to_parse.iloc[:, 99].squeeze().str.replace(r'(\w{3})', r'\1,', regex=True).str.rstrip("'").to_frame('raw_drop_number')
+        if lazy:
+            apply_kwargs = {"meta": (None, "object")}
+        else:
+            apply_kwargs = {}
+        df_raw_drop_concentration = (
+            df_to_parse.iloc[:, 35:67]
+            .apply(lambda x: ",".join(x.dropna().astype(str)), axis=1, **apply_kwargs)
+            .to_frame("raw_drop_concentration")
+        )
+        df_raw_drop_average_velocity = (
+            df_to_parse.iloc[:, 67:99]
+            .apply(lambda x: ",".join(x.dropna().astype(str)), axis=1, **apply_kwargs)
+            .to_frame("raw_drop_average_velocity")
+        )
+
+        df_raw_drop_number = (
+            df_to_parse.iloc[:, 99]
+            .squeeze()
+            .str.replace(r"(\w{3})", r"\1,", regex=True)
+            .str.rstrip("'")
+            .to_frame("raw_drop_number")
+        )
 
         # Concat all dataframe togheter
-        if lazy: 
+        if lazy:
             concat_kwargs = {"ignore_unknown_divisions": True}
-        else: 
+        else:
             concat_kwargs = {}
-        df = dd.concat([df_time, df_to_parse.iloc[:, :35], df_raw_drop_concentration, df_raw_drop_average_velocity, df_raw_drop_number], axis=1, **concat_kwargs)
-        
-        # Drop variables not required in L0 Apache Parquet 
-        todrop = ['firmware_iop',
-                  'firmware_dsp',
-                  'date_time_measurement_start',
-                  'sensor_time',
-                  'sensor_date',
-                  'station_name',
-                  'station_number',
-                  'sensor_serial_number',
-                  ]
+        df = dd.concat(
+            [
+                df_time,
+                df_to_parse.iloc[:, :35],
+                df_raw_drop_concentration,
+                df_raw_drop_average_velocity,
+                df_raw_drop_number,
+            ],
+            axis=1,
+            **concat_kwargs
+        )
+
+        # Drop variables not required in L0 Apache Parquet
+        todrop = [
+            "firmware_iop",
+            "firmware_dsp",
+            "date_time_measurement_start",
+            "sensor_time",
+            "sensor_date",
+            "station_name",
+            "station_number",
+            "sensor_serial_number",
+        ]
 
         df = df.drop(todrop, axis=1)
 
@@ -303,12 +392,12 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern= "*.csv*"
+    files_glob_pattern = "*.csv*"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products  
+    #### - Create L0 products
     run_L0(
-        raw_dir=raw_dir,  
+        raw_dir=raw_dir,
         processed_dir=processed_dir,
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
@@ -318,12 +407,13 @@ def main(raw_dir,
         debugging_mode=debugging_mode,
         lazy=lazy,
         single_netcdf=single_netcdf,
-        # Custom arguments of the parser 
-        files_glob_pattern = files_glob_pattern, 
+        # Custom arguments of the parser
+        files_glob_pattern=files_glob_pattern,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
-        )
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

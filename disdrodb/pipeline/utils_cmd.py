@@ -8,6 +8,7 @@ Created on Fri Feb 18 12:20:46 2022
 
 # TODO: adapt to new readers !!!!
 
+
 def get_parser_cmd(
     parser_filepath,
     raw_dir,
@@ -19,7 +20,7 @@ def get_parser_cmd(
     verbose,
     debugging_mode,
     lazy,
-    single_netcdf, 
+    single_netcdf,
 ):
     """Create command to launch parser processing from Terminal."""
     # parser_TICINO_2018.py [OPTIONS] <raw_dir> <processed_dir>

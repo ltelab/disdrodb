@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-#-----------------------------------------------------------------------------.
+# -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#-----------------------------------------------------------------------------.
+# -----------------------------------------------------------------------------.
 import os
 import sys
 import click
@@ -23,34 +23,85 @@ from disdrodb.L0.L0_processing import run_L0
 
 # Add project root folder into sys path
 root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-sys.path.insert(0,root_path)
-
+sys.path.insert(0, root_path)
 
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-L0A', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-L0B', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the L0A Parquet file")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
-@click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
-def main(raw_dir,
-         processed_dir,
-         l0a_processing=True,
-         l0b_processing=True,
-         keep_l0a=False,
-         force=False,
-         verbose=False,
-         debugging_mode=False,
-         lazy=True,
-         single_netcdf = True,
-         ):
+@click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
+@click.argument("processed_dir", metavar="<processed_dir>")
+@click.option(
+    "-L0A",
+    "--l0a_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0A processing",
+)
+@click.option(
+    "-L0B",
+    "--l0b_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0B processing",
+)
+@click.option(
+    "-k",
+    "--keep_l0a",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Whether to keep the L0A Parquet file",
+)
+@click.option(
+    "-f",
+    "--force",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Force overwriting",
+)
+@click.option(
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+)
+@click.option(
+    "-d",
+    "--debugging_mode",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Switch to debugging mode",
+)
+@click.option(
+    "-l",
+    "--lazy",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Use dask if lazy=True",
+)
+@click.option(
+    "-s",
+    "--single_netcdf",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Produce single netCDF",
+)
+def main(
+    raw_dir,
+    processed_dir,
+    l0a_processing=True,
+    l0b_processing=True,
+    keep_l0a=False,
+    force=False,
+    verbose=False,
+    debugging_mode=False,
+    lazy=True,
+    single_netcdf=True,
+):
     """Script to process raw data to L0A and L0B format.
 
     Parameters
@@ -116,39 +167,40 @@ def main(raw_dir,
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs['delimiter'] = ','
+    reader_kwargs["delimiter"] = ","
 
     # - Avoid first column to become df index
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
-    reader_kwargs["on_bad_lines"] = 'skip'
+    reader_kwargs["on_bad_lines"] = "skip"
 
     # - Define parser engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
-    reader_kwargs["engine"] = 'python'
+    reader_kwargs["engine"] = "python"
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    reader_kwargs['compression'] = 'infer'
+    reader_kwargs["compression"] = "infer"
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error']
+    reader_kwargs["na_values"] = ["na", "", "error"]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None # "50MB"
+    reader_kwargs["blocksize"] = None  # "50MB"
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards
     df_sanitizer_fun = None
+
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
@@ -157,15 +209,20 @@ def main(raw_dir,
             import pandas as dd
 
         # - Drop datalogger columns
-        columns_to_drop = ['id', 'datalogger_temperature', 'datalogger_voltage', 'datalogger_error']
+        columns_to_drop = [
+            "id",
+            "datalogger_temperature",
+            "datalogger_voltage",
+            "datalogger_error",
+        ]
         df = df.drop(columns=columns_to_drop)
 
         # - Drop latitude and longitude
         # --> Latitude and longitude is specified in the the metadata.yaml
-        df = df.drop(columns=['latitude', 'longitude'])
+        df = df.drop(columns=["latitude", "longitude"])
 
         # - Convert time column to datetime with resolution in seconds
-        df['time'] = dd.to_datetime(df['time'], format='%d-%m-%Y %H:%M:%S')
+        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
 
         return df
 
@@ -187,12 +244,12 @@ def main(raw_dir,
         lazy=lazy,
         single_netcdf=single_netcdf,
         # Custom arguments of the parser
-        files_glob_pattern = files_glob_pattern,
+        files_glob_pattern=files_glob_pattern,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

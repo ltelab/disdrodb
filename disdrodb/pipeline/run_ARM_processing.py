@@ -15,8 +15,8 @@ from disdrodb.utils.parser import get_parser_cmd
 
 # -----------------------------------------------------------------------------.
 #### Define campaign dictionary
-# ARM_ld --> OTT Parsivel 2 
-# ARM_lpm --> Thies LPM 
+# ARM_ld --> OTT Parsivel 2
+# ARM_lpm --> Thies LPM
 campaign_dict = {
     # "ALASKA": "parser_ARM_lpm.py",
     "ACE_ENA": "parser_ARM_ld.py",
@@ -24,17 +24,16 @@ campaign_dict = {
     "CACTI": "parser_ARM_ld.py",
     "COMBLE": "parser_ARM_ld.py",
     "GOAMAZON": "parser_ARM_ld.py",
-    "MARCUS": "parser_ARM_ld.py", # MARCUS S1, MARCUS S2 are mobile ...
+    "MARCUS": "parser_ARM_ld.py",  # MARCUS S1, MARCUS S2 are mobile ...
     "MICRE": "parser_ARM_ld.py",
-    "MOSAIC": "parser_ARM_ld.py", # MOSAIC M1, MOSAIC S3 are mobile ...
+    "MOSAIC": "parser_ARM_ld.py",  # MOSAIC M1, MOSAIC S3 are mobile ...
     "SAIL": "parser_ARM_ld.py",
     "SGP": "parser_ARM_ld.py",
     "TRACER": "parser_ARM_ld.py",
-    
-}     
-       
+}
+
 #### Define filepaths
-parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/ARM" # TO CHANGE
+parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/ARM"  # TO CHANGE
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/ARM"
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/ARM"
 # processed_base_dir = "/tmp/DISDRODB/ARM"

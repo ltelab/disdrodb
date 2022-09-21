@@ -387,6 +387,7 @@ df = df.drop(columns=["date"])
 
 # Set NaN into <SPECTRUM>ZERO</SPECTRUM> in raw_drop_number if no drops are detected
 import numpy as np
+
 df["raw_drop_number"] = df["raw_drop_number"].replace(
     "<SPECTRUM>ZERO</SPECTRUM>", np.NaN
 )
@@ -450,7 +451,7 @@ def df_sanitizer_fun(df, lazy=False):
         import dask.dataframe as dd
     else:
         import pandas as dd
-        
+
     import numpy as np
 
     # Split into columns and assign name

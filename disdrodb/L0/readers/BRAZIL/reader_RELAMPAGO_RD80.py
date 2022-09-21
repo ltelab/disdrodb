@@ -24,17 +24,18 @@ from disdrodb.L0 import click_L0_readers_options
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
 @click_L0_readers_options
-def main(raw_dir,
-         processed_dir,
-         l0a_processing=True,
-         l0b_processing=True,
-         keep_l0a=False,
-         force=False,
-         verbose=False,
-         debugging_mode=False,
-         lazy=False,
-         single_netcdf=True, 
-         ):
+def main(
+    raw_dir,
+    processed_dir,
+    l0a_processing=True,
+    l0b_processing=True,
+    keep_l0a=False,
+    force=False,
+    verbose=False,
+    debugging_mode=False,
+    lazy=False,
+    single_netcdf=True,
+):
     """Script to process raw data to L0A and L0B format.
     Parameters
     ----------
@@ -91,138 +92,141 @@ def main(raw_dir,
     ###########################
     #### CUSTOMIZABLE CODE ####
     ###########################
-    #### - Define raw data headers 
-    column_names = ['date',
-                    'time',
-                    'status',
-                    'interval',
-                    'n1',
-                    'n2',
-                    'n3',
-                    'n4',
-                    'n5',
-                    'n6',
-                    'n7',
-                    'n8',
-                    'n9',
-                    'n10',
-                    'n11',
-                    'n12',
-                    'n13',
-                    'n14',
-                    'n15',
-                    'n16',
-                    'n17',
-                    'n18',
-                    'n19',
-                    'n20',
-                    'RI',
-                    'RA',
-                    'RAT'
-                    ]
-    
+    #### - Define raw data headers
+    column_names = [
+        "date",
+        "time",
+        "status",
+        "interval",
+        "n1",
+        "n2",
+        "n3",
+        "n4",
+        "n5",
+        "n6",
+        "n7",
+        "n8",
+        "n9",
+        "n10",
+        "n11",
+        "n12",
+        "n13",
+        "n14",
+        "n15",
+        "n16",
+        "n17",
+        "n18",
+        "n19",
+        "n20",
+        "RI",
+        "RA",
+        "RAT",
+    ]
+
     ##------------------------------------------------------------------------.
-    #### - Define reader options 
+    #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs['delimiter'] = '\\t'
-    
+    reader_kwargs["delimiter"] = "\\t"
+
     # - Avoid first column to become df index !!!
-    reader_kwargs["index_col"] = False  
-    
-    # - Define behaviour when encountering bad lines 
-    reader_kwargs["on_bad_lines"] = 'skip'
-    
-    # - Define parser engine 
+    reader_kwargs["index_col"] = False
+
+    # - Define behaviour when encountering bad lines
+    reader_kwargs["on_bad_lines"] = "skip"
+
+    # - Define parser engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
-    reader_kwargs["engine"] = 'python'
-    
+    reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
-    #   - Available: gzip, bz2, zip 
-    reader_kwargs['compression'] = 'infer'  
-    
-    # - Strings to recognize as NA/NaN and replace with standard NA flags 
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’, 
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’, 
+    #   - Available: gzip, bz2, zip
+    reader_kwargs["compression"] = "infer"
+
+    # - Strings to recognize as NA/NaN and replace with standard NA flags
+    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
+    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs['na_values'] = ['na', '', 'error']
-    
+    reader_kwargs["na_values"] = ["na", "", "error"]
+
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None # "50MB" 
-    
+    reader_kwargs["blocksize"] = None  # "50MB"
+
     # Skip header
-    reader_kwargs['header'] = None
-    
+    reader_kwargs["header"] = None
+
     # Skip first row as columns names
-    reader_kwargs['skiprows'] = 1
-    
+    reader_kwargs["skiprows"] = 1
+
     # - Define encoding
-    reader_kwargs['encoding'] = 'ISO-8859-1'
-    
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files 
+    # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas 
-        if lazy: 
+        # Import dask or pandas
+        if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
-            
+
         # Replace 'status' NaN with 0
-        df['status'] = df['status'].fillna(0)
-        
-        # Replace all ',' with '.' in RI, RA, RAT 
-        df['RI'] = df['RI'].replace({',': '.'}, regex=True)
-        df['RA'] = df['RA'].replace({',': '.'}, regex=True)
-        df['RAT'] = df['RAT'].replace({',': '.'}, regex=True)
-        
+        df["status"] = df["status"].fillna(0)
+
+        # Replace all ',' with '.' in RI, RA, RAT
+        df["RI"] = df["RI"].replace({",": "."}, regex=True)
+        df["RA"] = df["RA"].replace({",": "."}, regex=True)
+        df["RAT"] = df["RAT"].replace({",": "."}, regex=True)
+
         # Define time column
-        df['time'] = df['date'].astype(str) + ' ' + df['time'].astype(str)
-        df['time'] = dd.to_datetime(df['time'], format='%Y-%m-%d %H:%M:%S')
-        df = df.drop(columns = ['date'])
-    
+        df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
+        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        df = df.drop(columns=["date"])
+
         # Create raw_drop_concentration string
-        bin_columns = ['n1',
-                       'n2',
-                       'n3',
-                       'n4',
-                       'n5',
-                       'n6',
-                       'n7',
-                       'n8',
-                       'n9',
-                       'n10',
-                       'n11',
-                       'n12',
-                       'n13',
-                       'n14',
-                       'n15',
-                       'n16',
-                       'n17',
-                       'n18',
-                       'n19',
-                       'n20']
-    
-        df['raw_drop_number'] = ''
+        bin_columns = [
+            "n1",
+            "n2",
+            "n3",
+            "n4",
+            "n5",
+            "n6",
+            "n7",
+            "n8",
+            "n9",
+            "n10",
+            "n11",
+            "n12",
+            "n13",
+            "n14",
+            "n15",
+            "n16",
+            "n17",
+            "n18",
+            "n19",
+            "n20",
+        ]
+
+        df["raw_drop_number"] = ""
         for c in bin_columns:
-            df['raw_drop_number'] += df[c].astype(str) + ';'
-            
-        df = df.drop(columns = bin_columns)
-        return df 
-    
+            df["raw_drop_number"] += df[c].astype(str) + ";"
+
+        df = df.drop(columns=bin_columns)
+        return df
+
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern=  "*.txt"   
-    
+    files_glob_pattern = "*.txt"
+
     ####----------------------------------------------------------------------.
-    #### - Create L0 products  
+    #### - Create L0 products
     run_L0(
-        raw_dir=raw_dir,  
+        raw_dir=raw_dir,
         processed_dir=processed_dir,
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
@@ -232,14 +236,13 @@ def main(raw_dir,
         debugging_mode=debugging_mode,
         lazy=lazy,
         single_netcdf=single_netcdf,
-        # Custom arguments of the parser 
-        files_glob_pattern = files_glob_pattern, 
+        # Custom arguments of the parser
+        files_glob_pattern=files_glob_pattern,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
-        )
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
-   
-    

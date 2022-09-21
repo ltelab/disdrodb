@@ -6,7 +6,11 @@ Created on Thu Sep 15 22:57:09 2022
 @author: ghiggi
 """
 from disdrodb.L0.L0A_processing import read_raw_data, cast_column_dtypes
-from disdrodb.L0.L0B_processing import retrieve_L0B_arrays, create_L0B_from_L0A, set_encodings
+from disdrodb.L0.L0B_processing import (
+    retrieve_L0B_arrays,
+    create_L0B_from_L0A,
+    set_encodings,
+)
 
 lazy = False  # should we test also True !
 
@@ -50,9 +54,8 @@ print(ds)
 ds_encoded = set_encodings(ds.copy(), sensor_name)
 print(ds_encoded)
 
-# Write unencoded 
+# Write unencoded
 ds.to_netcdf("/tmp/dummy1.nc")
 
-# Write encoded 
+# Write encoded
 ds_encoded.to_netcdf("/tmp/dummy2.nc")
-
