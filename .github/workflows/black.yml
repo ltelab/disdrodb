@@ -1,6 +1,6 @@
 name: Lint
 
-on: [pull_request]
+on: [pull_request, workflow_dispatch]
 
 jobs:
   lint:
@@ -8,3 +8,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          version: "22.8.0"
