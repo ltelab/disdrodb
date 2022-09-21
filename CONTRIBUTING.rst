@@ -61,23 +61,19 @@ root:
 
    pre-commit install
 
+
 The pre-commit hooks are scripts executed automatically in every commit
 to identify simple code quality issues. When an issue is identified
 (the pre-commit script exits with non-zero status), the hook aborts the
 commit and prints the error. Currently, DISDRODB only tests that the
-code to be committed complies with black’s format style. In case that
-the commit is aborted, you only need to run black agains you code.
-This can be done by running ``black .`` or
-``pre-commit run --all-files``. The latter is recommended since it
-indicates if the commit contained any formatting errors (that are
-automatically corrected).
+code to be committed complies with black’s format style. 
 
-IMPORTANT: Periodically update the black version used in the pre-commit
-hook by running:
+In case that the commit is aborted, you only need to run black agains you code.
+This can be done by running ``black .`` or ``pre-commit run --all-files``. The latter is recommended since it
+indicates if the commit contained any formatting errors (that are automatically corrected).
 
-::
-
-   pre-commit autoupdate
+.. note::
+	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.  
 
 Code Style guide
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

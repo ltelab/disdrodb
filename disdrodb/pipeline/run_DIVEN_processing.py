@@ -17,10 +17,10 @@ from disdrodb.utils.parser import get_parser_cmd
 #### Define campaign dictionary
 campaign_dict = {
     "DIVEN": "parser_DIVEN.py",
-}     
-       
+}
+
 #### Define filepaths
-parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/DIVEN" # TO CHANGE
+parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/DIVEN"  # TO CHANGE
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/UK"
 processed_base_dir = "/ltenas3/0_Data/DISDRODB/Processed/UK"
 # processed_base_dir = "/tmp/DISDRODB/UK"
@@ -47,7 +47,7 @@ for campaign_name in campaign_dict.keys():
         debugging_mode=debugging_mode,
         lazy=lazy,
     )
-    
+
     subprocess.run(cmd, shell=True)
     # os.system(cmd)
 

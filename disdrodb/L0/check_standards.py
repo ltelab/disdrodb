@@ -28,14 +28,18 @@ logger = logging.getLogger(__name__)
 
 def available_sensor_name():
     from disdrodb.L0.standards import get_available_sensor_name
+
     sensor_list = get_available_sensor_name()
-    raise ValueError("This need to be deprecated in favour of get_available_sensor_name() !") # TODO !!!
+    raise ValueError(
+        "This need to be deprecated in favour of get_available_sensor_name() !"
+    )  # TODO !!!
     return sensor_list
 
 
 def check_sensor_name(sensor_name):
     from disdrodb.L0.standards import get_available_sensor_name
-    available_sensor_name =  get_available_sensor_name()
+
+    available_sensor_name = get_available_sensor_name()
     if not isinstance(sensor_name, str):
         logger.exception("'sensor_name' must be a string'")
         raise TypeError("'sensor_name' must be a string'")
@@ -45,28 +49,31 @@ def check_sensor_name(sensor_name):
         raise ValueError(msg)
     return
 
+
 def check_L0A_column_names(df, sensor_name):
     "Checks that the dataframe columns respects DISDRODB standards."
-    # Get valid columns 
+    # Get valid columns
     dtype_dict = get_L0A_dtype(sensor_name)
     valid_columns = list(dtype_dict)
-    valid_columns = valid_columns + ['time']
-    valid_columns = set(valid_columns)  
+    valid_columns = valid_columns + ["time"]
+    valid_columns = set(valid_columns)
     # Get dataframe column names
     df_columns = list(df.columns)
     df_columns = set(df_columns)
     # --------------------------------------------
-    # Check there aren't valid columns 
+    # Check there aren't valid columns
     unvalid_columns = list(df_columns.difference(valid_columns))
     if len(unvalid_columns) > 0:
-        msg = f"The following columns do no met the DISDRODB standards: {unvalid_columns}"
-        logger.error(msg) 
+        msg = (
+            f"The following columns do no met the DISDRODB standards: {unvalid_columns}"
+        )
+        logger.error(msg)
         raise ValueError(msg)
     # --------------------------------------------
-    # Check time column is present 
-    if 'time' not in df_columns:
+    # Check time column is present
+    if "time" not in df_columns:
         msg = "The 'time' column is missing in the dataframe."
-        logger.error(msg) 
+        logger.error(msg)
         raise ValueError(msg)
     # --------------------------------------------
     return None
@@ -81,15 +88,20 @@ def check_L0A_standards(fpath, sensor_name, raise_errors=False, verbose=True):
     list_wrong_columns = []
     for column in df.columns:
         if column in list(dict_field_value_range.keys()):
-            if dict_field_value_range[column] is not None: 
+            if dict_field_value_range[column] is not None:
                 if not df[column].between(*dict_field_value_range[column]).all():
                     list_wrong_columns.append(column)
                     if raise_errors:
-                        raise ValueError(f"'column' {column} has values outside the expected data range.")
+                        raise ValueError(
+                            f"'column' {column} has values outside the expected data range."
+                        )
 
     if verbose:
         if len(list_wrong_columns) > 0:
-            print(" - This columns have values outside the expected data range:", list_wrong_columns)
+            print(
+                " - This columns have values outside the expected data range:",
+                list_wrong_columns,
+            )
     # -------------------------------------
     # Check categorical data values
     dict_field_values = get_field_value_options_dict(sensor_name)
@@ -129,13 +141,19 @@ def check_L0A_standards(fpath, sensor_name, raise_errors=False, verbose=True):
 
     # -------------------------------------
     # Check if raw spectrum and 1D derivate exists
-    list_sprectrum_vars = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
+    list_sprectrum_vars = [
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+    ]
     unavailable_vars = np.array(list_sprectrum_vars)[
         np.isin(list_sprectrum_vars, df.columns, invert=True)
     ]
     # Also if Thies_LPM has list_sprectrum_vars?
     if len(unavailable_vars) > 0:
-        msg = f" - The variables {unavailable_vars} are not present in the L0 dataframe."
+        msg = (
+            f" - The variables {unavailable_vars} are not present in the L0 dataframe."
+        )
         print(msg)
         logger.info(msg)
 

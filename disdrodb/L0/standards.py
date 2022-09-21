@@ -24,19 +24,19 @@
 import os
 import yaml
 import logging
-import datetime 
-    
+import datetime
+
 logger = logging.getLogger(__name__)
 
 PRODUCT_VERSION = "V0"
 SOFTWARE_VERSION = "V0"
-EPOCH = u"seconds since 1970-01-01 00:00:00"  
+EPOCH = "seconds since 1970-01-01 00:00:00"
 
- 
+
 # Notes:
 # - L0A_encodings currently specify only the dtype. This could be expanded in the future.
 # - disdrodb.configs ... the netcdf chunk size could be an option to be specified
- 
+
 
 def read_config_yml(sensor_name, filename):
     """Read a config yaml file and return the dictionary."""
@@ -90,7 +90,8 @@ def get_data_format_dict(sensor_name):
     """Get a dictionary containing the data format of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="L0_data_format.yml")
 
-def get_long_name_dict(sensor_name): 
+
+def get_long_name_dict(sensor_name):
     """Get a dictionary containing the long name of each sensor variable."""
     return read_config_yml(sensor_name=sensor_name, filename="variable_longname.yml")
 
@@ -163,20 +164,20 @@ def get_L0B_encodings_dict(sensor_name):
     return d
 
 
-def get_time_encoding():    
+def get_time_encoding():
     encoding = {}
-    encoding['units'] = EPOCH
-    encoding['calendar'] = 'proleptic_gregorian'
-    return encoding 
+    encoding["units"] = EPOCH
+    encoding["calendar"] = "proleptic_gregorian"
+    return encoding
 
 
 def set_DISDRODB_L0_attrs(ds, attrs):
-    sensor_name = attrs['sensor_name']
-    #----------------------------------
+    sensor_name = attrs["sensor_name"]
+    # ----------------------------------
     # Set global attributes (from metadata)
     ds.attrs = attrs
-    
-    #----------------------------------
+
+    # ----------------------------------
     # Set variable attributes (from config standards)
     description_dict = get_description_dict(sensor_name)
     units_dict = get_units_dict(sensor_name)
@@ -184,37 +185,38 @@ def set_DISDRODB_L0_attrs(ds, attrs):
     # data_format_dict = get_data_format_dict(sensor_name)
     for var in list(ds.data_vars):
         attrs_var = {}
-        attrs_var['long_name'] = long_name_dict[var] 
-        attrs_var['description'] = description_dict[var]
-        attrs_var['unit'] = units_dict[var]
-        # TODO: 
+        attrs_var["long_name"] = long_name_dict[var]
+        attrs_var["description"] = description_dict[var]
+        attrs_var["unit"] = units_dict[var]
+        # TODO:
         # attrs['valid_min'] =  data_format_dict
         # attrs['valid_max'] =  data_format_dict
         ds[var].attrs = attrs_var
-        
-    #----------------------------------  
-    # Set coordinate attributes 
-    # TODO 
-    # lat/lon - degrees N/E... 
+
+    # ----------------------------------
+    # Set coordinate attributes
+    # TODO
+    # lat/lon - degrees N/E...
     # altitude - meters above sea level
-    
-    #----------------------------------
-    # Add DISDRODB processing info 
+
+    # ----------------------------------
+    # Add DISDRODB processing info
     now = datetime.datetime.now()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-    ds.attrs['disdrodb_processing_date'] = current_time
-    ds.attrs['disdrodb_product_version'] = PRODUCT_VERSION 
-    ds.attrs['disdrodb_software_version'] = SOFTWARE_VERSION 
-    ds.attrs['disdrodb_product_level'] = "L0" 
-    # ds.attrs['disdrodb_id'] = # TODO XXXX 
-    
+    ds.attrs["disdrodb_processing_date"] = current_time
+    ds.attrs["disdrodb_product_version"] = PRODUCT_VERSION
+    ds.attrs["disdrodb_software_version"] = SOFTWARE_VERSION
+    ds.attrs["disdrodb_product_level"] = "L0"
+    # ds.attrs['disdrodb_id'] = # TODO XXXX
+
     return ds
-   
-    
+
+
 ####-------------------------------------------------------------------------.
 #############################################
 #### Get diameter and velocity bins info ####
 #############################################
+
 
 def get_diameter_bin_center(sensor_name):
     """Get diameter bin center."""
@@ -247,7 +249,7 @@ def get_diameter_bin_width(sensor_name):
 def get_velocity_bin_center(sensor_name):
     """Get velocity bin center."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    if velocity_dict is not None: 
+    if velocity_dict is not None:
         velocity_bin_center = list(velocity_dict["center"].values())
     else:
         return None
@@ -257,7 +259,7 @@ def get_velocity_bin_center(sensor_name):
 def get_velocity_bin_lower(sensor_name):
     """Get velocity bin lower bound."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    if velocity_dict is not None: 
+    if velocity_dict is not None:
         lower_bounds = [v[0] for v in velocity_dict["bounds"].values()]
     else:
         return None
@@ -267,7 +269,7 @@ def get_velocity_bin_lower(sensor_name):
 def get_velocity_bin_upper(sensor_name):
     """Get velocity bin upper bound."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    if velocity_dict is not None: 
+    if velocity_dict is not None:
         upper_bounds = [v[1] for v in velocity_dict["bounds"].values()]
     else:
         return None
@@ -277,7 +279,7 @@ def get_velocity_bin_upper(sensor_name):
 def get_velocity_bin_width(sensor_name):
     """Get velocity bin width."""
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    if velocity_dict is not None: 
+    if velocity_dict is not None:
         velocity_bin_width = list(velocity_dict["width"].values())
     else:
         return None
@@ -296,8 +298,8 @@ def get_raw_field_nbins(sensor_name):
             "raw_drop_average_velocity": n_v,
             "raw_drop_number": n_d * n_v,
         }
-     # For instruments measuring only size (i.e. RD80)
-    else: 
+    # For instruments measuring only size (i.e. RD80)
+    else:
         nbins_dict = {
             "raw_drop_number": n_d,
         }
@@ -305,26 +307,25 @@ def get_raw_field_nbins(sensor_name):
 
 
 def get_raw_field_dim_order(sensor_name):
-    # TODO: this should go into a config file ... 
+    # TODO: this should go into a config file ...
     # TODO: also think to set dimensions as diameter and velocity ... TO DISCUSS
     if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "ThiesLPM"]:
         dim_dict = {
-            "raw_drop_concentration":  ['diameter_bin_center'],
-            "raw_drop_average_velocity": ['velocity_bin_center'],
+            "raw_drop_concentration": ["diameter_bin_center"],
+            "raw_drop_average_velocity": ["velocity_bin_center"],
             "raw_drop_number": ["diameter_bin_center", "velocity_bin_center"],
         }
-    elif sensor_name in ["RD80"]: 
-        dim_dict = {
-            "raw_drop_number": ["diameter_bin_center"]
-        }
-    else: 
-        raise NotImplementedError() 
+    elif sensor_name in ["RD80"]:
+        dim_dict = {"raw_drop_number": ["diameter_bin_center"]}
+    else:
+        raise NotImplementedError()
     return dim_dict
 
 
 def get_raw_spectrum_ndims(sensor_name):
     encoding_dict = get_L0B_encodings_dict(sensor_name)
-    ndim = len(encoding_dict["raw_drop_number"]['chunksizes']) - 1
+    ndim = len(encoding_dict["raw_drop_number"]["chunksizes"]) - 1
     return ndim
+
 
 # -----------------------------------------------------------------------------.

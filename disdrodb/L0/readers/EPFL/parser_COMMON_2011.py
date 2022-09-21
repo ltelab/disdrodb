@@ -27,29 +27,81 @@ from disdrodb.L0 import run_L0
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
-@click.argument('raw_dir', type=click.Path(exists=True), metavar='<raw_dir>')
-@click.argument('processed_dir', metavar='<processed_dir>')
-@click.option('-l0a', '--l0a_processing', type=bool, show_default=True, default=True, help="Perform L0A processing")
-@click.option('-l0b', '--l0b_processing', type=bool, show_default=True, default=True, help="Perform L0B processing")
-@click.option('-k', '--keep_l0a', type=bool, show_default=True, default=True, help="Whether to keep the l0a Parquet file")
-@click.option('-f', '--force', type=bool, show_default=True, default=False, help="Force overwriting")
-@click.option('-v', '--verbose', type=bool, show_default=True, default=False, help="Verbose")
-@click.option('-d', '--debugging_mode', type=bool, show_default=True, default=False, help="Switch to debugging mode")
-@click.option('-l', '--lazy', type=bool, show_default=True, default=True, help="Use dask if lazy=True")
-@click.option('-s', '--single_netcdf', type=bool, show_default=True, default=True, help="Produce single netCDF")
-def main(raw_dir,
-         processed_dir,
-         l0a_processing=True,
-         l0b_processing=True,
-         keep_l0a=False,
-         force=False,
-         verbose=False,
-         debugging_mode=False,
-         lazy=True,
-         single_netcdf=True, 
-         ):
-    """Script to process raw data to L0A and L0B format. 
-    
+@click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
+@click.argument("processed_dir", metavar="<processed_dir>")
+@click.option(
+    "-l0a",
+    "--l0a_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0A processing",
+)
+@click.option(
+    "-l0b",
+    "--l0b_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0B processing",
+)
+@click.option(
+    "-k",
+    "--keep_l0a",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Whether to keep the l0a Parquet file",
+)
+@click.option(
+    "-f",
+    "--force",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Force overwriting",
+)
+@click.option(
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+)
+@click.option(
+    "-d",
+    "--debugging_mode",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Switch to debugging mode",
+)
+@click.option(
+    "-l",
+    "--lazy",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Use dask if lazy=True",
+)
+@click.option(
+    "-s",
+    "--single_netcdf",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Produce single netCDF",
+)
+def main(
+    raw_dir,
+    processed_dir,
+    l0a_processing=True,
+    l0b_processing=True,
+    keep_l0a=False,
+    force=False,
+    verbose=False,
+    debugging_mode=False,
+    lazy=True,
+    single_netcdf=True,
+):
+    """Script to process raw data to L0A and L0B format.
+
     Parameters
     ----------
     raw_dir : str
@@ -58,32 +110,32 @@ def main(raw_dir,
         Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
         The directory must have the following structure:
         - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.json 
+        - /metadata/<station_id>.json
         Important points:
         - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
         - The <campaign_name> must semantically match between:
            - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files. 
-        - The campaign_name are set to be UPPER CASE. 
+           - with the key 'campaign_name' within the metadata YAML files.
+        - The campaign_name are set to be UPPER CASE.
     processed_dir : str
-        Desired directory path for the processed L0A and L0B products. 
+        Desired directory path for the processed L0A and L0B products.
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
     L0A_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
     L0B_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data. 
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
       The default is True.
-    keep_L0A : bool 
+    keep_L0A : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     force : bool
-        If True, overwrite existing data into destination directories. 
-        If False, raise an error if there are already data into destination directories. 
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
         The default is False.
     verbose : bool
-        Whether to print detailed processing information into terminal. 
+        Whether to print detailed processing information into terminal.
         The default is False.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
@@ -91,7 +143,7 @@ def main(raw_dir,
         - For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
         The default is False.
     lazy : bool
-        Whether to perform processing lazily with dask. 
+        Whether to perform processing lazily with dask.
         If lazy=True, it employed dask.array and dask.dataframe.
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
@@ -100,7 +152,7 @@ def main(raw_dir,
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
-    
+
     """
     ####----------------------------------------------------------------------.
     ###########################
@@ -130,11 +182,11 @@ def main(raw_dir,
         "sensor_status",
         "rainfall_amount_absolute_32bit",
         "debug_data",
-        'raw_drop_concentration',
-        'raw_drop_average_velocity',
-        'raw_drop_number',
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
         "datalogger_error",
-        ]
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
@@ -190,10 +242,18 @@ def main(raw_dir,
             import pandas as dd
 
         # Drop bad lines on based on debug_data
-        df = df[~df.debug_data.str.startswith('Frame', na=False)]
+        df = df[~df.debug_data.str.startswith("Frame", na=False)]
 
         # Drop debug_data, datalogger_error and id
-        df = df.drop(columns=["debug_data", "datalogger_error", "id", "temp_temperature", "temp_voltage"])
+        df = df.drop(
+            columns=[
+                "debug_data",
+                "datalogger_error",
+                "id",
+                "temp_temperature",
+                "temp_voltage",
+            ]
+        )
 
         # If value in col_to_drop_if_na colum is nan, drop the row
         col_to_drop_if_na = [
@@ -217,7 +277,7 @@ def main(raw_dir,
         df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
         df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
         df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-        
+
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
@@ -225,12 +285,12 @@ def main(raw_dir,
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern= "*.dat*"
+    files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products  
+    #### - Create L0 products
     run_L0(
-        raw_dir=raw_dir,  
+        raw_dir=raw_dir,
         processed_dir=processed_dir,
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
@@ -240,12 +300,13 @@ def main(raw_dir,
         debugging_mode=debugging_mode,
         lazy=lazy,
         single_netcdf=single_netcdf,
-        # Custom arguments of the parser 
-        files_glob_pattern = files_glob_pattern, 
+        # Custom arguments of the parser
+        files_glob_pattern=files_glob_pattern,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
-        )
+    )
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

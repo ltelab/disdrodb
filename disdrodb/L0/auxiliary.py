@@ -18,6 +18,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 
+
 def get_DELFT_dict(sensor_name):
     """
     Dictionary mapping from DELFT standards to DISDRODB standards.
@@ -31,31 +32,32 @@ def get_DELFT_dict(sensor_name):
     if sensor_name == "OTT_Parsivel":
         d = {
             "Meas_Time": "time",  # TO BE CHECKED
-            "Meas_Interval": "sample_interval", 
-            "RR_Intensity": "rainfall_rate_32bit", 
-            "RR_Accumulated": "rainfall_accumulated_32bit", 
-            "RR_Total": "rainfall_amount_absolute_32bit", 
-            "Synop_WaWa": "weather_code_synop_4680", 
-            "Synop_WW": "weather_code_synop_4677", 
-            "Reflectivity": "reflectivity_32bit", 
-            "Visibility": "mor_visibility", 
-            "T_Sensor": "sensor_temperature", 
-            "Sig_Laser": "laser_amplitude", 
-            "N_Particles": "number_particles", 
-            "State_Sensor": "sensor_status", 
-            "E_kin": "rain_kinetic_energy", 
-            "V_Sensor": "sensor_battery_voltage", 
-            "I_Heating": "sensor_heating_current", 
+            "Meas_Interval": "sample_interval",
+            "RR_Intensity": "rainfall_rate_32bit",
+            "RR_Accumulated": "rainfall_accumulated_32bit",
+            "RR_Total": "rainfall_amount_absolute_32bit",
+            "Synop_WaWa": "weather_code_synop_4680",
+            "Synop_WW": "weather_code_synop_4677",
+            "Reflectivity": "reflectivity_32bit",
+            "Visibility": "mor_visibility",
+            "T_Sensor": "sensor_temperature",
+            "Sig_Laser": "laser_amplitude",
+            "N_Particles": "number_particles",
+            "State_Sensor": "sensor_status",
+            "E_kin": "rain_kinetic_energy",
+            "V_Sensor": "sensor_battery_voltage",
+            "I_Heating": "sensor_heating_current",
             "Error_Code": "error_code",
-            "Data_Raw": "raw_drop_number",  
-            "Data_N_Field": "raw_drop_concentration",  
-            "Data_V_Field": "raw_drop_average_velocity", 
+            "Data_Raw": "raw_drop_number",
+            "Data_N_Field": "raw_drop_concentration",
+            "Data_V_Field": "raw_drop_average_velocity",
         }
-    else: 
+    else:
         raise NotImplementedError("DELFT standard implemented only for OTT Parsivel")
     return d
 
-def get_DIVEN_dict(sensor_name): 
+
+def get_DIVEN_dict(sensor_name):
     """
     Dictionary mapping from DIVEN standards to DISDRODB standards.
 
@@ -66,7 +68,7 @@ def get_DIVEN_dict(sensor_name):
 
     """
     d = {
-        ## Time is to decode 
+        ## Time is to decode
         # 'year'
         # 'month'
         # 'day'
@@ -74,24 +76,21 @@ def get_DIVEN_dict(sensor_name):
         # 'minute'
         # 'second'
         # 'day_of_year'
-        
-        "precipitation_flux": "precipitation_rate",  
+        "precipitation_flux": "precipitation_rate",
         "solid_precipitation_flux": "snowfall_rate",
         "precipitation_visibility": "mor_visibility",
-        "reflectivity": "reflectivity",  
+        "reflectivity": "reflectivity",
         "present_weather_1m": "weather_code_synop_4680",
         "present_weather_5m": "weather_code_synop_4680_5min",
         "max_hail_diameter": "max_hail_diameter",
         "particle_count": "number_particles",
-        
         # 'hydrometeor_type_1m' # Pickering et al., 2019
         # 'hydrometeor_type_5m' # Pickering et al., 2019
         # "measurement_quality": "quality_index",
-          
-        # Arrays 
-        "size_velocity_distribution": "raw_drop_number", 
-        # "drop_size_distribution": "raw_drop_concentration", 
-        # "drop_velocity_distribution": "raw_drop_average_velocity", 
+        # Arrays
+        "size_velocity_distribution": "raw_drop_number",
+        # "drop_size_distribution": "raw_drop_concentration",
+        # "drop_velocity_distribution": "raw_drop_average_velocity",
     }
     return d
 
@@ -107,19 +106,19 @@ def get_ARM_LPM_dict(sensor_name):
 
     """
     if sensor_name == "Thies_LPM":
-        # Dimensions: 
-        # 'time': 'time # to use 
+        # Dimensions:
+        # 'time': 'time # to use
         # "particle_diameter": "diameter bin id ",
-        # "particle_fall_velocity": "velocity_bin_id", 
+        # "particle_fall_velocity": "velocity_bin_id",
         d = {
             # 'base_time': 'base_time',
             # 'time_offset': 'time_offset',
             # 'time_bounds': 'time_bounds',
             # "particle_diameter_bounds",
             # "particle_fall_velocity_bounds"
-            'lat': 'latitude',
-            'lon': 'longitude',
-            'alt': 'altitude',
+            "lat": "latitude",
+            "lon": "longitude",
+            "alt": "altitude",
             "synop_4677_weather_code": "weather_code_synop_4677",
             "metar_4678_weather_code": "weather_code_metar_4678",
             "synop_4680_weather_code": "weather_code_synop_4680",
@@ -175,59 +174,57 @@ def get_ARM_LPM_dict(sensor_name):
             # 'air_temperature',
         }
     elif sensor_name == "OTT_Parsivel2":
-            # Coords
-            # - time
-            # - raw_fall_velocity
-            # - particle_size
-            d = {
-                 # 'base_time': 'base_time',
-                 # 'time_offset'
-                 # 'class_size_width',
-                 # 'fall_velocity_calculated',
-                'lat': 'latitude',
-                'lon': 'longitude',
-                'alt': 'altitude',
-                'weather_code': 'weather_code_synop_4680',      
-                'equivalent_radar_reflectivity_ott': "reflectivity_32bit", 
-                'mor_visibility': 'mor_visibility',    
-                'sensor_temperature': 'sensor_temperature', 
-                'laserband_amplitude': 'laser_amplitude',
-                'heating_current': 'sensor_heating_current',
-                'sensor_voltage': 'sensor_battery_voltage',
-                'number_detected_particles': 'number_particles',
-                'raw_spectrum': 'raw_drop_number',
-                'number_density_drops': 'raw_drop_concentration',
-                'snow_depth_intensity': 'snowfall_rate', # Only available > 2019 
-                
-                # ARM retrievals
-                # 'moment1',
-                # 'moment2',
-                # 'moment3',
-                # 'moment4',
-                # 'moment5',
-                # 'moment6',
-                # 'diameter_min':  
-                # 'diameter_max':  
-                # 'median_volume_diameter'
-                # 'intercept_parameter',
-                # 'slope_parameter'
-                # 'liquid_water_content',
-                # 'liquid_water_distribution_mean'
-                # 'precip_rate':  
-                # 'equivalent_radar_reflectivity',
-           
-                # Possible QC variables 
-                # 'qc_time',
-                # 'qc_precip_rate':  
-                # 'qc_number_detected_particles': 
-                # 'qc_mor_visibility': 
-                # 'qc_heating_current':  
-                # 'qc_snow_depth_intensity': 
-                # 'qc_laserband_amplitude':   
-                # 'qc_weather_code':  
-                # 'qc_equivalent_radar_reflectivity_ott':  
-                # 'qc_sensor_voltage':   
-            }   
-    else: 
-        raise NotImplementedError 
+        # Coords
+        # - time
+        # - raw_fall_velocity
+        # - particle_size
+        d = {
+            # 'base_time': 'base_time',
+            # 'time_offset'
+            # 'class_size_width',
+            # 'fall_velocity_calculated',
+            "lat": "latitude",
+            "lon": "longitude",
+            "alt": "altitude",
+            "weather_code": "weather_code_synop_4680",
+            "equivalent_radar_reflectivity_ott": "reflectivity_32bit",
+            "mor_visibility": "mor_visibility",
+            "sensor_temperature": "sensor_temperature",
+            "laserband_amplitude": "laser_amplitude",
+            "heating_current": "sensor_heating_current",
+            "sensor_voltage": "sensor_battery_voltage",
+            "number_detected_particles": "number_particles",
+            "raw_spectrum": "raw_drop_number",
+            "number_density_drops": "raw_drop_concentration",
+            "snow_depth_intensity": "snowfall_rate",  # Only available > 2019
+            # ARM retrievals
+            # 'moment1',
+            # 'moment2',
+            # 'moment3',
+            # 'moment4',
+            # 'moment5',
+            # 'moment6',
+            # 'diameter_min':
+            # 'diameter_max':
+            # 'median_volume_diameter'
+            # 'intercept_parameter',
+            # 'slope_parameter'
+            # 'liquid_water_content',
+            # 'liquid_water_distribution_mean'
+            # 'precip_rate':
+            # 'equivalent_radar_reflectivity',
+            # Possible QC variables
+            # 'qc_time',
+            # 'qc_precip_rate':
+            # 'qc_number_detected_particles':
+            # 'qc_mor_visibility':
+            # 'qc_heating_current':
+            # 'qc_snow_depth_intensity':
+            # 'qc_laserband_amplitude':
+            # 'qc_weather_code':
+            # 'qc_equivalent_radar_reflectivity_ott':
+            # 'qc_sensor_voltage':
+        }
+    else:
+        raise NotImplementedError
     return d

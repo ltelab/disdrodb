@@ -25,16 +25,16 @@ import yaml
 def get_attrs_standards():
     # TO REMOVE
     # - station_number
-    # - disdrodb_id 
+    # - disdrodb_id
     # - temporal_resolution
-    
+
     # TO ADD
     # - comments
     # - acknoledgements
-    # - license   
-    
+    # - license
+
     # sensor_wavelegth --> sensor_wavelength
-    
+
     list_attrs = [  # Description
         "title",
         "description",
@@ -46,7 +46,7 @@ def get_attrs_standards():
         # Location
         "station_id",
         "station_name",
-        # "station_number",TODO: REMOVE 
+        # "station_number",TODO: REMOVE
         "location",
         "country",
         "continent",
@@ -106,6 +106,7 @@ def get_attrs_standards():
     attrs["proj4_string"] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
 
     return attrs
+
 
 # TODO: create_metadata_yml ? Decide similar pattern to create_issue<_yml>
 def create_metadata(fpath):

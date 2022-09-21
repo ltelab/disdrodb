@@ -38,11 +38,12 @@ from disdrodb.utils.logger import log_info, log_warning, log_debug
 logger = logging.getLogger(__name__)
 
 # TODO:
-# Renaming:  
-# - read_L0A_raw_file_list --> read_raw_file_list ? 
-# - write_df_to_parquet --> write_L0A? 
+# Renaming:
+# - read_L0A_raw_file_list --> read_raw_file_list ?
+# - write_df_to_parquet --> write_L0A?
 # Remove or refactor
 # - read_raw_data_zipped
+
 
 def check_glob_pattern(pattern):
     if not isinstance(pattern, str):
@@ -51,11 +52,12 @@ def check_glob_pattern(pattern):
         raise ValueError("glob_pattern should not start with /")
 
 
-def _get_file_list(raw_dir, glob_pattern): 
+def _get_file_list(raw_dir, glob_pattern):
     check_glob_pattern(glob_pattern)
     glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
     list_fpaths = sorted(glob.glob(glob_fpath_pattern))
     return list_fpaths
+
 
 def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
     """
@@ -63,13 +65,13 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
     ----------
     raw_dir : str
         Directory of the campaign where to search for files.
-    glob_pattern : str or list 
+    glob_pattern : str or list
         glob pattern to search for files. Can also be a list of glob patterns.
     verbose : bool, optional
         Wheter to verbose the processing.
         The default is False.
     debugging_mode : bool, optional
-        If True, it select maximum 3 files for debugging purposes. 
+        If True, it select maximum 3 files for debugging purposes.
         The default is False.
 
     Returns
@@ -80,19 +82,21 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
     """
     if not isinstance(glob_pattern, (str, list)):
         raise ValueError("'glob_pattern' must be a str or list of strings.")
-    if isinstance(glob_pattern, str): 
+    if isinstance(glob_pattern, str):
         glob_pattern = [glob_pattern]
-        
+
     # Retrieve filepaths list
     list_fpaths = [_get_file_list(raw_dir, pattern) for pattern in glob_pattern]
-    list_fpaths = [x for xs in list_fpaths for x in xs] # flatten list 
-    
+    list_fpaths = [x for xs in list_fpaths for x in xs]  # flatten list
+
     # Check there are files
     n_files = len(list_fpaths)
     if n_files == 0:
-        glob_fpath_patterns = [os.path.join(raw_dir, pattern) for pattern in glob_pattern]
+        glob_fpath_patterns = [
+            os.path.join(raw_dir, pattern) for pattern in glob_pattern
+        ]
         raise ValueError(f"No file found at t {glob_fpath_patterns}.")
-        
+
     # Check there are not directories (or other strange stuffs) in list_fpaths
     # TODO [KIMBO]
 
@@ -100,7 +104,7 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
     if debugging_mode:
         max_files = min(3, n_files)
         list_fpaths = list_fpaths[0:max_files]
-        
+
     # Log
     n_files = len(list_fpaths)
     msg = f" - {n_files} files to process in {raw_dir}"
@@ -121,7 +125,9 @@ def preprocess_reader_kwargs(reader_kwargs, lazy=True):
 
     # Preprocess the reader_kwargs
     reader_kwargs = reader_kwargs.copy()
-    if reader_kwargs.get("zipped"): # TODO: to provide example of this case for testing. I guess could be refactored
+    if reader_kwargs.get(
+        "zipped"
+    ):  # TODO: to provide example of this case for testing. I guess could be refactored
         reader_kwargs.pop("zipped", None)
         reader_kwargs.pop("blocksize", None)
         reader_kwargs.pop("file_name_to_read_zipped", None)
@@ -159,13 +165,13 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
     # Return dataframe
     return df
 
- 
+
 def cast_column_dtypes(df, sensor_name):
     "Convert 'object' dataframe columns into DISDRODB L0A dtype standards."
     # Cast dataframe to dtypes
-    dtype_dict = get_L0A_dtype(sensor_name) 
-    # Ensure time column is saved with seconds resolution 
-    dtype_dict['time'] = 'M8[s]'
+    dtype_dict = get_L0A_dtype(sensor_name)
+    # Ensure time column is saved with seconds resolution
+    dtype_dict["time"] = "M8[s]"
     # Get dataframe column names
     columns = list(df.columns)
     # Cast dataframe columns
@@ -198,15 +204,15 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
     Returns
     -------
     pandas.DataFrame or dask.DataFrame
-        Pandas or dask dataframe 
+        Pandas or dask dataframe
     """
     # Preprocess reader_kwargs
     reader_kwargs = preprocess_reader_kwargs(reader_kwargs, lazy=lazy)
-    
-    # Enforce all raw files columns with dtype = 'object' 
-    dtype = 'object'
-        
-    # Read with pandas or dask 
+
+    # Enforce all raw files columns with dtype = 'object'
+    dtype = "object"
+
+    # Read with pandas or dask
     # - Dask
     if lazy:
         try:
@@ -226,7 +232,7 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
             logger.exception(msg)
             print(msg)
             pass
-    # Return dataframe 
+    # Return dataframe
     return df
 
 
@@ -299,13 +305,13 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs, lazy=True):
 
 
 def read_L0A_raw_file_list(
-        file_list,
-        column_names,
-        reader_kwargs,
-        sensor_name,
-        verbose,
-        df_sanitizer_fun=None,
-        lazy=False,
+    file_list,
+    column_names,
+    reader_kwargs,
+    sensor_name,
+    verbose,
+    df_sanitizer_fun=None,
+    lazy=False,
 ):
     """Read and parse a list for raw files into a dataframe."""
     # ------------------------------------------------------.
@@ -314,26 +320,26 @@ def read_L0A_raw_file_list(
         if not callable(df_sanitizer_fun):
             raise ValueError("'df_sanitizer_fun' must be a function.")
         # TODO check df_sanitizer_fun has only lazy and df arguments !
-        
-    if isinstance(file_list, str): 
+
+    if isinstance(file_list, str):
         file_list = [file_list]
     if len(file_list) == 0:
         raise ValueError("'file_list' must contains at least 1 filepath.")
 
     # ------------------------------------------------------.
-    ### - Get station id from file_list 
-    station_id = infer_station_id_from_fpath(file_list[0]) 
-    
+    ### - Get station id from file_list
+    station_id = infer_station_id_from_fpath(file_list[0])
+
     # ------------------------------------------------------.
     ### - Loop over all raw files
     n_files = len(file_list)
     processed_file_counter = 0
     list_skipped_files_msg = []
     list_df = []
-    for filepath in file_list:       
+    for filepath in file_list:
         # Try to process a raw file
         try:
-            #-----------------------------------------------------------------.
+            # -----------------------------------------------------------------.
             # ---------------> THIS SHOULD BE REFACTORED  <-------------------.
             # Open the zip and choose the raw file (for GPM campaign)
             if reader_kwargs.get("zipped"):
@@ -363,7 +369,9 @@ def read_L0A_raw_file_list(
             # Check column number, ignore if columns_names empty
             if len(column_names) != 0:
                 if len(df.columns) != len(column_names):
-                    msg = f" - {filepath} has wrong columns number, and has been skipped."
+                    msg = (
+                        f" - {filepath} has wrong columns number, and has been skipped."
+                    )
                     log_warning(logger, msg, verbose)
                     list_skipped_files_msg.append(msg)
                     continue
@@ -373,15 +381,15 @@ def read_L0A_raw_file_list(
             if df_sanitizer_fun is not None:
                 df = df_sanitizer_fun(df, lazy=lazy)
 
-            #-------------------------------------------------------.
+            # -------------------------------------------------------.
             # TODO: Make a check to detect that the number of columns does not vary !!!!
-            # - Might facilitate identification of buzzy stuffs 
+            # - Might facilitate identification of buzzy stuffs
             # - Ensure that df_sanitizer_fun capture all problems
-            
+
             # ------------------------------------------------------.
-            # Check column names met DISDRODB standards 
+            # Check column names met DISDRODB standards
             check_L0A_column_names(df, sensor_name=sensor_name)
-            
+
             # ------------------------------------------------------.
             # Cast dataframe to dtypes
             # - TODO: I would move that after the concatenation !!!
@@ -413,21 +421,21 @@ def read_L0A_raw_file_list(
 
     ##----------------------------------------------------------------.
     #### - Concatenate the dataframe
-    if len(list_df) == 0: 
+    if len(list_df) == 0:
         raise ValueError(f"No dataframe to return. Impossible to parse {file_list}.")
-    if len(list_df) > 1: 
+    if len(list_df) > 1:
         df = concatenate_dataframe(list_df, verbose=verbose, lazy=lazy)
-    else: 
+    else:
         df = list_df[0]
-    
+
     # ------------------------------------------------------.
     #### - Filter out problematic data reported in issue file
     # TODO: [TEST IMPLEMENTATION] remove_problematic_timestamp in dev/TODO_issue_code.py
     # issue_dict = read_issue(raw_dir, station_id)
     # df = remove_problematic_timestamp(df, issue_dict, verbose)
-    
+
     # ------------------------------------------------------.
-    # Return the dataframe 
+    # Return the dataframe
     return df
 
 
@@ -442,6 +450,7 @@ def _write_to_parquet(df, fpath, force=False):
     _remove_if_exists(fpath, force=force)
     # Cannot create the station folder, so has to be created manually
     from disdrodb.L0.io import _create_directory
+
     _create_directory(os.path.dirname(fpath))
 
     # -------------------------------------------------------------------------.
