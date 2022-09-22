@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Thu Mar 31 09:55:54 2022
 
+@author: kimbo
+"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -58,12 +62,7 @@ from disdrodb.L0 import run_L0
     help="Force overwriting",
 )
 @click.option(
-    "-v",
-    "--verbose",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Verbose",
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
 )
 @click.option(
     "-d",
@@ -101,7 +100,7 @@ def main(
     lazy=True,
     single_netcdf=True,
 ):
-    """Script to process raw data to L0 and L1. \f
+    """Script to process raw data to L0A and L0B format.
 
     Parameters
     ----------
@@ -112,44 +111,47 @@ def main(
         The directory must have the following structure:
         - /data/<station_id>/<raw_files>
         - /metadata/<station_id>.json
-        For each <station_id> there must be a corresponding JSON file
-        in the metadata subfolder.
+        Important points:
+        - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
+        - The <campaign_name> must semantically match between:
+           - the raw_dir and processed_dir directory paths;
+           - with the key 'campaign_name' within the metadata YAML files.
+        - The campaign_name are set to be UPPER CASE.
     processed_dir : str
-        Desired directory path for the processed L0 and L1 products.
+        Desired directory path for the processed L0A and L0B products.
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    l0_processing : bool
-        Whether to launch processing to generate L0 Apache Parquet file(s) from raw data.
-        The default is True.
-    l1_processing : bool
-        Whether to launch processing to generate L1 netCDF4 file(s) from source netCDF or L0 data.
-        The default is True.
-    write_netcdf: bool
-        Whether to save L1 as netCDF4 archive
-        Write_netcdf must be True.
+    L0A_processing : bool
+      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+      The default is True.
+    L0B_processing : bool
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+      The default is True.
+    keep_L0A : bool
+        Whether to keep the L0A files after having generated the L0B netCDF products.
+        The default is False.
     force : bool
         If True, overwrite existing data into destination directories.
         If False, raise an error if there are already data into destination directories.
-        The default is False
+        The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        - For L0 processing, it processes just 3 raw data files.
-        - For L1 processing, it takes a small subset of the Apache Parquet dataframe.
+        - For L0A processing, it processes just 3 raw data files.
+        - For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
         The default is False.
     lazy : bool
         Whether to perform processing lazily with dask.
         If lazy=True, it employed dask.array and dask.dataframe.
         If lazy=False, it employed pandas.DataFrame and numpy.array.
         The default is True.
-
-    Additional information:
-    - The campaign name must semantically match between:
-       - The ends of raw_dir and processed_dir paths
-       - The attribute 'campaign' within the metadata JSON file.
-    - The campaign name are set to be UPPER CASE.
+    single_netcdf : bool
+        Whether to concatenate all raw files into a single L0B netCDF file.
+        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
+        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
+        The default is True.
 
     """
     ####----------------------------------------------------------------------.
@@ -160,28 +162,104 @@ def main(
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-    column_names = ["TO_SPLIT"]
-    ##----------------------------------------------------------------------------.
+
+    column_names = ["temp"]
+
+    column_names_2 = [
+        "start_identifier",
+        "sensor_serial_number",
+        "software_version",
+        "date_sensor",
+        "time_sensor",
+        "weather_code_synop_4677_5min",
+        "weather_code_synop_4680_5min",
+        "weather_code_metar_4678_5min",
+        "precipitation_rate_5min",
+        "weather_code_synop_4677",
+        "weather_code_synop_4680",
+        "weather_code_metar_4678",
+        "precipitation_rate",  # intensity_total
+        "rainfall_rate",  # intensity_liquid
+        "snowfall_rate",  # intensity_solid
+        "precipitation_accumulated",  # accum_precip
+        "mor_visibility",  # maximum_visibility
+        "reflectivity",  # radar_reflectivity
+        "quality_index",  # [0-100]
+        "max_hail_diameter",
+        "laser_status",
+        "static_signal",
+        "laser_temperature_analog_status",
+        "laser_temperature_digital_status",
+        "laser_current_analog_status",
+        "laser_current_digital_status",
+        "sensor_voltage_supply_status",
+        "current_heating_pane_transmitter_head_status",
+        "current_heating_pane_receiver_head_status",
+        "temperature_sensor_status",
+        "current_heating_voltage_supply_status",
+        "current_heating_house_status",
+        "current_heating_heads_status",
+        "current_heating_carriers_status",
+        "control_output_laser_power_status",
+        "reserve_status",
+        "temperature_interior",
+        "laser_temperature",
+        "laser_current_average",
+        "control_voltage",
+        "optical_control_voltage_output",
+        "sensor_voltage_supply",
+        "current_heating_pane_transmitter_head",
+        "current_heating_pane_receiver_head",
+        "temperature_ambient",
+        "current_heating_voltage_supply",
+        "current_heating_house",
+        "current_heating_heads",
+        "current_heating_carriers",
+        "number_particles",
+        "number_particles_internal_data",
+        "number_particles_min_speed",
+        "number_particles_min_speed_internal_data",
+        "number_particles_max_speed",
+        "number_particles_max_speed_internal_data",
+        "number_particles_min_diameter",
+        "number_particles_min_diameter_internal_data",
+        "number_particles_no_hydrometeor",
+        "number_particles_no_hydrometeor_internal_data",
+        "number_particles_unknown_classification",
+        "number_particles_unknown_classification_internal_data",
+        "number_particles_class_1",
+        "number_particles_class_1_internal_data",
+        "number_particles_class_2",
+        "number_particles_class_2_internal_data",
+        "number_particles_class_3",
+        "number_particles_class_3_internal_data",
+        "number_particles_class_4",
+        "number_particles_class_4_internal_data",
+        "number_particles_class_5",
+        "number_particles_class_5_internal_data",
+        "number_particles_class_6",
+        "number_particles_class_6_internal_data",
+        "number_particles_class_7",
+        "number_particles_class_7_internal_data",
+        "number_particles_class_8",
+        "number_particles_class_8_internal_data",
+        "number_particles_class_9",
+        "number_particles_class_9_internal_data",
+        "raw_drop_number",
+    ]
+
+    ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
 
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
+    reader_kwargs["delimiter"] = "\n"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # Skip the first row (header)
-    reader_kwargs["skiprows"] = 1
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
-    # Define encoding
-    reader_kwargs["encoding"] = "latin1"
 
     # - Define reader engine
     #   - C engine is faster
@@ -196,17 +274,25 @@ def main(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error"]
+    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
+    # Cast all to string
+    reader_kwargs["dtype"] = str
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    df_sanitizer_fun = None
+
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
@@ -214,53 +300,36 @@ def main(
         else:
             import pandas as dd
 
-        # The delimiter ; is used for separating both the variables and the
-        #   values of the raw spectrum.  So we need to retrieve the columns
-        #   inside the sanitizer assuming a fixed number of columns.
-        df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
+        # Split columns
+        df = df["temp"].str.split(";", n=79, expand=True)
 
-        # Define the column names
-        column_names = [
-            "date",
-            "time",
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_temperature",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "rain_kinetic_energy",
-            "snowfall_rate",
-            "weather_code_synop_4680",
-            "weather_code_metar_4678",
-            "weather_code_nws",
-            "raw_drop_number",
-        ]
-        df.columns = column_names
+        # Rename columns
+        df.columns = column_names_2
 
-        # Define the time column
-        df["time"] = df["date"] + "-" + df["time"]
-        df["time"] = dd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S")
-        df = df.drop(columns=["date"])
+        # Remove checksum at end of raw_drop_number
+        df["raw_drop_number"] = df["raw_drop_number"].str.slice(stop=1760)
 
-        # Preprocess the raw spectrum
-        # - The '<SPECTRUM>ZERO</SPECTRUM>'  indicates no drops detected
-        # - So replace the string with '' so that L0B processing generate a matrix filled by 0s.
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            "<SPECTRUM>ZERO</SPECTRUM>", "''"
-        )
-        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+        # Time
+        if lazy:
+            df["time"] = df[["time_sensor", "date_sensor"]].apply(
+                lambda x: " ".join(x), axis=1, meta=(None, "object")
+            )
+        else:
+            df["time"] = df[["time_sensor", "date_sensor"]].apply(
+                lambda x: " ".join(x), axis=1
+            )
+        # - Convert time column to datetime
+        df["time"] = dd.to_datetime(df["time"], format="%H:%M:%S %d.%m.%y")
+
+        to_drop = ["date_sensor", "time_sensor"]
+
+        df = df.drop(columns=to_drop)
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.txt"  # There is only one file without extension
+    files_glob_pattern = "*.txt*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products
@@ -273,7 +342,7 @@ def main(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=False,  # The actual solution work only with pandas, to change in the future
+        lazy=lazy,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

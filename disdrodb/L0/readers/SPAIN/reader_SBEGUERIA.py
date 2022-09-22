@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Mar 15 09:48:21 2022
 
+@author: kimbo
+"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -18,12 +23,71 @@
 # -----------------------------------------------------------------------------.
 import click
 from disdrodb.L0 import run_L0
-from disdrodb.L0 import click_L0_readers_options
 
 # -------------------------------------------------------------------------.
 # CLIck Command Line Interface decorator
 @click.command()  # options_metavar='<options>'
-@click_L0_readers_options
+@click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
+@click.argument("processed_dir", metavar="<processed_dir>")
+@click.option(
+    "-l0a",
+    "--l0a_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0A processing",
+)
+@click.option(
+    "-l0b",
+    "--l0b_processing",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Perform L0B processing",
+)
+@click.option(
+    "-k",
+    "--keep_l0a",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Whether to keep the l0a Parquet file",
+)
+@click.option(
+    "-f",
+    "--force",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Force overwriting",
+)
+@click.option(
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+)
+@click.option(
+    "-d",
+    "--debugging_mode",
+    type=bool,
+    show_default=True,
+    default=False,
+    help="Switch to debugging mode",
+)
+@click.option(
+    "-l",
+    "--lazy",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Use dask if lazy=True",
+)
+@click.option(
+    "-s",
+    "--single_netcdf",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Produce single netCDF",
+)
 def main(
     raw_dir,
     processed_dir,
@@ -33,10 +97,11 @@ def main(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=False,
+    lazy=True,
     single_netcdf=True,
 ):
     """Script to process raw data to L0A and L0B format.
+
     Parameters
     ----------
     raw_dir : str
@@ -56,13 +121,13 @@ def main(
         Desired directory path for the processed L0A and L0B products.
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    l0a_processing : bool
+    L0A_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
-    l0b_processing : bool
+    L0B_processing : bool
       Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
       The default is True.
-    keep_l0a : bool
+    keep_L0A : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     force : bool
@@ -87,47 +152,94 @@ def main(
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
+
     """
     ####----------------------------------------------------------------------.
     ###########################
     #### CUSTOMIZABLE CODE ####
     ###########################
     #### - Define raw data headers
+    # Notes
+    # - In all files, the datalogger voltage hasn't the delimeter,
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
+
+    # These are the variables included in the datasets:
+
+    # var			full name										units
+
+    # Time		time of the record								Y-m-d hh:mm:ss
+    # Event		event ID 										(factor)
+    # ID			disdromter ID 									(factor: T1, T2, P1, P2)
+    # Serial		disdrometer serial number						(factor)
+    # Type		disdrometer type 								(factor: Thi, Par)
+    # Mast		mast ID											(factor: 1, 2)
+    # NP_meas		number of particles detected					(-)
+    # R_meas		rainfall intensity, as outputted by the device	mm h−1
+    # Z_meas		radar reflectivity, as outputted by the device	dB mm6 m−3
+    # E_meas		erosivity, as outputted by the device			J m−2 mm−1
+    # Pcum_meas	cumulative rainfall amount						mm
+    # Ecum_meas	cumulative kinetic energy						J m−2 mm−1
+    # NP			number of particles detected					(-)
+    # ND			particle density								m−3 mm−1
+    # R			rainfall intensity								mm h−1
+    # P			rainfall amount									mm
+    # Z			radar reflectivity								dB mm6 m−3
+    # M			water content									gm−3
+    # E			kinetic energy									J m−2 mm−1
+    # Pcum		cumulative rainfall amount						mm
+    # Ecum		cumulative kinetic energy						J m−2 mm−1
+    # D10			drop diameter’s 10th percentile					mm
+    # D25			drop diameter’s 25th percentile					mm
+    # D50			drop diameter’s 50th percentile					mm
+    # D75			drop diameter’s 75th percentile					mm
+    # D90			drop diameter’s 90th percentile					mm
+    # Dm			mean drop diameter								mm
+    # V10			drop velocity’s 10th percentile					m s−1
+    # V25			drop velocity’s 25th percentile					m s−1
+    # V50			drop velocity’s 50th percentile					m s−1
+    # V75			drop velocity’s 75th percentile					m s−1
+    # V90			drop velocity’s 90th percentile					m s−1
+    # Vm			mean drop velocity								m s−1
+
     column_names = [
-        "date",
         "time",
-        "status",
-        "interval",
-        "n1",
-        "n2",
-        "n3",
-        "n4",
-        "n5",
-        "n6",
-        "n7",
-        "n8",
-        "n9",
-        "n10",
-        "n11",
-        "n12",
-        "n13",
-        "n14",
-        "n15",
-        "n16",
-        "n17",
-        "n18",
-        "n19",
-        "n20",
-        "RI",
-        "RA",
-        "RAT",
+        "id",
+        "disdromter_ID",  # to_drop
+        "disdrometer_serial",  # to_drop
+        "disdrometer_type",  # to_drop
+        "mast_ID",  # to_drop
+        "number_particles_meas",  # to_drop
+        "rainfall_rate_32bit_meas",  # to_drop
+        "reflectivity_32bit_meas",  # to_drop
+        "mor_visibility_meas",  # to_drop
+        "rainfall_accumulated_32bit_meas",  # to_drop
+        "rain_kinetic_energy_meas",
+        "number_particles",
+        "rainfall_rate_32bit",
+        "reflectivity_32bit",
+        "temp",  # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
+        "rainfall_accumulated_32bit",
+        "rain_kinetic_energy",
+        "D10",  # I don't know what to do with this
+        "D25",  # I don't know what to do with this
+        "D50",  # I don't know what to do with this
+        "D75",  # I don't know what to do with this
+        "D90",  # I don't know what to do with this
+        "Dm",  # I don't know what to do with this
+        "V10",  # I don't know what to do with this
+        "V25",  # I don't know what to do with this
+        "V50",  # I don't know what to do with this
+        "V75",  # I don't know what to do with this
+        "V90",  # I don't know what to do with this
+        "Vm",  # I don't know what to do with this
     ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
+
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\t"
+    reader_kwargs["delimiter"] = ","
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
@@ -148,26 +260,25 @@ def main(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error"]
+    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Skip header
-    reader_kwargs["header"] = None
+    # Cast all to string
+    reader_kwargs["dtype"] = str
 
     # Skip first row as columns names
-    reader_kwargs["skiprows"] = 1
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
+    reader_kwargs["header"] = None
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    df_sanitizer_fun = None
+
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
@@ -175,53 +286,44 @@ def main(
         else:
             import pandas as dd
 
-        # Replace 'status' NaN with 0
-        df["status"] = df["status"].fillna(0)
+        # # Drop useless columns
+        df = df.drop(
+            columns=[
+                "id",
+                "disdromter_ID",  # to_drop
+                "disdrometer_serial",  # to_drop
+                "disdrometer_type",  # to_drop
+                "mast_ID",  # to_drop
+                "number_particles_meas",  # to_drop
+                "rainfall_rate_32bit_meas",  # to_drop
+                "reflectivity_32bit_meas",  # to_drop
+                "temp",  # I think is mor_visibility, but not sure about this, give error because values are like: 0.00386755693894061
+                "mor_visibility_meas",  # to_drop
+                "rainfall_accumulated_32bit_meas",  # to_drop
+                "rain_kinetic_energy_meas",
+                "D10",  # I don't know what to do with this
+                "D25",  # I don't know what to do with this
+                "D50",  # I don't know what to do with this
+                "D75",  # I don't know what to do with this
+                "D90",  # I don't know what to do with this
+                "Dm",  # I don't know what to do with this
+                "V10",  # I don't know what to do with this
+                "V25",  # I don't know what to do with this
+                "V50",  # I don't know what to do with this
+                "V75",  # I don't know what to do with this
+                "V90",  # I don't know what to do with this
+                "Vm",  # I don't know what to do with this
+            ]
+        )
 
-        # Replace all ',' with '.' in RI, RA, RAT
-        df["RI"] = df["RI"].replace({",": "."}, regex=True)
-        df["RA"] = df["RA"].replace({",": "."}, regex=True)
-        df["RAT"] = df["RAT"].replace({",": "."}, regex=True)
-
-        # Define time column
-        df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
+        # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
-        df = df.drop(columns=["date"])
 
-        # Create raw_drop_concentration string
-        bin_columns = [
-            "n1",
-            "n2",
-            "n3",
-            "n4",
-            "n5",
-            "n6",
-            "n7",
-            "n8",
-            "n9",
-            "n10",
-            "n11",
-            "n12",
-            "n13",
-            "n14",
-            "n15",
-            "n16",
-            "n17",
-            "n18",
-            "n19",
-            "n20",
-        ]
-
-        df["raw_drop_number"] = ""
-        for c in bin_columns:
-            df["raw_drop_number"] += df[c].astype(str) + ";"
-
-        df = df.drop(columns=bin_columns)
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.txt"
+    files_glob_pattern = "*.csv*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products

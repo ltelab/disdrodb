@@ -33,10 +33,11 @@ def main(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=False,
+    lazy=True,
     single_netcdf=True,
 ):
     """Script to process raw data to L0A and L0B format.
+
     Parameters
     ----------
     raw_dir : str
@@ -87,6 +88,7 @@ def main(
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
+
     """
     ####----------------------------------------------------------------------.
     ###########################
@@ -94,42 +96,39 @@ def main(
     ###########################
     #### - Define raw data headers
     column_names = [
-        "date",
+        "id",
+        "latitude",
+        "longitude",
         "time",
-        "status",
-        "interval",
-        "n1",
-        "n2",
-        "n3",
-        "n4",
-        "n5",
-        "n6",
-        "n7",
-        "n8",
-        "n9",
-        "n10",
-        "n11",
-        "n12",
-        "n13",
-        "n14",
-        "n15",
-        "n16",
-        "n17",
-        "n18",
-        "n19",
-        "n20",
-        "RI",
-        "RA",
-        "RAT",
+        "datalogger_temperature",
+        "datalogger_voltage",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "laser_amplitude",
+        "number_particles",
+        "sensor_temperature",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
+        "sensor_status",
+        "rainfall_amount_absolute_32bit",
+        "error_code",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+        "datalogger_error",
     ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\t"
+    reader_kwargs["delimiter"] = ","
 
-    # - Avoid first column to become df index !!!
+    # - Avoid first column to become df index
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
@@ -155,19 +154,12 @@ def main(
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Skip header
-    reader_kwargs["header"] = None
-
-    # Skip first row as columns names
-    reader_kwargs["skiprows"] = 1
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
-
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    # - Enable to standardize raw data files to L0 standards
+    df_sanitizer_fun = None
+
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
@@ -175,62 +167,36 @@ def main(
         else:
             import pandas as dd
 
-        # Replace 'status' NaN with 0
-        df["status"] = df["status"].fillna(0)
-
-        # Replace all ',' with '.' in RI, RA, RAT
-        df["RI"] = df["RI"].replace({",": "."}, regex=True)
-        df["RA"] = df["RA"].replace({",": "."}, regex=True)
-        df["RAT"] = df["RAT"].replace({",": "."}, regex=True)
-
-        # Define time column
-        df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
-        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
-        df = df.drop(columns=["date"])
-
-        # Create raw_drop_concentration string
-        bin_columns = [
-            "n1",
-            "n2",
-            "n3",
-            "n4",
-            "n5",
-            "n6",
-            "n7",
-            "n8",
-            "n9",
-            "n10",
-            "n11",
-            "n12",
-            "n13",
-            "n14",
-            "n15",
-            "n16",
-            "n17",
-            "n18",
-            "n19",
-            "n20",
+        # - Drop datalogger columns
+        columns_to_drop = [
+            "id",
+            "datalogger_temperature",
+            "datalogger_voltage",
+            "datalogger_error",
         ]
+        df = df.drop(columns=columns_to_drop)
 
-        df["raw_drop_number"] = ""
-        for c in bin_columns:
-            df["raw_drop_number"] += df[c].astype(str) + ";"
+        # - Drop latitude and longitude
+        # --> Latitude and longitude is specified in the the metadata.yaml
+        df = df.drop(columns=["latitude", "longitude"])
 
-        df = df.drop(columns=bin_columns)
+        # - Convert time column to datetime with resolution in seconds
+        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.txt"
+    #### - Define glob pattern to search data files within raw_dir/data/<station_id>
+    files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products
     run_L0(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
+        L0A_processing=L0A_processing,
+        L0B_processing=L0B_processing,
+        keep_L0A=keep_L0A,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,

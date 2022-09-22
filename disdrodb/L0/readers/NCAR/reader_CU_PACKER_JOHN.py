@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Wed Aug 17 10:23:23 2022
+
+@author: kimbo
+"""
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -58,12 +63,7 @@ from disdrodb.L0 import run_L0
     help="Force overwriting",
 )
 @click.option(
-    "-v",
-    "--verbose",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Verbose",
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
 )
 @click.option(
     "-d",
@@ -160,28 +160,19 @@ def main(
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-    column_names = ["TO_SPLIT"]
-    ##----------------------------------------------------------------------------.
+    column_names = ["temp"]
+
+    ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # Skip the first row (header)
-    reader_kwargs["skiprows"] = 1
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
-    # Define encoding
-    reader_kwargs["encoding"] = "latin1"
 
     # - Define reader engine
     #   - C engine is faster
@@ -203,64 +194,103 @@ def main(
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    df_sanitizer_fun = None
+
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
+        # No lazy mode for now
         if lazy:
-            import dask.dataframe as dd
+            import pandas as dd
+
+            df = df.compute()
         else:
             import pandas as dd
 
-        # The delimiter ; is used for separating both the variables and the
-        #   values of the raw spectrum.  So we need to retrieve the columns
-        #   inside the sanitizer assuming a fixed number of columns.
-        df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
+        # Reshape dataframe
+        a = df.to_numpy()
+        a = a.reshape(int(len(a) / 97), 97)
+        df = dd.DataFrame(a)
 
-        # Define the column names
-        column_names = [
-            "date",
-            "time",
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_temperature",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "rain_kinetic_energy",
-            "snowfall_rate",
-            "weather_code_synop_4680",
-            "weather_code_metar_4678",
-            "weather_code_nws",
-            "raw_drop_number",
-        ]
-        df.columns = column_names
+        # Remove number before data
+        for col in df:
+            df[col] = df[col].str[3:]
 
-        # Define the time column
-        df["time"] = df["date"] + "-" + df["time"]
-        df["time"] = dd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S")
-        df = df.drop(columns=["date"])
+        # Rename columns
+        import numpy as np
 
-        # Preprocess the raw spectrum
-        # - The '<SPECTRUM>ZERO</SPECTRUM>'  indicates no drops detected
-        # - So replace the string with '' so that L0B processing generate a matrix filled by 0s.
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            "<SPECTRUM>ZERO</SPECTRUM>", "''"
+        df.columns = np.arange(1, 98)
+
+        col = {
+            1: "rainfall_rate_32bit",
+            2: "rainfall_accumulated_32bit",
+            3: "weather_code_synop_4680",
+            4: "weather_code_synop_4677",
+            5: "weather_code_metar_4678",
+            6: "weather_code_nws",
+            7: "reflectivity_32bit",
+            8: "mor_visibility",
+            9: "sample_interval",
+            10: "laser_amplitude",
+            11: "number_particles",
+            12: "sensor_temperature",
+            13: "sensor_serial_number",
+            14: "firmware_iop",
+            15: "firmware_dsp",
+            16: "sensor_heating_current",
+            17: "sensor_battery_voltage",
+            18: "sensor_status",
+            19: "start_time",
+            20: "sensor_time",
+            21: "sensor_date",
+            22: "station_name",
+            23: "station_number",
+            24: "rainfall_amount_absolute_32bit",
+            25: "error_code",
+            30: "rainfall_rate_16_bit_30",
+            31: "rainfall_rate_16_bit_1200",
+            32: "rainfall_accumulated_16bit",
+            90: "raw_drop_concentration",
+            91: "raw_drop_average_velocity",
+            92: "raw_drop_number",
+        }
+
+        df = df.rename(col, axis=1)
+
+        # Cast time
+        df["time"] = dd.to_datetime(
+            df["sensor_date"] + "-" + df["sensor_time"], format="%d.%m.%Y-%H:%M:%S"
         )
-        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+        df = df.drop(columns=["sensor_date", "sensor_time"])
+
+        # Drop useless columns
+        df.replace("", np.nan, inplace=True)
+        df.dropna(how="all", axis=1, inplace=True)
+        col_to_drop = [93, 94, 95, 96, 97]
+        df = df.drop(columns=col_to_drop)
+
+        # Trim weather_code_metar_4678 and weather_code_nws
+        df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
+        df["weather_code_nws"] = df["weather_code_nws"].str.strip()
+
+        # Delete invalid columsn by check_L0A
+        col_to_drop = ["rainfall_rate_16_bit_1200", "rainfall_rate_16_bit_30"]
+        df = df.drop(columns=col_to_drop)
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.txt"  # There is only one file without extension
+    files_glob_pattern = "*.dat"  # There is only one file without extension
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products
@@ -273,7 +303,7 @@ def main(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=False,  # The actual solution work only with pandas, to change in the future
+        lazy=lazy,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,
