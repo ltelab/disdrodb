@@ -7,7 +7,7 @@ Created on Sat Jan  1 17:18:04 2022
 """
 import os
 import subprocess
-from disdrodb.utils.parser import get_parser_cmd
+from disdrodb.pipeline.utils_cmd import get_parser_cmd
 from pathlib import Path
 
 # You need to set the disdrodb repo path in your .bashrc
@@ -28,14 +28,15 @@ processed_base_dir = "/tmp/Processed"
 # processed_base_dir = "/tmp/Processed/DELFT"
 
 #### Processing settings
-l0_processing = True
-l1_processing = True
+l0a_processing = True
+l0b_processing = True
 force = True
 verbose = True
 debugging_mode = False  # da cambiare se vuoi processare piu dei primi 5 files
 lazy = False
 # write_zarr = False
-write_netcdf = True
+keep_l0a = True
+single_netcdf = True
 
 #### Process all campaigns
 for campaign_name in DELFT_dict.keys():
@@ -44,13 +45,14 @@ for campaign_name in DELFT_dict.keys():
         parser_filepath=parser_filepath,
         raw_dir=os.path.join(raw_base_dir, campaign_name),
         processed_dir=os.path.join(processed_base_dir, campaign_name),
-        l0_processing=l0_processing,
-        l1_processing=l1_processing,
-        write_netcdf=write_netcdf,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
         lazy=lazy,
+        single_netcdf=single_netcdf,
     )
 
     subprocess.run(cmd, shell=True)

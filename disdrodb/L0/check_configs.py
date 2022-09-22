@@ -6,7 +6,7 @@ Created on Wed Jun 22 17:07:56 2022
 @author: ghiggi
 """
 import numpy as np
-from disdrodb.standards import (
+from disdrodb.L0.standards import (
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,
