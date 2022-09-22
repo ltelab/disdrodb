@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Thu Aug  4 10:34:08 2022
+
+@author: kimbo
+"""
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -58,12 +63,7 @@ from disdrodb.L0 import run_L0
     help="Force overwriting",
 )
 @click.option(
-    "-v",
-    "--verbose",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Verbose",
+    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
 )
 @click.option(
     "-d",
@@ -160,28 +160,34 @@ def main(
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-    column_names = ["TO_SPLIT"]
-    ##----------------------------------------------------------------------------.
+    column_names = [
+        "day",
+        "month",
+        "year",
+        "hour_minute",
+        "second",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_metar_4678",
+        "reflectivity_16bit",
+        "mor_visibility",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+        "unknown_field_to_drop",
+    ]
+
+    ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
+    reader_kwargs["delimiter"] = ","
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # Skip the first row (header)
-    reader_kwargs["skiprows"] = 1
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
-    # Define encoding
-    reader_kwargs["encoding"] = "latin1"
 
     # - Define reader engine
     #   - C engine is faster
@@ -203,64 +209,71 @@ def main(
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    df_sanitizer_fun = None
+
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
-            import dask.dataframe as dd
+            import pandas as dd
+
+            df = df.compute()
         else:
             import pandas as dd
 
-        # The delimiter ; is used for separating both the variables and the
-        #   values of the raw spectrum.  So we need to retrieve the columns
-        #   inside the sanitizer assuming a fixed number of columns.
-        df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
-
-        # Define the column names
-        column_names = [
-            "date",
-            "time",
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_temperature",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "rain_kinetic_energy",
-            "snowfall_rate",
-            "weather_code_synop_4680",
-            "weather_code_metar_4678",
-            "weather_code_nws",
-            "raw_drop_number",
-        ]
-        df.columns = column_names
-
-        # Define the time column
-        df["time"] = df["date"] + "-" + df["time"]
-        df["time"] = dd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S")
-        df = df.drop(columns=["date"])
-
-        # Preprocess the raw spectrum
-        # - The '<SPECTRUM>ZERO</SPECTRUM>'  indicates no drops detected
-        # - So replace the string with '' so that L0B processing generate a matrix filled by 0s.
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            "<SPECTRUM>ZERO</SPECTRUM>", "''"
+        # Parse time
+        df["time"] = (
+            df["day"].astype(str)
+            + "-"
+            + df["month"].astype(str)
+            + "-"
+            + df["year"].astype(str)
+            + " "
+            + df["hour_minute"].astype(str)
+            + ":"
+            + df["second"].astype(str)
         )
-        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
+
+        # Drop unrequired columns for L0
+        df = df.drop(
+            columns=[
+                "unknown_field_to_drop",
+                "day",
+                "month",
+                "year",
+                "hour_minute",
+                "second",
+            ]
+        )
+
+        # Trim weather_code_metar_4678
+        df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
+
+        # Set NaN rows with corrupted values
+        numeric_columns = [
+            "rainfall_accumulated_32bit",
+            "rainfall_rate_32bit",
+            "reflectivity_16bit",
+            "mor_visibility",
+        ]
+        for c in numeric_columns:
+            df[c] = dd.to_numeric(df[c], errors="coerce")
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.txt"  # There is only one file without extension
+    files_glob_pattern = "*.dat"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products
@@ -273,7 +286,7 @@ def main(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=False,  # The actual solution work only with pandas, to change in the future
+        lazy=lazy,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

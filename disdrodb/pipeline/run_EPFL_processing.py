@@ -7,7 +7,7 @@ Created on Sat Jan  1 17:18:04 2022
 """
 import os
 import subprocess
-from disdrodb.pipeline.utils_cmd import get_parser_cmd
+from disdrodb.pipeline.utils_cmd import get_reader_cmd
 
 # You need to set the disdrodb repo path in your .bashrc
 # export PYTHONPATH="${PYTHONPATH}:/home/ghiggi/Projects/disdrodb"
@@ -16,34 +16,34 @@ from disdrodb.pipeline.utils_cmd import get_parser_cmd
 # -----------------------------------------------------------------------------.
 #### Define campaign dictionary
 EPFL_dict = {
-    "LOCARNO_2018": "parser_LOCARNO_2018.py",
-    "PARSIVEL_2007": "parser_PARSIVEL_2007.py",
-    "GENEPI_2007": "parser_GENEPI_2007.py",  # Asked to discard into metadata
-    "EPFL_ROOF_2008_1": "parser_EPFL_ROOF_2008_1.py",
-    "EPFL_ROOF_2008_2": "parser_EPFL_ROOF_2008_2.py",
-    "EPFL_ROOF_2011": "parser_EPFL_ROOF_2011.py",
-    "EPFL_ROOF_2012": "parser_EPFL_ROOF_2012.py",
-    "EPFL_2009": "parser_EPFL_2009.py",
-    "DAVOS_2009_2011": "parser_DAVOS_2009_2011.py",
-    "HPICONET_2010": "parser_HPICONET_2010.py",
-    "COMMON_2011": "parser_COMMON_2011.py",
-    "RIETHOLZBACK_2011": "parser_RIETHOLZBACK_2011.py",
-    "HYMEX": "parser_HYMEX.py",
-    "HYMEX": "parser_HYMEX.py",
-    "PARADISO_2014": "parser_PARADISO_2014.py",
-    "SAMOYLOV_2017_2019": "parser_SAMOYLOV_2017_2019.py",
-    "LOCARNO_2018": "parser_LOCARNO_2018.py",
-    "PLATO_2019": "parser_PLATO_2019.py",
-    "DAVOS_2009": "parser_DAVOS_2009.py",
-    "EPFL_ROOF_2010": "parser_EPFL_ROOF_2010.py",
-    "PARADISO_2014": "parser_PARADISO_2014.py",
-    "RACLETS_2019": "parser_RACLETS_2019.py",
-    "SAMOYLOV_2017_2019": "parser_SAMOYLOV_2017_2019.py",
+    "LOCARNO_2018": "reader_LOCARNO_2018.py",
+    "PARSIVEL_2007": "reader_PARSIVEL_2007.py",
+    "GENEPI_2007": "reader_GENEPI_2007.py",  # Asked to discard into metadata
+    "EPFL_ROOF_2008_1": "reader_EPFL_ROOF_2008_1.py",
+    "EPFL_ROOF_2008_2": "reader_EPFL_ROOF_2008_2.py",
+    "EPFL_ROOF_2011": "reader_EPFL_ROOF_2011.py",
+    "EPFL_ROOF_2012": "reader_EPFL_ROOF_2012.py",
+    "EPFL_2009": "reader_EPFL_2009.py",
+    "DAVOS_2009_2011": "reader_DAVOS_2009_2011.py",
+    "HPICONET_2010": "reader_HPICONET_2010.py",
+    "COMMON_2011": "reader_COMMON_2011.py",
+    "RIETHOLZBACK_2011": "reader_RIETHOLZBACK_2011.py",
+    "HYMEX": "reader_HYMEX.py",
+    "HYMEX": "reader_HYMEX.py",
+    "PARADISO_2014": "reader_PARADISO_2014.py",
+    "SAMOYLOV_2017_2019": "reader_SAMOYLOV_2017_2019.py",
+    "LOCARNO_2018": "reader_LOCARNO_2018.py",
+    "PLATO_2019": "reader_PLATO_2019.py",
+    "DAVOS_2009": "reader_DAVOS_2009.py",
+    "EPFL_ROOF_2010": "reader_EPFL_ROOF_2010.py",
+    "PARADISO_2014": "reader_PARADISO_2014.py",
+    "RACLETS_2019": "reader_RACLETS_2019.py",
+    "SAMOYLOV_2017_2019": "reader_SAMOYLOV_2017_2019.py",
 }
 
 #### Define filepaths
-parser_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL"  # TODO: this should change to the current package
-parser_dir = "~/disdrodb/disdrodb/L0/readers/EPFL"
+reader_dir = "/ltenas3/0_Projects/disdrodb/disdrodb/readers/EPFL"  # TODO: this should change to the current package
+reader_dir = "~/disdrodb/disdrodb/L0/readers/EPFL"
 
 raw_base_dir = "/ltenas3/0_Data/DISDRODB/Raw/EPFL"
 
@@ -65,9 +65,9 @@ single_netcdf = True
 
 #### Process all campaigns
 for campaign_name in EPFL_dict.keys():
-    parser_filepath = os.path.join(parser_dir, EPFL_dict[campaign_name])
-    cmd = get_parser_cmd(
-        parser_filepath=parser_filepath,
+    reader_filepath = os.path.join(reader_dir, EPFL_dict[campaign_name])
+    cmd = get_reader_cmd(
+        reader_filepath=reader_filepath,
         raw_dir=os.path.join(raw_base_dir, campaign_name),
         processed_dir=os.path.join(processed_base_dir, campaign_name),
         l0a_processing=l0a_processing,
@@ -85,7 +85,7 @@ for campaign_name in EPFL_dict.keys():
 
 # -----------------------------------------------------------------------------.
 # TODO:
-# --> Useful to test changes to code do not crash other parser
+# --> Useful to test changes to code do not crash other reader
 # --> debuggin_mode=True to speed up tests ;)
 
 # -----------------------------------------------------------------------------.
