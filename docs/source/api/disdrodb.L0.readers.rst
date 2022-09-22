@@ -1,6 +1,17 @@
 disdrodb.L0.readers package
 ===========================
 
+Submodules
+----------
+
+disdrodb.L0.readers.parser\_template module
+-------------------------------------------
+
+.. automodule:: disdrodb.L0.readers.parser_template
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

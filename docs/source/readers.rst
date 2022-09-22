@@ -3,12 +3,6 @@ Readers development
 =========================
 
 
-.. warning::
-    This document is not complete !
-
-    Currently under development.
-
-    Do not use it now.
 
 DISDRODB supports reading and loading data from many input file formats and schemes. The following sections describe the different way data can be loaded, requested, or added to the DISDRODB project.
 
@@ -55,43 +49,43 @@ There are a couple of optional parameters that can added to the previous command
 	* The path should end with <campaign_name> and match the end of raw_dir.
 	* Example: '<...>/disdrodb/data/processed/<campaign_name>'.
 
-* ``--l0a_processing`` : bool [ **true** |false] - Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+* ``--l0a_processing`` : bool [ **true** \|false] - Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
 
 
 
-* ``--l0b_processing`` : bool [ **true** |false] - Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+* ``--l0b_processing`` : bool [ **true** \|false] - Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
 
 
 
-* ``--keep_l0a`` : bool [true| **false** ] - Whether to keep the L0A files after having generated the L0B netCDF products.
+* ``--keep_l0a`` : bool [true\| **false** ] - Whether to keep the L0A files after having generated the L0B netCDF products.
 
 
 
-* ``--force`` : bool [true| **false** ] - Whether to overwrite existing data.
+* ``--force`` : bool [true\| **false** ] - Whether to overwrite existing data.
 
 	*  If True, overwrite existing data into destination directories.
 	*  If False, raise an error if there are already data into destination directories.
 
 
-* ``--verbose`` : bool [true| **false** ] -  Whether to print detailed processing information into terminal.
+* ``--verbose`` : bool [true\| **false** ] -  Whether to print detailed processing information into terminal.
 
 
 
-* ``--debugging_mode`` : bool [true| **false** ] -  If True, it reduces the amount of data to process.
+* ``--debugging_mode`` : bool [true\| **false** ] -  If True, it reduces the amount of data to process.
 
 	* For L0A processing, it processes just 3 raw data files.
 	* For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
 
 
 
-* ``--lazy`` : bool [ **true** |false] - Whether to perform processing lazily with dask.
+* ``--lazy`` : bool [ **true** \|false] - Whether to perform processing lazily with dask.
 
 	* If lazy=True, it employed dask.array and dask.dataframe.
 	* If lazy=False, it employed pandas.DataFrame and numpy.array.
 
 
 
-* ``--single_netcdf`` : bool [ **true** |false] - Whether to concatenate all raw files into a single L0B netCDF file.
+* ``--single_netcdf`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single L0B netCDF file.
 
 	* If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
 	* If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
@@ -155,7 +149,7 @@ Raw data folder
 .. note::
     The **issue YAML** files are optional (and if missing are initialized to be empty).
     These files allow the reader to skip the loading of the data according to time-periods (for example, due to temporal device failures).
-    `Step 2 <#step-2-read-and-analyse-the-data>`_ will guide you through the analysis of your data in order to possibly found (and remove) these errors.
+    `Step 2 <#step-2-analyse-the-data-and-define-the-reader-components>`_ will guide you through the analysis of your data in order to possibly found (and remove) these errors.
 
 
 
@@ -193,7 +187,7 @@ In this notebook, we guide you through the definition of 4 relevant DISDRODB rea
 * The ``reader_kwargs`` dictionary guides the pandas / dask dataframe creation. 
 
 For more information on the possible key-value arguments, read the `pandas <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
-and/or `pandas <https://docs.dask.org/en/stable/generated/dask.dataframe.read_csv.html>`_  documentation.
+and/or `dask <https://docs.dask.org/en/stable/generated/dask.dataframe.read_csv.html>`_  documentation.
  
 * The ``column_names`` list defines the column names of the readed raw text file. 
 

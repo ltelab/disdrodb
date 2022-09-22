@@ -2,13 +2,6 @@
 Installation
 =========================
 
-.. warning::
-    This document is not complete !
-
-    Currently under development.
-
-    Do not use it now.
-
 
 We define here two types of installation :
 
@@ -34,7 +27,7 @@ disdrodb is available from the `Python Packaging Index (PyPI) <https://pypi.org/
 
 
 Conda-based installation is not yet available !!!
-.............................................
+.....................................................
 
 In future, it will be possible to install disdrodb using the following command:
 
@@ -127,7 +120,8 @@ You can use either conda or pip :
 	* Manually add the path of your local copy of disdrodb to the ``PYTHONPATH`` environment variable. 
 	  In Linux operating systems, you could add the following line to your ``.bashrc`` file located in the ``/home/<your_username>`` directory: 
 	  
-	  .. code-block:: bash
+	.. code-block:: bash
+	
 	  	export PYTHONPATH="${PYTHONPATH}:/path/to/your/local/repo/of/disdrodb/"
 
 
@@ -159,8 +153,8 @@ You can use either conda or pip :
 
 
 
-Install pre-commit hooks
-..............................
+Install pre-commit code quality checking
+..............................................
 
 After setting up your development environment, install the git
 pre-commit hook by executing the following command in the repository’s
