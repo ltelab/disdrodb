@@ -31,7 +31,7 @@ Issue Reporting Guidelines
 -  If you don’t find the required GitHub issue template, please ask for a new template.
 
 
-Github
+GitHub
 -----------------------
 
 **We Develop with Github !**
