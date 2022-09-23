@@ -87,7 +87,8 @@ There are a couple of optional parameters that can added to the previous command
 
 
 
-* ``--single_netcdf`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single L0B netCDF file.
+* ``--single_netcdf`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single DISDRODB L0B netCDF file.
+
 
 	* If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
 	* If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
