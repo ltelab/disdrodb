@@ -16,6 +16,7 @@ Welcome to disdroDB's documentation!
    readers
    contributors_guidelines
    maintainers_guidelines
+   metadata_keys
    
    
    

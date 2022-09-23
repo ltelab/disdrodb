@@ -13,6 +13,7 @@
 import os
 import sys
 import shutil
+import pandas as pd
 
 # sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../.."))
@@ -35,6 +36,29 @@ in_path = os.path.join(
 out_path = os.path.join(os.getcwd(), "reader_preparation.ipynb")
 
 shutil.copyfile(in_path, out_path)
+
+
+# Get key metadata from google sheet
+doc_id = "1tHXC8ZH6_v_SaR1tRffSZCphZL6Y6ktDYp6y4ysE0gg"
+
+
+def download_metadata_keys(sheet_id: str, csv_file_name: str) -> None:
+    sheet_id = sheet_id
+    sheet_url = f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv&gid={sheet_id}"
+    df = pd.read_csv(sheet_url)
+    df = df.replace("\*", "", regex=True)
+    df.to_csv(csv_file_name, index=False)
+
+
+list_csv = []
+list_csv.append(["0", "OTT_parsivel.csv"])
+list_csv.append(["2144525638", "Thies_LPM.csv"])
+list_csv.append(["846927819", "Dimensions.csv"])
+list_csv.append(["593773246", "Coordinates.csv"])
+list_csv.append(["1539710336", "metadata.csv"])
+
+for i in list_csv:
+    download_metadata_keys(i[0], i[1])
 
 
 # -- General configuration ---------------------------------------------------
