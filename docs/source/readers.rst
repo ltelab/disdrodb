@@ -54,7 +54,8 @@ There are a couple of optional parameters that can added to the previous command
 
 
 
-* ``--l0b_processing`` : bool [ **true** \|false] - Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+* ``--l0b_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0B netCDF4 file(s) from L0A data.
+
 
 
 
