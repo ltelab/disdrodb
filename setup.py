@@ -48,4 +48,9 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
     ],
+    entry_points={
+        "console_scripts": [
+            "run_disdrodb_l0_reader=disdrodb.L0.run_disdrodb_l0_reader:run_reader",
+        ]
+    },
 )

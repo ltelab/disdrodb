@@ -94,7 +94,3 @@ def get_reader(data_source: str, reader_name: str) -> object:
         my_function = getattr(__import__(module_name, fromlist=[""]), unit_name)
 
     return my_function
-
-
-if __name__ == "__main__":
-    get_reader("NETHERLANDS", "DELFT")

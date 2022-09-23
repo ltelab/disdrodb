@@ -53,52 +53,13 @@ from disdrodb.utils.logger import log_info, log_warning
 
 # -----------------------------------------------------------------------------.
 def click_L0_readers_options(function):
-    function = click.argument(
-        "raw_dir", type=click.Path(exists=True), metavar="<raw_dir>"
-    )(function)
-    function = click.argument("processed_dir", metavar="<processed_dir>")(function)
     function = click.option(
-        "-l0a",
-        "--l0a_processing",
+        "-s",
+        "--single_netcdf",
         type=bool,
         show_default=True,
         default=True,
-        help="Perform L0A processing",
-    )(function)
-    function = click.option(
-        "-l0b",
-        "--l0b_processing",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Perform L0B processing",
-    )(function)
-    function = click.option(
-        "-k",
-        "--keep_l0a",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Whether to keep the L0A Parquet file",
-    )(function)
-    function = click.option(
-        "-f",
-        "--force",
-        type=bool,
-        show_default=True,
-        default=False,
-        help="Force overwriting",
-    )(function)
-    function = click.option(
-        "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
-    )(function)
-    function = click.option(
-        "-d",
-        "--debugging_mode",
-        type=bool,
-        show_default=True,
-        default=False,
-        help="Switch to debugging mode",
+        help="Produce single netCDF",
     )(function)
     function = click.option(
         "-l",
@@ -109,13 +70,53 @@ def click_L0_readers_options(function):
         help="Use dask if lazy=True",
     )(function)
     function = click.option(
-        "-s",
-        "--single_netcdf",
+        "-d",
+        "--debugging_mode",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="Switch to debugging mode",
+    )(function)
+    function = click.option(
+        "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+    )(function)
+    function = click.option(
+        "-f",
+        "--force",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="Force overwriting",
+    )(function)
+    function = click.option(
+        "-k",
+        "--keep_l0a",
         type=bool,
         show_default=True,
         default=True,
-        help="Produce single netCDF",
+        help="Whether to keep the L0A Parquet file",
     )(function)
+    function = click.option(
+        "-l0b",
+        "--l0b_processing",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Perform L0B processing",
+    )(function)
+    function = click.option(
+        "-l0a",
+        "--l0a_processing",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Perform L0A processing",
+    )(function)
+    function = click.argument("processed_dir", metavar="<processed_dir>")(function)
+    function = click.argument(
+        "raw_dir", type=click.Path(exists=True), metavar="<raw_dir>"
+    )(function)
+
     return function
 
 

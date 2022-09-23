@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 import os
 import sys
-import click
 from disdrodb.L0.L0_processing import run_L0
 
 # Add project root folder into sys path
@@ -26,71 +25,7 @@ root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
 sys.path.insert(0, root_path)
 
 
-# -------------------------------------------------------------------------.
-# CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
-@click.argument("processed_dir", metavar="<processed_dir>")
-@click.option(
-    "-L0A",
-    "--l0a_processing",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Perform L0A processing",
-)
-@click.option(
-    "-L0B",
-    "--l0b_processing",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Perform L0B processing",
-)
-@click.option(
-    "-k",
-    "--keep_l0a",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Whether to keep the L0A Parquet file",
-)
-@click.option(
-    "-f",
-    "--force",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Force overwriting",
-)
-@click.option(
-    "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
-)
-@click.option(
-    "-d",
-    "--debugging_mode",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Switch to debugging mode",
-)
-@click.option(
-    "-l",
-    "--lazy",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Use dask if lazy=True",
-)
-@click.option(
-    "-s",
-    "--single_netcdf",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Produce single netCDF",
-)
-def main(
+def reader(
     raw_dir,
     processed_dir,
     l0a_processing=True,
@@ -252,4 +187,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    reader()
