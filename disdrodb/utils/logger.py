@@ -25,7 +25,7 @@ import logging
 
 def create_L0_logger(processed_dir, campaign_name, verbose=False):
     # Define log name
-    logger_name = "LO_" + "parser_" + campaign_name
+    logger_name = "LO_" + "reader_" + campaign_name
     # Create logs directory
     logs_dir = os.path.join(processed_dir, "logs")
     os.makedirs(logs_dir, exist_ok=True)

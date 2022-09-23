@@ -174,7 +174,7 @@ def main(
     # Skip the first row (header)
     reader_kwargs["skiprows"] = 0
 
-    # - Define parser engine
+    # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
@@ -323,7 +323,7 @@ def main(
         debugging_mode=debugging_mode,
         lazy=False,
         single_netcdf=single_netcdf,
-        # Custom arguments of the parser
+        # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,
         column_names=column_names,
         reader_kwargs=reader_kwargs,

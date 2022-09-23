@@ -9,8 +9,8 @@ Created on Fri Feb 18 12:20:46 2022
 # TODO: adapt to new readers !!!!
 
 
-def get_parser_cmd(
-    parser_filepath,
+def get_reader_cmd(
+    reader_filepath,
     raw_dir,
     processed_dir,
     l0a_processing=True,
@@ -22,13 +22,13 @@ def get_parser_cmd(
     lazy=True,
     single_netcdf=True,
 ):
-    """Create command to launch parser processing from Terminal."""
-    # parser_TICINO_2018.py [OPTIONS] <raw_dir> <processed_dir>
+    """Create command to launch reader processing from Terminal."""
+    # reader_TICINO_2018.py [OPTIONS] <raw_dir> <processed_dir>
     cmd = "".join(
         [
             "python",
             " ",
-            parser_filepath,
+            reader_filepath,
             " ",
             "--l0a_processing=",
             str(l0a_processing),

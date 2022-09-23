@@ -7,7 +7,7 @@ Created on Sat Jan  1 17:18:04 2022
 """
 import os
 import subprocess
-from disdrodb.pipeline.utils_cmd import get_parser_cmd
+from disdrodb.pipeline.utils_cmd import get_reader_cmd
 from pathlib import Path
 
 # You need to set the disdrodb repo path in your .bashrc
@@ -17,12 +17,12 @@ from pathlib import Path
 # -----------------------------------------------------------------------------.
 #### Define campaign dictionary
 DELFT_dict = {
-    "CABAUW": "parser_RASPBERRY.py",
+    "CABAUW": "reader_RASPBERRY.py",
 }
 
 #### Define filepaths
 home = str(Path.home())
-parser_dir = "/home/sguzzo/PycharmProjects/disdrodb/disdrodb/readers/DELFT"
+reader_dir = "/home/sguzzo/PycharmProjects/disdrodb/disdrodb/readers/DELFT"
 raw_base_dir = "/home/sguzzo/Parsivel/RAW_TELEGRAM"
 processed_base_dir = "/tmp/Processed"
 # processed_base_dir = "/tmp/Processed/DELFT"
@@ -40,9 +40,9 @@ single_netcdf = True
 
 #### Process all campaigns
 for campaign_name in DELFT_dict.keys():
-    parser_filepath = os.path.join(parser_dir, DELFT_dict[campaign_name])
-    cmd = get_parser_cmd(
-        parser_filepath=parser_filepath,
+    reader_filepath = os.path.join(reader_dir, DELFT_dict[campaign_name])
+    cmd = get_reader_cmd(
+        reader_filepath=reader_filepath,
         raw_dir=os.path.join(raw_base_dir, campaign_name),
         processed_dir=os.path.join(processed_base_dir, campaign_name),
         l0a_processing=l0a_processing,
@@ -60,7 +60,7 @@ for campaign_name in DELFT_dict.keys():
 
 # -----------------------------------------------------------------------------.
 # TODO:
-# --> Useful to test changes to code do not crash other parser
+# --> Useful to test changes to code do not crash other reader
 # --> debugging_mode=True to speed up tests ;)
 
 # -----------------------------------------------------------------------------.

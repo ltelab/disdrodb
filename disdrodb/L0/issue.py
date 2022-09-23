@@ -16,7 +16,7 @@ def _write_issue_timestamps_docs(f):
     """Provide template for timestamps.yml"""
     # TODO: Kim adapt to desired format
     f.write(
-        "# This file is used to store dates to drop by the parser, the time format used is the isoformat (YYYY-mm-dd HH:MM:SS). \n"
+        "# This file is used to store dates to drop by the reader, the time format used is the isoformat (YYYY-mm-dd HH:MM:SS). \n"
     )
     f.write("# timestamp: list of timestamps \n")
     f.write("# time_period: list of list ranges of dates \n")
