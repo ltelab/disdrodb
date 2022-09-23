@@ -96,7 +96,7 @@ You can use either conda or pip :
 			   source venv/bin/activate
 			   pip install -r requirements.txt
 
-	**With Conda env :**
+	**With Conda:**
 	
 		* Create the `disdrodb-dev` conda environment:
 
