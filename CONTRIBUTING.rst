@@ -171,7 +171,7 @@ We follow the pep8 and the python-guide writing style
    Python <https://docs.python-guide.org/writing/style/>`__
 
 To ensure a minimal style consistency, we use
-`black <https://black.readthedocs.io/en/stable/>`__ to auto-format to
+`black <https://black.readthedocs.io/en/stable/>`__ to auto-format
 the source code. The black configuration used in the DISDRODB project is
 defined in the pyproject.toml, and it is automatically detected by
 black (see above).
