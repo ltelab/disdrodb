@@ -7,7 +7,8 @@ Submodules
 disdrodb.L0.readers.parser\_template module
 -------------------------------------------
 
-.. automodule:: disdrodb.L0.readers.parser_template
+.. automodule:: disdrodb.L0.readers.reader_template
+
    :members:
    :undoc-members:
    :show-inheritance:
