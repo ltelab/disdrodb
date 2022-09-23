@@ -17,7 +17,7 @@ and read through the following documnents :
 
 - `Code of Conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__
 - `Contributing environment setup <#contributing-environment-setup>`__
-- `Contrubuting process <#contributing-process>`__
+- `Contributing process <#contributing-process>`__
 - `Code review checklist <#code-review-checklist>`__
 - `Financial contribution <#financial-contribution>`__
 
