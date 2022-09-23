@@ -49,7 +49,8 @@ There are a couple of optional parameters that can added to the previous command
 	* The path should end with <campaign_name> and match the end of raw_dir.
 	* Example: '<...>/disdrodb/data/processed/<campaign_name>'.
 
-* ``--l0a_processing`` : bool [ **true** \|false] - Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+* ``--l0a_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0A Apache Parquet file(s) from raw data.
+
 
 
 
