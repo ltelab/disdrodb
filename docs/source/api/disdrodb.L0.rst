@@ -68,14 +68,6 @@ disdrodb.L0.check\_standards module
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.dev\_tools module
------------------------------
-
-.. automodule:: disdrodb.L0.dev_tools
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 disdrodb.L0.io module
 ---------------------
 
@@ -100,14 +92,6 @@ disdrodb.L0.metadata module
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.rl\_test\_doc module
---------------------------------
-
-.. automodule:: disdrodb.L0.rl_test_doc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 disdrodb.L0.standards module
 ----------------------------
 
@@ -116,10 +100,10 @@ disdrodb.L0.standards module
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.utils\_cmd module
------------------------------
+disdrodb.L0.template\_tools module
+----------------------------------
 
-.. automodule:: disdrodb.L0.utils_cmd
+.. automodule:: disdrodb.L0.template_tools
    :members:
    :undoc-members:
    :show-inheritance:

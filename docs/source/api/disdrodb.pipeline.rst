@@ -36,6 +36,14 @@ disdrodb.pipeline.run\_EPFL\_processing module
    :undoc-members:
    :show-inheritance:
 
+disdrodb.pipeline.utils\_cmd module
+-----------------------------------
+
+.. automodule:: disdrodb.pipeline.utils_cmd
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 

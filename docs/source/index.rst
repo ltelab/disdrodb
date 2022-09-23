@@ -7,12 +7,6 @@ Welcome to disdroDB's documentation!
 =======================================
 
 
-.. warning::
-    This document is not complete !
-
-    Currently under development. 
-    
-    Do not use it now. 
 
 .. toctree::
    :maxdepth: 2
@@ -23,9 +17,13 @@ Welcome to disdroDB's documentation!
    contributors_guidelines
    maintainers_guidelines
    
+   
+   
+   
+.. toctree::
+   :maxdepth: 1
       
    disdrodb API <api/modules>
-   :caption: Contents:
 
   
 

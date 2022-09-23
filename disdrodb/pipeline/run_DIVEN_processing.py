@@ -9,6 +9,7 @@ import os
 import subprocess
 from disdrodb.pipeline.utils_cmd import get_reader_cmd
 
+
 # You need to set the disdrodb repo path in your .bashrc
 # export PYTHONPATH="${PYTHONPATH}:/home/ghiggi/Projects/disdrodb"
 # You need to activate the disdrodb envirnment: conda activate disdrodb

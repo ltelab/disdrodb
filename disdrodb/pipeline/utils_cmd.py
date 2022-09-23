@@ -13,14 +13,14 @@ def get_reader_cmd(
     reader_filepath,
     raw_dir,
     processed_dir,
-    l0a_processing,
-    l0b_processing,
-    keep_l0a,
-    force,
-    verbose,
-    debugging_mode,
-    lazy,
-    single_netcdf,
+    l0a_processing=True,
+    l0b_processing=True,
+    keep_l0a=False,
+    force=False,
+    verbose=False,
+    debugging_mode=False,
+    lazy=True,
+    single_netcdf=True,
 ):
     """Create command to launch reader processing from Terminal."""
     # reader_TICINO_2018.py [OPTIONS] <raw_dir> <processed_dir>

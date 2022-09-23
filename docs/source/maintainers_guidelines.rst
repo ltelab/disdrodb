@@ -2,12 +2,6 @@
 Maintainers guidelines
 ========================
 
-.. warning::
-    This document is not complete !
-    
-    Currently under development. 
-	
-	Do not use it now. 
 
 The section is dedicated to the DISDRODB core developers (maintainers). 
 

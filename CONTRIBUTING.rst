@@ -7,18 +7,21 @@ You can contribute in many ways :
 
 -  Join the
    `discussion <https://github.com/ltelab/disdrodb/discussions>`__
+- Report `issues <#issue-reporting-guidelines>`__
+- Help us developping new readers 
+- Any others code improvements are welcome !
 
-Before submitting your contribution, please make sure to take a moment
-and read through the following guidelines :
 
--  `Code of
-   Conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__
--  `Issue Reporting Guidelines <#issue-reporting-guidelines>`__
--  `Pull Request Guidelines <#pull-request-guidelines>`__
--  `Development Setup <#development-setup>`__
--  `Project Structure <#project-structure>`__
--  `Github Flow <#github-flow>`__
--  `Commit Lint <#commit-lint>`__
+Before adding your contribution, please make sure to take a moment
+and read through the following documnents :
+
+- `Code of Conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__
+- `Contributing environment setup <#contributing-environment-setup>`__
+- `Contributing process <#contributing-process>`__
+- `Code review checklist <#code-review-checklist>`__
+- `Financial contribution <#financial-contribution>`__
+
+
 
 Issue Reporting Guidelines
 --------------------------
@@ -27,7 +30,8 @@ Issue Reporting Guidelines
    templates <https://github.com/ltelab/disdrodb/issues/new/choose>`__
 -  If you don’t find the required GitHub issue template, please ask for a new template.
 
-Contribution Guidelines
+
+GitHub
 -----------------------
 
 **We Develop with Github !**
@@ -38,12 +42,17 @@ We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-fl
 So all code changes happen through Pull Requests (PRs).
 
 
-First Time Contributors
------------------------
+
+
+Contributing environment setup
+-----------------------------------
+
+**First Time Contributors ?** 
+
+Please follow the following steps to install your developing environment :
 
 -  Setting up the development environment
 -  Install pre-commit hooks
--  Respect the Code Style guide
 
 Setting up the development environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,75 +84,14 @@ indicates if the commit contained any formatting errors (that are automatically 
 .. note::
 	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.  
 
-Code Style guide
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We follow the pep8 and the python-guide writing style
-
--  `Code Style — The Hitchhiker's Guide to
-   Python <https://docs.python-guide.org/writing/style/>`__
-
-To ensure a minimal style consistency, we use
-`black <https://black.readthedocs.io/en/stable/>`__ to auto-format to
-the source code. The black configuration used in the DISDRODB project is
-defined in the pyproject.toml, and it is automatically detected by
-black (see above).
 
 
 
-**Docstrings**
+Contributing process
+-----------------------
 
-Every module, function, or class must have a docstring that describe its
-purpose and how to use it. The docstrings follows the conventions
-described in the `PEP
-257 <https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings>`__
-and the `Numpy’s docstrings
-format <https://numpydoc.readthedocs.io/en/latest/format.html>`__.
+**How to contribute ?** 
 
-Here is a summary of the most important rules:
-
--  Always use triple quotes for doctrings, even if it fits a single
-   line.
-
--  For one-line docstring, end the phrase with a period.
-
--  Use imperative mood for all docstrings (“””Return some value.”””)
-   rather than descriptive mood (“””Returns some value.”””).
-
-Here is an example of a docstring:
-
-::
-
-    def adjust_lag2_corrcoef1(gamma_1, gamma_2):
-       """
-       A simple adjustment of lag-2 temporal autocorrelation coefficient to
-       ensure that the resulting AR(2) process is stationary when the parameters
-       are estimated from the Yule-Walker equations.
-
-       Parameters
-       ----------
-       gamma_1 : float
-         Lag-1 temporal autocorrelation coeffient.
-       gamma_2 : float
-         Lag-2 temporal autocorrelation coeffient.
-
-       Returns
-       -------
-       out : float
-         The adjusted lag-2 correlation coefficient.
-       """
-
-
-If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension to automatically create such preformatted docstring. 
-
-You should configure VS code as follow : 
-
-
-.. image:: /static/vs_code_settings.png
-
-
-How to contribute ?
--------------------
 
 Here is a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
 
@@ -216,7 +164,69 @@ Please define the name of your branch based on the scope of the contribution. Tr
 Work on your changes
 ~~~~~~~~~~~~~~~~~~~~
 
-Here again, respect the `Code Style guide`_.
+
+We follow the pep8 and the python-guide writing style
+
+-  `Code Style — The Hitchhiker's Guide to
+   Python <https://docs.python-guide.org/writing/style/>`__
+
+To ensure a minimal style consistency, we use
+`black <https://black.readthedocs.io/en/stable/>`__ to auto-format
+the source code. The black configuration used in the DISDRODB project is
+defined in the pyproject.toml, and it is automatically detected by
+black (see above).
+
+
+
+**Docstrings**
+
+Every module, function, or class must have a docstring that describe its
+purpose and how to use it. The docstrings follows the conventions
+described in the `PEP
+257 <https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings>`__
+and the `Numpy’s docstrings
+format <https://numpydoc.readthedocs.io/en/latest/format.html>`__.
+
+Here is a summary of the most important rules:
+
+-  Always use triple quotes for doctrings, even if it fits a single
+   line.
+
+-  For one-line docstring, end the phrase with a period.
+
+-  Use imperative mood for all docstrings (“””Return some value.”””)
+   rather than descriptive mood (“””Returns some value.”””).
+
+Here is an example of a docstring:
+
+::
+
+    def adjust_lag2_corrcoef1(gamma_1, gamma_2):
+       """
+       A simple adjustment of lag-2 temporal autocorrelation coefficient to
+       ensure that the resulting AR(2) process is stationary when the parameters
+       are estimated from the Yule-Walker equations.
+
+       Parameters
+       ----------
+       gamma_1 : float
+         Lag-1 temporal autocorrelation coeffient.
+       gamma_2 : float
+         Lag-2 temporal autocorrelation coeffient.
+
+       Returns
+       -------
+       out : float
+         The adjusted lag-2 correlation coefficient.
+       """
+
+
+If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension to automatically create such preformatted docstring. 
+
+You should configure VS code as follow : 
+
+
+.. image:: /static/vs_code_settings.png
 
 
 
