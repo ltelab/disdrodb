@@ -281,7 +281,3 @@ def reader(
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
     )
-
-
-if __name__ == "__main__":
-    reader()
