@@ -604,23 +604,6 @@ def read_L0A_dataframe(fpaths, lazy=True, verbose=False, debugging_mode=False):
 
 
 ####---------------------------------------------------------------------------.
-#### TO BE DEPRECATED
-#### Back-compatibility stuffs
-# TODO: DEPRECATE
-def get_L0_fname(campaign_name, station_id, suffix=""):
-    return get_L0A_fname(campaign_name, station_id, suffix)
-
-
-def get_L0_fpath(processed_dir, station_id, suffix=""):
-    return get_L0A_fpath(processed_dir, station_id, suffix)
-
-
-def get_L1_netcdf_fname(campaign_name, station_id, suffix=""):
-    return get_L0B_fname(campaign_name, station_id, suffix)
-
-
-def get_L1_netcdf_fpath(processed_dir, station_id, suffix=""):
-    return get_L0B_fpath(processed_dir, station_id, suffix)
 
 
 def check_L0_is_available(processed_dir, station_id, suffix=""):

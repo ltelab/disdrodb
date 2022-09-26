@@ -6,7 +6,7 @@
 import click
 
 from disdrodb.L0 import click_L0_readers_options
-from disdrodb.L0.retrive_reader import get_reader
+from disdrodb.L0.L0_processing import get_reader
 
 
 # -------------------------------------------------------------------------.

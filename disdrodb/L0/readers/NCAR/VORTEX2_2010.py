@@ -20,75 +20,7 @@
 
 from disdrodb.L0 import run_L0
 
-# -------------------------------------------------------------------------.
-# CLIck Command Line Interface decorator
-@click.command()  # options_metavar='<options>'
-@click.argument("raw_dir", type=click.Path(exists=True), metavar="<raw_dir>")
-@click.argument("processed_dir", metavar="<processed_dir>")
-@click.option(
-    "-l0a",
-    "--l0a_processing",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Perform L0A processing",
-)
-@click.option(
-    "-l0b",
-    "--l0b_processing",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Perform L0B processing",
-)
-@click.option(
-    "-k",
-    "--keep_l0a",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Whether to keep the l0a Parquet file",
-)
-@click.option(
-    "-f",
-    "--force",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Force overwriting",
-)
-@click.option(
-    "-v",
-    "--verbose",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Verbose",
-)
-@click.option(
-    "-d",
-    "--debugging_mode",
-    type=bool,
-    show_default=True,
-    default=False,
-    help="Switch to debugging mode",
-)
-@click.option(
-    "-l",
-    "--lazy",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Use dask if lazy=True",
-)
-@click.option(
-    "-s",
-    "--single_netcdf",
-    type=bool,
-    show_default=True,
-    default=True,
-    help="Produce single netCDF",
-)
+
 def reader(
     raw_dir,
     processed_dir,
@@ -329,7 +261,3 @@ def reader(
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
     )
-
-
-if __name__ == "__main__":
-    reader()

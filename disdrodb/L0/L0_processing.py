@@ -9,7 +9,9 @@ import os
 import time
 import glob
 import shutil
+from urllib import response
 import click
+import logging
 
 # Directory
 from disdrodb.L0.io import (
@@ -45,6 +47,8 @@ from disdrodb.L0.L0B_processing import (
 # Logger
 from disdrodb.utils.logger import create_L0_logger, close_logger
 from disdrodb.utils.logger import log_info, log_warning
+
+logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------.
 # Consistency choice
@@ -443,3 +447,162 @@ def run_L0(
     msg = "### Script finish ###"
     log_info(logger, msg, verbose)
     close_logger(logger)
+
+
+def get_available_readers() -> dict:
+    """This function returns the list of reader included into the current release of DISDRODB.
+
+    Returns
+    -------
+    dict
+        The dictionary has the following schema {"data_source":{"campaign_name":"reader file path"}}
+    """
+    # current file path
+    lo_folder_path = os.path.dirname(__file__)
+
+    # readers folder path
+    reader_folder_path = os.path.join(lo_folder_path, "readers")
+
+    # list of readers folder
+    list_of_reader_folder = [
+        f.path for f in os.scandir(reader_folder_path) if f.is_dir()
+    ]
+
+    # create dictionary
+    dict_reader = {}
+    for path_folder in list_of_reader_folder:
+        data_source = os.path.basename(path_folder)
+        dict_reader[data_source] = {}
+        for path_python_file in [
+            f.path
+            for f in os.scandir(path_folder)
+            if f.is_file() and f.path.endswith(".py")
+        ]:
+            reader_name = (
+                os.path.basename(path_python_file)
+                .replace("reader_", "")
+                .replace(".py", "")
+            )
+            dict_reader[data_source][reader_name] = path_python_file
+
+    return dict_reader
+
+
+def check_data_source(data_source: str) -> bool:
+    """Check if the provided data source exists within the available readers.
+    Please run get_available_readers() to get the list of all available reader
+
+    Parameters
+    ----------
+    data_source : str
+        Data source name  - Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
+
+    Returns
+    -------
+    bool
+        True if the data source exists.
+        False if it does not exist.
+
+    Raises
+    ------
+    ValueError
+        Error if the data source name provided has not been found.
+    """
+
+    dict_all_readers = get_available_readers()
+
+    if dict_all_readers.get(data_source, None):
+        data_source_exists = True
+    else:
+        data_source_exists = False
+        msg = (
+            f"Data source {data_source} has not been found within the available readers"
+        )
+        logger.exception(msg)
+        raise ValueError(msg)
+
+    return data_source_exists
+
+
+def get_available_readers_by_data_source(data_source: str) -> dict:
+    """Return the available readers by data source
+
+    Parameters
+    ----------
+    data_source : str
+        Data source name - Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
+
+    Returns
+    -------
+    dict
+        Dictionary that conatins the campaigns for the requested data source.
+
+    """
+
+    if check_data_source(data_source):
+        dict_data_source = get_available_readers.get(data_source, None)
+
+    return dict_data_source
+
+
+def check_reader_name(data_source: str, reader_name: str) -> bool:
+    """Check if the provided data source exists and reader names exists within the available readers.
+    Please run get_available_readers() to get the list of all available reader
+
+    Parameters
+    ----------
+    data_source : str
+        Data source name - Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
+    reader_name : str
+        Campaign name
+
+    Returns
+    -------
+    bool
+        True if the reader has been found,
+        False if the reader has not been found.
+
+    Raises
+    ------
+    ValueError
+        Error if the reader name provided for the campaign has not been found.
+    """
+
+    if check_data_source(data_source):
+        if get_available_readers().get(data_source).get(reader_name, None):
+            reader_exist = True
+        else:
+            reader_exist = False
+            msg = (
+                f"Reader {reader_name} has not been found within the available readers"
+            )
+            logger.exception(msg)
+            raise ValueError(msg)
+    return reader_exist
+
+
+def get_reader(data_source: str, reader_name: str) -> object:
+    """Returns the reader function based on input parameters
+
+    Parameters
+    ----------
+    data_source : str
+        Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
+    reader_name : str
+        Campaign name
+
+    Returns
+    -------
+    object
+        The reader() function
+
+    """
+
+    reader_exist = check_reader_name(data_source, reader_name)
+
+    if reader_exist:
+        full_name = f"disdrodb.L0.readers.{data_source}.{reader_name}.reader"
+        module_name, unit_name = full_name.rsplit(".", 1)
+        my_reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
+
+    return my_reader

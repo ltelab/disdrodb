@@ -24,17 +24,21 @@ from disdrodb.L0.check_standards import check_sensor_name
 
 # L0 processing
 from disdrodb.L0.L0A_processing import get_file_list
-from disdrodb.L0.io import get_L1_netcdf_fpath
+from disdrodb.L0.io import get_L0B_fpath
 from disdrodb.L0.L0B_processing import write_L0B
 
 
 def reader(
     raw_dir,
     processed_dir,
+    l0a_processing,
+    l0b_processing,
+    keep_l0a,
     force=True,
     verbose=True,
     debugging_mode=False,
     lazy=True,
+    single_netcdf=False,
 ):
 
     # Define functions to reformat ARM netCDFs
@@ -50,9 +54,9 @@ def reader(
             DISDRODB metadata about the station.
         """
         from disdrodb.L0.utils_nc import xr_concat_datasets
-        from disdrodb.L1_proc import get_L1_coords
+        from disdrodb.L0.L0B_processing import get_coords
         from disdrodb.L0.auxiliary import get_ARM_LPM_dict
-        from disdrodb.standards import set_DISDRODB_L0_attrs
+        from disdrodb.L0.standards import set_DISDRODB_L0_attrs
 
         sensor_name = attrs["sensor_name"]
         # --------------------------------------------------------
@@ -84,7 +88,7 @@ def reader(
         ds = ds.rename(dict_dims)
         # --------------------------------------------------------
         # Update coordinates
-        coords = get_L1_coords(attrs["sensor_name"])
+        coords = get_coords(attrs["sensor_name"])
         coords["crs"] = attrs["crs"]
         coords["longitude"] = attrs["longitude"]
         coords["latitude"] = attrs["latitude"]
@@ -159,7 +163,7 @@ def reader(
 
         # -----------------------------------------------------------------.
         #### - Save to DISDRODB netCDF standard
-        fpath = get_L1_netcdf_fpath(processed_dir, station_id)
+        fpath = get_L0B_fpath(processed_dir, station_id)
         write_L0B(ds, fpath=fpath, sensor_name=sensor_name)
 
         # -----------------------------------------------------------------.
@@ -183,17 +187,3 @@ def reader(
 
     close_logger(logger)
     # -----------------------------------------------------------------.
-
-
-# -----------------------------------------------------------------.
-
-if __name__ == "__main__":
-
-    # Set Dask configuration for fast processing
-    # - Processes=True ensure fast reading of source netCDFs
-    from dask.distributed import Client
-
-    client = Client(processes=True)
-
-    # Run the processing
-    reader()
