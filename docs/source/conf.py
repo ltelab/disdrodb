@@ -51,7 +51,7 @@ df_all = pd.read_csv(sheet_url, header=3)
 df_list = np.split(df_all, df_all[df_all.isnull().all(1)].index)
 
 # Remove all CSV from the folder
-path_csv_folder = os.path.join("C:\\projects\\disdrodb-fork\\docs\\source", "csv")
+path_csv_folder = os.path.join(root_path, "docs", "source", "csv")
 filelist = [f for f in os.listdir(path_csv_folder) if f.endswith(".csv")]
 for f in filelist:
     os.remove(os.path.join(path_csv_folder, f))
