@@ -26,8 +26,10 @@ from disdrodb.L0.check_standards import check_sensor_name
 from disdrodb.L0.L0A_processing import get_file_list
 from disdrodb.L0.io import get_L0B_fpath
 from disdrodb.L0.L0B_processing import write_L0B
+from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
+@is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,

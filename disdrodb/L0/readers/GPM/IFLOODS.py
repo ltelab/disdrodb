@@ -25,6 +25,10 @@ Created on Wed Jun  1 11:01:41 2022
 from disdrodb.L0 import run_L0
 
 
+from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+
+
+@is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
@@ -37,60 +41,7 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
-    """Script to process raw data to L0A and L0B format.
 
-    Parameters
-    ----------
-    raw_dir : str
-        Directory path of raw file for a specific campaign.
-        The path should end with <campaign_name>.
-        Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
-        The directory must have the following structure:
-        - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.json
-        Important points:
-        - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are set to be UPPER CASE.
-    processed_dir : str
-        Desired directory path for the processed L0A and L0B products.
-        The path should end with <campaign_name> and match the end of raw_dir.
-        Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    L0A_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
-    L0B_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
-    keep_L0A : bool
-        Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is False.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        - For L0A processing, it processes just 3 raw data files.
-        - For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
-        The default is False.
-    lazy : bool
-        Whether to perform processing lazily with dask.
-        If lazy=True, it employed dask.array and dask.dataframe.
-        If lazy=False, it employed pandas.DataFrame and numpy.array.
-        The default is True.
-    single_netcdf : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
-        The default is True.
-
-    """
     ####----------------------------------------------------------------------.
     ###########################
     #### CUSTOMIZABLE CODE ####

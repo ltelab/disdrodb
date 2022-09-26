@@ -26,6 +26,10 @@ Created on Thu Aug  4 10:34:08 2022
 from disdrodb.L0 import run_L0
 
 
+from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+
+
+@is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
@@ -38,57 +42,7 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
-    """Script to process raw data to L0 and L1. \f
 
-    Parameters
-    ----------
-    raw_dir : str
-        Directory path of raw file for a specific campaign.
-        The path should end with <campaign_name>.
-        Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
-        The directory must have the following structure:
-        - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.json
-        For each <station_id> there must be a corresponding JSON file
-        in the metadata subfolder.
-    processed_dir : str
-        Desired directory path for the processed L0 and L1 products.
-        The path should end with <campaign_name> and match the end of raw_dir.
-        Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    l0_processing : bool
-        Whether to launch processing to generate L0 Apache Parquet file(s) from raw data.
-        The default is True.
-    l1_processing : bool
-        Whether to launch processing to generate L1 netCDF4 file(s) from source netCDF or L0 data.
-        The default is True.
-    write_netcdf: bool
-        Whether to save L1 as netCDF4 archive
-        Write_netcdf must be True.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        - For L0 processing, it processes just 3 raw data files.
-        - For L1 processing, it takes a small subset of the Apache Parquet dataframe.
-        The default is False.
-    lazy : bool
-        Whether to perform processing lazily with dask.
-        If lazy=True, it employed dask.array and dask.dataframe.
-        If lazy=False, it employed pandas.DataFrame and numpy.array.
-        The default is True.
-
-    Additional information:
-    - The campaign name must semantically match between:
-       - The ends of raw_dir and processed_dir paths
-       - The attribute 'campaign' within the metadata JSON file.
-    - The campaign name are set to be UPPER CASE.
-
-    """
     ####----------------------------------------------------------------------.
     ###########################
     #### CUSTOMIZABLE CODE ####
