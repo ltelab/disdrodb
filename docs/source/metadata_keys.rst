@@ -1,55 +1,75 @@
+
 =========================
 Metadata keys
 =========================
 
 
-The following tables are based on `this google sheet <https://docs.google.com/spreadsheets/d/1tHXC8ZH6_v_SaR1tRffSZCphZL6Y6ktDYp6y4ysE0gg>`__. 
+The following tables are based on `this google sheet <https://docs.google.com/spreadsheets/d/1z1bh55BFTwp7u-069PD8NF6r_ZmpCQwr7i78W6RBY_g>`__. 
 
 
 
-OTT Parsivel
-========================
 
+| 
+Global Infos
+============
 
-.. csv-table:: OTT Parsivel
-   :file: OTT_parsivel.csv
-   :widths:  auto
+.. csv-table:: Global Infos
+   :align: left
+   :file: C:\projects\disdrodb-fork\docs\source\csv\Global Infos.csv
+   :widths: auto
    :header-rows: 1
 
 
-Thies LPM
-========================
+| 
+Source
+======
 
-.. csv-table:: Thies LPM
-   :file: Thies_LPM.csv
-   :widths:  auto
+.. csv-table:: Source
+   :align: left
+   :file: C:\projects\disdrodb-fork\docs\source\csv\Source.csv
+   :widths: auto
    :header-rows: 1
 
 
+| 
+Sensor Location
+===============
 
-Dimensions
-========================
-
-
-.. csv-table:: Dimensions
-   :file: Dimensions.csv
-   :widths:  auto
+.. csv-table:: Sensor Location
+   :align: left
+   :file: C:\projects\disdrodb-fork\docs\source\csv\Sensor Location.csv
+   :widths: auto
    :header-rows: 1
-   
-Coordinates
-========================
 
-.. csv-table:: Coordinates
-   :file: Coordinates.csv
-   :widths:  auto
-   :header-rows: 1
- 
 
-Metadata
-======================== 
-   
-.. csv-table:: metadata
-   :file: metadata.csv
-   :widths:  auto
+| 
+Deployment info 
+================
+
+.. csv-table:: Deployment info 
+   :align: left
+   :file: C:\projects\disdrodb-fork\docs\source\csv\Deployment info .csv
+   :widths: auto
    :header-rows: 1
-   
+
+
+| 
+Sensor Info
+===========
+
+.. csv-table:: Sensor Info
+   :align: left
+   :file: C:\projects\disdrodb-fork\docs\source\csv\Sensor Info.csv
+   :widths: auto
+   :header-rows: 1
+
+
+| 
+Data Attribution
+================
+
+.. csv-table:: Data Attribution
+   :align: left
+   :file: C:\projects\disdrodb-fork\docs\source\csv\Data Attribution.csv
+   :widths: auto
+   :header-rows: 1

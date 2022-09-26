@@ -14,6 +14,7 @@ import os
 import sys
 import shutil
 import pandas as pd
+import numpy as np
 
 # sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../.."))
@@ -39,26 +40,74 @@ shutil.copyfile(in_path, out_path)
 
 
 # Get key metadata from google sheet
-doc_id = "1tHXC8ZH6_v_SaR1tRffSZCphZL6Y6ktDYp6y4ysE0gg"
+doc_id = "1z1bh55BFTwp7u-069PD8NF6r_ZmpCQwr7i78W6RBY_g"
+sheet_id = "0"
+sheet_url = (
+    f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv&gid={sheet_id}"
+)
+df_all = pd.read_csv(sheet_url, header=3)
 
 
-def download_metadata_keys(sheet_id: str, csv_file_name: str) -> None:
-    sheet_id = sheet_id
-    sheet_url = f"https://docs.google.com/spreadsheets/d/{doc_id}/export?format=csv&gid={sheet_id}"
-    df = pd.read_csv(sheet_url)
+df_list = np.split(df_all, df_all[df_all.isnull().all(1)].index)
+
+# Remove all CSV from the folder
+path_csv_folder = os.path.join("C:\\projects\\disdrodb-fork\\docs\\source", "csv")
+filelist = [f for f in os.listdir(path_csv_folder) if f.endswith(".csv")]
+for f in filelist:
+    os.remove(os.path.join(path_csv_folder, f))
+
+
+# create rst text
+metadata_keys_text = """
+=========================
+Metadata keys
+=========================
+
+
+The following tables are based on `this google sheet <https://docs.google.com/spreadsheets/d/1z1bh55BFTwp7u-069PD8NF6r_ZmpCQwr7i78W6RBY_g>`__. 
+
+"""
+
+for current_df in df_list:
+    # Remove empty lines
+    df = current_df.dropna(how="all")
+
+    # Reset the index
+    df = df.reset_index(drop=True)
+
+    # Get the table name
+    df_name = df.iloc[0][0]
+
+    # Remove line containing the table names
+    df = df.iloc[1:]
+
+    # Remove * in the table content
     df = df.replace("\*", "", regex=True)
-    df.to_csv(csv_file_name, index=False)
+
+    # save csv file
+    path_csv_file = os.path.join(path_csv_folder, f"{df_name}.csv")
+    df.to_csv(path_csv_file, index=False)
+
+    # populate rst text
+    metadata_keys_text += f"\n"
+    metadata_keys_text += f"\n"
+    metadata_keys_text += f"\n| "
+    metadata_keys_text += f"\n{df_name}"
+    line = len(df_name) * "="
+    metadata_keys_text += f"\n{line}"
+    metadata_keys_text += f"\n"
+    metadata_keys_text += f"\n.. csv-table:: {df_name}"
+    path_csv = os.path.join(os.path.dirname(__file__), "csv", f"{df_name}.csv")
+    metadata_keys_text += f"\n   :align: left"
+    metadata_keys_text += f"\n   :file: {path_csv}"
+    metadata_keys_text += f"\n   :widths: auto"
+    metadata_keys_text += f"\n   :header-rows: 1"
 
 
-list_csv = []
-list_csv.append(["0", "OTT_parsivel.csv"])
-list_csv.append(["2144525638", "Thies_LPM.csv"])
-list_csv.append(["846927819", "Dimensions.csv"])
-list_csv.append(["593773246", "Coordinates.csv"])
-list_csv.append(["1539710336", "metadata.csv"])
-
-for i in list_csv:
-    download_metadata_keys(i[0], i[1])
+# Save rst text as file
+metadata_keys_file = open("metadata_keys.rst", "w")
+metadata_keys_file.writelines(metadata_keys_text)
+metadata_keys_file.close()
 
 
 # -- General configuration ---------------------------------------------------
