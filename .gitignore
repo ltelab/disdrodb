@@ -154,4 +154,6 @@ log.txt
 
 
 docs\source\reader_preparation.ipynb
+\docs\source\reader_preparation.ipynb
+*.csv
 

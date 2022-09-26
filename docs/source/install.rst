@@ -77,6 +77,8 @@ You can use either conda or pip :
 	
 	
 	**With venv :**  
+	
+		**1. Install dependencies**
 
 		* Windows: Create a virtual environment with venv:
 
@@ -95,8 +97,20 @@ You can use either conda or pip :
 			   virtualenv -p python3 venv
 			   source venv/bin/activate
 			   pip install -r requirements.txt
+			   
+		**2. Install disdrodb** 
+		
+		To install the project in editable mode : 
+	
+		.. code-block:: bash
+		
+			pip install -e .
+			   
+			  
 
 	**With Conda:**
+		
+		**1. Install dependencies**
 	
 		* Create the `disdrodb-dev` conda environment:
 
@@ -123,13 +137,13 @@ You can use either conda or pip :
 			
 					conda install --only-deps disdrodb
 			
-		* Install disdrodb 
+		**2. Install disdrodb** 
 		
-			To install the project in editable mode : 
+		To install the project in editable mode : 
+	
+		.. code-block:: bash
 		
-			.. code-block:: bash
-			
-				pip install -e .
+			pip install -e .
 	
 	
 
