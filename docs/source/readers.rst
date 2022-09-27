@@ -1,5 +1,5 @@
 =========================
-Readers development
+Readers
 =========================
 
 
@@ -11,43 +11,73 @@ DISDRODB supports reading and loading data from many input file formats and sche
 Available Readers
 ########################
 
-The following function returns the list of all readers.
+The following function returns the dictionary of all readers `.
+
+.. code-block:: python
+
+	from disdrodb.L0.L0_processing import get_available_readers
+	get_available_readers()
 
 
-.. code-block:: bash
-
-	from disdrodb import available_readers
-	available_readers()
-
-.. warning::
-    Not implemented yet !
-
-
-
-
-Running a reader
-########################
-
-To execute a reader, run the following command :
+The resulting dictionary has the following shape : 
 
 .. code-block::
 
-       python python_file_path raw_dir  processed_dir [parameters]
+	`{
+		"Data source 1": 
+			{
+				"Campaign name 1 ":"File path 1" ,
+				"Campaign name 2 ":"File path 2" ,
+				...
+				"Campaign name n ":"File path n" ,
+			
+			}
+		...
+		"Data source n": 
+			{
+				"Campaign name 1 ":"File path 1" ,
+				"Campaign name 2 ":"File path 2" ,
+				...
+				"Campaign name n ":"File path n" ,
+			
+			}
+	}`
 
 
 
-There are a couple of optional parameters that can added to the previous command :
+
+
+Using a reader
+########################
+
+Running a reader can be done by command line or directly in python. In both ways, the follwoing parameters must ou could be defeined. 
+
+
+
+Readers parameters
+.....................
+
+
+* ``data_source`` : str - Name of the data source. 
+
+		* Example data_source: 'EPFL'.
+		* Check the `available Readers <#available-readers>`__ function to get the list of the available data sources. 
+
+* ``campaign_name`` : str - Name of the campaign. 
+
+* Example data_source: 'EPFL_ROOF_2012'.
+* Check the `available Readers <#available-readers>`__  function to get the list of the available campaign.  
 
 * ``raw_dir`` : str - Directory path of raw file for a specific campaign.
 
-	* The path should end with <campaign_name>.
-	* Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
+* The path should end with <campaign_name>.
+* Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
 
 
 * ``processed_dir`` : str - Desired directory path for the processed L0A and L0B products.
 
-	* The path should end with <campaign_name> and match the end of raw_dir.
-	* Example: '<...>/disdrodb/data/processed/<campaign_name>'.
+* The path should end with <campaign_name> and match the end of raw_dir.
+* Example: '<...>/disdrodb/data/processed/<campaign_name>'.
 
 * ``--l0a_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0A Apache Parquet file(s) from raw data.
 
@@ -65,8 +95,8 @@ There are a couple of optional parameters that can added to the previous command
 
 * ``--force`` : bool [true\| **false** ] - Whether to overwrite existing data.
 
-	*  If True, overwrite existing data into destination directories.
-	*  If False, raise an error if there are already data into destination directories.
+*  If True, overwrite existing data into destination directories.
+*  If False, raise an error if there are already data into destination directories.
 
 
 * ``--verbose`` : bool [true\| **false** ] -  Whether to print detailed processing information into terminal.
@@ -75,26 +105,101 @@ There are a couple of optional parameters that can added to the previous command
 
 * ``--debugging_mode`` : bool [true\| **false** ] -  If True, it reduces the amount of data to process.
 
-	* For L0A processing, it processes just 3 raw data files.
-	* For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
+* For L0A processing, it processes just 3 raw data files.
+* For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
 
 
 
 * ``--lazy`` : bool [ **true** \|false] - Whether to perform processing lazily with dask.
 
-	* If lazy=True, it employed dask.array and dask.dataframe.
-	* If lazy=False, it employed pandas.DataFrame and numpy.array.
+* If lazy=True, it employed dask.array and dask.dataframe.
+* If lazy=False, it employed pandas.DataFrame and numpy.array.
 
 
 
 * ``--single_netcdf`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single DISDRODB L0B netCDF file.
 
 
-	* If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-	* If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
+* If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
+* If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
+
+
+Running a reader
+.....................
+
+
+There are two ways of running a reader. 
+
+1. By command line : 
+
+
+	.. code-block::
+
+		run_disdrodb_l0_reader data_source campaign_name raw_dir processed_dir [parameters]
+
+	
+	Where the parameters are defeined `here <#readers-parameters>`__.
+
+	Example :
+
+	.. code-block::
+
+		run_disdrodb_l0_reader NETHERLANDS DELFT "...\DISDRODB\Raw\NETHERLANDS\DELFT" "...\DISDRODB\Processed\NETHERLANDS\DELFT" --l0a_processing True --l0b_processing False --keep_l0a True --force True --verbose True --debugging_mode False --lazy False --single_netcdf False 
+	 
+
+
+2. By calling a python function 
+
+	2.1 Wrapping function : 
+
+		.. code-block:: python
+
+			from disdrodb.L0.L0_processing import run_reader
+			run_reader(<data_source>, <campaign_name>, <raw_dir>, <processed_dir>, ...)
+
+	
+		Example :
+
+		.. code-block:: python
+
+			from disdrodb.L0.L0_processing import run_reader
+
+			raw_dir = "...\\DISDRODB\\Raw\\NETHERLANDS\\DELFT"
+			processed_dir = "...\\DISDRODB\\Processed\\NETHERLANDS\\DELFT"
+			l0a_processing=True
+			l0b_processing=True
+			keep_l0a=True
+			force=True
+			verbose=True
+			debugging_mode=True
+			lazy=True
+			single_netcdf=True
+
+			run_reader('NETHERLANDS','DELFT',raw_dir,processed_dir,l0a_processing,l0b_processing,keep_l0a,force,verbose,debugging_mode,lazy,single_netcdf)
+
+	
+	2.2 From the reader itself : 
+
+		.. code-block:: python
+
+			from disdrodb.L0.readers.NETHERLANDS.DELFT import reader
+
+			raw_dir = "...\\DISDRODB\\Raw\\NETHERLANDS\\DELFT"
+			processed_dir = "...\\DISDRODB\\Processed\\NETHERLANDS\\DELFT"
+			l0a_processing=True
+			l0b_processing=True
+			keep_l0a=True
+			force=True
+			verbose=True
+			debugging_mode=True
+			lazy=True
+			single_netcdf=True
+
+			reader(raw_dir,processed_dir,l0a_processing,l0b_processing,keep_l0a,force,verbose,debugging_mode,lazy,single_netcdf)
 
 
 
+|
 
 
 
