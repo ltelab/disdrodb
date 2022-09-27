@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Feb  4 10:53:10 2022
 
+@author: kimbo
+"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -16,13 +21,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-import os
-import sys
-from disdrodb.L0.L0_processing import run_L0
-
-# Add project root folder into sys path
-root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-sys.path.insert(0, root_path)
+from disdrodb.L0 import run_L0
 
 
 def reader(
@@ -96,15 +95,19 @@ def reader(
     #### CUSTOMIZABLE CODE ####
     ###########################
     #### - Define raw data headers
+    # Notes
+    # - In all files, the datalogger voltage hasn't the delimeter,
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
+
+    # Columns defined into sanitizer
     column_names = []
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
-    reader_kwargs = {}
-    # - Define delimiter
-    reader_kwargs["delimiter"] = ","
 
-    # - Avoid first column to become df index
+    reader_kwargs = {}
+
+    # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
@@ -123,56 +126,122 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error"]
+    reader_kwargs["na_values"] = [
+        "na",
+        "",
+        "error",
+        "NA",
+        "-.-",
+        "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+    ]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
+    # Cast all to string
+    reader_kwargs["dtype"] = str
+
+    # No header
+    reader_kwargs["header"] = None
+
+    # Different enconding for this campaign
+    reader_kwargs["encoding"] = "latin-1"  # Important for this campaign
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards
+    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df, lazy=lazy):
+
         # Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
 
-        # - Drop datalogger columns
-        columns_to_drop = [
-            "id",
-            "datalogger_temperature",
-            "datalogger_voltage",
-            "datalogger_error",
-        ]
-        df = df.drop(columns=columns_to_drop)
+        temp_time = df.loc[df.iloc[:, 0].astype(str).str.len() == 16].add_prefix("col_")
+        temp_time["col_0"] = dd.to_datetime(temp_time["col_0"], format="%Y.%m.%d;%H:%M")
 
-        # - Drop latitude and longitude
-        # --> Latitude and longitude is specified in the the metadata.yaml
-        df = df.drop(columns=["latitude", "longitude"])
+        # Insert Raw into a series and drop last line
+        temp_raw = df.loc[df.iloc[:, 0].astype(str).str.len() != 16].add_prefix("col_")
+        temp_raw["col_0"] = temp_raw["col_0"].str.lstrip("   ")
+        temp_raw = temp_raw.dropna()
 
-        # - Convert time column to datetime with resolution in seconds
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        # If raw_drop_number series is not a 32 multiple, throw error
+        if len(temp_raw) % 32 != 0:
+            msg = "Wrong column number on raw_drop_number, can not parse!"
+            raise ValueError(msg)
+
+        # Series and variable temporary for parsing raw_drop_number
+        if lazy:
+            import pandas as pd
+
+            raw = pd.DataFrame({"raw_drop_number": []})
+            # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+        else:
+            raw = pd.DataFrame({"raw_drop_number": []})
+        temp_string_2 = ""
+
+        # Parse for raw_drop_number
+        for index, value in temp_raw.iterrows():
+            temp_string = ""
+
+            if index % 32 != 0:
+
+                temp_string = value["col_0"].split(" ")
+
+                # Remove blank string from split
+                temp_string = list(filter(None, temp_string))
+
+                # Cast list to int
+                temp_string = [int(i) for i in temp_string]
+
+                # Join list separate by comma
+                temp_string = ", ".join(map(str, temp_string))
+
+                # Add last comma
+                temp_string += ", "
+
+                temp_string_2 += temp_string
+
+            else:
+
+                raw = raw.append({"raw_drop_number": temp_string_2}, ignore_index=True)
+
+                temp_string_2 = ""
+
+        if lazy:
+            raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
+
+        # Reset all index
+        temp_time = temp_time.reset_index(drop=True)
+        raw = raw.reset_index(drop=True)
+
+        if lazy:
+            df = dd.concat([temp_time, raw], axis=1, ignore_unknown_divisions=True)
+        else:
+            df = dd.concat([temp_time, raw], axis=1)
+
+        df.columns = ["time", "raw_drop_number"]
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files within raw_dir/data/<station_id>
-    files_glob_pattern = "*.dat*"
+    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    files_glob_pattern = "*.txt*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products
     run_L0(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        L0A_processing=l0a_processing,
-        L0B_processing=l0b_processing,
-        keep_L0A=keep_l0a,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,

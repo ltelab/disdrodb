@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan 14 11:40:17 2022
 
+@author: kimbo
+"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -16,13 +21,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-import os
-import sys
-from disdrodb.L0.L0_processing import run_L0
 
-# Add project root folder into sys path
-root_path = os.path.dirname(os.path.dirname(os.path.dirname(os.getcwd())))
-sys.path.insert(0, root_path)
+from disdrodb.L0 import run_L0
 
 
 def reader(
@@ -96,15 +96,41 @@ def reader(
     #### CUSTOMIZABLE CODE ####
     ###########################
     #### - Define raw data headers
-    column_names = []
+    # Notes
+    # - In all files, the datalogger voltage hasn't the delimeter,
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
+
+    # Header found: "TIMESTAMP","RECORD","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","Error","raw_drop_concentration","raw_drop_average_velocity","RowData"
+
+    column_names = [
+        "time",
+        "id",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "laser_amplitude",
+        "number_particles",
+        "sensor_temperature",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
+        "sensor_status",
+        "rainfall_amount_absolute_32bit",
+        "datalogger_error",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ","
+    # reader_kwargs['delimiter'] = ','
 
-    # - Avoid first column to become df index
+    # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
@@ -123,17 +149,36 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error"]
+    reader_kwargs["na_values"] = [
+        "na",
+        "",
+        "error",
+        "NA",
+        "-.-",
+        " NA",
+    ]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
+    # Cast all to string
+    reader_kwargs["dtype"] = str
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # Skip first 4 rows (it's a header)
+    reader_kwargs["skiprows"] = 4
+
+    # Use for Nan value
+    reader_kwargs["assume_missing"] = True
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards
+    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None
 
     def df_sanitizer_fun(df, lazy=False):
@@ -143,26 +188,40 @@ def reader(
         else:
             import pandas as dd
 
-        # - Drop datalogger columns
-        columns_to_drop = [
-            "id",
-            "datalogger_temperature",
-            "datalogger_voltage",
-            "datalogger_error",
+        # Drop Debug_data
+        df = df.drop(columns=["id", "datalogger_error"])
+
+        # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
+        col_to_drop_if_na = [
+            "raw_drop_concentration",
+            "raw_drop_average_velocity",
+            "raw_drop_number",
         ]
-        df = df.drop(columns=columns_to_drop)
+        df = df.dropna(subset=col_to_drop_if_na)
 
-        # - Drop latitude and longitude
-        # --> Latitude and longitude is specified in the the metadata.yaml
-        df = df.drop(columns=["latitude", "longitude"])
+        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
+        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
+        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
 
-        # - Convert time column to datetime with resolution in seconds
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        # Drop if row has any string
+        ignore_list = [
+            "time",
+            "raw_drop_concentration",
+            "raw_drop_average_velocity",
+            "raw_drop_number",
+        ]
+        for column in df.columns:
+            if column not in ignore_list:
+                df[column] = dd.to_numeric(df[column], errors="coerce")
+
+        # - Convert time column to datetime
+        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files within raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
     files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
@@ -170,9 +229,9 @@ def reader(
     run_L0(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        L0A_processing=l0a_processing,
-        L0B_processing=l0b_processing,
-        keep_L0A=keep_l0a,
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
