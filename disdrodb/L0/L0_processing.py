@@ -488,7 +488,7 @@ def get_available_readers() -> dict:
     return dict_reader
 
 
-def check_data_source(data_source: str) -> bool:
+def check_data_source(data_source: str) -> str:
     """Check if the provided data source exists within the available readers.
     Please run get_available_readers() to get the list of all available reader
 
@@ -499,9 +499,9 @@ def check_data_source(data_source: str) -> bool:
 
     Returns
     -------
-    bool
-        True if the data source exists.
-        False if it does not exist.
+    str
+        if data source exists : retrurn the correct data source name
+        if data source does not exist : error
 
     Raises
     ------
@@ -511,17 +511,20 @@ def check_data_source(data_source: str) -> bool:
 
     dict_all_readers = get_available_readers()
 
-    if dict_all_readers.get(data_source, None):
-        data_source_exists = True
+    correct_data_source_list = list(
+        set(dict_all_readers.keys()).intersection([data_source, data_source.upper()])
+    )
+
+    if correct_data_source_list:
+        correct_data_source = correct_data_source_list[0]
     else:
-        data_source_exists = False
         msg = (
             f"Data source {data_source} has not been found within the available readers"
         )
         logger.exception(msg)
         raise ValueError(msg)
 
-    return data_source_exists
+    return correct_data_source
 
 
 def get_available_readers_by_data_source(data_source: str) -> dict:
@@ -539,13 +542,15 @@ def get_available_readers_by_data_source(data_source: str) -> dict:
 
     """
 
-    if check_data_source(data_source):
-        dict_data_source = get_available_readers.get(data_source, None)
+    correct_data_source = check_data_source(data_source)
+
+    if correct_data_source:
+        dict_data_source = get_available_readers().get(correct_data_source)
 
     return dict_data_source
 
 
-def check_reader_name(data_source: str, reader_name: str) -> bool:
+def check_reader_name(data_source: str, reader_name: str) -> str:
     """Check if the provided data source exists and reader names exists within the available readers.
     Please run get_available_readers() to get the list of all available reader
 
@@ -558,9 +563,9 @@ def check_reader_name(data_source: str, reader_name: str) -> bool:
 
     Returns
     -------
-    bool
-        True if the reader has been found,
-        False if the reader has not been found.
+    str
+        If True : returns the reader name
+        If False : Error - return None
 
     Raises
     ------
@@ -568,17 +573,27 @@ def check_reader_name(data_source: str, reader_name: str) -> bool:
         Error if the reader name provided for the campaign has not been found.
     """
 
-    if check_data_source(data_source):
-        if get_available_readers().get(data_source).get(reader_name, None):
-            reader_exist = True
+    correct_data_source = check_data_source(data_source)
+
+    if correct_data_source:
+        dict_reader_names = get_available_readers_by_data_source(correct_data_source)
+
+        correct_reader_name_list = list(
+            set(dict_reader_names.keys()).intersection(
+                [reader_name, reader_name.upper()]
+            )
+        )
+
+        if correct_reader_name_list:
+            correct_reader_name = correct_reader_name_list[0]
         else:
-            reader_exist = False
             msg = (
                 f"Reader {reader_name} has not been found within the available readers"
             )
             logger.exception(msg)
             raise ValueError(msg)
-    return reader_exist
+
+    return correct_reader_name
 
 
 def get_reader(data_source: str, reader_name: str) -> object:
@@ -598,10 +613,13 @@ def get_reader(data_source: str, reader_name: str) -> object:
 
     """
 
-    reader_exist = check_reader_name(data_source, reader_name)
+    corrcet_data_source = check_data_source(data_source)
+    correct_reader_name = check_reader_name(data_source, reader_name)
 
-    if reader_exist:
-        full_name = f"disdrodb.L0.readers.{data_source}.{reader_name}.reader"
+    if correct_reader_name:
+        full_name = (
+            f"disdrodb.L0.readers.{corrcet_data_source}.{correct_reader_name}.reader"
+        )
         module_name, unit_name = full_name.rsplit(".", 1)
         my_reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
 
