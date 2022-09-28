@@ -19,13 +19,16 @@
 # -----------------------------------------------------------------------------.
 import logging
 import os
+from datetime import datetime
 import re
 import shutil
 import glob
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
+import importlib.metadata
 from disdrodb.utils.logger import log_info, log_warning
+from disdrodb.L0.metadata import read_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -76,6 +79,25 @@ def get_campaign_name(base_dir):
     return campaign_name
 
 
+def get_institute_name(base_dir: str) -> str:
+    """Retrives the institute name from 'raw_dir' or processed_dir' paths
+
+    Parameters
+    ----------
+    base_dir : str
+        Input paths
+
+    Returns
+    -------
+    str
+        Name of the institute
+    """
+
+    base_dir = parse_fpath(base_dir)
+    institute_name = os.path.basename(os.path.dirname(base_dir)).upper()
+    return institute_name
+
+
 def get_L0A_dir(processed_dir, station_id):
     dir_path = os.path.join(processed_dir, "L0A", station_id)
     return dir_path
@@ -109,9 +131,16 @@ def get_L0B_fname(campaign_name, station_id, suffix=""):
     return fname
 
 
-def get_L0B_fpath(processed_dir, station_id, suffix=""):
-    campaign_name = get_campaign_name(processed_dir)
-    fname = get_L0B_fname(campaign_name, station_id, suffix=suffix)
+def get_L0B_fpath(processed_dir, station_id, starting_time=None, ending_time=None):
+    campaign_name = get_campaign_name(processed_dir).replace(".", "-")
+    institute_name = get_institute_name(processed_dir).replace(".", "-")
+    metadata_content = read_metadata(processed_dir, station_id)
+    sensor_name = metadata_content.get("sensor_name").replace("_", "-")
+    production_time = datetime.now().strftime("%Y%m%d%H%M%S")
+    version = importlib.metadata.version("disdrodb").replace(".", "-")
+    if version == "-VERSION-PLACEHOLDER-":
+        version = "dev"
+    fname = f"DISDRODB.L0B.Raw.{institute_name}.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.p{production_time}.{version}.nc"
     dir_path = get_L0B_dir(processed_dir, station_id)
     fpath = os.path.join(dir_path, fname)
     return fpath
