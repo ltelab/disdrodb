@@ -29,8 +29,21 @@ def _write_issue_timestamps_docs(f):
     f.write("#               ['2018-08-02 12:44:30', '2018-08-02 12:59:31']] \n")
 
 
-def create_issue_yml(fpath, timestamp=None, time_period=None):
-    """Write timestamps.yml"""
+def create_issue_yml(
+    fpath: str, timestamp: str = None, time_period: str = None
+) -> None:
+    """Cerate issue file
+
+    Parameters
+    ----------
+    fpath : str
+        timestamps.yml fila path
+    timestamp : str, optional
+        Timestamp, by default None
+    time_period : str, optional
+        Timeperiod, by default None
+    """
+
     logger.info(f"Creating issue YAML file at {fpath}")
     with open(fpath, "w") as f:
         # Write template for timestamps.yml
@@ -49,8 +62,22 @@ def create_issue_yml(fpath, timestamp=None, time_period=None):
             yaml.dump(time_period_dict, f, default_flow_style=None)
 
 
-def read_issue(raw_dir, station_id):
-    """Read YAML issue file."""
+def read_issue(raw_dir: str, station_id: str) -> dict:
+    """Read YAML issue file.
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+    station_id : int
+        Id of the station.
+
+    Returns
+    -------
+    dict
+        Issue dictionary.
+    """
+
     issue_fpath = os.path.join(raw_dir, "issue", station_id + ".yml")
     with open(issue_fpath, "r") as f:
         issue_dict = yaml.safe_load(f)
@@ -58,5 +85,14 @@ def read_issue(raw_dir, station_id):
     return issue_dict
 
 
-def check_issue_compliance(fpath):
+def check_issue_compliance(fpath: str) -> None:
+    """Check issue compliance
+
+    Parameters
+    ----------
+    fpath : str
+        File pazh
+
+
+    """
     pass

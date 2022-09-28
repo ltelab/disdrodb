@@ -13,8 +13,24 @@ import xarray as xr
 logger = logging.getLogger(__name__)
 
 
-def ensure_monotonic_dimension(fpaths, list_ds, dim="time"):
-    """Ensure that a list of xr.Dataset has a monotonic increasing dimension."""
+def ensure_monotonic_dimension(fpaths: str, list_ds: list, dim: str = "time") -> list:
+    """Ensure that a list of xr.Dataset has a monotonic increasing dimension.
+
+    Parameters
+    ----------
+    fpaths : str
+        File path
+    list_ds : list
+        List of dask array
+    dim : str, optional
+        dimension, by default "time"
+
+    Returns
+    -------
+    list
+        List of dask array
+    """
+
     # Get dimension values array (and associated list_ds/xr.Dataset indices)
     dim_values = np.concatenate([ds[dim].values for ds in list_ds])
     list_index = np.concatenate(
@@ -79,7 +95,19 @@ def ensure_monotonic_dimension(fpaths, list_ds, dim="time"):
 # ds_index = np.array(ds_index)
 
 
-def get_common_coords(list_ds):
+def get_common_coords(list_ds: list) -> set:
+    """Get common coordinates
+
+    Parameters
+    ----------
+    list_ds : list
+        List of dask array
+
+    Returns
+    -------
+    set
+        Coordinate
+    """
     # Get common data vars
     coords_ref = set(list_ds[0].coords)
     for ds in list_ds:
@@ -87,7 +115,19 @@ def get_common_coords(list_ds):
     return coords_ref
 
 
-def get_common_vars(list_ds):
+def get_common_vars(list_ds: list) -> tuple:
+    """Get common variables
+
+    Parameters
+    ----------
+    list_ds : list
+        List of dask array
+
+    Returns
+    -------
+    tuple
+        (common variables, dictionary to collect problems)
+    """
     # Initialize variables in first file
     vars_init = set(list_ds[0].data_vars)
     n_vars_init = len(vars_init)
@@ -132,7 +172,20 @@ def get_common_vars(list_ds):
     return common_vars_ref, dict_problems
 
 
-def get_list_ds(fpaths):
+def get_list_ds(fpaths: str) -> list:
+    """Get list of dask arrays
+
+    Parameters
+    ----------
+    fpaths : str
+        File path
+
+    Returns
+    -------
+    list
+        list of dask arrays
+    """
+
     @dask.delayed
     def open_dataset_delayed(fpath):
         ds = xr.open_dataset(fpath, chunks={"time": -1}, engine="netcdf4")
@@ -145,7 +198,21 @@ def get_list_ds(fpaths):
     return list_ds
 
 
-def ensure_constant_coords(list_ds, coords):
+def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
+    """Check constant coordinates
+
+    Parameters
+    ----------
+    list_ds : list
+        list of dask arrays
+    coords : list
+        List of coordinates
+
+    Returns
+    -------
+    tuple
+        (list of dask arrays, dictionary to collect problems)
+    """
     dict_problems = {}
     for coord in coords:
         ref_set = set(list_ds[0][coord].values)
@@ -160,13 +227,31 @@ def ensure_constant_coords(list_ds, coords):
     return list_ds, dict_problems
 
 
-def xr_concat_datasets(fpaths):
+def xr_concat_datasets(fpaths: str) -> xr.Dataset:
     """Concat xr.Dataset in a robust and parallel way.
 
     1. It checks for time dimension monotonicity
     2. It checks by default for a minimum common set of variables
     Note: client = Client(processes=True) to execute it fast !
+
+
+    Parameters
+    ----------
+    fpaths : str
+        File path
+
+    Returns
+    -------
+    xr.Dataset
+        xarray dataset
+
+    Raises
+    ------
+    ValueError
+        Error if operations can not achieved.
+
     """
+
     # --------------------------------------.
     # Open xr.Dataset lazily in parallel using dask delayed
     list_ds = get_list_ds(fpaths)

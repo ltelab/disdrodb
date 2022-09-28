@@ -7,6 +7,7 @@ Created on Sun Jan  2 14:56:38 2022
 """
 import numpy as np
 import pandas as pd
+from typing import Union
 from disdrodb.L0.standards import get_L0A_dtype
 from disdrodb.L0.check_standards import (
     get_field_nchar_dict,
@@ -16,8 +17,22 @@ from disdrodb.L0.check_standards import (
 )
 
 
-def check_column_names(column_names, sensor_name):
-    "Checks that the columnn names respects DISDRODB standards."
+def check_column_names(column_names: list, sensor_name: str) -> None:
+    """Checks that the columnn names respects DISDRODB standards.
+
+    Parameters
+    ----------
+    column_names : list
+        List of columns names
+    sensor_name : str
+        Name of the sensors
+
+    Raises
+    ------
+    TypeError
+        Error if some columns do no met the DISDRODB standards.
+    """
+
     if not isinstance(column_names, list):
         raise TypeError("'column_names' must be a list of strings.")
     # Get valid columns
@@ -55,7 +70,20 @@ def check_column_names(column_names, sensor_name):
         pass
 
 
-def print_df_first_n_rows(df, n=5, column_names=True):
+def print_df_first_n_rows(
+    df: pd.DataFrame, n: int = 5, column_names: bool = True
+) -> None:
+    """Print the n first n rows dataframe by column.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    n : int, optional
+        Number of row, by default 5
+    column_names : bool , optional
+        If true columns name are printed, by default True
+    """
     columns = list(df.columns)
     for i in range(len(df.columns)):
         if column_names:
@@ -66,7 +94,9 @@ def print_df_first_n_rows(df, n=5, column_names=True):
     return None
 
 
-def print_df_random_n_rows(df, n=5, with_column_names=True):
+def print_df_random_n_rows(
+    df: pd.DataFrame, n: int = 5, with_column_names: bool = True
+) -> None:
     """Print the content of the dataframe by column, randomly chosen
 
     Parameters
@@ -101,7 +131,7 @@ def print_df_random_n_rows(df, n=5, with_column_names=True):
     return None
 
 
-def print_df_column_names(df):
+def print_df_column_names(df: pd.DataFrame) -> None:
     """Print dataframe columns names
 
     Parameters
@@ -119,7 +149,14 @@ def print_df_column_names(df):
     return None
 
 
-def print_valid_L0_column_names(sensor_name):
+def print_valid_L0_column_names(sensor_name: str) -> None:
+    """Print valid columns names from the standard.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+    """
     print(list(get_L0A_dtype(sensor_name)))
     return None
 
@@ -152,7 +189,23 @@ def _check_columns_indices(column_indices, n_columns):
     return column_indices
 
 
-def print_df_columns_unique_values(df, column_indices=None, column_names=True):
+def print_df_columns_unique_values(
+    df: pd.DataFrame,
+    column_indices: Union[int, slice, list] = None,
+    column_names: bool = True,
+) -> None:
+    """Print columns' unique values
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    column_indices : Union[int,slice,list], optional
+        column indices
+    column_names : bool, optional
+        If true, print the column name, by default True
+
+    """
     # Retrieve column names
     columns = list(df.columns)
     n_columns = len(columns)
@@ -169,8 +222,24 @@ def print_df_columns_unique_values(df, column_indices=None, column_names=True):
     return None
 
 
-def get_df_columns_unique_values_dict(df, column_indices=None, column_names=True):
-    """Create a dictionary {column: unique values}"""
+def get_df_columns_unique_values_dict(
+    df: pd.DataFrame,
+    column_indices: Union[int, slice, list] = None,
+    column_names: bool = True,
+):
+    """Create a dictionary {column: unique values}
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    column_indices : Union[int,slice,list], optional
+        column indices
+    column_names : bool, optional
+        If true, print the column name, by default True
+
+    """
+
     # Retrieve column names
     columns = list(df.columns)
     n_columns = len(columns)
@@ -189,7 +258,28 @@ def get_df_columns_unique_values_dict(df, column_indices=None, column_names=True
     return d
 
 
-def print_df_summary_stats(df, column_indices=None, column_names=True):
+def print_df_summary_stats(
+    df: pd.DataFrame,
+    column_indices: Union[int, slice, list] = None,
+    column_names: bool = True,
+):
+    """Create a columns statistics summary.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+    column_indices : Union[int,slice,list], optional
+        column indices
+    column_names : bool, optional
+        If true, print the column name, by default True
+
+    Raises
+    ------
+    ValueError
+        Error if columns types is not numeric.
+
+    """
     # Define columns of interest
     columns = df.columns
     n_columns = len(columns)
@@ -226,7 +316,14 @@ def print_df_summary_stats(df, column_indices=None, column_names=True):
     return None
 
 
-def print_df_with_any_nan_rows(df):
+def print_df_with_any_nan_rows(df: pd.DataFrame) -> None:
+    """Print empty rows
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    """
     df_bool_is_nan = df.isnull()
     idx_nan_rows = df_bool_is_nan.any(axis=1)
     df_nan_rows = df.loc[idx_nan_rows]
@@ -235,7 +332,7 @@ def print_df_with_any_nan_rows(df):
 
 ####--------------------------------------------------------------------------.
 #### Character checks
-def arr_has_constant_nchar(arr):
+def arr_has_constant_nchar(arr: np.array) -> bool:
     """Check if the content of an array has a constant number of characters
 
     Parameters
@@ -268,7 +365,20 @@ def arr_has_constant_nchar(arr):
         return True
 
 
-def str_is_number(string):
+def str_is_number(string: str) -> bool:
+    """Check if a string is numeric
+
+    Parameters
+    ----------
+    string : Input string
+
+
+    Returns
+    -------
+    bool
+        True if float.
+    """
+
     try:
         float(string)
         return True
@@ -276,11 +386,35 @@ def str_is_number(string):
         return False
 
 
-def str_is_not_number(string):
+def str_is_not_number(string: str) -> bool:
+    """Check if a string is not numeric
+
+    Parameters
+    ----------
+    string : Input string
+
+
+    Returns
+    -------
+    bool
+        True if not float.
+    """
     return not str_is_number(string)
 
 
-def str_is_integer(string):
+def str_is_integer(string: str) -> bool:
+    """Check if a string is an integer
+
+    Parameters
+    ----------
+    string : Input string
+
+
+    Returns
+    -------
+    bool
+        True if integer.
+    """
     try:
         int(string)
         return True
@@ -288,21 +422,58 @@ def str_is_integer(string):
         return False
 
 
-def str_has_decimal_digits(string):
+def str_has_decimal_digits(string: str) -> bool:
+    """Check if a string has decimals
+
+    Parameters
+    ----------
+    string :
+        Input string
+
+
+    Returns
+    -------
+    bool
+        True if sting has digits.
+    """
     if len(string.split(".")) == 2:
         return True
     else:
         return False
 
 
-def get_decimal_ndigits(string):
+def get_decimal_ndigits(string: str) -> int:
+    """Get the decimal number of digit.
+
+    Parameters
+    ----------
+    string : str
+        Input string
+
+    Returns
+    -------
+    int
+        The number of digit.
+    """
     if str_has_decimal_digits(string):
         return len(string.split(".")[1])
     else:
         return 0
 
 
-def get_natural_ndigits(string):
+def get_natural_ndigits(string: str) -> int:
+    """Get the natural number of digit.
+
+    Parameters
+    ----------
+    string : str
+        Input string
+
+    Returns
+    -------
+    int
+        The number of digit.
+    """
     if str_is_integer(string):
         return len(string)
     if str_has_decimal_digits(string):
@@ -311,7 +482,20 @@ def get_natural_ndigits(string):
         return 0
 
 
-def get_ndigits(string):
+def get_ndigits(string: str) -> int:
+    """Get the number of digit.
+
+    Parameters
+    ----------
+    string : str
+        Input string
+
+    Returns
+    -------
+    int
+        Number of digit
+    """
+
     if str_is_not_number(string):
         return 0
     if str_has_decimal_digits(string):
@@ -320,11 +504,38 @@ def get_ndigits(string):
         return len(string)
 
 
-def get_nchar(string):
+def get_nchar(string: str) -> int:
+    """Get the number of charactar.
+
+    Parameters
+    ----------
+    string : str
+        Input string
+
+    Returns
+    -------
+    int
+        Number of charactar
+    """
     return len(string)
 
 
-def get_possible_keys(dict_options, desired_value):
+def get_possible_keys(dict_options: dict, desired_value: str) -> set:
+    """Get the possible keys from the input values
+
+    Parameters
+    ----------
+    dict_options : dict
+        Input dictionnary
+    desired_value : str
+        Input value
+
+    Returns
+    -------
+    set
+        Keys that the value matches the desired input value.
+    """
+
     list_key_match = []
     for k, v in dict_options.items():
         if v == desired_value:
@@ -333,7 +544,21 @@ def get_possible_keys(dict_options, desired_value):
     return set_key_match
 
 
-def search_possible_columns(string, sensor_name):
+def search_possible_columns(string: str, sensor_name: str) -> list:
+    """Define possible column
+
+    Parameters
+    ----------
+    string : str
+        Inpur string
+    sensor_name : str
+        Name of the sensor
+
+    Returns
+    -------
+    list
+        list of possible columns
+    """
     dict_digits = get_field_ndigits_dict(sensor_name)
     dict_nchar_digits = get_field_nchar_dict(sensor_name)
     dict_decimal_digits = get_field_ndigits_decimals_dict(sensor_name)
@@ -347,7 +572,7 @@ def search_possible_columns(string, sensor_name):
     return possible_keys
 
 
-def infer_df_str_column_names(df, sensor_name, row_idx=1):
+def infer_df_str_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
     """Try to guess the columns names base on sting patterns.
 
     Parameters

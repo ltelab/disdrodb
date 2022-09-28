@@ -22,7 +22,14 @@ import os
 import yaml
 
 
-def get_attrs_standards():
+def get_attrs_standards() -> dict:
+    """Get attributes standards
+
+    Returns
+    -------
+    dict
+        Dictionary of attibutes standard
+    """
     # TO REMOVE
     # - station_number
     # - disdrodb_id
@@ -109,23 +116,51 @@ def get_attrs_standards():
 
 
 # TODO: create_metadata_yml ? Decide similar pattern to create_issue<_yml>
-def create_metadata(fpath):
-    """Create default YAML metadata file."""
+def create_metadata(fpath: str) -> None:
+    """Create default YAML metadata file.
+
+    Parameters
+    ----------
+    fpath : str
+        File path
+    """
+
     attrs = get_attrs_standards()
     with open(fpath, "w") as f:
         yaml.dump(attrs, f, sort_keys=False)
 
 
-def read_metadata(raw_dir, station_id):
-    """Read YAML metadata file."""
+def read_metadata(raw_dir: str, station_id: str) -> dict:
+    """Read YAML metadata file.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Path of the raw directory
+    station_id : int
+        Id of the station.
+
+    Returns
+    -------
+    dict
+        Dictionnary of the metadata.
+    """
+
     metadata_fpath = os.path.join(raw_dir, "metadata", station_id + ".yml")
     with open(metadata_fpath, "r") as f:
         attrs = yaml.safe_load(f)
     return attrs
 
 
-def check_metadata_compliance(raw_dir):
-    """Check YAML metadata files compliance."""
+def check_metadata_compliance(raw_dir: str) -> None:
+    """Check YAML metadata files compliance.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Path of the raw directory
+    """
+
     # TODO: MISSING CHECKS
     # - CHECK NO MISSING IMPORTANT METADATA
     # - CHECK NO ADDITIONAL METADATA OTHER THAN STANDARDS

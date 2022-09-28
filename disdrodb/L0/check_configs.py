@@ -33,7 +33,14 @@ sensor_name = "OTT_Parsivel2"  # LITTLE ISSUE WHEN IT STARTS THE DIAMETER ...
 sensor_name = "Thies_LPM"  # OK
 
 
-def check_bin_consistency(sensor_name):
+def check_bin_consistency(sensor_name: str) -> None:
+    """Check bin consistency from config file.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+    """
 
     diameter_bin_lower = get_diameter_bin_lower(sensor_name)
     diameter_bin_upper = get_diameter_bin_upper(sensor_name)
@@ -75,7 +82,14 @@ def check_bin_consistency(sensor_name):
     )
 
 
-def check_variable_keys_consistency(sensor_name):
+def check_variable_keys_consistency(sensor_name: str) -> None:
+    """Check attributes consistency from config file.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+    """
     description_dict = get_description_dict(sensor_name)
     units_dict = get_units_dict(sensor_name)
     long_name_dict = get_long_name_dict(sensor_name)
