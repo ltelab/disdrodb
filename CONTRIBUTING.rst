@@ -230,7 +230,7 @@ You should configure VS code as follow :
 
 
 
-Test of changes
+Running test
 ~~~~~~~~~~~~~~~
 
 Every changes must be tested !
@@ -251,12 +251,10 @@ DISDRODB tests can be executed by running:
 	pytest disdrodb/tests
 
 
-.. warning:: 
-   If you plan to create a new reader, your pull request must include a test file. This file must be name accordingly to the reader name with the test prefix. The test must simulate the reading of data with a small data sample.
 
+  
 
-
-Push you changes to your fork repository
+Push your changes to your fork repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 During this process, pre-commit hooks will be run. Your commit will be
