@@ -28,7 +28,9 @@ import logging
 import numpy as np
 import pandas as pd
 import dask.array as da
+import dask.dataframe as dd
 import xarray as xr
+from typing import Union
 
 from disdrodb.L0.check_standards import (
     check_sensor_name,
@@ -66,7 +68,23 @@ logger = logging.getLogger(__name__)
 #     return arr[:, 0, :]
 
 
-def check_L0_raw_fields_available(df, sensor_name):
+def check_L0_raw_fields_available(
+    df: Union[pd.DataFrame, dd.DataFrame], sensor_name: str
+) -> None:
+    """Check the presence of the raw spectrum data according to the type of sensor.
+
+    Parameters
+    ----------
+    df : Union[pd.DataFrame,da.DataFrame]
+        Dataframe
+    sensor_name : str
+        Name of the sensor.
+
+    Raises
+    ------
+    ValueError
+        Error if the raw spectrum field is missing.
+    """
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
     raw_vars = np.array(list(n_bins_dict.keys()))
     missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
@@ -74,7 +92,19 @@ def check_L0_raw_fields_available(df, sensor_name):
         raise ValueError(f"The following L0 raw fields are missing: {missing_vars}")
 
 
-def infer_split_str(string):
+def infer_split_str(string: str) -> str:
+    """Infer the delimeter inside a string.
+
+    Parameters
+    ----------
+    string : str
+        Input string.
+
+    Returns
+    -------
+    str
+        Inferred delimiter.
+    """
     if len(string) > 0:
         valid_delims = [";", ","]  # here we can add others if needed [|, ... ]
         counts = np.array([string.count(delim) for delim in valid_delims])
@@ -90,7 +120,24 @@ def infer_split_str(string):
     return split_str
 
 
-def format_string_array(string, n_values):
+def format_string_array(string: str, n_values: int) -> np.array:
+    """Split a string with multiple numbers separated by a delimiter into an 1D array.
+
+        e.g. : format_string_array("2,44,22,33",4) will return [ 2. 44. 22. 33.]
+
+    Parameters
+    ----------
+    string : str
+        Input string
+    n_values : int
+        Expected length of the output array.
+
+    Returns
+    -------
+    np.array
+        array of float
+    """
+
     split_str = infer_split_str(string)
     values = np.array(string.split(split_str))
 
@@ -125,7 +172,31 @@ def format_string_array(string, n_values):
     return values
 
 
-def reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps):
+def reshape_raw_spectrum_to_2D(
+    arr: np.array, n_bins_dict: dict, n_timesteps: int
+) -> np.array:
+    """Reshape the raw spectrum to 2D.
+
+    Parameters
+    ----------
+    arr : np.array
+        Input array.
+    n_bins_dict : dict
+        Raw field number of bins.
+    n_timesteps : int
+        Number of timesteps.
+
+    Returns
+    -------
+    np.array
+        Output array.
+
+    Raises
+    ------
+    ValueError
+        Impossible to reshape the raw_spectrum matrix
+    """
+
     try:
         arr = arr.reshape(
             n_timesteps,
@@ -140,8 +211,34 @@ def reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps):
     return arr
 
 
-def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
-    # Log
+def retrieve_L0B_arrays(
+    df: Union[pd.DataFrame, dd.DataFrame],
+    sensor_name: str,
+    lazy: bool = True,
+    verbose: bool = False,
+) -> dict:
+    """Retrieves the L0B data matrix.
+
+    Parameters
+    ----------
+    df : Union[pd.DataFrame,dd.DataFrame]
+        Input dataframe
+    sensor_name : str
+        Name of the sensor
+    lazy : bool, optional
+        If True : Dask is used.
+        If False : Pandas is used.
+        verbose : bool, optional
+        Whether to verbose the processing.
+        The default is False.
+
+    Returns
+    -------
+    dict
+        Dictionary with data arrays.
+
+    """
+
     msg = " - Retrieval of L0B data matrix started."
     if verbose:
         print(msg)
@@ -226,7 +323,20 @@ def retrieve_L0B_arrays(df, sensor_name, lazy=True, verbose=False):
     return dict_data
 
 
-def get_coords(sensor_name):
+def get_coords(sensor_name: str) -> dict:
+    """Retrieve coordinates.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with coordinate arrays.
+    """
+
     check_sensor_name(sensor_name=sensor_name)
     coords = {}
     # Retrieve diameter coords
@@ -264,11 +374,24 @@ def get_coords(sensor_name):
     return coords
 
 
-def convert_object_variables_to_string(ds):
+def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
+    """Convert variables with object dtype to string.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+
+    Returns
+    -------
+    xr.Dataset
+        Output dataset.
+    """
     for var in ds.data_vars:
         if pd.api.types.is_object_dtype(ds[var]):
             ds[var] = ds[var].astype(str)
     return ds
+
 
 
 def get_min_max_time_as_string(ds: xr.Dataset, format: str = "%Y%m%d%H%M%S") -> tuple:
@@ -296,7 +419,38 @@ def get_min_max_time_as_string(ds: xr.Dataset, format: str = "%Y%m%d%H%M%S") -> 
     return (starting_time, ending_time)
 
 
-def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
+def create_L0B_from_L0A(
+    df: Union[pd.DataFrame, dd.DataFrame],
+    attrs: dict,
+    lazy: bool = True,
+    verbose: bool = False,
+) -> xr.Dataset:
+    """Transform the L0A dataframe to the L0B xr.Dataset.
+
+    Parameters
+    ----------
+    df : Union[pd.DataFrame,dd.DataFrame]
+        DISDRODB L0A dataframe.
+    attrs : dict
+        Station metadata.
+    lazy : bool, optional
+        If True : Dask is used.
+        If False : Pandas is used.
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+
+    Returns
+    -------
+    xr.Dataset
+        DISDRODB L0B dataset.
+
+    Raises
+    ------
+    ValueError
+        Error if the DISDRODB L0B xarray dataset can not be created.
+    """
+
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
     # -----------------------------------------------------------.
@@ -391,7 +545,21 @@ def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
 
 ####--------------------------------------------------------------------------.
 #### Writers
-def sanitize_encodings_dict(encoding_dict, ds):
+def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
+    """Ensure chunk size to be smaller than the array shape.
+
+    Parameters
+    ----------
+    encoding_dict : dict
+        Dictionary containing the encoding to write DISDRODB L0B netCDFs.
+    ds : xr.Dataset
+        Input dataset.
+
+    Returns
+    -------
+    dict
+        Encoding dictionary.
+    """
     for var in ds.data_vars:
         shape = ds[var].shape
         chunks = encoding_dict[var]["chunksizes"]
@@ -404,7 +572,22 @@ def sanitize_encodings_dict(encoding_dict, ds):
     return encoding_dict
 
 
-def rechunk_dataset(ds, encoding_dict):
+def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
+    """Coerce the dataset arrays to have the chunk size specified in the encoding dictionary.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset
+    encoding_dict : dict
+        Dictionary containing the encoding to write the xarray dataset as a netCDF.
+
+    Returns
+    -------
+    xr.Dataset
+        Output xarray dataset
+    """
+
     for var in ds.data_vars:
         chunks = encoding_dict[var].pop("chunksizes")
         if chunks is not None:
@@ -412,7 +595,21 @@ def rechunk_dataset(ds, encoding_dict):
     return ds
 
 
-def set_encodings(ds, sensor_name):
+def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
+    """Apply the encodings to the xarray Dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset.
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    xr.Dataset
+        Output xarray dataset.
+    """
     # Get encoding dictionary
     encoding_dict = get_L0B_encodings_dict(sensor_name)
     encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
@@ -434,7 +631,19 @@ def set_encodings(ds, sensor_name):
     return ds
 
 
-def write_L0B(ds, fpath, sensor_name):
+def write_L0B(ds: xr.Dataset, fpath: str, sensor_name: str) -> None:
+    """Save the xarray dataset into a NetCDF file.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset.
+    fpath : str
+        Output file path.
+    sensor_name : str
+        Name of the sensor.
+    """
+
     # Ensure directory exist
     os.makedirs(os.path.dirname(fpath), exist_ok=True)
 
@@ -447,8 +656,24 @@ def write_L0B(ds, fpath, sensor_name):
 
 ####--------------------------------------------------------------------------.
 #### Summary statistics
-def create_summary_statistics(ds, processed_dir, station_id, sensor_name):
-    """Create L0 summary statistics and save it into the station info YAML file."""
+def create_summary_statistics(
+    ds: xr.Dataset, processed_dir: str, station_id: str, sensor_name: str
+) -> None:
+    """Create L0 summary statistics and save it into the station info YAML file.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset.
+    processed_dir : str
+        Output file path
+    station_id : str
+        Station ID
+    sensor_name : str
+        Name of the sensor
+
+    """
+
     ###-----------------------------------------------------------------------.
     # Initialize dictionary
     stats_dict = {}

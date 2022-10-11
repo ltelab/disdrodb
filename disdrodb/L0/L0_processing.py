@@ -57,7 +57,14 @@ logger = logging.getLogger(__name__)
 # - Add verbose and logs to disdrodb.io function !!!
 
 # -----------------------------------------------------------------------------.
-def click_L0_readers_options(function):
+def click_L0_readers_options(function: object):
+    """Define click command line parameters.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
     function = click.option(
         "-s",
         "--single_netcdf",
@@ -454,7 +461,7 @@ def run_L0(
 
 
 def get_available_readers() -> dict:
-    """This function returns the list of reader included into the current release of DISDRODB.
+    """Returns the readers description included into the current release of DISDRODB.
 
     Returns
     -------

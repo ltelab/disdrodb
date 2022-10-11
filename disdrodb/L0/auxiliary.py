@@ -19,7 +19,7 @@
 # -----------------------------------------------------------------------------.
 
 
-def get_DELFT_dict(sensor_name):
+def get_DELFT_dict(sensor_name: str) -> dict:
     """
     Dictionary mapping from DELFT standards to DISDRODB standards.
 
@@ -57,7 +57,7 @@ def get_DELFT_dict(sensor_name):
     return d
 
 
-def get_DIVEN_dict(sensor_name):
+def get_DIVEN_dict(sensor_name: str) -> dict:
     """
     Dictionary mapping from DIVEN standards to DISDRODB standards.
 
@@ -95,7 +95,7 @@ def get_DIVEN_dict(sensor_name):
     return d
 
 
-def get_ARM_LPM_dict(sensor_name):
+def get_ARM_LPM_dict(sensor_name: str) -> dict:
     """
     Dictionary mapping from ARM standards to DISDRODB standards.
 

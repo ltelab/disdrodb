@@ -23,6 +23,7 @@ from datetime import datetime
 import re
 import shutil
 import glob
+from typing import Union
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
@@ -34,21 +35,45 @@ logger = logging.getLogger(__name__)
 
 ####---------------------------------------------------------------------------.
 #### Directory/Filepaths Defaults
-def infer_institute_from_fpath(fpath):
+def infer_institute_from_fpath(fpath: str) -> str:
+    """Infer institue name from file path.
+
+    Parameters
+    ----------
+    fpath : str
+        Input file path.
+
+    Returns
+    -------
+    str
+        Name of the institute.
+    """
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
     institute = disdrodb_fpath.split("/")[2]
     return institute
 
 
-def infer_campaign_from_fpath(fpath):
+def infer_campaign_from_fpath(fpath: str) -> str:
+    """Infer campaign name from file path.
+
+    Parameters
+    ----------
+    fpath : str
+        Input file path.
+
+    Returns
+    -------
+    str
+        Name of the campaign.
+    """
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
     campaign = disdrodb_fpath.split("/")[3]
     return campaign
 
 
-def infer_station_id_from_fpath(fpath):
+def infer_station_id_from_fpath(fpath: str) -> str:
     """
     Get the station ID from the path of the input raw data.
 
@@ -72,25 +97,37 @@ def infer_station_id_from_fpath(fpath):
     return station_id
 
 
-def get_campaign_name(base_dir):
-    """Return the campaign name from 'raw_dir' or processed_dir' paths."""
+def get_campaign_name(base_dir: str) -> str:
+    """Return the campaign name from 'raw_dir' or 'processed_dir' paths.
+
+    Parameters
+    ----------
+    base_dir : str
+        Path 'raw_dir' or 'processed_dir' directory.
+
+    Returns
+    -------
+    str
+        Name of the campaign.
+    """
+
     base_dir = parse_fpath(base_dir)
     campaign_name = os.path.basename(base_dir).upper()
     return campaign_name
 
 
 def get_institute_name(base_dir: str) -> str:
-    """Retrieves the institute name from 'raw_dir' or processed_dir' paths.
+    """Retrives the institute name from 'raw_dir' or processed_dir' paths
 
     Parameters
     ----------
     base_dir : str
-        Input directory path.
+        Input paths
 
     Returns
     -------
     str
-        Name of the data source.
+        Name of the institute
     """
 
     base_dir = parse_fpath(base_dir)
@@ -98,19 +135,65 @@ def get_institute_name(base_dir: str) -> str:
     return institute_name
 
 
-def get_L0A_dir(processed_dir, station_id):
+def get_L0A_dir(processed_dir: str, station_id: str) -> str:
+    """Get L0A directory
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+    station_id : int
+        ID of the station
+
+    Returns
+    -------
+    str
+        L0A directory path.
+    """
     dir_path = os.path.join(processed_dir, "L0A", station_id)
     return dir_path
+    
 
+def get_L0A_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
+    """build L0A file name.
 
-def get_L0A_fname(campaign_name, station_id, suffix=""):
+    Parameters
+    ----------
+    campaign_name : str
+        Name of the campaign.
+    station_id : int
+        ID of the station
+    suffix : int, optional
+        suffix, by default ""
+
+    Returns
+    -------
+    str
+        L0A file name.
+    """
     if suffix != "":
         suffix = "_" + suffix
     fname = campaign_name + "_s" + station_id + suffix + ".parquet"
     return fname
 
 
-def get_L0A_fpath(processed_dir, station_id, suffix=""):
+def get_L0A_fpath(processed_dir: str, station_id: str, suffix: str = "") -> str:
+    """build L0A file path.
+
+    Parameters
+    ----------
+    campaign_name : str
+        Name of the campaign.
+    station_id : int
+        ID of the station
+    suffix : int, optional
+        suffix, by default ""
+
+    Returns
+    -------
+    str
+        L0A file path.
+    """
     campaign_name = get_campaign_name(processed_dir)
     fname = get_L0A_fname(campaign_name, station_id, suffix=suffix)
     dir_path = get_L0A_dir(processed_dir, station_id)
@@ -118,12 +201,42 @@ def get_L0A_fpath(processed_dir, station_id, suffix=""):
     return fpath
 
 
-def get_L0B_dir(processed_dir, station_id):
+def get_L0B_dir(processed_dir: str, station_id: str) -> str:
+    """Build L0B directory
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+    station_id : int
+        ID of the station
+
+    Returns
+    -------
+    str
+        Path of the L0B directory
+    """
     dir_path = os.path.join(processed_dir, "L0B", station_id)
     return dir_path
 
 
-def get_L0B_fname(campaign_name, station_id, suffix=""):
+def get_L0B_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
+    """build L0B file name.
+
+    Parameters
+    ----------
+    campaign_name : str
+        Name of the campaign.
+    station_id : int
+        ID of the station
+    suffix : int, optional
+        suffix, by default ""
+
+    Returns
+    -------
+    str
+        L0B file name.
+    """
     if suffix != "":
         suffix = "_" + suffix
     # TODO: _s make sense with station_id... but if station_name a bit orrible
@@ -131,7 +244,23 @@ def get_L0B_fname(campaign_name, station_id, suffix=""):
     return fname
 
 
-def get_L0B_fpath(processed_dir, station_id, starting_time=None, ending_time=None):
+def get_L0B_fpath(processed_dir: str, station_id: str, suffix: str = "") -> str:
+    """build L0B file path.
+
+    Parameters
+    ----------
+    campaign_name : str
+        Name of the campaign.
+    station_id : int
+        ID of the station
+    suffix : int, optional
+        suffix, by default ""
+
+    Returns
+    -------
+    str
+        L0B file path.
+    """
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
     institute_name = get_institute_name(processed_dir).replace(".", "-")
     metadata_content = read_metadata(processed_dir, station_id)
@@ -150,7 +279,7 @@ def get_L0B_fpath(processed_dir, station_id, starting_time=None, ending_time=Non
 #### Directory/File Creation/Deletion
 
 
-def _create_directory(path):
+def _create_directory(path: str) -> None:
     if not isinstance(path, str):
         raise TypeError("'path' must be a strig.")
     try:
@@ -166,7 +295,7 @@ def _create_directory(path):
         raise FileNotFoundError(msg)
 
 
-def _remove_if_exists(fpath, force=False):
+def _remove_if_exists(fpath: str, force: bool = False) -> None:
     if os.path.exists(fpath):
         if not force:
             msg = f"--force is False and a file already exists at:{fpath}"
@@ -196,8 +325,25 @@ def _remove_if_exists(fpath, force=False):
 
 ####--------------------------------------------------------------------------.
 #### Directory checks
-def parse_fpath(fpath):
-    """Ensure fpath does not end with /."""
+def parse_fpath(fpath: str) -> str:
+    """Ensure fpath does not end with /.
+
+    Parameters
+    ----------
+    fpath : str
+        Input file path
+
+    Returns
+    -------
+    str
+        Output file path
+
+    Raises
+    ------
+    TypeError
+        Error il file path not compliant
+    """
+
     if not isinstance(fpath, str):
         raise TypeError("'parse_fpath' expects a directory/filepath string.")
     if fpath[-1] == "/":
@@ -208,7 +354,7 @@ def parse_fpath(fpath):
 
 ####--------------------------------------------------------------------------.
 #### L0 processing directory checks
-def check_raw_dir(raw_dir, verbose=False):
+def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     """Check validity of raw_dir.
 
     Steps:
@@ -217,7 +363,22 @@ def check_raw_dir(raw_dir, verbose=False):
     3. Check that each station_id directory contains data
     4. Check that for each station_id the mandatory metadata are specified.
 
+
+
+    Parameters
+    ----------
+    raw_dir : str
+        Input raw directory
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+
+    Raises
+    ------
+    TypeError
+        Error if not complient.
     """
+
     from disdrodb.L0.metadata import create_metadata
     from disdrodb.L0.metadata import check_metadata_compliance
     from disdrodb.L0.issue import create_issue_yml
@@ -376,11 +537,27 @@ def check_raw_dir(raw_dir, verbose=False):
     _ = [check_issue_compliance(fpath) for fpath in list_issue_fpath]
     # TODO: MISSING IMPLEMENTATION OF check_issue_compliance
     # -------------------------------------------------------------------------.
-    return None
 
 
-def check_processed_dir(processed_dir, force=False):
-    """Check that 'processed_dir' is a valid directory path."""
+def check_processed_dir(processed_dir: str, force: bool = False) -> None:
+    """Check that 'processed_dir' is a valid directory path.
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+    force : bool, optional
+        If True, overwrite existing data into processed directory.
+        If False, raise an error if there are already data into processed directory.
+
+    Raises
+    ------
+    TypeError
+        Error if path pattern not respected or can not be created.
+
+
+    """
+
     if not isinstance(processed_dir, str):
         raise TypeError("Provide 'processed_dir' as a string'.")
     # ------------------------------
@@ -435,8 +612,27 @@ def check_processed_dir(processed_dir, force=False):
         raise ValueError(msg)
 
 
-def check_campaign_name(raw_dir, processed_dir):
-    """Check that 'raw_dir' and 'processed_dir' have same campaign_name."""
+def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
+    """Check that 'raw_dir' and 'processed_dir' have same campaign_name.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Path of the raw directory
+    processed_dir : str
+        Path of the processed directory
+
+    Returns
+    -------
+    str
+        Campaign name in capital letter
+
+    Raises
+    ------
+    ValueError
+        Error if both paths do not match.
+    """
+
     upper_campaign_name = os.path.basename(raw_dir).upper()
     raw_campaign_name = os.path.basename(raw_dir)
     processed_campaign_name = os.path.basename(processed_dir)
@@ -453,8 +649,25 @@ def check_campaign_name(raw_dir, processed_dir):
     return upper_campaign_name
 
 
-def check_directories(raw_dir, processed_dir, force=False):
-    """Check that the specified directories respect the standards."""
+def check_directories(raw_dir: str, processed_dir: str, force: bool = False) -> tuple:
+    """Check that the specified directories respect the standards.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Path of the raw directory
+    processed_dir : str
+        Path of the processed directory
+    force : bool, optional
+        If True, overwrite existing data into processed directory.
+        If False, raise an error if there are already data into processed directory.
+
+    Returns
+    -------
+    tuple
+        raw directory and processed directory
+    """
+
     raw_dir = parse_fpath(raw_dir)
     processed_dir = parse_fpath(processed_dir)
     check_raw_dir(raw_dir)
@@ -463,7 +676,19 @@ def check_directories(raw_dir, processed_dir, force=False):
     return raw_dir, processed_dir
 
 
-def check_metadata_dir(processed_path):
+def check_metadata_dir(processed_path: str) -> None:
+    """Check metadata folder
+
+    Parameters
+    ----------
+    processed_path : str
+        Path of the processed directory
+
+    Raises
+    ------
+    FileNotFoundError
+        Error metadat already existed or can not be created.
+    """
     # Create metadata folder
     try:
         metadata_folder_path = os.path.join(processed_path, "metadata")
@@ -478,8 +703,22 @@ def check_metadata_dir(processed_path):
         raise FileNotFoundError(msg)
 
 
-def copy_metadata_from_raw_dir(raw_dir, processed_dir):
-    """Copy yaml files in raw_dir/metadata into processed_dir/metadata"""
+def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
+    """Copy yaml files in raw_dir/metadata into processed_dir/metadata
+
+    Parameters
+    ----------
+    raw_dir : str
+        Path of the raw directory
+    processed_dir : str
+        Path of the processed directory
+
+    Raises
+    ------
+    ValueError
+        Error if the copy fails.
+    """
+
     # Get src and dst metadata directory
     raw_metadata_dir = os.path.join(raw_dir, "metadata")
     processed_metadata_dir = os.path.join(processed_dir, "metadata")
@@ -516,8 +755,22 @@ def copy_metadata_from_raw_dir(raw_dir, processed_dir):
 #### L0 processing directory structure
 
 
-def create_directory_structure(raw_dir, processed_dir):
-    """Create directory structure for L0A and L0B processing."""
+def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
+    """Create directory structure for L0A and L0B processing.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Path of the raw directory
+    processed_dir : str
+        Path of the processed directory
+
+    Raises
+    ------
+    FileNotFoundError
+        Error is folder structure can not be created.
+    """
+
     # -----------------------------------------------------.
     #### Create metadata folder inside processed_dir
     check_metadata_dir(processed_dir)
@@ -569,7 +822,9 @@ def create_directory_structure(raw_dir, processed_dir):
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers
-def _read_L0A(fpath, lazy=True, verbose=False):
+def _read_L0A(
+    fpath: str, lazy: bool = True, verbose: bool = False
+) -> Union[pd.DataFrame, dd.DataFrame]:
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} started."
     log_info(logger, msg, verbose)
@@ -584,9 +839,13 @@ def _read_L0A(fpath, lazy=True, verbose=False):
     return df
 
 
-def read_L0A_dataframe(fpaths, lazy=True, verbose=False, debugging_mode=False):
-    """
-    Read DISDRODB L0A Apache Parquet file(s).
+def read_L0A_dataframe(
+    fpaths: Union[str, list],
+    lazy: bool = True,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+) -> Union[pd.DataFrame, dd.DataFrame]:
+    """Read DISDRODB L0A Apache Parquet file(s).
 
     Parameters
     ----------
@@ -604,7 +863,18 @@ def read_L0A_dataframe(fpaths, lazy=True, verbose=False, debugging_mode=False):
         If lazy=True, it returns a dask.dataframe.
         If lazy=False, it returns a pandas.DataFrame
         The default is True.
+
+    Returns
+    -------
+    Union[pd.DataFrame,dd.DataFrame]
+        Dataframe
+
+    Raises
+    ------
+    TypeError
+        Error if the reading fails
     """
+
     from disdrodb.L0.L0A_processing import concatenate_dataframe
 
     # ----------------------------------------
@@ -635,7 +905,25 @@ def read_L0A_dataframe(fpaths, lazy=True, verbose=False, debugging_mode=False):
 ####---------------------------------------------------------------------------.
 
 
-def check_L0_is_available(processed_dir, station_id, suffix=""):
+def check_L0_is_available(
+    processed_dir: str, station_id: str, suffix: str = ""
+) -> None:
+    """Check if the Apache parquet file has been found
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+    station_id : int
+        Id of the station.
+    suffix : str, optional
+        Suffix, by default ""
+
+    Raises
+    ------
+    ValueError
+        Check if the Apache parquet file has not been found
+    """
     fpath = get_L0A_fpath(processed_dir, station_id, suffix=suffix)
     if not os.path.exists(fpath):
         msg = f"Need to run L0 processing first. The Apache Parquet file {fpath} is not available."
@@ -647,12 +935,40 @@ def check_L0_is_available(processed_dir, station_id, suffix=""):
 
 
 def read_L0_data(
-    processed_dir, station_id, suffix="", lazy=True, verbose=False, debugging_mode=False
-):
+    processed_dir: str,
+    station_id: str,
+    suffix: str = "",
+    lazy: bool = True,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+) -> Union[pd.DataFrame, dd.DataFrame]:
     """Read L0 Apache Parquet into dataframe.
 
-    If debugging_mode = True, return just a subset of total rows.
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+    station_id : int
+        Id of the station.
+    suffix : str, optional
+        Suffix, by default ""
+    lazy : bool, optional
+        If True : Dask is used.
+        If False : Pandas is used
+        by default True
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+    debugging_mode : bool, optional
+        If True, return just a subset of total rows, by default False
+
+    Returns
+    -------
+    Union[pd.DataFrame,dd.DataFrame]
+        Dataframe
     """
+
     # Check L0 is available
     check_L0_is_available(processed_dir, station_id, suffix=suffix)
     # Define fpath

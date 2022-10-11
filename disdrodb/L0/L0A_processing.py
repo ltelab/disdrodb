@@ -24,10 +24,12 @@
 # -----------------------------------------------------------------------------.
 import os
 import glob
+from xmlrpc.server import list_public_methods
 import pandas as pd
 import dask.dataframe as dd
 import logging
 import tarfile
+from typing import Union
 
 from disdrodb.L0.standards import get_L0A_dtype
 from disdrodb.L0.check_standards import check_L0A_standards, check_L0A_column_names
@@ -45,14 +47,42 @@ logger = logging.getLogger(__name__)
 # - read_raw_data_zipped
 
 
-def check_glob_pattern(pattern):
+def check_glob_pattern(pattern: str) -> None:
+    """Check if the input parameters is a string and if it can be used as pattern.
+
+    Parameters
+    ----------
+    pattern : str
+        String to be checked.
+
+    Raises
+    ------
+    TypeError
+        The input parameter is not a string.
+    ValueError
+        The input parameter can not be used as pattern.
+    """
     if not isinstance(pattern, str):
         raise TypeError("Expect pattern as a string.")
     if pattern[0] == "/":
         raise ValueError("glob_pattern should not start with /")
 
 
-def _get_file_list(raw_dir, glob_pattern):
+def _get_file_list(raw_dir: str, glob_pattern) -> list:
+    """Get the list of files from a directory based on pattern.
+
+    Parameters
+    ----------
+    raw_dir : _type_
+        Directory of the raw dataset.
+    glob_pattern : _type_
+        Pattern to match
+
+    Returns
+    -------
+    list
+        List of file paths.
+    """
     check_glob_pattern(glob_pattern)
     glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
     list_fpaths = sorted(glob.glob(glob_fpath_pattern))
@@ -60,13 +90,14 @@ def _get_file_list(raw_dir, glob_pattern):
 
 
 def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
-    """
+    """Get the list of files from a directory based on input parameters.
+
     Parameters
     ----------
     raw_dir : str
         Directory of the campaign where to search for files.
     glob_pattern : str or list
-        glob pattern to search for files. Can also be a list of glob patterns.
+        Glob pattern to search for files. Can also be a list of glob patterns.
     verbose : bool, optional
         Wheter to verbose the processing.
         The default is False.
@@ -77,7 +108,7 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
     Returns
     -------
     list_fpaths : list
-        List of files filepaths.
+        List of files file paths.
 
     """
     if not isinstance(glob_pattern, (str, list)):
@@ -118,7 +149,21 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 
 ####---------------------------------------------------------------------------.
 #### Dataframe creation
-def preprocess_reader_kwargs(reader_kwargs, lazy=True):
+def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
+    """Define a dictionary with the parameters required for reading the raw data with Pandas or Dask.
+
+    Parameters
+    ----------
+    reader_kwargs : dict
+        Initial parameter dictionary.
+    lazy : bool, optional
+        If True : Dask is used.
+        If False : Pandas is used.
+    Returns
+    -------
+    dict
+        Parameter dictionary that matches either Pandas or Dask.
+    """
     # Remove dtype key
     # - The dtype is enforced to be 'object' in the read function !
     reader_kwargs.pop("dtype", None)
@@ -138,7 +183,32 @@ def preprocess_reader_kwargs(reader_kwargs, lazy=True):
     return reader_kwargs
 
 
-def concatenate_dataframe(list_df, verbose=False, lazy=True):
+def concatenate_dataframe(
+    list_df: list, verbose: bool = False, lazy: bool = True
+) -> Union[pd.DataFrame, dd.DataFrame]:
+    """Concatenate a list of dataframes.
+
+    Parameters
+    ----------
+    list_df : list
+        List of dataframes.
+    verbose : bool, optional
+        If True, print messages.
+        If False, no print.
+    lazy : bool, optional
+        If True : Dask is used.
+        If False : Pandas is used.
+
+    Returns
+    -------
+    Union[pd.DataFrame,dd.DataFrame]
+        Concatenated dataframe.
+
+    Raises
+    ------
+    ValueError
+        Concatenation can not be done.
+    """
     # Import dask or pandas
     if lazy:
         import dask.dataframe as dd
@@ -166,8 +236,22 @@ def concatenate_dataframe(list_df, verbose=False, lazy=True):
     return df
 
 
-def cast_column_dtypes(df, sensor_name):
-    "Convert 'object' dataframe columns into DISDRODB L0A dtype standards."
+def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
+    """Convert 'object' dataframe columns into DISDRODB L0A dtype standards.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with corrected columns types.
+    """
+
     # Cast dataframe to dtypes
     dtype_dict = get_L0A_dtype(sensor_name)
     # Ensure time column is saved with seconds resolution
@@ -187,19 +271,22 @@ def cast_column_dtypes(df, sensor_name):
     return df
 
 
-def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
+def read_raw_data(
+    filepath: str, column_names: list, reader_kwargs: dict, lazy: bool = True
+) -> pd.DataFrame:
     """Read raw data into a dataframe
 
     Parameters
     ----------
     filepath : str
-        Raw file path
+        Raw file path.
     column_names : list
-        Column names
+        Column names.
     reader_kwargs : dict
         Dask or Pandas reading parameters
     lazy : bool, optional
-        If lazy = True, load the raw file using dask, If false, uses pandas.
+        If True : Dask is used.
+        If False : Pandas is used.
 
     Returns
     -------
@@ -236,15 +323,45 @@ def read_raw_data(filepath, column_names, reader_kwargs, lazy=True):
     return df
 
 
-def read_raw_data_zipped(filepath, column_names, reader_kwargs, lazy=True):
-    """
+def read_raw_data_zipped(
+    filepath: str, column_names: list, reader_kwargs: dict, lazy: bool = True
+) -> pd.DataFrame:
+    """Read zipped raw data into a dataframe.
     Used because some campaign has tar with multiple files inside,
     and in some situation only one files has to be read.
     Tar reading work only with pandas.
     Put the only file name to read into file_name_to_read_zipped variable,
     if file_name_to_read_zipped is none, all the tar contenet will be
     read and concat into a single dataframe.
+
+
+    Parameters
+    ----------
+    filepath : str
+        Raw file path.
+    column_names : list
+        Column names.
+    reader_kwargs : dict
+        Dask or Pandas reading parameters
+    lazy : bool, optional
+        If True : Dask is used.
+        If False : Pandas is used.
+
+    Returns
+    -------
+    pandas.DataFrame or dask.DataFrame
+        Pandas or dask dataframe
+
+    Raises
+    ------
+    pd.errors.EmptyDataError
+        File is empty
+    pd.errors.ParserError
+        File can not be read
+    UnicodeDecodeError
+        File can not be decoded
     """
+
     df = pd.DataFrame()
     tar = tarfile.open(filepath)
 
@@ -305,15 +422,46 @@ def read_raw_data_zipped(filepath, column_names, reader_kwargs, lazy=True):
 
 
 def read_L0A_raw_file_list(
-    file_list,
-    column_names,
-    reader_kwargs,
-    sensor_name,
-    verbose,
-    df_sanitizer_fun=None,
-    lazy=False,
-):
-    """Read and parse a list for raw files into a dataframe."""
+    file_list: Union[list, str],
+    column_names: list,
+    reader_kwargs: dict,
+    sensor_name: str,
+    verbose: bool,
+    df_sanitizer_fun: object = None,
+    lazy: bool = False,
+) -> Union[pd.DataFrame, dd.DataFrame]:
+    """Read and parse a list for raw files into a dataframe.
+
+    Parameters
+    ----------
+    file_list : Union[list,str]
+        File(s) path(s)
+    column_names : list
+        Columns names.
+    reader_kwargs : dict
+        Dask or Pandas reading parameters.
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+    df_sanitizer_fun : object, optional
+        Sanitizer function to format the datafame.
+    lazy : bool, optional
+        If True : Dask is used.
+        If False : Pandas is used.
+
+    Returns
+    -------
+    Union[pd.DataFrame,dd.DataFrame]
+        Dataframe
+
+    Raises
+    ------
+    ValueError
+        Input parameters can not be used or the raw file can not be processed.
+
+    """
+
     # ------------------------------------------------------.
     # ### Checks arguments
     if df_sanitizer_fun is not None:
@@ -441,7 +589,10 @@ def read_L0A_raw_file_list(
 
 ####---------------------------------------------------------------------------.
 #### Parquet Writer
-def _write_to_parquet(df, fpath, force=False):
+def _write_to_parquet(
+    df: Union[pd.DataFrame, dd.DataFrame], fpath: str, force: bool = False
+):
+
     import pandas as pd
     import dask.dataframe
 
@@ -504,7 +655,36 @@ def _write_to_parquet(df, fpath, force=False):
     # -------------------------------------------------------------------------.
 
 
-def write_df_to_parquet(df, fpath, force=False, verbose=False):
+def write_df_to_parquet(
+    df: Union[pd.DataFrame, dd.DataFrame],
+    fpath: str,
+    force: bool = False,
+    verbose: bool = False,
+):
+    """Save the dataframe into an Apache Parquet file.
+
+    Parameters
+    ----------
+    df : Union[pd.DataFrame,dd.DataFrame]
+        Input dataframe.
+    fpath : str
+        Output file path.
+    force : bool, optional
+        Whether to overwrite existing data.
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories. This is the default.
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+
+    Raises
+    ------
+    ValueError
+        The input dataframe can not be written as an Apache Parquet file.
+    NotImplementedError
+        The input dataframe can not be processed.
+    """
+
     # Log
     msg = " - Conversion to Apache Parquet started."
     log_info(logger, msg, verbose)
