@@ -233,7 +233,7 @@ You should configure VS code as follow :
 Running test units
 ~~~~~~~~~~~~~~~
 
-Every changes must be tested !
+Every code change must be tested !
 
 DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. There is usually no need to run all DISDRODB tests, 
 but instead only run the tests related to the component you are working on. All tests are automatically run from the GitHub Pull Request using multiple versions of Python, multiple operating systems, and multiple versions of dependency libraries. 
