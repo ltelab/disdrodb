@@ -191,7 +191,7 @@ def concatenate_dataframe(
     Parameters
     ----------
     list_df : list
-        List of dataframes
+        List of dataframes.
     verbose : bool, optional
         If True, print messages.
         If False, no print.
