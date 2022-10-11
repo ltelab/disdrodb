@@ -72,7 +72,6 @@ def create_and_testing_folder_structure(path_reader: str) -> dict:
             for item in list_zip_files_names:
                 source = os.path.join(campaign_path, f"{item}.zip")
                 dst_dir = os.path.join(
-
                     LOCAL_FOLDER,
                     "testing_files",
                     "DISDRODB",
@@ -82,7 +81,6 @@ def create_and_testing_folder_structure(path_reader: str) -> dict:
                 )
                 with zipfile.ZipFile(source, "r") as zipObj:
                     zipObj.extractall(dst_dir)
-
 
             # Populate the dictionnary of available testing items
             if not data_source_name in dict_available_testing_items.keys():

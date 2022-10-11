@@ -152,7 +152,7 @@ def get_L0A_dir(processed_dir: str, station_id: str) -> str:
     """
     dir_path = os.path.join(processed_dir, "L0A", station_id)
     return dir_path
-    
+
 
 def get_L0A_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
     """build L0A file name.

@@ -393,7 +393,6 @@ def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-
 def get_min_max_time_as_string(ds: xr.Dataset, format: str = "%Y%m%d%H%M%S") -> tuple:
     """Retrives starting and ending time
 
