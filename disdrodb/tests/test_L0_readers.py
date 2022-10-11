@@ -18,7 +18,8 @@ GITHUB_URL = "https://github.com/EPFL-ENAC/LTE-disdrodb-testing"
 
 
 def downlaod_file(url: str, local_path: str) -> None:
-    """Download files
+    """Download files.
+
 
     Parameters
     ----------
@@ -33,17 +34,20 @@ def downlaod_file(url: str, local_path: str) -> None:
 
 
 def create_and_testing_folder_structure(path_reader: str) -> dict:
-    """Create testing folder and return available testing ressources
+    """Create a testing folder and return available testing resources.
+
 
     Parameters
     ----------
     path_reader : str
-        Reader path
+        Reader file path.
+
 
     Returns
     -------
     dict
-        Available testing ressources {'data_source':['campaign']}
+        Available testing resources {'data_source':['campaign']} .
+
     """
 
     list_zip_files_names = ["raw", "processed"]
@@ -67,7 +71,8 @@ def create_and_testing_folder_structure(path_reader: str) -> dict:
             # Unzip files
             for item in list_zip_files_names:
                 source = os.path.join(campaign_path, f"{item}.zip")
-                dest = os.path.join(
+                dst_dir = os.path.join(
+
                     LOCAL_FOLDER,
                     "testing_files",
                     "DISDRODB",
@@ -76,7 +81,8 @@ def create_and_testing_folder_structure(path_reader: str) -> dict:
                     campaign_name,
                 )
                 with zipfile.ZipFile(source, "r") as zipObj:
-                    zipObj.extractall(dest)
+                    zipObj.extractall(dst_dir)
+
 
             # Populate the dictionnary of available testing items
             if not data_source_name in dict_available_testing_items.keys():
@@ -87,14 +93,17 @@ def create_and_testing_folder_structure(path_reader: str) -> dict:
 
 
 def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
-    """Run reader on test data
+    """Run reader on test data.
+
 
     Parameters
     ----------
     data_source : str
-        Data source
+        Data source.
+
     campaign_name : str
-        Name of the campaign
+        Name of the campaign.
+
     """
 
     raw_dir = os.path.join(
@@ -133,8 +142,10 @@ def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
     )
 
 
-def are_netcdf_identital(dataset_1: Dataset, dataset_2: Dataset) -> bool:
-    """Check if two NetCDF are identical
+def are_netcdf_identical(dataset_1: Dataset, dataset_2: Dataset) -> bool:
+
+    """Check if two NetCDF are identical.
+
 
     Parameters
     ----------
@@ -189,9 +200,11 @@ def is_reader_results_similar_to_ground_truth(
     Parameters
     ----------
     data_source : str
-        Data source
+        Data source.
+
     campaign_name : str
-        Name of the campaign
+        Name of the campaign.
+
 
     Returns
     -------
@@ -240,7 +253,8 @@ def is_reader_results_similar_to_ground_truth(
                 # Load datasets
                 dataset_1 = Dataset(ground_truth_file_path)
                 dataset_2 = Dataset(result_file_path)
-                if not are_netcdf_identital(dataset_1, dataset_2):
+                if not are_netcdf_identical(dataset_1, dataset_2):
+
                     is_reader_result_similar_to_ground_truth = False
                     print(f"{result_file_name} does not match {groud_truth_file_name}")
 
@@ -248,7 +262,8 @@ def is_reader_results_similar_to_ground_truth(
 
 
 def downlaod_test_ressources() -> str:
-    """Download testing ressource files
+    """Download testing resource files.
+
 
     Returns
     -------

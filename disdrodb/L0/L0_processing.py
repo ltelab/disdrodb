@@ -660,7 +660,7 @@ def run_reader(
         - /data/<station_id>/<raw_files>
         - /metadata/<station_id>.json
         Important points:
-        - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
+        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
         - The <campaign_name> must semantically match between:
            - the raw_dir and processed_dir directory paths;
            - with the key 'campaign_name' within the metadata YAML files.
@@ -669,13 +669,13 @@ def run_reader(
         Desired directory path for the processed L0A and L0B products.
         The path should end with <campaign_name> and match the end of raw_dir.
         Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    L0A_processing : bool
+    l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
-    L0B_processing : bool
+    l0b_processing : bool
       Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
       The default is True.
-    keep_L0A : bool
+    keep_l0a : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     force : bool

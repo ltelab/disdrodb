@@ -80,17 +80,17 @@ def get_campaign_name(base_dir):
 
 
 def get_institute_name(base_dir: str) -> str:
-    """Retrives the institute name from 'raw_dir' or processed_dir' paths
+    """Retrieves the institute name from 'raw_dir' or processed_dir' paths.
 
     Parameters
     ----------
     base_dir : str
-        Input paths
+        Input directory path.
 
     Returns
     -------
     str
-        Name of the institute
+        Name of the data source.
     """
 
     base_dir = parse_fpath(base_dir)

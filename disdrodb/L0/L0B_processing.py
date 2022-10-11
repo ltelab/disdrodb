@@ -287,13 +287,13 @@ def get_min_max_time_as_string(ds: xr.Dataset, format: str = "%Y%m%d%H%M%S") -> 
     tuple
         (starting_time, ending_time)
     """
-    strating_time = pd.to_datetime(str(min(ds.time).coords["time"].values)).strftime(
+    starting_time = pd.to_datetime(str(min(ds.time).coords["time"].values)).strftime(
         format
     )
     ending_time = pd.to_datetime(str(max(ds.time).coords["time"].values)).strftime(
         format
     )
-    return (strating_time, ending_time)
+    return (starting_time, ending_time)
 
 
 def create_L0B_from_L0A(df, attrs, lazy=True, verbose=False):
