@@ -25,7 +25,7 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
     column_names : list
         List of columns names.
     sensor_name : str
-        Name of the sensors
+        Name of the sensor.
 
     Raises
     ------
