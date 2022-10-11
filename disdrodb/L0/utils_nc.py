@@ -199,7 +199,7 @@ def get_list_ds(fpaths: str) -> list:
 
 
 def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
-    """Check constant coordinates
+    """Check coordinates are invariant across xarray datasets.
 
     Parameters
     ----------
