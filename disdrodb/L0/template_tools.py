@@ -30,7 +30,7 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
     Raises
     ------
     TypeError
-        Error if some columns do no met the DISDRODB standards.
+        Error if some columns do not meet the DISDRODB standards.
     """
 
     if not isinstance(column_names, list):
