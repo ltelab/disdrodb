@@ -194,7 +194,7 @@ def concatenate_dataframe(
         List of dataframes
     verbose : bool, optional
         If True, print messages.
-        If False, no print
+        If False, no print.
     lazy : bool, optional
         If True : Dask is used.
         If False : Pandas is used.
