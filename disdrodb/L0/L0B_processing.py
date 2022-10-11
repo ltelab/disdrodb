@@ -393,6 +393,31 @@ def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
+def get_min_max_time_as_string(ds: xr.Dataset, format: str = "%Y%m%d%H%M%S") -> tuple:
+    """Retrives starting and ending time
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset
+
+    format : str
+        String date format
+
+    Returns
+    -------
+    tuple
+        (starting_time, ending_time)
+    """
+    starting_time = pd.to_datetime(str(min(ds.time).coords["time"].values)).strftime(
+        format
+    )
+    ending_time = pd.to_datetime(str(max(ds.time).coords["time"].values)).strftime(
+        format
+    )
+    return (starting_time, ending_time)
+
+
 def create_L0B_from_L0A(
     df: Union[pd.DataFrame, dd.DataFrame],
     attrs: dict,
@@ -424,6 +449,7 @@ def create_L0B_from_L0A(
     ValueError
         Error if the DISDRODB L0B xarray dataset can not be created.
     """
+
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
     # -----------------------------------------------------------.

@@ -6,7 +6,7 @@
 import click
 
 from disdrodb.L0 import click_L0_readers_options
-from disdrodb.L0.L0_processing import get_reader
+from disdrodb.L0.L0_processing import run_reader
 
 
 # -------------------------------------------------------------------------.
@@ -15,20 +15,7 @@ from disdrodb.L0.L0_processing import get_reader
 @click.argument("data_source", metavar="<data_source>")
 @click.argument("reader_name", metavar="<reader_name>")
 @click_L0_readers_options  # get default arguments
-def run_reader(
-    data_source: str,
-    reader_name: str,
-    raw_dir: str,
-    processed_dir: str,
-    l0a_processing: bool = True,
-    l0b_processing: bool = True,
-    keep_l0a: bool = False,
-    force: bool = False,
-    verbose: bool = False,
-    debugging_mode: bool = False,
-    lazy: bool = True,
-    single_netcdf: bool = True,
-) -> None:
+def run_reader_cmd(**kwargs):
     """Wrapper to run reader functions by command lines.
 
     Parameters
@@ -87,22 +74,7 @@ def run_reader(
         The default is True.
     """
 
-    # Get the corresponding reader function.
-    reader = get_reader(data_source, reader_name)
-
-    # Run the reader function accoring to the command line aguments.
-    reader(
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        force=force,
-        verbose=verbose,
-        debugging_mode=debugging_mode,
-        lazy=lazy,
-        single_netcdf=single_netcdf,
-    )
+    run_reader(**kwargs)
 
 
 if __name__ == "__main__":
