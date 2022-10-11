@@ -437,9 +437,9 @@ def read_L0A_raw_file_list(
     file_list : Union[list,str]
         File(s) path(s)
     column_names : list
-        Columns names
+        Columns names.
     reader_kwargs : dict
-        Dask or Pandas reading parameters
+        Dask or Pandas reading parameters.
     sensor_name : str
         Name of the sensor.
     verbose : bool
@@ -458,7 +458,7 @@ def read_L0A_raw_file_list(
     Raises
     ------
     ValueError
-        Input parameters can not be used or the raw file can be processed.
+        Input parameters can not be used or the raw file can not be processed.
 
     """
 
@@ -661,26 +661,26 @@ def write_df_to_parquet(
     force: bool = False,
     verbose: bool = False,
 ):
-    """Save the dataframe into a Apache parquet file.
+    """Save the dataframe into an Apache Parquet file.
 
     Parameters
     ----------
     df : Union[pd.DataFrame,dd.DataFrame]
-        Input dataframe
+        Input dataframe.
     fpath : str
-        Output file path
+        Output file path.
     force : bool, optional
         Whether to overwrite existing data.
         If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories. This is the default
+        If False, raise an error if there are already data into destination directories. This is the default.
     verbose : bool, optional
         Wheter to verbose the processing.
-        The default is False
+        The default is False.
 
     Raises
     ------
     ValueError
-        The DataFrame cannot be written as an Apache Parquet file.
+        The input dataframe can not be written as an Apache Parquet file.
     NotImplementedError
         The input dataframe can not be processed.
     """

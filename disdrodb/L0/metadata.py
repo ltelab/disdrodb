@@ -23,7 +23,7 @@ import yaml
 
 
 def get_attrs_standards() -> dict:
-    """Get attributes standards
+    """Get DISDRODB metadata default values.
 
     Returns
     -------

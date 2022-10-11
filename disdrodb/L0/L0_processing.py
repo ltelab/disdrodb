@@ -57,12 +57,12 @@ logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------.
 def click_L0_readers_options(function: object):
-    """Define click command line parameters
+    """Define click command line parameters.
 
     Parameters
     ----------
-    function : oject
-        Function
+    function : object
+        Function.
     """
     function = click.option(
         "-s",

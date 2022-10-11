@@ -18,17 +18,18 @@ def ensure_monotonic_dimension(fpaths: str, list_ds: list, dim: str = "time") ->
 
     Parameters
     ----------
-    fpaths : str
-        File path
+    fpaths : list
+        List of netCDFs file paths.
     list_ds : list
-        List of dask array
+        List of xarray Dataset.
     dim : str, optional
-        dimension, by default "time"
+        Dimension name. 
+        The default is "time".
 
     Returns
     -------
     list
-        List of dask array
+        List of xarray datasets.
     """
 
     # Get dimension values array (and associated list_ds/xr.Dataset indices)
@@ -96,17 +97,17 @@ def ensure_monotonic_dimension(fpaths: str, list_ds: list, dim: str = "time") ->
 
 
 def get_common_coords(list_ds: list) -> set:
-    """Get common coordinates
+    """Get the common set of coordinates across xarray datasets.
 
     Parameters
     ----------
     list_ds : list
-        List of dask array
+        List of xarray datasets.
 
     Returns
     -------
     set
-        Coordinate
+        The common set of coordinates.
     """
     # Get common data vars
     coords_ref = set(list_ds[0].coords)
@@ -116,17 +117,17 @@ def get_common_coords(list_ds: list) -> set:
 
 
 def get_common_vars(list_ds: list) -> tuple:
-    """Get common variables
+    """Get the common set of variables across xarray datasets.
 
     Parameters
     ----------
     list_ds : list
-        List of dask array
+        List of xarray datasets
 
     Returns
     -------
     tuple
-        (common variables, dictionary to collect problems)
+        (The common set of variables, Dictionary to collect problems)
     """
     # Initialize variables in first file
     vars_init = set(list_ds[0].data_vars)
@@ -173,12 +174,12 @@ def get_common_vars(list_ds: list) -> tuple:
 
 
 def get_list_ds(fpaths: str) -> list:
-    """Get list of dask arrays
+    """Get list of xarray datasets from file paths.
 
     Parameters
     ----------
-    fpaths : str
-        File path
+    fpaths : list
+        List of netCDFs file paths.
 
     Returns
     -------
@@ -204,14 +205,14 @@ def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
     Parameters
     ----------
     list_ds : list
-        list of dask arrays
+        List of xarray datasets.
     coords : list
-        List of coordinates
+        List of coordinates names.
 
     Returns
     -------
     tuple
-        (list of dask arrays, dictionary to collect problems)
+        (List of xarray datasets, Dictionary to collect problems)
     """
     dict_problems = {}
     for coord in coords:
@@ -237,18 +238,18 @@ def xr_concat_datasets(fpaths: str) -> xr.Dataset:
 
     Parameters
     ----------
-    fpaths : str
-        File path
+    fpaths : list
+        List of netCDFs file paths.
 
     Returns
     -------
     xr.Dataset
-        xarray dataset
+        A single xarray dataset.
 
     Raises
     ------
     ValueError
-        Error if operations can not achieved.
+        Error if the merging/concatenation operations can not be achieved.
 
     """
 

@@ -16,17 +16,17 @@ from typing import Union
 
 
 def read_yaml(fpath: str) -> dict:
-    """Read Yaml file.
+    """Read YAML file.
 
     Parameters
     ----------
     fpath : str
-        Input Yaml file path.
+        Input YAML file path.
 
     Returns
     -------
     dict
-        Attributes read from the Yaml file.
+        Attributes read from the YAML file.
     """
     with open(fpath, "r") as f:
         attrs = yaml.safe_load(f)
@@ -34,12 +34,12 @@ def read_yaml(fpath: str) -> dict:
 
 
 def identify_missing_metadata(metadata_fpaths: str, keys: Union[str, list]) -> None:
-    """Identify missing metadata
+    """Identify missing metadata.
 
     Parameters
     ----------
     metadata_fpaths : str
-        Input Yaml file  path
+        Input YAML file path.
     keys : Union[str,list]
         Attributes to verify the presence.
     """
@@ -60,12 +60,12 @@ def identify_missing_coords(metadata_fpaths: str) -> None:
     Parameters
     ----------
     metadata_fpaths : str
-        Input Yaml file  path
+        Input YAML file path.
 
     Raises
     ------
     TypeError
-        Error if latitude or longitude coordinates are not present or are wrongly fromatted.
+        Error if latitude or longitude coordinates are not present or are wrongly formatted.
 
     """
     for fpath in metadata_fpaths:

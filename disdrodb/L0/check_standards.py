@@ -38,7 +38,7 @@ def check_sensor_name(sensor_name: str) -> None:
     Raises
     ------
     TypeError
-        Error if the encoding of the sensor name is wrong.
+        Error if `sensor_name` is not a string.
     ValueError
         Error if the input sensor name has not been found in the list of available sensors.
     """
@@ -62,14 +62,14 @@ def check_L0A_column_names(
     Parameters
     ----------
     df : Union[pd.DataFrame,dd.DataFrame]
-        Input dataframe
+        Input dataframe.
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Raises
     ------
     ValueError
-        Error if some columns do no met the DISDRODB standards or if the 'time' column is missing in the dataframe
+        Error if some columns do not meet the DISDRODB standards or if the 'time' column is missing in the dataframe.
 
     """
 
@@ -103,16 +103,18 @@ def check_L0A_column_names(
 def check_L0A_standards(
     fpath: str, sensor_name: str, raise_errors: bool = False, verbose: bool = True
 ) -> None:
-    """Check L0A standard.
+    """Checks that a file respects the DISDRODB L0A standards.
 
     Parameters
     ----------
     fpath : str
-        Input Apache parquet file path.
+        Input Apache Parquet file path.
     sensor_name : str
         Name of the sensor.
     raise_errors : bool, optional
-        If True: raise error in case of error, by default False
+        If True: it raises an error in case the file does not respect DISDROB L0A standards.
+        If False: it logs the errors but does not interrupt the checks.
+        By default is set to False.
     verbose : bool, optional
         Wheter to verbose the processing.
         The default is True.
@@ -120,7 +122,7 @@ def check_L0A_standards(
     Raises
     ------
     ValueError
-        It some columns have inconsistent values.
+        Error if some columns have inconsistent values.
 
     """
     # Read parquet
@@ -222,7 +224,8 @@ def check_L0B_standards(x: str) -> None:
 #### Get instrument default string standards
 def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
     """Get number of digits on the left side of the comma from the instrument default string standards.
-    example: 123,45 -> 123
+    
+    Example: 123,45 -> 123 --> 3 natural digits
 
     Parameters
     ----------
@@ -232,7 +235,7 @@ def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        dictionary of natural digits
+        Dictionary with the expected number of natural digits for each data field.
     """
 
     data_dict = get_data_format_dict(sensor_name)
@@ -242,7 +245,8 @@ def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
 
 def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
     """Get number of digits on the right side of the comma from the instrument default string standards.
-    example: 123,45 -> 45
+    
+    Example: 123,45 -> 45 --> 2 decimal digits
     Parameters
     ----------
     sensor_name : dict
@@ -251,7 +255,7 @@ def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
     Returns
     -------
     dict
-        dictionary of decimal digits
+        Dictionary with the expected number of decimal digits for each data field.
     """
 
     data_dict = get_data_format_dict(sensor_name)
@@ -261,7 +265,8 @@ def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
 
 def get_field_ndigits_dict(sensor_name: str) -> dict:
     """Get number of digits from the instrument default string standards.
-    It excludes the comma but it count the minus sign !!!.
+   
+    Important note: it excludes the comma but it counts the minus sign !!!
 
 
     Parameters
@@ -271,7 +276,7 @@ def get_field_ndigits_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionary of the number of digit.
+        Dictionary with the expected number of digits for each data field.
     """
 
     data_dict = get_data_format_dict(sensor_name)
@@ -282,7 +287,7 @@ def get_field_ndigits_dict(sensor_name: str) -> dict:
 def get_field_nchar_dict(sensor_name: str) -> dict:
     """Get the total number of characters from the instrument default string standards.
 
-    It accounts also for the comma and the minus sign.
+    Important note: it accounts also for the comma and the minus sign !!!
 
 
     Parameters
@@ -293,7 +298,7 @@ def get_field_nchar_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionary of the number of characters
+        Dictionary with the expected number of characters for each data field. 
     """
 
     data_dict = get_data_format_dict(sensor_name)
@@ -302,7 +307,7 @@ def get_field_nchar_dict(sensor_name: str) -> dict:
 
 
 def get_field_value_range_dict(sensor_name: str) -> dict:
-    """Get the variable data range (including nan flags).
+    """Get the variable data range.
 
     Parameters
     ----------
@@ -312,7 +317,7 @@ def get_field_value_range_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionary of the data range
+        Dictionary with the expected data value range for each data field. 
     """
 
     data_dict = get_data_format_dict(sensor_name)
@@ -331,7 +336,7 @@ def get_field_flag_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionary of nan flag.
+        Dictionary with the expected nan flag for each data field.
     """
 
     data_dict = get_data_format_dict(sensor_name)

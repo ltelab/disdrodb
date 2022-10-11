@@ -71,7 +71,7 @@ logger = logging.getLogger(__name__)
 def check_L0_raw_fields_available(
     df: Union[pd.DataFrame, dd.DataFrame], sensor_name: str
 ) -> None:
-    """Check the presence of the number of bin fields according to the type of sensor.
+    """Check the presence of the raw spectrum data according to the type of sensor.
 
     Parameters
     ----------
@@ -83,7 +83,7 @@ def check_L0_raw_fields_available(
     Raises
     ------
     ValueError
-        Error if one field id missing.
+        Error if the raw spectrum field is missing.
     """
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
     raw_vars = np.array(list(n_bins_dict.keys()))
@@ -93,17 +93,17 @@ def check_L0_raw_fields_available(
 
 
 def infer_split_str(string: str) -> str:
-    """Infer the delimeter inside a sting.
+    """Infer the delimeter inside a string.
 
     Parameters
     ----------
     string : str
-        Input string
+        Input string.
 
     Returns
     -------
     str
-        Infered delimiter
+        Inferred delimiter.
     """
     if len(string) > 0:
         valid_delims = [";", ","]  # here we can add others if needed [|, ... ]
@@ -121,7 +121,7 @@ def infer_split_str(string: str) -> str:
 
 
 def format_string_array(string: str, n_values: int) -> np.array:
-    """Split a string of mutliple numbers into an array by infering the delimiter.
+    """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
         e.g. : format_string_array("2,44,22,33",4) will return [ 2. 44. 22. 33.]
 
@@ -130,7 +130,7 @@ def format_string_array(string: str, n_values: int) -> np.array:
     string : str
         Input string
     n_values : int
-        Number of numbers
+        Expected length of the output array.
 
     Returns
     -------
@@ -184,12 +184,12 @@ def reshape_raw_spectrum_to_2D(
     n_bins_dict : dict
         Raw field number of bins.
     n_timesteps : int
-        Number of timesteps
+        Number of timesteps.
 
     Returns
     -------
     np.array
-        Output array
+        Output array.
 
     Raises
     ------
@@ -229,13 +229,13 @@ def retrieve_L0B_arrays(
         If True : Dask is used.
         If False : Pandas is used.
         verbose : bool, optional
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
         The default is False.
 
     Returns
     -------
     dict
-        Output dictionary
+        Dictionary with data arrays.
 
     """
 
@@ -324,17 +324,17 @@ def retrieve_L0B_arrays(
 
 
 def get_coords(sensor_name: str) -> dict:
-    """Retrieve coordinates
+    """Retrieve coordinates.
 
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     dict
-        Coordinate
+        Dictionary with coordinate arrays.
     """
 
     check_sensor_name(sensor_name=sensor_name)
@@ -375,12 +375,12 @@ def get_coords(sensor_name: str) -> dict:
 
 
 def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
-    """Convert variables from object to string
+    """Convert variables with object dtype to string.
 
     Parameters
     ----------
     ds : xr.Dataset
-        Input Dataset.
+        Input dataset.
 
     Returns
     -------
@@ -399,12 +399,12 @@ def create_L0B_from_L0A(
     lazy: bool = True,
     verbose: bool = False,
 ) -> xr.Dataset:
-    """Transform L0A to L0B by creating xarray dataset.
+    """Transform the L0A dataframe to the L0B xr.Dataset.
 
     Parameters
     ----------
     df : Union[pd.DataFrame,dd.DataFrame]
-        Dataframes
+        DISDRODB L0A dataframe.
     attrs : dict
         Station metadata.
     lazy : bool, optional
@@ -416,13 +416,13 @@ def create_L0B_from_L0A(
 
     Returns
     -------
-    _type_
-        Output xarray dataframe
+    xr.Dataset
+        DISDRODB L0B dataset.
 
     Raises
     ------
     ValueError
-        Error if xarray dataframe can not be created.
+        Error if the DISDRODB L0B xarray dataset can not be created.
     """
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -519,19 +519,19 @@ def create_L0B_from_L0A(
 ####--------------------------------------------------------------------------.
 #### Writers
 def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
-    """Ensure chunksize smaller than the array shape
+    """Ensure chunk size to be smaller than the array shape.
 
     Parameters
     ----------
     encoding_dict : dict
-        Dictionary containing the encoding to write L0B netCDFs
+        Dictionary containing the encoding to write DISDRODB L0B netCDFs.
     ds : xr.Dataset
-        Input dataset
+        Input dataset.
 
     Returns
     -------
     dict
-        Encoding dictionary
+        Encoding dictionary.
     """
     for var in ds.data_vars:
         shape = ds[var].shape
@@ -546,19 +546,19 @@ def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
 
 
 def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
-    """Coerce array’s data into a arrays with the given chunks.
+    """Coerce the dataset arrays to have the chunk size specified in the encoding dictionary.
 
     Parameters
     ----------
     ds : xr.Dataset
-        Input array
+        Input xarray dataset
     encoding_dict : dict
-        Dictionary containing the encoding to write L0B netCDFs
+        Dictionary containing the encoding to write the xarray dataset as a netCDF.
 
     Returns
     -------
     xr.Dataset
-        Output array
+        Output xarray dataset
     """
 
     for var in ds.data_vars:
@@ -569,19 +569,19 @@ def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
 
 
 def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
-    """Define encoding
+    """Apply the encodings to the xarray Dataset.
 
     Parameters
     ----------
     ds : xr.Dataset
-        Input dataframe
+        Input xarray dataset.
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     xr.Dataset
-        Output dataframe
+        Output xarray dataset.
     """
     # Get encoding dictionary
     encoding_dict = get_L0B_encodings_dict(sensor_name)
@@ -605,12 +605,12 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
 
 
 def write_L0B(ds: xr.Dataset, fpath: str, sensor_name: str) -> None:
-    """Save dataframe into NetCDF file.
+    """Save the xarray dataset into a NetCDF file.
 
     Parameters
     ----------
     ds : xr.Dataset
-        Input dataframe
+        Input xarray dataset.
     fpath : str
         Output file path.
     sensor_name : str
@@ -637,7 +637,7 @@ def create_summary_statistics(
     Parameters
     ----------
     ds : xr.Dataset
-        Input Dataset
+        Input xarray dataset.
     processed_dir : str
         Output file path
     station_id : str

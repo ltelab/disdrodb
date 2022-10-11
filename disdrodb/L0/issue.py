@@ -32,12 +32,12 @@ def _write_issue_timestamps_docs(f):
 def create_issue_yml(
     fpath: str, timestamp: str = None, time_period: str = None
 ) -> None:
-    """Cerate issue file
+    """Create issue YAML file.
 
     Parameters
     ----------
     fpath : str
-        timestamps.yml fila path
+        timestamps.yml file path.
     timestamp : str, optional
         Timestamp, by default None
     time_period : str, optional

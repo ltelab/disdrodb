@@ -27,21 +27,22 @@ import logging
 def create_L0_logger(
     processed_dir: str, campaign_name: str, verbose: bool = False
 ) -> logger:
-    """Create L0 logger
+    """Create L0 logger.
 
     Parameters
     ----------
     processed_dir : str
-        Path of the processed directory
+        Path of the processed directory.
     campaign_name : str
-        Campaign name
+        Campaign name.
     verbose : bool, optional
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
+        The default is False.
 
     Returns
     -------
     logger
-        Logger object
+        Logger object.
     """
     # Define log name
     logger_name = "LO_" + "reader_" + campaign_name
@@ -83,7 +84,7 @@ def close_logger(logger: logger) -> None:
     Parameters
     ----------
     logger : logger
-        Logger object
+        Logger object.
     """
     handlers = logger.handlers[:]
     for handler in handlers:
@@ -99,11 +100,12 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
     Parameters
     ----------
     logger : logger
-        Log object
+        Log object.
     msg : str
-        Message
+        Message.
     verbose : bool, optional
-        Wheter to verbose the processing, by default False
+        Whether to verbose the processing. 
+        The default is False.
     """
     logger.debug(msg)
     if verbose:
@@ -116,11 +118,12 @@ def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
     Parameters
     ----------
     logger : logger
-        Log object
+        Log object.
     msg : str
-        Message
+        Message.
     verbose : bool, optional
-        Wheter to verbose the processing, by default False
+        Whether to verbose the processing.
+        The default is False.
     """
     logger.info(msg)
     if verbose:
@@ -133,11 +136,12 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
     Parameters
     ----------
     logger : logger
-        Log object
+        Log object.
     msg : str
-        Message
+        Message.
     verbose : bool, optional
-        Wheter to verbose the processing, by default False
+        Whether to verbose the processing.
+        The default is False.
     """
     logger.warning(msg)
     if verbose:

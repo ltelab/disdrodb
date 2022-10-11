@@ -19,7 +19,8 @@ The following function returns the dictionary of all readers `.
 	get_available_readers()
 
 
-The resulting dictionary has the following shape : 
+The resulting dictionary has the following shape: 
+
 
 .. code-block::
 
@@ -50,7 +51,8 @@ The resulting dictionary has the following shape :
 Using a reader
 ======================
 
-Running a reader can be done by command line or directly in python. In both ways, the follwoing parameters must ou could be defeined. 
+Running a reader can be done by command line or directly in python. In both ways, the following parameters must or could be defined. 
+
 
 
 
@@ -112,8 +114,10 @@ Readers parameters
 
 * ``--lazy`` : bool [ **true** \|false] - Whether to perform processing lazily with dask.
 
-* If lazy=True, it employed dask.array and dask.dataframe.
-* If lazy=False, it employed pandas.DataFrame and numpy.array.
+* If lazy=True, it employs dask.dataframe and dask.array. 
+
+* If lazy=False, it employs pandas.DataFrame and numpy.array.
+
 
 
 
@@ -138,7 +142,8 @@ There are two ways of running a reader.
 		run_disdrodb_l0_reader data_source campaign_name raw_dir processed_dir [parameters]
 
 	
-	Where the parameters are defeined `here <#readers-parameters>`__.
+	Where the parameters are defined `here <#readers-parameters>`__.
+
 
 	Example :
 
@@ -317,7 +322,8 @@ Step 3 : Create and share your reader
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 If you arrived at this final step, it means that your reader is now almost ready to be shared with the community. 
-However, in order to guaranty consistencies between readers, it is very important to follow a specific nomenclature.
+However, in order to guarantee consistency between readers, it is very important to follow a specific nomenclature.
+
 
 Therefore, rename your modified `reader_template.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/reader_template.py>`_ file as ``reader_<CAMPAIGN_NAME>.py`` and copy it into the directory ``\disdrodb\LO\readers\<DATA_SOURCE>\``.
 
@@ -325,7 +331,8 @@ Therefore, rename your modified `reader_template.py <https://github.com/ltelab/d
 Step 4 : Define reader testing files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-If you plan to create a new reader, you must provide a testing data sample composed of a tiny raw file and exepected results. 
+If you plan to create a new reader, you must provide a testing data sample composed of a tiny raw file and the expected results. 
+
 
 All readers are tested as follow : 
 
@@ -335,16 +342,19 @@ All readers are tested as follow :
 
 
 .. note:: 
-	The objective is to run every readers sequently. Therefore, make sure to provided a very small test sample in odrer to limit the computation time.
+	The objective is to run every reader sequentially. Therefore, make sure to provide a very small test sample in order to limit the computing time.
+
 	
-	The size of the test sample must just be sufficient to garantee the detection of errors due to code changes.  
+	The size of the test sample must just be sufficient to guarantee the detection of errors due to code changes.  
+
 	
 
 	A typical test file is composed of 2 stations, with 2 days of measurements with a couple of rows each. 
  
  
 
-The `github readers testing ressources <https://github.com/EPFL-ENAC/LTE-disdrodb-testing>`_ must have the following sructure : 
+The `GitHub readers testing resources <https://github.com/EPFL-ENAC/LTE-disdrodb-testing>`_ must have the following structure: 
+
  
 | 📁 LTE-disdrodb-testing 
 | ├── 📁 disdrodb
@@ -391,13 +401,15 @@ The `github readers testing ressources <https://github.com/EPFL-ENAC/LTE-disdrod
 
 	* Must be in capital letter. 
 	* Must correspond to the name of the reader python file. 
-	* Example : `LOCARNO` or `GID`
+	* Example : `LOCARNO2018` or `GID`
+
 
 
 
 Process as follow to add a new test file :
 
-1. Clone the `LTE-disdrodb-testing github repository <https://github.com/EPFL-ENAC/LTE-disdrodb-testing>`_
+1. Clone the `LTE-disdrodb-testing GitHub repository <https://github.com/EPFL-ENAC/LTE-disdrodb-testing>`_
+
 
 	.. code-block:: bash
 
