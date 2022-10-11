@@ -90,7 +90,7 @@ def _get_file_list(raw_dir: str, glob_pattern) -> list:
 
 
 def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
-    """Get the list of files from a directory based on input parameters
+    """Get the list of files from a directory based on input parameters.
 
     Parameters
     ----------
