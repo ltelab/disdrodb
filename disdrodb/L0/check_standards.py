@@ -224,7 +224,7 @@ def check_L0B_standards(x: str) -> None:
 #### Get instrument default string standards
 def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
     """Get number of digits on the left side of the comma from the instrument default string standards.
-    
+
     Example: 123,45 -> 123 --> 3 natural digits
 
     Parameters
@@ -245,7 +245,7 @@ def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
 
 def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
     """Get number of digits on the right side of the comma from the instrument default string standards.
-    
+
     Example: 123,45 -> 45 --> 2 decimal digits
     Parameters
     ----------
@@ -265,7 +265,7 @@ def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
 
 def get_field_ndigits_dict(sensor_name: str) -> dict:
     """Get number of digits from the instrument default string standards.
-   
+
     Important note: it excludes the comma but it counts the minus sign !!!
 
 
@@ -298,7 +298,7 @@ def get_field_nchar_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionary with the expected number of characters for each data field. 
+        Dictionary with the expected number of characters for each data field.
     """
 
     data_dict = get_data_format_dict(sensor_name)
@@ -317,7 +317,7 @@ def get_field_value_range_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionary with the expected data value range for each data field. 
+        Dictionary with the expected data value range for each data field.
     """
 
     data_dict = get_data_format_dict(sensor_name)
