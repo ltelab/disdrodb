@@ -18,12 +18,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 
+from asyncio.log import logger
 import os
 import time
 import logging
 
 
-def create_L0_logger(processed_dir, campaign_name, verbose=False):
+def create_L0_logger(
+    processed_dir: str, campaign_name: str, verbose: bool = False
+) -> logger:
+    """Create L0 logger.
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory.
+    campaign_name : str
+        Campaign name.
+    verbose : bool, optional
+        Whether to verbose the processing.
+        The default is False.
+
+    Returns
+    -------
+    logger
+        Logger object.
+    """
     # Define log name
     logger_name = "LO_" + "reader_" + campaign_name
     # Create logs directory
@@ -58,7 +78,14 @@ def _create_logger(log_dir, logger_name):
     return None
 
 
-def close_logger(logger):
+def close_logger(logger: logger) -> None:
+    """Close the logger
+
+    Parameters
+    ----------
+    logger : logger
+        Logger object.
+    """
     handlers = logger.handlers[:]
     for handler in handlers:
         handler.close()
@@ -67,40 +94,55 @@ def close_logger(logger):
 
 
 # ----------------------------
-def log_debug(logger, msg, verbose=False):
+def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
+    """Include debug entry into log.
+
+    Parameters
+    ----------
+    logger : logger
+        Log object.
+    msg : str
+        Message.
+    verbose : bool, optional
+        Whether to verbose the processing.
+        The default is False.
+    """
     logger.debug(msg)
     if verbose:
         print(" - " + msg)
 
 
-def log_info(logger, msg, verbose=False):
+def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
+    """Include info entry into log.
+
+    Parameters
+    ----------
+    logger : logger
+        Log object.
+    msg : str
+        Message.
+    verbose : bool, optional
+        Whether to verbose the processing.
+        The default is False.
+    """
     logger.info(msg)
     if verbose:
         print(" - " + msg)
 
 
-def log_warning(logger, msg, verbose=False):
+def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
+    """Include warning entry into log.
+
+    Parameters
+    ----------
+    logger : logger
+        Log object.
+    msg : str
+        Message.
+    verbose : bool, optional
+        Whether to verbose the processing.
+        The default is False.
+    """
     logger.warning(msg)
     if verbose:
         print(" - " + msg)
-
-
-# ----------------------------
-# TO DEPRECATE
-
-
-def create_logger(log_dir, logger_name):
-    # Define log file filepath
-    logger_fname = f'{time.strftime("%d-%m-%Y_%H-%M-%S")}_{logger_name}.log'
-    logger_fpath = os.path.join(log_dir, logger_fname)
-    # -------------------------------------------------------------------------.
-    # Define logger format
-    format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-    # Define logger level
-    level = logging.DEBUG
-
-    # Define logging
-    logging.basicConfig(format=format_type, level=level, filename=logger_fpath)
-
-    # -------------------------------------------------------------------------.

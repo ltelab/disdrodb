@@ -8,19 +8,41 @@ Created on Wed Jun 22 17:42:56 2022
 import os
 import glob
 import yaml
+from typing import Union
 
 # TODO: to improve a lot !!!
 # - Check metadata !!!
 # - Define rules !!!
 
 
-def read_yaml(fpath):
+def read_yaml(fpath: str) -> dict:
+    """Read YAML file.
+
+    Parameters
+    ----------
+    fpath : str
+        Input YAML file path.
+
+    Returns
+    -------
+    dict
+        Attributes read from the YAML file.
+    """
     with open(fpath, "r") as f:
         attrs = yaml.safe_load(f)
     return attrs
 
 
-def identify_missing_metadata(metadata_fpaths, keys):
+def identify_missing_metadata(metadata_fpaths: str, keys: Union[str, list]) -> None:
+    """Identify missing metadata.
+
+    Parameters
+    ----------
+    metadata_fpaths : str
+        Input YAML file path.
+    keys : Union[str,list]
+        Attributes to verify the presence.
+    """
     if isinstance(keys, str):
         keys = [keys]
     for key in keys:
@@ -32,7 +54,20 @@ def identify_missing_metadata(metadata_fpaths, keys):
     return None
 
 
-def identify_missing_coords(metadata_fpaths):
+def identify_missing_coords(metadata_fpaths: str) -> None:
+    """Identify missing coordinates.
+
+    Parameters
+    ----------
+    metadata_fpaths : str
+        Input YAML file path.
+
+    Raises
+    ------
+    TypeError
+        Error if latitude or longitude coordinates are not present or are wrongly formatted.
+
+    """
     for fpath in metadata_fpaths:
         metadata = read_yaml(fpath)
         longitude = metadata.get("longitude", -9999)

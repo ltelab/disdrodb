@@ -28,7 +28,7 @@ Here is the structure of the project :
 |       ├── 📜 \*.pdf: Official disdrometers documentation
 |     ├── 📁 readers
 |     	├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
-|           ├── 📜 \reader_<campaign_name>.py : Readers to transform raw data into DISDRODB L0 products
+|           ├── 📜 \<campaign_name>.py : Readers to transform raw data into DISDRODB L0 products
 |       ├── 📜 reader_preparation.ipynb : Jupyter Notebook template to start developing a new reader
 |     ├── 📜 auxiliary.py : Mapping dictionary for some `data_source` standards (e.g. ARM)*
 |     ├── 📜 check_configs.py : Sensor configs validator
