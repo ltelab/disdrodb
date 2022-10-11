@@ -150,7 +150,7 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 ####---------------------------------------------------------------------------.
 #### Dataframe creation
 def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
-    """Define the dataframe parameters dictionary for Pandas or Dask.
+    """Define a dictionary with the parameters required for reading the raw data with Pandas or Dask.
 
     Parameters
     ----------
