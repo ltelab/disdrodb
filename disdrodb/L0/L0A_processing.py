@@ -60,7 +60,7 @@ def check_glob_pattern(pattern: str) -> None:
     TypeError
         The input parameter is not a string.
     ValueError
-        The input paramter can not be used as pattern.
+        The input parameter can not be used as pattern.
     """
     if not isinstance(pattern, str):
         raise TypeError("Expect pattern as a string.")
