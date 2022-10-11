@@ -183,7 +183,7 @@ def get_list_ds(fpaths: str) -> list:
     Returns
     -------
     list
-        list of dask arrays
+        List of xarray datasets.
     """
 
     @dask.delayed
