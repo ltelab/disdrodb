@@ -155,7 +155,7 @@ def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
     Parameters
     ----------
     reader_kwargs : dict
-        Intinial paramter dictionnary
+        Initial parameter dictionary.
     lazy : bool, optional
         If True : Dask is used.
         If False : Pandas is used.
