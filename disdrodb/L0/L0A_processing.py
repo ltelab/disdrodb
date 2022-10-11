@@ -58,7 +58,7 @@ def check_glob_pattern(pattern: str) -> None:
     Raises
     ------
     TypeError
-        The input paramter is not a string.
+        The input parameter is not a string.
     ValueError
         The input paramter can not be used as pattern.
     """
