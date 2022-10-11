@@ -23,7 +23,7 @@ def ensure_monotonic_dimension(fpaths: str, list_ds: list, dim: str = "time") ->
     list_ds : list
         List of xarray Dataset.
     dim : str, optional
-        Dimension name. 
+        Dimension name.
         The default is "time".
 
     Returns

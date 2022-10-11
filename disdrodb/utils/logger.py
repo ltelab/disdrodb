@@ -104,7 +104,7 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
     msg : str
         Message.
     verbose : bool, optional
-        Whether to verbose the processing. 
+        Whether to verbose the processing.
         The default is False.
     """
     logger.debug(msg)
