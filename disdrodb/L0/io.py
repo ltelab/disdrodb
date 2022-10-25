@@ -19,15 +19,16 @@
 # -----------------------------------------------------------------------------.
 import logging
 import os
-from datetime import datetime
 import re
 import shutil
 import glob
-from typing import Union
+import datetime
 import numpy as np
 import pandas as pd
+import xarray as xr 
 import dask.dataframe as dd
 import importlib.metadata
+from typing import Union
 from disdrodb.utils.logger import log_info, log_warning
 from disdrodb.L0.metadata import read_metadata
 
@@ -116,8 +117,8 @@ def get_campaign_name(base_dir: str) -> str:
     return campaign_name
 
 
-def get_institute_name(base_dir: str) -> str:
-    """Retrives the institute name from 'raw_dir' or processed_dir' paths
+def get_data_source(base_dir: str) -> str:
+    """Retrieves the data source from 'raw_dir' or processed_dir' paths
 
     Parameters
     ----------
@@ -127,12 +128,35 @@ def get_institute_name(base_dir: str) -> str:
     Returns
     -------
     str
-        Name of the institute
+        Name of the data source
     """
 
     base_dir = parse_fpath(base_dir)
     institute_name = os.path.basename(os.path.dirname(base_dir)).upper()
     return institute_name
+
+
+def get_dataset_min_max_time(ds: xr.Dataset):
+    """Retrieves dataset starting and ending time.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset
+        
+    Returns
+    -------
+    tuple
+        (starting_time, ending_time)
+        
+    """
+     
+    starting_time = ds['time'].values[0] 
+    ending_time = ds['time'].values[-1] 
+    return (starting_time, ending_time)
+
+
+# TODO: get_dataframe_min_max_time
 
 
 def get_L0A_dir(processed_dir: str, station_id: str) -> str:
@@ -175,6 +199,40 @@ def get_L0A_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
         suffix = "_" + suffix
     fname = campaign_name + "_s" + station_id + suffix + ".parquet"
     return fname
+
+
+# TODO: and refactor L0_processing --> remove suffix
+# 
+# def get_L0A_fname(df, processed_dir, station_id: str) -> str:
+#     """Define L0A file name.
+
+#     Parameters
+#     ----------
+#     ds : pd.DataFrame
+#         L0A DataFrame 
+#     processed_dir : str
+#         Path of the processed directory
+#     station_id : int
+#         ID of the station
+
+#     Returns
+#     -------
+#     str
+#         L0B file name.
+#     """
+#     starting_time, ending_time = get_dataframe_min_max_time(ds)    
+#     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S") 
+#     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+#     # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+#     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
+#     institute_name = get_data_source(processed_dir).replace(".", "-")
+#     metadata_dict = read_metadata(processed_dir, station_id)
+#     sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
+#     version = importlib.metadata.version("disdrodb").replace(".", "-")
+#     if version == "-VERSION-PLACEHOLDER-":
+#         version = "dev"
+#     fname = f"DISDRODB.L0A.Raw.{institute_name}.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.{version}.parquet"
+#     return fname
 
 
 def get_L0A_fpath(processed_dir: str, station_id: str, suffix: str = "") -> str:
@@ -220,57 +278,57 @@ def get_L0B_dir(processed_dir: str, station_id: str) -> str:
     return dir_path
 
 
-def get_L0B_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
-    """build L0B file name.
+def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
+    """Define L0B file name.
 
     Parameters
     ----------
-    campaign_name : str
-        Name of the campaign.
+    ds : xr.Dataset
+        L0B xarray Dataset 
+    processed_dir : str
+        Path of the processed directory
     station_id : int
         ID of the station
-    suffix : int, optional
-        suffix, by default ""
 
     Returns
     -------
     str
         L0B file name.
     """
-    if suffix != "":
-        suffix = "_" + suffix
-    # TODO: _s make sense with station_id... but if station_name a bit orrible
-    fname = campaign_name + "_s" + station_id + suffix + ".nc"
+    starting_time, ending_time = get_dataset_min_max_time(ds)    
+    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S") 
+    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+    # institute_name = get_data_source(processed_dir).replace(".", "-") # TODO: data_source
+    campaign_name = get_campaign_name(processed_dir).replace(".", "-")
+    metadata_dict = read_metadata(processed_dir, station_id)
+    sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
+    version = importlib.metadata.version("disdrodb").replace(".", "-")
+    if version == "-VERSION-PLACEHOLDER-":
+        version = "dev"
+    fname = f"DISDRODB.L0B.Raw.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname
 
 
-def get_L0B_fpath(processed_dir: str, station_id: str, suffix: str = "") -> str:
-    """build L0B file path.
+def get_L0B_fpath(ds, processed_dir: str, station_id: str) -> str:
+    """Define L0B file path.
 
     Parameters
     ----------
-    campaign_name : str
-        Name of the campaign.
+    ds : xr.Dataset
+        L0B xarray Dataset 
+    processed_dir : str
+        Path of the processed directory
     station_id : int
         ID of the station
-    suffix : int, optional
-        suffix, by default ""
 
     Returns
     -------
     str
         L0B file path.
-    """
-    campaign_name = get_campaign_name(processed_dir).replace(".", "-")
-    institute_name = get_institute_name(processed_dir).replace(".", "-")
-    metadata_content = read_metadata(processed_dir, station_id)
-    sensor_name = metadata_content.get("sensor_name").replace("_", "-")
-    production_time = datetime.now().strftime("%Y%m%d%H%M%S")
-    version = importlib.metadata.version("disdrodb").replace(".", "-")
-    if version == "-VERSION-PLACEHOLDER-":
-        version = "dev"
-    fname = f"DISDRODB.L0B.Raw.{institute_name}.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.p{production_time}.{version}.nc"
+    """  
     dir_path = get_L0B_dir(processed_dir, station_id)
+    fname = get_L0B_fname(ds, processed_dir, station_id)
     fpath = os.path.join(dir_path, fname)
     return fpath
 
