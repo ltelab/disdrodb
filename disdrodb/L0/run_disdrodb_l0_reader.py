@@ -6,8 +6,6 @@
 import click
 
 from disdrodb.L0 import click_L0_readers_options
-from disdrodb.L0.L0_processing import run_reader
-
 
 # -------------------------------------------------------------------------.
 # Click Command Line Interface decorator
@@ -73,9 +71,9 @@ def run_reader_cmd(**kwargs):
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
     """
-
+    from disdrodb.L0.L0_processing import run_reader
     run_reader(**kwargs)
 
 
 if __name__ == "__main__":
-    run_reader()
+    run_reader_cmd()

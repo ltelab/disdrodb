@@ -42,7 +42,6 @@ from disdrodb.L0.L0B_processing import (
     create_L0B_from_L0A,
     write_L0B,
     create_summary_statistics,
-    get_min_max_time_as_string,
 )
 
 # Logger
@@ -406,10 +405,7 @@ def run_L0(
 
                 # -----------------------------------------------------------------.
                 #### - Write L0B netCDF4 dataset
-                starting_time, ending_time = get_min_max_time_as_string(ds)
-                fpath = get_L0B_fpath(
-                    processed_dir, station_id, starting_time, ending_time
-                )
+                fpath = get_L0B_fpath(ds, processed_dir, station_id)  
                 write_L0B(ds, fpath=fpath, sensor_name=sensor_name)
 
                 # -----------------------------------------------------------------.
