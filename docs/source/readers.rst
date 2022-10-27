@@ -65,40 +65,42 @@ Readers parameters
 		* Example data_source: 'EPFL'.
 		* Check the `available Readers <#available-readers>`__ function to get the list of the available data sources. 
 
+
 * ``campaign_name`` : str - Name of the campaign. 
 
 		* Example data_source: 'EPFL_ROOF_2012'.
 		* Check the `available Readers <#available-readers>`__  function to get the list of the available campaign.  
 
-* ``raw_dir`` : str - Directory path of raw file for a specific campaign.
 
-		* The path should end with <campaign_name>.
-		* Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
+* ``raw_dir`` : str - Directory path where all the raw content of a specific campaign is stored.
+
+		* The path must have the following structure: '<...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+		* Inside the raw_dir directory, the software expects to find the following structure:
+          - /data/<station_id>/<raw_files>
+          - /metadata/<station_id>.yaml
 
 
-* ``processed_dir`` : str - Desired directory path for the processed L0A and L0B products.
+* ``processed_dir`` : str - Desired directory path for the processed DISDRODB L0A and L0B products.
 
-		* The path should end with <campaign_name> and match the end of raw_dir.
-		* Example: '<...>/disdrodb/data/processed/<campaign_name>'.
+        * The path should have the following structure: '<...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        * For testing purpose, this function exceptionally accept also a directory path simply ending 
+          with <campaign_name> (i.e. /tmp/<campaign_name>).
+        * The <campaign_name> must match with the one specified in the raw_dir path.
+
 
 * ``--l0a_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0A Apache Parquet file(s) from raw data.
-
-
 
 
 * ``--l0b_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0B netCDF4 file(s) from L0A data.
 
 
-
-
 * ``--keep_l0a`` : bool [true\| **false** ] - Whether to keep the L0A files after having generated the L0B netCDF products.
-
 
 
 * ``--force`` : bool [true\| **false** ] - Whether to overwrite existing data.
 
-*  If True, overwrite existing data into destination directories.
-*  If False, raise an error if there are already data into destination directories.
+        *  If True, overwrite existing data into destination directories.
+        *  If False, raise an error if there are already data into destination directories.
 
 
 * ``--verbose`` : bool [true\| **false** ] -  Whether to print detailed processing information into terminal.
@@ -107,25 +109,21 @@ Readers parameters
 
 * ``--debugging_mode`` : bool [true\| **false** ] -  If True, it reduces the amount of data to process.
 
-* For L0A processing, it processes just 3 raw data files.
-* For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
-
+        * For L0A processing, it processes just 3 raw data files.
+        * For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
 
 
 * ``--lazy`` : bool [ **true** \|false] - Whether to perform processing lazily with dask.
 
-* If lazy=True, it employs dask.dataframe and dask.array. 
-
-* If lazy=False, it employs pandas.DataFrame and numpy.array.
-
-
+        * If lazy=True, it employs dask.dataframe and dask.array. 
+        * If lazy=False, it employs pandas.DataFrame and numpy.array.  
 
 
 * ``--single_netcdf`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single DISDRODB L0B netCDF file.
 
 
-* If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-* If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
+        * If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
+        * If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
 
 
 Running a reader

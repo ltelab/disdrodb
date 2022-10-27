@@ -165,7 +165,7 @@ def run_L0(
         tailor the reading of the raw file.
     files_glob_pattern: str
         It indicates the glob pattern to search for the raw data files within
-        the directory path raw_dir/data/<station_id>.
+        the directory path <raw_dir>/data/<station_id>.
     df_sanitizer_fun : function
         It's a function detailing the custom preprocessing of each single raw data files
         in order to meet the DISDRODB standards.
@@ -181,29 +181,31 @@ def run_L0(
                 # Return the dataframe agreeing with the DISDRODB standards
                 return df
     raw_dir : str
-        Directory path of raw file for a specific campaign.
-        The path should end with <campaign_name>.
-        Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
-        The directory must have the following structure:
+        The directory path where all the raw content of a specific campaign is stored.
+        The path must have the following structure: 
+            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        Inside the raw_dir directory, it is required to adopt the following structure:
         - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.json
+        - /metadata/<station_id>.yaml
         Important points:
-        - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
+        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
         - The <campaign_name> must semantically match between:
            - the raw_dir and processed_dir directory paths;
            - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are set to be UPPER CASE.
+        - The campaign_name are expected to be UPPER CASE.
     processed_dir : str
-        Desired directory path for the processed L0A and L0B products.
-        The path should end with <campaign_name> and match the end of raw_dir.
-        Example: '<...>/disdrodb/data/processed/<campaign_name>'.
-    L0A_processing : bool
+        The desired directory path for the processed DISDRODB L0A and L0B products.
+        The path should have the following structure: 
+            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        For testing purpose, this function exceptionally accept also a directory path simply ending 
+        with <campaign_name> (i.e. /tmp/<campaign_name>).
+    l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
-    L0B_processing : bool
+    l0b_processing : bool
       Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
       The default is True.
-    keep_L0A : bool
+    keep_l0a : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     force : bool
@@ -656,22 +658,24 @@ def run_reader(
     reader_name : str
         Campaign name
     raw_dir : str
-        Directory path of raw file for a specific campaign.
-        The path should end with <campaign_name>.
-        Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
-        The directory must have the following structure:
+        The directory path where all the raw content of a specific campaign is stored.
+        The path must have the following structure: 
+            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        Inside the raw_dir directory, it is required to adopt the following structure:
         - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.json
+        - /metadata/<station_id>.yaml
         Important points:
         - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
         - The <campaign_name> must semantically match between:
            - the raw_dir and processed_dir directory paths;
            - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are set to be UPPER CASE.
+        - The campaign_name are expected to be UPPER CASE.
     processed_dir : str
-        Desired directory path for the processed L0A and L0B products.
-        The path should end with <campaign_name> and match the end of raw_dir.
-        Example: '<...>/disdrodb/data/processed/<campaign_name>'.
+        The desired directory path for the processed DISDRODB L0A and L0B products.
+        The path should have the following structure: 
+            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        For testing purpose, this function exceptionally accept also a directory path simply ending 
+        with <campaign_name> (i.e. /tmp/<campaign_name>).
     l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
@@ -745,22 +749,24 @@ def reader_generic_docstring():
     Parameters
     ----------
     raw_dir : str
-        Directory path of raw file for a specific campaign.
-        The path should end with <campaign_name>.
-        Example raw_dir: '<...>/disdrodb/data/raw/<campaign_name>'.
-        The directory must have the following structure:
+        The directory path where all the raw content of a specific campaign is stored.
+        The path must have the following structure: 
+            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        Inside the raw_dir directory, it is required to adopt the following structure:
         - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.json
+        - /metadata/<station_id>.yaml
         Important points:
-        - For each <station_id> there must be a corresponding JSON file in the metadata subfolder.
+        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
         - The <campaign_name> must semantically match between:
            - the raw_dir and processed_dir directory paths;
            - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are set to be UPPER CASE.
+        - The campaign_name are expected to be UPPER CASE.
     processed_dir : str
-        Desired directory path for the processed L0A and L0B products.
-        The path should end with <campaign_name> and match the end of raw_dir.
-        Example: '<...>/disdrodb/data/processed/<campaign_name>'.
+        The desired directory path for the processed DISDRODB L0A and L0B products.
+        The path should have the following structure: 
+            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        For testing purpose, this function exceptionally accept also a directory path simply ending 
+        with <campaign_name> (i.e. /tmp/<campaign_name>).
     l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
       The default is True.
