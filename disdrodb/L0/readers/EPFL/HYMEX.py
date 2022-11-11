@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jan 18 14:30:35 2022
-
-@author: kimbo
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -25,10 +16,8 @@ Created on Tue Jan 18 14:30:35 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
+"""Reader for HYMEX campaign."""
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -54,8 +43,7 @@ def reader(
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
-    # Header found: "TIMESTAMP","RECORD","CampbellTemp","CampbellVolt","Intensity","AccumulatedAmount","Code4680","Code4677","RadarReflectivity","Visibility","LaserAmplitude","NumberOfParticles","Temperature","HeatingCurrent","Voltage","Status","AbsoluteAmount","TransmitTime","raw_drop_concentration","raw_drop_average_velocity","RowData","CommErrorCount"
+    # - When no data are logged (every 30 seconds), all columns (except time) have "NA" values  
 
     column_names = [
         "time",
@@ -75,7 +63,7 @@ def reader(
         "sensor_battery_voltage",
         "sensor_status",
         "rainfall_amount_absolute_32bit",
-        "Debug_data",
+        "datalogger_debug",
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
@@ -84,52 +72,36 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
-
     reader_kwargs = {}
-
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-        "-.-",
-        " NA",
-    ]
-
+    reader_kwargs["na_values"] = ["na","","error","NA","-.-"," NA"]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
-
     # Cast all to string
     reader_kwargs["dtype"] = str
-
     # Use for Nan value
     reader_kwargs["assume_missing"] = True
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    # - Enable to standardize raw data files to L0 standards
     df_sanitizer_fun = None
 
     def df_sanitizer_fun(df, lazy=False):
@@ -139,10 +111,10 @@ def reader(
         else:
             import pandas as dd
 
-        # Drop Debug_data
+        # Drop column variables which do not adhere to the DISDRODB standard 
         df = df.drop(
             columns=[
-                "Debug_data",
+                "datalogger_debug",
                 "datalogger_error",
                 "datalogger_voltage",
                 "datalogger_temperature",
@@ -150,20 +122,11 @@ def reader(
             ]
         )
 
-        # If raw_drop_concentration or raw_drop_average_velocity orraw_drop_number is nan, drop the row
-        col_to_drop_if_na = [
-            "raw_drop_concentration",
-            "raw_drop_average_velocity",
-            "raw_drop_number",
-        ]
-        df = df.dropna(subset=col_to_drop_if_na)
+        # Remove rows where all column variables execept 'time' are 'NA' (nan in the dataframe) 
+	# - To simplify, we just drop when raw_drop_number is 'NA'  
+        df = df.dropna(subset="raw_drop_number", axis=0)
 
-        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-
-        # - Convert time column to datetime
+        # Convert time to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         return df
