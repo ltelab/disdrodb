@@ -39,20 +39,13 @@ def reader(
     #### CUSTOMIZABLE CODE ####
     ###########################
     #### - Define raw data headers
-    column_names = []
+    column_names = [] # [ADD THE COLUMN NAMES LIST HERE]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
+    # - For more info: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
     reader_kwargs = {}
-    # - Define delimiter
-    reader_kwargs["delimiter"] = ","
-
-    # - Avoid first column to become df index
-    reader_kwargs["index_col"] = False
-
-    # - Define behaviour when encountering bad lines
-    reader_kwargs["on_bad_lines"] = "skip"
-
+  
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
@@ -66,18 +59,33 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error"]
+    reader_kwargs["na_values"] = ["na", "", "error", " NA"]
 
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
+    
+    # - Define behaviour when encountering bad lines
+    reader_kwargs["on_bad_lines"] = "skip"
+    
+    # Skip first row as columns names  
+    reader_kwargs["header"] = None
+    
+    # - Avoid first column to become df index
+    reader_kwargs["index_col"] = False
+    
+    # - Define delimiter [THIS MIGHT BE CUSTOMIZED]
+    reader_kwargs["delimiter"] = ","
 
+    # Skip a specific number of rows [THIS MIGHT BE CUSTOMIZED]
+    reader_kwargs["skiprows"] = None
+    
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards
-    df_sanitizer_fun = None
+
 
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
@@ -85,28 +93,15 @@ def reader(
             import dask.dataframe as dd
         else:
             import pandas as dd
-
-        # - Drop datalogger columns
-        columns_to_drop = [
-            "id",
-            "datalogger_temperature",
-            "datalogger_voltage",
-            "datalogger_error",
-        ]
-        df = df.drop(columns=columns_to_drop)
-
-        # - Drop latitude and longitude
-        # --> Latitude and longitude is specified in the the metadata.yaml
-        df = df.drop(columns=["latitude", "longitude"])
-
-        # - Convert time column to datetime with resolution in seconds
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
-
+	
+	# [ADD YOUR CUSTOM CODE HERE]
+        #             ...
+        
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files within raw_dir/data/<station_id>
-    files_glob_pattern = "*.dat*"
+    files_glob_pattern = "*" # [TO BE ADAPTED TO THE STATION RAW FILE NAME PATTERN]
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products
