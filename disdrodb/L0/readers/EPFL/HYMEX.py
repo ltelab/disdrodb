@@ -93,10 +93,9 @@ def reader(
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
-    # Cast all to string
-    reader_kwargs["dtype"] = str
+
     # Use for Nan value
-    reader_kwargs["assume_missing"] = True
+    # reader_kwargs["assume_missing"] = True
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -124,7 +123,7 @@ def reader(
 
         # Remove rows where all column variables execept 'time' are 'NA' (nan in the dataframe) 
 	# - To simplify, we just drop when raw_drop_number is 'NA'  
-        df = df.dropna(subset="raw_drop_number", axis=0)
+        df = df.dropna(subset="raw_drop_number")
 
         # Convert time to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")

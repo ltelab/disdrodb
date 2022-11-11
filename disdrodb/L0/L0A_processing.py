@@ -180,6 +180,7 @@ def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
         reader_kwargs.pop("index_col", None)
     if not lazy:
         reader_kwargs.pop("blocksize", None)
+        reader_kwargs.pop("assume_missing", None) 
     return reader_kwargs
 
 
