@@ -277,7 +277,9 @@ def retrieve_L0B_arrays(
 
         # Get a numpy array for each row and then stack
         if lazy:
-            list_arr = df_series.apply(format_string_array, n_values=n_bins, meta=(key, 'f8'))
+            list_arr = df_series.apply(
+                format_string_array, n_values=n_bins, meta=(key, "f8")
+            )
             arr = da.stack(list_arr, axis=0)
         else:
             list_arr = df_series.apply(format_string_array, n_values=n_bins)
