@@ -182,7 +182,7 @@ def run_L0(
                 return df
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure: 
+        The path must have the following structure:
             <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
         Inside the raw_dir directory, it is required to adopt the following structure:
         - /data/<station_id>/<raw_files>
@@ -195,9 +195,9 @@ def run_L0(
         - The campaign_name are expected to be UPPER CASE.
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: 
+        The path should have the following structure:
             <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        For testing purpose, this function exceptionally accept also a directory path simply ending 
+        For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
@@ -407,7 +407,7 @@ def run_L0(
 
                 # -----------------------------------------------------------------.
                 #### - Write L0B netCDF4 dataset
-                fpath = get_L0B_fpath(ds, processed_dir, station_id)  
+                fpath = get_L0B_fpath(ds, processed_dir, station_id)
                 write_L0B(ds, fpath=fpath, sensor_name=sensor_name)
 
                 # -----------------------------------------------------------------.
@@ -659,7 +659,7 @@ def run_reader(
         Campaign name
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure: 
+        The path must have the following structure:
             <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
         Inside the raw_dir directory, it is required to adopt the following structure:
         - /data/<station_id>/<raw_files>
@@ -672,9 +672,9 @@ def run_reader(
         - The campaign_name are expected to be UPPER CASE.
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: 
+        The path should have the following structure:
             <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        For testing purpose, this function exceptionally accept also a directory path simply ending 
+        For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
@@ -750,7 +750,7 @@ def reader_generic_docstring():
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure: 
+        The path must have the following structure:
             <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
         Inside the raw_dir directory, it is required to adopt the following structure:
         - /data/<station_id>/<raw_files>
@@ -763,9 +763,9 @@ def reader_generic_docstring():
         - The campaign_name are expected to be UPPER CASE.
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: 
+        The path should have the following structure:
             <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        For testing purpose, this function exceptionally accept also a directory path simply ending 
+        For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.

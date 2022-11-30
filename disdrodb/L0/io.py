@@ -25,7 +25,7 @@ import glob
 import datetime
 import numpy as np
 import pandas as pd
-import xarray as xr 
+import xarray as xr
 import dask.dataframe as dd
 import importlib.metadata
 from typing import Union
@@ -143,16 +143,16 @@ def get_dataset_min_max_time(ds: xr.Dataset):
     ----------
     ds : xr.Dataset
         Input dataset
-        
+
     Returns
     -------
     tuple
         (starting_time, ending_time)
-        
+
     """
-     
-    starting_time = ds['time'].values[0] 
-    ending_time = ds['time'].values[-1] 
+
+    starting_time = ds["time"].values[0]
+    ending_time = ds["time"].values[-1]
     return (starting_time, ending_time)
 
 
@@ -202,14 +202,14 @@ def get_L0A_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
 
 
 # TODO: and refactor L0_processing --> remove suffix
-# 
+#
 # def get_L0A_fname(df, processed_dir, station_id: str) -> str:
 #     """Define L0A file name.
 
 #     Parameters
 #     ----------
 #     ds : pd.DataFrame
-#         L0A DataFrame 
+#         L0A DataFrame
 #     processed_dir : str
 #         Path of the processed directory
 #     station_id : int
@@ -220,8 +220,8 @@ def get_L0A_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
 #     str
 #         L0B file name.
 #     """
-#     starting_time, ending_time = get_dataframe_min_max_time(ds)    
-#     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S") 
+#     starting_time, ending_time = get_dataframe_min_max_time(ds)
+#     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
 #     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
 #     # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
 #     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
@@ -284,7 +284,7 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
     Parameters
     ----------
     ds : xr.Dataset
-        L0B xarray Dataset 
+        L0B xarray Dataset
     processed_dir : str
         Path of the processed directory
     station_id : int
@@ -295,8 +295,8 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
     str
         L0B file name.
     """
-    starting_time, ending_time = get_dataset_min_max_time(ds)    
-    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S") 
+    starting_time, ending_time = get_dataset_min_max_time(ds)
+    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
     # institute_name = get_data_source(processed_dir).replace(".", "-") # TODO: data_source
@@ -316,7 +316,7 @@ def get_L0B_fpath(ds, processed_dir: str, station_id: str) -> str:
     Parameters
     ----------
     ds : xr.Dataset
-        L0B xarray Dataset 
+        L0B xarray Dataset
     processed_dir : str
         Path of the processed directory
     station_id : int
@@ -326,7 +326,7 @@ def get_L0B_fpath(ds, processed_dir: str, station_id: str) -> str:
     -------
     str
         L0B file path.
-    """  
+    """
     dir_path = get_L0B_dir(processed_dir, station_id)
     fname = get_L0B_fname(ds, processed_dir, station_id)
     fpath = os.path.join(dir_path, fname)

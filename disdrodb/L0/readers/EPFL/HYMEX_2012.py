@@ -43,7 +43,7 @@ def reader(
     # Notes
     # - In all files, the datalogger voltage hasn't the delimeter,
     #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-    # - When no data are logged (every 30 seconds), all columns (except time) have "NA" values  
+    # - When no data are logged (every 30 seconds), all columns (except time) have "NA" values
 
     column_names = [
         "time",
@@ -88,7 +88,7 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na","","error","NA","-.-"," NA"]
+    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-", " NA"]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
@@ -107,7 +107,7 @@ def reader(
         else:
             import pandas as dd
 
-        # Drop column variables which do not adhere to the DISDRODB standard 
+        # Drop column variables which do not adhere to the DISDRODB standard
         df = df.drop(
             columns=[
                 "datalogger_debug",
@@ -118,8 +118,8 @@ def reader(
             ]
         )
 
-        # Remove rows where all column variables execept 'time' are 'NA' (nan in the dataframe) 
-	# - To simplify, we just drop when raw_drop_number is 'NA'  
+        # Remove rows where all column variables execept 'time' are 'NA' (nan in the dataframe)
+        # - To simplify, we just drop when raw_drop_number is 'NA'
         df = df.dropna(subset="raw_drop_number")
 
         # Convert time to datetime
