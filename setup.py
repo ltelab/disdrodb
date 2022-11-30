@@ -26,7 +26,7 @@ setup(
     package_data={
         "disdrodb": [
             "L0/configs/*/*.yaml",
-            #'L0/readers/*/*.py',
+            "L0/readers/*/*.py",
         ]
     },
     install_requires=[
