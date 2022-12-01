@@ -25,7 +25,7 @@ setup(
     # See https://setuptools.readthedocs.io/en/latest/userguide/datafiles.html#data-files-support
     package_data={
         "disdrodb": [
-            "L0/configs/*/*.yaml",
+            "L0/configs/*/*.yml",
             "L0/readers/*/*.py",
         ]
     },
