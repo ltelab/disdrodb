@@ -24,13 +24,9 @@ from disdrodb.L0.standards import (
 
 # ------------------------------------------------------------
 # TODO:
-# - check variables in L0A_dtypes match L0B_encodings.yml keys
-
+# - function that check variables in L0A_dtypes match L0B_encodings.yml keys
+# - check start diameter with OTT_Parsivel and OTT_Parsivel2
 # ------------------------------------------------------------
-
-sensor_name = "OTT_Parsivel"  # LITTLE ISSUE WHEN IT STARTS THE DIAMETER ...
-sensor_name = "OTT_Parsivel2"  # LITTLE ISSUE WHEN IT STARTS THE DIAMETER ...
-sensor_name = "Thies_LPM"  # OK
 
 
 def check_bin_consistency(sensor_name: str) -> None:
@@ -104,21 +100,9 @@ def check_variable_keys_consistency(sensor_name: str) -> None:
     encoding_vars.difference(data_format_vars)
     encoding_vars.difference(units_vars)
     encoding_vars.difference(description_vars)
-    # encoding_vars.difference(long_name_vars) # TODO ADD
+    encoding_vars.difference(long_name_vars)
 
     data_format_vars.difference(encoding_vars)
     units_vars.difference(encoding_vars)
     description_vars.difference(encoding_vars)
-    # long_name_vars.difference(encoding_vars) # TODO ADD
-
-
-# get_available_sensor_name()
-
-# get_diameter_bins_dict(sensor_name)
-# get_velocity_bins_dict(sensor_name)
-
-# get_variables_dict(sensor_name)
-# get_sensor_variables(sensor_name)
-
-# get_units_dict(sensor_name)
-# get_explanations_dict(sensor_name)
+    long_name_vars.difference(encoding_vars)
