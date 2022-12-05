@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Apr 13 10:55:06 2022
-
-@author: kimbo
-"""
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -22,10 +16,7 @@ Created on Wed Apr 13 10:55:06 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -43,116 +34,83 @@ def reader(
     single_netcdf=True,
 ):
 
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
-    # Header info :
-    # YYYYmmDDHHMMSS;[sn], sensor status, temperature (°C), number of particles detected,
-    # rain rate (mm/hr), reflectivity (dBz), MOR Visibility (m), Weather code SYNOP WaWa 4680
-    # Weather Code SYNOP WW Table 4677, number of particles within each diameter and velocity class (raw)
-
-    column_names = ["time", "temp"]
-
-    column_names_2 = [
-        "time",
-        "sensor_id",
-        "sensor_status",
-        "sensor_temperature",
-        "number_particles",
-        "rainfall_rate_32bit",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "raw_drop_number",
-    ]
+    ##------------------------------------------------------------------------.
+    #### - Define column names
+    column_names = ["time", "TO_BE_SPLITTED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+    # Skip file with encoding errors
+    reader_kwargs["encoding_errors"] = "ignore"
     # - Need for zipped raw file (GPM files)
     reader_kwargs["zipped"] = True
-
+    # Searched file into tar files
+    reader_kwargs["file_name_to_read_zipped"] = "raw.txt"
     # - Define delimiter
     reader_kwargs["delimiter"] = ";"
-
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
-
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # Skip file with encoding errors
-    reader_kwargs["encoding_errors"] = "ignore"
-
-    # Searched file into tar files
-    reader_kwargs["file_name_to_read_zipped"] = "raw.txt"
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
+        # - Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
 
-        # Convert time and split columns
-        df = dd.concat(
-            [
-                dd.to_datetime(df["time"], format="%Y%m%d%H%M%S"),
-                df["temp"].str.split(",", n=9, expand=True),
-            ],
-            axis=1,
-        )
+        # - Define 'time' datetime
+        df_time = dd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
 
-        # Rename columns
-        df.columns = column_names_2
+        # - Split the 'TO_BE_SPLITTED' column
+        df = df["TO_BE_SPLITTED"].str.split(",", n=9, expand=True)
 
-        # Drop sensor_id
+        # - Assign column names
+        column_names = [
+            "sensor_id",
+            "sensor_status",
+            "sensor_temperature",
+            "number_particles",
+            "rainfall_rate_32bit",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "raw_drop_number",
+        ]
+        df.columns = column_names
+
+        # - Add the time column
+        df["time"] = df_time
+
+        # - Drop columns not agreeing with DISDRODB L0 standards
         df = df.drop(columns=["sensor_id"])
-
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.tar"
 
     ####----------------------------------------------------------------------.

@@ -16,10 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
 from disdrodb.L0.L0_processing import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -100,7 +97,6 @@ def reader(
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
-    reader_kwargs["header"] = None
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -109,7 +105,7 @@ def reader(
     df_sanitizer_fun = None
 
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
+        # - Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
@@ -135,7 +131,7 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files within raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files within <raw_dir>/data/<station_id>
     files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.

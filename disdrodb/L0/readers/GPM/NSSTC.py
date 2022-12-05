@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Feb  2 12:47:52 2022
-
-@author: kimbo
-"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -21,10 +16,7 @@ Created on Wed Feb  2 12:47:52 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -41,100 +33,100 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
-
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = ["time", "TO_BE_PARSED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
     # - Need for zipped raw file (GPM files)
     reader_kwargs["zipped"] = True
-
     # - Define delimiter
     reader_kwargs["delimiter"] = ";"
-
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+    # - Skip file with encoding errors
+    reader_kwargs["encoding_errors"] = "ignore"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
-
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-"]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # Skip file with encoding errors
-    reader_kwargs["encoding_errors"] = "ignore"
-
-    # Searched file into tar files
-    # reader_kwargs['file_name_to_read_zipped'] = 'spectrum.txt'
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
+    #### - Define dataframe sanitizer function for L0 processing
+    # Deal with changing file format after 25 feb 2011 by the documentation
+    # - https://ghrc.nsstc.nasa.gov/pub/fieldCampaigns/gpmValidation/relatedProjects/nsstc/parsivel/doc/gpm_parsivel_nsstc_dataset.html).
+    # - TODO: code below might exploit df['time'] instead of n_delimiters
 
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
+        # - Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
 
-        # Some rows are corrupted, little check
+        # - Check 'time' string length
+        # --> Enable to detect rows which are corrupted
         df = df[df["time"].str.len() == 14]
 
-        # Change format after 25 feb 2011 by the documentation (https://ghrc.nsstc.nasa.gov/pub/fieldCampaigns/gpmValidation/relatedProjects/nsstc/parsivel/doc/gpm_parsivel_nsstc_dataset.html).
+        # - Convert time column to datetime
+        df["time"] = dd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
 
-        # Count commas on the first row for determine the columns number
-        if df.iloc[:1, 1].str.count(",").item() == 1027:
+        # Compute number of delimiters in the column to be parsed
+        # - Count commas on the first row to determine the columns number
+        n_delimiters = df["TO_BE_PARSED"].iloc[0].count(",").item()
+
+        if n_delimiters == 1027:
+            # - Select valid rows
             df = df.loc[df["TO_BE_PARSED"].str.count(",") == 1027]
-            n_split = 3
-            temp_column_names = [
-                "time",
+            # - Get time column
+            df_time = df["time"]
+            # - Split the column be parsed
+            df = df["TO_BE_PARSED"].str.split(",", expand=True, n=3)
+            # - Assign column names
+            column_names = [
                 "station_name",
                 "sensor_status",
                 "sensor_temperature",
                 "raw_drop_number",
             ]
-        elif df.iloc[:1, 1].str.count(",").item() == 1033:
+            df.columns = column_names
+            # - Add missing columns with NAN value
+            df["number_particles"] = "NaN"
+            df["rainfall_rate_32bit"] = "NaN"
+            df["reflectivity_32bit"] = "NaN"
+            df["mor_visibility"] = "NaN"
+            df["weather_code_synop_4680"] = "NaN"
+            df["weather_code_synop_4677"] = "NaN"
+            # - Add time column
+            df["time"] = df_time
+
+        elif n_delimiters == 1033:
+            # - Select valid rows
             df = df.loc[df["TO_BE_PARSED"].str.count(",") == 1033]
-            n_split = 9
-            temp_column_names = [
-                "time",
+            # - Get time column
+            df_time = df["time"]
+            # - Split the column be parsed
+            df = df["TO_BE_PARSED"].str.split(",", expand=True, n=9)
+            # - Assign column names
+            column_names = [
                 "station_name",
                 "sensor_status",
                 "sensor_temperature",
@@ -146,43 +138,22 @@ def reader(
                 "weather_code_synop_4677",
                 "raw_drop_number",
             ]
+            df.columns = column_names
+            # - Add time column
+            df["time"] = df_time
+
         else:
-            # Wrong column number, probrably corrupted file
+            # Wrong number of delimiters ... likely a corrupted file
             raise SyntaxError("Something wrong with columns number!")
 
-        # Split temp column and rename it
-        df = dd.concat(
-            [df.iloc[:, 0], df.iloc[:, 1].str.split(",", expand=True, n=n_split)],
-            axis=1,
-            ignore_unknown_divisions=True,
-        )
-        df.columns = temp_column_names
-
-        # Add missing column and fill with value set for nan (it give error on Nan values)
-        if len(temp_column_names) == 5:
-            df["number_particles"] = 0
-            df["rainfall_rate_32bit"] = -1
-            df["reflectivity_32bit"] = -1
-            df["mor_visibility"] = 0
-            df["weather_code_synop_4680"] = 0
-            df["weather_code_synop_4677"] = 0
-
-        # - Drop invalid raw_drop_number
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-
-        # - Error in enconding raw_drop_number
+        # - Detect corrupted row by analyzing raw_drop_number
+        # TODO: to be discarded in future by timestep ...
         df = df[df["raw_drop_number"].str.contains("0p0") == False]
-
-        # - Convert time column to datetime
-        try:
-            df["time"] = dd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
-        except TypeError:
-            raise TypeError("Error on parse date on df {}").format(df.compute())
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.tar"
 
     ####----------------------------------------------------------------------.

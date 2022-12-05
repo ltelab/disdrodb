@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jan 20 09:37:03 2022
-
-@author: kimbo
-"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -22,8 +17,6 @@ Created on Thu Jan 20 09:37:03 2022
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -40,21 +33,13 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
-
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = [
         "time",
         "id",
-        "temp_temperature",
-        "temp_voltage",
+        "datalogger_temperature",
+        "datalogger_voltage",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
@@ -68,7 +53,7 @@ def reader(
         "sensor_battery_voltage",
         "sensor_status",
         "rainfall_amount_absolute_32bit",
-        "debug_data",
+        "datalogger_debug",
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
@@ -77,24 +62,20 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
-
     reader_kwargs = {}
-
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
@@ -106,72 +87,34 @@ def reader(
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # Use for Nan value
-    reader_kwargs["assume_missing"] = True
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
+        # - Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
 
-        # Drop bad lines on based on debug_data
-        df = df[~df.debug_data.str.startswith("Frame", na=False)]
-
-        # Drop debug_data, datalogger_error and id
-        df = df.drop(
-            columns=[
-                "debug_data",
-                "datalogger_error",
-                "id",
-                "temp_temperature",
-                "temp_voltage",
-            ]
-        )
-
-        # If value in col_to_drop_if_na colum is nan, drop the row
-        col_to_drop_if_na = [
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "weather_code_synop_4680",
-            "weather_code_synop_4677",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_temperature",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "sensor_status",
-            "rainfall_amount_absolute_32bit",
-        ]
-        df = df.dropna(subset=col_to_drop_if_na, how="all")
-
-        # Drop rows with less than 224 char on raw_drop_concentration, raw_drop_average_velocity and 4096 on raw_drop_number
-        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+        # - Drop bad lines on based on datalogger_debug column
+        df = df[~df["datalogger_debug"].str.startswith("Frame", na=False)]
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        columns_to_drop = [
+            "datalogger_debug",
+            "datalogger_voltage",
+            "id",
+            "datalogger_temperature",
+            "datalogger_error",
+        ]
+        df = df.drop(columns=columns_to_drop)
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.

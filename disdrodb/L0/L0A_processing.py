@@ -128,9 +128,6 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
         ]
         raise ValueError(f"No file found at t {glob_fpath_patterns}.")
 
-    # Check there are not directories (or other strange stuffs) in list_fpaths
-    # TODO [KIMBO]
-
     # Subset file_list if debugging_mode
     if debugging_mode:
         max_files = min(3, n_files)
@@ -170,17 +167,19 @@ def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
 
     # Preprocess the reader_kwargs
     reader_kwargs = reader_kwargs.copy()
-    if reader_kwargs.get(
-        "zipped"
-    ):  # TODO: to provide example of this case for testing. I guess could be refactored
-        reader_kwargs.pop("zipped", None)
-        reader_kwargs.pop("blocksize", None)
-        reader_kwargs.pop("file_name_to_read_zipped", None)
+
     if lazy:
         reader_kwargs.pop("index_col", None)
     if not lazy:
         reader_kwargs.pop("blocksize", None)
         reader_kwargs.pop("assume_missing", None)
+
+    # TODO: Remove this when removing read_raw_data_zipped
+    if reader_kwargs.get("zipped", False):
+        reader_kwargs.pop("zipped", None)
+        reader_kwargs.pop("blocksize", None)
+        reader_kwargs.pop("file_name_to_read_zipped", None)
+
     return reader_kwargs
 
 
@@ -263,12 +262,79 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     for column in columns:
         try:
             df[column] = df[column].astype(dtype_dict[column])
-        except KeyError:
-            # TODO: this must be captured before casting !!!
-            # If column dtype is not into L0A_encodings.yml, assign object
-            df[column] = df[column].astype("object")
         except ValueError as e:
             raise (f"ValueError: The column {column} has {e}")
+    return df
+
+
+def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
+    """Coerce corrupted values in dataframe numeric columns to np.nan.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with string columns without corrupted values.
+    """
+    # Cast dataframe to dtypes
+    dtype_dict = get_L0A_dtype(sensor_name)
+
+    # Get string columns
+    numeric_columns = [
+        k for k, dtype in dtype_dict.items() if "float" in dtype or "int" in dtype
+    ]
+
+    # Get dataframe column names
+    columns = list(df.columns)
+
+    # Cast dataframe columns
+    for column in columns:
+        if column in numeric_columns:
+            try:
+                df[column] = dd.to_numeric(df[column], errors="coerce")
+            except AttributeError:
+                raise (f"AttributeError: The column {column} is not a numeric column.")
+    return df
+
+
+def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
+    """Strip leading/trailing spaces from dataframe string columns.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with string columns without leading/trailing spaces.
+    """
+    # Cast dataframe to dtypes
+    dtype_dict = get_L0A_dtype(sensor_name)
+
+    # Get string columns
+    string_columns = [k for k, dtype in dtype_dict.items() if dtype == "str"]
+
+    # Get dataframe column names
+    columns = list(df.columns)
+    # Cast dataframe columns
+    for column in columns:
+        if column in string_columns:
+            try:
+                df[column] = df[column].str.strip()
+            except AttributeError:
+                raise (
+                    f"AttributeError: The column {column} is not a string/object dtype."
+                )
     return df
 
 
@@ -530,19 +596,9 @@ def read_L0A_raw_file_list(
             if df_sanitizer_fun is not None:
                 df = df_sanitizer_fun(df, lazy=lazy)
 
-            # -------------------------------------------------------.
-            # TODO: Make a check to detect that the number of columns does not vary !!!!
-            # - Might facilitate identification of buzzy stuffs
-            # - Ensure that df_sanitizer_fun capture all problems
-
             # ------------------------------------------------------.
             # Check column names met DISDRODB standards
             check_L0A_column_names(df, sensor_name=sensor_name)
-
-            # ------------------------------------------------------.
-            # Cast dataframe to dtypes
-            # - TODO: I would move that after the concatenation !!!
-            df = cast_column_dtypes(df, sensor_name=sensor_name)
 
             # ------------------------------------------------------.
             # Append dataframe to the list
@@ -578,6 +634,20 @@ def read_L0A_raw_file_list(
         df = list_df[0]
 
     # ------------------------------------------------------.
+    # Final dataframe cleaning
+    # - Coerce numeric columns corrupted values to np.nan
+    df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name)
+
+    # - Strip trailing/leading space from string columns
+    df = strip_string_spaces(df, sensor_name=sensor_name)
+
+    # - Remove rows with duplicate timestep (keep the first)
+    df = df.drop_duplicates(subset=["time"])
+
+    # - Cast dataframe to dtypes
+    df = cast_column_dtypes(df, sensor_name=sensor_name)
+
+    # ------------------------------------------------------.
     #### - Filter out problematic data reported in issue file
     # TODO: [TEST IMPLEMENTATION] remove_problematic_timestamp in dev/TODO_issue_code.py
     # issue_dict = read_issue(raw_dir, station_id)
@@ -596,13 +666,12 @@ def _write_to_parquet(
 
     import pandas as pd
     import dask.dataframe
+    from disdrodb.L0.io import _create_directory
 
     # -------------------------------------------------------------------------.
     # Check if a file already exists (and remove if force=True)
     _remove_if_exists(fpath, force=force)
     # Cannot create the station folder, so has to be created manually
-    from disdrodb.L0.io import _create_directory
-
     _create_directory(os.path.dirname(fpath))
 
     # -------------------------------------------------------------------------.

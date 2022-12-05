@@ -123,7 +123,10 @@ def infer_split_str(string: str) -> str:
 def format_string_array(string: str, n_values: int) -> np.array:
     """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
-        e.g. : format_string_array("2,44,22,33",4) will return [ 2. 44. 22. 33.]
+        e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
+
+    If empty string ("") --> Assume no precipitation recorded
+    If the list length is not n_values or n_values+1 --> Set np.nan
 
     Parameters
     ----------
