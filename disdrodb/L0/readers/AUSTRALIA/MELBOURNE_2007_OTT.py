@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jun 14 07:51:55 2022
-
-@author: kimbo
-"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -22,8 +17,6 @@ Created on Tue Jun 14 07:51:55 2022
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -40,18 +33,8 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
-
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
-    column_names_temp = ["temp"]
-
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = [
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
@@ -74,7 +57,6 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
-
     reader_kwargs = {}
 
     # - Define delimiter
@@ -113,10 +95,9 @@ def reader(
     reader_kwargs["header"] = None
 
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
+    #### - Define dataframe sanitizer
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
 
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
@@ -129,40 +110,22 @@ def reader(
         # -2015-01-09 00:02:16
         # 0000.063;0012.33;51;51;  -DZ; ...
 
-        # Save time into df_time
-        df_time = df.loc[df["temp"].astype(str).str.len() == 20]
-        df_time["temp"] = dd.to_datetime(df_time["temp"], format="-%Y-%m-%d %H:%M:%S")
-        df_time.columns = ["time"]
+        # Convert 'temp' column to string
+        df["temp"] = df["temp"].astype(str)
+
+        # Infer time
+        df_time = df.loc[df["temp"].str.len() == 20]
+        df_time["time"] = dd.to_datetime(df_time["temp"], format="-%Y-%m-%d %H:%M:%S")
+        df_time = df_time.drop(columns=["temp"])
 
         # Drop header's log and corrupted rows
-        df = df.loc[df["temp"].astype(str).str.len() > 620]
+        df = df.loc[df["temp"].str.len() > 620]
 
         # Split first 80 columns
         df = df["temp"].str.split(";", n=16, expand=True)
-
-        column_names = [
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "weather_code_synop_4680",
-            "weather_code_synop_4677",
-            "weather_code_metar_4678",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "unknow2",
-            "datalogger_temperature",
-            "sensor_status",
-            "station_name",
-            "unknow3",
-            "unknow4",
-            "error_code",
-            "TO_BE_SPLITTED",
-        ]
-
         df.columns = column_names
 
-        # Split raws columns
+        # Retrieve raw_drop* fields
         df["raw_drop_concentration"] = df["TO_BE_SPLITTED"].str[:224]
         df["raw_drop_average_velocity"] = df["TO_BE_SPLITTED"].str[224:448]
         df["raw_drop_number"] = df["TO_BE_SPLITTED"].str[448:]
@@ -175,25 +138,21 @@ def reader(
         # Drop last columns (all nan)
         df = df.dropna(thresh=(len(df.columns) - 19), how="all")
 
-        # Columns to drop
+        # Drops columns not compliant with DISDRODB L0 standard
         columns_to_drop = [
             "TO_BE_SPLITTED",
-            "weather_code_metar_4678",
             "datalogger_temperature",
-            "sensor_status",
             "station_name",
-            "error_code",
             "unknow2",
             "unknow3",
             "unknow4",
         ]
-
         df = df.drop(columns=columns_to_drop)
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.txt*"
 
     ####----------------------------------------------------------------------.

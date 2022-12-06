@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jun 13 04:57:12 2022
-
-@author: kimbo
-"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -40,16 +35,8 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
-
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names_temp = ["temp"]
 
     column_names = [
@@ -137,44 +124,33 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
-
     reader_kwargs = {}
-
     # - Define delimiter
     reader_kwargs["delimiter"] = "#"
-
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]
-
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
-
     # Cast all to string
     reader_kwargs["dtype"] = str
-
     # Skip first row as columns names
     reader_kwargs["header"] = None
-
     # Skip first 3 rows
     reader_kwargs["skiprows"] = 3
 
@@ -207,6 +183,7 @@ def reader(
 
         # Merge time
         df["time"] = df["date_sensor"].astype(str) + " " + df["time_sensor"]
+
         # Drop rows with invalid date
         df = df.loc[df["time"].astype(str).str.len() == 17]
         try:

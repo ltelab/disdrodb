@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Aug  4 10:34:08 2022
-
-@author: kimbo
-"""
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -22,10 +16,7 @@ Created on Thu Aug  4 10:34:08 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -43,14 +34,8 @@ def reader(
     single_netcdf=True,
 ):
 
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = [
         "day",
         "month",
@@ -65,7 +50,7 @@ def reader(
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
-        "unknown_field_to_drop",
+        "unknown",
     ]
 
     ##------------------------------------------------------------------------.
@@ -107,13 +92,9 @@ def reader(
     reader_kwargs["encoding"] = "ISO-8859-1"
 
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
+        # - Import dask or pandas
         if lazy:
             import pandas as dd
 
@@ -121,7 +102,7 @@ def reader(
         else:
             import pandas as dd
 
-        # Parse time
+        # - Define datetime 'time' column
         df["time"] = (
             df["day"].astype(str)
             + "-"
@@ -135,35 +116,21 @@ def reader(
         )
         df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
 
-        # Drop unrequired columns for L0
-        df = df.drop(
-            columns=[
-                "unknown_field_to_drop",
-                "day",
-                "month",
-                "year",
-                "hour_minute",
-                "second",
-            ]
-        )
-
-        # Trim weather_code_metar_4678
-        df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
-
-        # Set NaN rows with corrupted values
-        numeric_columns = [
-            "rainfall_accumulated_32bit",
-            "rainfall_rate_32bit",
-            "reflectivity_16bit",
-            "mor_visibility",
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        columns_to_drop = [
+            "unknown",
+            "day",
+            "month",
+            "year",
+            "hour_minute",
+            "second",
         ]
-        for c in numeric_columns:
-            df[c] = dd.to_numeric(df[c], errors="coerce")
+        df = df.drop(columns=columns_to_drop)
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.dat"
 
     ####----------------------------------------------------------------------.
