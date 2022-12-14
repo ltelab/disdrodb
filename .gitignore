@@ -159,4 +159,3 @@ docs\source\reader_preparation.ipynb
 
 # Ignore specific folders
 /disdrodb/tests/temp/
-/disdrodb/pipeline/*
