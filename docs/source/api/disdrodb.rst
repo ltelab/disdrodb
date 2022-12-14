@@ -11,7 +11,6 @@ Subpackages
    disdrodb.L1
    disdrodb.L2
    disdrodb.api
-   disdrodb.pipeline
    disdrodb.utils
 
 Module contents
