@@ -49,9 +49,10 @@ def infer_institute_from_fpath(fpath: str) -> str:
     str
         Name of the institute.
     """
+    path_pattern = r"(\\|\/)"
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
-    institute = disdrodb_fpath.split("/")[2]
+    institute = re.split(path_pattern, disdrodb_fpath)[4]
     return institute
 
 
@@ -68,9 +69,10 @@ def infer_campaign_from_fpath(fpath: str) -> str:
     str
         Name of the campaign.
     """
+    path_pattern = r"(\\|\/)"
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
-    campaign = disdrodb_fpath.split("/")[3]
+    campaign = re.split(path_pattern, disdrodb_fpath)[6]
     return campaign
 
 
@@ -92,7 +94,8 @@ def infer_station_id_from_fpath(fpath: str) -> str:
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
     list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    station_id = list_path_elements[10]
+    print(list_path_elements)
+    station_id = list_path_elements[8]
     # Optional strip .yml if fpath point to YAML file
     station_id.strip(".yml")
     return station_id
@@ -303,7 +306,9 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
     metadata_dict = read_metadata(processed_dir, station_id)
     sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
+
     version = importlib.metadata.version("disdrodb").replace(".", "-")
+
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
     fname = f"DISDRODB.L0B.Raw.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.{version}.nc"
@@ -407,6 +412,11 @@ def parse_fpath(fpath: str) -> str:
     if fpath[-1] == "/":
         print("{} should not end with /.".format(fpath))
         fpath = fpath[:-1]
+
+    elif fpath[-1] == "\\":
+        print("{} should not end with /.".format(fpath))
+        fpath = fpath[:-1]
+
     return fpath
 
 
@@ -735,7 +745,7 @@ def check_directories(raw_dir: str, processed_dir: str, force: bool = False) -> 
 
 
 def check_metadata_dir(processed_path: str) -> None:
-    """Check metadata folder
+    """Create metadata folder into process directory.
 
     Parameters
     ----------

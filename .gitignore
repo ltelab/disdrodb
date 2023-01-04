@@ -159,3 +159,6 @@ docs\source\reader_preparation.ipynb
 
 # Ignore specific folders
 /disdrodb/tests/temp/
+/disdrodb/tests/pytest_files/test_folders_files_creation/*
+!disdrodb/tests/pytest_files/test_folders_files_creation/.gitkeep
+
