@@ -155,7 +155,7 @@ log.txt
 # Ignore specific files
 docs\source\reader_preparation.ipynb
 \docs\source\reader_preparation.ipynb
-*.csv
+/docs/source/csv/*.csv
 
 # Ignore specific folders
 /disdrodb/tests/temp/
