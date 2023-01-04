@@ -33,7 +33,7 @@ def read_yaml(fpath: str) -> dict:
     return attrs
 
 
-def identify_missing_metadata(metadata_fpaths: str, keys: Union[str, list]) -> None:
+def identify_missing_metadata(metadata_fpaths: list, keys: Union[str, list]) -> None:
     """Identify missing metadata.
 
     Parameters
