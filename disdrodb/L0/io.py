@@ -94,7 +94,6 @@ def infer_station_id_from_fpath(fpath: str) -> str:
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
     list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    print(list_path_elements)
     station_id = list_path_elements[8]
     # Optional strip .yml if fpath point to YAML file
     station_id.strip(".yml")
@@ -114,9 +113,11 @@ def get_campaign_name(base_dir: str) -> str:
     str
         Name of the campaign.
     """
-
-    base_dir = parse_fpath(base_dir)
-    campaign_name = os.path.basename(base_dir).upper()
+    path_pattern = r"(\\|\/)"
+    idx_start = base_dir.rfind("DISDRODB")
+    disdrodb_fpath = base_dir[idx_start:]
+    list_path_elements = re.split(path_pattern, disdrodb_fpath)
+    campaign_name = list_path_elements[-1].upper()
     return campaign_name
 
 
@@ -134,8 +135,11 @@ def get_data_source(base_dir: str) -> str:
         Name of the data source
     """
 
-    base_dir = parse_fpath(base_dir)
-    institute_name = os.path.basename(os.path.dirname(base_dir)).upper()
+    path_pattern = r"(\\|\/)"
+    idx_start = base_dir.rfind("DISDRODB")
+    disdrodb_fpath = base_dir[idx_start:]
+    list_path_elements = re.split(path_pattern, disdrodb_fpath)
+    institute_name = list_path_elements[-3].upper()
     return institute_name
 
 

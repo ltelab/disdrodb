@@ -104,10 +104,12 @@ PATH_PROCESS_DIR_LINUX = "DISDRODB/Processed/institute_name/campaign_name"
 def test_get_L0A_fpath(path_process_dir):
     res = (
         io.get_L0A_fpath(path_process_dir, "station_id", "suffix")
-        .replace(path_process_dir, "")
         .replace("\\", "")
         .replace("/", "")
     )
+
+    path_without_delimiters = path_process_dir.replace("\\", "").replace("/", "")
+    res = res.replace(path_without_delimiters, "")
     assert res == "L0Astation_idCAMPAIGN_NAME_sstation_id_suffix.parquet"
 
 
