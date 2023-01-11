@@ -33,7 +33,12 @@ def test_read_metadata():
     raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
     station_id = "123"
 
-    metadata_path = os.path.join(raw_dir, "metadata", f"{station_id}.yml")
+    metadata_folder_path = os.path.join(raw_dir, "metadata")
+
+    if not os.path.exists(metadata_folder_path):
+        os.makedirs(metadata_folder_path)
+
+    metadata_path = os.path.join(metadata_folder_path, f"{station_id}.yml")
 
     if os.path.exists(metadata_path):
         os.remove(metadata_path)
