@@ -255,7 +255,7 @@ DISDRODB tests can be executed by running:
   
 
 Push your changes to your fork repository
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 During this process, pre-commit hooks will be run. Your commit will be
 allowed only if quality requirements are fulfilled.
@@ -272,7 +272,7 @@ The goal is to increase readability and ease of contribution. We use `commit-lin
 
 
 Create a new Pull Request in GitHub.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once your code has been uploaded into your DISDRODB fork, you can create
 a Pull Request (PR) to the DISDRODB main branch.

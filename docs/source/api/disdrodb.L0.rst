@@ -92,6 +92,14 @@ disdrodb.L0.metadata module
    :undoc-members:
    :show-inheritance:
 
+disdrodb.L0.run\_disdrodb\_l0\_reader module
+--------------------------------------------
+
+.. automodule:: disdrodb.L0.run_disdrodb_l0_reader
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 disdrodb.L0.standards module
 ----------------------------
 

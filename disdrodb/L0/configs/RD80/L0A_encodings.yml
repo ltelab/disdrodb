@@ -1,6 +1,6 @@
 time: 'str'
-status: 'int8'
-interval: 'uint8'
+status: 'float32' #  'int8'
+interval: 'float32' #  'uint8'
 raw_drop_number: 'str'
 RI: 'float32'
 RA: 'float32'

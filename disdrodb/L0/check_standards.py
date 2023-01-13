@@ -147,6 +147,7 @@ def check_L0A_standards(
                 " - This columns have values outside the expected data range:",
                 list_wrong_columns,
             )
+
     # -------------------------------------
     # Check categorical data values
     dict_field_values = get_field_value_options_dict(sensor_name)
@@ -167,6 +168,7 @@ def check_L0A_standards(
                 list_wrong_columns,
             )
             [print(msg) for msg in list_msg]
+
     # -------------------------------------
     # Check if latitude and longitude are columns of the dataframe
     # - They should be only provided if the instrument is moving !!!!
@@ -201,6 +203,11 @@ def check_L0A_standards(
         )
         print(msg)
         logger.info(msg)
+
+    # -------------------------------------
+    # Check that numeric variable are not all NaN
+    # - Otherwise raise error
+    # - df[column].isna().all()
 
     # -------------------------------------
     # Add index to dataframe

@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Tue Jan 11 13:00:07 2022
-
-@author: kimbo
-"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -21,10 +16,7 @@ Created on Tue Jan 11 13:00:07 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -41,16 +33,8 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
-
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = [
         "temp1",
         "temp2",
@@ -211,7 +195,6 @@ def reader(
             return df
 
         # - If first column is ID, than is a different format
-
         if lazy:
             flag = df.iloc[:, 0].str.isnumeric().all().compute()
         else:
@@ -273,43 +256,8 @@ def reader(
         # Drop latitude, longitude
         df = df.drop(columns=["longitude", "latitude"])
 
-        # - Drop columns if nan
-        col_to_drop_if_na = [
-            "raw_drop_concentration",
-            "raw_drop_average_velocity",
-            "raw_drop_number",
-        ]
-        df = df.dropna(subset=col_to_drop_if_na)
-
-        # - Drop invalid raw_drop_concentration, raw_drop_average_velocity and raw_drop_number
-        df = df.loc[df["raw_drop_concentration"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_average_velocity"].astype(str).str.len() == 224]
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
-
+        # - Discard rows with corrupted values in raw_drop_number
         df = df[df["raw_drop_number"].str.contains("0\x100") == False]
-
-        # # - Cast dataframe to dtypes
-        # from disdrodb.data_encodings import get_L0_dtype_standards
-        # dtype_dict = get_L0_dtype_standards(sensor_name=sensor_name)
-
-        # dtype_dict_not_object = {}
-        # for k, v in dtype_dict.items():
-        #     if v != 'object':
-        #         dtype_dict_not_object[k] =  v
-        # dtype_dict_not_object.pop('time')
-
-        # for column in df.columns:
-        #     if column in dtype_dict_not_object:
-        #         df[column] = dd.to_numeric(df[column], errors='coerce')
-        #         invalid_rows_index = df.loc[df[column].isna()].index
-        #         if lazy:
-        #             if invalid_rows_index.size.compute() != 0:
-        #                 df = df.dropna(subset=[column])
-        #         else:
-        #             if invalid_rows_index.size != 0:
-        #                 df = df.dropna(subset=[column])
-        #                 # df = df.drop(invalid_rows_index)
-        #         df[column] = df[column].astype(dtype_dict[column])
 
         return df
 

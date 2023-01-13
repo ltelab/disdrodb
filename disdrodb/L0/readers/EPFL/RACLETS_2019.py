@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Feb 21 17:31:55 2022
-
-@author: kimbo
-"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -21,10 +16,7 @@ Created on Mon Feb 21 17:31:55 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -42,22 +34,15 @@ def reader(
     single_netcdf=True,
 ):
 
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = [
         "id",
         "latitude",
         "longitude",
         "time",
-        "temp",  # All nan values
-        "TO_BE_SPLITTED",  # Dataloger status and rainfall_rate_32bit
+        "datalogger_temperature",
+        "TO_BE_SPLITTED",  # datalogger_voltage and rainfall_rate_32bit
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
         "weather_code_synop_4677",
@@ -70,11 +55,11 @@ def reader(
         "sensor_battery_voltage",
         "sensor_status",
         "rainfall_amount_absolute_32bit",
-        "temp1",  # Datalogger error
+        "datalogger_debug",
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
-        "temp2",  # All 0
+        "datalogger_error",
     ]
 
     ##------------------------------------------------------------------------.
@@ -82,22 +67,19 @@ def reader(
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = ";"
-
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "gzip"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
@@ -106,79 +88,50 @@ def reader(
         "na",
         "",
         "error",
-        "NA",
         "Error in data reading! 0000.000",
         "Error in data reading! 0002.344",
     ]
-
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
+        # - Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
 
-        # Drop invalid rows
+        # - Drop invalid rows
         df = df.loc[df["id"].astype(str).str.len() < 10]
 
-        # Split TO_BE_SPLITTED
-        df[["datalogger_error", "rainfall_rate_32bit"]] = df[
-            "TO_BE_SPLITTED"
-        ].str.split(",", expand=True, n=1)
+        # - Split th 'TO_BE_SPLITTED' column
+        df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)
+        df_splitted.columns = ["datalogger_error", "rainfall_rate_32bit"]
+        df["rainfall_rate_32bit"] = df_splitted["rainfall_rate_32bit"]
 
-        # Drop id, latitude, longitude, temps and datalogger_error
-        df = df.drop(
-            columns=[
-                "id",
-                "temp",
-                "temp1",
-                "temp2",
-                "TO_BE_SPLITTED",
-                "datalogger_error",
-                "longitude",
-                "latitude",
-            ]
-        )
-
-        # If raw_drop_number is nan, drop the row
-        col_to_drop_if_na = [
-            "raw_drop_concentration",
-            "raw_drop_average_velocity",
-            "raw_drop_number",
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        columns_to_drop = [
+            "datalogger_temperature",
+            "datalogger_voltage",
+            "TO_BE_SPLITTED",
+            "latitude",
+            "longitude",
+            "id",
+            "datalogger_debug",
         ]
-        df = df.dropna(subset=col_to_drop_if_na)
-
-        # Drop rows with less than 4096 char on raw_drop_number
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 4096]
+        df = df.drop(columns=columns_to_drop)
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
 
-        # Check again for invalid values
-        df = df[~df.eq("Error in data reading! 0000.000").any(1)]
-        df = df[~df.eq("Error in data reading! 0002.344").any(1)]
-
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.dat.gz*"
 
     ####----------------------------------------------------------------------.

@@ -123,7 +123,10 @@ def infer_split_str(string: str) -> str:
 def format_string_array(string: str, n_values: int) -> np.array:
     """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
-        e.g. : format_string_array("2,44,22,33",4) will return [ 2. 44. 22. 33.]
+        e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
+
+    If empty string ("") --> Assume no precipitation recorded
+    If the list length is not n_values or n_values+1 --> Set np.nan
 
     Parameters
     ----------
@@ -277,7 +280,9 @@ def retrieve_L0B_arrays(
 
         # Get a numpy array for each row and then stack
         if lazy:
-            list_arr = df_series.apply(format_string_array, n_values=n_bins, meta=(key, 'f8'))
+            list_arr = df_series.apply(
+                format_string_array, n_values=n_bins, meta=(key, "f8")
+            )
             arr = da.stack(list_arr, axis=0)
         else:
             list_arr = df_series.apply(format_string_array, n_values=n_bins)
@@ -506,6 +511,11 @@ def create_L0B_from_L0A(
     ds = convert_object_variables_to_string(ds)
 
     # -----------------------------------------------------------
+    # - Add netCDF variable attributes
+    # -_> Attributes: long_name, units, descriptions
+    ds = set_variable_attributes(ds=ds, sensor_name=sensor_name)
+
+    # -----------------------------------------------------------
     # Check L0B standards
     check_L0B_standards(ds)
 
@@ -518,6 +528,43 @@ def create_L0B_from_L0A(
 
 ####--------------------------------------------------------------------------.
 #### Writers
+
+
+def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
+    """Set attributes to each xr.Dataset variable.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    ds
+        xr.Dataset.
+    """
+    from disdrodb.L0.standards import (
+        get_description_dict,
+        get_units_dict,
+        get_long_name_dict,
+    )
+
+    # Retrieve attributes dictionaries
+    description_dict = get_description_dict(sensor_name)
+    units_dict = get_units_dict(sensor_name)
+    long_name_dict = get_long_name_dict(sensor_name)
+
+    # Assign attributes to each variable
+    for var in ds.data_vars:
+        ds[var].attrs["description"] = description_dict[var]
+        ds[var].attrs["units"] = units_dict[var]
+        ds[var].attrs["long_name"] = long_name_dict[var]
+
+    return ds
+
+
 def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
     """Ensure chunk size to be smaller than the array shape.
 

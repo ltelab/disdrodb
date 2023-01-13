@@ -150,7 +150,7 @@ def reader(
             90: "raw_drop_concentration",
             91: "raw_drop_average_velocity",
             92: "raw_drop_number",
-        }  # this correspond to the field '93: <value>' in the file
+        }
 
         # Rename columns and drop unknown field names
         column_names = list(column_names_dict.values())
@@ -193,7 +193,7 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.dat"  # There is only one file without extension
 
     ####----------------------------------------------------------------------.

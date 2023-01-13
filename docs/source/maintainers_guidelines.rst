@@ -82,7 +82,7 @@ The output of the previous command should be checked for warnings and errors. If
 
 .. code-block:: bash
 
-	sphinx-apidoc -f -o source/api ..
+	sphinx-apidoc -f -o source/api .. ../setup.py
 
 
 Automatic (Github) documentation creation 

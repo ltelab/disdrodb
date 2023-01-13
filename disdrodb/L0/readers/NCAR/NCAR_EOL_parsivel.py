@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jul  8 11:10:46 2022
-
-@author: kimbo
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -25,10 +16,7 @@ Created on Fri Jul  8 11:10:46 2022
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -46,60 +34,33 @@ def reader(
     single_netcdf=True,
 ):
 
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-    column_names = ["TO_SPLIT"]
+    ##------------------------------------------------------------------------.
+    #### - Define column names
+    column_names = ["TO_BE_PARSED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-    # - Define delimiter
-    reader_kwargs["delimiter"] = "No_need_it"
-
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-        "-.-",
-        " NA",
-    ]
-
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
@@ -107,19 +68,24 @@ def reader(
         else:
             import pandas as dd
 
-        # Read date from header and then remove it
-        date = df.head().loc[0][0]
+        # - Read date from header
+        date = df.loc[0][0]
         date = date[:10]
+
+        # - Retrieve the dataframe
         df = df.loc[1:]
 
         # Temporary column name
-        df.columns = ["TO_SPLIT"]
+        df.columns = ["TO_BE_PARSED"]
 
-        # Parse time
-        # Suppress SettingWithCopyWarning with pandas
+        # Extract time column
         if not lazy:
             dd.options.mode.chained_assignment = None
-        df[["time", "TO_SPLIT"]] = df["TO_SPLIT"].str.split(" ", n=1, expand=True)
+        df[["time", "TO_BE_SPLITTED"]] = df["TO_BE_PARSED"].str.split(
+            " ", n=1, expand=True
+        )
+
+        # - Define datetime 'time' column
         df["time"] = df["time"].str[:-3]
         df["time"] = df["time"] + "-" + date
         df["time"] = dd.to_datetime(df["time"], format="%M%S-%m/%d/%Y")
@@ -138,8 +104,10 @@ def reader(
         ]
 
         for c in columns:
-            df["TO_SPLIT"] = df["TO_SPLIT"].str.strip()
-            df[[c, "TO_SPLIT"]] = df["TO_SPLIT"].str.split(" ", n=1, expand=True)
+            df["TO_BE_SPLITTED"] = df["TO_BE_SPLITTED"].str.strip()
+            df[[c, "TO_BE_SPLITTED"]] = df["TO_BE_SPLITTED"].str.split(
+                " ", n=1, expand=True
+            )
 
         # Add 0 digits to raw_drop_number
         for i, r in df.iterrows():
@@ -149,8 +117,8 @@ def reader(
                 raw += "%03d" % int(n) + ","
             df["raw_drop_number"] = raw
 
-        # Drop TO_SPLIT column
-        df = df.drop(columns=["TO_SPLIT"])
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        df = df.drop(columns=["TO_BE_SPLITTED"])
 
         # Reset index
         df = df.reset_index(drop=True)

@@ -170,6 +170,23 @@ def get_data_format_dict(sensor_name: str) -> dict:
     return read_config_yml(sensor_name=sensor_name, filename="L0_data_format.yml")
 
 
+def get_description_dict(sensor_name: str) -> dict:
+    """Get a dictionary containing the description of each sensor variable.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Description of each sensor variable.
+    """
+
+    return read_config_yml(sensor_name=sensor_name, filename="variable_description.yml")
+
+
 def get_long_name_dict(sensor_name: str) -> dict:
     """Get a dictionary containing the long name of each sensor variable.
 

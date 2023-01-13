@@ -152,8 +152,10 @@ train_interactive.py
 tmp_fig.py
 log.txt
 
-
+# Ignore specific files
 docs\source\reader_preparation.ipynb
 \docs\source\reader_preparation.ipynb
 *.csv
+
+# Ignore specific folders
 /disdrodb/tests/temp/

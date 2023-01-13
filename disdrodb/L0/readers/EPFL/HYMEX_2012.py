@@ -35,16 +35,9 @@ def reader(
     single_netcdf=True,
 ):
 
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
-    # - When no data are logged (every 30 seconds), all columns (except time) have "NA" values  
-
+    ##------------------------------------------------------------------------.
+    #### - Define column names
+    # - When no data are logged (every 30 seconds), all columns (except time) have "NA" values
     column_names = [
         "time",
         "id",
@@ -88,21 +81,14 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na","","error","NA","-.-"," NA"]
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Use for Nan value
-    # reader_kwargs["assume_missing"] = True
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards
-    df_sanitizer_fun = None
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
@@ -110,28 +96,22 @@ def reader(
         else:
             import pandas as dd
 
-        # Drop column variables which do not adhere to the DISDRODB standard 
-        df = df.drop(
-            columns=[
-                "datalogger_debug",
-                "datalogger_error",
-                "datalogger_voltage",
-                "datalogger_temperature",
-                "id",
-            ]
-        )
-
-        # Remove rows where all column variables execept 'time' are 'NA' (nan in the dataframe) 
-	# - To simplify, we just drop when raw_drop_number is 'NA'  
-        df = df.dropna(subset="raw_drop_number")
-
-        # Convert time to datetime
+        # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        columns_to_drop = [
+            "datalogger_debug",
+            "datalogger_voltage",
+            "id",
+            "datalogger_temperature",
+            "datalogger_error",
+        ]
+        df = df.drop(columns=columns_to_drop)
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.

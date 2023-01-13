@@ -18,8 +18,6 @@
 # -----------------------------------------------------------------------------.
 import click
 from disdrodb.L0 import run_L0
-
-
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
 
@@ -36,12 +34,8 @@ def reader(
     lazy=False,
     single_netcdf=True,
 ):
-
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = [
         "date",
         "time",
@@ -77,67 +71,56 @@ def reader(
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\t"
-
+    # Skip header
+    reader_kwargs["header"] = None
+    # Skip first row as columns names
+    reader_kwargs["skiprows"] = 1
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
-
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
     reader_kwargs["blocksize"] = None  # "50MB"
 
-    # Skip header
-    reader_kwargs["header"] = None
-
-    # Skip first row as columns names
-    reader_kwargs["skiprows"] = 1
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
+        # - Import dask or pandas
         if lazy:
             import dask.dataframe as dd
         else:
             import pandas as dd
 
-        # Replace 'status' NaN with 0
+        # - Replace 'status' NaN with 0
         df["status"] = df["status"].fillna(0)
 
-        # Replace all ',' with '.' in RI, RA, RAT
+        # - Replace all ',' with '.' in RI, RA, RAT
         df["RI"] = df["RI"].replace({",": "."}, regex=True)
         df["RA"] = df["RA"].replace({",": "."}, regex=True)
         df["RAT"] = df["RAT"].replace({",": "."}, regex=True)
 
-        # Define time column
+        # - Define 'time' datetime column
         df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
         df = df.drop(columns=["date"])
 
-        # Create raw_drop_concentration string
+        # - Create raw_drop_number string
         bin_columns = [
             "n1",
             "n2",
@@ -160,16 +143,14 @@ def reader(
             "n19",
             "n20",
         ]
-
         df["raw_drop_number"] = ""
         for c in bin_columns:
             df["raw_drop_number"] += df[c].astype(str) + ";"
-
         df = df.drop(columns=bin_columns)
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
     files_glob_pattern = "*.txt"
 
     ####----------------------------------------------------------------------.
