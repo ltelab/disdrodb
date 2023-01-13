@@ -292,7 +292,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
 
     # Get dataframe column names
     columns = list(df.columns)
-    
+
     # Cast dataframe columns (TODO: tmp fix)
     if isinstance(df, dd.DataFrame):
         # Cast dataframe columns
@@ -301,15 +301,19 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
                 try:
                     df[column] = dd.to_numeric(df[column], errors="coerce")
                 except AttributeError:
-                    raise (f"AttributeError: The column {column} is not a numeric column.")
-    else: 
-     
+                    raise (
+                        f"AttributeError: The column {column} is not a numeric column."
+                    )
+    else:
+
         for column in columns:
             if column in numeric_columns:
                 try:
                     df[column] = pd.to_numeric(df[column], errors="coerce")
                 except AttributeError:
-                    raise (f"AttributeError: The column {column} is not a numeric column.")
+                    raise (
+                        f"AttributeError: The column {column} is not a numeric column."
+                    )
     return df
 
 
