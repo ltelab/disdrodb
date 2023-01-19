@@ -5,15 +5,15 @@ Installation
 
 We define here two types of installation :
 
-- `Installation for users`_ : for users who want to process data.
+- `Installation for standard users`_ : for users who want to process data.
 
 - `Installation for contributors`_: for contributors who want to enrich the project (eg. add a new reader).
 
+We recommend users and contributors to use a `Virtual environment`_ to install Disdrodb.
 
 
-
-Installation for users
-========================
+Installation for standard users
+==================================
 
 Pip-based installation
 ..............................
@@ -26,15 +26,6 @@ disdrodb is available from the `Python Packaging Index (PyPI) <https://pypi.org/
    pip install disdrodb
 
 
-Conda-based installation is not yet available !!!
-.....................................................
-
-In future, it will be possible to install disdrodb using the following command:
-
-
-.. code-block:: bash
-
-	conda install -c conda-forge disdrodb
 
 
 
@@ -60,7 +51,9 @@ According to the `contributors guidelines <contributors_guidelines>`__, you shou
 
 
 
-Install the python developing environment
+
+
+Install the disdrobd package dependencies
 ............................................
 
 You can use either conda or pip : 
@@ -71,109 +64,32 @@ You can use either conda or pip :
 	.. code-block:: bash
 
 	   pip install -r requirements.txt
-	   
-	
-	We recomand you to use a virtual environment. This can be done as follow :
-	
-	
-	**With venv :**  
-	
-		**1. Install dependencies**
-
-		* Windows: Create a virtual environment with venv:
-
-			.. code-block:: bash
-
-			   python -m venv venv
-			   cd venv/Script
-			   activate
-			   pip install -r requirements.txt
-			   
-
-		* Mac/Linux: Create a virtual environment with venv:
-
-			.. code-block:: bash
-
-			   virtualenv -p python3 venv
-			   source venv/bin/activate
-			   pip install -r requirements.txt
-			   
-		**2. Install disdrodb** 
-		
-		To install the project in editable mode : 
-	
-		.. code-block:: bash
-		
-			pip install -e .
-			   
-			  
-
-	**With Conda:**
-		
-		**1. Install dependencies**
-	
-		* Create the `disdrodb-dev` conda environment:
-
-			.. code-block:: bash
-			
-				conda create --name disdrodb-dev python=3.9 --no-default-packages
-
-		* Activate the disdrodb conda environment:
-
-			.. code-block:: bash
-
-				conda activate disdrodb-dev
-		
-		* Check you are inside the disdrodb local repository, and install the required dependencies with:
-		
-			.. code-block:: bash
-
-				pip install -r requirements.txt
-			
-			.. warning::
-				Note: In future, when the conda disdrodb feedstock installation will be set up, the following code should be used instead: 
-			
-				.. code-block:: bash
-			
-					conda install --only-deps disdrodb
-			
-		**2. Install disdrodb** 
-		
-		To install the project in editable mode : 
-	
-		.. code-block:: bash
-		
-			pip install -e .
-	
 	
 
 
-
 	
-		
 * **Conda**
 
+	Create the `disdrodb-dev` conda environment and install the required dependencies:
 
-	* Create the `disdrodb-dev` conda environment and install the required dependencies:
+	.. code-block:: bash
 
-		.. code-block:: bash
+		conda env update -f environment.yml 
 
-			conda env create -f environment.yml 
+
+To install the project in editable mode : 
 	
-
-
-	* Activate the disdrodb conda environment
-
-		.. code-block:: bash
-
-			conda activate disdrodb-dev
+.. code-block:: bash
 		
-	* Manually add the path of your local copy of disdrodb to the ``PYTHONPATH`` environment variable. 
-	  In Linux operating systems, you could add the following line to your ``.bashrc`` file located in the ``/home/<your_username>`` directory: 
-	  
-		.. code-block:: bash
-		
-			export PYTHONPATH="${PYTHONPATH}:/path/to/your/local/repo/of/disdrodb/"
+	pip install -e .
+
+
+
+
+
+
+
+
 
 
 
@@ -203,5 +119,60 @@ indicates if the commit contained any formatting errors (that are automatically 
 
 .. note::
 	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.  
+
+
+
+
+
+Virtual environment
+==================================
+
+While not mandatory, utilizing a virtual environment when installing disdroDB is Recommended. Using a virtual environment for installing packages provides isolation of dependencies, easier package management, easier maintenance, improved security, and improved development workflow.
+
+
+
+To set up a virtual environment, follow these steps :
+
+* **With venv :**  
+
+	* Windows: Create a virtual environment with venv:
+
+		.. code-block:: bash
+
+		   python -m venv venv
+		   cd venv/Scripts
+		   activate
+		   
+
+	* Mac/Linux: Create a virtual environment with venv:
+
+		.. code-block:: bash
+
+		   virtualenv -p python3 venv
+		   source venv/bin/activate
+
+
+
+* **With Conda:**
+
+	* Create the `disdrodb-dev` (or anay other name) conda environment:
+
+		.. code-block:: bash
+
+			conda create --name disdrodb-dev python=3.9 --no-default-packages
+
+	* Activate the disdrodb conda environment:
+
+		.. code-block:: bash
+
+			conda activate disdrodb-dev
+
+		
+	* Manually add the path of your local copy of disdrodb to the ``PYTHONPATH`` environment variable. 
+	  In Linux operating systems, you could add the following line to your ``.bashrc`` file located in the ``/home/<your_username>`` directory: 
+	  
+		.. code-block:: bash
+		
+			export PYTHONPATH="${PYTHONPATH}:/path/to/your/local/repo/of/disdrodb/"
 
 
