@@ -14,6 +14,7 @@ Welcome to disdroDB's documentation!
    overview
    install
    readers
+   data
    contributors_guidelines
    maintainers_guidelines
    metadata_keys
