@@ -231,26 +231,73 @@ You should configure VS code as follow :
 
 
 Running test units
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 
 Every code change must be tested !
 
-DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. There is usually no need to run all DISDRODB tests, 
-but instead only run the tests related to the component you are working on. All tests are automatically run from the GitHub Pull Request using multiple versions of Python, multiple operating systems, and multiple versions of dependency libraries. 
-If you want to run all DISDRODB tests you will need to install additional dependencies that aren’t needed for regular DISDRODB usage. To install them run:
+DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. 
+
+
+DISDRODB full testing pipeline can be executed by running:
 
 .. code-block:: bash
 
-	pip install pytest
+	pytest disdrodb
 
 
-DISDRODB tests can be executed by running:
+
+**Unit tests**
+
+The tests located in the `disdrob/tests` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
 
 .. code-block:: bash
 
 	pytest disdrodb/tests
 
 
+
+
+**Integration tests**
+
+Tests located in the `disdrob/test_readers` folder are utilized to test readers. They are **not** run automatically when you push your changes to the main repository via a GitHub Pull Request.
+
+Tests are in place to ensure that a particular reader functions properly. If a new reader is added, a corresponding test should also be added.
+
+To run the tests : 
+
+.. code-block:: bash
+
+	pytest disdrodb/test_readers
+
+To create a new test, simply add a small, single-station dataset and the associated files (issue, metadata), and expected data, in the following manner:
+
+| 📁 disdrodb/test_readers/
+| ├── 📁 test_ressources_raw_data
+|     	├── 📁 L0
+|     		├── 📁 readers
+|     	      ├── 📁 DISDRODB
+|     		      ├── 📁 Raw
+|     			      ├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
+|     				      ├── 📁 `<campaign_name>` : e.g. PARSIVEL_2007
+|     				         ├── 📁 data
+|     				            ├── 📁 `<station_id>`.\*
+|     				         ├── 📁 issue
+|     				            ├── 📁 `<station_id>`.yml
+|     				         ├── 📁 metadata
+|     				            ├── 📁 `<station_id>`.yml
+| ├── 📁 disdrodb/test_ressources_ground_truth 
+|     	├── 📁 DISDRODB
+|     		├── 📁 Processed
+|     			├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
+|     				├── 📁 `<campaign_name>` : e.g. PARSIVEL_2007
+|     				   ├── 📁 L0B
+|     				      ├── 📁 `<station_id>`
+|     				         ├── 📜 \*.nc  : NetCDF files containing the L0B products
+
+
+
+
+This test will run all readers that data have been put in the above structure. The raw data `test_ressources_raw_data` will be processed and the resulting netCDF files will be compared to the ground truth `test_ressources_ground_truth`.
 
   
 
