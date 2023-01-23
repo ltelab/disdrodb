@@ -256,6 +256,10 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     dtype_dict = get_L0A_dtype(sensor_name)
     # Ensure time column is saved with seconds resolution
     dtype_dict["time"] = "M8[s]"
+    # Add latitude, longitude and elevation for mobile disdrometers
+    dtype_dict["latitude"] = "float64"
+    dtype_dict["longitude"] = "float64"
+    dtype_dict["altitude"] = "float64"
     # Get dataframe column names
     columns = list(df.columns)
     # Cast dataframe columns

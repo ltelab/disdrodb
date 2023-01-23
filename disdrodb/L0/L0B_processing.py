@@ -466,12 +466,12 @@ def create_L0B_from_L0A(
 
     # -----------------------------------------------------------.
     # Drop lat/lon array if present (TODO: in future L0 should not contain it)
-    if "latitude" in data_vars:
-        _ = data_vars.pop("latitude")
-    if "longitude" in data_vars:
-        _ = data_vars.pop("longitude")
-    if "altitude" in data_vars:
-        _ = data_vars.pop("altitude")
+    # if "latitude" in data_vars:
+    #     _ = data_vars.pop("latitude")
+    # if "longitude" in data_vars:
+    #     _ = data_vars.pop("longitude")
+    # if "altitude" in data_vars:
+    #     _ = data_vars.pop("altitude")
 
     # -----------------------------------------------------------.
     # Define coordinates for xarray Dataset
