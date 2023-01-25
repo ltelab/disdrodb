@@ -43,11 +43,12 @@ def identify_missing_metadata(metadata_fpaths: list, keys: Union[str, list]) -> 
     keys : Union[str,list]
         Attributes to verify the presence.
     """
+
     if isinstance(keys, str):
         keys = [keys]
-    for key in keys:
-        for fpath in metadata_fpaths:
-            #  print(fpath)
+
+    for fpath in metadata_fpaths:
+        for key in keys:
             metadata = read_yaml(fpath)
             if len(str(metadata.get(key, ""))) == 0:  # ensure is string to avoid error
                 print(f"Missing {key} at: ", fpath)
