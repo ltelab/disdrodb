@@ -142,7 +142,10 @@ def test_read_raw_data():
     reader_kwargs["engine"] = "python"
 
     r = L0A_processing.read_raw_data(
-        path_test_data, ["att_1", "att_2"], reader_kwargs, False
+        filepath=path_test_data,
+        column_names=["att_1", "att_2"],
+        reader_kwargs=reader_kwargs,
+        lazy=False,
     )
 
     assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}

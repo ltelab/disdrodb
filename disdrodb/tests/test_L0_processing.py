@@ -38,7 +38,7 @@ def test_check_reader_name():
 
 
 def test_get_reader():
-    # Check that the object is un function
+    # Check that the object is a function
     function_return = L0_processing.get_reader("epfl", "EPFL_ROOF_2012")
     assert inspect.isfunction(function_return)
 
