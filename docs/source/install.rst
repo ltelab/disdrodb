@@ -9,7 +9,7 @@ We define here two types of installation :
 
 - `Installation for contributors`_: for contributors who want to enrich the project (eg. add a new reader).
 
-We recommend users and contributors to use a `Virtual environment`_ to install Disdrodb.
+We recommend users and contributors to use a `Virtual environment`_ to install DISDRODB.
 
 
 Installation for standard users
@@ -53,7 +53,7 @@ According to the `contributors guidelines <contributors_guidelines>`__, you shou
 
 
 
-Install the disdrobd package dependencies
+Install the DISDRODB package dependencies
 ............................................
 
 You can use either conda or pip : 
@@ -127,7 +127,7 @@ indicates if the commit contained any formatting errors (that are automatically 
 Virtual environment
 ==================================
 
-While not mandatory, utilizing a virtual environment when installing disdroDB is Recommended. Using a virtual environment for installing packages provides isolation of dependencies, easier package management, easier maintenance, improved security, and improved development workflow.
+While not mandatory, utilizing a virtual environment when installing DISDRODB is recommended. Using a virtual environment for installing packages provides isolation of dependencies, easier package management, easier maintenance, improved security, and improved development workflow.
 
 
 
