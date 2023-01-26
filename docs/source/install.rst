@@ -148,8 +148,8 @@ To set up a virtual environment, follow these steps :
 
 		.. code-block:: bash
 
-		   virtualenv -p python3 venv
-		   source venv/bin/activate
+		   virtualenv -p python3 disdrodb-dev
+		   source disdrodb-dev/bin/activate
 
 
 
