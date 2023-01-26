@@ -1,0 +1,8 @@
+# This file is used to store dates to drop by the parser, the time format used is the isoformat (YYYY-mm-dd HH:MM:SS). 
+# timestamp: list of timestamps 
+# time_period: list of list ranges of dates 
+# Example: 
+# timestamp: ['2018-12-07 14:15','2018-12-07 14:17','2018-12-07 14:19', '2018-12-07 14:25'] 
+# time_period: [['2018-08-01 12:00:00', '2018-08-01 14:00:00'], 
+#               ['2018-08-01 15:44:30', '2018-08-01 15:59:31'], 
+#               ['2018-08-02 12:44:30', '2018-08-02 12:59:31']] 

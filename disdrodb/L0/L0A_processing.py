@@ -318,6 +318,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
                     raise (
                         f"AttributeError: The column {column} is not a numeric column."
                     )
+
     return df
 
 
