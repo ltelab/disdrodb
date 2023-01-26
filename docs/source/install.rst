@@ -139,8 +139,8 @@ To set up a virtual environment, follow these steps :
 
 		.. code-block:: bash
 
-		   python -m venv venv
-		   cd venv/Scripts
+		   python -m venv disdrodb-dev
+		   cd disdrodb-dev/Scripts
 		   activate
 		   
 
@@ -168,11 +168,5 @@ To set up a virtual environment, follow these steps :
 			conda activate disdrodb-dev
 
 		
-	* Manually add the path of your local copy of disdrodb to the ``PYTHONPATH`` environment variable. 
-	  In Linux operating systems, you could add the following line to your ``.bashrc`` file located in the ``/home/<your_username>`` directory: 
-	  
-		.. code-block:: bash
-		
-			export PYTHONPATH="${PYTHONPATH}:/path/to/your/local/repo/of/disdrodb/"
 
 
