@@ -63,6 +63,8 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
+    # - Define delimiter
+    reader_kwargs["delimiter"] = ","
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # Skip first row as columns names
@@ -96,8 +98,9 @@ def reader(
         else:
             import pandas as dd
 
-        # - Drop bad lines on based on datalogger_debug column
-        df = df[~df["datalogger_debug"].str.startswith("Frame", na=False)]
+        # - Drop bad lines based on datalogger_debug column
+        bad_indexes = df[df["datalogger_debug"].str.startswith("Frame", na=False)].index
+        df = df.drop(bad_indexes)
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")

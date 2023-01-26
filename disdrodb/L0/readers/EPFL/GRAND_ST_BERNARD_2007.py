@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 23 17:56:48 2023
+
+@author: ghiggi
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -33,41 +40,40 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
+
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = [
-        "id",
-        "latitude",
-        "longitude",
         "time",
-        "datalogger_temperature",
-        "TO_BE_SPLITTED",  # datalogger_voltage and rainfall_rate_32bit
+        "id",
+        "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
         "weather_code_synop_4677",
         "reflectivity_32bit",
         "mor_visibility",
-        "sample_interval",
         "laser_amplitude",
         "number_particles",
+        "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
         "sensor_status",
         "rainfall_amount_absolute_32bit",
-        "datalogger_debug",
+        "error_code",
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
-        "datalogger_error",
     ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
+    reader_kwargs["delimiter"] = ","
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+    # - Skip first 4 rows (it's a header)
+    reader_kwargs["skiprows"] = 4
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -76,11 +82,14 @@ def reader(
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+    # - Define on-the-fly decompression of on-disk data
+    #   - Available: gzip, bz2, zip
+    reader_kwargs["compression"] = "infer"
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA"]
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
@@ -95,32 +104,16 @@ def reader(
         else:
             import pandas as dd
 
-        # - Drop invalid rows
-        df = df.loc[df["id"].astype(str).str.len() < 10]
-
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
-
-        # - Split TO_BE_SPLITTED columns
-        df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)
-        df.columns = ["datalogger_voltage", "rainfall_rate_32bit"]
-        df["rainfall_rate_32bit"] = df_splitted["rainfall_rate_32bit"]
+        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
-        columns_to_drop = [
-            "id",
-            "latitude",
-            "longitude",
-            "TO_BE_SPLITTED",
-            "datalogger_temperature",
-            "datalogger_error",
-        ]
-        df = df.drop(columns=columns_to_drop)
+        df = df.drop(columns=["id"])
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
-    files_glob_pattern = "*.log*"
+    files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products

@@ -101,10 +101,11 @@ def reader(
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
-            "datalogger_debug",
-            "datalogger_voltage",
             "id",
+            "datalogger_voltage",
             "datalogger_temperature",
+            "datalogger_debug",
+            "datalogger_error",
         ]
         df = df.drop(columns=columns_to_drop)
         return df

@@ -61,6 +61,8 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
+    # - Define delimiter
+    reader_kwargs["delimiter"] = ","
     # - Skip first 4 rows (it's a header)
     reader_kwargs["skiprows"] = 4
     # - Skip first row as columns names

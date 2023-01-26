@@ -256,6 +256,10 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     dtype_dict = get_L0A_dtype(sensor_name)
     # Ensure time column is saved with seconds resolution
     dtype_dict["time"] = "M8[s]"
+    # Add latitude, longitude and elevation for mobile disdrometers
+    dtype_dict["latitude"] = "float64"
+    dtype_dict["longitude"] = "float64"
+    dtype_dict["altitude"] = "float64"
     # Get dataframe column names
     columns = list(df.columns)
     # Cast dataframe columns
@@ -293,16 +297,28 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
     # Get dataframe column names
     columns = list(df.columns)
 
-    # Cast dataframe columns
-    for column in columns:
-        if column in numeric_columns:
-            try:
-                if isinstance(df, pd.DataFrame):
-                    df[column] = pd.to_numeric(df[column], errors="coerce")
-                if isinstance(df, dd.DataFrame):
+    # Cast dataframe columns (TODO: tmp fix)
+    if isinstance(df, dd.DataFrame):
+        # Cast dataframe columns
+        for column in columns:
+            if column in numeric_columns:
+                try:
                     df[column] = dd.to_numeric(df[column], errors="coerce")
-            except AttributeError:
-                raise (f"AttributeError: The column {column} is not a numeric column.")
+                except AttributeError:
+                    raise (
+                        f"AttributeError: The column {column} is not a numeric column."
+                    )
+    else:
+
+        for column in columns:
+            if column in numeric_columns:
+                try:
+                    df[column] = pd.to_numeric(df[column], errors="coerce")
+                except AttributeError:
+                    raise (
+                        f"AttributeError: The column {column} is not a numeric column."
+                    )
+
     return df
 
 

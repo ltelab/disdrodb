@@ -1,5 +1,13 @@
 # DISDRODB - A package to standardize, process and analyze global disdrometer data.
 
+[![DOI](https://zenodo.org/badge/DOI/XXX)](https://doi.org/10.5281/zenodo.XXXX)
+[![PyPI version](https://badge.fury.io/py/disdrodb.svg)](https://badge.fury.io/py/disdrodb)
+[![Conda Version](https://img.shields.io/conda/vn/conda-forge/disdrodb.svg)](https://anaconda.org/conda-forge/disdrodb)
+[![Build Status](https://github.com/ltelab/disdrodb/workflows/Continuous%20Integration/badge.svg?branch=main)](https://github.com/ltelab/disdrodb/actions)
+[![Coverage Status](https://coveralls.io/repos/github/ltelab/disdrodb/badge.svg?branch=main)](https://coveralls.io/github/ltelab/disdrodb?branch=main)
+[![Documentation Status](https://readthedocs.org/projects/disdrodb/badge/?version=latest)](https://disdrodb.readthedocs.io/en/latest/)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
+[![License](https://img.shields.io/github/license/ltelab/disdrodb)](https://github.com/ltelab/disdrodb/blob/master/LICENSE)
 
 DISDRODB is part of an initial effort to index, collect and homogenize drop size distribution (DSD) data sets across the globe,
 as well as to establish a global standard for disdrometers observations data sharing. 

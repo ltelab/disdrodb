@@ -25,7 +25,7 @@ from disdrodb.L0.io import get_campaign_name
 from disdrodb.L0.io import create_directory_structure
 
 # Logger
-from disdrodb.utils.logger import create_L0_logger
+from disdrodb.utils.logger import create_l0_logger
 from disdrodb.utils.logger import close_logger
 
 # Metadata
@@ -131,7 +131,7 @@ def reader(
 
     # -------------------------------------------------------------------------.
     # Define logging settings
-    logger = create_L0_logger(processed_dir, campaign_name)
+    logger = create_l0_logger(processed_dir, campaign_name)
 
     # -------------------------------------------------------------------------.
     # Create directory structure

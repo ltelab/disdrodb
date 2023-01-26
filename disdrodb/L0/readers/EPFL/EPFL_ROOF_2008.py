@@ -57,6 +57,7 @@ def reader(
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
+        "datalogger_error",
     ]
 
     ##------------------------------------------------------------------------.
@@ -97,15 +98,15 @@ def reader(
             import pandas as dd
 
         # - Convert time column to datetime
-        df["time"] = df["time"].str.lstrip('"')
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
-            "datalogger_debug",
-            "datalogger_voltage",
             "id",
+            "datalogger_voltage",
             "datalogger_temperature",
+            "datalogger_debug",
+            "datalogger_error",
         ]
         df = df.drop(columns=columns_to_drop)
 

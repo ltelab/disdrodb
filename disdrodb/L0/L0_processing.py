@@ -45,7 +45,7 @@ from disdrodb.L0.L0B_processing import (
 )
 
 # Logger
-from disdrodb.utils.logger import create_L0_logger, close_logger
+from disdrodb.utils.logger import create_l0_logger, close_logger
 from disdrodb.utils.logger import log_info, log_warning
 
 logger = logging.getLogger(__name__)
@@ -243,7 +243,7 @@ def run_L0(
 
     # -------------------------------------------------------------------------.
     # Define logging settings
-    logger = create_L0_logger(processed_dir, campaign_name)
+    logger = create_l0_logger(processed_dir, campaign_name)
 
     # -------------------------------------------------------------------------.
     # Create directory structure

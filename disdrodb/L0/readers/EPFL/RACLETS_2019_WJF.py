@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Mon Jan 23 16:43:01 2023
+
+@author: ghiggi
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -33,10 +40,30 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
+
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = [
-        "TO_BE_SPLITTED",
+        "id",
+        "latitude",
+        "longitude",
+        "time",
+        "datalogger_temperature",
+        "TO_BE_SPLITTED",  # datalogger_voltage and rainfall_rate_32bit
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "weather_code_synop_4677",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "sample_interval",
+        "laser_amplitude",
+        "number_particles",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
+        "sensor_status",
+        "rainfall_amount_absolute_32bit",
+        "error_code",
+        "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
         "datalogger_error",
@@ -46,7 +73,9 @@ def reader(
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ",,"
+    reader_kwargs["delimiter"] = ";"
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -62,7 +91,13 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error"]
+    reader_kwargs["na_values"] = [
+        "na",
+        "",
+        "error",
+        "Error in data reading! 0000.000",
+        "Error in data reading! 0002.344",
+    ]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
     #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
@@ -77,56 +112,27 @@ def reader(
         else:
             import pandas as dd
 
-        # - Drop row that contains errors
-        df = df[~df["TO_BE_SPLITTED"].str.contains("Error in data reading! 0")]
+        # - Drop invalid rows
+        df = df.loc[df["id"].astype(str).str.len() < 10]
 
-        # - Check again if file empty
-        if len(df.index) == 0:
-            raise ValueError("Error in all rows. The file has been skipped.")
-
-        # - Split TO_BE_SPLITTED column
-        df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=20)
-
-        # - Assign names to splitted columns
-        column_names = [
-            "time",
-            "datalogger_temperature",
-            "datalogger_voltage",
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "weather_code_synop_4680",
-            "weather_code_synop_4677",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "sample_interval",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "sensor_status",
-            "rainfall_amount_absolute_32bit",
-            "datalogger_debug",
-            "raw_drop_concentration",
-        ]
-        df_splitted.columns = column_names
-
-        # - Concat together
-        concat_kwargs = {}
-        if lazy:
-            concat_kwargs["ignore_unknown_divisions"] = True
-        df = dd.concat([df_splitted, df.iloc[:, 1:]], axis=1, **concat_kwargs)
-
-        # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        # - Split th 'TO_BE_SPLITTED' column
+        df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)
+        df_splitted.columns = ["datalogger_voltage", "rainfall_rate_32bit"]
+        df["rainfall_rate_32bit"] = df_splitted["rainfall_rate_32bit"]
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
-            "datalogger_debug",
-            "datalogger_voltage",
+            "id",
+            "latitude",
+            "longitude",
             "datalogger_temperature",
             "datalogger_error",
+            "TO_BE_SPLITTED",
         ]
         df = df.drop(columns=columns_to_drop)
+
+        # - Convert time column to datetime
+        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
 
         return df
 
