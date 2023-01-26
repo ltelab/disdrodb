@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for HYMEX SOP2 campaign."""
 from disdrodb.L0 import run_L0
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
@@ -33,15 +34,16 @@ def reader(
     lazy=True,
     single_netcdf=True,
 ):
+
     ##------------------------------------------------------------------------.
     #### - Define column names
+    # - When no data are logged (every 30 seconds), all columns (except time) have "NA" values
     column_names = [
-        "id",
-        "latitude",
-        "longitude",
         "time",
+        "id",
         "datalogger_temperature",
-        "TO_BE_SPLITTED",  # datalogger_voltage and rainfall_rate_32bit
+        "datalogger_voltage",
+        "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
         "weather_code_synop_4677",
@@ -54,7 +56,7 @@ def reader(
         "sensor_battery_voltage",
         "sensor_status",
         "rainfall_amount_absolute_32bit",
-        "error_code",
+        "datalogger_debug",
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
@@ -64,44 +66,31 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
+    reader_kwargs["delimiter"] = ","
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-    ]
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
+    # - Define max size of dask dataframe chunks (if lazy=True)
+    #   - If None: use a single block for each file
+    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
+    reader_kwargs["blocksize"] = None  # "50MB"
 
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df, lazy=False):
         # Import dask or pandas
         if lazy:
@@ -110,33 +99,26 @@ def reader(
             import pandas as dd
 
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
-        # - Drop rows when  'Error in data reading' in TO_BE_SPLITTED column
-        bad_indices = df[
-            df["TO_BE_SPLITTED"].str.contains("Error in data reading!")
-        ].index
-        df = df.drop(bad_indices)
-
-        # - Split TO_BE_SPLITTED columns
-        df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)
-        df_splitted.columns = ["datalogger_voltage", "rainfall_rate_32bit"]
-        df["rainfall_rate_32bit"] = df_splitted["rainfall_rate_32bit"]
+        # - Drop rows when "raw_drop_number" is "NA"
+        # --> This is used to drop all rows where all values are "NA"
+        df = df.dropna(subset="raw_drop_number", axis=0)
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
+            "datalogger_debug",
+            "datalogger_voltage",
             "id",
-            "TO_BE_SPLITTED",
             "datalogger_temperature",
             "datalogger_error",
         ]
         df = df.drop(columns=columns_to_drop)
-
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.log*"
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
+    files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0 products

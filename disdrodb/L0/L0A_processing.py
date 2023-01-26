@@ -615,6 +615,10 @@ def read_L0A_raw_file_list(
             if df_sanitizer_fun is not None:
                 df = df_sanitizer_fun(df, lazy=lazy)
 
+            # Remove duplicated timesteps
+            # - TODO: Log info !!!
+            df = df.drop_duplicates(subset="time", keep="first")
+
             # ------------------------------------------------------.
             # Check column names met DISDRODB standards
             check_L0A_column_names(df, sensor_name=sensor_name)

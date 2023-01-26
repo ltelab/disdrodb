@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for HYMEX campaign."""
+"""Reader for HYMEX SOP4 campaign."""
 from disdrodb.L0 import run_L0
 from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
 
@@ -100,6 +100,10 @@ def reader(
 
         # - Convert time column to datetime
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+
+        # - Drop rows when "raw_drop_number" is "NA"
+        # --> This is used to drop all rows where all values are "NA"
+        df = df.dropna(subset="raw_drop_number", axis=0)
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
