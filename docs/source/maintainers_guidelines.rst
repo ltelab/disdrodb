@@ -37,14 +37,22 @@ In the DISDRODB spec, a breaking change is any change that requires either consu
 
 Examples of breaking changes include:
 
-- Adding a feature to process a new sensor
-- Adding a feature to create new DISDRODB L1 and L2 products/fields;
-- Adding a feature providing new functionality to the DISDRODB API.
+- Renaming a DISDRODB product variable or metadata key.
+- Changing the output format/structure of DISDRODB netCDF product.
+- Adding new functionalities to the DISDRODB that affect the behavior of the software directly.
 
 
-Examples of non-breaking changes include:
+Examples of non-breaking changes include :
 
-- Modifying documentation or spec language that doesn't affect the behavior of the API directly
+- Fix a bug.
+- Adding the configuration files to process a new sensor.
+- Adding a new DISDRODB L0 reader.
+- Adding new functionalities to the DISDRODB API that don’t affect the behavior of the API directly.
+- Updating the documentation.
+- Internal function refactoring that doesn’t affect the behavior of the software directly.
+
+
+
 
 One implication of this policy is that clients should be prepared to ignore the presence of unexpected fields in responses and unexpected values for enums. This is necessary to preserve compatibility between PATCH versions within the same MINOR version range, since optional fields and enum values can be added as non-breaking changes.
 
