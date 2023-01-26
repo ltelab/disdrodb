@@ -64,7 +64,7 @@ def reader(
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = '","'
+    reader_kwargs["delimiter"] = ","
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -96,14 +96,13 @@ def reader(
             import pandas as dd
 
         # - Convert time column to datetime
-        df["time"] = df["time"].str.lstrip('"')  # Remove "
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
+            "id",
             "datalogger_debug",
             "datalogger_voltage",
-            "id",
             "datalogger_temperature",
             "datalogger_error",
         ]

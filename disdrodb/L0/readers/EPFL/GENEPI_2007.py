@@ -52,7 +52,7 @@ def reader(
         "sensor_battery_voltage",
         "sensor_status",
         "rainfall_amount_absolute_32bit",
-        "datalogger_error",
+        "error_code",
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
@@ -62,7 +62,7 @@ def reader(
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    # reader_kwargs['delimiter'] = ','
+    reader_kwargs["delimiter"] = ","
     # - Skip first row as columns names
     reader_kwargs["header"] = None
     # - Skip first 4 rows (it's a header)
@@ -101,7 +101,7 @@ def reader(
         df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["id", "datalogger_error"])
+        df = df.drop(columns=["id"])
         return df
 
     ##------------------------------------------------------------------------.

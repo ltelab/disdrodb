@@ -64,6 +64,8 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
+    # - Define delimiter
+    reader_kwargs["delimiter"] = ","
     # - Skip first row as columns names
     reader_kwargs["header"] = None
     # - Avoid first column to become df index !!!
@@ -101,10 +103,11 @@ def reader(
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
-            "datalogger_debug",
-            "datalogger_voltage",
             "id",
             "datalogger_temperature",
+            "datalogger_voltage",
+            "datalogger_debug",
+            "datalogger_error",
         ]
         df = df.drop(columns=columns_to_drop)
         return df

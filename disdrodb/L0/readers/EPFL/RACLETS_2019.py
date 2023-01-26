@@ -36,39 +36,17 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = [
-        "id",
-        "latitude",
-        "longitude",
-        "time",
-        "datalogger_temperature",
-        "TO_BE_SPLITTED",  # datalogger_voltage and rainfall_rate_32bit
-        "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "sample_interval",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "sensor_status",
-        "rainfall_amount_absolute_32bit",
-        "datalogger_debug",
-        "raw_drop_concentration",
-        "raw_drop_average_velocity",
-        "raw_drop_number",
-        "datalogger_error",
-    ]
+    column_names = ["TO_BE_SPLITTED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
+    reader_kwargs["delimiter"] = ";"  # Used to not split anything !
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -88,8 +66,6 @@ def reader(
         "na",
         "",
         "error",
-        "Error in data reading! 0000.000",
-        "Error in data reading! 0002.344",
     ]
     # - Define max size of dask dataframe chunks (if lazy=True)
     #   - If None: use a single block for each file
@@ -105,23 +81,63 @@ def reader(
         else:
             import pandas as dd
 
+        # - Drop row that contains errors
+        df = df[~df["TO_BE_SPLITTED"].str.contains("Error in data reading! 0")]
+
+        # - Check if file empty
+        if len(df.index) == 0:
+            raise ValueError("Error in all rows. The file has been skipped.")
+
+        # - Split the column
+        df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1111)
+
+        # - Define auxiliary columns
+        column_names = [
+            "id",
+            "latitude",
+            "longitude",
+            "time",
+            "datalogger_temperature",
+            "datalogger_voltage",
+            "rainfall_rate_32bit",
+            "rainfall_accumulated_32bit",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "sample_interval",
+            "laser_amplitude",
+            "number_particles",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "sensor_status",
+            "rainfall_amount_absolute_32bit",
+            "error_code",
+        ]
+        df_variables = df.iloc[:, 0:20]
+        df_variables.columns = column_names
+
+        # - Define raw fields
+        df_raw_drop_concentration = df.iloc[:, 20:52].agg(",".join, axis=1)
+        df_raw_drop_average_velocity = df.iloc[:, 53:85].agg(",".join, axis=1)
+        df_raw_drop_number = df.iloc[:, 86:1110].agg(",".join, axis=1)
+
+        # - Combine together
+        df = df_variables
+        df["raw_drop_concentration"] = df_raw_drop_concentration
+        df["raw_drop_average_velocity"] = df_raw_drop_average_velocity
+        df["raw_drop_number"] = df_raw_drop_number
+
         # - Drop invalid rows
         df = df.loc[df["id"].astype(str).str.len() < 10]
-
-        # - Split th 'TO_BE_SPLITTED' column
-        df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)
-        df_splitted.columns = ["datalogger_error", "rainfall_rate_32bit"]
-        df["rainfall_rate_32bit"] = df_splitted["rainfall_rate_32bit"]
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
             "datalogger_temperature",
             "datalogger_voltage",
-            "TO_BE_SPLITTED",
+            "id",
             "latitude",
             "longitude",
-            "id",
-            "datalogger_debug",
         ]
         df = df.drop(columns=columns_to_drop)
 
