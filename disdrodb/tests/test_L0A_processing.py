@@ -87,21 +87,11 @@ def test_preprocess_reader_kwargs():
 
 
 def test_concatenate_dataframe():
-    # Test that the function returns a Pandas dataframe when lazy=False
+    # Test that the function returns a Pandas dataframe
     df1 = pd.DataFrame({"time": [1, 2, 3], "value": [4, 5, 6]})
     df2 = pd.DataFrame({"time": [7, 8, 9], "value": [10, 11, 12]})
-    concatenated_df = L0A_processing.concatenate_dataframe([df1, df2], lazy=False)
+    concatenated_df = L0A_processing.concatenate_dataframe([df1, df2])
     assert isinstance(concatenated_df, pd.DataFrame)
-
-    # Test that the function returns a Dask dataframe when lazy=True
-    df1 = dd.from_pandas(
-        pd.DataFrame({"time": [1, 2, 3], "value": [4, 5, 6]}), npartitions=2
-    )
-    df2 = dd.from_pandas(
-        pd.DataFrame({"time": [7, 8, 9], "value": [10, 11, 12]}), npartitions=2
-    )
-    concatenated_df = L0A_processing.concatenate_dataframe([df1, df2], lazy=True)
-    assert isinstance(concatenated_df, dd.DataFrame)
 
     # Test that the function raises a ValueError if the list_df is empty
     with pytest.raises(ValueError, match="No objects to concatenate"):
@@ -109,7 +99,9 @@ def test_concatenate_dataframe():
 
     with pytest.raises(ValueError):
         L0A_processing.concatenate_dataframe(["not a dataframe"])
-
+    
+    with pytest.raises(ValueError):
+        L0A_processing.concatenate_dataframe(["not a dataframe", "not a dataframe"])
 
 def test_cast_column_dtypes():
     # not tested yet because relies on config files that can be modified
@@ -145,7 +137,6 @@ def test_read_raw_data():
         filepath=path_test_data,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
-        lazy=False,
     )
 
     assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}
@@ -164,16 +155,16 @@ def test_read_raw_data_zipped():
     reader_kwargs["engine"] = "python"
     reader_kwargs["zipped"] = True
 
-    r = L0A_processing.read_raw_data_zipped(
-        path_test_data, ["att_1", "att_2"], reader_kwargs, False
+    r = L0A_processing._read_raw_data_zipped(
+        path_test_data, column_names=["att_1", "att_2"], reader_kwargs=reader_kwargs,
     )
 
     assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}
 
 
-def test_read_L0A_raw_file_list():
+def test_read_raw_file_list():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0A_processing.read_L0A_raw_file_list()
+    # function_return = L0A_processing.read_raw_file_list()
     assert 1 == 1
 
 

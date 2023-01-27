@@ -9,12 +9,15 @@ import dask
 import logging
 import numpy as np
 import xarray as xr
+from disdrodb.utils.logger import log_info, log_warning, log_error
 
 logger = logging.getLogger(__name__)
 
 
-def ensure_monotonic_dimension(fpaths: str, list_ds: list, dim: str = "time") -> list:
-    """Ensure that a list of xr.Dataset has a monotonic increasing dimension.
+def ensure_monotonic_dimension(
+    fpaths: str, list_ds: list, dim: str = "time", verbose: bool = False
+) -> list:
+    """Ensure that a list of xr.Dataset has a monotonic increasing (non duplicated) dimension values.
 
     Parameters
     ----------
@@ -31,6 +34,8 @@ def ensure_monotonic_dimension(fpaths: str, list_ds: list, dim: str = "time") ->
     list
         List of xarray datasets.
     """
+    # Currently assume that first input is first start_time occuring
+    # TODO: RE-SORT fpaths, list_ds by start_time
 
     # Get dimension values array (and associated list_ds/xr.Dataset indices)
     dim_values = np.concatenate([ds[dim].values for ds in list_ds])
@@ -71,12 +76,13 @@ def ensure_monotonic_dimension(fpaths: str, list_ds: list, dim: str = "time") ->
         }
 
         # Print message
+        # TODO: use slices instead for clear message !
         for ds_idx_bad, bad_values in dict_ds_bad_values.items():
             fpath = fpaths[ds_idx_bad]
             msg = f"In {fpath}, dropping {dim} values {bad_values} to ensure monotonic {dim} dimension."
-            logger.debug(msg)
+            log_warning(logger=logger, msg=msg, verbose=verbose)
 
-        # Remove non-unique and not  da
+        # Remove non-unique and not da
         for ds_idx_bad, bad_idx in dict_ds_bad_idx.items():
             ds = list_ds[ds_idx_bad]
             list_ds[ds_idx_bad] = ds.drop_isel({dim: bad_idx})
@@ -216,11 +222,18 @@ def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
     """
     dict_problems = {}
     for coord in coords:
-        ref_set = set(list_ds[0][coord].values)
+        print(coord)
+        coord_values = list_ds[0][coord].values.tolist()
+        if not isinstance(coord_values, list):
+            coord_values = [coord_values]
+        ref_set = set(coord_values)
         dict_coord = {}
         dict_coord["ref"] = ref_set
         for i, ds in enumerate(list_ds):
-            values = set(ds[coord].values)
+            values = ds[coord].values.tolist()
+            if not isinstance(values, list):
+                values = [values]
+            values = set(values)
             if ref_set != values:
                 dict_coord[i] = values
                 list_ds[i] = ds.assign_coords({coord: list(ref_set)})
@@ -228,7 +241,7 @@ def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
     return list_ds, dict_problems
 
 
-def xr_concat_datasets(fpaths: str) -> xr.Dataset:
+def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
     """Concat xr.Dataset in a robust and parallel way.
 
     1. It checks for time dimension monotonicity
@@ -263,30 +276,31 @@ def xr_concat_datasets(fpaths: str) -> xr.Dataset:
 
     # --------------------------------------.
     # Ensure coordinate outside time do not vary
-    coords_var = get_common_coords(list_ds)
-    coords_without_time = coords_var.difference(
-        set(["time", "latitude", "longitude", "lat", "lon"])
-    )
-    list_ds, dict_problems = ensure_constant_coords(list_ds, coords=coords_without_time)
+    # coords_var = get_common_coords(list_ds)
+    # coords_without_time = coords_var.difference(
+    #     set(["time", "latitude", "longitude", "lat", "lon"])
+    # )
+    # list_ds, dict_problems = ensure_constant_coords(list_ds, coords=coords_without_time)
+
     # --------------------------------------.
     # - Log the possible problems
-    for coord in coords_without_time:
-        dict_problem = dict_problems[coord]
-        ref = dict_problem.pop("ref")
-        n_problems = len(dict_problem)
-        n_files = len(list_ds)
-        if len(dict_problem) != 0:
-            msg = f"Difference found in {n_problems}/{n_files} files."
-            logger.debug(msg)
-            msg = f"In the first file, the coordinate {coord} has values {ref}."
-            logger.debug(msg)
-            for i, values in dict_problem.items():
-                fpath = fpaths[i]
-                msg = f"In {fpath}, the coordinate {coord} has values {values}."
-                logger.debug(msg)
-                logger.info(
-                    "Such coordinates have been replaced with the one observed in the first file."
-                )
+    # for coord in coords_without_time:
+    #     dict_problem = dict_problems[coord]
+    #     ref = dict_problem.pop("ref")
+    #     n_problems = len(dict_problem)
+    #     n_files = len(list_ds)
+    #     if len(dict_problem) != 0:
+    #         msg = f"Difference found in {n_problems}/{n_files} files."
+    #         logger.debug(msg)
+    #         msg = f"In the first file, the coordinate {coord} has values {ref}."
+    #         logger.debug(msg)
+    #         for i, values in dict_problem.items():
+    #             fpath = fpaths[i]
+    #             msg = f"In {fpath}, the coordinate {coord} has values {values}."
+    #             logger.debug(msg)
+    #             logger.info(
+    #                 "Such coordinates have been replaced with the one observed in the first file."
+    #             )
 
     # --------------------------------------.
     # Get set of common_vars
@@ -294,44 +308,48 @@ def xr_concat_datasets(fpaths: str) -> xr.Dataset:
 
     # --------------------------------------.
     # Log the missing variables compared to first file
+
+    # --------------------------------------.
     dict_problem = dict_problems["missing_versus_first"]
     n_problems = len(dict_problem)
     n_files = len(list_ds)
-    ref = dict_problem.pop("ref")
+    _ = dict_problem.pop("ref")
     if len(dict_problem) != 0:
         msg = f"Difference found in {n_problems}/{n_files} files."
+        log_warning(logger=logger, msg=msg, verbose=verbose)
         for i, vars in dict_problem.items():
             fpath = fpaths[i]
             msg = f"At file {i}/{n_files} ({fpath}), the variables {vars} are missing (compared to first file)."
-            logger.debug(msg)
+            log_warning(logger=logger, msg=msg, verbose=verbose)
 
     # --------------------------------------.
     # Log the additional variables compared to first file
     dict_problem = dict_problems["additional_versus_first"]
     n_problems = len(dict_problem)
     n_files = len(list_ds)
-    ref = dict_problem.pop("ref")
+    _ = dict_problem.pop("ref")
     if len(dict_problem) != 0:
         msg = f"Difference found in {n_problems}/{n_files} files."
+        log_warning(logger=logger, msg=msg, verbose=verbose)
         for i, vars in dict_problem.items():
             fpath = fpaths[i]
             msg = f"At file {i}/{n_files} ({fpath}), there are the variables {vars} which are missing in the first file."
-            logger.debug(msg)
+            log_warning(logger=logger, msg=msg, verbose=verbose)
 
     # --------------------------------------.
     # Log the progressively shrinkage of common variables
     dict_problem = dict_problems["evolution"]
     n_problems = len(dict_problem)
     n_files = len(list_ds)
-    ref = dict_problem.pop("ref")
+    _ = dict_problem.pop("ref")
     if len(dict_problem) != 0:
         msg = "Here we report the file which led to shrinkage of the set of common variables."
-        logger.debug(msg)
+        log_warning(logger=logger, msg=msg, verbose=verbose)
         for i, removed_vars in dict_problem.items():
             fpath = fpaths[i]
             for var in removed_vars:
                 msg = f"At file {i}/{n_files} ({fpath}), the {var} is removed from the common set of variables."
-                logger.debug(msg)
+                log_warning(logger=logger, msg=msg, verbose=verbose)
 
     # --------------------------------------.
     # Concat/merge all netCDFs
@@ -342,24 +360,31 @@ def xr_concat_datasets(fpaths: str) -> xr.Dataset:
             list_ds[i] = ds[common_vars]
         # Try concatenating
         try:
-            logger.info("Start concatenating with xr.concat.")
+            msg = "Start concatenating with xr.concat."
+            log_info(logger=logger, msg=msg, verbose=verbose)
+
             ds = xr.concat(list_ds, dim="time", coords="minimal", compat="override")
-            logger.info("Concatenation with xr.concat has been successful.")
+
+            msg = "Concatenation with xr.concat has been successful."
+            log_info(logger=logger, msg=msg, verbose=verbose)
+
         except:
             msg = "Concatenation with xr.concat failed."
-            logger.error(msg)
+            log_error(logger=logger, msg=msg, verbose=verbose)
             raise ValueError(msg)
     # - Otherwise use xr.merge
     else:
         try:
-            logger.info("Start concatenating with xr.merge.")
+            msg = "Start concatenating with xr.merge."
+            log_info(logger=logger, msg=msg, verbose=verbose)
             ds = xr.merge(
                 list_ds, compat="override", join="outer", combine_attrs="override"
             )
-            logger.info("Concatenation with xr.merge has been successful.")
+            msg = "Concatenation with xr.merge has been successful."
+            log_info(logger=logger, msg=msg, verbose=verbose)
         except:
             msg = "Concatenation with xr.merge failed."
-            logger.error(msg)
+            log_error(logger=logger, msg=msg, verbose=verbose)
             raise ValueError(msg)
     # --------------------------------------.
     # Return xr.Dataset

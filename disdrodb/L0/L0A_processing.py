@@ -24,27 +24,33 @@
 # -----------------------------------------------------------------------------.
 import os
 import glob
-from xmlrpc.server import list_public_methods
-import pandas as pd
-import dask.dataframe as dd
+import inspect
 import logging
 import tarfile
+import pandas as pd
+import numpy as np
 from typing import Union
-
 from disdrodb.L0.standards import get_L0A_dtype
-from disdrodb.L0.check_standards import check_L0A_standards, check_L0A_column_names
+from disdrodb.L0.check_standards import check_L0A_column_names
 from disdrodb.L0.io import _remove_if_exists
 from disdrodb.L0.io import infer_station_id_from_fpath
-from disdrodb.utils.logger import log_info, log_warning, log_debug
+
+# Logger
+from disdrodb.utils.logger import (
+    log_info,
+    log_warning,
+    log_error,
+    log_debug,
+)
 
 logger = logging.getLogger(__name__)
 
 # TODO:
 # Renaming:
-# - read_L0A_raw_file_list --> read_raw_file_list ?
+# - read_raw_file_list --> read_raw_file_list ?
 # - write_df_to_parquet --> write_L0A?
 # Remove or refactor
-# - read_raw_data_zipped
+# - _read_raw_data_zipped
 
 
 def check_glob_pattern(pattern: str) -> None:
@@ -145,8 +151,10 @@ def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
 
 
 ####---------------------------------------------------------------------------.
-#### Dataframe creation
-def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
+#### Raw file readers
+
+
+def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = False) -> dict:
     """Define a dictionary with the parameters required for reading the raw data with Pandas or Dask.
 
     Parameters
@@ -174,7 +182,7 @@ def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
         reader_kwargs.pop("blocksize", None)
         reader_kwargs.pop("assume_missing", None)
 
-    # TODO: Remove this when removing read_raw_data_zipped
+    # TODO: Remove this when removing _read_raw_data_zipped
     if reader_kwargs.get("zipped", False):
         reader_kwargs.pop("zipped", None)
         reader_kwargs.pop("blocksize", None)
@@ -183,57 +191,158 @@ def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = True) -> dict:
     return reader_kwargs
 
 
-def concatenate_dataframe(
-    list_df: list, verbose: bool = False, lazy: bool = True
-) -> Union[pd.DataFrame, dd.DataFrame]:
-    """Concatenate a list of dataframes.
+def read_raw_data(
+    filepath: str,
+    column_names: list,
+    reader_kwargs: dict,
+) -> pd.DataFrame:
+    """Read raw data into a dataframe.
 
     Parameters
     ----------
-    list_df : list
-        List of dataframes.
-    verbose : bool, optional
-        If True, print messages.
-        If False, no print.
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
+    filepath : str
+        Raw file path.
+    column_names : list
+        Column names.
+    reader_kwargs : dict
+        Pandas pd.read_csv arguments.
 
     Returns
     -------
-    Union[pd.DataFrame,dd.DataFrame]
-        Concatenated dataframe.
+    pandas.DataFrame
+        Pandas dataframe.
+    """
+    # Preprocess reader_kwargs
+    reader_kwargs = preprocess_reader_kwargs(reader_kwargs)
+
+    # Enforce all raw files columns with dtype = 'object'
+    dtype = "object"
+
+    # Read with pandas
+    reader_kwargs.pop("blocksize", None)
+
+    # If zipped in reader_kwargs, use __read_raw_data_zipped
+    if reader_kwargs.get("zipped"):
+        df = _read_raw_data_zipped(
+            filepath=filepath,
+            column_names=column_names,
+            reader_kwargs=reader_kwargs,
+        )
+    else:
+        try:
+            df = pd.read_csv(filepath, names=column_names, dtype=dtype, **reader_kwargs)
+        except pd.errors.EmptyDataError:
+            msg = f" - Is empty, skip file: {filepath}"
+            log_warning(logger=logger, msg=msg, verbose=False)
+            pass
+    # Return dataframe
+    return df
+
+
+def _read_raw_data_zipped(
+    filepath: str,
+    column_names: list,
+    reader_kwargs: dict,
+) -> pd.DataFrame:
+    """Read zipped raw data into a dataframe.
+    Used because some campaign has tar with multiple files inside,
+    and in some situation only one files has to be read.
+    Tar reading work only with pandas.
+    Put the only file name to read into file_name_to_read_zipped variable,
+    if file_name_to_read_zipped is none, all the tar contenet will be
+    read and concat into a single dataframe.
+
+
+    Parameters
+    ----------
+    filepath : str
+        Raw file path.
+    column_names : list
+        Column names.
+    reader_kwargs : dict
+        Dask or Pandas reading parameters
+
+    Returns
+    -------
+    pandas.DataFrame
+        Pandas dataframe
 
     Raises
     ------
-    ValueError
-        Concatenation can not be done.
+    pd.errors.EmptyDataError
+        File is empty
+    pd.errors.ParserError
+        File can not be read
+    UnicodeDecodeError
+        File can not be decoded
     """
-    # Import dask or pandas
-    if lazy:
-        import dask.dataframe as dd
-    else:
-        import pandas as dd
-    # Log
-    msg = " - Concatenation of dataframes started."
-    log_info(logger, msg, verbose)
-    # Concatenate the dataframe
-    try:
-        df = dd.concat(list_df, axis=0, ignore_index=True)
-        # Drop duplicated values
-        df = df.drop_duplicates(subset="time")
-        # Sort by increasing time
-        df = df.sort_values(by="time")
 
-    except (AttributeError, TypeError) as e:
-        msg = f" - Can not create concat data files. \n Error: {e}"
-        logger.error(msg)
-        raise ValueError(msg)
-    # Log
-    msg = " - Concatenation of dataframes has finished."
-    log_info(logger, msg, verbose)
-    # Return dataframe
+    df = pd.DataFrame()
+    tar = tarfile.open(filepath)
+
+    file_name_to_read_zipped = reader_kwargs.get("file_name_to_read_zipped")
+
+    # TODO: deprecate reading zipped files ! 
+    # This function should ready only a single file !
+
+    # Loop tar files
+    for file in tar.getnames():
+        # Check if pass only particular file to read
+        if file_name_to_read_zipped is not None:
+            if file.endswith(file_name_to_read_zipped):
+                filepath = file
+            else:
+                continue
+
+        try:
+            # If need only to read one file, exit loop file in tar
+            if file_name_to_read_zipped is not None:
+                # Read the data
+                df = read_raw_data(
+                    filepath=tar.extractfile(filepath),
+                    column_names=column_names,
+                    reader_kwargs=reader_kwargs,
+                )
+                break
+            else:
+                # Read the data
+                df_temp = read_raw_data(
+                    filepath=tar.extractfile(file),
+                    column_names=column_names,
+                    reader_kwargs=reader_kwargs,
+                )
+
+                # Concat all files in tar
+                df = pd.concat((df, df_temp))
+
+        except pd.errors.EmptyDataError:
+            msg = f" - Is empty, skip file: {file}"
+            log_warning(logger=logger, msg=msg, verbose=False)
+            pass
+        except pd.errors.ParserError:
+            msg = f" - Cannot parse, skip file: {file}"
+            log_error(logger=logger, msg=msg, verbose=False)
+            raise pd.errors.ParserError(msg)
+        except UnicodeDecodeError:
+            msg = f" - Unicode error, skip file: {file}"
+            log_error(logger=logger, msg=msg, verbose=False)
+            raise UnicodeDecodeError(msg)
+
+    # Close zipped file
+    tar.close()
+
     return df
+
+
+####---------------------------------------------------------------------------.
+#### L0A checks and homogenization
+
+
+def _check_df_sanitizer_fun(df_sanitizer_fun):
+    if not np.all(np.isin(inspect.getfullargspec(df_sanitizer_fun).args, ["df"])):
+        raise ValueError(
+            "The `df_sanitizer_fun` must have only `df` as input argument!"
+        )
 
 
 def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
@@ -297,28 +406,13 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
     # Get dataframe column names
     columns = list(df.columns)
 
-    # Cast dataframe columns (TODO: tmp fix)
-    if isinstance(df, dd.DataFrame):
-        # Cast dataframe columns
-        for column in columns:
-            if column in numeric_columns:
-                try:
-                    df[column] = dd.to_numeric(df[column], errors="coerce")
-                except AttributeError:
-                    raise (
-                        f"AttributeError: The column {column} is not a numeric column."
-                    )
-    else:
-
-        for column in columns:
-            if column in numeric_columns:
-                try:
-                    df[column] = pd.to_numeric(df[column], errors="coerce")
-                except AttributeError:
-                    raise (
-                        f"AttributeError: The column {column} is not a numeric column."
-                    )
-
+    # Cast dataframe columns
+    for column in columns:
+        if column in numeric_columns:
+            try:
+                df[column] = pd.to_numeric(df[column], errors="coerce")
+            except AttributeError:
+                raise ValueError(f"The column {column} is not a numeric column.")
     return df
 
 
@@ -357,318 +451,74 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     return df
 
 
-def read_raw_data(
-    filepath: str, column_names: list, reader_kwargs: dict, lazy: bool = True
-) -> pd.DataFrame:
-    """Read raw data into a dataframe
+def process_raw_file(
+    filepath,
+    column_names,
+    reader_kwargs,
+    df_sanitizer_fun,
+    sensor_name,
+    verbose,
+):
+    """Read and parse a raw files into a L0A dataframe.
 
     Parameters
     ----------
     filepath : str
-        Raw file path.
-    column_names : list
-        Column names.
-    reader_kwargs : dict
-        Dask or Pandas reading parameters
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
-
-    Returns
-    -------
-    pandas.DataFrame or dask.DataFrame
-        Pandas or dask dataframe
-    """
-    # Preprocess reader_kwargs
-    reader_kwargs = preprocess_reader_kwargs(reader_kwargs, lazy=lazy)
-
-    # Enforce all raw files columns with dtype = 'object'
-    dtype = "object"
-
-    # Read with pandas or dask
-    # - Dask
-    if lazy:
-        try:
-            df = dd.read_csv(filepath, names=column_names, dtype=dtype, **reader_kwargs)
-        except dd.errors.EmptyDataError:
-            msg = f" - Is empty, skip file: {filepath}"
-            logger.exception(msg)
-            print(msg)
-            pass
-    # Pandas
-    else:
-        reader_kwargs.pop("blocksize", None)
-        try:
-            df = pd.read_csv(filepath, names=column_names, dtype=dtype, **reader_kwargs)
-        except pd.errors.EmptyDataError:
-            msg = f" - Is empty, skip file: {filepath}"
-            logger.exception(msg)
-            print(msg)
-            pass
-    # Return dataframe
-    return df
-
-
-def read_raw_data_zipped(
-    filepath: str, column_names: list, reader_kwargs: dict, lazy: bool = True
-) -> pd.DataFrame:
-    """Read zipped raw data into a dataframe.
-    Used because some campaign has tar with multiple files inside,
-    and in some situation only one files has to be read.
-    Tar reading work only with pandas.
-    Put the only file name to read into file_name_to_read_zipped variable,
-    if file_name_to_read_zipped is none, all the tar contenet will be
-    read and concat into a single dataframe.
-
-
-    Parameters
-    ----------
-    filepath : str
-        Raw file path.
-    column_names : list
-        Column names.
-    reader_kwargs : dict
-        Dask or Pandas reading parameters
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
-
-    Returns
-    -------
-    pandas.DataFrame or dask.DataFrame
-        Pandas or dask dataframe
-
-    Raises
-    ------
-    pd.errors.EmptyDataError
-        File is empty
-    pd.errors.ParserError
-        File can not be read
-    UnicodeDecodeError
-        File can not be decoded
-    """
-
-    df = pd.DataFrame()
-    tar = tarfile.open(filepath)
-
-    file_name_to_read_zipped = reader_kwargs.get("file_name_to_read_zipped")
-
-    # Loop tar files
-    for file in tar.getnames():
-        # Check if pass only particular file to read
-        if file_name_to_read_zipped is not None:
-            if file.endswith(file_name_to_read_zipped):
-                filepath = file
-            else:
-                continue
-
-        try:
-            # If need only to read one file, exit loop file in tar
-            if file_name_to_read_zipped is not None:
-                # Read the data
-                df = read_raw_data(
-                    filepath=tar.extractfile(filepath),
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    lazy=lazy,
-                )
-                break
-            else:
-                # Read the data
-                df_temp = read_raw_data(
-                    filepath=tar.extractfile(file),
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    lazy=lazy,
-                )
-
-                # Concat all files in tar
-                df = df.append(df_temp)
-
-        except pd.errors.EmptyDataError:
-            msg = f" - Is empty, skip file: {file}"
-            logger.exception(msg)
-            raise pd.errors.EmptyDataError(msg)
-            pass
-        except pd.errors.ParserError:
-            msg = f" - Cannot parse, skip file: {file}"
-            logger.exception(msg)
-            raise pd.errors.ParserError(msg)
-            pass
-        except UnicodeDecodeError:
-            msg = f" - Unicode error, skip file: {file}"
-            logger.exception(msg)
-            raise UnicodeDecodeError(msg)
-            pass
-
-    # Close zipped file
-    tar.close()
-
-    return df
-
-
-def read_L0A_raw_file_list(
-    file_list: Union[list, str],
-    column_names: list,
-    reader_kwargs: dict,
-    sensor_name: str,
-    verbose: bool,
-    df_sanitizer_fun: object = None,
-    lazy: bool = False,
-) -> Union[pd.DataFrame, dd.DataFrame]:
-    """Read and parse a list for raw files into a dataframe.
-
-    Parameters
-    ----------
-    file_list : Union[list,str]
-        File(s) path(s)
+        File path
     column_names : list
         Columns names.
     reader_kwargs : dict
-        Dask or Pandas reading parameters.
+         Pandas `read_csv` arguments.
     sensor_name : str
         Name of the sensor.
     verbose : bool
         Wheter to verbose the processing.
     df_sanitizer_fun : object, optional
         Sanitizer function to format the datafame.
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
 
     Returns
     -------
-    Union[pd.DataFrame,dd.DataFrame]
+    pd.DataFrame
         Dataframe
-
-    Raises
-    ------
-    ValueError
-        Input parameters can not be used or the raw file can not be processed.
-
     """
 
-    # ------------------------------------------------------.
-    # ### Checks arguments
+    # Read the data
+    df = read_raw_data(
+        filepath=filepath,
+        column_names=column_names,
+        reader_kwargs=reader_kwargs,
+    )
+
+    # Check if file empty
+    if len(df.index) == 0:
+        msg = f" - {filepath} is empty and has been skipped."
+        log_error(logger=logger, msg=msg, verbose=verbose)
+        raise ValueError(msg)
+
+    # Check dataframe column number matches columns_names
+    n_columns = len(df.columns)
+    n_expected_columns = len(column_names)
+    if n_columns != n_expected_columns:
+        msg = f" - {filepath} has {n_columns} columns, while {n_expected_columns} are expected !."
+        log_error(logger, msg, verbose)
+        raise ValueError(msg)
+
+    # Sanitize the dataframe with a custom function
     if df_sanitizer_fun is not None:
-        if not callable(df_sanitizer_fun):
-            raise ValueError("'df_sanitizer_fun' must be a function.")
-        # TODO check df_sanitizer_fun has only lazy and df arguments !
+        # _check_df_sanitizer_fun(df_sanitizer_fun) # TODO activate after refactoring
+        df = df_sanitizer_fun(df, lazy=False)
 
-    if isinstance(file_list, str):
-        file_list = [file_list]
-    if len(file_list) == 0:
-        raise ValueError("'file_list' must contains at least 1 filepath.")
+    # Remove rows with time NaT
+    # - TODO: Log info !!!
+    df = df.dropna(subset="time", axis=0)
+    if len(df.index) == 0:
+        msg = f" - {filepath} has not valid timestep."
+        log_error(logger=logger, msg=msg, verbose=verbose)
+        raise ValueError(msg)
 
-    # ------------------------------------------------------.
-    ### - Get station id from file_list
-    station_id = infer_station_id_from_fpath(file_list[0])
-
-    # ------------------------------------------------------.
-    ### - Loop over all raw files
-    n_files = len(file_list)
-    processed_file_counter = 0
-    list_skipped_files_msg = []
-    list_df = []
-    for filepath in file_list:
-        # Try to process a raw file
-        try:
-            # -----------------------------------------------------------------.
-            # ---------------> THIS SHOULD BE REFACTORED  <-------------------.
-            # Open the zip and choose the raw file (for GPM campaign)
-            if reader_kwargs.get("zipped"):
-                df = read_raw_data_zipped(
-                    filepath=filepath,
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    lazy=lazy,
-                )
-
-            else:
-                # Read the data
-                df = read_raw_data(
-                    filepath=filepath,
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    lazy=lazy,
-                )
-
-            # Check if file empty
-            if len(df.index) == 0:
-                msg = f" - {filepath} is empty and has been skipped."
-                log_warning(logger, msg, verbose)
-                list_skipped_files_msg.append(msg)
-                continue
-
-            # Check column number, ignore if columns_names empty
-            if len(column_names) != 0:
-                if len(df.columns) != len(column_names):
-                    msg = (
-                        f" - {filepath} has wrong columns number, and has been skipped."
-                    )
-                    log_warning(logger, msg, verbose)
-                    list_skipped_files_msg.append(msg)
-                    continue
-            # -------------------> TILL HERE   <------------------------------.
-            # ----------------------------------------------------------------.
-            # Sanitize the dataframe with a custom function
-            if df_sanitizer_fun is not None:
-                df = df_sanitizer_fun(df, lazy=lazy)
-
-            # Remove duplicated timesteps
-            # - TODO: Log info !!!
-            df = df.drop_duplicates(subset="time", keep="first")
-
-            # ------------------------------------------------------.
-            # Check column names met DISDRODB standards
-            check_L0A_column_names(df, sensor_name=sensor_name)
-
-            # ------------------------------------------------------.
-            # Append dataframe to the list
-            list_df.append(df)
-
-            # Update the logger
-            processed_file_counter += 1
-            logger.debug(
-                f"{processed_file_counter} / {n_files} processed successfully. File name: {filepath}"
-            )
-
-        # If processing of raw file fails
-        except (Exception, ValueError) as e:
-            # Update the logger
-            msg = f" - {filepath} has been skipped. \n -- The error is: {e}."
-            log_warning(logger, msg, verbose)
-            list_skipped_files_msg.append(msg)
-
-    # Update logger
-    msg = f" - {len(list_skipped_files_msg)} of {n_files} have been skipped."
-    log_info(logger, msg, verbose)
-    logger.info("---")
-    logger.info(msg)
-    logger.info("---")
-
-    ##----------------------------------------------------------------.
-    #### - Concatenate the dataframe
-    if len(list_df) == 0:
-        raise ValueError(f"No dataframe to return. Impossible to parse {file_list}.")
-    if len(list_df) > 1:
-        df = concatenate_dataframe(list_df, verbose=verbose, lazy=lazy)
-    else:
-        df = list_df[0]
-
-    # ------------------------------------------------------.
-    # Final dataframe cleaning
-    # - Coerce numeric columns corrupted values to np.nan
-    df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name)
-
-    # - Strip trailing/leading space from string columns
-    df = strip_string_spaces(df, sensor_name=sensor_name)
-
-    # - Remove rows with duplicate timestep (keep the first)
-    df = df.drop_duplicates(subset=["time"])
-
-    # - Cast dataframe to dtypes
-    df = cast_column_dtypes(df, sensor_name=sensor_name)
+    # Remove duplicated timesteps
+    # - TODO: Log info !!!
+    df = df.drop_duplicates(subset="time", keep="first")
 
     # ------------------------------------------------------.
     #### - Filter out problematic data reported in issue file
@@ -677,18 +527,29 @@ def read_L0A_raw_file_list(
     # df = remove_problematic_timestamp(df, issue_dict, verbose)
 
     # ------------------------------------------------------.
-    # Return the dataframe
+    # - Coerce numeric columns corrupted values to np.nan
+    df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name)
+
+    # - Strip trailing/leading space from string columns
+    df = strip_string_spaces(df, sensor_name=sensor_name)
+
+    # - Cast dataframe to dtypes
+    df = cast_column_dtypes(df, sensor_name=sensor_name)
+
+    # ------------------------------------------------------.
+    # Check column names agrees to DISDRODB standards
+    check_L0A_column_names(df, sensor_name=sensor_name)
+
+    # TODO: check_L0A_standards(fpath)
+    # ------------------------------------------------------.
+    # Return the L0A dataframe
     return df
 
 
 ####---------------------------------------------------------------------------.
-#### Parquet Writer
-def _write_to_parquet(
-    df: Union[pd.DataFrame, dd.DataFrame], fpath: str, force: bool = False
-):
-
+#### L0A Apache Parquet Writer
+def _write_to_parquet(df: pd.DataFrame, fpath: str, force: bool = False):
     import pandas as pd
-    import dask.dataframe
     from disdrodb.L0.io import _create_directory
 
     # -------------------------------------------------------------------------.
@@ -704,52 +565,26 @@ def _write_to_parquet(
     engine = "pyarrow"
 
     # -------------------------------------------------------------------------.
-    # Save to parquet
-    # - If Pandas df
-    if isinstance(df, pd.DataFrame):
-        try:
-            df.to_parquet(
-                fpath,
-                engine=engine,
-                compression=compression,
-                row_group_size=row_group_size,
-            )
-            logger.info(
-                f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
-            )
-        except (Exception) as e:
-            msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
-            logger.exception(msg)
-            raise ValueError(msg)
-
-    # - If Dask DataFrame
-    elif isinstance(df, dask.dataframe.DataFrame):
-        # https://arrow.apache.org/docs/python/generated/pyarrow.parquet.ParquetWriter.html
-        try:
-            # df.repartition(npartitions=1)
-            _ = df.to_parquet(
-                fpath,
-                schema="infer",
-                engine=engine,
-                row_group_size=row_group_size,
-                compression=compression,
-                write_metadata_file=False,
-            )
-            logger.info(
-                f"The Dask Dataframe has been written as an Apache Parquet file to {fpath}."
-            )
-        except (Exception) as e:
-            msg = f" - The Dask DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
-            logger.exception(msg)
-            raise ValueError(msg)
-    else:
-        raise NotImplementedError("Pandas or Dask DataFrame is required.")
+    # Save dataframe to Apache Parquet
+    try:
+        df.to_parquet(
+            fpath,
+            engine=engine,
+            compression=compression,
+            row_group_size=row_group_size,
+        )
+        msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
+        log_info(logger=logger, msg=msg, verbose=False)
+    except (Exception) as e:
+        msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
 
     # -------------------------------------------------------------------------.
 
 
 def write_df_to_parquet(
-    df: Union[pd.DataFrame, dd.DataFrame],
+    df: pd.DataFrame,
     fpath: str,
     force: bool = False,
     verbose: bool = False,
@@ -758,7 +593,7 @@ def write_df_to_parquet(
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,dd.DataFrame]
+    df : pd.DataFrame
         Input dataframe.
     fpath : str
         Output file path.
@@ -788,3 +623,170 @@ def write_df_to_parquet(
     log_info(logger, msg, verbose)
     # -------------------------------------------------------------------------.
     return None
+
+
+####---------------------------------------------------------------------------.
+#### L0A Utility
+
+
+def concatenate_dataframe(list_df: list, verbose: bool = False) -> pd.DataFrame:
+    """Concatenate a list of dataframes.
+
+    Parameters
+    ----------
+    list_df : list
+        List of dataframes.
+    verbose : bool, optional
+        If True, print messages.
+        If False, no print.
+
+    Returns
+    -------
+    pd.DataFrame
+        Concatenated dataframe.
+
+    Raises
+    ------
+    ValueError
+        Concatenation can not be done.
+    """
+    # Check if something to concatenate
+    if len(list_df) == 1:
+        df = list_df[0]
+        if not isinstance(df, pd.DataFrame): 
+            raise ValueError("Only pd.DataFrame objects are valid.")
+        return df
+
+    # Log
+    msg = " - Concatenation of dataframes started."
+    log_info(logger, msg, verbose)
+
+    # Concatenate the dataframe
+    try:
+        df = pd.concat(list_df, axis=0, ignore_index=True)
+
+        # Drop duplicated values
+        df = df.drop_duplicates(subset="time")
+
+        # Sort by increasing time
+        df = df.sort_values(by="time")
+
+    except (AttributeError, TypeError) as e:
+        msg = f" - Can not concatenate the files. \n Error: {e}"
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+
+    # Log
+    msg = " - Concatenation of dataframes has finished."
+    log_info(logger, msg, verbose)
+
+    # Return dataframe
+    return df
+
+
+def read_raw_file_list(
+    file_list: Union[list, str],
+    column_names: list,
+    reader_kwargs: dict,
+    sensor_name: str,
+    verbose: bool,
+    df_sanitizer_fun: object = None,
+) -> pd.DataFrame:
+    """Read and parse a list for raw files into a dataframe.
+
+    Parameters
+    ----------
+    file_list : Union[list,str]
+        File(s) path(s)
+    column_names : list
+        Columns names.
+    reader_kwargs : dict
+         Pandas `read_csv` arguments.
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+    df_sanitizer_fun : object, optional
+        Sanitizer function to format the datafame.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe
+
+    Raises
+    ------
+    ValueError
+        Input parameters can not be used or the raw file can not be processed.
+
+    """
+
+    # ------------------------------------------------------.
+    # ### Checks arguments
+    if df_sanitizer_fun is not None:
+        if not callable(df_sanitizer_fun):
+            raise ValueError("'df_sanitizer_fun' must be a function.")
+
+    # TODO check df_sanitizer_fun has only df argument !
+
+    if isinstance(file_list, str):
+        file_list = [file_list]
+    if len(file_list) == 0:
+        raise ValueError("'file_list' must contains at least 1 filepath.")
+
+    # ------------------------------------------------------.
+    ### - Get station id from file_list
+    station_id = infer_station_id_from_fpath(file_list[0])
+
+    # ------------------------------------------------------.
+    ### - Loop over all raw files
+    n_files = len(file_list)
+    processed_file_counter = 0
+    list_skipped_files_msg = []
+    list_df = []
+    for filepath in file_list:
+        try:
+            # Try to process a raw file
+            df = process_raw_file(
+                filepath=filepath,
+                column_names=column_names,
+                reader_kwargs=reader_kwargs,
+                df_sanitizer_fun=df_sanitizer_fun,
+                sensor_name=sensor_name,
+                verbose=verbose,
+            )
+
+            # Append dataframe to the list
+            list_df.append(df)
+
+            # Update the logger
+            processed_file_counter += 1
+            msg = f"{processed_file_counter} / {n_files} processed successfully. File name: {filepath}"
+            log_debug(logger=logger, msg=msg, verbose=verbose)
+
+        # If processing of raw file fails
+        except Exception as e:
+            # Update the logger
+            msg = f" - {filepath} has been skipped. \n -- The error is: {e}."
+            log_warning(logger=logger, msg=msg, verbose=verbose)
+            list_skipped_files_msg.append(msg)
+
+    # Update logger
+    msg = f" - {len(list_skipped_files_msg)} of {n_files} have been skipped."
+    log_info(logger=logger, msg=msg, verbose=verbose)
+    logger.info("---")
+    logger.info(msg)
+    logger.info("---")
+
+    ##----------------------------------------------------------------.
+    #### - Concatenate the dataframe
+    if len(list_df) == 0:
+        raise ValueError(f"No dataframe to return. Impossible to parse {file_list}.")
+    df = concatenate_dataframe(list_df, verbose=verbose)
+
+    # - Remove rows with duplicate timestep (keep the first)
+    df = df.drop_duplicates(subset=["time"], axis=0)
+
+    # ------------------------------------------------------.
+    # Return the dataframe
+    return df

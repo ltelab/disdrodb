@@ -19,7 +19,6 @@
 import logging
 import numpy as np
 import pandas as pd
-import dask.dataframe as dd
 from typing import Union
 from disdrodb.L0.standards import get_data_format_dict, get_L0A_dtype
 
@@ -55,13 +54,13 @@ def check_sensor_name(sensor_name: str) -> None:
 
 
 def check_L0A_column_names(
-    df: Union[pd.DataFrame, dd.DataFrame], sensor_name: str
+    df: pd.DataFrame, sensor_name: str
 ) -> None:
     """Checks that the dataframe columns respects DISDRODB standards.
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,dd.DataFrame]
+    df : pd.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -126,7 +125,7 @@ def check_L0A_standards(
 
     """
     # Read parquet
-    df = pd.read_parquet(fpath)
+    df = pd.read_parquet(fpath, engine="pyarrow")
     # -------------------------------------
     # Check data range
     dict_field_value_range = get_field_value_range_dict(sensor_name)

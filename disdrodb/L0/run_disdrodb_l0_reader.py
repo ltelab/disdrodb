@@ -5,14 +5,14 @@
 ##################################################
 import click
 
-from disdrodb.L0 import click_L0_readers_options
+from disdrodb.L0 import click_l0_readers_options
 
 # -------------------------------------------------------------------------.
 # Click Command Line Interface decorator
 @click.command()
 @click.argument("data_source", metavar="<data_source>")
 @click.argument("reader_name", metavar="<reader_name>")
-@click_L0_readers_options  # get default arguments
+@click_l0_readers_options  # get default arguments
 def run_reader_cmd(**kwargs):
     """Wrapper to run reader functions by command lines.
 

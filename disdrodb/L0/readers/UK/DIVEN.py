@@ -175,7 +175,7 @@ def reader(
         # -----------------------------------------------------------------.
         #### - Save to DISDRODB netCDF standard
         fpath = get_L0B_fpath(processed_dir, station_id)
-        write_L0B(ds, fpath=fpath, sensor_name=sensor_name)
+        write_L0B(ds, fpath=fpath)
 
         # End L0 processing
         t_f = time.time() - t_i

@@ -27,11 +27,7 @@ import yaml
 import logging
 import numpy as np
 import pandas as pd
-import dask.array as da
-import dask.dataframe as dd
 import xarray as xr
-from typing import Union
-
 from disdrodb.L0.check_standards import (
     check_sensor_name,
     check_L0B_standards,
@@ -52,10 +48,17 @@ from disdrodb.L0.standards import (
     get_L0B_encodings_dict,
     get_time_encoding,
 )
+from disdrodb.utils.logger import (
+    log_info,
+    # log_warning,
+    # log_debug,
+    log_error,
+)
 
 logger = logging.getLogger(__name__)
 
-
+####--------------------------------------------------------------------------.
+#### L0B spectrum processing
 # def get_drop_concentration(arr):
 #     # TODO
 #     logger.info("Computing raw_drop_concentration from raw spectrum.")
@@ -68,14 +71,12 @@ logger = logging.getLogger(__name__)
 #     return arr[:, 0, :]
 
 
-def check_L0_raw_fields_available(
-    df: Union[pd.DataFrame, dd.DataFrame], sensor_name: str
-) -> None:
+def check_L0_raw_fields_available(df: pd.DataFrame, sensor_name: str) -> None:
     """Check the presence of the raw spectrum data according to the type of sensor.
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,da.DataFrame]
+    df : pd.DataFrame
         Dataframe
     sensor_name : str
         Name of the sensor.
@@ -176,7 +177,7 @@ def format_string_array(string: str, n_values: int) -> np.array:
 
 
 def reshape_raw_spectrum_to_2D(
-    arr: np.array, n_bins_dict: dict, n_timesteps: int
+    arr: np.array, n_bins_dict: dict, n_timesteps: int, verbose: bool = False
 ) -> np.array:
     """Reshape the raw spectrum to 2D.
 
@@ -208,32 +209,24 @@ def reshape_raw_spectrum_to_2D(
         )
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
-        logger.error(msg)
-        print(msg)
+        log_error(logger=logger, msg=msg, verbose=verbose)
         raise ValueError(msg)
     return arr
 
 
 def retrieve_L0B_arrays(
-    df: Union[pd.DataFrame, dd.DataFrame],
+    df: pd.DataFrame,
     sensor_name: str,
-    lazy: bool = True,
     verbose: bool = False,
 ) -> dict:
     """Retrieves the L0B data matrix.
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,dd.DataFrame]
+    df : pd.DataFrame
         Input dataframe
     sensor_name : str
         Name of the sensor
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
-        verbose : bool, optional
-        Whether to verbose the processing.
-        The default is False.
 
     Returns
     -------
@@ -243,9 +236,7 @@ def retrieve_L0B_arrays(
     """
 
     msg = " - Retrieval of L0B data matrix started."
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
     # check_L0_raw_fields_available(df, sensor_name)
@@ -260,10 +251,7 @@ def retrieve_L0B_arrays(
     n_dim_spectrum = get_raw_spectrum_ndims(sensor_name)
 
     # Retrieve number of timesteps
-    if lazy:
-        n_timesteps = df.shape[0].compute()
-    else:
-        n_timesteps = df.shape[0]
+    n_timesteps = df.shape[0]
 
     # Retrieve available arrays
     dict_data = {}
@@ -279,20 +267,16 @@ def retrieve_L0B_arrays(
         df_series = df[key].astype(str)
 
         # Get a numpy array for each row and then stack
-        if lazy:
-            list_arr = df_series.apply(
-                format_string_array, n_values=n_bins, meta=(key, "f8")
-            )
-            arr = da.stack(list_arr, axis=0)
-        else:
-            list_arr = df_series.apply(format_string_array, n_values=n_bins)
-            arr = np.stack(list_arr, axis=0)
+        list_arr = df_series.apply(format_string_array, n_values=n_bins)
+        arr = np.stack(list_arr, axis=0)
 
         # For key='raw_drop_number', if 2D ... reshape to 2D matrix
         # - This applies i.e for OTT_Parsivels and ThiesLPM
         # - This does not apply to RD80
         if key == "raw_drop_number" and n_dim_spectrum == 2:
-            arr = reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps)
+            arr = reshape_raw_spectrum_to_2D(
+                arr, n_bins_dict, n_timesteps, verbose=verbose
+            )
 
         # Define dictionary to pass to xr.Dataset
         dims_order = ["time"] + dims_dict[key]
@@ -319,12 +303,13 @@ def retrieve_L0B_arrays(
     # -------------------------------------------------------------------------.
     # Log
     msg = " - Retrieval of L0B data matrices finished."
-    if verbose:
-        print(msg)
-    logger.info(msg)
-
+    log_info(logger=logger, msg=msg, verbose=verbose)
     # Return
     return dict_data
+
+
+####--------------------------------------------------------------------------.
+#### L0B Dataset creation
 
 
 def get_coords(sensor_name: str) -> dict:
@@ -398,22 +383,18 @@ def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
 
 
 def create_L0B_from_L0A(
-    df: Union[pd.DataFrame, dd.DataFrame],
+    df: pd.DataFrame,
     attrs: dict,
-    lazy: bool = True,
     verbose: bool = False,
 ) -> xr.Dataset:
     """Transform the L0A dataframe to the L0B xr.Dataset.
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,dd.DataFrame]
+    df : pd.DataFrame
         DISDRODB L0A dataframe.
     attrs : dict
         Station metadata.
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
     verbose : bool, optional
         Wheter to verbose the processing.
         The default is False.
@@ -440,7 +421,7 @@ def create_L0B_from_L0A(
         )
     ):
         # Retrieve dictionary of raw data matrices for xarray Dataset
-        data_vars = retrieve_L0B_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
+        data_vars = retrieve_L0B_arrays(df, sensor_name, verbose=verbose)
     else:
         data_vars = {}
     # -----------------------------------------------------------.
@@ -453,15 +434,7 @@ def create_L0B_from_L0A(
         # longitude and latitude too for moving sensors
     ]
     aux_columns = df.columns[np.isin(df.columns, valid_core_fields, invert=True)]
-    if lazy:
-        aux_data_vars = {
-            column: (["time"], df[column].to_dask_array(lengths=True))
-            for column in aux_columns
-        }
-    else:
-        aux_data_vars = {
-            column: (["time"], df[column].values) for column in aux_columns
-        }
+    aux_data_vars = {column: (["time"], df[column].values) for column in aux_columns}
     data_vars.update(aux_data_vars)
 
     # -----------------------------------------------------------.
@@ -504,7 +477,7 @@ def create_L0B_from_L0A(
         )
     except Exception as e:
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
-        logger.error(msg)
+        log_error(logger=logger, msg=msg, verbose=verbose)
         raise ValueError(msg)
 
     # Ensure variables with dtype object are converted to string
@@ -527,7 +500,7 @@ def create_L0B_from_L0A(
 
 
 ####--------------------------------------------------------------------------.
-#### Writers
+#### L0B netCDF4 Writer
 
 
 def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
@@ -651,7 +624,7 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     return ds
 
 
-def write_L0B(ds: xr.Dataset, fpath: str, sensor_name: str) -> None:
+def write_L0B(ds: xr.Dataset, fpath: str) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
@@ -667,17 +640,63 @@ def write_L0B(ds: xr.Dataset, fpath: str, sensor_name: str) -> None:
     # Ensure directory exist
     os.makedirs(os.path.dirname(fpath), exist_ok=True)
 
+    # Get sensor name from dataset
+    sensor_name = ds.attrs.get("sensor_name")
+
     # Set encodings
-    ds = set_encodings(ds, sensor_name)
+    ds = set_encodings(ds=ds, sensor_name=sensor_name)
 
     # Write netcdf
-    ds.to_netcdf(fpath, engine="netcdf4")  # , encoding=encoding_dict)
+    ds.to_netcdf(fpath, engine="netcdf4")
 
 
 ####--------------------------------------------------------------------------.
-#### Summary statistics
-def create_summary_statistics(
-    ds: xr.Dataset, processed_dir: str, station_id: str, sensor_name: str
+#### Single L0B netCDF
+
+
+def concatenate_L0B_files(processed_dir, station_id, remove=False):
+    """Concatenate all L0B netCDF files into a single netCDF file.
+
+    The single netCDF file is saved at <processed_dir>/L0B.
+    """
+    import glob
+    from disdrodb.L0.io import get_L0B_dir, get_L0B_fpath
+    from disdrodb.L0.utils_nc import xr_concat_datasets
+
+    # TODO: add logs
+
+    # Retrieve L0B files
+    L0B_dir_path = get_L0B_dir(processed_dir, station_id)
+    file_list = sorted(glob.glob(os.path.join(L0B_dir_path, "*.nc")))
+
+    # Check there are at least two files
+    n_files = len(file_list)
+    if n_files <= 1:
+        msg = f"No L0B file is available for concatenation in {L0B_dir_path}."
+        raise ValueError(msg)
+
+    # Concatenate the files
+    ds = xr_concat_datasets(file_list)  # TODO RENAME
+
+    # Define the filepath of the concatenated L0B netCDF
+    single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_id, single_netcdf=True)
+    write_L0B(ds, fpath=single_nc_fpath)
+
+    # If remove = True, remove all the single files
+    if remove:
+        _ = [os.remove(fpath) for fpath in file_list]
+
+    # Open the full netCDF
+    ds = xr.open_dataset(single_nc_fpath, chunks="auto")
+
+    # Return the dataset
+    return ds
+
+
+def create_L0B_summary(
+    ds: xr.Dataset,
+    processed_dir: str,
+    station_id: str,
 ) -> None:
     """Create L0 summary statistics and save it into the station info YAML file.
 
@@ -689,12 +708,12 @@ def create_summary_statistics(
         Output file path
     station_id : str
         Station ID
-    sensor_name : str
-        Name of the sensor
-
     """
 
     ###-----------------------------------------------------------------------.
+    # Get the sensor name
+    sensor_name = ds.attrs.get("sensor_name")
+
     # Initialize dictionary
     stats_dict = {}
 
@@ -755,3 +774,18 @@ def create_summary_statistics(
         yaml.dump(stats_dict, f, sort_keys=False)
 
     return None
+
+
+def create_L0B_archive(processed_dir, station_id, remove):
+    # TODO: COMMAND TO RUN FROM TERMINAL IN NEW ENVIRONMENT !
+    ds = concatenate_L0B_files(
+        processed_dir=processed_dir, station_id=station_id, remove=False
+    )
+    create_L0B_summary(
+        ds=ds,
+        processed_dir=processed_dir,
+        station_id=station_id,
+    )
+
+
+####--------------------------------------------------------------------------.

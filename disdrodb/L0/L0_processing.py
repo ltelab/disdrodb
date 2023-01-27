@@ -9,126 +9,362 @@ import os
 import time
 import glob
 import shutil
-from urllib import response
 import click
 import logging
+import functools
+import dask
 
 # Directory
 from disdrodb.L0.io import (
     check_directories,
-    get_campaign_name,
     create_directory_structure,
     get_L0A_dir,
-    get_L0A_fpath,
-    get_L0B_fpath,
-    read_L0A_dataframe,
 )
 
 # Metadata
 from disdrodb.L0.metadata import read_metadata
 
 # Standards
-from disdrodb.L0.check_standards import check_sensor_name, check_L0A_standards
-
-# L0A_processing
-from disdrodb.L0.L0A_processing import (
-    get_file_list,
-    read_L0A_raw_file_list,
-    write_df_to_parquet,
-)
+from disdrodb.L0.check_standards import check_sensor_name
 
 # L0B_processing
-from disdrodb.L0.L0B_processing import (
-    create_L0B_from_L0A,
-    write_L0B,
-    create_summary_statistics,
-)
+from disdrodb.L0.L0B_processing import create_L0B_archive
 
 # Logger
-from disdrodb.utils.logger import create_l0_logger, close_logger
-from disdrodb.utils.logger import log_info, log_warning
+from disdrodb.utils.logger import (
+    create_file_logger,
+    close_logger,
+    define_summary_log,
+    log_info,
+    # log_warning,
+    log_error,
+)
 
 logger = logging.getLogger(__name__)
 
-# ------------------------------------------------------------------.
-# Consistency choice
-# TODO:
-# - Add verbose and logs to disdrodb.io function !!!
-
 # -----------------------------------------------------------------------------.
-def click_L0_readers_options(function: object):
-    """Define click command line parameters.
+#### L0A and L0B File Creators
 
-    Parameters
-    ----------
-    function : object
-        Function.
-    """
-    function = click.option(
-        "-s",
-        "--single_netcdf",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Produce single netCDF",
-    )(function)
-    function = click.option(
-        "-l",
-        "--lazy",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Use dask if lazy=True",
-    )(function)
-    function = click.option(
-        "-d",
-        "--debugging_mode",
-        type=bool,
-        show_default=True,
-        default=False,
-        help="Switch to debugging mode",
-    )(function)
-    function = click.option(
-        "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
-    )(function)
-    function = click.option(
-        "-f",
-        "--force",
-        type=bool,
-        show_default=True,
-        default=False,
-        help="Force overwriting",
-    )(function)
-    function = click.option(
-        "-k",
-        "--keep_l0a",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Whether to keep the L0A Parquet file",
-    )(function)
-    function = click.option(
-        "-l0b",
-        "--l0b_processing",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Perform L0B processing",
-    )(function)
-    function = click.option(
-        "-l0a",
-        "--l0a_processing",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Perform L0A processing",
-    )(function)
-    function = click.argument("processed_dir", metavar="<processed_dir>")(function)
-    function = click.argument(
-        "raw_dir", type=click.Path(exists=True), metavar="<raw_dir>"
-    )(function)
 
-    return function
+def _delayed_based_on_kwargs(function):
+    """Decorator to make the function delayed if its `delayed` argument is True."""
+
+    @functools.wraps(function)
+    def wrapper(*args, **kwargs):
+        # Check if it must be a delayed function
+        delayed = kwargs.get("delayed")
+        # If delayed is True
+        if delayed:
+            # Define the delayed task
+            result = dask.delayed(function)(*args, **kwargs)
+        else:
+            # Else run the function
+            result = function(*args, **kwargs)
+        return result
+
+    return wrapper
+
+
+@_delayed_based_on_kwargs
+def _generate_l0a(
+    filepath,
+    processed_dir,
+    station_id,  # retrievable from filepath
+    column_names,
+    reader_kwargs,
+    df_sanitizer_fun,
+    sensor_name,
+    force,
+    verbose,
+    delayed,
+):
+    from disdrodb.L0.io import get_L0A_fpath
+    from disdrodb.L0.check_standards import check_L0A_standards
+    from disdrodb.L0.L0A_processing import (
+        process_raw_file,
+        write_df_to_parquet,
+    )
+
+    ##------------------------------------------------------------------------.
+    # Create file logger
+    filename = os.path.basename(filepath)
+    logger = create_file_logger(
+        processed_dir=processed_dir,
+        product_level="L0A",
+        station_id=station_id,
+        filename=filename,
+        parallel=delayed,
+    )
+    logger_fpath = logger.handlers[0].baseFilename
+
+    ##------------------------------------------------------------------------.
+    # Log start processing
+    msg = f"L0A processing of {filename} has started."
+    log_info(logger, msg, verbose=verbose)
+
+    ##------------------------------------------------------------------------.
+    try:
+        #### - Read raw file into a dataframe and sanitize to L0A format
+        df = process_raw_file(
+            filepath=filepath,
+            column_names=column_names,
+            reader_kwargs=reader_kwargs,
+            df_sanitizer_fun=df_sanitizer_fun,
+            sensor_name=sensor_name,
+            verbose=verbose,
+        )
+
+        ##--------------------------------------------------------------------.
+        #### - Write to Parquet
+        fpath = get_L0A_fpath(df=df, processed_dir=processed_dir, station_id=station_id)
+        write_df_to_parquet(df=df, fpath=fpath, force=force, verbose=verbose)
+
+        ##--------------------------------------------------------------------.
+        #### - Check L0 file respects the DISDRODB standards
+        check_L0A_standards(fpath=fpath, sensor_name=sensor_name, verbose=verbose)
+
+        ##--------------------------------------------------------------------.
+        # Clean environment
+        del df
+
+        # Log end processing
+        msg = f"L0A processing of {filename} has ended."
+        log_info(logger, msg, verbose=verbose)
+
+    # Otherwise log the error
+    except Exception as e:
+        error_type = str(type(e).__name__)
+        msg = f"{error_type}: {e}"
+        log_error(logger, msg, verbose=verbose)
+        pass
+
+    # Close the file logger
+    close_logger(logger)
+
+    # Return the logger file path
+    return logger_fpath
+
+
+@_delayed_based_on_kwargs
+def _generate_l0b(
+    filepath,
+    processed_dir,  # retrievable from filepath
+    station_id,  # retrievable from filepath
+    force,
+    verbose,
+    debugging_mode,
+    delayed,
+):
+    from disdrodb.utils.logger import create_file_logger
+    from disdrodb.L0.io import get_L0B_fpath, read_L0A_dataframe
+    from disdrodb.L0.L0B_processing import (
+        create_L0B_from_L0A,
+        write_L0B,
+    )
+
+    # Create file logger
+    filename = os.path.basename(filepath)
+    logger = create_file_logger(
+        processed_dir=processed_dir,
+        product_level="L0B",
+        station_id=station_id,
+        filename=filename,
+        parallel=delayed,
+    )
+    logger_fpath = logger.handlers[0].baseFilename
+
+    # Retrieve metadata
+    attrs = read_metadata(raw_dir=processed_dir, station_id=station_id)
+
+    # Retrieve sensor name
+    sensor_name = attrs["sensor_name"]
+    check_sensor_name(sensor_name)
+
+    ##------------------------------------------------------------------------.
+    # Log start processing
+    msg = f"L0B processing of {filename} has started."
+    log_info(logger, msg, verbose=verbose)
+    ##------------------------------------------------------------------------.
+    try:
+        # Read L0A Apache Parquet file
+        df = read_L0A_dataframe(
+            filepath, verbose=verbose, debugging_mode=debugging_mode
+        )
+        # -----------------------------------------------------------------.
+        # Create xarray Dataset
+        ds = create_L0B_from_L0A(df=df, attrs=attrs, verbose=verbose)
+
+        # -----------------------------------------------------------------.
+        # Write L0B netCDF4 dataset
+        fpath = get_L0B_fpath(ds, processed_dir, station_id)
+        write_L0B(ds, fpath=fpath)
+
+        ##--------------------------------------------------------------------.
+        # Clean environment
+        del ds, df
+
+        # Log end processing
+        msg = f"L0B processing of {filename} has ended."
+        log_info(logger, msg, verbose=verbose)
+
+    # Otherwise log the error
+    except Exception as e:
+        error_type = str(type(e).__name__)
+        msg = f"{error_type}: {e}"
+        log_error(logger, msg, verbose=verbose)
+        pass
+
+    # Close the file logger
+    close_logger(logger)
+
+    # Return the logger file path
+    return logger_fpath
+
+
+####------------------------------------------------------------------------.
+#### L0, L0A and L0B Routines
+
+
+def run_l0a(
+    raw_dir,
+    processed_dir,
+    station_id,
+    files_glob_pattern,
+    column_names,
+    reader_kwargs,
+    df_sanitizer_fun,
+    parallel,
+    verbose,
+    force,
+    debugging_mode,
+):
+    from disdrodb.L0.L0A_processing import get_file_list
+
+    # ---------------------------------------------------------------------.
+    # Retrieve metadata
+    attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+
+    # Retrieve sensor name
+    sensor_name = attrs["sensor_name"]
+    check_sensor_name(sensor_name)
+
+    # ---------------------------------------------------------------------.
+    # Start L0A processing
+    msg = " - L0A processing of station_id {} has started.".format(station_id)
+    if verbose:
+        print(msg)
+
+    # -----------------------------------------------------------------.
+    # List files to process
+    glob_pattern = os.path.join("data", station_id, files_glob_pattern)
+    filepaths = get_file_list(
+        raw_dir=raw_dir,
+        glob_pattern=glob_pattern,
+        verbose=verbose,
+        debugging_mode=debugging_mode,
+    )
+
+    # -----------------------------------------------------------------.
+    # If parallel=True, enforce verbose=False
+    if parallel and verbose:
+        verbose = False
+
+    # -----------------------------------------------------------------.
+    # Generate L0A files
+    # - Loop over the files and save the L0A Apache Parquet files.
+    # - If parallel=True, it does that in parallel using dask.delayed
+    list_tasks = []
+    for filepath in filepaths:
+        list_tasks.append(
+            _generate_l0a(
+                filepath=filepath,
+                processed_dir=processed_dir,
+                station_id=station_id,
+                column_names=column_names,
+                reader_kwargs=reader_kwargs,
+                df_sanitizer_fun=df_sanitizer_fun,
+                sensor_name=sensor_name,
+                force=force,
+                verbose=verbose,
+                delayed=parallel,
+            )
+        )
+    if parallel:
+        list_logs = dask.compute(*list_tasks)
+    else:
+        list_logs = list_tasks
+    # -----------------------------------------------------------------.
+    # Define L0A summary logs
+    define_summary_log(list_logs)
+    return None
+
+
+# -----------------------------------------------------------------.
+
+
+def run_l0b(
+    processed_dir,
+    station_id,
+    parallel,
+    force,
+    verbose,
+    debugging_mode,
+):
+    # -----------------------------------------------------------------.
+    # Start L0B processing
+    if verbose:
+        t_i = time.time()
+        msg = " - L0B processing of station_id {} has started.".format(station_id)
+        print(msg)
+
+    ##----------------------------------------------------------------.
+    # Get L0A station directory
+    L0A_dir_path = get_L0A_dir(processed_dir, station_id)
+    filepaths = glob.glob(os.path.join(L0A_dir_path, "*.parquet"))
+    n_files = len(filepaths)
+    if n_files == 0:
+        msg = f"No L0A Apache Parquet file is available in {L0A_dir_path}. Run L0A processing first."
+        raise ValueError(msg)
+
+    # -----------------------------------------------------------------.
+    # If parallel=True, enforce verbose=False
+    if parallel and verbose:
+        verbose = False
+
+    # -----------------------------------------------------------------.
+    # Generate L0B files
+    # - Loop over the L0A files and save the L0B netCDF files.
+    # - If parallel=True, it does that in parallel using dask.delayed
+    list_tasks = []
+    for filepath in filepaths:
+        list_tasks.append(
+            _generate_l0b(
+                filepath=filepath,
+                processed_dir=processed_dir,  # can be derived by filepath
+                station_id=station_id,  # can be derived by filepath
+                force=force,
+                verbose=verbose,
+                debugging_mode=debugging_mode,
+                delayed=parallel,
+            )
+        )
+    if parallel:
+        list_logs = dask.compute(*list_tasks)
+    else:
+        list_logs = list_tasks
+
+    # -----------------------------------------------------------------.
+    # Define L0B summary logs
+    define_summary_log(list_logs)
+
+    # -----------------------------------------------------------------.
+    # End L0B processing
+    if verbose:
+        t_f = time.time() - t_i
+        msg = " - L0B processing of station_id {} ended in {:.2f}s".format(
+            station_id, t_f
+        )
+    return None
 
 
 # -----------------------------------------------------------------------------.
@@ -138,17 +374,18 @@ def run_L0(
     reader_kwargs,
     files_glob_pattern,
     df_sanitizer_fun,
+    # Arguments designing the processing type
     raw_dir,
     processed_dir,
-    # Arguments designing the processing type
     l0a_processing=True,
     l0b_processing=True,
     keep_l0a=True,
+    single_netcdf=False,
+    parallel=False,
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    lazy=False,  # TODO: backcomp
 ):
     """Core function to process raw data files to L0A and L0B format.
 
@@ -161,7 +398,7 @@ def run_L0(
         DISDRODB standard. However, it's important that non-standard columns are
         dropped during the application of the `df_sanitizer_fun` function.
     reader_kwargs : dict
-        Dictionary of arguments to be passed to `pd.read_csv` or `dd.read_csv` to
+        Dictionary of arguments to be passed to `pd.read_csv` to
         tailor the reading of the raw file.
     files_glob_pattern: str
         It indicates the glob pattern to search for the raw data files within
@@ -220,11 +457,6 @@ def run_L0(
         - For L0A processing, it processes just 3 raw data files.
         - For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
         The default is False.
-    lazy : bool
-        Whether to perform processing lazily with dask.
-        If lazy=True, it employed dask.array and dask.dataframe.
-        If lazy=False, it employed pandas.DataFrame and numpy.array.
-        The default is True.
     single_netcdf : bool
         Whether to concatenate all raw files into a single L0B netCDF file.
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
@@ -238,215 +470,64 @@ def run_L0(
     # Initial directory checks
     raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
 
-    # Retrieve campaign name
-    campaign_name = get_campaign_name(raw_dir)
-
-    # -------------------------------------------------------------------------.
-    # Define logging settings
-    logger = create_l0_logger(processed_dir, campaign_name)
-
     # -------------------------------------------------------------------------.
     # Create directory structure
     create_directory_structure(raw_dir, processed_dir)
 
     # -------------------------------------------------------------------------.
-    #### Loop over station_id directory and process the files
+    # Loop over station_id directory and process the files
     list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
 
     # station_id = list_stations_id[0]
     for station_id in list_stations_id:
         # ---------------------------------------------------------------------.
-        logger.info(f" - Processing of station_id {station_id} has started")
-        # ---------------------------------------------------------------------.
-        # Retrieve metadata
-        attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
-        # Retrieve sensor name
-        sensor_name = attrs["sensor_name"]
-        check_sensor_name(sensor_name)
+        logger.info(f" - Processing of station_id {station_id} has started.")
 
-        # ---------------------------------------------------------------------.
-        ########################
-        #### L0A processing ####
-        ########################
+        # ------------------------------------------------------------------.
+        # L0A processing
         if l0a_processing:
-            # Start L0 processing
-            t_i_station = time.time()
-            msg = " - L0A processing of station_id {} has started.".format(station_id)
-            if verbose:
-                print(msg)
-            logger.info(msg)
-
-            # -----------------------------------------------------------------.
-            #### - List files to process
-            glob_pattern = os.path.join("data", station_id, files_glob_pattern)
-            file_list = get_file_list(
+            run_l0a(
                 raw_dir=raw_dir,
-                glob_pattern=glob_pattern,
+                processed_dir=processed_dir,
+                station_id=station_id,
+                files_glob_pattern=files_glob_pattern,
+                column_names=column_names,
+                reader_kwargs=reader_kwargs,
+                df_sanitizer_fun=df_sanitizer_fun,
+                parallel=parallel,
+                force=force,
                 verbose=verbose,
                 debugging_mode=debugging_mode,
             )
 
-            # -----------------------------------------------------------------.
-            #### - If single_netcdf = True, ensure loop over all files only once
-            if single_netcdf:
-                file_list = [file_list]
-
-            # -----------------------------------------------------------------.
-            #### - Loop over all files
-            # - It loops only once if single_netcdf=True
-            for filepath in file_list:
-                ##------------------------------------------------------.
-                # Define file suffix
-                if single_netcdf:
-                    file_suffix = ""
-                else:
-                    # Get file name without file extensions
-                    t_i_file = time.time()
-                    file_suffix = os.path.basename(filepath).split(".")[0]
-                    logger.info(
-                        f"L0A processing of raw file {file_suffix} has started."
-                    )
-
-                ##------------------------------------------------------.
-                #### - Read all raw data files into a dataframe
-                df = read_L0A_raw_file_list(
-                    file_list=filepath,
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                    df_sanitizer_fun=df_sanitizer_fun,
-                    lazy=lazy,
-                    sensor_name=sensor_name,
-                    verbose=verbose,
-                )
-
-                ##------------------------------------------------------.
-                #### - Write to Parquet
-                fpath = get_L0A_fpath(processed_dir, station_id, suffix=file_suffix)
-                write_df_to_parquet(df=df, fpath=fpath, force=force, verbose=verbose)
-
-                ##------------------------------------------------------.
-                #### - Check L0 file respects the DISDRODB standards
-                check_L0A_standards(
-                    fpath=fpath, sensor_name=sensor_name, verbose=verbose
-                )
-
-                ##------------------------------------------------------.
-                # Delete temp variables
-                del df
-
-                ##------------------------------------------------------.
-                if not single_netcdf:
-                    # End L0 processing for a single raw file
-                    t_f = time.time() - t_i_file
-                    msg = " - L0A processing of {} ended in {:.2f}s".format(
-                        file_suffix, t_f
-                    )
-                    log_info(logger, msg, verbose)
-
-            ##------------------------------------------------------.
-            # End L0 processing for the station
-            t_f = time.time() - t_i_station
-            msg = " - L0A processing of station_id {} ended in {:.2f}s".format(
-                station_id, t_f
-            )
-            log_info(logger, msg, verbose)
-
         # ------------------------------------------------------------------.
-        ########################
-        #### L0B processing ####
-        ########################
+        # L0B processing
         if l0b_processing:
-            # Start L1 processing
-            t_i = time.time()
-            msg = " - L0B processing of station_id {} has started.".format(station_id)
-            if verbose:
-                print(msg)
-            logger.info(msg)
-            ##----------------------------------------------------------------.
-            # Get station L0A directory
-            L0A_dir_path = get_L0A_dir(processed_dir, station_id)
-            file_list = glob.glob(os.path.join(L0A_dir_path, "*.parquet"))
-            n_files = len(file_list)
-            if n_files == 0:
-                msg = f"No L0A Apache Parquet file is available in {L0A_dir_path}. Run L0A processing first."
-                logger.error(msg)
-                raise ValueError(msg)
-
-            ##----------------------------------------------------------------.
-            # Checks for single_netcdf=True
-            if single_netcdf:
-                # Enclose into a list to loop over only once
-                file_list = [file_list]
-                if n_files != 1:
-                    msg = "If single_netcdf=True, DISDRODB would typically expect only a single L0A Apache Parquet file in {L0A_dir_path}."
-                    log_warning(logger, msg, verbose)
-
-            ##----------------------------------------------------------------.
-            # Loop over all files
-            for filepath in file_list:
-                ##------------------------------------------------------.
-                # Define file suffix
-                if single_netcdf:
-                    file_suffix = ""
-                else:
-                    # Get file name without file extensions
-                    t_i_file = time.time()
-                    file_suffix = os.path.basename(filepath).split(".")[0]
-                    logger.info(
-                        f"L0A processing of raw file {file_suffix} has started."
-                    )
-                ##------------------------------------------------------.
-                # Read L0A dataframes
-                df = read_L0A_dataframe(
-                    filepath, lazy=lazy, verbose=verbose, debugging_mode=debugging_mode
-                )
-
-                # -----------------------------------------------------------------.
-                #### - Create xarray Dataset
-                ds = create_L0B_from_L0A(df=df, attrs=attrs, lazy=lazy, verbose=verbose)
-
-                # -----------------------------------------------------------------.
-                #### - Write L0B netCDF4 dataset
-                fpath = get_L0B_fpath(ds, processed_dir, station_id)
-                write_L0B(ds, fpath=fpath, sensor_name=sensor_name)
-
-                # -----------------------------------------------------------------.
-                if not single_netcdf:
-                    # End L0B processing for a single L0A file
-                    t_f = time.time() - t_i_file
-                    msg = " - L0B processing of {} ended in {:.2f}s".format(
-                        file_suffix, t_f
-                    )
-                    log_info(logger, msg, verbose)
-
-            # -----------------------------------------------------------------.
-            #### - Compute L0B summary statics (if single_netcdf=True)
-            if single_netcdf:
-                create_summary_statistics(
-                    ds,
-                    processed_dir=processed_dir,
-                    station_id=station_id,
-                    sensor_name=sensor_name,
-                )
-
-            # -----------------------------------------------------------------.
-            # End L0B processing
-            t_f = time.time() - t_i
-            msg = " - L0B processing of station_id {} ended in {:.2f}s".format(
-                station_id, t_f
+            run_l0b(
+                processed_dir=processed_dir,
+                station_id=station_id,
+                parallel=parallel,
+                force=force,
+                verbose=verbose,
+                debugging_mode=debugging_mode,
             )
-            log_info(logger, msg, verbose)
 
-            # -----------------------------------------------------------------.
-        # ---------------------------------------------------------------------.
-    # Remove L0A directory if keep_L0A = False
+    # ------------------------------------------------------------------------.
+    # Remove L0A directory if keep_l0a = False
     if not keep_l0a:
         shutil.rmtree(os.path.join(processed_dir, "L0A"))
 
+    # ------------------------------------------------------------------------.
+    # If single_netcdf=True, concat the netCDF in a single file and compute summary statistics
+    if single_netcdf:
+        create_L0B_archive(
+            processed_dir=processed_dir, station_id=station_id, remove=False
+        )
+
     # -------------------------------------------------------------------------.
-    # End of L0B processing for all stations
+    # End of L0 processing for all stations
     t_f = time.time() - t_i_script
-    msg = " - L0 processing of stations {} ended in {:.2f} minutes".format(
+    msg = " - L0 processing of stations {} ended in {:.2f} minutes.".format(
         list_stations_id, t_f / 60
     )
 
@@ -456,6 +537,9 @@ def run_L0(
     msg = "### Script finish ###"
     log_info(logger, msg, verbose)
     close_logger(logger)
+
+
+####--------------------------------------------------------------------------.
 
 
 def get_available_readers() -> dict:
@@ -499,7 +583,8 @@ def get_available_readers() -> dict:
 
 def check_data_source(data_source: str) -> str:
     """Check if the provided data source exists within the available readers.
-    Please run get_available_readers() to get the list of all available reader
+
+    Please run get_available_readers() to get the list of all available reader.
 
     Parameters
     ----------
@@ -527,9 +612,7 @@ def check_data_source(data_source: str) -> str:
     if correct_data_source_list:
         correct_data_source = correct_data_source_list[0]
     else:
-        msg = (
-            f"Data source {data_source} has not been found within the available readers"
-        )
+        msg = f"Data source {data_source} has not been found within the available readers."
         logger.exception(msg)
         raise ValueError(msg)
 
@@ -537,7 +620,7 @@ def check_data_source(data_source: str) -> str:
 
 
 def get_available_readers_by_data_source(data_source: str) -> dict:
-    """Return the available readers by data source
+    """Return the available readers by data source.
 
     Parameters
     ----------
@@ -561,7 +644,8 @@ def get_available_readers_by_data_source(data_source: str) -> dict:
 
 def check_reader_name(data_source: str, reader_name: str) -> str:
     """Check if the provided data source exists and reader names exists within the available readers.
-    Please run get_available_readers() to get the list of all available reader
+
+    Please run get_available_readers() to get the list of all available reader.
 
     Parameters
     ----------
@@ -606,7 +690,7 @@ def check_reader_name(data_source: str, reader_name: str) -> str:
 
 
 def get_reader(data_source: str, reader_name: str) -> object:
-    """Returns the reader function based on input parameters
+    """Returns the reader function based on input parameters.
 
     Parameters
     ----------
@@ -633,6 +717,9 @@ def get_reader(data_source: str, reader_name: str) -> object:
         my_reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
 
     return my_reader
+
+
+####--------------------------------------------------------------------------.
 
 
 def run_reader(
@@ -727,13 +814,16 @@ def run_reader(
     )
 
 
+####--------------------------------------------------------------------------.
+
+
 def is_documented_by(original):
-    """Wrapper function to apply generic docstring to the decorated function
+    """Wrapper function to apply generic docstring to the decorated function.
 
     Parameters
     ----------
     original : function
-        funtion to take the docstring from
+        Function to take the docstring from.
     """
 
     def wrapper(target):
@@ -798,5 +888,79 @@ def reader_generic_docstring():
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
-
     """
+
+
+def click_l0_readers_options(function: object):
+    """Define click command line parameters.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.option(
+        "-s",
+        "--single_netcdf",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Produce single netCDF",
+    )(function)
+    function = click.option(
+        "-l",
+        "--lazy",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Use dask if lazy=True",
+    )(function)
+    function = click.option(
+        "-d",
+        "--debugging_mode",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="Switch to debugging mode",
+    )(function)
+    function = click.option(
+        "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
+    )(function)
+    function = click.option(
+        "-f",
+        "--force",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="Force overwriting",
+    )(function)
+    function = click.option(
+        "-k",
+        "--keep_l0a",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Whether to keep the L0A Parquet file",
+    )(function)
+    function = click.option(
+        "-l0b",
+        "--l0b_processing",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Perform L0B processing",
+    )(function)
+    function = click.option(
+        "-l0a",
+        "--l0a_processing",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Perform L0A processing",
+    )(function)
+    function = click.argument("processed_dir", metavar="<processed_dir>")(function)
+    function = click.argument(
+        "raw_dir", type=click.Path(exists=True), metavar="<raw_dir>"
+    )(function)
+
+    return function

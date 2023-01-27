@@ -163,11 +163,28 @@ def get_dataset_min_max_time(ds: xr.Dataset):
     return (starting_time, ending_time)
 
 
-# TODO: get_dataframe_min_max_time
+def get_dataframe_min_max_time(df: pd.DataFrame):
+    """Retrieves dataframe starting and ending time.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+
+    Returns
+    -------
+    tuple
+        (starting_time, ending_time)
+
+    """
+
+    starting_time = df["time"].iloc[0]
+    ending_time = df["time"].iloc[-1]
+    return (starting_time, ending_time)
 
 
 def get_L0A_dir(processed_dir: str, station_id: str) -> str:
-    """Get L0A directory
+    """Define L0A directory.
 
     Parameters
     ----------
@@ -185,89 +202,8 @@ def get_L0A_dir(processed_dir: str, station_id: str) -> str:
     return dir_path
 
 
-def get_L0A_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
-    """build L0A file name.
-
-    Parameters
-    ----------
-    campaign_name : str
-        Name of the campaign.
-    station_id : int
-        ID of the station
-    suffix : int, optional
-        suffix, by default ""
-
-    Returns
-    -------
-    str
-        L0A file name.
-    """
-    if suffix != "":
-        suffix = "_" + suffix
-    fname = campaign_name + "_s" + station_id + suffix + ".parquet"
-    return fname
-
-
-# TODO: and refactor L0_processing --> remove suffix
-#
-# def get_L0A_fname(df, processed_dir, station_id: str) -> str:
-#     """Define L0A file name.
-
-#     Parameters
-#     ----------
-#     ds : pd.DataFrame
-#         L0A DataFrame
-#     processed_dir : str
-#         Path of the processed directory
-#     station_id : int
-#         ID of the station
-
-#     Returns
-#     -------
-#     str
-#         L0B file name.
-#     """
-#     starting_time, ending_time = get_dataframe_min_max_time(ds)
-#     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-#     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-#     # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-#     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
-#     institute_name = get_data_source(processed_dir).replace(".", "-")
-#     metadata_dict = read_metadata(processed_dir, station_id)
-#     sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
-#     version = importlib.metadata.version("disdrodb").replace(".", "-")
-#     if version == "-VERSION-PLACEHOLDER-":
-#         version = "dev"
-#     fname = f"DISDRODB.L0A.Raw.{institute_name}.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.{version}.parquet"
-#     return fname
-
-
-def get_L0A_fpath(processed_dir: str, station_id: str, suffix: str = "") -> str:
-    """build L0A file path.
-
-    Parameters
-    ----------
-    campaign_name : str
-        Name of the campaign.
-    station_id : int
-        ID of the station
-    suffix : int, optional
-        suffix, by default ""
-
-    Returns
-    -------
-    str
-        L0A file path.
-    """
-    campaign_name = get_campaign_name(processed_dir)
-    fname = get_L0A_fname(campaign_name, station_id, suffix=suffix)
-    dir_path = get_L0A_dir(processed_dir, station_id)
-    fpath = os.path.join(dir_path, fname)
-    return fpath
-
-
 def get_L0B_dir(processed_dir: str, station_id: str) -> str:
-    """Build L0B directory
+    """Define L0B directory.
 
     Parameters
     ----------
@@ -283,6 +219,36 @@ def get_L0B_dir(processed_dir: str, station_id: str) -> str:
     """
     dir_path = os.path.join(processed_dir, "L0B", station_id)
     return dir_path
+
+
+def get_L0A_fname(df, processed_dir, station_id: str) -> str:
+    """Define L0A file name.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        L0A DataFrame
+    processed_dir : str
+        Path of the processed directory
+    station_id : int
+        ID of the station
+
+    Returns
+    -------
+    str
+        L0A file name.
+    """
+    starting_time, ending_time = get_dataframe_min_max_time(df)
+    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    campaign_name = get_campaign_name(processed_dir).replace(".", "-")
+    # metadata_dict = read_metadata(processed_dir, station_id)
+    # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
+    version = importlib.metadata.version("disdrodb").replace(".", "-")
+    if version == "-VERSION-PLACEHOLDER-":
+        version = "dev"
+    fname = f"DISDRODB.L0A.{campaign_name}.{station_id}.s{starting_time}.e{ending_time}.{version}.parquet"
+    return fname
 
 
 def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
@@ -305,21 +271,42 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
     starting_time, ending_time = get_dataset_min_max_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-    # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    # institute_name = get_data_source(processed_dir).replace(".", "-") # TODO: data_source
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
-    metadata_dict = read_metadata(processed_dir, station_id)
-    sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
-
+    # metadata_dict = read_metadata(processed_dir, station_id)
+    # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = importlib.metadata.version("disdrodb").replace(".", "-")
-
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
-    fname = f"DISDRODB.L0B.Raw.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    fname = f"DISDRODB.L0B.{campaign_name}.{station_id}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname
 
 
-def get_L0B_fpath(ds, processed_dir: str, station_id: str) -> str:
+def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_id: str) -> str:
+    """Define L0A file path.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        L0A DataFrame
+    processed_dir : str
+        Path of the processed directory
+    station_id : int
+        ID of the station
+
+    Returns
+    -------
+    str
+        L0A file path.
+    """
+    fname = get_L0A_fname(df=df, processed_dir=processed_dir, station_id=station_id)
+    dir_path = get_L0A_dir(processed_dir=processed_dir, station_id=station_id)
+    fpath = os.path.join(dir_path, fname)
+    return fpath
+
+
+def get_L0B_fpath(
+    ds: xr.Dataset, processed_dir: str, station_id: str, single_netcdf=False
+) -> str:
     """Define L0B file path.
 
     Parameters
@@ -330,6 +317,9 @@ def get_L0B_fpath(ds, processed_dir: str, station_id: str) -> str:
         Path of the processed directory
     station_id : int
         ID of the station
+    single_netcdf : bool
+        If False, the file is specified inside the station directory.
+        If True, the file is specified outside the station directory.
 
     Returns
     -------
@@ -337,6 +327,8 @@ def get_L0B_fpath(ds, processed_dir: str, station_id: str) -> str:
         L0B file path.
     """
     dir_path = get_L0B_dir(processed_dir, station_id)
+    if single_netcdf:
+        dir_path = os.path.dirname(dir_path)
     fname = get_L0B_fname(ds, processed_dir, station_id)
     fpath = os.path.join(dir_path, fname)
     return fpath
@@ -895,16 +887,15 @@ def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers
 def _read_L0A(
-    fpath: str, lazy: bool = True, verbose: bool = False
-) -> Union[pd.DataFrame, dd.DataFrame]:
+    fpath: str, verbose: bool = False, debugging_mode: bool = False
+) -> pd.DataFrame:
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} started."
     log_info(logger, msg, verbose)
-    # Read
-    if lazy:
-        df = dd.read_parquet(fpath)
-    else:
-        df = pd.read_parquet(fpath)
+    # Open file
+    df = pd.read_parquet(fpath)
+    if debugging_mode:
+        df = df.iloc[0:100]
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} ended."
     log_info(logger, msg, verbose)
@@ -913,10 +904,10 @@ def _read_L0A(
 
 def read_L0A_dataframe(
     fpaths: Union[str, list],
-    lazy: bool = True,
+    lazy: bool = False,
     verbose: bool = False,
     debugging_mode: bool = False,
-) -> Union[pd.DataFrame, dd.DataFrame]:
+) -> pd.DataFrame:
     """Read DISDRODB L0A Apache Parquet file(s).
 
     Parameters
@@ -929,6 +920,7 @@ def read_L0A_dataframe(
     debugging_mode : bool
         If True, it reduces the amount of data to process.
         If fpaths is a list, it reads only the first 3 files
+        For each file it select only the first 100 rows.
         The default is False.
     lazy : bool
         Whether to read the dataframe lazily with dask.
@@ -938,13 +930,9 @@ def read_L0A_dataframe(
 
     Returns
     -------
-    Union[pd.DataFrame,dd.DataFrame]
-        Dataframe
+    pd.DataFrame
+        L0A Dataframe.
 
-    Raises
-    ------
-    TypeError
-        Error if the reading fails
     """
 
     from disdrodb.L0.L0A_processing import concatenate_dataframe
@@ -956,104 +944,23 @@ def read_L0A_dataframe(
     # TODO:
     # - CHECK ENDS WITH .parquet
     # ----------------------------------------
-    # If list of length 1, convert to string
-    if isinstance(fpaths, list) and len(fpaths) == 1:
-        fpaths = fpaths[0]
+    # If fpath is a string, convert to list
+    if isinstance(fpaths, str):
+        fpaths = [fpaths]
     # ---------------------------------------------------
-    # If more than 1 fpath, read and concantenate first
-    if isinstance(fpaths, list):
-        if debugging_mode:
-            fpaths = fpaths[0:3]  # select first 3 fpaths
-        list_df = [_read_L0A(fpath, lazy=lazy, verbose=verbose) for fpath in fpaths]
-        df = concatenate_dataframe(list_df, verbose=verbose, lazy=lazy)
-    # Else read the single file
-    else:
-        df = _read_L0A(fpaths, lazy=lazy, verbose=verbose)
+    # - If debugging_mode=True, it reads only the first 3 fpaths
+    if debugging_mode:
+        fpaths = fpaths[0:3]  # select first 3 fpaths
+    # - Define the list of dataframe
+    list_df = [
+        _read_L0A(fpath, verbose=verbose, debugging_mode=debugging_mode)
+        for fpath in fpaths
+    ]
+    # - Concatenate dataframe
+    df = concatenate_dataframe(list_df, verbose=verbose)
     # ---------------------------------------------------
     # Return dataframe
     return df
 
 
 ####---------------------------------------------------------------------------.
-
-
-def check_L0_is_available(
-    processed_dir: str, station_id: str, suffix: str = ""
-) -> None:
-    """Check if the Apache parquet file has been found
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    station_id : int
-        Id of the station.
-    suffix : str, optional
-        Suffix, by default ""
-
-    Raises
-    ------
-    ValueError
-        Check if the Apache parquet file has not been found
-    """
-    fpath = get_L0A_fpath(processed_dir, station_id, suffix=suffix)
-    if not os.path.exists(fpath):
-        msg = f"Need to run L0 processing first. The Apache Parquet file {fpath} is not available."
-        logger.exception(msg)
-        raise ValueError(msg)
-    # Log
-    msg = f"Found parquet file: {fpath}"
-    logger.info(msg)
-
-
-def read_L0_data(
-    processed_dir: str,
-    station_id: str,
-    suffix: str = "",
-    lazy: bool = True,
-    verbose: bool = False,
-    debugging_mode: bool = False,
-) -> Union[pd.DataFrame, dd.DataFrame]:
-    """Read L0 Apache Parquet into dataframe.
-
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    station_id : int
-        Id of the station.
-    suffix : str, optional
-        Suffix, by default ""
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used
-        by default True
-    verbose : bool, optional
-        Wheter to verbose the processing.
-        The default is False.
-    debugging_mode : bool, optional
-        If True, return just a subset of total rows, by default False
-
-    Returns
-    -------
-    Union[pd.DataFrame,dd.DataFrame]
-        Dataframe
-    """
-
-    # Check L0 is available
-    check_L0_is_available(processed_dir, station_id, suffix=suffix)
-    # Define fpath
-    fpath = get_L0A_fpath(processed_dir, station_id, suffix=suffix)
-    # Read L0A Apache Parquet file
-    df = _read_L0A(fpath, lazy=lazy, verbose=verbose)
-    # Subset dataframe if debugging_mode = True
-    if debugging_mode:
-        if not lazy:
-            df = df.iloc[0:100, :]
-        else:
-            NotImplementedError
-    return df
-
-
-####--------------------------------------------------------------------------.

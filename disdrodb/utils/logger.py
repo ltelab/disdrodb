@@ -22,6 +22,7 @@ from asyncio.log import logger
 import os
 import time
 import logging
+import re
 
 
 def create_l0_logger(
@@ -49,22 +50,26 @@ def create_l0_logger(
     # Create logs directory
     logs_dir = os.path.join(processed_dir, "logs")
     os.makedirs(logs_dir, exist_ok=True)
+
     # Create logger
     _create_logger(logs_dir, logger_name)
-    # Retrieve logger
     logger = logging.getLogger(campaign_name)
+
+    # logger = _create_logger(logs_dir, logger_name)
+    # -------------------------------------------------.
     # Update logger
     msg = "### Script started ###"
     if verbose:
         print("\n  " + msg + "\n")
     logger.info(msg)
+    # -------------------------------------------------.
     # Return logger
     return logger
 
 
 def _create_logger(log_dir, logger_name):
     # Define log file filepath
-    logger_fname = f'{time.strftime("%d-%m-%Y_%H-%M-%S")}_{logger_name}.log'
+    logger_fname = f'{logger_name}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
     logger_fpath = os.path.join(log_dir, logger_fname)
     # -------------------------------------------------------------------------.
     # Define logger format
@@ -75,6 +80,10 @@ def _create_logger(log_dir, logger_name):
 
     # Define logging
     logging.basicConfig(format=format_type, level=level, filename=logger_fpath)
+
+    # Retrieve logger
+    # logger = logging.getLogger(logger_fpath)
+    # return logger
     return None
 
 
@@ -88,12 +97,67 @@ def close_logger(logger: logger) -> None:
     """
     handlers = logger.handlers[:]
     for handler in handlers:
+        handler.flush()
         handler.close()
         logger.removeHandler(handler)
     return
 
 
-# ----------------------------
+def create_file_logger(processed_dir, product_level, station_id, filename, parallel):
+    ##------------------------------------------------------------------------.
+    # Create logs directory
+    logs_dir = os.path.join(processed_dir, "logs", product_level, station_id)
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # logger_fname = f'logs_{fname}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
+    logger_fname = f"logs_{filename}.log"
+    logger_fpath = os.path.join(logs_dir, logger_fname)
+
+    # -------------------------------------------------------------------------.
+    # Set logger (TODO: messy with multiprocess)
+    if parallel:
+        logger = logging.getLogger(filename)  # does not log submodules logs
+    else:
+        logger = logging.getLogger()  # root logger (messy with multiprocess)
+
+    handler = logging.FileHandler(logger_fpath, mode="w")
+    handler.setLevel(logging.DEBUG)
+    format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    handler.setFormatter(logging.Formatter(format_type))
+    logger.addHandler(handler)
+    return logger
+
+
+####---------------------------------------------------------------------------.
+
+
+def define_summary_log(list_logs):
+    """Define station summary log file from list of file logs.
+
+    It select only logged lines with root, WARNING and ERROR keywords.
+    It write the summary log in the parent directory.
+    """
+    logs_dir = os.path.dirname(list_logs[0])
+    station_id = logs_dir.split(os.path.sep)[-1]
+    summary_log_dir = os.path.dirname(logs_dir)
+    # Define summary logs file name
+    summary_fpath = os.path.join(summary_log_dir, f"logs_summary_{station_id}.logs")
+    # Define logs keywords to select lines to copy into the summary log file
+    list_keywords = ["root", "WARNING", "ERROR"]  # "DEBUG"
+    re_keyword = re.compile("|".join(list_keywords))
+    # Filter and concat all logs files
+    with open(summary_fpath, "w") as output_file:
+        for log_fpath in list_logs:
+            with open(log_fpath) as input_file:
+                for line in input_file:
+                    if re_keyword.search(line):
+                        # Write line to output file
+                        output_file.write(line)
+
+
+####---------------------------------------------------------------------------.
+
+
 def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
     """Include debug entry into log.
 
@@ -144,5 +208,23 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
         The default is False.
     """
     logger.warning(msg)
+    if verbose:
+        print(" - " + msg)
+
+
+def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
+    """Include error entry into log.
+
+    Parameters
+    ----------
+    logger : logger
+        Log object.
+    msg : str
+        Message.
+    verbose : bool, optional
+        Whether to verbose the processing.
+        The default is False.
+    """
+    logger.error(msg)
     if verbose:
         print(" - " + msg)

@@ -2,8 +2,8 @@ import inspect
 from disdrodb.L0 import L0_processing
 
 
-def test_click_L0_readers_options():
-    # function_return = L0_processing.click_L0_readers_options()
+def test_click_l0_readers_options():
+    # function_return = L0_processing.click_l0_readers_options()
     assert 1 == 1
 
 

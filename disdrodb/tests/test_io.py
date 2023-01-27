@@ -1,7 +1,9 @@
 import os
 import datetime
 import pytest
+import numpy as np
 import pandas as pd
+import xarray as xr
 from disdrodb.L0 import io
 import importlib.metadata
 
@@ -86,36 +88,9 @@ def test_get_L0B_dir(path_process_dir):
     assert res == "L0Bstation_id"
 
 
-def test_get_L0A_fname():
-    campaign_name = "<campaign_name>"
-    station_id = "<station_id>"
-    suffix = "<suffix>"
-    fname = f"{campaign_name}_s{station_id}_{suffix}.parquet"
-    assert io.get_L0A_fname(campaign_name, station_id, suffix) == fname
-
-
-PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed\\institute_name\\campaign_name"
-PATH_PROCESS_DIR_LINUX = "DISDRODB/Processed/institute_name/campaign_name"
-
-
-@pytest.mark.parametrize(
-    "path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX]
-)
-def test_get_L0A_fpath(path_process_dir):
-    res = (
-        io.get_L0A_fpath(path_process_dir, "station_id", "suffix")
-        .replace("\\", "")
-        .replace("/", "")
-    )
-
-    path_without_delimiters = path_process_dir.replace("\\", "").replace("/", "")
-    res = res.replace(path_without_delimiters, "")
-    assert res == "L0Astation_idCAMPAIGN_NAME_sstation_id_suffix.parquet"
-
-
-def test_get_L0B_fpath():
+def test_get_L0A_fpath():
     """
-    Test the naming and the path of the L0B file
+    Test the naming and the path of the L0A file
     Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/institute_name/campaign_name/metadata/STATIONID.yml"
     """
 
@@ -123,7 +98,6 @@ def test_get_L0B_fpath():
     institute_name = "INSTITUTE_NAME"
     campaign_name = "CAMPAIGN_NAME"
     station_id = "STATIONID"
-    sensor_name = "sensor-name"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
     start_date_str = start_date.strftime("%Y%m%d%H%M%S")
@@ -139,19 +113,67 @@ def test_get_L0B_fpath():
         campaign_name,
     )
 
-    # Set dataframe
+    # Create dataframe
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
-    # set version (based on the version included into the setup.py to create the pypi package)
+    # Set version (based on the version included into the setup.py to create the pypi package)
     version = importlib.metadata.version("disdrodb").replace(".", "-")
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
 
-    # test the function
-    res = io.get_L0B_fpath(df, path_campaign_name, station_id)
+    # Test the function
+    res = io.get_L0A_fpath(df, path_campaign_name, station_id)
 
-    # define expected results
-    expected_name = f"DISDRODB.L0B.Raw.{campaign_name.upper()}.{station_id}.{sensor_name}.s{start_date_str}.e{end_date_str}.{version}.nc"
+    # Define expected results
+    expected_name = f"DISDRODB.L0A.{campaign_name.upper()}.{station_id}.s{start_date_str}.e{end_date_str}.{version}.parquet"
+    expected_path = os.path.join(path_campaign_name, "L0A", station_id, expected_name)
+    assert res == expected_path
+
+
+def test_get_L0B_fpath():
+    """
+    Test the naming and the path of the L0B file
+    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/institute_name/campaign_name/metadata/STATIONID.yml"
+    """
+
+    # Set variables
+    institute_name = "INSTITUTE_NAME"
+    campaign_name = "CAMPAIGN_NAME"
+    station_id = "STATIONID"
+    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
+    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
+    start_date_str = start_date.strftime("%Y%m%d%H%M%S")
+    end_date_str = end_date.strftime("%Y%m%d%H%M%S")
+
+    # Set paths
+    path_campaign_name = os.path.join(
+        PATH_TEST_FOLDERS_FILES,
+        "test_folders_files_structure",
+        "DISDRODB",
+        "Processed",
+        institute_name,
+        campaign_name,
+    )
+
+    # Create xarray object
+    timesteps = pd.date_range(start=start_date, end=end_date)
+    data = np.zeros(timesteps.shape)
+    ds = xr.DataArray(
+        data=data,
+        dims=["time"],
+        coords={"time": pd.date_range(start=start_date, end=end_date)},
+    )
+
+    # Set version (based on the version included into the setup.py to create the pypi package)
+    version = importlib.metadata.version("disdrodb").replace(".", "-")
+    if version == "-VERSION-PLACEHOLDER-":
+        version = "dev"
+
+    # Test the function
+    res = io.get_L0B_fpath(ds, path_campaign_name, station_id)
+
+    # Define expected results
+    expected_name = f"DISDRODB.L0B.{campaign_name.upper()}.{station_id}.s{start_date_str}.e{end_date_str}.{version}.nc"
     expected_path = os.path.join(path_campaign_name, "L0B", station_id, expected_name)
     assert res == expected_path
 
@@ -423,26 +445,3 @@ def test_read_L0A_dataframe():
     comparaison = df_written_list == df_concatenate_list
 
     assert comparaison
-
-
-def test_check_L0_is_available():
-    """
-    Test if CAMPAIGN_NAME_sSTATIONID_SUFFIX.parquet exists in the test_folders_files_structure folder
-    """
-
-    campaign_name = "CAMPAIGN_NAME"
-    institute_name = "INSTITUTE_NAME"
-    station_id = "STATIONID"
-    suffix = "SUFFIX"
-    path_process = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_structure",
-        "DISDRODB",
-        "Processed",
-        institute_name,
-        campaign_name,
-    )
-
-    resultat = io.check_L0_is_available(path_process, station_id, suffix)
-
-    assert resultat is None
