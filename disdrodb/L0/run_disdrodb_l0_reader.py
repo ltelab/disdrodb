@@ -4,7 +4,7 @@
 ## Author: Régis Longchamp
 ##################################################
 import click
-import os 
+import os
 import dask
 from disdrodb.L0 import click_l0_readers_options
 from dask.distributed import Client, LocalCluster
@@ -59,12 +59,12 @@ def run_reader_cmd(**kwargs):
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
-    parallel : bool 
+    parallel : bool
         If True, the files are processed simultanously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
-        By default, the number of process is defined with os.cpu_count(). 
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_reader 
-        If False, the files are processed sequentially in a single process. 
+        By default, the number of process is defined with os.cpu_count().
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_reader
+        If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
@@ -76,32 +76,31 @@ def run_reader_cmd(**kwargs):
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
-    """ 
+    """
     from disdrodb.L0.L0_processing import run_reader
-    
-    # If parallel=True, set dask environment 
+
+    # If parallel=True, set dask environment
     parallel = kwargs.get("parallel")
-    if parallel: 
-        # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF 
-        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE" 
-        # Retrieve the number of process to run 
+    if parallel:
+        # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
+        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+        # Retrieve the number of process to run
         available_workers = os.cpu_count()
-        num_workers = dask.config.get('num_workers', available_workers)
+        num_workers = dask.config.get("num_workers", available_workers)
         # Create dask.distributed local cluster
-        cluster = LocalCluster(n_workers = num_workers,           
-                               threads_per_worker=1,  
-                               processes=True, 
-                               # memory_limit='8GB',
-                               # silence_logs=False,
-                               )
+        cluster = LocalCluster(
+            n_workers=num_workers,
+            threads_per_worker=1,
+            processes=True,
+            # memory_limit='8GB',
+            # silence_logs=False,
+        )
         client = Client(cluster)
-        
-    # Run the processing 
+
+    # Run the processing
     run_reader(**kwargs)
-    
+
 
 if __name__ == "__main__":
-    
+
     run_reader_cmd()
-    
-    

@@ -13,12 +13,14 @@ import click
 import logging
 import functools
 import datetime
-import numpy as np 
+import numpy as np
+
 # Directory
 from disdrodb.L0.io import (
     check_directories,
     create_directory_structure,
 )
+
 # Metadata
 from disdrodb.L0.metadata import read_metadata
 
@@ -101,7 +103,7 @@ def _generate_l0a(
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"L0A processing of {filename} has started."
-    log_info(logger, msg, verbose=verbose)
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
@@ -138,13 +140,13 @@ def _generate_l0a(
 
         # Log end processing
         msg = f"L0A processing of {filename} has ended."
-        log_info(logger, msg, verbose=verbose)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Otherwise log the error
     except Exception as e:
         error_type = str(type(e).__name__)
         msg = f"{error_type}: {e}"
-        log_error(logger, msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=verbose)
         pass
 
     # Close the file logger
@@ -267,22 +269,22 @@ def get_list_stations_to_process(raw_dir, station_ids):
 
     """
     # Check station_ids type
-    if not isinstance(station_ids, (str, list, type(None))): 
+    if not isinstance(station_ids, (str, list, type(None))):
         raise TypeError("`station_ids` must be None, str or list of strings.")
     # Select available stations in raw_dir
     data_dir = os.path.join(raw_dir, "data")
     list_stations_id = sorted(os.listdir(data_dir))
     # Check if there are stations
-    if len(list_stations_id) == 0: 
+    if len(list_stations_id) == 0:
         raise ValueError(f"No station directories inside {data_dir}")
     ####-----------------------------------------.
     # Case 1: station_ids=None
     if station_ids is None:
         return list_stations_id
-    
+
     ####-----------------------------------------.
-    # Case 2: list of selected stations provided 
-    if isinstance(station_ids, str): 
+    # Case 2: list of selected stations provided
+    if isinstance(station_ids, str):
         station_ids = [station_ids]
     # - Check stations_id type
     is_not_string = [not isinstance(station_id, str) for station_id in station_ids]
@@ -292,10 +294,12 @@ def get_list_stations_to_process(raw_dir, station_ids):
     idx_not_valid = np.isin(station_ids, list_stations_id, invert=True)
     if np.any(idx_not_valid):
         unvalid_station_ids = np.array(station_ids)[idx_not_valid].tolist()
-        raise ValueError(f"Valid station_ids are {list_stations_id}. {unvalid_station_ids} are not.")
-    # - Return station_ids subset 
+        raise ValueError(
+            f"Valid station_ids are {list_stations_id}. {unvalid_station_ids} are not."
+        )
+    # - Return station_ids subset
     return station_ids
- 
+
 
 def run_l0a(
     raw_dir,
@@ -353,12 +357,14 @@ def run_l0a(
     # -----------------------------------------------------------------.
     # Define L0A summary logs
     define_summary_log(list_logs)
-    
+
     # ---------------------------------------------------------------------.
     # End L0A processing
     if verbose:
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
-        msg = f" - L0A processing of station_id {station_id} completed in {timedelta_str}"
+        msg = (
+            f" - L0A processing of station_id {station_id} completed in {timedelta_str}"
+        )
         log_info(logger=logger, msg=msg, verbose=verbose)
     return None
 
@@ -419,7 +425,9 @@ def run_l0b(
     # End L0B processing
     if verbose:
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
-        msg = f" - L0B processing of station_id {station_id} completed in {timedelta_str}"
+        msg = (
+            f" - L0B processing of station_id {station_id} completed in {timedelta_str}"
+        )
         log_info(logger=logger, msg=msg, verbose=verbose)
     return None
 
@@ -434,7 +442,7 @@ def run_L0(
     # Arguments designing the processing type
     raw_dir,
     processed_dir,
-    station_ids=None, 
+    station_ids=None,
     l0a_processing=True,
     l0b_processing=True,
     keep_l0a=True,
@@ -512,12 +520,12 @@ def run_L0(
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
-    parallel : bool 
+    parallel : bool
         If True, the files are processed simultanously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
         Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
-        If False, the files are processed sequentially in a single process. 
+        If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
@@ -542,9 +550,11 @@ def run_L0(
     create_directory_structure(raw_dir, processed_dir)
 
     # -------------------------------------------------------------------------.
-    # Retrieve stations to process 
-    list_stations_id = get_list_stations_to_process(raw_dir=raw_dir, station_ids=station_ids)  
-    
+    # Retrieve stations to process
+    list_stations_id = get_list_stations_to_process(
+        raw_dir=raw_dir, station_ids=station_ids
+    )
+
     # Loop over station_id directory and process the files
     for station_id in list_stations_id:
         # ---------------------------------------------------------------------.
@@ -595,11 +605,13 @@ def run_L0(
     # -------------------------------------------------------------------------.
     # End of L0 processing for all stations
     timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
-    msg = f" - L0 processing of stations {list_stations_id} completed in {timedelta_str}" 
+    msg = (
+        f" - L0 processing of stations {list_stations_id} completed in {timedelta_str}"
+    )
     log_info(logger, msg, verbose)
     # -------------------------------------------------------------------------.
     close_logger(logger)
-    return None 
+    return None
 
 
 ####--------------------------------------------------------------------------.
@@ -785,6 +797,7 @@ def get_reader(data_source: str, reader_name: str) -> object:
 ####--------------------------------------------------------------------------.
 #### Readers Docs and CLIck
 
+
 def is_documented_by(original):
     """Wrapper function to apply generic docstring to the decorated function.
 
@@ -841,12 +854,12 @@ def reader_generic_docstring():
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
-    parallel : bool 
+    parallel : bool
         If True, the files are processed simultanously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
         Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
-        If False, the files are processed sequentially in a single process. 
+        If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
@@ -942,7 +955,8 @@ def click_l0_readers_options(function: object):
 
 
 ####--------------------------------------------------------------------------.
-#### Reader wrapper 
+#### Reader wrapper
+
 
 def run_reader(
     data_source: str,
@@ -1006,12 +1020,12 @@ def run_reader(
         - For L0A processing, it processes just 3 raw data files.
         - For L0B processing, it processes only the first 100 rows of 3 L0A files.
         The default is False.
-    parallel : bool 
+    parallel : bool
         If True, the files are processed simultanously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
         Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
-        If False, the files are processed sequentially in a single process. 
+        If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     single_netcdf : bool
         Whether to concatenate all raw files into a single L0B netCDF file.
@@ -1033,7 +1047,6 @@ def run_reader(
         single_netcdf=single_netcdf,
         force=force,
         verbose=verbose,
-        parallel=parallel, 
+        parallel=parallel,
         debugging_mode=debugging_mode,
     )
-

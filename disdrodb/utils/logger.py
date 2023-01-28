@@ -121,10 +121,11 @@ def create_file_logger(processed_dir, product_level, station_id, filename, paral
         logger = logging.getLogger()  # root logger (messy with multiprocess)
 
     handler = logging.FileHandler(logger_fpath, mode="w")
-    handler.setLevel(logging.DEBUG)
+    # handler.setLevel(logging.DEBUG)
     format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     handler.setFormatter(logging.Formatter(format_type))
     logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
     return logger
 
 
@@ -139,11 +140,14 @@ def define_summary_log(list_logs):
     """
     logs_dir = os.path.dirname(list_logs[0])
     station_id = logs_dir.split(os.path.sep)[-1]
-    summary_log_dir = os.path.dirname(logs_dir)
+    summary_logs_dir = os.path.dirname(logs_dir)
+    ####-----------------------------------------------------------------------.
+    #### Define summary and problem logs
     # Define summary logs file name
-    summary_fpath = os.path.join(summary_log_dir, f"logs_summary_{station_id}.logs")
+    summary_fpath = os.path.join(summary_logs_dir, f"logs_summary_{station_id}.log")
     # Define logs keywords to select lines to copy into the summary log file
-    list_keywords = ["root", "WARNING", "ERROR"]  # "DEBUG"
+    # -- > "has started" and "has ended" is used to copy the line with the filename being processsed
+    list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
     re_keyword = re.compile("|".join(list_keywords))
     # Filter and concat all logs files
     with open(summary_fpath, "w") as output_file:
@@ -153,6 +157,27 @@ def define_summary_log(list_logs):
                     if re_keyword.search(line):
                         # Write line to output file
                         output_file.write(line)
+    ####-----------------------------------------------------------------------.
+    #### Define problem logs
+    # Define problem logs file name
+    problem_fpath = os.path.join(summary_logs_dir, f"logs_problem_{station_id}.log")
+    # - Copy the log of files with warnings and error
+    list_keywords = ["WARNING", "ERROR"]
+    re_keyword = re.compile("|".join(list_keywords))
+    with open(problem_fpath, "w") as output_file:
+        for log_fpath in list_logs:
+            log_with_problem = False
+            # Check if a warning or error is reported
+            with open(log_fpath) as input_file:
+                for line in input_file:
+                    if re_keyword.search(line):
+                        log_with_problem = True
+                        break
+            # If it is reported, copy the log file in the logs_problem file
+            if log_with_problem:
+                with open(log_fpath) as input_file:
+                    output_file.write(input_file.read())
+    return None
 
 
 ####---------------------------------------------------------------------------.

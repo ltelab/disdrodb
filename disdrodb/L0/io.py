@@ -809,6 +809,7 @@ def check_processed_dir(processed_dir: str, force: bool = False) -> None:
             # TODO: https://github.com/ltelab/disdrodb/issues/113
             # - if l0a_processing=False, remove only L0B directory ! --> Otherwise then no data to process
             # - if l0a_processing=True, remove as it done now
+            # --> Require adding such argumments to this function and create_directory_structure
             shutil.rmtree(processed_dir)
 
     # ------------------------------
@@ -1011,7 +1012,7 @@ def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
     #### Create L0A folder inside processed_dir
     try:
         L0A_folder_path = os.path.join(processed_dir, "L0A")
-        os.makedirs(L0A_folder_path)
+        os.makedirs(L0A_folder_path, exist_ok=True)
         logger.debug(f"Created {L0A_folder_path}")
     except FileExistsError:
         logger.debug(f"Found {L0A_folder_path}")
