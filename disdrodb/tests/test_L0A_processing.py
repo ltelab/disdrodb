@@ -64,9 +64,10 @@ def test_concatenate_dataframe():
 
     with pytest.raises(ValueError):
         L0A_processing.concatenate_dataframe(["not a dataframe"])
-    
+
     with pytest.raises(ValueError):
         L0A_processing.concatenate_dataframe(["not a dataframe", "not a dataframe"])
+
 
 def test_cast_column_dtypes():
     # not tested yet because relies on config files that can be modified
@@ -121,7 +122,9 @@ def test_read_raw_data_zipped():
     reader_kwargs["zipped"] = True
 
     r = L0A_processing._read_raw_data_zipped(
-        path_test_data, column_names=["att_1", "att_2"], reader_kwargs=reader_kwargs,
+        path_test_data,
+        column_names=["att_1", "att_2"],
+        reader_kwargs=reader_kwargs,
     )
 
     assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}

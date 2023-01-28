@@ -332,8 +332,8 @@ def get_L0B_fpath(
 
 
 ####--------------------------------------------------------------------------.
-#### File retrievals 
- 
+#### File retrievals
+
 
 def check_glob_pattern(pattern: str) -> None:
     """Check if the input parameters is a string and if it can be used as pattern.
@@ -364,8 +364,8 @@ def check_glob_patterns(patterns: Union[str, list]) -> list:
         patterns = [patterns]
     _ = [check_glob_pattern(pattern) for pattern in patterns]
     return patterns
- 
-    
+
+
 def _get_file_list(raw_dir: str, glob_pattern) -> list:
     """Get the list of files from a directory based on pattern.
 
@@ -386,15 +386,15 @@ def _get_file_list(raw_dir: str, glob_pattern) -> list:
     return list_fpaths
 
 
-def get_raw_file_list(raw_dir, station_id, glob_patterns, 
-                      verbose=False,
-                      debugging_mode=False):
+def get_raw_file_list(
+    raw_dir, station_id, glob_patterns, verbose=False, debugging_mode=False
+):
     """Get the list of files from a directory based on input parameters.
-    
-    Currently concatenates all files provided by the glob patterns. 
-    In future, this might be modified to enable DISDRODB processing when raw data 
-    are separated in multiple files. 
-    
+
+    Currently concatenates all files provided by the glob patterns.
+    In future, this might be modified to enable DISDRODB processing when raw data
+    are separated in multiple files.
+
     Parameters
     ----------
     raw_dir : str
@@ -414,13 +414,15 @@ def get_raw_file_list(raw_dir, station_id, glob_patterns,
     list_fpaths : list
         List of files file paths.
 
-    """  
+    """
     # Check glob patterns
     glob_patterns = check_glob_patterns(glob_patterns)
-    
-    # Get patterns in the the data directory 
-    glob_patterns = [os.path.join("data", station_id, pattern) for pattern in glob_patterns]
-    
+
+    # Get patterns in the the data directory
+    glob_patterns = [
+        os.path.join("data", station_id, pattern) for pattern in glob_patterns
+    ]
+
     # Retrieve filepaths list
     list_fpaths = [_get_file_list(raw_dir, pattern) for pattern in glob_patterns]
     list_fpaths = [x for xs in list_fpaths for x in xs]  # flatten list
@@ -447,11 +449,11 @@ def get_raw_file_list(raw_dir, station_id, glob_patterns,
 
     # Return file list
     return list_fpaths
- 
+
 
 def get_l0a_file_list(processed_dir, station_id, debugging_mode):
     """Retrieve L0A files for a give station.
-        
+
     Parameters
     ----------
     processed_dir : str
@@ -468,24 +470,25 @@ def get_l0a_file_list(processed_dir, station_id, debugging_mode):
     list_fpaths : list
         List of L0A file paths.
 
-    """  
+    """
     L0A_dir_path = get_L0A_dir(processed_dir, station_id)
     filepaths = glob.glob(os.path.join(L0A_dir_path, "*.parquet"))
-    
+
     n_files = len(filepaths)
-    
+
     # Subset file_list if debugging_mode
     if debugging_mode:
         max_files = min(3, n_files)
         filepaths = filepaths[0:max_files]
-    
-    # If no file available, raise error 
+
+    # If no file available, raise error
     if n_files == 0:
         msg = f"No L0A Apache Parquet file is available in {L0A_dir_path}. Run L0A processing first."
         raise ValueError(msg)
-        
-    return filepaths   
-        
+
+    return filepaths
+
+
 ####--------------------------------------------------------------------------.
 #### Directory/File Creation/Deletion
 
@@ -696,7 +699,7 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     #### Check metadata compliance
     _ = [check_metadata_compliance(fpath) for fpath in list_metadata_fpath]
-    
+
     # -------------------------------------------------------------------------.
     #### Check there is /issue subfolder
     issue_dir = os.path.join(raw_dir, "issue")
@@ -1099,7 +1102,7 @@ def read_L0A_dataframe(
     # - If debugging_mode=True, it reads only the first 3 fpaths
     if debugging_mode:
         fpaths = fpaths[0:3]  # select first 3 fpaths
-        
+
     # - Define the list of dataframe
     list_df = [
         _read_L0A(fpath, verbose=verbose, debugging_mode=debugging_mode)

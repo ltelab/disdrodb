@@ -22,6 +22,7 @@ from disdrodb.L0.io import (
 
 # Metadata
 from disdrodb.L0.metadata import read_metadata
+
 # Standards
 from disdrodb.L0.check_standards import check_sensor_name
 
@@ -55,8 +56,8 @@ def _delayed_based_on_kwargs(function):
         parallel = kwargs.get("parallel")
         # If parallel is True
         if parallel:
-            # Enforce verbose to be False 
-            kwargs["verbose"] = False 
+            # Enforce verbose to be False
+            kwargs["verbose"] = False
             # Define the delayed task
             result = dask.delayed(function)(*args, **kwargs)
         else:
@@ -85,7 +86,7 @@ def _generate_l0a(
         process_raw_file,
         write_df_to_parquet,
     )
-        
+
     ##------------------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
@@ -97,7 +98,7 @@ def _generate_l0a(
         parallel=parallel,
     )
     logger_fpath = logger.handlers[0].baseFilename
-    
+
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"L0A processing of {filename} has started."
@@ -110,7 +111,7 @@ def _generate_l0a(
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
     check_sensor_name(sensor_name)
-    
+
     ##------------------------------------------------------------------------.
     try:
         #### - Read raw file into a dataframe and sanitize to L0A format
@@ -170,7 +171,7 @@ def _generate_l0b(
         create_L0B_from_L0A,
         write_L0B,
     )
-        
+
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
@@ -187,7 +188,7 @@ def _generate_l0b(
     # Log start processing
     msg = f"L0B processing of {filename} has started."
     log_info(logger, msg, verbose=verbose)
-    
+
     ##------------------------------------------------------------------------.
     # Retrieve metadata
     attrs = read_metadata(raw_dir=processed_dir, station_id=station_id)
@@ -258,12 +259,14 @@ def run_l0a(
 
     # -----------------------------------------------------------------.
     # List files to process
-    filepaths = get_raw_file_list(raw_dir=raw_dir, 
-                                  station_id=station_id, 
-                                  glob_patterns=files_glob_pattern, 
-                                  verbose=verbose,
-                                  debugging_mode=debugging_mode)
-    
+    filepaths = get_raw_file_list(
+        raw_dir=raw_dir,
+        station_id=station_id,
+        glob_patterns=files_glob_pattern,
+        verbose=verbose,
+        debugging_mode=debugging_mode,
+    )
+
     # -----------------------------------------------------------------.
     # Generate L0A files
     # - Loop over the files and save the L0A Apache Parquet files.
@@ -312,10 +315,12 @@ def run_l0b(
         print(msg)
 
     ##----------------------------------------------------------------.
-    # Get L0A files for the station 
-    filepaths = get_l0a_file_list(processed_dir=processed_dir, 
-                                  station_id=station_id, 
-                                  debugging_mode=debugging_mode)
+    # Get L0A files for the station
+    filepaths = get_l0a_file_list(
+        processed_dir=processed_dir,
+        station_id=station_id,
+        debugging_mode=debugging_mode,
+    )
 
     # -----------------------------------------------------------------.
     # Generate L0B files

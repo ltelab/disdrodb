@@ -162,7 +162,7 @@ def reader(
         # Retrieve list of files to process
         file_list = get_raw_file_list(
             raw_dir=raw_dir,
-            station_id=station_id, 
+            station_id=station_id,
             glob_patterns=raw_data_glob_pattern,
             verbose=verbose,
             debugging_mode=debugging_mode,

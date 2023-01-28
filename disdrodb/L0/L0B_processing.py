@@ -57,7 +57,7 @@ from disdrodb.utils.logger import (
 
 logger = logging.getLogger(__name__)
 
-   
+
 ####--------------------------------------------------------------------------.
 #### L0B spectrum processing
 # def get_drop_concentration(arr):

@@ -181,7 +181,7 @@ def _read_raw_data_zipped(
 
     file_name_to_read_zipped = reader_kwargs.get("file_name_to_read_zipped")
 
-    # TODO: deprecate reading zipped files ! 
+    # TODO: deprecate reading zipped files !
     # This function should ready only a single file !
 
     # Loop tar files
@@ -552,7 +552,7 @@ def concatenate_dataframe(list_df: list, verbose: bool = False) -> pd.DataFrame:
     # Check if something to concatenate
     if len(list_df) == 1:
         df = list_df[0]
-        if not isinstance(df, pd.DataFrame): 
+        if not isinstance(df, pd.DataFrame):
             raise ValueError("Only pd.DataFrame objects are valid.")
         return df
 

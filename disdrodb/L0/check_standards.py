@@ -53,9 +53,7 @@ def check_sensor_name(sensor_name: str) -> None:
         raise ValueError(msg)
 
 
-def check_L0A_column_names(
-    df: pd.DataFrame, sensor_name: str
-) -> None:
+def check_L0A_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     """Checks that the dataframe columns respects DISDRODB standards.
 
     Parameters

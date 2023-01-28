@@ -196,35 +196,37 @@ def test_get_raw_file_list():
     path_test_directory = os.path.join(
         PATH_TEST_FOLDERS_FILES, "test_L0A_processing", "files"
     )
-    
+
     station_id = "STATION_ID"
-    
+
     # Test that the function returns the correct number of files in debugging mode
     file_list = io.get_raw_file_list(
-        raw_dir=path_test_directory, 
+        raw_dir=path_test_directory,
         station_id=station_id,
         glob_patterns="*.txt",
-        debugging_mode=True
+        debugging_mode=True,
     )
-    assert len(file_list) == 2 # max(2, 3)
+    assert len(file_list) == 2  # max(2, 3)
 
     # Test that the function returns the correct number of files in normal mode
-    file_list = io.get_raw_file_list(raw_dir=path_test_directory, 
-                                     station_id=station_id,
-                                     glob_patterns="*.txt")
+    file_list = io.get_raw_file_list(
+        raw_dir=path_test_directory, station_id=station_id, glob_patterns="*.txt"
+    )
     assert len(file_list) == 2
 
     # Test that the function raises an error if the glob_patterns is not a str or list
-    with pytest.raises(ValueError, match="'glob_patterns' must be a str or list of strings."):
-        io.get_raw_file_list(raw_dir=path_test_directory, 
-                             station_id=station_id,
-                             glob_patterns=1)
+    with pytest.raises(
+        ValueError, match="'glob_patterns' must be a str or list of strings."
+    ):
+        io.get_raw_file_list(
+            raw_dir=path_test_directory, station_id=station_id, glob_patterns=1
+        )
 
     # Test that the function raises an error if no files are found
     with pytest.raises(ValueError):
-        io.get_raw_file_list(raw_dir=path_test_directory, 
-                             station_id=station_id,
-                             glob_patterns="*.csv")
+        io.get_raw_file_list(
+            raw_dir=path_test_directory, station_id=station_id, glob_patterns="*.csv"
+        )
 
 
 ####--------------------------------------------------------------------------.
