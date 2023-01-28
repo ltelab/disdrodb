@@ -31,8 +31,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ##------------------------------------------------------------------------.
@@ -83,23 +83,14 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"] 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+        import pandas as pd
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         # - Drop rows when "raw_drop_number" is "NA"
         # --> This is used to drop all rows where all values are "NA"
@@ -131,7 +122,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

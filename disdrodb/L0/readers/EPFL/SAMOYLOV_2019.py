@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -102,15 +102,11 @@ def reader(
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+        import pandas as pd
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
 
         # - Drop rows when  'Error in data reading' in TO_BE_SPLITTED column
         bad_indices = df[
@@ -149,7 +145,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ####----------------------------------------------------------------------.
@@ -47,8 +47,18 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
+
     # - Define delimiter
     reader_kwargs["delimiter"] = "no_need_it"
+
+        # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # # Skip header
+    reader_kwargs["skiprows"] = 7
+
+    # Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
@@ -77,23 +87,8 @@ def reader(
         "-.-",
         " NA",
     ]
+ 
 
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # # Skip header
-    reader_kwargs["skiprows"] = 7
-
-    # Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -101,17 +96,13 @@ def reader(
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
         # Cannot implement dask for this loop, so only pandas for now
         import numpy as np
 
-        if lazy:
-            import pandas as dd
-
-            df = df.compute()
-        else:
-            import pandas as dd
+        import pandas as pd
+        
 
         # Different column and divider into raw order between stations
         header_1 = "Date,Time,Intensity (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Radar reflectivity (dBz),MOR Visibility (m),Number of detected particles,Temperature in sensor (°C),Weather code METAR/SPECI,Weather code NWS,Signal amplitude of Laserband,Heating current (A),Sensor voltage (V),Spectrum"
@@ -166,7 +157,7 @@ def reader(
 
         # Parse time and drop precipitation_since_start_TO_DROP column
         df["time"] = df["date"] + "-" + df["time_temp"]
-        df["time"] = dd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S")
+        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S")
         df = df.drop(columns=["date", "time_temp", "precipitation_since_start_TO_DROP"])
 
         # Set NaN into <SPECTRUM>ZERO</SPECTRUM> in raw_drop_number
@@ -216,7 +207,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

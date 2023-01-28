@@ -32,8 +32,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ##------------------------------------------------------------------------.
@@ -62,24 +62,15 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", ["C"] * 32]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", ["C"] * 32] 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
-    def df_sanitizer_fun(df, lazy=lazy):
+    def df_sanitizer_fun(df):
 
-        # - Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+        # - Import pandas
+        import pandas as pd
         temp_time = df.loc[df.iloc[:, 0].astype(str).str.len() == 16].add_prefix("col_")
-        temp_time["col_0"] = dd.to_datetime(temp_time["col_0"], format="%Y.%m.%d;%H:%M")
+        temp_time["col_0"] = pd.to_datetime(temp_time["col_0"], format="%Y.%m.%d;%H:%M")
 
         # Insert Raw into a series and drop last line
         temp_raw = df.loc[df.iloc[:, 0].astype(str).str.len() != 16].add_prefix("col_")
@@ -92,13 +83,8 @@ def reader(
             raise ValueError(msg)
 
         # Series and variable temporary for parsing raw_drop_number
-        if lazy:
-            import pandas as pd
-
-            raw = pd.DataFrame({"raw_drop_number": []})
-            # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
-        else:
-            raw = pd.DataFrame({"raw_drop_number": []})
+        raw = pd.DataFrame({"raw_drop_number": []})
+   
         temp_string_2 = ""
 
         # Parse for raw_drop_number
@@ -129,18 +115,11 @@ def reader(
 
                 temp_string_2 = ""
 
-        if lazy:
-            raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
-
         # Reset all index
         temp_time = temp_time.reset_index(drop=True)
         raw = raw.reset_index(drop=True)
 
-        if lazy:
-            df = dd.concat([temp_time, raw], axis=1, ignore_unknown_divisions=True)
-        else:
-            df = dd.concat([temp_time, raw], axis=1)
-
+        df = pd.concat([temp_time, raw], axis=1)
         df.columns = ["time", "raw_drop_number"]
 
         return df
@@ -160,7 +139,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

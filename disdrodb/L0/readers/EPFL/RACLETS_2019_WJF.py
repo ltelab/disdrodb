@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ##------------------------------------------------------------------------.
@@ -90,21 +90,12 @@ def reader(
         "error",
         "Error in data reading! 0000.000",
         "Error in data reading! 0002.344",
-    ]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+    ] 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
-    def df_sanitizer_fun(df, lazy=False):
-        # - Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+    def df_sanitizer_fun(df):
+        # - Import pandas
+        import pandas as pd
         # - Drop invalid rows
         df = df.loc[df["id"].astype(str).str.len() < 10]
 
@@ -125,7 +116,7 @@ def reader(
         df = df.drop(columns=columns_to_drop)
 
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
 
         return df
 
@@ -144,7 +135,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

@@ -50,7 +50,7 @@ def reader(
     force=True,
     verbose=True,
     debugging_mode=False,
-    lazy=True,
+    parallel=False,
     single_netcdf=False,
 ):
 

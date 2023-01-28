@@ -32,8 +32,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -127,6 +127,10 @@ def reader(
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = "#"
+      # Skip first row as columns names
+    reader_kwargs["header"] = None
+    # Skip first 3 rows
+    reader_kwargs["skiprows"] = 3
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -142,17 +146,7 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    # Skip first 3 rows
-    reader_kwargs["skiprows"] = 3
+    reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]     # Cast all to string
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -160,13 +154,9 @@ def reader(
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+        import pandas as pd
         # Drop header's log rows
         df = df.loc[df["temp"].astype(str).str.len() > 30]
 
@@ -187,9 +177,9 @@ def reader(
         # Drop rows with invalid date
         df = df.loc[df["time"].astype(str).str.len() == 17]
         try:
-            df["time"] = dd.to_datetime(df["time"], format="%d.%m.%y %H:%M:%S")
+            df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y %H:%M:%S")
         except ValueError:
-            df["time"] = dd.to_datetime(
+            df["time"] = pd.to_datetime(
                 df["time"], format="%d.%m.%y %H:%M:%S", errors="coerce"
             )
             df = df.loc[df.time.notnull()]
@@ -290,7 +280,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

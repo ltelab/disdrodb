@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ##------------------------------------------------------------------------.
@@ -53,20 +53,12 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"] 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
-    def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
+    def df_sanitizer_fun(df):
+        # Import pandas
+        import pandas as pd
 
         # - Read date from header
         date = df.loc[0][0]
@@ -79,8 +71,6 @@ def reader(
         df.columns = ["TO_BE_PARSED"]
 
         # Extract time column
-        if not lazy:
-            dd.options.mode.chained_assignment = None
         df[["time", "TO_BE_SPLITTED"]] = df["TO_BE_PARSED"].str.split(
             " ", n=1, expand=True
         )
@@ -88,7 +78,7 @@ def reader(
         # - Define datetime 'time' column
         df["time"] = df["time"].str[:-3]
         df["time"] = df["time"] + "-" + date
-        df["time"] = dd.to_datetime(df["time"], format="%M%S-%m/%d/%Y")
+        df["time"] = pd.to_datetime(df["time"], format="%M%S-%m/%d/%Y")
 
         # Split columns
         columns = [
@@ -140,7 +130,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

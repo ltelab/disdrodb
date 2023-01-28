@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -83,27 +83,18 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
-
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+ 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
-    def df_sanitizer_fun(df, lazy=False):
-        # - Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+    def df_sanitizer_fun(df):
+        # - Import pandas
+        import pandas as pd
         # - Drop bad lines based on datalogger_debug column
         bad_indexes = df[df["datalogger_debug"].str.startswith("Frame", na=False)].index
         df = df.drop(bad_indexes)
 
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
@@ -131,7 +122,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

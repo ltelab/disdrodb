@@ -39,8 +39,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ####----------------------------------------------------------------------.
@@ -94,12 +94,7 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
-
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+ 
     # Skip first row as columns names
     reader_kwargs["header"] = None
 
@@ -112,14 +107,9 @@ def reader(
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None
 
-    def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
-        if lazy:
-            import pandas as dd
-
-            df = df.compute()
-        else:
-            import pandas as dd
+    def df_sanitizer_fun(df):
+        # Import pandas
+        import pandas as dd
 
         # Parse time
         df["time"] = (
@@ -133,7 +123,7 @@ def reader(
             + ":"
             + df["second"]
         )
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
 
         # Drop unrequired columns for L0
         df = df.drop(
@@ -157,8 +147,9 @@ def reader(
             "reflectivity_16bit",
             "mor_visibility",
         ]
+
         for c in numeric_columns:
-            df[c] = dd.to_numeric(df[c], errors="coerce")
+            df[c] = pd.to_numeric(df[c], errors="coerce")
 
         return df
 
@@ -177,7 +168,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

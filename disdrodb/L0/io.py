@@ -1058,7 +1058,6 @@ def _read_L0A(
 
 def read_L0A_dataframe(
     fpaths: Union[str, list],
-    lazy: bool = False,
     verbose: bool = False,
     debugging_mode: bool = False,
 ) -> pd.DataFrame:
@@ -1076,11 +1075,6 @@ def read_L0A_dataframe(
         If fpaths is a list, it reads only the first 3 files
         For each file it select only the first 100 rows.
         The default is False.
-    lazy : bool
-        Whether to read the dataframe lazily with dask.
-        If lazy=True, it returns a dask.dataframe.
-        If lazy=False, it returns a pandas.DataFrame
-        The default is True.
 
     Returns
     -------

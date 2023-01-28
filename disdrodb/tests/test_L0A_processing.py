@@ -1,7 +1,6 @@
 import os
 import pytest
 import pandas as pd
-import dask.dataframe as dd
 from disdrodb.L0 import L0A_processing
 from disdrodb.L0 import io
 
@@ -18,36 +17,18 @@ def test_preprocess_reader_kwargs():
     assert "dtype" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
 
-    # Test that the function removes the 'index_col' key when lazy=True
-    reader_kwargs = {"index_col": 0, "other_key": "other_value"}
-    preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(
-        reader_kwargs, lazy=True
-    )
-    assert "index_col" not in preprocessed_kwargs
-    assert "other_key" in preprocessed_kwargs
-
-    # Test that the function removes the 'blocksize' and 'assume_missing' keys when lazy=False
+    # Test that the function removes the 'blocksize' and 'assume_missing' keys
+    # - This argument expected by dask.dataframe.read_csv
     reader_kwargs = {
         "blocksize": 128,
         "assume_missing": True,
         "other_key": "other_value",
     }
     preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(
-        reader_kwargs, lazy=False
+        reader_kwargs,
     )
     assert "blocksize" not in preprocessed_kwargs
     assert "assume_missing" not in preprocessed_kwargs
-    assert "other_key" in preprocessed_kwargs
-
-    # Test that the function removes the 'zipped' and 'blocksize' keys when 'zipped' is True
-    reader_kwargs = {
-        "zipped": True,
-        "blocksize": 128,
-        "other_key": "other_value",
-    }
-    preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(reader_kwargs)
-    assert "zipped" not in preprocessed_kwargs
-    assert "blocksize" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
 
 

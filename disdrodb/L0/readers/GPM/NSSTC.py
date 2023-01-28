@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -63,31 +63,22 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-"]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-"] 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     # Deal with changing file format after 25 feb 2011 by the documentation
     # - https://ghrc.nsstc.nasa.gov/pub/fieldCampaigns/gpmValidation/relatedProjects/nsstc/parsivel/doc/gpm_parsivel_nsstc_dataset.html).
     # - TODO: code below might exploit df['time'] instead of n_delimiters
 
-    def df_sanitizer_fun(df, lazy=False):
-        # - Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+    def df_sanitizer_fun(df):
+        # - Import pandas
+        import pandas as pd
         # - Check 'time' string length
         # --> Enable to detect rows which are corrupted
         df = df[df["time"].str.len() == 14]
 
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
+        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
 
         # Compute number of delimiters in the column to be parsed
         # - Count commas on the first row to determine the columns number
@@ -167,7 +158,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

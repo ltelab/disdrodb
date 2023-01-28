@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -91,12 +91,7 @@ def reader(
         "error",
         "NA",
     ]
-
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+ 
     # Different enconding for this campaign
     reader_kwargs["encoding"] = "latin-1"
 
@@ -105,13 +100,9 @@ def reader(
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+        import pandas as pd
         # - Drop rows when  'Error in data reading' in rainfall_rate_32bit column
         bad_indexes = df[
             df["rainfall_rate_32bit"].str.startswith("Error in data reading!", na=False)
@@ -123,7 +114,7 @@ def reader(
             raise ValueError("No valid data available.")
 
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(
+        df["time"] = pd.to_datetime(
             df["time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
         )
 
@@ -154,7 +145,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

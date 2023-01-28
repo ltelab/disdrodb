@@ -472,12 +472,9 @@ def run_L0(
         It's a function detailing the custom preprocessing of each single raw data files
         in order to meet the DISDRODB standards.
         The function must have the following definition and return a dataframe:
-            def df_sanitizer_fun(df, lazy=False)
-                # Import dask or pandas depending on lazy argument
-                if lazy:
-                    import dask.dataframe as dd
-                else:
-                    import pandas as dd
+            def df_sanitizer_fun(df)
+                # Import pandas 
+                import pandas as dd
                 # Custom processing
                 pass
                 # Return the dataframe agreeing with the DISDRODB standards
@@ -866,11 +863,6 @@ def reader_generic_docstring():
         - For L0A processing, it processes just 3 raw data files.
         - For L0B processing, it processes only the first 100 rows of 3 L0A files.
         The default is False.
-    lazy : bool
-        Whether to perform processing lazily with dask.
-        If lazy=True, it employed dask.array and dask.dataframe.
-        If lazy=False, it employed pandas.DataFrame and numpy.array.
-        The default is True.
     single_netcdf : bool
         Whether to concatenate all raw files into a single L0B netCDF file.
         If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.

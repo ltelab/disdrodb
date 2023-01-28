@@ -34,8 +34,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ####----------------------------------------------------------------------.
@@ -74,12 +74,7 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
-
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+ 
     # Skip first row as columns names
     reader_kwargs["header"] = None
 
@@ -90,23 +85,17 @@ def reader(
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
+        # Import pandas and numpy
         import numpy as np
-
-        # Import dask or pandas
-        if lazy:
-            import pandas as dd
-
-            df = df.compute()
-        else:
-            import pandas as dd
-
+        import pandas as dd
+    
         # Reshape dataframe and define dummy column names
         # - Assume always 97 fields
         n_fields = 97
         arr = df.to_numpy()
         arr = arr.reshape(int(len(arr) / n_fields), n_fields)
-        df = dd.DataFrame(arr)
+        df = pd.DataFrame(arr)
         df.columns = np.arange(1, n_fields + 1)
 
         # Define known field names
@@ -179,7 +168,7 @@ def reader(
         df = df.dropna(how="all", axis=1)
 
         # Define time
-        df["time"] = dd.to_datetime(
+        df["time"] = pd.to_datetime(
             df["sensor_date"] + "-" + df["sensor_time"], format="%d.%m.%Y-%H:%M:%S"
         )
         df = df.drop(columns=["sensor_date", "sensor_time", "start_time"])
@@ -207,7 +196,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=False,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

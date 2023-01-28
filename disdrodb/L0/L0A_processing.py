@@ -53,16 +53,14 @@ logger = logging.getLogger(__name__)
 #### Raw file readers
 
 
-def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = False) -> dict:
+def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     """Define a dictionary with the parameters required for reading the raw data with Pandas or Dask.
 
     Parameters
     ----------
     reader_kwargs : dict
         Initial parameter dictionary.
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
+    
     Returns
     -------
     dict
@@ -75,16 +73,13 @@ def preprocess_reader_kwargs(reader_kwargs: dict, lazy: bool = False) -> dict:
     # Preprocess the reader_kwargs
     reader_kwargs = reader_kwargs.copy()
 
-    if lazy:
-        reader_kwargs.pop("index_col", None)
-    if not lazy:
-        reader_kwargs.pop("blocksize", None)
-        reader_kwargs.pop("assume_missing", None)
+    # Remove kwargs expected by dask dataframe read_csv
+    reader_kwargs.pop("blocksize", None)
+    reader_kwargs.pop("assume_missing", None)
 
     # TODO: Remove this when removing _read_raw_data_zipped
     if reader_kwargs.get("zipped", False):
         reader_kwargs.pop("zipped", None)
-        reader_kwargs.pop("blocksize", None)
         reader_kwargs.pop("file_name_to_read_zipped", None)
 
     return reader_kwargs
@@ -116,9 +111,6 @@ def read_raw_data(
 
     # Enforce all raw files columns with dtype = 'object'
     dtype = "object"
-
-    # Read with pandas
-    reader_kwargs.pop("blocksize", None)
 
     # If zipped in reader_kwargs, use __read_raw_data_zipped
     if reader_kwargs.get("zipped"):
@@ -405,7 +397,7 @@ def process_raw_file(
     # Sanitize the dataframe with a custom function
     if df_sanitizer_fun is not None:
         # _check_df_sanitizer_fun(df_sanitizer_fun) # TODO activate after refactoring
-        df = df_sanitizer_fun(df, lazy=False)
+        df = df_sanitizer_fun(df)
 
     # Remove rows with time NaT
     # - TODO: Log info !!!

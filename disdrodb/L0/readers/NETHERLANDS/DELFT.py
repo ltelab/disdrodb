@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
 
     ##------------------------------------------------------------------------.
@@ -62,25 +62,14 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"] 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     # Station 8 has all raw_drop_number corrupted, so it can't be used
 
-    def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
-        if lazy:
-            df = df.compute()
+    def df_sanitizer_fun(df):
+        # Import pandas
+        import pandas as pd
 
         # # Station 7 throws a bug on rows 105000 and 110000 on dask (000NETDL07 and PAR007 device name)
         # if (df['TO_BE_PARSED'].str.contains('000NETDL07')).any() | (df['TO_BE_PARSED'].str.contains('PAR007')).any():
@@ -94,7 +83,7 @@ def reader(
         df = df.loc[df["time"].astype(str).str.len() == 15]
 
         # - Convert 'time' column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y%m%d-%H%M%S")
+        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d-%H%M%S")
 
         # - Remove rows with duplicate timestep
         df = df.drop_duplicates(subset=["time"])
@@ -158,16 +147,11 @@ def reader(
         df["weather_code_nws"] = df["weather_code_nws"].str.strip()
 
         # - Retrieve raw_drop_concentration and raw_drop_average_velocity columns
-        if lazy:
-            apply_kwargs = {"meta": (None, "object")}
-        else:
-            apply_kwargs = {}
-
         df["raw_drop_concentration"] = df_to_parse.iloc[:, 35:67].apply(
-            lambda x: ",".join(x.dropna().astype(str)), axis=1, **apply_kwargs
+            lambda x: ",".join(x.dropna().astype(str)), axis=1,
         )
         df["raw_drop_average_velocity"] = df_to_parse.iloc[:, 67:99].apply(
-            lambda x: ",".join(x.dropna().astype(str)), axis=1, **apply_kwargs
+            lambda x: ",".join(x.dropna().astype(str)), axis=1,
         )
 
         # - Retrieve raw_drop_number column
@@ -217,7 +201,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the parser
         files_glob_pattern=files_glob_pattern,

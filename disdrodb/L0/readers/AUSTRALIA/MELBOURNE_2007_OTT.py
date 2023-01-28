@@ -30,8 +30,8 @@ def reader(
     force=False,
     verbose=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
+    parallel=False,
+    single_netcdf=False,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -62,6 +62,9 @@ def reader(
     # - Define delimiter
     reader_kwargs["delimiter"] = "!"
 
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
@@ -82,30 +85,15 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]
-
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
+ 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
+        import pandas as pd
         # Data format:
         # -2015-01-09 00:02:16
         # 0000.063;0012.33;51;51;  -DZ; ...
@@ -115,7 +103,7 @@ def reader(
 
         # Infer time
         df_time = df.loc[df["temp"].str.len() == 20]
-        df_time["time"] = dd.to_datetime(df_time["temp"], format="-%Y-%m-%d %H:%M:%S")
+        df_time["time"] = pd.to_datetime(df_time["temp"], format="-%Y-%m-%d %H:%M:%S")
         df_time = df_time.drop(columns=["temp"])
 
         # Drop header's log and corrupted rows
@@ -133,7 +121,7 @@ def reader(
         # Concat df and df_time
         df = df.reset_index(drop=True)
         df_time = df_time.reset_index(drop=True)
-        df = dd.concat([df_time, df], axis=1, ignore_unknown_divisions=True)
+        df = pd.concat([df_time, df], axis=1, ignore_unknown_divisions=True)
 
         # Drop last columns (all nan)
         df = df.dropna(thresh=(len(df.columns) - 19), how="all")
@@ -166,7 +154,7 @@ def reader(
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
-        lazy=lazy,
+        parallel=parallel,
         single_netcdf=single_netcdf,
         # Custom arguments of the reader
         files_glob_pattern=files_glob_pattern,

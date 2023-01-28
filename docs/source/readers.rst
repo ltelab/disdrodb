@@ -113,10 +113,10 @@ Readers parameters
         * For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
 
 
-* ``--lazy`` : bool [ **true** \|false] - Whether to perform processing lazily with dask.
+* ``--parallel`` : bool [ **true** \|false] - Whether to process multiple files simultanously.
 
-        * If lazy=True, it employs dask.dataframe and dask.array. 
-        * If lazy=False, it employs pandas.DataFrame and numpy.array.  
+        * If parallel=False, the file are processed sequentially. 
+        * If parallel=True, each file is processed by a separate core.  
 
 
 * ``--single_netcdf`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single DISDRODB L0B netCDF file.
@@ -147,7 +147,7 @@ There are two ways of running a reader.
 
 	.. code-block::
 
-		run_disdrodb_l0_reader NETHERLANDS DELFT "...\DISDRODB\Raw\NETHERLANDS\DELFT" "...\DISDRODB\Processed\NETHERLANDS\DELFT" --l0a_processing True --l0b_processing False --keep_l0a True --force True --verbose True --debugging_mode False --lazy False --single_netcdf False 
+		run_disdrodb_l0_reader NETHERLANDS DELFT "...\DISDRODB\Raw\NETHERLANDS\DELFT" "...\DISDRODB\Processed\NETHERLANDS\DELFT" --l0a_processing True --l0b_processing False --keep_l0a True --force True --verbose True --debugging_mode False --parallel False --single_netcdf False 
 	 
 
 
@@ -169,16 +169,33 @@ There are two ways of running a reader.
 
 			raw_dir = "...\\DISDRODB\\Raw\\NETHERLANDS\\DELFT"
 			processed_dir = "...\\DISDRODB\\Processed\\NETHERLANDS\\DELFT"
+			data_source='NETHERLANDS'
+			reader_name='DELFT'
 			l0a_processing=True
 			l0b_processing=True
 			keep_l0a=True
 			force=True
 			verbose=True
 			debugging_mode=True
-			lazy=True
+			parallel=False
 			single_netcdf=True
 
-			run_reader('NETHERLANDS','DELFT',raw_dir,processed_dir,l0a_processing,l0b_processing,keep_l0a,force,verbose,debugging_mode,lazy,single_netcdf)
+			run_reader(   
+				data_source=data_source,
+				reader_name=reader_name,
+				raw_dir=raw_dir,
+				processed_dir=processed_dir,
+				# L0 processing type 
+				l0a_processing=l0a_processing,
+				l0b_processing=l0b_processing,
+				keep_l0a=keep_l0a,
+				single_netcdf=single_netcdf, 
+				# L0 processing options 
+				parallel=parallel, 
+				verbose=verbose,
+				force=force, 
+				debugging_mode=debugging_mode,
+			)
 
 	
 	2.2 From the reader itself : 
@@ -195,15 +212,23 @@ There are two ways of running a reader.
 			force=True
 			verbose=True
 			debugging_mode=True
-			lazy=True
+			parallel=False
 			single_netcdf=True
 
-			reader(raw_dir,processed_dir,l0a_processing,l0b_processing,keep_l0a,force,verbose,debugging_mode,lazy,single_netcdf)
-
-
-
-|
-
+			reader(
+				raw_dir=raw_dir,
+				processed_dir=processed_dir,
+				# L0 processing type 
+				l0a_processing=l0a_processing,
+				l0b_processing=l0b_processing,
+				keep_l0a=keep_l0a,
+				single_netcdf=single_netcdf, 
+				# L0 processing options 
+				parallel=parallel, 
+				verbose=verbose,
+				force=force, 
+				debugging_mode=debugging_mode,
+			)
 
 
 Adding a new reader
@@ -305,7 +330,7 @@ In this notebook, we guide you through the definition of 4 relevant DISDRODB rea
 * The ``reader_kwargs`` dictionary guides the pandas / dask dataframe creation. 
 
 For more information on the possible key-value arguments, read the `pandas <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
-and/or `dask <https://docs.dask.org/en/stable/generated/dask.dataframe.read_csv.html>`_  documentation.
+documentation.
  
 * The ``column_names`` list defines the column names of the readed raw text file. 
 
