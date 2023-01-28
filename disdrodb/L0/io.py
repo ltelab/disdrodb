@@ -419,9 +419,8 @@ def get_raw_file_list(
     glob_patterns = check_glob_patterns(glob_patterns)
 
     # Get patterns in the the data directory
-    glob_patterns = [
-        os.path.join("data", station_id, pattern) for pattern in glob_patterns
-    ]
+    data_dir = os.path.join("data", station_id)
+    glob_patterns = [os.path.join(data_dir, pattern) for pattern in glob_patterns]
 
     # Retrieve filepaths list
     list_fpaths = [_get_file_list(raw_dir, pattern) for pattern in glob_patterns]
@@ -442,10 +441,9 @@ def get_raw_file_list(
 
     # Log
     n_files = len(list_fpaths)
-    msg = f" - {n_files} files to process in {raw_dir}"
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    full_dir = os.path.join(raw_dir, data_dir)
+    msg = f" - {n_files} files to process in {full_dir}"
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Return file list
     return list_fpaths
@@ -808,8 +806,10 @@ def check_processed_dir(processed_dir: str, force: bool = False) -> None:
                 logger.error(msg)
                 raise ValueError(msg)
             # Remove content of existing processed_dir
-            # TODO: maybe remove also the campaign name directory, not only the content of it
-            shutil.rmtree(processed_dir)  # TODO: !! TOO DANGEROUS ??? !!!
+            # TODO: https://github.com/ltelab/disdrodb/issues/113
+            # - if l0a_processing=False, remove only L0B directory ! --> Otherwise then no data to process
+            # - if l0a_processing=True, remove as it done now
+            shutil.rmtree(processed_dir)
 
     # ------------------------------
     # If avoiding overwriting

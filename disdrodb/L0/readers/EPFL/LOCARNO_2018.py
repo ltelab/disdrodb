@@ -25,12 +25,12 @@ def reader(
     processed_dir,
     l0a_processing=True,
     l0b_processing=True,
+    single_netcdf=True,
     keep_l0a=False,
     force=False,
     verbose=False,
+    parallel=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
 ):
 
     ##------------------------------------------------------------------------.
@@ -121,15 +121,17 @@ def reader(
     run_L0(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
+        # Type of L0 processing
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
         keep_l0a=keep_l0a,
+        single_netcdf=single_netcdf,
+        # Settings for L0 processing
         force=force,
         verbose=verbose,
+        parallel=parallel,
         debugging_mode=debugging_mode,
-        lazy=lazy,
-        single_netcdf=single_netcdf,
-        # Custom arguments of the reader
+        # Custom arguments of the reader for L0A processing
         files_glob_pattern=files_glob_pattern,
         column_names=column_names,
         reader_kwargs=reader_kwargs,

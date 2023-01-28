@@ -50,6 +50,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
+            # <name_to_type_in_terminal>=<module>:<name_of_the_function>
             "run_disdrodb_l0_reader=disdrodb.L0.run_disdrodb_l0_reader:run_reader_cmd",
         ]
     },
