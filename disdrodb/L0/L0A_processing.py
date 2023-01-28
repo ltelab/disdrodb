@@ -23,7 +23,6 @@
 
 # -----------------------------------------------------------------------------.
 import os
-import glob
 import inspect
 import logging
 import tarfile
@@ -45,110 +44,10 @@ from disdrodb.utils.logger import (
 
 logger = logging.getLogger(__name__)
 
-# TODO:
-# Renaming:
-# - read_raw_file_list --> read_raw_file_list ?
+# Possible renaming:
 # - write_df_to_parquet --> write_L0A?
 # Remove or refactor
 # - _read_raw_data_zipped
-
-
-def check_glob_pattern(pattern: str) -> None:
-    """Check if the input parameters is a string and if it can be used as pattern.
-
-    Parameters
-    ----------
-    pattern : str
-        String to be checked.
-
-    Raises
-    ------
-    TypeError
-        The input parameter is not a string.
-    ValueError
-        The input parameter can not be used as pattern.
-    """
-    if not isinstance(pattern, str):
-        raise TypeError("Expect pattern as a string.")
-    if pattern[0] == "/":
-        raise ValueError("glob_pattern should not start with /")
-
-
-def _get_file_list(raw_dir: str, glob_pattern) -> list:
-    """Get the list of files from a directory based on pattern.
-
-    Parameters
-    ----------
-    raw_dir : _type_
-        Directory of the raw dataset.
-    glob_pattern : _type_
-        Pattern to match
-
-    Returns
-    -------
-    list
-        List of file paths.
-    """
-    check_glob_pattern(glob_pattern)
-    glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
-    list_fpaths = sorted(glob.glob(glob_fpath_pattern))
-    return list_fpaths
-
-
-def get_file_list(raw_dir, glob_pattern, verbose=False, debugging_mode=False):
-    """Get the list of files from a directory based on input parameters.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Directory of the campaign where to search for files.
-    glob_pattern : str or list
-        Glob pattern to search for files. Can also be a list of glob patterns.
-    verbose : bool, optional
-        Wheter to verbose the processing.
-        The default is False.
-    debugging_mode : bool, optional
-        If True, it select maximum 3 files for debugging purposes.
-        The default is False.
-
-    Returns
-    -------
-    list_fpaths : list
-        List of files file paths.
-
-    """
-    if not isinstance(glob_pattern, (str, list)):
-        raise ValueError("'glob_pattern' must be a str or list of strings.")
-    if isinstance(glob_pattern, str):
-        glob_pattern = [glob_pattern]
-
-    # Retrieve filepaths list
-    list_fpaths = [_get_file_list(raw_dir, pattern) for pattern in glob_pattern]
-    list_fpaths = [x for xs in list_fpaths for x in xs]  # flatten list
-
-    # Check there are files
-    n_files = len(list_fpaths)
-    if n_files == 0:
-        glob_fpath_patterns = [
-            os.path.join(raw_dir, pattern) for pattern in glob_pattern
-        ]
-        raise ValueError(f"No file found at t {glob_fpath_patterns}.")
-
-    # Subset file_list if debugging_mode
-    if debugging_mode:
-        max_files = min(3, n_files)
-        list_fpaths = list_fpaths[0:max_files]
-
-    # Log
-    n_files = len(list_fpaths)
-    msg = f" - {n_files} files to process in {raw_dir}"
-    if verbose:
-        print(msg)
-    logger.info(msg)
-
-    # Return file list
-    return list_fpaths
-
 
 ####---------------------------------------------------------------------------.
 #### Raw file readers

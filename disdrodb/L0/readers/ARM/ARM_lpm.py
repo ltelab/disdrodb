@@ -35,7 +35,7 @@ from disdrodb.L0.metadata import read_metadata
 from disdrodb.L0.check_standards import check_sensor_name
 
 # L0 processing
-from disdrodb.L0.L0A_processing import get_file_list
+from disdrodb.L0.io import get_raw_file_list
 from disdrodb.L0.io import get_L0B_fpath
 from disdrodb.L0.L0B_processing import write_L0B
 
@@ -165,10 +165,10 @@ def reader(
         check_sensor_name(sensor_name)
 
         # Retrieve list of files to process
-        glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
-        file_list = get_file_list(
+        file_list = get_raw_file_list(
             raw_dir=raw_dir,
-            glob_pattern=glob_pattern,
+            station_id=station_id, 
+            glob_patterns=raw_data_glob_pattern,
             verbose=verbose,
             debugging_mode=debugging_mode,
         )

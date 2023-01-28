@@ -22,15 +22,12 @@ import os
 import re
 import shutil
 import glob
-import datetime
 import numpy as np
 import pandas as pd
 import xarray as xr
-import dask.dataframe as dd
 import importlib.metadata
 from typing import Union
 from disdrodb.utils.logger import log_info, log_warning
-from disdrodb.L0.metadata import read_metadata
 
 logger = logging.getLogger(__name__)
 
@@ -190,7 +187,7 @@ def get_L0A_dir(processed_dir: str, station_id: str) -> str:
     ----------
     processed_dir : str
         Path of the processed directory
-    station_id : int
+    station_id : str
         ID of the station
 
     Returns
@@ -230,7 +227,7 @@ def get_L0A_fname(df, processed_dir, station_id: str) -> str:
         L0A DataFrame
     processed_dir : str
         Path of the processed directory
-    station_id : int
+    station_id : str
         ID of the station
 
     Returns
@@ -260,7 +257,7 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
         L0B xarray Dataset
     processed_dir : str
         Path of the processed directory
-    station_id : int
+    station_id : str
         ID of the station
 
     Returns
@@ -287,11 +284,11 @@ def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_id: str) -> str:
     Parameters
     ----------
     df : pd.DataFrame
-        L0A DataFrame
+        L0A DataFrame.
     processed_dir : str
-        Path of the processed directory
-    station_id : int
-        ID of the station
+        Path of the processed directory.
+    station_id : str
+        ID of the station.
 
     Returns
     -------
@@ -312,10 +309,10 @@ def get_L0B_fpath(
     Parameters
     ----------
     ds : xr.Dataset
-        L0B xarray Dataset
+        L0B xarray Dataset.
     processed_dir : str
-        Path of the processed directory
-    station_id : int
+        Path of the processed directory.
+    station_id : str
         ID of the station
     single_netcdf : bool
         If False, the file is specified inside the station directory.
@@ -334,6 +331,161 @@ def get_L0B_fpath(
     return fpath
 
 
+####--------------------------------------------------------------------------.
+#### File retrievals 
+ 
+
+def check_glob_pattern(pattern: str) -> None:
+    """Check if the input parameters is a string and if it can be used as pattern.
+
+    Parameters
+    ----------
+    pattern : str
+        String to be checked.
+
+    Raises
+    ------
+    TypeError
+        The input parameter is not a string.
+    ValueError
+        The input parameter can not be used as pattern.
+    """
+    if not isinstance(pattern, str):
+        raise TypeError("Expect pattern as a string.")
+    if pattern[0] == "/":
+        raise ValueError("glob_pattern should not start with /")
+
+
+def check_glob_patterns(patterns: Union[str, list]) -> list:
+    """Check if glob patterns are valids."""
+    if not isinstance(patterns, (str, list)):
+        raise ValueError("'glob_patterns' must be a str or list of strings.")
+    if isinstance(patterns, str):
+        patterns = [patterns]
+    _ = [check_glob_pattern(pattern) for pattern in patterns]
+    return patterns
+ 
+    
+def _get_file_list(raw_dir: str, glob_pattern) -> list:
+    """Get the list of files from a directory based on pattern.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Directory of the raw dataset.
+    glob_pattern : str
+        Pattern to match.
+
+    Returns
+    -------
+    list
+        List of file paths.
+    """
+    glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
+    list_fpaths = sorted(glob.glob(glob_fpath_pattern))
+    return list_fpaths
+
+
+def get_raw_file_list(raw_dir, station_id, glob_patterns, 
+                      verbose=False,
+                      debugging_mode=False):
+    """Get the list of files from a directory based on input parameters.
+    
+    Currently concatenates all files provided by the glob patterns. 
+    In future, this might be modified to enable DISDRODB processing when raw data 
+    are separated in multiple files. 
+    
+    Parameters
+    ----------
+    raw_dir : str
+        Directory of the campaign where to search for files.
+        Format <..>/DISDRODB/Raw/<data_source>/<campaign_name>
+    station_id : str
+        ID of the station
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+    debugging_mode : bool, optional
+        If True, it select maximum 3 files for debugging purposes.
+        The default is False.
+
+    Returns
+    -------
+    list_fpaths : list
+        List of files file paths.
+
+    """  
+    # Check glob patterns
+    glob_patterns = check_glob_patterns(glob_patterns)
+    
+    # Get patterns in the the data directory 
+    glob_patterns = [os.path.join("data", station_id, pattern) for pattern in glob_patterns]
+    
+    # Retrieve filepaths list
+    list_fpaths = [_get_file_list(raw_dir, pattern) for pattern in glob_patterns]
+    list_fpaths = [x for xs in list_fpaths for x in xs]  # flatten list
+
+    # Check there are files
+    n_files = len(list_fpaths)
+    if n_files == 0:
+        glob_fpath_patterns = [
+            os.path.join(raw_dir, pattern) for pattern in glob_patterns
+        ]
+        raise ValueError(f"No file found at {glob_fpath_patterns}.")
+
+    # Subset file_list if debugging_mode
+    if debugging_mode:
+        max_files = min(3, n_files)
+        list_fpaths = list_fpaths[0:max_files]
+
+    # Log
+    n_files = len(list_fpaths)
+    msg = f" - {n_files} files to process in {raw_dir}"
+    if verbose:
+        print(msg)
+    logger.info(msg)
+
+    # Return file list
+    return list_fpaths
+ 
+
+def get_l0a_file_list(processed_dir, station_id, debugging_mode):
+    """Retrieve L0A files for a give station.
+        
+    Parameters
+    ----------
+    processed_dir : str
+        Directory of the campaign where to search for the L0A files.
+        Format <..>/DISDRODB/Processed/<data_source>/<campaign_name>
+    station_id : str
+        ID of the station
+    debugging_mode : bool, optional
+        If True, it select maximum 3 files for debugging purposes.
+        The default is False.
+
+    Returns
+    -------
+    list_fpaths : list
+        List of L0A file paths.
+
+    """  
+    L0A_dir_path = get_L0A_dir(processed_dir, station_id)
+    filepaths = glob.glob(os.path.join(L0A_dir_path, "*.parquet"))
+    
+    n_files = len(filepaths)
+    
+    # Subset file_list if debugging_mode
+    if debugging_mode:
+        max_files = min(3, n_files)
+        filepaths = filepaths[0:max_files]
+    
+    # If no file available, raise error 
+    if n_files == 0:
+        msg = f"No L0A Apache Parquet file is available in {L0A_dir_path}. Run L0A processing first."
+        raise ValueError(msg)
+        
+    return filepaths   
+        
 ####--------------------------------------------------------------------------.
 #### Directory/File Creation/Deletion
 
@@ -426,8 +578,6 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     2. Check that 'raw_dir' follows the expect directory structure
     3. Check that each station_id directory contains data
     4. Check that for each station_id the mandatory metadata are specified.
-
-
 
     Parameters
     ----------
@@ -546,7 +696,7 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     #### Check metadata compliance
     _ = [check_metadata_compliance(fpath) for fpath in list_metadata_fpath]
-    # TODO: MISSING IMPLEMENTATION OF check_metadata_compliance
+    
     # -------------------------------------------------------------------------.
     #### Check there is /issue subfolder
     issue_dir = os.path.join(raw_dir, "issue")
@@ -599,7 +749,7 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     #### Check issue compliance
     _ = [check_issue_compliance(fpath) for fpath in list_issue_fpath]
-    # TODO: MISSING IMPLEMENTATION OF check_issue_compliance
+
     # -------------------------------------------------------------------------.
 
 
@@ -938,11 +1088,9 @@ def read_L0A_dataframe(
     from disdrodb.L0.L0A_processing import concatenate_dataframe
 
     # ----------------------------------------
-    # Check fpaths validity
+    # Check filepaths validity
     if not isinstance(fpaths, (list, str)):
         raise TypeError("Expecting fpaths to be a string or a list of strings.")
-    # TODO:
-    # - CHECK ENDS WITH .parquet
     # ----------------------------------------
     # If fpath is a string, convert to list
     if isinstance(fpaths, str):
@@ -951,6 +1099,7 @@ def read_L0A_dataframe(
     # - If debugging_mode=True, it reads only the first 3 fpaths
     if debugging_mode:
         fpaths = fpaths[0:3]  # select first 3 fpaths
+        
     # - Define the list of dataframe
     list_df = [
         _read_L0A(fpath, verbose=verbose, debugging_mode=debugging_mode)

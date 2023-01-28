@@ -11,41 +11,6 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 )
 
 
-def test_check_glob_pattern():
-    function_return = L0A_processing.check_glob_pattern("1")
-    assert function_return is None
-
-    with pytest.raises(TypeError, match="Expect pattern as a string."):
-        L0A_processing.check_glob_pattern(1)
-
-    with pytest.raises(ValueError, match="glob_pattern should not start with /"):
-        L0A_processing.check_glob_pattern("/1")
-
-
-def test_get_file_list():
-    path_test_directory = os.path.join(
-        PATH_TEST_FOLDERS_FILES, "test_L0A_processing", "files"
-    )
-
-    # Test that the function returns the correct number of files in debugging mode
-    file_list = L0A_processing.get_file_list(
-        path_test_directory, "*.txt", debugging_mode=True
-    )
-    assert len(file_list) == 2
-
-    # Test that the function returns the correct number of files in normal mode
-    file_list = L0A_processing.get_file_list(path_test_directory, "*.txt")
-    assert len(file_list) == 2
-
-    # Test that the function raises an error if the glob_pattern is not a str or list
-    # with pytest.raises(ValueError, match="'glob_pattern' must be a str or list of strings."):
-    #     L0A_processing._get_file_list(path_test_directory, 1)
-
-    # Test that the function raises an error if no files are found
-    with pytest.raises(ValueError):
-        L0A_processing.get_file_list(path_test_directory, "*.csv")
-
-
 def test_preprocess_reader_kwargs():
     # Test that the function removes the 'dtype' key from the reader_kwargs dict
     reader_kwargs = {"dtype": "int64", "other_key": "other_value"}

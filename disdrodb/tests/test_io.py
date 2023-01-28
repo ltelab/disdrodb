@@ -178,6 +178,57 @@ def test_get_L0B_fpath():
     assert res == expected_path
 
 
+####--------------------------------------------------------------------------.
+
+
+def test_check_glob_pattern():
+    function_return = io.check_glob_pattern("1")
+    assert function_return is None
+
+    with pytest.raises(TypeError, match="Expect pattern as a string."):
+        io.check_glob_pattern(1)
+
+    with pytest.raises(ValueError, match="glob_pattern should not start with /"):
+        io.check_glob_pattern("/1")
+
+
+def test_get_raw_file_list():
+    path_test_directory = os.path.join(
+        PATH_TEST_FOLDERS_FILES, "test_L0A_processing", "files"
+    )
+    
+    station_id = "STATION_ID"
+    
+    # Test that the function returns the correct number of files in debugging mode
+    file_list = io.get_raw_file_list(
+        raw_dir=path_test_directory, 
+        station_id=station_id,
+        glob_patterns="*.txt",
+        debugging_mode=True
+    )
+    assert len(file_list) == 2 # max(2, 3)
+
+    # Test that the function returns the correct number of files in normal mode
+    file_list = io.get_raw_file_list(raw_dir=path_test_directory, 
+                                     station_id=station_id,
+                                     glob_patterns="*.txt")
+    assert len(file_list) == 2
+
+    # Test that the function raises an error if the glob_patterns is not a str or list
+    with pytest.raises(ValueError, match="'glob_patterns' must be a str or list of strings."):
+        io.get_raw_file_list(raw_dir=path_test_directory, 
+                             station_id=station_id,
+                             glob_patterns=1)
+
+    # Test that the function raises an error if no files are found
+    with pytest.raises(ValueError):
+        io.get_raw_file_list(raw_dir=path_test_directory, 
+                             station_id=station_id,
+                             glob_patterns="*.csv")
+
+
+####--------------------------------------------------------------------------.
+
 folder_name = "folder_creation_deletion_test"
 path_file_temp = os.path.join(
     PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", folder_name
