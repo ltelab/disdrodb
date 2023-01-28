@@ -127,7 +127,7 @@ def reader(
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = "#"
-      # Skip first row as columns names
+    # Skip first row as columns names
     reader_kwargs["header"] = None
     # Skip first 3 rows
     reader_kwargs["skiprows"] = 3
@@ -146,7 +146,13 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]     # Cast all to string
+    reader_kwargs["na_values"] = [
+        "na",
+        "",
+        "error",
+        "NA",
+        "NP   ",
+    ]  # Cast all to string
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -157,6 +163,7 @@ def reader(
     def df_sanitizer_fun(df):
         # Import dask or pandas
         import pandas as pd
+
         # Drop header's log rows
         df = df.loc[df["temp"].astype(str).str.len() > 30]
 

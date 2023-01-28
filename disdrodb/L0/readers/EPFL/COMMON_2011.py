@@ -83,12 +83,13 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
- 
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
+
         # - Drop bad lines based on datalogger_debug column
         bad_indexes = df[df["datalogger_debug"].str.startswith("Frame", na=False)].index
         df = df.drop(bad_indexes)

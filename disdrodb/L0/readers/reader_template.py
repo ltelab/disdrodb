@@ -60,7 +60,7 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", " NA"]
- 
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
 
@@ -84,6 +84,7 @@ def reader(
     def df_sanitizer_fun(df):
         # Import dask or pandas
         import pandas as pd
+
         # [ADD YOUR CUSTOM CODE HERE]
         #             ...
 

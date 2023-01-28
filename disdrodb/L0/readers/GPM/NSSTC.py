@@ -63,7 +63,7 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-"] 
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-"]
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     # Deal with changing file format after 25 feb 2011 by the documentation
@@ -73,6 +73,7 @@ def reader(
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
+
         # - Check 'time' string length
         # --> Enable to detect rows which are corrupted
         df = df[df["time"].str.len() == 14]

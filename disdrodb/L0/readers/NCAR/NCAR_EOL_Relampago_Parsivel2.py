@@ -96,7 +96,7 @@ def reader(
         # Import pandas and numpy
         import numpy as np
         import pandas as pd
-       
+
         # Reshape dataframe
         a = df.to_numpy()
         a = a.reshape(int(len(a) / 97), 97)

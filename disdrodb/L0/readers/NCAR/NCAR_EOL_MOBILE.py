@@ -51,7 +51,7 @@ def reader(
     # - Define delimiter
     reader_kwargs["delimiter"] = "no_need_it"
 
-        # Skip first row as columns names
+    # Skip first row as columns names
     reader_kwargs["header"] = None
 
     # # Skip header
@@ -87,8 +87,6 @@ def reader(
         "-.-",
         " NA",
     ]
- 
-
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -102,7 +100,6 @@ def reader(
         import numpy as np
 
         import pandas as pd
-        
 
         # Different column and divider into raw order between stations
         header_1 = "Date,Time,Intensity (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Radar reflectivity (dBz),MOR Visibility (m),Number of detected particles,Temperature in sensor (°C),Weather code METAR/SPECI,Weather code NWS,Signal amplitude of Laserband,Heating current (A),Sensor voltage (V),Spectrum"

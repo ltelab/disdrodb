@@ -92,7 +92,7 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
- 
+
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
     # - Enable to deal with bad raw data files
@@ -102,6 +102,7 @@ def reader(
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
+
         # - Drop datalogger columns
         columns_to_drop = [
             "id",

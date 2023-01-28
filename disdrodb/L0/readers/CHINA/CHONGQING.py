@@ -62,13 +62,14 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", ["C"] * 32] 
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", ["C"] * 32]
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
 
         # - Import pandas
         import pandas as pd
+
         temp_time = df.loc[df.iloc[:, 0].astype(str).str.len() == 16].add_prefix("col_")
         temp_time["col_0"] = pd.to_datetime(temp_time["col_0"], format="%Y.%m.%d;%H:%M")
 
@@ -84,7 +85,7 @@ def reader(
 
         # Series and variable temporary for parsing raw_drop_number
         raw = pd.DataFrame({"raw_drop_number": []})
-   
+
         temp_string_2 = ""
 
         # Parse for raw_drop_number

@@ -91,8 +91,6 @@ def reader(
         "-.-",
         " NA",
     ]
- 
-
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -106,7 +104,6 @@ def reader(
         import numpy as np
 
         import pandas as pd
-        
 
         # Remove header columns
         df = df[

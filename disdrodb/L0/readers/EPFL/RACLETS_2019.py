@@ -66,12 +66,13 @@ def reader(
         "na",
         "",
         "error",
-    ] 
+    ]
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
+
         # - Drop row that contains errors
         df = df[~df["TO_BE_SPLITTED"].str.contains("Error in data reading! 0")]
 

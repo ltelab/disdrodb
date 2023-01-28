@@ -473,7 +473,7 @@ def run_L0(
         in order to meet the DISDRODB standards.
         The function must have the following definition and return a dataframe:
             def df_sanitizer_fun(df)
-                # Import pandas 
+                # Import pandas
                 import pandas as dd
                 # Custom processing
                 pass

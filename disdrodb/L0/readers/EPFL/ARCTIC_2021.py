@@ -80,7 +80,7 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA"] 
+    reader_kwargs["na_values"] = ["na", "", "error", "NA"]
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     # - Latitude and longitude are kept because the sensor is moving !
@@ -88,6 +88,7 @@ def reader(
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
+
         # - Drop invalid rows
         df = df.loc[df["id"].astype(str).str.len() < 10]
 

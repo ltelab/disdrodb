@@ -85,7 +85,7 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]
- 
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer
     # - Enable to deal with bad raw data files
@@ -94,6 +94,7 @@ def reader(
     def df_sanitizer_fun(df):
         # Import dask or pandas
         import pandas as pd
+
         # Data format:
         # -2015-01-09 00:02:16
         # 0000.063;0012.33;51;51;  -DZ; ...

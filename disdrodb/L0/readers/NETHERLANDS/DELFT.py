@@ -62,7 +62,7 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"] 
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     # Station 8 has all raw_drop_number corrupted, so it can't be used
@@ -148,10 +148,12 @@ def reader(
 
         # - Retrieve raw_drop_concentration and raw_drop_average_velocity columns
         df["raw_drop_concentration"] = df_to_parse.iloc[:, 35:67].apply(
-            lambda x: ",".join(x.dropna().astype(str)), axis=1,
+            lambda x: ",".join(x.dropna().astype(str)),
+            axis=1,
         )
         df["raw_drop_average_velocity"] = df_to_parse.iloc[:, 67:99].apply(
-            lambda x: ",".join(x.dropna().astype(str)), axis=1,
+            lambda x: ",".join(x.dropna().astype(str)),
+            axis=1,
         )
 
         # - Retrieve raw_drop_number column

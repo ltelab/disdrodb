@@ -91,7 +91,7 @@ def reader(
         "error",
         "NA",
     ]
- 
+
     # Different enconding for this campaign
     reader_kwargs["encoding"] = "latin-1"
 
@@ -103,6 +103,7 @@ def reader(
     def df_sanitizer_fun(df):
         # Import dask or pandas
         import pandas as pd
+
         # - Drop rows when  'Error in data reading' in rainfall_rate_32bit column
         bad_indexes = df[
             df["rainfall_rate_32bit"].str.startswith("Error in data reading!", na=False)

@@ -60,7 +60,7 @@ def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     ----------
     reader_kwargs : dict
         Initial parameter dictionary.
-    
+
     Returns
     -------
     dict

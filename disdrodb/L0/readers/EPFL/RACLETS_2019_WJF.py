@@ -90,12 +90,13 @@ def reader(
         "error",
         "Error in data reading! 0000.000",
         "Error in data reading! 0002.344",
-    ] 
+    ]
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
+
         # - Drop invalid rows
         df = df.loc[df["id"].astype(str).str.len() < 10]
 
