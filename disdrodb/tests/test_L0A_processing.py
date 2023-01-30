@@ -1,5 +1,6 @@
 import os
 import pytest
+import numpy as np
 import pandas as pd
 from disdrodb.L0 import L0A_processing
 from disdrodb.L0 import io
@@ -68,6 +69,42 @@ def test_strip_string_spaces():
     assert 1 == 1
 
 
+def test_remove_rows_with_missing_time():
+    # Create dataframe
+    n_rows = 3
+    time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
+    df = pd.DataFrame({"time": time})
+
+    # Add Nat value to a single rows of the time column
+    df.at[0, "time"] = np.datetime64("NaT")
+    # Test it remove the unvalid timestep
+    valid_df = L0A_processing.remove_rows_with_missing_time(df)
+    assert len(valid_df) == n_rows - 1
+    assert not np.any(valid_df["time"].isna())
+
+    # Add only Nat value
+    df["time"] = np.repeat([np.datetime64("NaT")], n_rows).astype("M8[s]")
+
+    # Test it raise an error if no valid timesteps left
+    with pytest.raises(ValueError):
+        L0A_processing.remove_rows_with_missing_time(df=df)
+
+
+def test_remove_duplicated_timesteps():
+    # Create dataframe
+    n_rows = 3
+    time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
+    df = pd.DataFrame({"time": time})
+
+    # Add duplicated timestep value
+    df.at[0, "time"] = df["time"][1]
+
+    # Test it removes the duplicated timesteps
+    valid_df = L0A_processing.remove_duplicated_timesteps(df=df)
+    assert len(valid_df) == n_rows - 1
+    assert len(np.unique(valid_df)) == len(valid_df)
+
+
 def test_read_raw_data():
     # this test relies on "\tests\pytest_files\test_L0A_processing\test_read_raw_data\data.csv"
 
@@ -117,7 +154,7 @@ def test_read_raw_file_list():
     assert 1 == 1
 
 
-def test__write_to_parquet():
+def test_write_to_parquet():
     # tested bellow
     # function_return = L0A_processing._write_to_parquet()
     assert 1 == 1

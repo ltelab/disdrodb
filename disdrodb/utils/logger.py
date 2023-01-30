@@ -177,6 +177,10 @@ def define_summary_log(list_logs):
             if log_with_problem:
                 with open(log_fpath) as input_file:
                     output_file.write(input_file.read())
+
+    # If no problems occured, remove the logs_problem_<station_id>.log file
+    if not log_with_problem:
+        os.remove(problem_fpath)
     return None
 
 

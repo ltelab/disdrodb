@@ -230,13 +230,80 @@ def _read_raw_data_zipped(
 
 
 def _check_df_sanitizer_fun(df_sanitizer_fun):
+    """Check the argument of df_sanitizer_fun is only df."""
+    if df_sanitizer_fun is None:
+        return None
     if not np.all(np.isin(inspect.getfullargspec(df_sanitizer_fun).args, ["df"])):
         raise ValueError(
             "The `df_sanitizer_fun` must have only `df` as input argument!"
         )
 
 
-def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
+def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
+    """Remove dataframe rows where the "time" is NaT.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with valid timesteps.
+    """
+    # Get the number of rows of the dataframe
+    n_rows = len(df)
+    # Drop rows with "time" nat values
+    df = df.dropna(subset="time", axis=0)
+    # If no valid timesteps, raise error
+    if len(df.index) == 0:
+        msg = " - There are not valid timestep."
+        log_error(logger=logger, msg=msg, verbose=verbose)
+        raise ValueError(msg)
+    # Otherwise, report the number of unvalid timesteps
+    n_unvalid_timesteps = n_rows - len(df)
+    if n_unvalid_timesteps > 0:
+        msg = f" - {n_unvalid_timesteps} rows had unvalid timesteps and were discarded."
+        log_warning(logger=logger, msg=msg, verbose=verbose)
+    return df
+
+
+def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
+    """Remove duplicated timesteps.
+
+    It keep only the first timestep occurence !
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with valid unique timesteps.
+    """
+    values, counts = np.unique(df["time"], return_counts=True)
+    idx_duplicates = np.where(counts > 1)[0]
+    values_duplicates = values[idx_duplicates]
+    # If there are duplicated timesteps
+    if len(values_duplicates) > 0:
+        # Drop duplicated timesteps (keeping the first occurence)
+        df = df.drop_duplicates(subset="time", keep="first")
+        # Report the values of duplicated timesteps
+        msg = f" - The following timesteps occured more than once: {values_duplicates}. Only the first occurence selected."
+        log_warning(logger=logger, msg=msg, verbose=verbose)
+    return df
+
+
+def cast_column_dtypes(
+    df: pd.DataFrame, sensor_name: str, verbose: bool = False
+) -> pd.DataFrame:
     """Convert 'object' dataframe columns into DISDRODB L0A dtype standards.
 
     Parameters
@@ -245,6 +312,8 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
         Input dataframe.
     sensor_name : str
         Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
 
     Returns
     -------
@@ -267,11 +336,15 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
         try:
             df[column] = df[column].astype(dtype_dict[column])
         except ValueError as e:
-            raise (f"ValueError: The column {column} has {e}")
+            msg = f"ValueError: The column {column} has {e}"
+            log_error(logger=logger, msg=msg, verbose=verbose)
+            raise ValueError(msg)
     return df
 
 
-def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
+def coerce_corrupted_values_to_nan(
+    df: pd.DataFrame, sensor_name: str, verbose: bool = False
+) -> pd.DataFrame:
     """Coerce corrupted values in dataframe numeric columns to np.nan.
 
     Parameters
@@ -280,6 +353,8 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
         Input dataframe.
     sensor_name : str
         Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
 
     Returns
     -------
@@ -303,11 +378,15 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
             try:
                 df[column] = pd.to_numeric(df[column], errors="coerce")
             except AttributeError:
-                raise ValueError(f"The column {column} is not a numeric column.")
+                msg = f"The column {column} is not a numeric column."
+                log_error(logger=logger, msg=msg, verbose=verbose)
+                raise ValueError(msg)
     return df
 
 
-def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
+def strip_string_spaces(
+    df: pd.DataFrame, sensor_name: str, verbose: bool = False
+) -> pd.DataFrame:
     """Strip leading/trailing spaces from dataframe string columns.
 
     Parameters
@@ -316,6 +395,8 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
         Input dataframe.
     sensor_name : str
         Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
 
     Returns
     -------
@@ -336,9 +417,11 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
             try:
                 df[column] = df[column].str.strip()
             except AttributeError:
-                raise (
+                msg = (
                     f"AttributeError: The column {column} is not a string/object dtype."
                 )
+                log_error(logger=logger, msg=msg, verbose=verbose)
+                raise AttributeError(msg)
     return df
 
 
@@ -372,6 +455,7 @@ def process_raw_file(
     pd.DataFrame
         Dataframe
     """
+    _check_df_sanitizer_fun(df_sanitizer_fun)
 
     # Read the data
     df = read_raw_data(
@@ -396,20 +480,13 @@ def process_raw_file(
 
     # Sanitize the dataframe with a custom function
     if df_sanitizer_fun is not None:
-        # _check_df_sanitizer_fun(df_sanitizer_fun) # TODO activate after refactoring
         df = df_sanitizer_fun(df)
 
     # Remove rows with time NaT
-    # - TODO: Log info !!!
-    df = df.dropna(subset="time", axis=0)
-    if len(df.index) == 0:
-        msg = f" - {filepath} has not valid timestep."
-        log_error(logger=logger, msg=msg, verbose=verbose)
-        raise ValueError(msg)
+    df = remove_rows_with_missing_time(df, verbose=verbose)
 
     # Remove duplicated timesteps
-    # - TODO: Log info !!!
-    df = df.drop_duplicates(subset="time", keep="first")
+    df = remove_duplicated_timestep(df, verbose=verbose)
 
     # ------------------------------------------------------.
     #### - Filter out problematic data reported in issue file
@@ -419,13 +496,13 @@ def process_raw_file(
 
     # ------------------------------------------------------.
     # - Coerce numeric columns corrupted values to np.nan
-    df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name)
+    df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name, verbose=verbose)
 
     # - Strip trailing/leading space from string columns
-    df = strip_string_spaces(df, sensor_name=sensor_name)
+    df = strip_string_spaces(df, sensor_name=sensor_name, verbose=verbose)
 
     # - Cast dataframe to dtypes
-    df = cast_column_dtypes(df, sensor_name=sensor_name)
+    df = cast_column_dtypes(df, sensor_name=sensor_name, verbose=verbose)
 
     # ------------------------------------------------------.
     # Check column names agrees to DISDRODB standards
