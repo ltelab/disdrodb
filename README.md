@@ -45,12 +45,6 @@ DISDRODB can be installed from PyPI with pip:
   ```sh
   pip install disdrodb
   ```
-  
-In future, it will become available from conda-forge for conda installations:   
-
-  ```sh
-  conda install -c conda-forge disdrodb
-  ```
  
 ## Contributors
 
