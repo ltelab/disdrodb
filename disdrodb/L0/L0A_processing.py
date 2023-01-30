@@ -486,7 +486,7 @@ def process_raw_file(
     df = remove_rows_with_missing_time(df, verbose=verbose)
 
     # Remove duplicated timesteps
-    df = remove_duplicated_timestep(df, verbose=verbose)
+    df = remove_duplicated_timesteps(df, verbose=verbose)
 
     # ------------------------------------------------------.
     #### - Filter out problematic data reported in issue file
@@ -703,10 +703,6 @@ def read_raw_file_list(
         raise ValueError("'file_list' must contains at least 1 filepath.")
 
     # ------------------------------------------------------.
-    ### - Get station id from file_list
-    station_id = infer_station_id_from_fpath(file_list[0])
-
-    # ------------------------------------------------------.
     ### - Loop over all raw files
     n_files = len(file_list)
     processed_file_counter = 0
@@ -753,7 +749,7 @@ def read_raw_file_list(
     df = concatenate_dataframe(list_df, verbose=verbose)
 
     # - Remove rows with duplicate timestep (keep the first)
-    df = df.drop_duplicates(subset=["time"], axis=0)
+    df = df.drop_duplicates(subset=["time"], keep="first")
 
     # ------------------------------------------------------.
     # Return the dataframe
