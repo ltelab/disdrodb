@@ -8,16 +8,19 @@ Created on Thu Jun 23 14:02:12 2022
 import dask
 import logging
 import numpy as np
+import pandas as pd
 import xarray as xr
+from typing import List, Tuple
 from disdrodb.utils.logger import log_info, log_warning, log_error
 
 logger = logging.getLogger(__name__)
 
 
-def ensure_monotonic_dimension(
-    fpaths: str, list_ds: list, dim: str = "time", verbose: bool = False
-) -> list:
-    """Ensure that a list of xr.Dataset has a monotonic increasing (non duplicated) dimension values.
+####---------------------------------------------------------------------------.
+def _sort_datasets_by_dim(
+    list_ds: list, fpaths: str, dim: str = "time"
+) -> Tuple[list, list]:
+    """Sort a list of xarray.Dataset and corresponding file paths by the starting value of a specified dimension.
 
     Parameters
     ----------
@@ -26,18 +29,24 @@ def ensure_monotonic_dimension(
     list_ds : list
         List of xarray Dataset.
     dim : str, optional
-        Dimension name.
-        The default is "time".
+        Dimension name. The default is "time".
 
     Returns
     -------
-    list
-        List of xarray datasets.
+    tuple
+        Tuple of sorted list of xarray datasets and sorted list of file paths.
     """
-    # Currently assume that first input is first start_time occuring
-    # TODO: RE-SORT fpaths, list_ds by start_time
+    start_values = [ds[dim].values[0] for ds in list_ds]
+    sorted_idx = np.argsort(start_values)
+    sorted_list_ds = [list_ds[i] for i in sorted_idx]
+    sorted_fpaths = [fpaths[i] for i in sorted_idx]
+    return sorted_list_ds, sorted_fpaths
 
-    # Get dimension values array (and associated list_ds/xr.Dataset indices)
+
+def _get_dim_values_index(
+    list_ds: list, dim: str
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Get list and dataset indices associated to the dimension values."""
     dim_values = np.concatenate([ds[dim].values for ds in list_ds])
     list_index = np.concatenate(
         [np.ones(len(ds[dim])) * i for i, ds in enumerate(list_ds)]
@@ -46,52 +55,275 @@ def ensure_monotonic_dimension(
     ds_index = np.concatenate(
         [np.arange(0, len(ds[dim])) for i, ds in enumerate(list_ds)]
     )
+    return dim_values, list_index, ds_index
 
-    # Identify index where start decreasing or duplicated
+
+def _get_non_monotonic_indices_to_remove(dim_values: np.ndarray) -> np.ndarray:
+    """Returns the indices that cause a non-monotonic increasing series of values.
+
+    Assume that duplicated values, if present, occurs consecutively !
+    """
     diff_dim_values = np.diff(dim_values)
     indices_decreasing = np.where(diff_dim_values.astype(float) <= 0)[0] + 1
+    if len(indices_decreasing) == 0:
+        return []
+    idx_start_decreasing = indices_decreasing[0]
+    idx_restart_increase = np.max(
+        np.where(dim_values <= dim_values[idx_start_decreasing - 1])[0]
+    )
+    idx_to_remove = np.arange(idx_start_decreasing, idx_restart_increase + 1)
+    return idx_to_remove
 
-    if len(indices_decreasing) > 0:
-        idx_start_decreasing = indices_decreasing[0]  # or duplicate
 
-        # Find last timestep that is lower or equal to that timestep
-        idx_restart_increase = np.max(
-            np.where(dim_values <= dim_values[idx_start_decreasing - 1])[0]
+def _get_duplicated_indices(x, keep="first"):
+    """Return the indices to remove for duplicated values in x such that there is only one value occurence.
+
+    Parameters
+    ----------
+    x :  np.array
+        Array of values.
+    keep : str, optional
+        The value to keep, either 'first', 'last' or False.
+        The default is 'first'.
+        ‘first’ : Mark duplicates as True except for the first occurrence.
+        ‘last’ : Mark duplicates as True except for the last occurrence.
+        False : Mark all duplicates as True.
+
+    Returns
+    -------
+    np.array
+        Array of indices to remove.
+    """
+    # Check 'keep' argument
+    # if not isinstance(keep, str):
+    #     raise TypeError("`keep` must be a string. Either first or last.")
+    # if not np.isin(keep, ["first", "last"]):
+    #     raise ValueError("Invalid value for argument keep. Only 'first' and 'last' are accepted.")
+    # # Get
+
+    # x_indices = np.arange(len(x))
+    # unique_values, unique_counts = np.unique(x, return_counts=True)
+    # duplicated_values = unique_values[unique_counts > 1]
+
+    # duplicated_indices = np.array([], dtype=np.int32)
+    # if keep == 'first':
+    #     for value in duplicated_values:
+    #         indices = np.where(x == value)[0]
+    #         duplicated_indices = np.concatenate([duplicated_indices, indices[1:]])
+    # elif keep == 'last':
+    #     indices = np.where(x == value)[0]
+    #     duplicated_indices = np.concatenate([duplicated_indices, indices[:-1]])
+    # return duplicated_indices
+
+    # Get duplicate indices
+    idx_duplicated = pd.Index(x).duplicated(keep=keep)
+    return np.where(idx_duplicated)[0]
+
+
+def _get_bad_info_dict(
+    idx_to_remove: np.ndarray,
+    list_index: np.ndarray,
+    dim_values: np.ndarray,
+    ds_index: np.ndarray,
+) -> Tuple[dict, dict]:
+    """Return two dictionaries mapping, for each dataset, the bad values and indices to remove.
+
+    Parameters
+    ----------
+    idx_to_remove : np.ndarray
+        Indices to be removed to ensure monotonic dimension.
+    list_index : np.ndarray
+        Indices corresponding to the file in the `list_ds` parameter.
+    ds_index : np.ndarray
+        Indices corresponding to the dataset dimension index in the `list_ds` parameter.
+
+    Returns
+    -------
+    dict
+        A dictionary mapping the dimension values to remove for each file.
+    dict
+        A dictionary mapping the dataset dimension indices to remove for each file.
+    """
+    list_index_bad = list_index[idx_to_remove]
+    ds_index_bad = ds_index[idx_to_remove]
+    dim_values_bad = dim_values[idx_to_remove]
+    # Retrieve dictionary with the bad values in each dataset
+    dict_ds_bad_values = {
+        k: dim_values_bad[np.where(list_index_bad == k)[0]]
+        for k in np.unique(list_index_bad)
+    }
+    # Retrieve dictionary with the index with the bad values in each dataset
+    dict_ds_bad_idx = {
+        k: ds_index_bad[np.where(list_index_bad == k)[0]]
+        for k in np.unique(list_index_bad)
+    }
+    return dict_ds_bad_values, dict_ds_bad_idx
+
+
+def _remove_dataset_bad_values(list_ds, fpaths, dict_ds_bad_idx, dim):
+    """Remove portions of xarray Datasets corresponding to duplicated values.
+
+    Parameters
+    ----------
+    list_ds : list
+        List of xarray Dataset.
+    dict_ds_bad_idx : dict
+        Dictionary with the dimension indices corresponding to bad values in each xarray Dataset.
+
+    Returns
+    -------
+
+    list_ds : list
+        List of xarray Dataset without bad values.
+    """
+    list_index_valid = list(range(len(list_ds)))
+    for list_index_bad, bad_idx in dict_ds_bad_idx.items():
+        # Get dataset
+        ds = list_ds[list_index_bad]
+        # If resulting in a empty dataset, drop index from list_index_valid
+        if len(bad_idx) == len(list_ds[list_index_bad][dim]):
+            list_index_valid.remove(list_index_bad)
+        # Remove unvalid indices
+        list_ds[list_index_bad] = ds.drop_isel({dim: bad_idx})
+
+    # Keep non-empty datasets
+    new_list_ds = [list_ds[idx] for idx in list_index_valid]
+    new_fpaths = [fpaths[idx] for idx in list_index_valid]
+    return new_list_ds, new_fpaths
+
+
+def ensure_unique_dimension_values(
+    list_ds: list, fpaths: str, dim: str = "time", verbose: bool = False
+) -> list:
+    """Ensure that a list of xr.Dataset has non duplicated dimension values.
+
+    Parameters
+    ----------
+    list_ds : list
+        List of xarray Dataset.
+    fpaths : list
+        List of netCDFs file paths.
+    dim : str, optional
+        Dimension name.
+        The default is "time".
+
+    Returns
+    -------
+    list
+        List of xarray Dataset.
+    list
+        List of netCDFs file paths.
+    """
+    # Reorder the files and filepaths by the starting dimension value (time)
+    sorted_list_ds, sorted_fpaths = _sort_datasets_by_dim(
+        list_ds=list_ds, fpaths=fpaths, dim=dim
+    )
+
+    # Get the datasets dimension values array (and associated list_ds/xr.Dataset indices)
+    dim_values, list_index, ds_index = _get_dim_values_index(list_ds, dim=dim)
+
+    # Get duplicated indices
+    idx_duplicated = _get_duplicated_indices(dim_values, keep="first")
+
+    # Remove duplicated indices
+    if len(idx_duplicated) > 0:
+        # Retrieve dictionary providing bad values and indexes for each dataset
+        dict_ds_bad_values, dict_ds_bad_idx = _get_bad_info_dict(
+            idx_to_remove=idx_duplicated,
+            list_index=list_index,
+            dim_values=dim_values,
+            ds_index=ds_index,
         )
 
-        # Indices to remove
-        idx_to_remove = np.arange(idx_start_decreasing, idx_restart_increase + 1)
-        list_index_bad = list_index[idx_to_remove]
-        ds_index_bad = ds_index[idx_to_remove]
-        dim_values_bad = dim_values[idx_to_remove]
+        # Report for each dataset, the duplicates values occuring
+        for list_index_bad, bad_values in dict_ds_bad_values.items():
+            # Retrieve dataset filepath
+            fpath = fpaths[list_index_bad]
+            # If all values inside the file are duplicated, report it
+            if len(bad_values) == len(list_ds[list_index_bad][dim]):
+                msg = f"{fpath} is excluded from concatenation. All {dim} values are already present in some other file."
+                log_warning(logger=logger, msg=msg, verbose=verbose)
+            else:
+                if np.issubdtype(bad_values.dtype, np.datetime64):
+                    bad_values = bad_values.astype("M8[s]")
+                msg = f"In {fpath}, dropping {dim} values {bad_values} to avoid duplicated {dim} values."
+                log_warning(logger=logger, msg=msg, verbose=verbose)
 
-        # Get dictionary of values/idx which are duplicated (or lead to no monotonic dimension)
-        dict_ds_bad_values = {
-            k: dim_values_bad[np.where(list_index_bad == k)[0]]
-            for k in np.unique(list_index_bad)
-        }
-        dict_ds_bad_idx = {
-            k: ds_index_bad[np.where(list_index_bad == k)[0]]
-            for k in np.unique(list_index_bad)
-        }
+        # Remove duplicated values
+        list_ds, fpaths = _remove_dataset_bad_values(
+            list_ds=list_ds, fpaths=fpaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
+        )
+    return list_ds, fpaths
 
-        # Print message
-        # TODO: use slices instead for clear message !
-        for ds_idx_bad, bad_values in dict_ds_bad_values.items():
-            fpath = fpaths[ds_idx_bad]
-            msg = f"In {fpath}, dropping {dim} values {bad_values} to ensure monotonic {dim} dimension."
-            log_warning(logger=logger, msg=msg, verbose=verbose)
 
-        # Remove non-unique and not da
-        for ds_idx_bad, bad_idx in dict_ds_bad_idx.items():
-            ds = list_ds[ds_idx_bad]
-            list_ds[ds_idx_bad] = ds.drop_isel({dim: bad_idx})
+def ensure_monotonic_dimension(
+    list_ds: list, fpaths: str, dim: str = "time", verbose: bool = False
+) -> list:
+    """Ensure that a list of xr.Dataset has a monotonic increasing (non duplicated) dimension values.
 
+    Parameters
+    ----------
+    list_ds : list
+        List of xarray Dataset.
+    fpaths : list
+        List of netCDFs file paths.
+    dim : str, optional
+        Dimension name.
+        The default is "time".
+
+    Returns
+    -------
+    list
+        List of xarray Dataset.
+    list
+        List of netCDFs file paths.
+    """
+    # Reorder the files and filepaths by the starting dimension value (time)
+    # TODO: should maybe also split by non-continuous time ...
+    sorted_list_ds, sorted_fpaths = _sort_datasets_by_dim(
+        list_ds=list_ds, fpaths=fpaths, dim=dim
+    )
+
+    # Get the datasets dimension values array (and associated list_ds/xr.Dataset indices)
+    dim_values, list_index, ds_index = _get_dim_values_index(list_ds, dim=dim)
+
+    # Identify the indices to remove to ensure monotonic values
+    idx_to_remove = _get_non_monotonic_indices_to_remove(dim_values)
+
+    # Remove indices causing the values to be non-monotonic increasing
+    if len(idx_to_remove) > 0:
+        # Retrieve dictionary providing bad values and indexes for each dataset
+        dict_ds_bad_values, dict_ds_bad_idx = _get_bad_info_dict(
+            idx_to_remove=idx_to_remove,
+            list_index=list_index,
+            dim_values=dim_values,
+            ds_index=ds_index,
+        )
+
+        # Report for each dataset, the values to be dropped
+        for list_index_bad, bad_values in dict_ds_bad_values.items():
+            # Retrieve dataset filepath
+            fpath = fpaths[list_index_bad]
+            # If all values inside the file shoudl be dropped, report it
+            if len(bad_values) == len(list_ds[list_index_bad][dim]):
+                msg = f"{fpath} is excluded from concatenation. All {dim} values cause the dimension to be non-monotonic."
+                log_warning(logger=logger, msg=msg, verbose=verbose)
+            else:
+                if np.issubdtype(bad_values.dtype, np.datetime64):
+                    bad_values = bad_values.astype("M8[s]")
+                msg = f"In {fpath}, dropping {dim} values {bad_values} to ensure monotonic {dim} dimension."
+                log_warning(logger=logger, msg=msg, verbose=verbose)
+
+        # Remove duplicated values
+        list_ds, fpaths = _remove_dataset_bad_values(
+            list_ds=list_ds, fpaths=fpaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
+        )
         # Iterative check
-        list_ds = ensure_monotonic_dimension(fpaths, list_ds, dim=dim)
+        list_ds, fpathsa = ensure_monotonic_dimension(
+            list_ds=list_ds, fpaths=fpaths, dim=dim
+        )
 
-    # Return list of xr.Dataset with monotonic dimension
-    return list_ds
+    return list_ds, fpaths
 
 
 # ds_index = [0,1,2,3,0,1,2,3,4]
@@ -100,6 +332,9 @@ def ensure_monotonic_dimension(
 # list_index = np.array(list_index)
 # dim_values = np.array(dim_values)
 # ds_index = np.array(ds_index)
+
+
+####---------------------------------------------------------------------------.
 
 
 def get_common_coords(list_ds: list) -> set:
@@ -179,6 +414,7 @@ def get_common_vars(list_ds: list) -> tuple:
     return common_vars_ref, dict_problems
 
 
+####---------------------------------------------------------------------------
 def get_list_ds(fpaths: str) -> list:
     """Get list of xarray datasets from file paths.
 
@@ -205,8 +441,32 @@ def get_list_ds(fpaths: str) -> list:
     return list_ds
 
 
+####---------------------------------------------------------------------------
+def _get_coord_values(ds, coord):
+    values = ds[coord].values.tolist()
+    if not isinstance(values, list):
+        values = [values]
+    return values
+
+
+def _check_coord_values(list_ds, coord):
+    coord_values = _get_coord_values(list_ds[0], coord)
+    ref_set = set(coord_values)
+    dict_coord = {}
+    dict_coord["ref"] = ref_set
+    for i, ds in enumerate(list_ds):
+        values = _get_coord_values(ds, coord)
+        values = set(values)
+        if ref_set != values:
+            dict_coord[i] = values
+            list_ds[i] = ds.assign_coords({coord: list(ref_set)})
+    return dict_coord
+
+
 def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
     """Check coordinates are invariant across xarray datasets.
+
+    It takes the first dataset as reference.
 
     Parameters
     ----------
@@ -221,24 +481,60 @@ def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
         (List of xarray datasets, Dictionary to collect problems)
     """
     dict_problems = {}
+    # dict_problems = {}
+    # for coord in coords:
+    #     dict_coord = _check_coord_values(list_ds, coord)
+    #     dict_problems[coord] = dict_coord
+    # return list_ds, dict_problems
     for coord in coords:
-        print(coord)
-        coord_values = list_ds[0][coord].values.tolist()
-        if not isinstance(coord_values, list):
-            coord_values = [coord_values]
+        coord_values = _get_coord_values(ds=list_ds[0], coord=coord)
         ref_set = set(coord_values)
         dict_coord = {}
         dict_coord["ref"] = ref_set
         for i, ds in enumerate(list_ds):
-            values = ds[coord].values.tolist()
-            if not isinstance(values, list):
-                values = [values]
+            values = _get_coord_values(ds=ds, coord=coords)
             values = set(values)
             if ref_set != values:
                 dict_coord[i] = values
                 list_ds[i] = ds.assign_coords({coord: list(ref_set)})
         dict_problems[coord] = dict_coord
     return list_ds, dict_problems
+
+
+####---------------------------------------------------------------------------
+
+
+def _concatenate_datasets(list_ds, dim="time", verbose=False):
+    try:
+        msg = "Start concatenating with xr.concat."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+        ds = xr.concat(list_ds, dim="time", coords="minimal", compat="override")
+
+        msg = "Concatenation with xr.concat has been successful."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+    except Exception as e:
+        msg = f"Concatenation with xr.concat failed. Error is {e}."
+        log_error(logger=logger, msg=msg, verbose=verbose)
+        raise ValueError(msg)
+    return ds
+
+
+def _merge_datasets(list_ds, verbose=False):
+    try:
+        msg = "Start concatenating with xr.merge."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+        ds = xr.merge(
+            list_ds, compat="override", join="outer", combine_attrs="override"
+        )
+        msg = "Concatenation with xr.merge has been successful."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+    except Exception as e:
+        msg = f"Concatenation with xr.merge failed. Error is {e}"
+        log_error(logger=logger, msg=msg, verbose=verbose)
+        raise ValueError(msg)
+    return ds
 
 
 def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
@@ -271,8 +567,15 @@ def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
     list_ds = get_list_ds(fpaths)
 
     # --------------------------------------.
+    # Ensure time dimension contains no duplicated values
+    list_ds, fpaths = ensure_unique_dimension_values(
+        list_ds=list_ds, fpaths=fpaths, dim="time", verbose=verbose
+    )
+
     # Ensure time dimension is monotonic increasingly
-    list_ds = ensure_monotonic_dimension(fpaths, list_ds, dim="time")
+    list_ds, fpaths = ensure_monotonic_dimension(
+        list_ds=list_ds, fpaths=fpaths, dim="time", verbose=verbose
+    )
 
     # --------------------------------------.
     # Ensure coordinate outside time do not vary
@@ -358,34 +661,14 @@ def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
         # Ensure common set of variables across xr.Datasets
         for i, ds in enumerate(list_ds):
             list_ds[i] = ds[common_vars]
+
         # Try concatenating
-        try:
-            msg = "Start concatenating with xr.concat."
-            log_info(logger=logger, msg=msg, verbose=verbose)
+        ds = _concatenate_datasets(list_ds=list_ds, dim="time", verbose=verbose)
 
-            ds = xr.concat(list_ds, dim="time", coords="minimal", compat="override")
-
-            msg = "Concatenation with xr.concat has been successful."
-            log_info(logger=logger, msg=msg, verbose=verbose)
-
-        except:
-            msg = "Concatenation with xr.concat failed."
-            log_error(logger=logger, msg=msg, verbose=verbose)
-            raise ValueError(msg)
     # - Otherwise use xr.merge
     else:
-        try:
-            msg = "Start concatenating with xr.merge."
-            log_info(logger=logger, msg=msg, verbose=verbose)
-            ds = xr.merge(
-                list_ds, compat="override", join="outer", combine_attrs="override"
-            )
-            msg = "Concatenation with xr.merge has been successful."
-            log_info(logger=logger, msg=msg, verbose=verbose)
-        except:
-            msg = "Concatenation with xr.merge failed."
-            log_error(logger=logger, msg=msg, verbose=verbose)
-            raise ValueError(msg)
+        ds = _merge_datasets(list_ds=list_ds, verbose=verbose)
+
     # --------------------------------------.
     # Return xr.Dataset
     return ds

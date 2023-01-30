@@ -49,9 +49,13 @@ setup(
         "Operating System :: Microsoft :: Windows",
     ],
     entry_points={
+        # <name_to_type_in_terminal>=<module>:<name_of_the_function>
         "console_scripts": [
-            # <name_to_type_in_terminal>=<module>:<name_of_the_function>
-            "run_disdrodb_l0_reader=disdrodb.L0.run_disdrodb_l0_reader:run_reader_cmd",
+            # L0 reader execution
+            "run_disdrodb_l0_reader=disdrodb.L0.scripts.run_disdrodb_l0_reader:run_reader_cmd",
+            # L0B concatenation
+            "disdrodb_concat_l0b_station=disdrodb.L0.scripts.run_disdrodb_concat_l0b_station:run_concat_cmd",
+            # "disdrodb_concat_l0b=disdrodb.L0.scripts.run_disdrodb_concat_l0b",
         ]
     },
 )

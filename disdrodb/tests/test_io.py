@@ -22,8 +22,8 @@ PATH_FILE_LINUX = (
 
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
-def test_infer_institute_from_fpath(path_raw_data):
-    assert io.infer_institute_from_fpath(path_raw_data) == "institute_name"
+def test_infer_data_source_from_fpath(path_raw_data):
+    assert io.infer_data_source_from_fpath(path_raw_data) == "institute_name"
 
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])

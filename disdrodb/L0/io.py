@@ -32,9 +32,8 @@ from disdrodb.utils.logger import log_info, log_warning
 logger = logging.getLogger(__name__)
 
 ####---------------------------------------------------------------------------.
-#### Directory/Filepaths Defaults
-def infer_institute_from_fpath(fpath: str) -> str:
-    """Infer institue name from file path.
+def infer_data_source_from_fpath(fpath: str) -> str:
+    """Infer data source from file path.
 
     Parameters
     ----------
@@ -95,6 +94,24 @@ def infer_station_id_from_fpath(fpath: str) -> str:
     # Optional strip .yml if fpath point to YAML file
     station_id.strip(".yml")
     return station_id
+
+
+def get_disdrodb_dir(base_dir: str) -> str:
+    """Return the disdrodb base directory from 'raw_dir' or 'processed_dir' paths.
+
+    Parameters
+    ----------
+    base_dir : str
+        Path 'raw_dir' or 'processed_dir' directory.
+
+    Returns
+    -------
+    str
+        Path of the DISDRODB directory.
+    """
+    idx_start = base_dir.rfind("DISDRODB")
+    disdrodb_dir = os.path.join(base_dir[:idx_start], "DISDRODB")
+    return disdrodb_dir
 
 
 def get_campaign_name(base_dir: str) -> str:
@@ -178,6 +195,10 @@ def get_dataframe_min_max_time(df: pd.DataFrame):
     starting_time = df["time"].iloc[0]
     ending_time = df["time"].iloc[-1]
     return (starting_time, ending_time)
+
+
+####--------------------------------------------------------------------------.
+#### Directory/Filepaths L0A and L0B Defaults
 
 
 def get_L0A_dir(processed_dir: str, station_id: str) -> str:
@@ -489,6 +510,12 @@ def get_l0a_file_list(processed_dir, station_id, debugging_mode):
 
 ####--------------------------------------------------------------------------.
 #### Directory/File Creation/Deletion
+def _check_directory_exist(dir_path):
+    # Check the directory exist
+    if not os.path.exists(dir_path):
+        raise ValueError(f"{dir_path} directory does not exist.")
+    if not os.path.isdir(dir_path):
+        raise ValueError(f"{dir_path} is not a directory.")
 
 
 def _create_directory(path: str) -> None:

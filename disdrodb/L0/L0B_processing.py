@@ -23,7 +23,6 @@
 
 # -----------------------------------------------------------------------------.
 import os
-import yaml
 import logging
 import numpy as np
 import pandas as pd
@@ -34,6 +33,7 @@ from disdrodb.L0.check_standards import (
     _check_raw_fields_available,
     # check_array_lengths_consistency,
 )
+from disdrodb.L0.io import _check_directory_exist
 from disdrodb.L0.standards import (
     get_diameter_bin_center,
     get_diameter_bin_lower,
@@ -50,8 +50,10 @@ from disdrodb.L0.standards import (
     get_time_encoding,
 )
 from disdrodb.utils.logger import (
+    create_file_logger,
+    close_logger,
     log_info,
-    # log_warning,
+    log_warning,
     # log_debug,
     log_error,
 )
@@ -610,144 +612,6 @@ def write_L0B(ds: xr.Dataset, fpath: str) -> None:
 
     # Write netcdf
     ds.to_netcdf(fpath, engine="netcdf4")
-
-
-####--------------------------------------------------------------------------.
-#### Single L0B netCDF
-
-
-def concatenate_L0B_files(processed_dir, station_id, remove=False):
-    """Concatenate all L0B netCDF files into a single netCDF file.
-
-    The single netCDF file is saved at <processed_dir>/L0B.
-    """
-    import glob
-    from disdrodb.L0.io import get_L0B_dir, get_L0B_fpath
-    from disdrodb.L0.utils_nc import xr_concat_datasets
-
-    # TODO: add logs
-
-    # Retrieve L0B files
-    L0B_dir_path = get_L0B_dir(processed_dir, station_id)
-    file_list = sorted(glob.glob(os.path.join(L0B_dir_path, "*.nc")))
-
-    # Check there are at least two files
-    n_files = len(file_list)
-    if n_files <= 1:
-        msg = f"No L0B file is available for concatenation in {L0B_dir_path}."
-        raise ValueError(msg)
-
-    # Concatenate the files
-    ds = xr_concat_datasets(file_list)  # TODO RENAME
-
-    # Define the filepath of the concatenated L0B netCDF
-    single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_id, single_netcdf=True)
-    write_L0B(ds, fpath=single_nc_fpath)
-
-    # If remove = True, remove all the single files
-    if remove:
-        _ = [os.remove(fpath) for fpath in file_list]
-
-    # Open the full netCDF
-    ds = xr.open_dataset(single_nc_fpath, chunks="auto")
-
-    # Return the dataset
-    return ds
-
-
-def create_L0B_summary(
-    ds: xr.Dataset,
-    processed_dir: str,
-    station_id: str,
-) -> None:
-    """Create L0 summary statistics and save it into the station info YAML file.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        Input xarray dataset.
-    processed_dir : str
-        Output file path
-    station_id : str
-        Station ID
-    """
-
-    ###-----------------------------------------------------------------------.
-    # Get the sensor name
-    sensor_name = ds.attrs.get("sensor_name")
-
-    # Initialize dictionary
-    stats_dict = {}
-
-    # Infer the sampling interval looking at the difference between timesteps
-    dt, counts = np.unique(np.diff(ds.time.values), return_counts=True)
-    dt_most_frequent = dt[np.argmax(counts)]
-    dt_most_frequent = dt_most_frequent.astype("m8[s]")
-    inferred_sampling_interval = dt_most_frequent.astype(int)
-    stats_dict["inferred_sampling_interval"] = inferred_sampling_interval
-
-    # Number of years, months, days, minutes
-    time = ds.time.values
-    n_timesteps = len(time)
-    n_minutes = inferred_sampling_interval / 60 * n_timesteps
-    n_hours = n_minutes / 60
-    n_days = n_hours / 24
-
-    stats_dict["n_timesteps"] = n_timesteps
-    stats_dict["n_minutes"] = n_minutes
-    stats_dict["n_hours"] = n_hours
-    stats_dict["n_days"] = n_days
-
-    # Add start_time and end_time
-    start_time = pd.DatetimeIndex(time[[0]])
-    end_time = pd.DatetimeIndex(time[[-1]])
-    years = np.unique([start_time.year, end_time.year])
-    if len(years) == 1:
-        years_coverage = str(years[0])
-    else:
-        years_coverage = str(years[0]) + "-" + str(years[-1])
-
-    stats_dict["years_coverage"] = years_coverage
-    stats_dict["start_time"] = start_time[0].isoformat()
-    stats_dict["end_time"] = end_time[0].isoformat()
-
-    ###-----------------------------------------------------------------------.
-    # TODO: Create and save image with temporal coverage
-    # --> Colored using quality flag from sensor_status if available ?
-
-    ###-----------------------------------------------------------------------.
-    # TODO STATISTICS
-    # --> Requiring deriving stats from raw spectrum
-
-    # diameter_min, diameter_max, diameter_sum
-
-    # Total rain events
-
-    # Total rainy minutes
-
-    # Total dry minutes
-
-    # Number of dry/rainy minutes
-
-    ###-----------------------------------------------------------------------.
-    # Save to info.yaml
-    info_path = os.path.join(processed_dir, "info", station_id + ".yml")
-    with open(info_path, "w") as f:
-        yaml.dump(stats_dict, f, sort_keys=False)
-
-    return None
-
-
-def create_L0B_archive(processed_dir, station_id, remove):
-    # TODO: COMMAND TO RUN FROM TERMINAL IN NEW ENVIRONMENT !
-    ds = concatenate_L0B_files(
-        processed_dir=processed_dir, station_id=station_id, remove=False
-    )
-    create_L0B_summary(
-        ds=ds,
-        processed_dir=processed_dir,
-        station_id=station_id,
-    )
 
 
 ####--------------------------------------------------------------------------.

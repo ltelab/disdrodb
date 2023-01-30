@@ -30,7 +30,7 @@ from disdrodb.L0.check_standards import check_sensor_name
 from disdrodb.L0.io import get_raw_file_list, get_l0a_file_list
 
 # L0B_processing
-from disdrodb.L0.L0B_processing import create_L0B_archive
+from disdrodb.L0.L0B_concat import concatenate_L0B_files
 
 # Logger
 from disdrodb.utils.logger import (
@@ -588,10 +588,13 @@ def run_L0(
         shutil.rmtree(os.path.join(processed_dir, "L0A"))
 
     # ------------------------------------------------------------------------.
-    # If single_netcdf=True, concat the netCDF in a single file and compute summary statistics
+    # If single_netcdf=True, concat the netCDF in a single file
     if single_netcdf:
-        create_L0B_archive(
-            processed_dir=processed_dir, station_id=station_id, remove=False
+        concatenate_L0B_files(
+            processed_dir=processed_dir,
+            station_id=station_id,
+            remove=False,
+            verbose=verbose,
         )
 
     # -------------------------------------------------------------------------.
