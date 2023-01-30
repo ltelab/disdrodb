@@ -82,7 +82,6 @@ def _generate_l0a(
     parallel,
 ):
     from disdrodb.L0.io import get_L0A_fpath
-    from disdrodb.L0.check_standards import check_L0A_standards
     from disdrodb.L0.L0A_processing import (
         process_raw_file,
         write_df_to_parquet,
@@ -129,10 +128,6 @@ def _generate_l0a(
         #### - Write to Parquet
         fpath = get_L0A_fpath(df=df, processed_dir=processed_dir, station_id=station_id)
         write_df_to_parquet(df=df, fpath=fpath, force=force, verbose=verbose)
-
-        ##--------------------------------------------------------------------.
-        #### - Check L0 file respects the DISDRODB standards
-        check_L0A_standards(fpath=fpath, sensor_name=sensor_name, verbose=verbose)
 
         ##--------------------------------------------------------------------.
         # Clean environment

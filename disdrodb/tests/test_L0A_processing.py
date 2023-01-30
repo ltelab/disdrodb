@@ -154,12 +154,6 @@ def test_read_raw_file_list():
     assert 1 == 1
 
 
-def test_write_to_parquet():
-    # tested bellow
-    # function_return = L0A_processing._write_to_parquet()
-    assert 1 == 1
-
-
 def test_write_df_to_parquet():
 
     # create dummy dataframe

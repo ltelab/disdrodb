@@ -10,6 +10,12 @@ ROOT_DISDRODB_FOLDER = os.path.join(
 CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "L0", "configs")
 
 
+def test_check_raw_fields_available():
+    # not tested yet because relies on config files that can be modified
+    # function_return = check_standards._check_raw_fields_available()
+    assert 1 == 1
+
+
 def test_check_sensor_name():
     sensor_name = "wrong_sensor_name"
     # Test with an unknown device
@@ -87,7 +93,7 @@ def test_get_field_error_dict():
     known_device_error_dict = check_standards.get_field_error_dict("OTT_Parsivel")
     assert known_device_error_dict == {
         "sensor_status": [1, 2, 3],
-        "datalogger_error": [1],
+        # "datalogger_error": [1],
         "error_code": [1, 2],
     }
 

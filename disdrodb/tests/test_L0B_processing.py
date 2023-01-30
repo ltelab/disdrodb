@@ -12,12 +12,6 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 )
 
 
-def test_check_L0_raw_fields_available():
-    # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.check_L0_raw_fields_available()
-    assert 1 == 1
-
-
 def test_infer_split_str():
     # Test strings with no delimiter
     assert L0B_processing.infer_split_str("") == None

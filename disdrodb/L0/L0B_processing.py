@@ -31,6 +31,7 @@ import xarray as xr
 from disdrodb.L0.check_standards import (
     check_sensor_name,
     check_L0B_standards,
+    _check_raw_fields_available,
     # check_array_lengths_consistency,
 )
 from disdrodb.L0.standards import (
@@ -70,28 +71,6 @@ logger = logging.getLogger(__name__)
 #     # TODO
 #     logger.info("Computing raw_drop_average_velocity from raw spectrum.")
 #     return arr[:, 0, :]
-
-
-def check_L0_raw_fields_available(df: pd.DataFrame, sensor_name: str) -> None:
-    """Check the presence of the raw spectrum data according to the type of sensor.
-
-    Parameters
-    ----------
-    df : pd.DataFrame
-        Dataframe
-    sensor_name : str
-        Name of the sensor.
-
-    Raises
-    ------
-    ValueError
-        Error if the raw spectrum field is missing.
-    """
-    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-    raw_vars = np.array(list(n_bins_dict.keys()))
-    missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
-    if len(missing_vars) > 0:
-        raise ValueError(f"The following L0 raw fields are missing: {missing_vars}")
 
 
 def infer_split_str(string: str) -> str:
@@ -240,7 +219,7 @@ def retrieve_L0B_arrays(
     log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
-    # check_L0_raw_fields_available(df, sensor_name)
+    _check_raw_fields_available(df=df, sensor_name=sensor_name)
 
     # Retrieve raw fields matrix bins dictionary
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
@@ -283,24 +262,6 @@ def retrieve_L0B_arrays(
         dims_order = ["time"] + dims_dict[key]
         dict_data[key] = (dims_order, arr)
 
-    # -------------------------------------------------------------------------.
-    # Retrieve unavailable keys from the raw spectrum field
-    # TODO: This should be performed when the xarray object is created !
-    # if len(unavailable_keys) > 0:
-    #     if "raw_drop_number" not in list(dict_data.keys()):
-    #         raise ValueError(
-    #             """The raw spectrum is required to compute the unavailables
-    #             'raw_drop_concentration' and 'raw_drop_average_velocity' fields."""
-    #         )
-    #     if "raw_drop_concentration" in unavailable_keys and n_dim_spectrum == 2:
-    #         # TODO: can this be computed for RD80 ?
-    #         dict_data["raw_drop_concentration"] = get_drop_concentration(
-    #             dict_data["raw_drop_number"]
-    #         )
-    #     if "raw_drop_average_velocity" in unavailable_keys and n_dim_spectrum == 2:
-    #         dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(
-    #             dict_data["raw_drop_number"]
-    #         )
     # -------------------------------------------------------------------------.
     # Log
     msg = " - Retrieval of L0B data matrices finished."

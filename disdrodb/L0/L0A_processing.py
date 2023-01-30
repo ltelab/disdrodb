@@ -30,8 +30,8 @@ import pandas as pd
 import numpy as np
 from typing import Union
 from disdrodb.L0.standards import get_L0A_dtype
-from disdrodb.L0.check_standards import check_L0A_column_names
-from disdrodb.L0.io import _remove_if_exists
+from disdrodb.L0.check_standards import check_L0A_column_names, check_L0A_standards
+from disdrodb.L0.io import _remove_if_exists, _create_directory
 from disdrodb.L0.io import infer_station_id_from_fpath
 
 # Logger
@@ -233,10 +233,28 @@ def _check_df_sanitizer_fun(df_sanitizer_fun):
     """Check the argument of df_sanitizer_fun is only df."""
     if df_sanitizer_fun is None:
         return None
+    if not callable(df_sanitizer_fun):
+        raise ValueError("'df_sanitizer_fun' must be a function.")
     if not np.all(np.isin(inspect.getfullargspec(df_sanitizer_fun).args, ["df"])):
         raise ValueError(
             "The `df_sanitizer_fun` must have only `df` as input argument!"
         )
+
+
+def _check_not_empty_dataframe(df, verbose=False):
+    if len(df.index) == 0:
+        msg = " - The file is empty and has been skipped."
+        log_error(logger=logger, msg=msg, verbose=verbose)
+        raise ValueError(msg)
+
+
+def _check_matching_column_number(df, column_names, verbose=False):
+    n_columns = len(df.columns)
+    n_expected_columns = len(column_names)
+    if n_columns != n_expected_columns:
+        msg = f" - The dataframe has {n_columns} columns, while {n_expected_columns} are expected !."
+        log_error(logger, msg, verbose)
+        raise ValueError(msg)
 
 
 def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
@@ -290,7 +308,7 @@ def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
     """
     values, counts = np.unique(df["time"], return_counts=True)
     idx_duplicates = np.where(counts > 1)[0]
-    values_duplicates = values[idx_duplicates]
+    values_duplicates = values[idx_duplicates].astype("M8[s]")
     # If there are duplicated timesteps
     if len(values_duplicates) > 0:
         # Drop duplicated timesteps (keeping the first occurence)
@@ -464,32 +482,24 @@ def process_raw_file(
         reader_kwargs=reader_kwargs,
     )
 
-    # Check if file empty
-    if len(df.index) == 0:
-        msg = f" - {filepath} is empty and has been skipped."
-        log_error(logger=logger, msg=msg, verbose=verbose)
-        raise ValueError(msg)
+    # - Check if file empty
+    _check_not_empty_dataframe(df=df, verbose=verbose)
 
-    # Check dataframe column number matches columns_names
-    n_columns = len(df.columns)
-    n_expected_columns = len(column_names)
-    if n_columns != n_expected_columns:
-        msg = f" - {filepath} has {n_columns} columns, while {n_expected_columns} are expected !."
-        log_error(logger, msg, verbose)
-        raise ValueError(msg)
+    # - Check dataframe column number matches columns_names
+    _check_matching_column_number(df, column_names, verbose=False)
 
-    # Sanitize the dataframe with a custom function
+    # - Sanitize the dataframe with a custom function
     if df_sanitizer_fun is not None:
         df = df_sanitizer_fun(df)
 
-    # Remove rows with time NaT
+    # - Remove rows with time NaT
     df = remove_rows_with_missing_time(df, verbose=verbose)
 
-    # Remove duplicated timesteps
+    # - Remove duplicated timesteps
     df = remove_duplicated_timesteps(df, verbose=verbose)
 
     # ------------------------------------------------------.
-    #### - Filter out problematic data reported in issue file
+    # - Filter out problematic data reported in issue file
     # TODO: [TEST IMPLEMENTATION] remove_problematic_timestamp in dev/TODO_issue_code.py
     # issue_dict = read_issue(raw_dir, station_id)
     # df = remove_problematic_timestamp(df, issue_dict, verbose)
@@ -505,10 +515,12 @@ def process_raw_file(
     df = cast_column_dtypes(df, sensor_name=sensor_name, verbose=verbose)
 
     # ------------------------------------------------------.
-    # Check column names agrees to DISDRODB standards
+    # - Check column names agrees to DISDRODB standards
     check_L0A_column_names(df, sensor_name=sensor_name)
 
-    # TODO: check_L0A_standards(fpath)
+    # - Check the dataframe respects the DISDRODB standards
+    check_L0A_standards(df=df, sensor_name=sensor_name, verbose=verbose)
+
     # ------------------------------------------------------.
     # Return the L0A dataframe
     return df
@@ -516,39 +528,6 @@ def process_raw_file(
 
 ####---------------------------------------------------------------------------.
 #### L0A Apache Parquet Writer
-def _write_to_parquet(df: pd.DataFrame, fpath: str, force: bool = False):
-    import pandas as pd
-    from disdrodb.L0.io import _create_directory
-
-    # -------------------------------------------------------------------------.
-    # Check if a file already exists (and remove if force=True)
-    _remove_if_exists(fpath, force=force)
-    # Cannot create the station folder, so has to be created manually
-    _create_directory(os.path.dirname(fpath))
-
-    # -------------------------------------------------------------------------.
-    # Define writing options
-    compression = "snappy"  # 'gzip', 'brotli, 'lz4', 'zstd'
-    row_group_size = 100000
-    engine = "pyarrow"
-
-    # -------------------------------------------------------------------------.
-    # Save dataframe to Apache Parquet
-    try:
-        df.to_parquet(
-            fpath,
-            engine=engine,
-            compression=compression,
-            row_group_size=row_group_size,
-        )
-        msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
-        log_info(logger=logger, msg=msg, verbose=False)
-    except (Exception) as e:
-        msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
-        log_error(logger=logger, msg=msg, verbose=False)
-        raise ValueError(msg)
-
-    # -------------------------------------------------------------------------.
 
 
 def write_df_to_parquet(
@@ -581,14 +560,31 @@ def write_df_to_parquet(
         The input dataframe can not be processed.
     """
 
-    # Log
-    msg = " - Conversion to Apache Parquet started."
-    log_info(logger, msg, verbose)
-    # Write to Parquet
-    _write_to_parquet(df=df, fpath=fpath, force=force)
-    # Log
-    msg = " - Conversion to Apache Parquet ended."
-    log_info(logger, msg, verbose)
+    # -------------------------------------------------------------------------.
+    # Check if a file already exists (and remove if force=True)
+    _remove_if_exists(fpath, force=force)
+    # Cannot create the station folder, so has to be created manually
+    _create_directory(os.path.dirname(fpath))
+    # -------------------------------------------------------------------------.
+    # Define writing options
+    compression = "snappy"  # 'gzip', 'brotli, 'lz4', 'zstd'
+    row_group_size = 100000
+    engine = "pyarrow"
+    # -------------------------------------------------------------------------.
+    # Save dataframe to Apache Parquet
+    try:
+        df.to_parquet(
+            fpath,
+            engine=engine,
+            compression=compression,
+            row_group_size=row_group_size,
+        )
+        msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
+        log_info(logger=logger, msg=msg, verbose=False)
+    except (Exception) as e:
+        msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
     # -------------------------------------------------------------------------.
     return None
 
@@ -690,13 +686,7 @@ def read_raw_file_list(
     """
 
     # ------------------------------------------------------.
-    # ### Checks arguments
-    if df_sanitizer_fun is not None:
-        if not callable(df_sanitizer_fun):
-            raise ValueError("'df_sanitizer_fun' must be a function.")
-
-    # TODO check df_sanitizer_fun has only df argument !
-
+    # Check input list
     if isinstance(file_list, str):
         file_list = [file_list]
     if len(file_list) == 0:
