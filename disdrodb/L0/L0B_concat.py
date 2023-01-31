@@ -1,3 +1,21 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2022 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
 import os
 import glob
 import logging
@@ -5,6 +23,7 @@ import xarray as xr
 from disdrodb.L0.io import _check_directory_exist
 from disdrodb.L0.io import get_L0B_dir, get_L0B_fpath
 from disdrodb.L0.utils_nc import xr_concat_datasets
+from disdrodb.L0.utils_scripts import _execute_cmd
 from disdrodb.utils.logger import (
     create_file_logger,
     close_logger,
@@ -59,7 +78,8 @@ def _concatenate_L0B_files(processed_dir, station_id, remove=False, verbose=Fals
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
     single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_id, single_netcdf=True)
-    write_L0B(ds, fpath=single_nc_fpath)
+    force=True # TODO add as argument
+    write_L0B(ds, fpath=single_nc_fpath, force=force)
 
     # -------------------------------------------------------------------------.
     # Close file and delete
@@ -103,18 +123,6 @@ def _concatenate_L0B_station(
 
 ####---------------------------------------------------------------------------.
 #### Wrappers of run_disdrodb_l0b_concat_station call
-
-
-def _execute_cmd(cmd):
-    """Execute command in the terminal, streaming output in python console."""
-    from subprocess import Popen, PIPE, CalledProcessError
-
-    with Popen(cmd, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
-        for line in p.stdout:
-            print(line, end="")  # process line here
-
-    if p.returncode != 0:
-        raise CalledProcessError(p.returncode, p.args)
 
 
 def concatenate_L0B_station(

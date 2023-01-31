@@ -34,6 +34,7 @@ from disdrodb.L0.check_standards import (
     # check_array_lengths_consistency,
 )
 from disdrodb.L0.io import _check_directory_exist
+from disdrodb.L0.io import _remove_if_exists, _create_directory
 from disdrodb.L0.standards import (
     get_diameter_bin_center,
     get_diameter_bin_lower,
@@ -588,7 +589,7 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     return ds
 
 
-def write_L0B(ds: xr.Dataset, fpath: str) -> None:
+def write_L0B(ds: xr.Dataset, fpath: str, force=False) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
@@ -599,11 +600,19 @@ def write_L0B(ds: xr.Dataset, fpath: str) -> None:
         Output file path.
     sensor_name : str
         Name of the sensor.
+    force : bool, optional
+        Whether to overwrite existing data.
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories. This is the default.
     """
-
-    # Ensure directory exist
-    os.makedirs(os.path.dirname(fpath), exist_ok=True)
-
+    # Create station directory if does not exist
+    _create_directory(os.path.dirname(fpath))
+    
+    # Check if the file already exists 
+    # - If force=True --> Remove it
+    # - If force=False --> Raise error
+    _remove_if_exists(fpath, force=force)
+    
     # Get sensor name from dataset
     sensor_name = ds.attrs.get("sensor_name")
 

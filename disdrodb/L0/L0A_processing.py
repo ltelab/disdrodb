@@ -561,10 +561,14 @@ def write_df_to_parquet(
     """
 
     # -------------------------------------------------------------------------.
-    # Check if a file already exists (and remove if force=True)
-    _remove_if_exists(fpath, force=force)
-    # Cannot create the station folder, so has to be created manually
+    # Create station directory if does not exist 
     _create_directory(os.path.dirname(fpath))
+    
+    # Check if the file already exists 
+    # - If force=True --> Remove it
+    # - If force=False --> Raise error
+    _remove_if_exists(fpath, force=force)
+ 
     # -------------------------------------------------------------------------.
     # Define writing options
     compression = "snappy"  # 'gzip', 'brotli, 'lz4', 'zstd'

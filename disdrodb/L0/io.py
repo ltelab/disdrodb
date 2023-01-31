@@ -511,6 +511,8 @@ def get_l0a_file_list(processed_dir, station_id, debugging_mode):
 
 ####--------------------------------------------------------------------------.
 #### Directory/File Checks/Creation/Deletion
+
+
 def _check_directory_exist(dir_path):
     """Check if the directory exist."""
     # Check the directory exist
@@ -825,7 +827,15 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
 #### -------------------------------------------------------------------------.
 #### PROCESSED Directory Checks 
 
+
 def _check_is_processed_dir(processed_dir):
+    if not isinstance(processed_dir, str):
+        raise TypeError("Provide 'processed_dir' as a string'.")
+        
+    # Parse the fpath 
+    processed_dir = _parse_fpath(processed_dir)
+    
+    # Check is the processed_dir 
     if (
         processed_dir.find("DISDRODB/Processed") == -1
         and processed_dir.find("DISDRODB\\Processed") == -1
@@ -843,87 +853,11 @@ def _check_is_processed_dir(processed_dir):
     ):
         msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
         logger.error(msg)
-        raise ValueError(msg)
-
-    
-def _create_processed_dir_folder(processed_dir, dir_name):
-    """Create directory <dir_name> inside the processed_dir directory."""
-    try:
-        folder_path = os.path.join(processed_dir, dir_name)
-        os.makedirs(folder_path)
-        logger.debug(f"Created {folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {folder_path}")
-        pass
-    except (Exception) as e:
-        msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)  
+        raise ValueError(msg) 
+    return processed_dir 
 
 
-def check_processed_dir(processed_dir: str, force: bool = False) -> None:
-    """Check that 'processed_dir' is a valid directory path.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    force : bool, optional
-        If True, overwrite existing data into processed directory.
-        If False, raise an error if there are already data into processed directory.
-
-    Raises
-    ------
-    TypeError
-        Error if path pattern not respected or can not be created.
-
-
-    """
-
-    if not isinstance(processed_dir, str):
-        raise TypeError("Provide 'processed_dir' as a string'.")
-    processed_dir = _parse_fpath(processed_dir)
-    # ------------------------------
-    # Check processed_dir has "DISDRODB/Processed" to avoid deleting precious stuffs
-    _check_is_processed_dir(processed_dir)
-   
-    # ------------------------------
-    # If forcing overwriting
-    if force:
-        # Check processed_dir is a directory before removing the content
-        if os.path.exists(processed_dir):
-            if not os.path.isdir(processed_dir):
-                msg = f"'processed_dir' {processed_dir} already exist but is not a directory."
-                logger.error(msg)
-                raise ValueError(msg)
-            # Remove content of existing processed_dir
-            # TODO: https://github.com/ltelab/disdrodb/issues/113
-            # - if l0a_processing=False, remove only L0B directory ! --> Otherwise then no data to process
-            # - if l0a_processing=True, remove as it done now
-            # --> Require adding such argumments to this function and create_directory_structure
-            shutil.rmtree(processed_dir)
-
-    # ------------------------------
-    # If avoiding overwriting
-    if not force:
-        if os.path.exists(processed_dir):
-            msg = f"'processed_dir' {processed_dir} already exists and force=False."
-            logger.error(msg)
-            raise ValueError(msg)
-
-    # ------------------------------
-    # Recreate processed_dir
-    if not os.path.exists(processed_dir):
-        os.makedirs(processed_dir)
-    else:
-        msg = "Please report the BUG. This should not happen."
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-####---------------------------------------------------------------------------.
-#### RAW - PROCESSED Directories Checks
-def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
+def _check_campaign_name(raw_dir: str, processed_dir: str) -> str:
     """Check that 'raw_dir' and 'processed_dir' have same campaign_name.
 
     Parameters
@@ -943,7 +877,6 @@ def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
     ValueError
         Error if both paths do not match.
     """
-
     upper_campaign_name = os.path.basename(raw_dir).upper()
     raw_campaign_name = os.path.basename(raw_dir)
     processed_campaign_name = os.path.basename(processed_dir)
@@ -958,39 +891,21 @@ def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
         raise ValueError(msg)
 
     return upper_campaign_name
+   
+    
+def _create_processed_dir_folder(processed_dir, dir_name):
+    """Create directory <dir_name> inside the processed_dir directory."""
+    try:
+        folder_path = os.path.join(processed_dir, dir_name)
+        os.makedirs(folder_path, exist_ok = True)
+    except (Exception) as e:
+        msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
+        logger.exception(msg)
+        raise FileNotFoundError(msg)  
+        
 
-
-def check_directories(raw_dir: str, processed_dir: str, force: bool = False) -> tuple:
-    """Check that the specified directories respect the standards.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Path of the raw directory
-    processed_dir : str
-        Path of the processed directory
-    force : bool, optional
-        If True, overwrite existing data into processed directory.
-        If False, raise an error if there are already data into processed directory.
-
-    Returns
-    -------
-    tuple
-        raw directory and processed directory
-    """
-
-    check_raw_dir(raw_dir)
-    check_processed_dir(processed_dir, force=force)
-    _ = check_campaign_name(raw_dir, processed_dir)
-    return raw_dir, processed_dir
-
-
-####--------------------------------------------------------------------------.
-#### L0 processing directory structure
-
-
-def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
-    """Copy yaml files in raw_dir/metadata into processed_dir/metadata
+def _copy_station_metadata(raw_dir: str, processed_dir: str, station: str) -> None:
+    """Copy the station YAML file from the raw_dir/metadata into processed_dir/metadata
 
     Parameters
     ----------
@@ -1004,67 +919,143 @@ def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
     ValueError
         Error if the copy fails.
     """
-
     # Get src and dst metadata directory
     raw_metadata_dir = os.path.join(raw_dir, "metadata")
     processed_metadata_dir = os.path.join(processed_dir, "metadata")
-    # Retrieve metadata fpaths in raw directory
-    raw_metadata_fpaths = glob.glob(os.path.join(raw_metadata_dir, "*.yml"))
-    # Copy all metadata yml files into the "processed" folder
-    for raw_metadata_fpath in raw_metadata_fpaths:
-        # Check if is a files
-        if os.path.isfile(raw_metadata_fpath):
-            metadata_fname = os.path.basename(raw_metadata_fpath)
-            processed_metadata_fpath = os.path.join(
-                processed_metadata_dir, metadata_fname
-            )
-            try:
-                # Copy every file
-                shutil.copy(raw_metadata_fpath, processed_metadata_fpath)
-                msg = f"{metadata_fname} copied into {processed_metadata_dir}."
-                logger.info(msg)
-            except (Exception) as e:
-                msg = f"Something went wrong when copying {metadata_fname} into {processed_metadata_dir}.\n The error is: {e}."
-                logger.error(msg)
+    # Retrieve the metadata fpath in the raw directory
+    metadata_fname = f"{station}.yml"
+    raw_metadata_fpath = os.path.join(raw_metadata_dir, metadata_fname)
+    # Check the metadata exists 
+    if not os.path.isfile(raw_metadata_fpath):
+        raise ValueError(f"No metadata available for {station} at {raw_metadata_fpath}") 
+    # Define the destination fpath 
+    processed_metadata_fpath = os.path.join(processed_metadata_dir, os.path.basename(raw_metadata_fpath))
+    # Try copying the file 
+    try:
+        shutil.copy(raw_metadata_fpath, processed_metadata_fpath)
+        msg = f"{metadata_fname} copied at {processed_metadata_fpath}."
+        logger.info(msg)
+    except Exception as e:
+        msg = f"Something went wrong when copying {metadata_fname} into {processed_metadata_dir}.\n The error is: {e}."
+        logger.error(msg)
+        raise ValueError(msg)
+    return None      
+
+
+def _check_pre_existing_station_data(campaign_dir, product_level, station, force=False):
+    """Check for pre-existing station data.
+    
+    - If force=True, remove all data inside the station folder.
+    - If force=False, raise error.
+    """
+    from disdrodb.api.io import _get_list_stations_with_data
+    
+    # Get list of available stations 
+    list_stations = _get_list_stations_with_data(product_level=product_level, 
+                                                 campaign_dir=campaign_dir)
+    # Check if station data are already present
+    station_already_present = station in list_stations 
+    
+    # Define the station directory path
+    station_dir = os.path.join(campaign_dir, product_level, station)
+        
+    # If the station data are already present: 
+    # - If force=True, remove all data inside the station folder 
+    # - If force=False, raise error
+    # NOTE:
+    # - force=False behaviour could be changed to enable updating of missing files.
+    #   This would require also adding code to check whether a downstream file already exist.
+    if station_already_present:
+        # Check is a directory
+        _check_directory_exist(station_dir)
+        # If force=True, remove all the content 
+        if force: 
+            # Remove all station directory content 
+            shutil.rmtree(station_dir)
         else:
-            msg = f"Cannot copy {metadata_fname} into {processed_metadata_dir}."
+            msg = f"The station directory {station_dir} already exists and force=False."
             logger.error(msg)
             raise ValueError(msg)
-    metadata_fnames = [
-        os.path.basename(metadata_fpath) for metadata_fpath in raw_metadata_fpaths
-    ]
-    msg = f"The metadata of stations ({metadata_fnames}) have been copied into {processed_metadata_dir}."
-    logger.info(msg)
+
+
+def check_processed_dir(processed_dir):
+    # Check input, format and validity of the directory path
+    processed_dir = _check_is_processed_dir(processed_dir)
+    return processed_dir
+
+
+def create_directory_structure_l0a(raw_dir, 
+                                   processed_dir,
+                                   station, 
+                                   force,
+                                   verbose=False):
+    """Create directory structure for L0A DISDRODB product."""
+    from disdrodb.api.io import _get_list_stations_with_data
     
-
-def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
-    """Create directory structure for L0A and L0B processing.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Path of the raw directory
-    processed_dir : str
-        Path of the processed directory
-
-    Raises
-    ------
-    FileNotFoundError
-        Error is folder structure can not be created.
-    """
-    # Creare required folders inside processed_dir     
+    # Check inputs
+    raw_dir = check_raw_dir(raw_dir=raw_dir, verbose=verbose)
+    processed_dir = check_processed_dir(processed_dir=processed_dir)
+    
+    # Check valid campaign name 
+    # - The campaign_name concides between raw and processed dir
+    # - The campaign_name is all upper case
+    _ = _check_campaign_name(raw_dir=raw_dir, processed_dir=processed_dir)
+    
+    # Get list of available stations (at raw level)
+    list_stations = _get_list_stations_with_data(product_level="RAW", 
+                                                 campaign_dir=raw_dir)
+    # Check station is available 
+    if station not in list_stations: 
+        raise ValueError(f"No data available for station {station}. Available stations: {list_stations}.")
+    
+    # Create required directory (if they don't exists)
     _create_processed_dir_folder(processed_dir, dir_name="metadata")
     _create_processed_dir_folder(processed_dir, dir_name="info")
     _create_processed_dir_folder(processed_dir, dir_name="L0A")
-    _create_processed_dir_folder(processed_dir, dir_name="L0B")
     
-    # -----------------------------------------------------.
-    #### Copy metadata from RAW directory 
-    copy_metadata_from_raw_dir(raw_dir, processed_dir)
+    # Copy the station metadata 
+    _copy_station_metadata(raw_dir=raw_dir, 
+                           processed_dir=processed_dir, 
+                           station=station) 
+        
+    # Remove <product_level>/<station> directory if force=True
+    _check_pre_existing_station_data(campaign_dir=processed_dir, 
+                                     product_level="L0A",
+                                     station=station, 
+                                     force=force)  
+    
+    
+def  create_directory_structure(processed_dir,
+                                product_level, 
+                                station, 
+                                force,
+                                verbose=False):
+    """Create directory structure for L0B and higher DISDRODB products."""
+    from disdrodb.api.io import check_product_level, _get_list_stations_with_data
+    
+    # Check inputs
+    check_product_level(product_level)
+    processed_dir = check_processed_dir(processed_dir=processed_dir)
+    
+    # Check station is available in the target processed_dir directory
+    if product_level == "L0B":
+        required_level = "L0A"
+        list_stations = _get_list_stations_with_data(product_level=required_level, 
+                                                     campaign_dir=processed_dir)
+    else: 
+        raise NotImplementedError("product level {product_level} not yet implemented.")
 
-    # -----------------------------------------------------.            
-    return None 
-
+    if station not in list_stations: 
+        raise ValueError(f"No {required_level} data available for station {station}. Available stations: {list_stations}.")
+            
+    # Create required directory (if they don't exists)
+    _create_processed_dir_folder(processed_dir, dir_name=product_level)
+    
+    # Remove <product_level>/<station> directory if force=True
+    _check_pre_existing_station_data(campaign_dir=processed_dir, 
+                                     product_level=product_level,
+                                     station=station, 
+                                     force=force)
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers

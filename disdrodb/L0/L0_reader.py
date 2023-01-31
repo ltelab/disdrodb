@@ -187,6 +187,50 @@ def get_reader(data_source: str, reader_name: str) -> object:
     return my_reader
 
 
+def check_reader_arguments(reader):
+    # TODO: check reader arguments !!!!
+    # --> This should be also called for all readers in the CI
+    pass
+
+
+# TODO: rename as get_reader after refactoring above 
+def _get_new_reader(disdrodb_dir, data_source, campaign_name, station):
+    """Retrieve reader form station metadata information."""
+    from disdrodb.L0.L0_reader import get_reader
+    from disdrodb.api.io import get_metadata_dict
+
+    # Get metadata
+    metadata = get_metadata_dict(
+        disdrodb_dir=disdrodb_dir,
+        product_level="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station=station,
+    )
+    # Check reader key is within the dictionary
+    if "reader" not in metadata:
+        raise ValueError(
+            f"The `reader` key is not available in the metadata of the {data_source} {campaign_name} {station} station."
+        )
+
+    # ------------------------------------------------------------------------.
+    # Retrieve reader
+    # - Convention: reader: <data_source/reader_name> in disdrodb.L0.readers
+    reader_data_source_name = metadata.get("reader")
+    reader_data_source = reader_data_source_name.split("/")[0]
+    reader_name = reader_data_source_name.split("/")[1]
+
+    reader = get_reader(
+        reader_data_source, reader_name
+    )  # TODO: redefine get_reader for new pattern
+
+    # ------------------------------------------------------------------------.
+    # Check reader argument
+    check_reader_arguments(reader)
+
+    return reader
+
+
 ####--------------------------------------------------------------------------.
 #### Readers Docs
 

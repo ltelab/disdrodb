@@ -16,10 +16,8 @@ import datetime
 import numpy as np
 
 # Directory
-from disdrodb.L0.io import (
-    check_directories,
-    create_directory_structure,
-)
+from disdrodb.L0.io import get_raw_file_list, get_l0a_file_list
+from disdrodb.L0.io import create_directory_structure_l0a, create_directory_structure
 
 # Metadata
 from disdrodb.L0.metadata import read_metadata
@@ -27,11 +25,9 @@ from disdrodb.L0.metadata import read_metadata
 # Standards
 from disdrodb.L0.check_standards import check_sensor_name
 
-from disdrodb.L0.io import get_raw_file_list, get_l0a_file_list
-
 # L0B_processing
 from disdrodb.L0.L0B_concat import concatenate_L0B_files
-
+from disdrodb.L0.utils_scripts import _execute_cmd
 # Logger
 from disdrodb.utils.logger import (
     create_file_logger,
@@ -206,7 +202,7 @@ def _generate_l0b(
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
         fpath = get_L0B_fpath(ds, processed_dir, station_id)
-        write_L0B(ds, fpath=fpath)
+        write_L0B(ds, fpath=fpath, force=force)
 
         ##--------------------------------------------------------------------.
         # Clean environment
@@ -237,29 +233,40 @@ def _generate_l0b(
 def run_l0a(
     raw_dir,
     processed_dir,
-    station_id,
+    station,
+    # L0A reader argument
     files_glob_pattern,
     column_names,
     reader_kwargs,
     df_sanitizer_fun,
+    # Processing options
     parallel,
     verbose,
     force,
     debugging_mode,
 ):
-    # ---------------------------------------------------------------------.
+    # ------------------------------------------------------------------------.
     # Start L0A processing
     if verbose:
         t_i = time.time()
-        msg = f" - L0A processing of station_id {station_id} has started."
+        msg = f" - L0A processing of station {station} has started."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
-    # -----------------------------------------------------------------.
+    # ------------------------------------------------------------------------.
+    # Create directory structure 
+    create_directory_structure_l0a(raw_dir=raw_dir, 
+                                   processed_dir=processed_dir,
+                                   station=station, 
+                                   force=force)
+
+    # -------------------------------------------------------------------------.
     # List files to process
     filepaths = get_raw_file_list(
         raw_dir=raw_dir,
-        station_id=station_id,
+        station_id=station,
+        # L0A reader argument
         glob_patterns=files_glob_pattern,
+        # Processing options
         verbose=verbose,
         debugging_mode=debugging_mode,
     )
@@ -274,10 +281,12 @@ def run_l0a(
             _generate_l0a(
                 filepath=filepath,
                 processed_dir=processed_dir,
-                station_id=station_id,
+                station_id=station,  # TODO: remove in future
+                # L0A reader argument
                 column_names=column_names,
                 reader_kwargs=reader_kwargs,
                 df_sanitizer_fun=df_sanitizer_fun,
+                # Processing options
                 force=force,
                 verbose=verbose,
                 parallel=parallel,
@@ -295,16 +304,15 @@ def run_l0a(
     # End L0A processing
     if verbose:
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
-        msg = (
-            f" - L0A processing of station_id {station_id} completed in {timedelta_str}"
-        )
+        msg = f" - L0A processing of station {station} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
     return None
 
 
 def run_l0b(
     processed_dir,
-    station_id,
+    station,
+    # Processing options
     parallel,
     force,
     verbose,
@@ -314,14 +322,21 @@ def run_l0b(
     # Start L0B processing
     if verbose:
         t_i = time.time()
-        msg = f" - L0B processing of station_id {station_id} has started."
+        msg = f" - L0B processing of station_id {station} has started."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
+    # -------------------------------------------------------------------------.
+    # Create directory structure 
+    create_directory_structure(processed_dir=processed_dir,
+                               product_level="L0B",
+                               station=station, 
+                               force=force)
+    
     ##----------------------------------------------------------------.
     # Get L0A files for the station
     filepaths = get_l0a_file_list(
         processed_dir=processed_dir,
-        station_id=station_id,
+        station_id=station,
         debugging_mode=debugging_mode,
     )
 
@@ -335,7 +350,7 @@ def run_l0b(
             _generate_l0b(
                 filepath=filepath,
                 processed_dir=processed_dir,  # can be derived by filepath
-                station_id=station_id,  # can be derived by filepath
+                station_id=station,  # can be derived by filepath
                 force=force,
                 verbose=verbose,
                 debugging_mode=debugging_mode,
@@ -356,14 +371,335 @@ def run_l0b(
     if verbose:
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
         msg = (
-            f" - L0B processing of station_id {station_id} completed in {timedelta_str}"
+            f" - L0B processing of station_id {station} completed in {timedelta_str}"
         )
         log_info(logger=logger, msg=msg, verbose=verbose)
     return None
 
 
+def run_disdrodb_l0a_station(
+    # Station arguments
+    disdrodb_dir,
+    data_source,
+    campaign_name,
+    station,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+):
+    """Run the L0B processing of a station calling run_disdrodb_l0a_station in the terminal."""
+    # TODO: note that this does not customize the number of dask workers !
+   
+    # Define command 
+    cmd = " ".join(
+        [
+            "run_disdrodb_l0a_station",
+            # Station arguments
+            disdrodb_dir,
+            data_source,
+            campaign_name,
+            station,
+            # Processing options
+            "--force",
+            str(force),
+            "--verbose",
+            str(verbose),
+            "--debugging_mode",
+            str(debugging_mode),
+            "--parallel",
+            str(parallel),
+        ]
+    )
+    # Execute command 
+    _execute_cmd(cmd)
+    return None
+
+
+def run_disdrodb_l0b_station(
+    # Station arguments
+    disdrodb_dir,
+    data_source,
+    campaign_name,
+    station,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+):
+    """Run the L0B processing of a station calling run_disdrodb_l0b_station in the terminal."""
+    # Define command 
+    cmd = " ".join(
+        [
+            "run_disdrodb_l0b_station",
+            # Station arguments
+            disdrodb_dir,
+            data_source,
+            campaign_name,
+            station,
+            # Processing options
+            "--force",
+            str(force),
+            "--verbose",
+            str(verbose),
+            "--debugging_mode",
+            str(debugging_mode),
+            "--parallel",
+            str(parallel),
+        ]
+    )
+    # Execute command 
+    _execute_cmd(cmd)
+    return None
+
 ####--------------------------------------------------------------------------.
-#### Run L0 processing (L0A + L0B)
+#### Run L0 station processing (L0A + L0B)
+
+
+def run_disdrodb_l0_station(
+    disdrodb_dir,
+    data_source,
+    campaign_name,
+    station,
+    # L0A settings
+    l0a_processing: bool = True,
+    # L0B settings
+    l0b_processing: bool = True,
+    keep_l0a: bool = False,
+    single_netcdf: bool = True,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+):
+    # ---------------------------------------------------------------------.
+    msg = f" - L0 processing of station {station} has started."
+    log_info(logger=logger, msg=msg, verbose=verbose)
+
+    # ------------------------------------------------------------------.
+    # L0A processing
+    if l0a_processing:
+        run_disdrodb_l0a_station(
+            # Station arguments
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station=station,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+    # ------------------------------------------------------------------.
+    # L0B processing
+    if l0b_processing:
+        run_disdrodb_l0b_station(
+            # Station arguments
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station=station,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+
+    # ------------------------------------------------------------------------.
+    # Remove L0A station directory if keep_l0a = False
+    if not keep_l0a:
+        campaign_dir = _get_disdrodb_directory(
+            disdrodb_dir=disdrodb_dir,
+            product_level="L0A",
+            data_source=data_source,
+            campaign_name=campaign_name,
+        )
+        station_product_dir = os.path.join(campaign_dir, "L0A", station)
+        shutil.rmtree(station_product_dir)
+    
+    # ------------------------------------------------------------------------.
+    # If single_netcdf=True, concat the netCDF in a single file
+    if single_netcdf:
+        concatenate_L0B_station(
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station=station,
+            remove=False,   # TODO make as argument  # keep_l0b_files, concatenate_l0b
+            verbose=verbose
+        )
+    return None 
+    
+    # -------------------------------------------------------------------------.
+    # End of L0 processing for all stations
+    timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+    msg = (
+        f" - L0 processing of stations {station} completed in {timedelta_str}"
+    )
+    log_info(logger, msg, verbose)
+    return None 
+ 
+
+ 
+
+
+####---------------------------------------------------------------------------.
+#### Wrappers to run archive L0 processing
+# TODO: create script calling run_disdrodb_l0, run_disdrodb_l0a, run_disdrodb_l0b
+
+def run_disdrodb_l0(
+    disdrodb_dir,
+    data_sources=None,
+    campaign_names=None,
+    station=None,
+    # L0A settings
+    l0a_processing: bool = True,
+    # L0B settings
+    l0b_processing: bool = True,
+    keep_l0a: bool = False,
+    single_netcdf: bool = True,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+):
+    from disdrodb.api.io import available_stations
+
+    if l0a_processing:
+        product_level = "RAW"
+    elif l0b_processing:
+        product_level = "L0A"
+    else:
+        # TODO: potentially can be used to just run single_netcdf
+        raise ValueError("At least l0a_processing or l0b_processing must be True.")
+
+    # Get list of available stations
+    list_info = available_stations(
+        disdrodb_dir,
+        product_level=product_level,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+    )
+
+    # If no stations available, raise an error
+    if len(list_info) == 0:
+        raise ValueError("No stations are available !")
+
+    # Filter by provided stations
+    if station is not None:
+        list_info = [info for info in list_info if info[2] in station]
+        # If nothing left, raise an error
+        if len(list_info) == 0:
+            raise ValueError(
+                "No stations to concatenate given the provided `station` argument!"
+            )
+
+    # Print message
+    n_stations = len(list_info)
+    print(f"L0 processing of {n_stations} stations started.")
+
+    # Loop over stations
+    for data_source, campaign_name, station in list_info:
+        print(
+            f"L0 processing of {data_source} {campaign_name} {station} station started."
+        )
+        # Run processing
+        run_disdrodb_l0_station(
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station=station,
+            # L0A settings
+            l0a_processing=l0a_processing,
+            # L0B settings
+            l0b_processing=l0b_processing,
+            keep_l0a=keep_l0a,
+            single_netcdf=single_netcdf,
+            # Process options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+        print(
+            f"L0 processing of {data_source} {campaign_name} {station} station ended."
+        )
+
+
+def run_disdrodb_l0a(
+    disdrodb_dir,
+    data_sources=None,
+    campaign_names=None,
+    station=None,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+):
+
+    run_disdrodb_l0(
+        disdrodb_dir=disdrodb_dir,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station=station,
+        # L0A settings
+        l0a_processing=True,
+        # L0B settings
+        l0b_processing=False,
+        keep_l0a=True,
+        single_netcdf=False,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        debugging_mode=debugging_mode,
+        parallel=parallel,
+    )
+
+
+def run_disdrodb_l0b(
+    disdrodb_dir,
+    data_sources=None,
+    campaign_names=None,
+    station=None,
+    # L0B settings
+    keep_l0a: bool = True,
+    single_netcdf: bool = False,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+):
+
+    run_disdrodb_l0(
+        disdrodb_dir=disdrodb_dir,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station=station,
+        # L0A settings
+        l0a_processing=False,
+        # L0B settings
+        l0b_processing=True,
+        keep_l0a=keep_l0a,
+        single_netcdf=single_netcdf,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        debugging_mode=debugging_mode,
+        parallel=parallel,
+    )
+    
+
+####--------------------------------------------------------------------------.
+
+#### TO DEPRECATE
 
 
 def get_station_list_to_process(raw_dir, station_ids):
@@ -428,210 +764,33 @@ def get_station_list_to_process(raw_dir, station_ids):
     return station_ids
 
 
-def run_L0(
-    # Arguments custom to each reader (for L0A)
-    column_names,
-    reader_kwargs,
-    files_glob_pattern,
-    df_sanitizer_fun,
-    # Arguments required
-    raw_dir,
-    processed_dir,
-    station_ids=None,
-    # L0A settings
-    l0a_processing=True,
-    # L0B settings
-    l0b_processing=True,
-    keep_l0a=True,
-    single_netcdf=False,
-    # Processing options
-    parallel=False,
-    force=False,
-    verbose=False,
-    debugging_mode=False,
-):
-    """Core function to process raw data files to L0A and L0B format.
-
-    Parameters
-    ----------
-
-    column_names : list
-        Column names to be assigned to the dataframe created after reading a raw file.
-        This argument is allowed to contains column names not agreeing with the
-        DISDRODB standard. However, it's important that non-standard columns are
-        dropped during the application of the `df_sanitizer_fun` function.
-    reader_kwargs : dict
-        Dictionary of arguments to be passed to `pd.read_csv` to
-        tailor the reading of the raw file.
-    files_glob_pattern: str
-        It indicates the glob pattern to search for the raw data files within
-        the directory path <raw_dir>/data/<station_id>.
-    df_sanitizer_fun : function
-        It's a function detailing the custom preprocessing of each single raw data files
-        in order to meet the DISDRODB standards.
-        The function must have the following definition and return a dataframe:
-            def df_sanitizer_fun(df)
-                # Import pandas
-                import pandas as dd
-                # Custom processing
-                pass
-                # Return the dataframe agreeing with the DISDRODB standards
-                return df
-    raw_dir : str
-        The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
-        Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.yaml
-        Important points:
-        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
-    processed_dir : str
-        The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure:
-            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        For testing purpose, this function exceptionally accept also a directory path simply ending
-        with <campaign_name> (i.e. /tmp/<campaign_name>).
-    station_ids : str or list
-        If None (default), it process all the stations inside the raw_dir
-        If a single or a list of station_id, it process only those stations.
-    l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
-    l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
-    keep_l0a : bool
-        Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is False.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    parallel : bool
-        If True, the files are processed simultanously in multiple processes.
-        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
-        Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        - For L0A processing, it processes just 3 raw data files.
-        - For L0B processing, it processes only the first 100 rows of 3 L0A files.
-        The default is False.
-    single_netcdf : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
-        The default is True.
-
-    """
-
-    t_i = time.time()
-    # -------------------------------------------------------------------------.
-    # Check directories and create directory structure
-    # TODO: flexible for station, type of processing
-    raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
-    create_directory_structure(raw_dir, processed_dir)
-
-    # -------------------------------------------------------------------------.
-    # Retrieve stations to process
-    list_stations_id = get_station_list_to_process(
-        raw_dir=raw_dir, station_ids=station_ids
-    )
-
-    # Loop over station_id directory and process the files
-    for station_id in list_stations_id:
-        # ---------------------------------------------------------------------.
-        msg = f" - L0 processing of station_id {station_id} has started."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-
-        # ------------------------------------------------------------------.
-        # L0A processing
-        if l0a_processing:
-            run_l0a(
-                raw_dir=raw_dir,
-                processed_dir=processed_dir,
-                station_id=station_id,
-                # Reader options
-                files_glob_pattern=files_glob_pattern,
-                column_names=column_names,
-                reader_kwargs=reader_kwargs,
-                df_sanitizer_fun=df_sanitizer_fun,
-                # Processing options
-                parallel=parallel,
-                force=force,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-            )
-
-        # ------------------------------------------------------------------.
-        # L0B processing
-        if l0b_processing:
-            run_l0b(
-                processed_dir=processed_dir,
-                station_id=station_id,
-                # Processing options
-                parallel=parallel,
-                force=force,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-            )
-
-    # ------------------------------------------------------------------------.
-    # Remove L0A directory if keep_l0a = False
-    if not keep_l0a:
-        shutil.rmtree(os.path.join(processed_dir, "L0A"))
-
-    # ------------------------------------------------------------------------.
-    # If single_netcdf=True, concat the netCDF in a single file
-    if single_netcdf:
-        concatenate_L0B_files(
-            processed_dir=processed_dir,
-            station_id=station_id,
-            remove=False,
-            verbose=verbose,
-        )
-
-    # -------------------------------------------------------------------------.
-    # End of L0 processing for all stations
-    timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
-    msg = (
-        f" - L0 processing of stations {list_stations_id} completed in {timedelta_str}"
-    )
-    log_info(logger, msg, verbose)
-    # -------------------------------------------------------------------------.
-    close_logger(logger)
-    return None
-
-
 ####--------------------------------------------------------------------------.
 #### CLIck
-# TODO: TO DEPRECATE WITH NEW INTERFACE
-def click_l0_readers_options(function: object):
-    """Define click command line parameters.
+
+
+def click_l0_station_arguments(function: object):
+    """Click command line arguments for L0 processing of a station.
 
     Parameters
     ----------
     function : object
         Function.
     """
-    function = click.option(
-        "-s",
-        "--single_netcdf",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Produce single L0B netCDF",
-    )(function)
+    function = click.argument("station", metavar="<station>")(function)
+    function = click.argument("campaign_name", metavar="<campaign_name>")(function)
+    function = click.argument("data_source", metavar="<data_source>")(function)
+    function = click.argument("disdrodb_dir", metavar="<disdrodb_dir>")(function)
+    return function 
+
+ 
+def click_l0_processing_options(function: object):
+    """Click command line default parameters for L0 processing options.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
     function = click.option(
         "-p",
         "--parallel",
@@ -659,6 +818,25 @@ def click_l0_readers_options(function: object):
         default=False,
         help="Force overwriting",
     )(function)
+    return function
+
+
+def click_l0_archive_options(function: object):
+    """Click command line arguments for L0 processing archiving of a station.
+    
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.option(
+        "-s",
+        "--single_netcdf",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Produce single L0B netCDF",
+    )(function)
     function = click.option(
         "-k",
         "--keep_l0a",
@@ -683,113 +861,5 @@ def click_l0_readers_options(function: object):
         default=True,
         help="Perform L0A processing",
     )(function)
-    function = click.argument("processed_dir", metavar="<processed_dir>")(function)
-    function = click.argument(
-        "raw_dir", type=click.Path(exists=True), metavar="<raw_dir>"
-    )(function)
-
     return function
-
-
-####--------------------------------------------------------------------------.
-#### Reader wrapper
-
-
-def run_reader(
-    data_source: str,
-    reader_name: str,
-    raw_dir: str,
-    processed_dir: str,
-    station_ids: list = None,
-    # L0A settings
-    l0a_processing: bool = True,
-    # L0B settings
-    l0b_processing: bool = True,
-    keep_l0a: bool = False,
-    single_netcdf: bool = True,
-    # Processing arguments
-    force: bool = False,
-    verbose: bool = False,
-    debugging_mode: bool = False,
-    parallel: bool = True,
-) -> None:
-    """Wrapper to run reader functions.
-
-    Parameters
-    ----------
-    data_source : str
-        Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
-    reader_name : str
-        Campaign name
-    raw_dir : str
-        The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
-        Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.yaml
-        Important points:
-        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
-    processed_dir : str
-        The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure:
-            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        For testing purpose, this function exceptionally accept also a directory path simply ending
-        with <campaign_name> (i.e. /tmp/<campaign_name>).
-    l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
-    l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
-    keep_l0a : bool
-        Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is False.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        - For L0A processing, it processes just 3 raw data files.
-        - For L0B processing, it processes only the first 100 rows of 3 L0A files.
-        The default is False.
-    parallel : bool
-        If True, the files are processed simultanously in multiple processes.
-        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
-        Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    single_netcdf : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
-        The default is True.
-    """
-    from disdrodb.L0.L0_reader import get_reader
-
-    # Get the corresponding reader function.
-    reader = get_reader(data_source, reader_name)
-
-    # Run the reader
-    reader(
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
-        station_ids=station_ids,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        single_netcdf=single_netcdf,
-        force=force,
-        verbose=verbose,
-        parallel=parallel,
-        debugging_mode=debugging_mode,
-    )
+  

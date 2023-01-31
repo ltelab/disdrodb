@@ -12,7 +12,11 @@ import numpy as np
 
 
 def _get_disdrodb_directory(
-    disdrodb_dir, product_level, data_source="", campaign_name=""
+    disdrodb_dir,
+    product_level,
+    data_source="",
+    campaign_name="",
+    check_exist=True,
 ):
     from disdrodb.L0.io import _check_directory_exist
 
@@ -21,7 +25,8 @@ def _get_disdrodb_directory(
         dir_path = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name)
     else:
         dir_path = os.path.join(disdrodb_dir, "Processed", data_source, campaign_name)
-    _check_directory_exist(dir_path)
+    if check_exist:
+        _check_directory_exist(dir_path)
     return dir_path
 
 
@@ -40,6 +45,7 @@ def _get_list_stations_dirs(product_level, campaign_dir):
 
 
 def _get_list_stations_with_data(product_level, campaign_dir):
+    """Get the list of stations with data inside."""
     # Get stations directory
     list_stations_dir = _get_list_stations_dirs(
         product_level=product_level, campaign_dir=campaign_dir
@@ -265,7 +271,7 @@ def check_data_sources(disdrodb_dir, product_level, data_sources):
     return data_sources
 
 
-def check_campaign_names(disdrodb_dir, product_level, campaign_names):
+def _check_campaign_names(disdrodb_dir, product_level, campaign_names):
     """Check DISDRODB campaign_names are valid.
 
     It checks only if the directory exist within the product level.
@@ -361,7 +367,7 @@ def available_stations(
         product_level=product_level,
         data_sources=data_sources,
     )
-    campaign_names = check_campaign_names(
+    campaign_names = _check_campaign_names(
         disdrodb_dir=disdrodb_dir,
         product_level=product_level,
         campaign_names=campaign_names,
