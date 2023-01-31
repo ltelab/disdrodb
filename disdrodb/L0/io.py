@@ -32,6 +32,7 @@ from disdrodb.utils.logger import log_info, log_warning
 logger = logging.getLogger(__name__)
 
 ####---------------------------------------------------------------------------.
+#### Info from filepath
 def infer_data_source_from_fpath(fpath: str) -> str:
     """Infer data source from file path.
 
@@ -157,6 +158,10 @@ def get_data_source(base_dir: str) -> str:
     return institute_name
 
 
+####--------------------------------------------------------------------------.
+#### Directory/Filepaths L0A and L0B products
+
+
 def get_dataset_min_max_time(ds: xr.Dataset):
     """Retrieves dataset starting and ending time.
 
@@ -195,10 +200,6 @@ def get_dataframe_min_max_time(df: pd.DataFrame):
     starting_time = df["time"].iloc[0]
     ending_time = df["time"].iloc[-1]
     return (starting_time, ending_time)
-
-
-####--------------------------------------------------------------------------.
-#### Directory/Filepaths L0A and L0B Defaults
 
 
 def get_L0A_dir(processed_dir: str, station_id: str) -> str:
@@ -353,7 +354,7 @@ def get_L0B_fpath(
 
 
 ####--------------------------------------------------------------------------.
-#### File retrievals
+#### List Station Files
 
 
 def check_glob_pattern(pattern: str) -> None:
@@ -509,8 +510,9 @@ def get_l0a_file_list(processed_dir, station_id, debugging_mode):
 
 
 ####--------------------------------------------------------------------------.
-#### Directory/File Creation/Deletion
+#### Directory/File Checks/Creation/Deletion
 def _check_directory_exist(dir_path):
+    """Check if the directory exist."""
     # Check the directory exist
     if not os.path.exists(dir_path):
         raise ValueError(f"{dir_path} directory does not exist.")
@@ -519,6 +521,7 @@ def _check_directory_exist(dir_path):
 
 
 def _create_directory(path: str) -> None:
+    """Create a directory."""
     if not isinstance(path, str):
         raise TypeError("'path' must be a strig.")
     try:
@@ -535,6 +538,7 @@ def _create_directory(path: str) -> None:
 
 
 def _remove_if_exists(fpath: str, force: bool = False) -> None:
+    """Remove file or directory if exists and force=True."""
     if os.path.exists(fpath):
         if not force:
             msg = f"--force is False and a file already exists at:{fpath}"
@@ -562,9 +566,7 @@ def _remove_if_exists(fpath: str, force: bool = False) -> None:
         logger.info(f"Deleted folder {fpath}")
 
 
-####--------------------------------------------------------------------------.
-#### Directory checks
-def parse_fpath(fpath: str) -> str:
+def _parse_fpath(fpath: str) -> str:
     """Ensure fpath does not end with /.
 
     Parameters
@@ -584,7 +586,7 @@ def parse_fpath(fpath: str) -> str:
     """
 
     if not isinstance(fpath, str):
-        raise TypeError("'parse_fpath' expects a directory/filepath string.")
+        raise TypeError("'_parse_fpath' expects a directory/filepath string.")
     if fpath[-1] == "/":
         print("{} should not end with /.".format(fpath))
         fpath = fpath[:-1]
@@ -598,44 +600,19 @@ def parse_fpath(fpath: str) -> str:
 
 ####--------------------------------------------------------------------------.
 #### L0 processing directory checks
-def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
-    """Check validity of raw_dir.
 
-    Steps:
-    1. Check that 'raw_dir' is a valid directory path
-    2. Check that 'raw_dir' follows the expect directory structure
-    3. Check that each station_id directory contains data
-    4. Check that for each station_id the mandatory metadata are specified.
 
-    Parameters
-    ----------
-    raw_dir : str
-        Input raw directory
-    verbose : bool, optional
-        Wheter to verbose the processing.
-        The default is False.
-
-    Raises
-    ------
-    TypeError
-        Error if not complient.
-    """
-
-    from disdrodb.L0.metadata import create_metadata
-    from disdrodb.L0.metadata import check_metadata_compliance
-    from disdrodb.L0.issue import create_issue_yml
-    from disdrodb.L0.issue import check_issue_compliance
-
-    # -------------------------------------------------------------------------.
-    # Check input argument
+def _check_raw_dir_input(raw_dir):
     if not isinstance(raw_dir, str):
         raise TypeError("Provide 'raw_dir' as a string'.")
     if not os.path.exists(raw_dir):
         raise ValueError("'raw_dir' {} directory does not exist.".format(raw_dir))
     if not os.path.isdir(raw_dir):
         raise ValueError("'raw_dir' {} is not a directory.".format(raw_dir))
-    # -------------------------------------------------------------------------.
-    #### Check there is /data subfolders
+
+
+def _check_raw_dir_data_subfolders(raw_dir):
+    """Check `data` directory in raw dir."""
     list_subfolders = os.listdir(raw_dir)
     if len(list_subfolders) == 0:
         raise ValueError("There are not subfolders in {}".format(raw_dir))
@@ -666,10 +643,21 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
             "The following data directories are empty: {}".format(empty_station_dir)
         )
 
-    # -------------------------------------------------------------------------.
-    #### Check there is /metadata subfolders
+
+def _check_raw_dir_metadata(raw_dir, verbose=True):
+    """Check metadata in the raw_dir directory."""
+    from disdrodb.L0.metadata import create_metadata
+    from disdrodb.L0.metadata import check_metadata_compliance
+
+    # Get list of stations
+    raw_data_dir = os.path.join(raw_dir, "data")
+    list_data_station_id = os.listdir(raw_data_dir)
+
+    # Get metadata directory
     metadata_dir = os.path.join(raw_dir, "metadata")
-    if "metadata" not in list_subfolders:
+
+    # If does not exists
+    if "metadata" not in os.listdir(raw_dir):
         # - Create metadata directory
         _create_directory(metadata_dir)
         # - Create default metadata yml file for each station (since the folder didn't existed)
@@ -724,11 +712,21 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     #### Check metadata compliance
     _ = [check_metadata_compliance(fpath) for fpath in list_metadata_fpath]
+    return None
 
-    # -------------------------------------------------------------------------.
-    #### Check there is /issue subfolder
+
+def _check_raw_dir_issue(raw_dir, verbose=True):
+    """Check issue yaml files in the raw_dir directory."""
+    from disdrodb.L0.issue import create_issue_yml
+    from disdrodb.L0.issue import check_issue_compliance
+
+    # Get list of stations
+    raw_data_dir = os.path.join(raw_dir, "data")
+    list_data_station_id = os.listdir(raw_data_dir)
+    # Get issue directory
     issue_dir = os.path.join(raw_dir, "issue")
-    if "issue" not in list_subfolders:
+    # If issue directory does not exist
+    if "issue" not in os.listdir(raw_dir):
         # - Create issue directory
         _create_directory(issue_dir)
         # - Create issue yml file for each station (since the folder didn't existed)
@@ -762,6 +760,7 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
         msg = "The issue files for the following station_id were missing: {}".format(
             list_missing_station_id
         )
+        log_warning(logger, msg, verbose)
 
     # - Check not excess issue compared to present stations
     excess_issue_station_idx = np.where(
@@ -777,6 +776,41 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     #### Check issue compliance
     _ = [check_issue_compliance(fpath) for fpath in list_issue_fpath]
+
+
+def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
+    """Check validity of raw_dir.
+
+    Steps:
+    1. Check that 'raw_dir' is a valid directory path
+    2. Check that 'raw_dir' follows the expect directory structure
+    3. Check that each station_id directory contains data
+    4. Check that for each station_id the mandatory metadata are specified.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Input raw directory
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+
+    """
+    # -------------------------------------------------------------------------.
+    # Check input argument
+    _check_raw_dir_input(raw_dir)
+
+    # -------------------------------------------------------------------------.
+    # Check there is valid /data subfolder
+    _check_raw_dir_data_subfolders(raw_dir)
+
+    # -------------------------------------------------------------------------.
+    # Check there is valid /metadata subfolder
+    _check_raw_dir_metadata(raw_dir, verbose=verbose)
+
+    # -------------------------------------------------------------------------.
+    # Check there is valid /issue subfolder
+    _check_raw_dir_issue(raw_dir, verbose=verbose)
 
     # -------------------------------------------------------------------------.
 
@@ -913,8 +947,8 @@ def check_directories(raw_dir: str, processed_dir: str, force: bool = False) -> 
         raw directory and processed directory
     """
 
-    raw_dir = parse_fpath(raw_dir)
-    processed_dir = parse_fpath(processed_dir)
+    raw_dir = _parse_fpath(raw_dir)
+    processed_dir = _parse_fpath(processed_dir)
     check_raw_dir(raw_dir)
     check_processed_dir(processed_dir, force=force)
     check_campaign_name(raw_dir, processed_dir)
