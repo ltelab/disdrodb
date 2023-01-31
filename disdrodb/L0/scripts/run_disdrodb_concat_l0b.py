@@ -24,20 +24,20 @@ import click
 @click.command()
 @click.argument("disdrodb_dir", metavar="<DISDRODB base directory>")
 @click.option(
-    "-data_source",
-    "--data_source",
+    "-data_sources",
+    "--data_sources",
     type=str,
     show_default=True,
     default=None,
-    help="Data source name",
+    help="Data source names",
 )
 @click.option(
-    "-campaign_name",
-    "--campaign_name",
+    "-campaign_names",
+    "--campaign_names",
     type=str,
     show_default=True,
     default=None,
-    help="Campaign name",
+    help="Campaign names",
 )
 @click.option(
     "-station",
@@ -60,18 +60,20 @@ import click
     "--verbose",
     type=bool,
     show_default=True,
-    default=False,
-    help="Produce a single L0B netCDF",
+    default=True,
+    help="Verbose processing.",
 )
-def run_concat_cmd(disdrodb_dir, data_source, campaign_name, station, remove, verbose):
+def run_concat_cmd(
+    disdrodb_dir, data_sources, campaign_names, station, remove, verbose
+):
     """Wrapper to run L0B concatenation on all stations (or a subset of it) from the terminal."""
     from disdrodb.L0.L0B_concat import concatenate_L0B
 
     # Run concatenation
     concatenate_L0B(
         disdrodb_dir=disdrodb_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
         station=station,
         remove=remove,
         verbose=verbose,

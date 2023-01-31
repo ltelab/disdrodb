@@ -431,7 +431,15 @@ def get_list_ds(fpaths: str) -> list:
 
     @dask.delayed
     def open_dataset_delayed(fpath):
-        ds = xr.open_dataset(fpath, chunks={"time": -1}, engine="netcdf4")
+        import os
+
+        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+        import xarray as xr
+
+        # This context manager is required to avoid random HDF locking
+        # - cache=True: store data in memory to avoid reading back from disk
+        with xr.open_dataset(fpath, cache=True) as data:
+            ds = data.load()
         return ds
 
     list_ds_delayed = []

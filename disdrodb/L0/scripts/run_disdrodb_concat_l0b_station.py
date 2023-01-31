@@ -39,8 +39,8 @@ import click
     "--verbose",
     type=bool,
     show_default=True,
-    default=False,
-    help="Produce a single L0B netCDF",
+    default=True,
+    help="Verbose processing.",
 )
 def run_concat_cmd(disdrodb_dir, data_source, campaign_name, station, remove, verbose):
     """Wrapper to run concatenation of a single station L0B files from the terminal."""

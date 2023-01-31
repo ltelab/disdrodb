@@ -16,23 +16,25 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 from disdrodb.L0 import run_L0
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
+    station_ids=None,
     l0a_processing=True,
+    # L0B settings
     l0b_processing=True,
     single_netcdf=False,
     keep_l0a=False,
+    # Processing options
     force=False,
     verbose=False,
     parallel=False,
     debugging_mode=False,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = [
@@ -113,6 +115,7 @@ def reader(
     run_L0(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
+        station_ids=station_ids,
         # Type of L0 processing
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,

@@ -45,7 +45,7 @@ from disdrodb.utils.logger import (
 logger = logging.getLogger(__name__)
 
 # -----------------------------------------------------------------------------.
-#### L0A and L0B File Creators
+#### Creation of L0A and L0B Single Station File
 
 
 def _delayed_based_on_kwargs(function):
@@ -231,69 +231,7 @@ def _generate_l0b(
 
 
 ####------------------------------------------------------------------------.
-#### L0, L0A and L0B Routines
-
-
-def get_list_stations_to_process(raw_dir, station_ids):
-    """
-    Retrieve the subset of stations to process.
-
-    Parameters
-    ----------
-    raw_dir : str
-        The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
-        Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.yaml
-        Important points:
-        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
-    station_ids : str or list
-        If None (default), it process all the stations inside the raw_dir
-        If a single or a list of station_id, it process only those stations.
-
-    Returns
-    -------
-    list
-        List of stations to process.
-
-    """
-    # Check station_ids type
-    if not isinstance(station_ids, (str, list, type(None))):
-        raise TypeError("`station_ids` must be None, str or list of strings.")
-    # Select available stations in raw_dir
-    data_dir = os.path.join(raw_dir, "data")
-    list_stations_id = sorted(os.listdir(data_dir))
-    # Check if there are stations
-    if len(list_stations_id) == 0:
-        raise ValueError(f"No station directories inside {data_dir}")
-    ####-----------------------------------------.
-    # Case 1: station_ids=None
-    if station_ids is None:
-        return list_stations_id
-
-    ####-----------------------------------------.
-    # Case 2: list of selected stations provided
-    if isinstance(station_ids, str):
-        station_ids = [station_ids]
-    # - Check stations_id type
-    is_not_string = [not isinstance(station_id, str) for station_id in station_ids]
-    if np.any(is_not_string):
-        raise ValueError("`station_ids` must be specified as (list of) strings.")
-    # - Check if specified stations are availables
-    idx_not_valid = np.isin(station_ids, list_stations_id, invert=True)
-    if np.any(idx_not_valid):
-        unvalid_station_ids = np.array(station_ids)[idx_not_valid].tolist()
-        raise ValueError(
-            f"Valid station_ids are {list_stations_id}. {unvalid_station_ids} are not."
-        )
-    # - Return station_ids subset
-    return station_ids
+#### Creation of L0A and L0B Single Station Files
 
 
 def run_l0a(
@@ -364,9 +302,6 @@ def run_l0a(
     return None
 
 
-# -----------------------------------------------------------------.
-
-
 def run_l0b(
     processed_dir,
     station_id,
@@ -427,21 +362,89 @@ def run_l0b(
     return None
 
 
-# -----------------------------------------------------------------------------.
+####--------------------------------------------------------------------------.
+#### Run L0 processing (L0A + L0B)
+
+
+def get_station_list_to_process(raw_dir, station_ids):
+    """
+    Retrieve the subset of stations to process.
+
+    Parameters
+    ----------
+    raw_dir : str
+        The directory path where all the raw content of a specific campaign is stored.
+        The path must have the following structure:
+            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        Inside the raw_dir directory, it is required to adopt the following structure:
+        - /data/<station_id>/<raw_files>
+        - /metadata/<station_id>.yaml
+        Important points:
+        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
+        - The <campaign_name> must semantically match between:
+           - the raw_dir and processed_dir directory paths;
+           - with the key 'campaign_name' within the metadata YAML files.
+        - The campaign_name are expected to be UPPER CASE.
+    station_ids : str or list
+        If None (default), it process all the stations inside the raw_dir
+        If a single or a list of station_id, it process only those stations.
+
+    Returns
+    -------
+    list
+        List of stations to process.
+
+    """
+    # Check station_ids type
+    if not isinstance(station_ids, (str, list, type(None))):
+        raise TypeError("`station_ids` must be None, str or list of strings.")
+    # Select available stations in raw_dir
+    data_dir = os.path.join(raw_dir, "data")
+    list_stations_id = sorted(os.listdir(data_dir))
+    # Check if there are stations
+    if len(list_stations_id) == 0:
+        raise ValueError(f"No station directories inside {data_dir}")
+    # -----------------------------------------.
+    # Case 1: station_ids=None
+    if station_ids is None:
+        return list_stations_id
+
+    # -----------------------------------------.
+    # Case 2: list of selected stations provided
+    if isinstance(station_ids, str):
+        station_ids = [station_ids]
+    # - Check stations_id type
+    is_not_string = [not isinstance(station_id, str) for station_id in station_ids]
+    if np.any(is_not_string):
+        raise ValueError("`station_ids` must be specified as (list of) strings.")
+    # - Check if specified stations are availables
+    idx_not_valid = np.isin(station_ids, list_stations_id, invert=True)
+    if np.any(idx_not_valid):
+        unvalid_station_ids = np.array(station_ids)[idx_not_valid].tolist()
+        raise ValueError(
+            f"Valid station_ids are {list_stations_id}. {unvalid_station_ids} are not."
+        )
+    # - Return station_ids subset
+    return station_ids
+
+
 def run_L0(
-    # Arguments custom to each reader
+    # Arguments custom to each reader (for L0A)
     column_names,
     reader_kwargs,
     files_glob_pattern,
     df_sanitizer_fun,
-    # Arguments designing the processing type
+    # Arguments required
     raw_dir,
     processed_dir,
     station_ids=None,
+    # L0A settings
     l0a_processing=True,
+    # L0B settings
     l0b_processing=True,
     keep_l0a=True,
     single_netcdf=False,
+    # Processing options
     parallel=False,
     force=False,
     verbose=False,
@@ -534,16 +537,14 @@ def run_L0(
 
     t_i = time.time()
     # -------------------------------------------------------------------------.
-    # Initial directory checks
+    # Check directories and create directory structure
+    # TODO: flexible for station, type of processing
     raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
-
-    # -------------------------------------------------------------------------.
-    # Create directory structure
     create_directory_structure(raw_dir, processed_dir)
 
     # -------------------------------------------------------------------------.
     # Retrieve stations to process
-    list_stations_id = get_list_stations_to_process(
+    list_stations_id = get_station_list_to_process(
         raw_dir=raw_dir, station_ids=station_ids
     )
 
@@ -560,10 +561,12 @@ def run_L0(
                 raw_dir=raw_dir,
                 processed_dir=processed_dir,
                 station_id=station_id,
+                # Reader options
                 files_glob_pattern=files_glob_pattern,
                 column_names=column_names,
                 reader_kwargs=reader_kwargs,
                 df_sanitizer_fun=df_sanitizer_fun,
+                # Processing options
                 parallel=parallel,
                 force=force,
                 verbose=verbose,
@@ -576,6 +579,7 @@ def run_L0(
             run_l0b(
                 processed_dir=processed_dir,
                 station_id=station_id,
+                # Processing options
                 parallel=parallel,
                 force=force,
                 verbose=verbose,
@@ -610,265 +614,8 @@ def run_L0(
 
 
 ####--------------------------------------------------------------------------.
-
-
-def get_available_readers() -> dict:
-    """Returns the readers description included into the current release of DISDRODB.
-
-    Returns
-    -------
-    dict
-        The dictionary has the following schema {"data_source":{"campaign_name":"reader file path"}}
-    """
-    # current file path
-    lo_folder_path = os.path.dirname(__file__)
-
-    # readers folder path
-    reader_folder_path = os.path.join(lo_folder_path, "readers")
-
-    # list of readers folder
-    list_of_reader_folder = [
-        f.path for f in os.scandir(reader_folder_path) if f.is_dir()
-    ]
-
-    # create dictionary
-    dict_reader = {}
-    for path_folder in list_of_reader_folder:
-        data_source = os.path.basename(path_folder)
-        dict_reader[data_source] = {}
-        for path_python_file in [
-            f.path
-            for f in os.scandir(path_folder)
-            if f.is_file() and f.path.endswith(".py")
-        ]:
-            reader_name = (
-                os.path.basename(path_python_file)
-                .replace("reader_", "")
-                .replace(".py", "")
-            )
-            dict_reader[data_source][reader_name] = path_python_file
-
-    return dict_reader
-
-
-def check_data_source(data_source: str) -> str:
-    """Check if the provided data source exists within the available readers.
-
-    Please run get_available_readers() to get the list of all available reader.
-
-    Parameters
-    ----------
-    data_source : str
-        Data source name  - Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
-
-    Returns
-    -------
-    str
-        if data source exists : retrurn the correct data source name
-        if data source does not exist : error
-
-    Raises
-    ------
-    ValueError
-        Error if the data source name provided has not been found.
-    """
-
-    dict_all_readers = get_available_readers()
-
-    correct_data_source_list = list(
-        set(dict_all_readers.keys()).intersection([data_source, data_source.upper()])
-    )
-
-    if correct_data_source_list:
-        correct_data_source = correct_data_source_list[0]
-    else:
-        msg = f"Data source {data_source} has not been found within the available readers."
-        logger.exception(msg)
-        raise ValueError(msg)
-
-    return correct_data_source
-
-
-def get_available_readers_by_data_source(data_source: str) -> dict:
-    """Return the available readers by data source.
-
-    Parameters
-    ----------
-    data_source : str
-        Data source name - Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
-
-    Returns
-    -------
-    dict
-        Dictionary that conatins the campaigns for the requested data source.
-
-    """
-
-    correct_data_source = check_data_source(data_source)
-
-    if correct_data_source:
-        dict_data_source = get_available_readers().get(correct_data_source)
-
-    return dict_data_source
-
-
-def check_reader_name(data_source: str, reader_name: str) -> str:
-    """Check if the provided data source exists and reader names exists within the available readers.
-
-    Please run get_available_readers() to get the list of all available reader.
-
-    Parameters
-    ----------
-    data_source : str
-        Data source name - Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
-    reader_name : str
-        Campaign name
-
-    Returns
-    -------
-    str
-        If True : returns the reader name
-        If False : Error - return None
-
-    Raises
-    ------
-    ValueError
-        Error if the reader name provided for the campaign has not been found.
-    """
-
-    correct_data_source = check_data_source(data_source)
-
-    if correct_data_source:
-        dict_reader_names = get_available_readers_by_data_source(correct_data_source)
-
-        correct_reader_name_list = list(
-            set(dict_reader_names.keys()).intersection(
-                [reader_name, reader_name.upper()]
-            )
-        )
-
-        if correct_reader_name_list:
-            correct_reader_name = correct_reader_name_list[0]
-        else:
-            msg = (
-                f"Reader {reader_name} has not been found within the available readers"
-            )
-            logger.exception(msg)
-            raise ValueError(msg)
-
-    return correct_reader_name
-
-
-def get_reader(data_source: str, reader_name: str) -> object:
-    """Returns the reader function based on input parameters.
-
-    Parameters
-    ----------
-    data_source : str
-        Institution name (when campaign data spans more than 1 country) or country (when all campaigns (or sensor networks) are inside a given country)
-    reader_name : str
-        Campaign name
-
-    Returns
-    -------
-    object
-        The reader() function
-
-    """
-
-    corrcet_data_source = check_data_source(data_source)
-    correct_reader_name = check_reader_name(data_source, reader_name)
-
-    if correct_reader_name:
-        full_name = (
-            f"disdrodb.L0.readers.{corrcet_data_source}.{correct_reader_name}.reader"
-        )
-        module_name, unit_name = full_name.rsplit(".", 1)
-        my_reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
-
-    return my_reader
-
-
-####--------------------------------------------------------------------------.
-#### Readers Docs and CLIck
-
-
-def is_documented_by(original):
-    """Wrapper function to apply generic docstring to the decorated function.
-
-    Parameters
-    ----------
-    original : function
-        Function to take the docstring from.
-    """
-
-    def wrapper(target):
-        target.__doc__ = original.__doc__
-        return target
-
-    return wrapper
-
-
-def reader_generic_docstring():
-    """Script to process raw data to L0A and L0B format.
-
-    Parameters
-    ----------
-    raw_dir : str
-        The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
-        Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_id>/<raw_files>
-        - /metadata/<station_id>.yaml
-        Important points:
-        - For each <station_id> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
-    processed_dir : str
-        The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure:
-            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        For testing purpose, this function exceptionally accept also a directory path simply ending
-        with <campaign_name> (i.e. /tmp/<campaign_name>).
-    l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
-    l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
-    keep_l0a : bool
-        Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is False.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    parallel : bool
-        If True, the files are processed simultanously in multiple processes.
-        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
-        Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        - For L0A processing, it processes just 3 raw data files.
-        - For L0B processing, it processes only the first 100 rows of 3 L0A files.
-        The default is False.
-    single_netcdf : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
-        The default is True.
-    """
-
-
+#### CLIck
+# TODO: TO DEPRECATE WITH NEW INTERFACE
 def click_l0_readers_options(function: object):
     """Define click command line parameters.
 
@@ -953,14 +700,18 @@ def run_reader(
     reader_name: str,
     raw_dir: str,
     processed_dir: str,
+    station_ids: list = None,
+    # L0A settings
     l0a_processing: bool = True,
+    # L0B settings
     l0b_processing: bool = True,
     keep_l0a: bool = False,
+    single_netcdf: bool = True,
+    # Processing arguments
     force: bool = False,
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    single_netcdf: bool = True,
 ) -> None:
     """Wrapper to run reader functions.
 
@@ -1023,6 +774,7 @@ def run_reader(
         If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
         The default is True.
     """
+    from disdrodb.L0.L0_reader import get_reader
 
     # Get the corresponding reader function.
     reader = get_reader(data_source, reader_name)
@@ -1031,6 +783,7 @@ def run_reader(
     reader(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
+        station_ids=station_ids,
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
         keep_l0a=keep_l0a,

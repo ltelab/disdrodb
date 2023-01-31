@@ -26,7 +26,7 @@ Created on Tue Aug  2 11:10:22 2022
 from disdrodb.L0 import run_L0
 
 
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)

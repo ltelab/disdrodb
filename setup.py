@@ -53,9 +53,16 @@ setup(
         "console_scripts": [
             # L0 reader execution
             "run_disdrodb_l0_reader=disdrodb.L0.scripts.run_disdrodb_l0_reader:run_reader_cmd",
+            #### Future terminal scripts
+            # run_disdrodb_l0
+            # run_disdrodb_l0_station
+            # run_disdrodb_l0a
+            # run_disdrodb_l0a_station
+            # run_disdrodb_l0b
+            # run_disdrodb_l0b_station
             # L0B concatenation
-            "disdrodb_concat_l0b_station=disdrodb.L0.scripts.run_disdrodb_concat_l0b_station:run_concat_cmd",
-            # "disdrodb_concat_l0b=disdrodb.L0.scripts.run_disdrodb_concat_l0b",
+            "run_disdrodb_l0b_concat_station=disdrodb.L0.scripts.run_disdrodb_concat_l0b_station:run_concat_cmd",
+            "run_disdrodb_l0b_concat=disdrodb.L0.scripts.run_disdrodb_concat_l0b:run_concat_cmd",
         ]
     },
 )

@@ -19,7 +19,7 @@
 # -----------------------------------------------------------------------------.
 """Reader for CHONGQING campaign."""
 from disdrodb.L0 import run_L0
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
