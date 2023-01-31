@@ -266,11 +266,11 @@ def test__remove_directory():
 def test_parse_fpath():
     path_dir_windows_in = "\\DISDRODB\\Processed\\institute_name\\campaign_name\\"
     path_dir_windows_out = "\\DISDRODB\\Processed\\institute_name\\campaign_name"
-    assert io.parse_fpath(path_dir_windows_in) == path_dir_windows_out
+    assert io._parse_fpath(path_dir_windows_in) == path_dir_windows_out
 
     path_dir_linux_in = "/DISDRODB/Processed/institute_name/campaign_name/"
     path_dir_linux_out = "/DISDRODB/Processed/institute_name/campaign_name"
-    assert io.parse_fpath(path_dir_linux_in) == path_dir_linux_out
+    assert io._parse_fpath(path_dir_linux_in) == path_dir_linux_out
 
 
 def test_check_raw_dir():
@@ -359,21 +359,6 @@ def test_check_directories():
         path_raw,
         path_process,
     )
-
-
-def test_check_metadata_dir():
-    campaign_name = "CAMPAIGN_NAME"
-    institute_name = "INSTITUTE_NAME"
-    path_process = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_structure",
-        "DISDRODB",
-        "Processed",
-        institute_name,
-        campaign_name,
-    )
-
-    assert io.check_metadata_dir(path_process) is None
 
 
 def test_copy_metadata_from_raw_dir():

@@ -599,7 +599,7 @@ def _parse_fpath(fpath: str) -> str:
 
 
 ####--------------------------------------------------------------------------.
-#### L0 processing directory checks
+#### RAW Directory Checks
 
 
 def _check_raw_dir_input(raw_dir):
@@ -814,6 +814,44 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
 
     # -------------------------------------------------------------------------.
 
+#### -------------------------------------------------------------------------.
+#### PROCESSED Directory Checks 
+
+def _check_is_processed_dir(processed_dir):
+    if (
+        processed_dir.find("DISDRODB/Processed") == -1
+        and processed_dir.find("DISDRODB\\Processed") == -1
+    ):
+        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*. or *\DISDRODB\Processed\*."
+        logger.error(msg)
+        raise ValueError(msg)
+
+    # Check processed_dir does not end with "DISDRODB/Processed"
+    # - It must contain also the <campaign_name> directory
+    if (
+        processed_dir.endswith("Processed")
+        or processed_dir.endswith("Processed/")
+        or processed_dir.endswith("Processed\\")
+    ):
+        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
+        logger.error(msg)
+        raise ValueError(msg)
+
+    
+def _create_processed_dir_folder(processed_dir, dir_name):
+    """Create directory <dir_name> inside the processed_dir directory."""
+    try:
+        folder_path = os.path.join(processed_dir, dir_name)
+        os.makedirs(folder_path)
+        logger.debug(f"Created {folder_path}")
+    except FileExistsError:
+        logger.debug(f"Found {folder_path}")
+        pass
+    except (Exception) as e:
+        msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
+        logger.exception(msg)
+        raise FileNotFoundError(msg)  
+
 
 def check_processed_dir(processed_dir: str, force: bool = False) -> None:
     """Check that 'processed_dir' is a valid directory path.
@@ -838,25 +876,8 @@ def check_processed_dir(processed_dir: str, force: bool = False) -> None:
         raise TypeError("Provide 'processed_dir' as a string'.")
     # ------------------------------
     # Check processed_dir has "DISDRODB/Processed" to avoid deleting precious stuffs
-    if (
-        processed_dir.find("DISDRODB/Processed") == -1
-        and processed_dir.find("DISDRODB\\Processed") == -1
-    ):
-        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*. or *\DISDRODB\Processed\*."
-        logger.error(msg)
-        raise ValueError(msg)
-
-    # Check processed_dir does not end with "DISDRODB/Processed"
-    # - It must contain also the <campaign_name> directory
-    if (
-        processed_dir.endswith("Processed")
-        or processed_dir.endswith("Processed/")
-        or processed_dir.endswith("Processed\\")
-    ):
-        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
-        logger.error(msg)
-        raise ValueError(msg)
-
+    _check_is_processed_dir(processed_dir)
+   
     # ------------------------------
     # If forcing overwriting
     if force:
@@ -891,6 +912,8 @@ def check_processed_dir(processed_dir: str, force: bool = False) -> None:
         raise ValueError(msg)
 
 
+####---------------------------------------------------------------------------.
+#### RAW - PROCESSED Directories Checks
 def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
     """Check that 'raw_dir' and 'processed_dir' have same campaign_name.
 
@@ -954,32 +977,6 @@ def check_directories(raw_dir: str, processed_dir: str, force: bool = False) -> 
     check_campaign_name(raw_dir, processed_dir)
     return raw_dir, processed_dir
 
-
-def check_metadata_dir(processed_path: str) -> None:
-    """Create metadata folder into process directory.
-
-    Parameters
-    ----------
-    processed_path : str
-        Path of the processed directory
-
-    Raises
-    ------
-    FileNotFoundError
-        Error metadat already existed or can not be created.
-    """
-    # Create metadata folder
-    try:
-        metadata_folder_path = os.path.join(processed_path, "metadata")
-        os.makedirs(metadata_folder_path)
-        logger.debug(f"Created {metadata_folder_path}.")
-    except FileExistsError:
-        logger.debug(f"{metadata_folder_path} already existed.")
-        pass
-    except (Exception) as e:
-        msg = f"Folder metadata can not be created in {metadata_folder_path}>. \n The error is: {e}."
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
 
 
 def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
@@ -1049,55 +1046,18 @@ def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
     FileNotFoundError
         Error is folder structure can not be created.
     """
-
+    # Creare required folders inside processed_dir     
+    _create_processed_dir_folder(processed_dir, dir_name="metadata")
+    _create_processed_dir_folder(processed_dir, dir_name="info")
+    _create_processed_dir_folder(processed_dir, dir_name="L0A")
+    _create_processed_dir_folder(processed_dir, dir_name="L0B")
+    
     # -----------------------------------------------------.
-    #### Create metadata folder inside processed_dir
-    check_metadata_dir(processed_dir)
+    #### Copy metadata from RAW directory 
     copy_metadata_from_raw_dir(raw_dir, processed_dir)
 
-    # -----------------------------------------------------.
-    #### Create info folder inside processed_dir
-    try:
-        info_folder_path = os.path.join(processed_dir, "info")
-        os.makedirs(info_folder_path)
-        logger.debug(f"Created {info_folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {info_folder_path}")
-        pass
-    except (Exception) as e:
-        msg = f"Can not create folder metadata inside <info_folder_path>. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
-
-    # -----------------------------------------------------.
-    #### Create L0A folder inside processed_dir
-    try:
-        L0A_folder_path = os.path.join(processed_dir, "L0A")
-        os.makedirs(L0A_folder_path, exist_ok=True)
-        logger.debug(f"Created {L0A_folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {L0A_folder_path}")
-        pass
-    except (Exception) as e:
-        msg = f"Can not create folder L0A inside {processed_dir}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
-
-    # -----------------------------------------------------.
-    #### Create L0B folder inside processed_dir
-    try:
-        L0B_folder_path = os.path.join(processed_dir, "L0B")
-        os.makedirs(L0B_folder_path)
-        logger.debug(f"Created {L0B_folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {L0B_folder_path}")
-        pass
-    except (Exception) as e:
-        msg = f"Can not create folder L0B inside {processed_dir}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
-    return
-
+    # -----------------------------------------------------.            
+    return None 
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers
