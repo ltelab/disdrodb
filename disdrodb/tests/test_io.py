@@ -288,7 +288,7 @@ def test_check_raw_dir():
         campaign_name,
     )
 
-    assert io.check_raw_dir(path_campaign_name) is None
+    assert io.check_raw_dir(path_campaign_name) == path_campaign_name
 
 
 def test_check_processed_dir():

@@ -520,17 +520,14 @@ def _check_directory_exist(dir_path):
         raise ValueError(f"{dir_path} is not a directory.")
 
 
-def _create_directory(path: str) -> None:
+def _create_directory(path: str, exist_ok=True) -> None:
     """Create a directory."""
     if not isinstance(path, str):
         raise TypeError("'path' must be a strig.")
     try:
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=exist_ok)
         logger.debug(f"Created directory {path}.")
-    except FileExistsError:
-        logger.debug(f"Directory {path} already exists.")
-        pass
-    except (Exception) as e:
+    except Exception as e:
         dir_name = os.path.basename(path)
         msg = f"Can not create folder {dir_name} inside <path>. Error: {e}"
         logger.exception(msg)
@@ -539,31 +536,37 @@ def _create_directory(path: str) -> None:
 
 def _remove_if_exists(fpath: str, force: bool = False) -> None:
     """Remove file or directory if exists and force=True."""
-    if os.path.exists(fpath):
-        if not force:
-            msg = f"--force is False and a file already exists at:{fpath}"
-            logger.error(msg)
-            raise ValueError(msg)
+    # If the file does not exist, do nothing
+    if not os.path.exists(fpath):
+        return None 
+    
+    # If the file exist and force=False, raise Error 
+    if not force:
+        msg = f"--force is False and a file already exists at:{fpath}"
+        logger.error(msg)
+        raise ValueError(msg)
+    
+    # If force=True, remove the file. 
+    try:
+        os.remove(fpath)
+    except IsADirectoryError:
         try:
-            os.remove(fpath)
-        except IsADirectoryError:
+            os.rmdir(fpath)
+        except OSError:
             try:
+                # shutil.rmtree(fpath.rpartition('.')[0])
+                for f in glob.glob(fpath + "/*"):
+                    try:
+                        os.remove(f)
+                    except OSError as e:
+                        msg = f"Can not delete file {f}, error: {e.strerror}"
+                        logger.exception(msg)
                 os.rmdir(fpath)
-            except OSError:
-                try:
-                    # shutil.rmtree(fpath.rpartition('.')[0])
-                    for f in glob.glob(fpath + "/*"):
-                        try:
-                            os.remove(f)
-                        except OSError as e:
-                            msg = f"Can not delete file {f}, error: {e.strerror}"
-                            logger.exception(msg)
-                    os.rmdir(fpath)
-                except:
-                    msg = f"Something wrong with: {fpath}"
-                    logger.error(msg)
-                    raise ValueError(msg)
-        logger.info(f"Deleted folder {fpath}")
+            except:
+                msg = f"Something wrong with: {fpath}"
+                logger.error(msg)
+                raise ValueError(msg)
+    logger.info(f"Deleted folder {fpath}")
 
 
 def _parse_fpath(fpath: str) -> str:
@@ -785,7 +788,8 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     1. Check that 'raw_dir' is a valid directory path
     2. Check that 'raw_dir' follows the expect directory structure
     3. Check that each station_id directory contains data
-    4. Check that for each station_id the mandatory metadata are specified.
+    4. Check that for each station_id the mandatory metadata.yml is specified.
+    4. Check that for each station_id the mandatory issue.yml is specified.
 
     Parameters
     ----------
@@ -799,7 +803,9 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     # Check input argument
     _check_raw_dir_input(raw_dir)
-
+    
+    # Ensure valid path format 
+    raw_dir = _parse_fpath(raw_dir)
     # -------------------------------------------------------------------------.
     # Check there is valid /data subfolder
     _check_raw_dir_data_subfolders(raw_dir)
@@ -813,6 +819,8 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     _check_raw_dir_issue(raw_dir, verbose=verbose)
 
     # -------------------------------------------------------------------------.
+    return raw_dir
+
 
 #### -------------------------------------------------------------------------.
 #### PROCESSED Directory Checks 
@@ -874,6 +882,7 @@ def check_processed_dir(processed_dir: str, force: bool = False) -> None:
 
     if not isinstance(processed_dir, str):
         raise TypeError("Provide 'processed_dir' as a string'.")
+    processed_dir = _parse_fpath(processed_dir)
     # ------------------------------
     # Check processed_dir has "DISDRODB/Processed" to avoid deleting precious stuffs
     _check_is_processed_dir(processed_dir)
@@ -970,13 +979,14 @@ def check_directories(raw_dir: str, processed_dir: str, force: bool = False) -> 
         raw directory and processed directory
     """
 
-    raw_dir = _parse_fpath(raw_dir)
-    processed_dir = _parse_fpath(processed_dir)
     check_raw_dir(raw_dir)
     check_processed_dir(processed_dir, force=force)
-    check_campaign_name(raw_dir, processed_dir)
+    _ = check_campaign_name(raw_dir, processed_dir)
     return raw_dir, processed_dir
 
+
+####--------------------------------------------------------------------------.
+#### L0 processing directory structure
 
 
 def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
@@ -1025,11 +1035,7 @@ def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
     ]
     msg = f"The metadata of stations ({metadata_fnames}) have been copied into {processed_metadata_dir}."
     logger.info(msg)
-
-
-####--------------------------------------------------------------------------.
-#### L0 processing directory structure
-
+    
 
 def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
     """Create directory structure for L0A and L0B processing.
@@ -1058,6 +1064,7 @@ def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
 
     # -----------------------------------------------------.            
     return None 
+
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers
