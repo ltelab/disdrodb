@@ -37,7 +37,7 @@ def run_disdrodb_l0b_concat(
     data_sources,
     campaign_names,
     station_names,
-    remove=False,
+    remove_l0b=False,
     verbose=True,
 ):
     """Run the L0B concatenation of available DISDRODB stations.
@@ -63,8 +63,9 @@ def run_disdrodb_l0b_concat(
     station_names : str
         Station names.
         To specify multiple stations, write i.e.: --station_names 'station1 station2'
-    remove : bool
-        Whether to remove the L0B files which are concatenated together.
+    remove_l0b : bool
+        If true, remove all source L0B files once L0B concatenation is terminated.
+        The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.

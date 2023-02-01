@@ -44,14 +44,12 @@ from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 def reader(
     raw_dir,
     processed_dir,
-    l0a_processing,
-    l0b_processing,
-    keep_l0a,
-    force=True,
-    verbose=True,
-    debugging_mode=False,
+    station_name,
+    # Processing options
+    force=False,
+    verbose=False,
     parallel=False,
-    single_netcdf=False,
+    debugging_mode=False,
 ):
 
     # Define functions to reformat ARM netCDFs

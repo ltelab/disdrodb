@@ -324,7 +324,7 @@ def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> st
 
 
 def get_L0B_fpath(
-    ds: xr.Dataset, processed_dir: str, station_name: str, single_netcdf=False
+    ds: xr.Dataset, processed_dir: str, station_name: str, l0b_concat=False
 ) -> str:
     """Define L0B file path.
 
@@ -336,7 +336,7 @@ def get_L0B_fpath(
         Path of the processed directory.
     station_name : str
         ID of the station
-    single_netcdf : bool
+    l0b_concat : bool
         If False, the file is specified inside the station directory.
         If True, the file is specified outside the station directory.
 
@@ -346,7 +346,7 @@ def get_L0B_fpath(
         L0B file path.
     """
     dir_path = get_L0B_dir(processed_dir, station_name)
-    if single_netcdf:
+    if l0b_concat:
         dir_path = os.path.dirname(dir_path)
     fname = get_L0B_fname(ds, processed_dir, station_name)
     fpath = os.path.join(dir_path, fname)

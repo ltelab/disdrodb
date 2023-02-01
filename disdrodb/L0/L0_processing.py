@@ -245,7 +245,7 @@ def run_l0a(
     processed_dir,
     station_name,
     # L0A reader argument
-    files_glob_pattern,
+    glob_patterns,
     column_names,
     reader_kwargs,
     df_sanitizer_fun,
@@ -255,6 +255,49 @@ def run_l0a(
     force,
     debugging_mode,
 ):
+    """Run the L0A processing for a specific DISDRODB station.
+
+    Parameters
+    ----------
+    raw_dir : str
+        The directory path where all the raw content of a specific campaign is stored.
+        The path must have the following structure:
+            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        Inside the raw_dir directory, it is required to adopt the following structure:
+        - /data/<station_name>/<raw_files>
+        - /metadata/<station_name>.yaml
+        Important points:
+        - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
+        - The <campaign_name> must semantically match between:
+           - the raw_dir and processed_dir directory paths;
+           - with the key 'campaign_name' within the metadata YAML files.
+        - The campaign_name are expected to be UPPER CASE.
+    processed_dir : str
+        The desired directory path for the processed DISDRODB L0A and L0B products.
+        The path should have the following structure:
+            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        For testing purpose, this function exceptionally accept also a directory path simply ending
+        with <campaign_name> (i.e. /tmp/<campaign_name>).
+    station_name : str
+        Station name
+    force : bool
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
+        The default is False.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is False.
+    parallel : bool
+        If True, the files are processed simultanously in multiple processes.
+        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
+        If False, the files are processed sequentially in a single process.
+        If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        It processes just the first 100 rows of 3 raw data files.
+        The default is False.
+    """
+
     # ------------------------------------------------------------------------.
     # Start L0A processing
     if verbose:
@@ -277,7 +320,7 @@ def run_l0a(
         raw_dir=raw_dir,
         station_name=station_name,
         # L0A reader argument
-        glob_patterns=files_glob_pattern,
+        glob_patterns=glob_patterns,
         # Processing options
         verbose=verbose,
         debugging_mode=debugging_mode,
@@ -330,6 +373,50 @@ def run_l0b(
     verbose,
     debugging_mode,
 ):
+    """Run the L0B processing for a specific DISDRODB station.
+
+    Parameters
+    ----------
+    raw_dir : str
+        The directory path where all the raw content of a specific campaign is stored.
+        The path must have the following structure:
+            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        Inside the raw_dir directory, it is required to adopt the following structure:
+        - /data/<station_name>/<raw_files>
+        - /metadata/<station_name>.yaml
+        Important points:
+        - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
+        - The <campaign_name> must semantically match between:
+           - the raw_dir and processed_dir directory paths;
+           - with the key 'campaign_name' within the metadata YAML files.
+        - The campaign_name are expected to be UPPER CASE.
+    processed_dir : str
+        The desired directory path for the processed DISDRODB L0A and L0B products.
+        The path should have the following structure:
+            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        For testing purpose, this function exceptionally accept also a directory path simply ending
+        with <campaign_name> (i.e. /tmp/<campaign_name>).
+    station_name : str
+        Station name
+    force : bool
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
+        The default is False.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is True.
+    parallel : bool
+        If True, the files are processed simultanously in multiple processes.
+        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
+        Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
+        Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
+        If False, the files are processed sequentially in a single process.
+        If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        It processes just 3 raw data files.
+        The default is False.
+    """
     # -----------------------------------------------------------------.
     # Start L0B processing
     if verbose:
@@ -474,19 +561,71 @@ def run_disdrodb_l0_station(
     data_source,
     campaign_name,
     station_name,
-    # L0A settings
+    # L0 archive options
     l0a_processing: bool = True,
-    # L0B settings
     l0b_processing: bool = True,
-    keep_l0a: bool = False,
-    single_netcdf: bool = True,
+    l0b_concat: bool = True,
+    remove_l0a: bool = False,
+    remove_l0b: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
 ):
-    from disdrodb.L0.L0B_concat import concatenate_L0B_station
+    """Run the L0 processing of a specific DISDRODB station from the terminal.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Base directory of DISDRODB
+        Format: <...>/DISDRODB
+    data_source : str
+        Institution name (when campaign data spans more than 1 country),
+        or country (when all campaigns (or sensor networks) are inside a given country).
+        Must be UPPER CASE.
+    campaign_name : str
+        Campaign name. Must be UPPER CASE.
+    station_name : str
+        Station name
+    l0a_processing : bool
+      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+      The default is True.
+    l0b_processing : bool
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+      The default is True.
+    l0b_concat : bool
+        Whether to concatenate all raw files into a single L0B netCDF file.
+        If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
+        If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.
+        The default is False.
+    remove_l0a : bool
+        Whether to keep the L0A files after having generated the L0B netCDF products.
+        The default is False.
+    remove_l0b : bool
+         Whether to remove the L0B files after having concatenated all L0B netCDF files.
+         It takes places only if l0b_concat=True
+        The default is False.
+    force : bool
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
+        The default is False.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is True.
+    parallel : bool
+        If True, the files are processed simultanously in multiple processes.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        By default, the number of process is defined with os.cpu_count().
+        If False, the files are processed sequentially in a single process.
+        If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        For L0A, it processes just the first 3 raw data files for each station.
+        For L0B, it processes just the first 100 rows of 3 L0A files for each station.
+        The default is False.
+    """
+    from disdrodb.L0.L0B_concat import run_disdrodb_l0b_concat_station
     from disdrodb.api.io import _get_disdrodb_directory
 
     # ---------------------------------------------------------------------.
@@ -526,8 +665,8 @@ def run_disdrodb_l0_station(
         )
 
     # ------------------------------------------------------------------------.
-    # Remove L0A station directory if keep_l0a = False
-    if not keep_l0a:
+    # Remove L0A station directory if remove_l0a = True and l0b_processing = True
+    if l0b_processing and remove_l0a:
         campaign_dir = _get_disdrodb_directory(
             disdrodb_dir=disdrodb_dir,
             product_level="L0A",
@@ -538,14 +677,14 @@ def run_disdrodb_l0_station(
         shutil.rmtree(station_product_dir)
 
     # ------------------------------------------------------------------------.
-    # If single_netcdf=True, concat the netCDF in a single file
-    if single_netcdf:
-        concatenate_L0B_station(
+    # If l0b_concat=True, concat the netCDF in a single file
+    if l0b_concat:
+        run_disdrodb_l0b_concat_station(
             disdrodb_dir=disdrodb_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            remove=False,  # TODO make as argument  # keep_l0b_files, concatenate_l0b
+            remove_l0b=remove_l0b,
             verbose=verbose,
         )
     return None
@@ -567,18 +706,78 @@ def run_disdrodb_l0(
     data_sources=None,
     campaign_names=None,
     station_names=None,
-    # L0A settings
+    # L0 archive options
     l0a_processing: bool = True,
-    # L0B settings
     l0b_processing: bool = True,
-    keep_l0a: bool = False,
-    single_netcdf: bool = True,
+    l0b_concat: bool = False,
+    remove_l0a: bool = False,
+    remove_l0b: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
 ):
+    """Run the L0 processing of DISDRODB stations.
+
+    This function enable to launch the processing of many DISDRODB stations with a single command.
+    From the list of all available DISDRODB stations, it runs the processing of the
+    stations matching the provided data_sources, campaign_names and station_names.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Base directory of DISDRODB
+        Format: <...>/DISDRODB
+    data_sources : list
+        Name of data source(s) to process.
+        The name(s) must be UPPER CASE.
+        If campaign_names and station are not specified, process all stations.
+        The default is None
+    campaign_names : list
+        Name of the campaign(s) to process.
+        The name(s) must be UPPER CASE.
+        The default is None
+    station_names : list
+        Station names to process.
+        The default is None
+    l0a_processing : bool
+      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+      The default is True.
+    l0b_processing : bool
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+      The default is True.
+    l0b_concat : bool
+        Whether to concatenate all raw files into a single L0B netCDF file.
+        If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
+        If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.
+        The default is False.
+    remove_l0a : bool
+        Whether to keep the L0A files after having generated the L0B netCDF products.
+        The default is False.
+    remove_l0b : bool
+         Whether to remove the L0B files after having concatenated all L0B netCDF files.
+         It takes places only if l0b_concat = True
+        The default is False.
+    force : bool
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
+        The default is False.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is True.
+    parallel : bool
+        If True, the files are processed simultanously in multiple processes.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        By default, the number of process is defined with os.cpu_count().
+        If False, the files are processed sequentially in a single process.
+        If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        For L0A, it processes just the first 3 raw data files.
+        For L0B, it processes just the first 100 rows of 3 L0A files.
+        The default is False.
+    """
     from disdrodb.api.io import available_stations
 
     if l0a_processing:
@@ -624,12 +823,12 @@ def run_disdrodb_l0(
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            # L0A settings
+            # L0 archive options
             l0a_processing=l0a_processing,
-            # L0B settings
             l0b_processing=l0b_processing,
-            keep_l0a=keep_l0a,
-            single_netcdf=single_netcdf,
+            l0b_concat=l0b_concat,
+            remove_l0a=remove_l0a,
+            remove_l0b=remove_l0b,
             # Process options
             force=force,
             verbose=verbose,
@@ -658,12 +857,12 @@ def run_disdrodb_l0a(
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
-        # L0A settings
+        # L0 archive options
         l0a_processing=True,
-        # L0B settings
         l0b_processing=False,
-        keep_l0a=True,
-        single_netcdf=False,
+        l0b_concat=False,
+        remove_l0a=False,
+        remove_l0b=False,
         # Processing options
         force=force,
         verbose=verbose,
@@ -677,9 +876,6 @@ def run_disdrodb_l0b(
     data_sources=None,
     campaign_names=None,
     station_names=None,
-    # L0B settings
-    keep_l0a: bool = True,
-    single_netcdf: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = False,
@@ -692,12 +888,12 @@ def run_disdrodb_l0b(
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
-        # L0A settings
+        # L0 archive options
         l0a_processing=False,
-        # L0B settings
         l0b_processing=True,
-        keep_l0a=keep_l0a,
-        single_netcdf=single_netcdf,
+        l0b_concat=False,
+        remove_l0a=False,
+        remove_l0b=False,
         # Processing options
         force=force,
         verbose=verbose,
@@ -804,20 +1000,25 @@ def click_l0_archive_options(function: object):
         Function.
     """
     function = click.option(
-        "-s",
-        "--single_netcdf",
+        "--l0b_concat",
         type=bool,
         show_default=True,
         default=True,
         help="Produce single L0B netCDF file.",
     )(function)
     function = click.option(
-        "-k",
-        "--keep_l0a",
+        "--remove_l0b",
         type=bool,
         show_default=True,
-        default=True,
-        help="Whether to keep the L0A files.",
+        default=False,
+        help="If true, remove all source L0B files once L0B concatenation is terminated.",
+    )(function)
+    function = click.option(
+        "--remove_l0a",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="If true, remove the L0A files once the L0B processing is terminated.",
     )(function)
     function = click.option(
         "-l0b",
@@ -847,11 +1048,11 @@ def click_l0b_concat_options(function: object):
         Function.
     """
     function = click.option(
-        "--remove",
+        "--remove_l0b",
         type=bool,
         show_default=True,
         default=False,
-        help="Remove source L0B netCDFs",
+        help="If true, remove all source L0B files once L0B concatenation is terminated.",
     )(function)
     function = click.option(
         "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"

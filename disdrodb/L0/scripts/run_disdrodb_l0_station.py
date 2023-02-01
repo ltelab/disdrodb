@@ -41,13 +41,14 @@ def run_disdrodb_l0_station(
     # L0 archive options
     l0a_processing: bool = True,
     l0b_processing: bool = True,
-    keep_l0a: bool = False,
-    single_netcdf: bool = True,
+    l0b_concat: bool = True,
+    remove_l0a: bool = False,
+    remove_l0b: bool = False,
     # Processing options
     force: bool = False,
-    verbose: bool = False,
-    debugging_mode: bool = False,
+    verbose: bool = True,
     parallel: bool = True,
+    debugging_mode: bool = False,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -70,21 +71,25 @@ def run_disdrodb_l0_station(
     l0b_processing : bool
       Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
       The default is True.
-    keep_l0a : bool
+    l0b_concat : bool
+        Whether to concatenate all raw files into a single L0B netCDF file.
+        If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
+        If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.
+        The default is False.
+    remove_l0a : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
-    single_netcdf : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
-        The default is True.
+    remove_l0b : bool
+         Whether to remove the L0B files after having concatenated all L0B netCDF files.
+         It takes places only if l0b_concat=True
+        The default is False.
     force : bool
         If True, overwrite existing data into destination directories.
         If False, raise an error if there are already data into destination directories.
         The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is False.
+        The default is True.
     parallel : bool
         If True, the files are processed simultanously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
@@ -92,6 +97,11 @@ def run_disdrodb_l0_station(
         However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_station
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        For L0A, it processes just the first 3 raw data files for each station.
+        For L0B, it processes just the first 100 rows of 3 L0A files for each station.
+        The default is False.
     """
     from disdrodb.L0.L0_processing import run_disdrodb_l0_station
 
@@ -103,8 +113,9 @@ def run_disdrodb_l0_station(
         # L0 archive options
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        single_netcdf=single_netcdf,
+        l0b_concat=l0b_concat,
+        remove_l0a=remove_l0a,
+        remove_l0b=remove_l0b,
         # Processing options
         force=force,
         verbose=verbose,

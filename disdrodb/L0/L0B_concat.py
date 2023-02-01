@@ -77,7 +77,7 @@ def _concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=Fa
 
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
-    single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_name, single_netcdf=True)
+    single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_name, l0b_concat=True)
     force = True  # TODO add as argument
     write_L0B(ds, fpath=single_nc_fpath, force=force)
 
@@ -110,7 +110,12 @@ def _concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=Fa
 
 
 def run_disdrodb_l0b_concat_station(
-    disdrodb_dir, data_source, campaign_name, station_name, remove=False, verbose=False
+    disdrodb_dir,
+    data_source,
+    campaign_name,
+    station_name,
+    remove_l0b=False,
+    verbose=False,
 ):
     """Concatenate the L0B files of a single DISDRODB station.
 
@@ -123,8 +128,8 @@ def run_disdrodb_l0b_concat_station(
             data_source,
             campaign_name,
             station_name,
-            "--remove",
-            str(remove),
+            "--remove_l0b",
+            str(remove_l0b),
             "--verbose",
             str(verbose),
         ]
@@ -137,7 +142,7 @@ def run_disdrodb_l0b_concat(
     data_sources=None,
     campaign_names=None,
     station_names=None,
-    remove=False,
+    remove_l0b=False,
     verbose=False,
 ):
     """Concatenate the L0B files of the DISDRODB archive.
@@ -176,7 +181,7 @@ def run_disdrodb_l0b_concat(
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            remove=remove,
+            remove_l0b=remove_l0b,
             verbose=verbose,
         )
 
@@ -184,24 +189,3 @@ def run_disdrodb_l0b_concat(
 
 
 ####--------------------------------------------------------------------------.
-
-
-def concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=False):
-    """Concatenate the L0B files of a single DISDRODB station.
-
-    This function calls run_disdrodb_l0b_concat_station in the terminal.
-    It is used by L0_processing.run_L0 function if single_netcf=True.
-    """
-    from disdrodb.L0.io import get_data_source, get_campaign_name, get_disdrodb_dir
-
-    disdrodb_dir = get_disdrodb_dir(processed_dir)
-    data_source = get_data_source(processed_dir)
-    campaign_name = get_campaign_name(processed_dir)
-    run_disdrodb_l0b_concat_station(
-        disdrodb_dir=disdrodb_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        remove=remove,
-        verbose=verbose,
-    )

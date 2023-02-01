@@ -103,7 +103,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files within <raw_dir>/data/<station_name>
-    files_glob_pattern = "*.dat*"
+    glob_patterns = "*.dat*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products
@@ -112,7 +112,7 @@ def reader(
         processed_dir=processed_dir,
         station_name=station_name,
         # Custom arguments of the reader for L0A processing
-        files_glob_pattern=files_glob_pattern,
+        glob_patterns=glob_patterns,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,

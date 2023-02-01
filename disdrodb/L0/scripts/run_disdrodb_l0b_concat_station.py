@@ -37,7 +37,7 @@ def run_disdrodb_l0b_concat_station(
     campaign_name,
     station_name,
     # L0B concat options
-    remove=False,
+    remove_l0b=False,
     verbose=True,
 ):
     """Concatenation all L0B files of a specific DISDRODB station into a single netCDF.
@@ -55,8 +55,9 @@ def run_disdrodb_l0b_concat_station(
         Campaign name. Must be UPPER CASE.
     station_name : str
         Station name
-    remove : bool
-        Whether to remove the L0B files which are concatenated together.
+    remove_l0b : bool
+        If true, remove all source L0B files once L0B concatenation is terminated.
+        The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
@@ -78,7 +79,7 @@ def run_disdrodb_l0b_concat_station(
     _concatenate_L0B_files(
         processed_dir=processed_dir,
         station_name=station_name,
-        remove=remove,
+        remove=remove_l0b,
         verbose=verbose,
     )
 

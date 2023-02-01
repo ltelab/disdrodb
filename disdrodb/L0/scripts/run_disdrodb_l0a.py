@@ -44,9 +44,9 @@ def run_disdrodb_l0a(
     station_names=None,
     # Processing options
     force: bool = False,
-    verbose: bool = False,
-    debugging_mode: bool = False,
+    verbose: bool = True,
     parallel: bool = True,
+    debugging_mode: bool = False,
 ):
     """Run the L0A processing of DISDRODB stations.
 
@@ -85,6 +85,10 @@ def run_disdrodb_l0a(
         However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0a
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        It processes just the first 3 raw data files for each station.
+        The default is False.
     """
     from disdrodb.L0.L0_processing import run_disdrodb_l0a
 

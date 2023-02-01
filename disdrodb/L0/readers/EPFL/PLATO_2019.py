@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-from disdrodb.L0 import run_L0
+from disdrodb.L0 import run_l0a
 from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
@@ -24,14 +24,12 @@ from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 def reader(
     raw_dir,
     processed_dir,
-    l0a_processing=True,
-    l0b_processing=True,
-    keep_l0a=False,
+    station_name,
+    # Processing options
     force=False,
     verbose=False,
-    debugging_mode=False,
     parallel=False,
-    single_netcdf=False,
+    debugging_mode=False,
 ):
 
     ##------------------------------------------------------------------------.
@@ -94,24 +92,22 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    files_glob_pattern = "*.MIS*"
+    glob_patterns = "*.MIS*"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products
-    run_L0(
+    #### - Create L0A products
+    run_l0a(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        force=force,
-        verbose=verbose,
-        debugging_mode=debugging_mode,
-        parallel=parallel,
-        single_netcdf=single_netcdf,
-        # Custom arguments of the reader
-        files_glob_pattern=files_glob_pattern,
+        station_name=station_name,
+        # Custom arguments of the reader for L0A processing
+        glob_patterns=glob_patterns,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
     )

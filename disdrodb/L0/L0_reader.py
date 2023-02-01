@@ -252,7 +252,7 @@ def is_documented_by(original):
 
 
 def reader_generic_docstring():
-    """Script to process raw data to L0A and L0B format.
+    """Script to convert the raw data to L0A format.
 
     Parameters
     ----------
@@ -275,37 +275,22 @@ def reader_generic_docstring():
             <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
         For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
-    l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
-    l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
-    keep_l0a : bool
-        Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is False.
+    station_name : str
+        Station name
     force : bool
         If True, overwrite existing data into destination directories.
         If False, raise an error if there are already data into destination directories.
         The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is False.
+        The default is True.
     parallel : bool
         If True, the files are processed simultanously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
-        Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        - For L0A processing, it processes just 3 raw data files.
-        - For L0B processing, it processes only the first 100 rows of 3 L0A files.
+        It processes just the first 3 raw data files.
         The default is False.
-    single_netcdf : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
-        The default is True.
     """

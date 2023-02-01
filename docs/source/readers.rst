@@ -94,7 +94,14 @@ Readers parameters
 * ``--l0b_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0B netCDF4 file(s) from L0A data.
 
 
-* ``--keep_l0a`` : bool [true\| **false** ] - Whether to keep the L0A files after having generated the L0B netCDF products.
+* ``--remove_l0a`` : bool [true\| **false** ] - Whether to keep the L0A files after having generated the L0B netCDF products.
+
+
+* ``--l0b_concat`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single DISDRODB L0B netCDF file.
+
+
+        * If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
+        * If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.
 
 
 * ``--force`` : bool [true\| **false** ] - Whether to overwrite existing data.
@@ -119,25 +126,99 @@ Readers parameters
         * If parallel=True, each file is processed by a separate core.  
 
 
-* ``--single_netcdf`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single DISDRODB L0B netCDF file.
-
-
-        * If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
-        * If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
-
-
-Running a reader
+Launch DISDRODB L0 processing for a specific station
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-There are two ways of running a reader. 
+There are two ways of process a station using DISDRODB. 
 
 1. By command line : 
 
 
 	.. code-block::
 
-		run_disdrodb_l0_reader data_source campaign_name raw_dir processed_dir [parameters]
+		run_disdrodb_l0_station <disdrodb_dir> <data_source> <campaign_name> <station_name> [parameters]
+
+	
+	Example :
+
+	.. code-block::
+
+		run_disdrodb_l0_station /ltenas8/DISDRODB EPFL  EPFL_2008 10 --l0a_processing True --l0b_processing True --force True --verbose True --parallel False 
+	 
+
+2. By calling a python function 
+
+
+	.. code-block:: python
+
+		from disdrodb.L0 import run_disdrodb_l0_station
+		run_disdrodb_l0_station(<disdrodb_dir> <data_source>, <campaign_name>, <station_name>, ...)
+
+
+	Example :
+
+	.. code-block:: python
+
+		from disdrodb.L0 import run_disdrodb_l0_station
+
+		disdrodb_dir = "...\\DISDRODB"
+		data_source='EPFL'
+		campaign_name='EPFL_2008'
+		station_name="10"
+
+		# L0 processing settings 
+		l0a_processing=True
+		l0b_processing=True
+		l0b_concat=True
+		remove_l0a=False
+		remove_l0b=False
+
+		# L0 processing options
+		force=True
+		verbose=True
+		debugging_mode=True
+		parallel=False
+		# Run the processing
+
+		run_disdrodb_l0_station(   
+			disdrodb_dir=disdrodb_dir,
+			data_source=data_source,
+			campaign_name=campaign_name,
+			station_name=station_name, 
+			# L0 processing settings 
+			l0a_processing=l0a_processing,
+			l0b_processing=l0b_processing,
+			l0b_concat=l0b_concat, 
+			remove_l0a=remove_l0a,
+			remove_l0b=remove_l0b,
+			# L0 processing options 
+			parallel=parallel, 
+			verbose=verbose,
+			force=force, 
+			debugging_mode=debugging_mode,
+		)
+
+
+Launch DISDRODB L0 processing for all stations within a campaign
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+DISDRODB offers an utility to run the process of multiple stations with a single command.
+
+In the code example belows, if --data_sources, --campaign_names, --station_names  
+are not specified, the command will process all stations available within the <disdrodb_dir>.
+Starting from all the available stations, the optional specification of the --data_sources , --campaign_names
+and --station_names will restrict the stations that will be processed.
+For example, if only --campaign_names are specified, DISDRODB will process only the stations of such campaigns.
+
+
+1. By command line : 
+
+
+	.. code-block::
+
+		run_disdrodb_l0 <disdrodb_dir> --data_sources <data_sources> --campaign_names <campaign_names> --station_names <station_names> [parameters]
 
 	
 	Where the parameters are defined `here <#readers-parameters>`__.
@@ -147,8 +228,14 @@ There are two ways of running a reader.
 
 	.. code-block::
 
-		run_disdrodb_l0_reader NETHERLANDS DELFT "...\DISDRODB\Raw\NETHERLANDS\DELFT" "...\DISDRODB\Processed\NETHERLANDS\DELFT" --l0a_processing True --l0b_processing False --keep_l0a True --force True --verbose True --debugging_mode False --parallel False --single_netcdf False 
-	 
+		run_disdrodb_l0 /ltenas8/DISDRODB --campaign_names EPFL_2008 --l0a_processing True --l0b_processing True --parallel False  
+	
+	To  specify multiple campaigns you can do the follow 
+
+	.. code-block::
+
+		run_disdrodb_l0 /ltenas8/DISDRODB --campaign_names 'EPFL_2008 LOCARNO_2018' --l0a_processing True --l0b_processing True --parallel False  
+
 
 
 2. By calling a python function 
@@ -157,39 +244,43 @@ There are two ways of running a reader.
 
 		.. code-block:: python
 
-			from disdrodb.L0.L0_processing import run_reader
-			run_reader(<data_source>, <campaign_name>, <raw_dir>, <processed_dir>, ...)
+			from disdrodb.L0 import run_disdrodb_l0
+			run_disdrodb_l0(<disdrodb_dir> <data_source>, <campaign_name>, ...)
 
-	
+
 		Example :
 
 		.. code-block:: python
 
-			from disdrodb.L0.L0_processing import run_reader
+			from disdrodb.L0 import run_disdrodb_l0
 
-			raw_dir = "...\\DISDRODB\\Raw\\NETHERLANDS\\DELFT"
-			processed_dir = "...\\DISDRODB\\Processed\\NETHERLANDS\\DELFT"
-			data_source='NETHERLANDS'
-			reader_name='DELFT'
+			disdrodb_dir = "...\\DISDRODB"
+			data_sources=['EPFL']
+			campaign_names=['EPFL_2008']
+			# L0 processing settings 
 			l0a_processing=True
 			l0b_processing=True
-			keep_l0a=True
+			l0b_concat=False
+			remove_l0a=False
+			remove_l0b=False
+			# L0 processing options
 			force=True
 			verbose=True
 			debugging_mode=True
 			parallel=False
-			single_netcdf=True
+			l0b_concat=True
 
-			run_reader(   
-				data_source=data_source,
-				reader_name=reader_name,
-				raw_dir=raw_dir,
-				processed_dir=processed_dir,
-				# L0 processing type 
+			run_disdrodb_l0(   
+				disdrodb_dir=disdrodb_dir,
+				data_sources=data_sources,      # optional 
+				campaign_names=campaign_names,  # optional 
+				# station_names=station_names,  # optional 
+   		     	# L0 processing settings 
 				l0a_processing=l0a_processing,
 				l0b_processing=l0b_processing,
-				keep_l0a=keep_l0a,
-				single_netcdf=single_netcdf, 
+				l0b_concat=l0b_concat, 
+				remove_l0a=remove_l0a,
+				remove_l0b=remove_l0b,
 				# L0 processing options 
 				parallel=parallel, 
 				verbose=verbose,
@@ -197,38 +288,6 @@ There are two ways of running a reader.
 				debugging_mode=debugging_mode,
 			)
 
-	
-	2.2 From the reader itself : 
-
-		.. code-block:: python
-
-			from disdrodb.L0.readers.NETHERLANDS.DELFT import reader
-
-			raw_dir = "...\\DISDRODB\\Raw\\NETHERLANDS\\DELFT"
-			processed_dir = "...\\DISDRODB\\Processed\\NETHERLANDS\\DELFT"
-			l0a_processing=True
-			l0b_processing=True
-			keep_l0a=True
-			force=True
-			verbose=True
-			debugging_mode=True
-			parallel=False
-			single_netcdf=True
-
-			reader(
-				raw_dir=raw_dir,
-				processed_dir=processed_dir,
-				# L0 processing type 
-				l0a_processing=l0a_processing,
-				l0b_processing=l0b_processing,
-				keep_l0a=keep_l0a,
-				single_netcdf=single_netcdf, 
-				# L0 processing options 
-				parallel=parallel, 
-				verbose=verbose,
-				force=force, 
-				debugging_mode=debugging_mode,
-			)
 
 
 Adding a new reader
@@ -325,7 +384,7 @@ We highly suggest to copy the notebook and adapt it to your own data.
 
 In this notebook, we guide you through the definition of 4 relevant DISDRODB reader components: 
 
-* The ``files_glob_pattern`` to search for the data files within the ``.../data/<station_name>`` directory.
+* The ``glob_patterns`` to search for the data files within the ``.../data/<station_name>`` directory.
     
 * The ``reader_kwargs`` dictionary guides the pandas / dask dataframe creation. 
 
