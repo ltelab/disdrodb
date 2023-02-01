@@ -99,18 +99,18 @@ def identify_missing_coords(metadata_fpaths: str) -> None:
 # metadata_fpaths = glob.glob(os.path.join(ARCHIVE_DIR, "*/*/metadata/*.yml"))
 # identify_missing_coords(metadata_fpaths)
 
-# identify_missing_metadata(metadata_fpaths, keys="station_id")
 # identify_missing_metadata(metadata_fpaths, keys="station_name")
-# identify_missing_metadata(metadata_fpaths, keys=["station_id","station_name"])
+# identify_missing_metadata(metadata_fpaths, keys="station_name")
+# identify_missing_metadata(metadata_fpaths, keys=["station_name","station_name"])
 # identify_missing_metadata(metadata_fpaths, keys="campaign_name")
 
 # -----------------------------------------------------------------------------.
 # TODO
-# - station_id
-# - station_number --> to be replaced by station_id
-# - station_name --> if missing, use station_id
+# - station_name
+# - station_number --> to be replaced by station_name
+# - station_name --> if missing, use station_name
 
 # - TODO: define dtype of metadata !!!
-# - raise error if missing station_id
+# - raise error if missing station_name
 # - raise error if missing campaign_name
 #

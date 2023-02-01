@@ -91,7 +91,7 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files within raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files within raw_dir/data/<station_name>
     files_glob_pattern = "*"  # [TO BE ADAPTED TO THE STATION RAW FILE NAME PATTERN]
 
     ####----------------------------------------------------------------------.

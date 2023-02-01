@@ -548,7 +548,7 @@ resample2DVDdrops = function(DVDdropData,
   
   # Set up the result vector. We add timeRes to POSIXtimes so that 
   # the given time is the end of each integration step.
-  result = data.frame(station=station, POSIXtime=timeSeq,
+  result = data.frame(station_name=station_name, POSIXtime=timeSeq,
                       precipCode=precipCode, resultMat, stringsAsFactors=FALSE)
   
   names(result) = c("station", "POSIXtime", "precipCode",

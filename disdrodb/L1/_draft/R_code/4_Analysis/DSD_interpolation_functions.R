@@ -1512,8 +1512,8 @@ dryDistancesByTime = function(data, dryTimes) {
   #          "dryDistance" added, containing the distance in minutes to
   #          the closest dry time.
 
-  dryTimes = dryTimes[, list(station=station, dryTime=as.integer(POSIXtime))]
-  queryTimes = data[, list(station=station, rainTime=as.integer(POSIXtime))]
+  dryTimes = dryTimes[, list(station_name=station_name, dryTime=as.integer(POSIXtime))]
+  queryTimes = data[, list(station_name=station_name, rainTime=as.integer(POSIXtime))]
 
   setkey(dryTimes, "station", "dryTime")
   setkey(queryTimes, "station", "rainTime")

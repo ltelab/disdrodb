@@ -76,8 +76,8 @@ Readers parameters
 
 		* The path must have the following structure: '<...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
 		* Inside the raw_dir directory, the software expects to find the following structure:
-          - /data/<station_id>/<raw_files>
-          - /metadata/<station_id>.yaml
+          - /data/<station_name>/<raw_files>
+          - /metadata/<station_name>.yaml
 
 
 * ``processed_dir`` : str - Desired directory path for the processed DISDRODB L0A and L0B products.

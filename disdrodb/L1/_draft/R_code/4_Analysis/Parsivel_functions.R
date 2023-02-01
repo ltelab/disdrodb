@@ -376,7 +376,7 @@ readAllParsivelData = function(datadir,
     if(length(dsd) == 0) {
       print(paste("ERROR: no files found for station", station))
     }
-    DSDlist = c(DSDlist, list(data.frame(station=station, dsd)))
+    DSDlist = c(DSDlist, list(data.frame(station_name=station_name, dsd)))
   }
   
   # Stack all the data frames together in a fast way.
@@ -1088,7 +1088,7 @@ processRawCSVFile = function(infile, outputFile, timeRes,
   }
   
   # Convert times to POSIXct and collect together unnormalised counts.
-  res = data.frame(station=stationNum, 
+  res = data.frame(station_name=station_nameNum, 
                    POSIXtime=as.POSIXct(data[,timeCol], tz="UTC"),
                    parsivelStatus=data[,statusCol],
                    precipCode=data[,codeCol],

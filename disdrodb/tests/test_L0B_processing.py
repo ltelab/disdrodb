@@ -220,9 +220,3 @@ def test_write_L0B():
     # not tested yet because relies on config files that can be modified
     # function_return = L0B_processing.write_L0B()
     assert 1 == 1
-
-
-def test_create_L0B_summary():
-    # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.create_L0B_summary()
-    assert 1 == 1

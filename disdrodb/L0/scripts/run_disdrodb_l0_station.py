@@ -17,11 +17,11 @@
 import sys
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
-
 import click
 from disdrodb.L0.L0_processing import (
     click_l0_processing_options,
     click_l0_station_arguments,
+    click_l0_archive_options,
 )
 
 # -------------------------------------------------------------------------.
@@ -31,19 +31,25 @@ from disdrodb.L0.L0_processing import (
 @click.command()
 @click_l0_station_arguments
 @click_l0_processing_options
-def run_disdrodb_l0a_station(
+@click_l0_archive_options
+def run_disdrodb_l0_station(
     # Station arguments
     disdrodb_dir,
     data_source,
     campaign_name,
     station_name,
+    # L0 archive options
+    l0a_processing: bool = True,
+    l0b_processing: bool = True,
+    keep_l0a: bool = False,
+    single_netcdf: bool = True,
     # Processing options
     force: bool = False,
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
 ):
-    """Run the L0A processing of a specific DISDRODB station from the terminal.
+    """Run the L0 processing of a specific DISDRODB station from the terminal.
 
     Parameters
     ----------
@@ -58,6 +64,20 @@ def run_disdrodb_l0a_station(
         Campaign name. Must be UPPER CASE.
     station_name : str
         Station name
+    l0a_processing : bool
+      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+      The default is True.
+    l0b_processing : bool
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+      The default is True.
+    keep_l0a : bool
+        Whether to keep the L0A files after having generated the L0B netCDF products.
+        The default is False.
+    single_netcdf : bool
+        Whether to concatenate all raw files into a single L0B netCDF file.
+        If single_netcdf=True, all raw files will be saved into a single L0B netCDF file.
+        If single_netcdf=False, each raw file will be converted into the corresponding L0B netCDF file.
+        The default is True.
     force : bool
         If True, overwrite existing data into destination directories.
         If False, raise an error if there are already data into destination directories.
@@ -67,71 +87,33 @@ def run_disdrodb_l0a_station(
         The default is False.
     parallel : bool
         If True, the files are processed simultanously in multiple processes.
-        Each process will use a single thread.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
         By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0a_station
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_station
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     """
-    import os
-    import dask
-    from dask.distributed import Client, LocalCluster
-    from disdrodb.api.io import _get_disdrodb_directory
-    from disdrodb.L0.L0_reader import _get_new_reader
+    from disdrodb.L0.L0_processing import run_disdrodb_l0_station
 
-    # -------------------------------------------------------------------------.
-    # If parallel=True, set the dask environment
-    if parallel:
-        # Retrieve the number of process to run
-        available_workers = os.cpu_count()  # if not set, all CPUs
-        num_workers = dask.config.get("num_workers", available_workers)
-        # Create dask.distributed local cluster
-        cluster = LocalCluster(
-            n_workers=num_workers,
-            threads_per_worker=1,
-            processes=True,
-            # memory_limit='8GB',
-            # silence_logs=False,
-        )
-        client = Client(cluster)
-    # -------------------------------------------------------------------------.
-    # Get reader
-    reader = _get_new_reader(
+    run_disdrodb_l0_station(
         disdrodb_dir=disdrodb_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-    )
-    # Define raw_dir and process_dir
-    raw_dir = _get_disdrodb_directory(
-        disdrodb_dir=disdrodb_dir,
-        product_level="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-    processed_dir = _get_disdrodb_directory(
-        disdrodb_dir=disdrodb_dir,
-        product_level="L0B",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exist=False,
-    )
-
-    # Run L0A processing
-    # --> The reader call the run_l0a within the custom defined reader function
-    # --> For the special case of raw netCDF data, it calls the run_l0a_nc function
-    reader(
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
-        station_name=station_name,
+        # L0 archive options
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        keep_l0a=keep_l0a,
+        single_netcdf=single_netcdf,
         # Processing options
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
     )
+
     return None
 
 
 if __name__ == "__main__":
-    run_disdrodb_l0a_station()
+    run_disdrodb_l0_station()

@@ -700,7 +700,7 @@ readMRREventsAtTimeRes = function(dir, events, timeRes,
             start=start, end=end, variables=MRRVariables, res=timeRes)
         
         if(!is.null(mrrData))
-            mrr = rbind(mrr, data.table(station=stationName, mrrData))
+            mrr = rbind(mrr, data.table(station_name=station_nameName, mrrData))
         rm(list=c("mrrData"))
     }
 

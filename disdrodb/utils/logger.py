@@ -103,10 +103,10 @@ def close_logger(logger: logger) -> None:
     return
 
 
-def create_file_logger(processed_dir, product_level, station_id, filename, parallel):
+def create_file_logger(processed_dir, product_level, station_name, filename, parallel):
     ##------------------------------------------------------------------------.
     # Create logs directory
-    logs_dir = os.path.join(processed_dir, "logs", product_level, station_id)
+    logs_dir = os.path.join(processed_dir, "logs", product_level, station_name)
     os.makedirs(logs_dir, exist_ok=True)
 
     # logger_fname = f'logs_{fname}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
@@ -139,12 +139,12 @@ def define_summary_log(list_logs):
     It write the summary log in the parent directory.
     """
     logs_dir = os.path.dirname(list_logs[0])
-    station_id = logs_dir.split(os.path.sep)[-1]
+    station_name = logs_dir.split(os.path.sep)[-1]
     summary_logs_dir = os.path.dirname(logs_dir)
     ####-----------------------------------------------------------------------.
     #### Define summary and problem logs
     # Define summary logs file name
-    summary_fpath = os.path.join(summary_logs_dir, f"logs_summary_{station_id}.log")
+    summary_fpath = os.path.join(summary_logs_dir, f"logs_summary_{station_name}.log")
     # Define logs keywords to select lines to copy into the summary log file
     # -- > "has started" and "has ended" is used to copy the line with the filename being processsed
     list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
@@ -160,7 +160,7 @@ def define_summary_log(list_logs):
     ####-----------------------------------------------------------------------.
     #### Define problem logs
     # Define problem logs file name
-    problem_fpath = os.path.join(summary_logs_dir, f"logs_problem_{station_id}.log")
+    problem_fpath = os.path.join(summary_logs_dir, f"logs_problem_{station_name}.log")
     # - Copy the log of files with warnings and error
     list_keywords = ["WARNING", "ERROR"]
     re_keyword = re.compile("|".join(list_keywords))
@@ -178,7 +178,7 @@ def define_summary_log(list_logs):
                 with open(log_fpath) as input_file:
                     output_file.write(input_file.read())
 
-    # If no problems occured, remove the logs_problem_<station_id>.log file
+    # If no problems occured, remove the logs_problem_<station_name>.log file
     if not log_with_problem:
         os.remove(problem_fpath)
     return None

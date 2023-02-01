@@ -73,9 +73,9 @@ def infer_campaign_from_fpath(fpath: str) -> str:
     return campaign
 
 
-def infer_station_id_from_fpath(fpath: str) -> str:
+def infer_station_name_from_fpath(fpath: str) -> str:
     """
-    Get the station ID from the path of the input raw data.
+    Get the station name from the path of the input raw data.
 
     Parameters
     ----------
@@ -85,16 +85,16 @@ def infer_station_id_from_fpath(fpath: str) -> str:
     Returns
     -------
     str
-        Station ID
+        Station name
     """
     path_pattern = r"(\\|\/)"
     idx_start = fpath.rfind("DISDRODB")
     disdrodb_fpath = fpath[idx_start:]
     list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    station_id = list_path_elements[8]
+    station_name = list_path_elements[8]
     # Optional strip .yml if fpath point to YAML file
-    station_id.strip(".yml")
-    return station_id
+    station_name.strip(".yml")
+    return station_name
 
 
 def get_disdrodb_dir(base_dir: str) -> str:
@@ -202,45 +202,45 @@ def get_dataframe_min_max_time(df: pd.DataFrame):
     return (starting_time, ending_time)
 
 
-def get_L0A_dir(processed_dir: str, station_id: str) -> str:
+def get_L0A_dir(processed_dir: str, station_name: str) -> str:
     """Define L0A directory.
 
     Parameters
     ----------
     processed_dir : str
         Path of the processed directory
-    station_id : str
-        ID of the station
+    station_name : str
+        Name of the station
 
     Returns
     -------
     str
         L0A directory path.
     """
-    dir_path = os.path.join(processed_dir, "L0A", station_id)
+    dir_path = os.path.join(processed_dir, "L0A", station_name)
     return dir_path
 
 
-def get_L0B_dir(processed_dir: str, station_id: str) -> str:
+def get_L0B_dir(processed_dir: str, station_name: str) -> str:
     """Define L0B directory.
 
     Parameters
     ----------
     processed_dir : str
         Path of the processed directory
-    station_id : int
-        ID of the station
+    station_name : int
+        Name of the station
 
     Returns
     -------
     str
         Path of the L0B directory
     """
-    dir_path = os.path.join(processed_dir, "L0B", station_id)
+    dir_path = os.path.join(processed_dir, "L0B", station_name)
     return dir_path
 
 
-def get_L0A_fname(df, processed_dir, station_id: str) -> str:
+def get_L0A_fname(df, processed_dir, station_name: str) -> str:
     """Define L0A file name.
 
     Parameters
@@ -249,8 +249,8 @@ def get_L0A_fname(df, processed_dir, station_id: str) -> str:
         L0A DataFrame
     processed_dir : str
         Path of the processed directory
-    station_id : str
-        ID of the station
+    station_name : str
+        Name of the station
 
     Returns
     -------
@@ -261,16 +261,16 @@ def get_L0A_fname(df, processed_dir, station_id: str) -> str:
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
-    # metadata_dict = read_metadata(processed_dir, station_id)
+    # metadata_dict = read_metadata(processed_dir, station_name)
     # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = importlib.metadata.version("disdrodb").replace(".", "-")
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
-    fname = f"DISDRODB.L0A.{campaign_name}.{station_id}.s{starting_time}.e{ending_time}.{version}.parquet"
+    fname = f"DISDRODB.L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return fname
 
 
-def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
+def get_L0B_fname(ds, processed_dir, station_name: str) -> str:
     """Define L0B file name.
 
     Parameters
@@ -279,8 +279,8 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
         L0B xarray Dataset
     processed_dir : str
         Path of the processed directory
-    station_id : str
-        ID of the station
+    station_name : str
+        Name of the station
 
     Returns
     -------
@@ -291,16 +291,16 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
-    # metadata_dict = read_metadata(processed_dir, station_id)
+    # metadata_dict = read_metadata(processed_dir, station_name)
     # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = importlib.metadata.version("disdrodb").replace(".", "-")
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
-    fname = f"DISDRODB.L0B.{campaign_name}.{station_id}.s{starting_time}.e{ending_time}.{version}.nc"
+    fname = f"DISDRODB.L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname
 
 
-def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_id: str) -> str:
+def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> str:
     """Define L0A file path.
 
     Parameters
@@ -309,22 +309,22 @@ def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_id: str) -> str:
         L0A DataFrame.
     processed_dir : str
         Path of the processed directory.
-    station_id : str
-        ID of the station.
+    station_name : str
+        Name of the station.
 
     Returns
     -------
     str
         L0A file path.
     """
-    fname = get_L0A_fname(df=df, processed_dir=processed_dir, station_id=station_id)
-    dir_path = get_L0A_dir(processed_dir=processed_dir, station_id=station_id)
+    fname = get_L0A_fname(df=df, processed_dir=processed_dir, station_name=station_name)
+    dir_path = get_L0A_dir(processed_dir=processed_dir, station_name=station_name)
     fpath = os.path.join(dir_path, fname)
     return fpath
 
 
 def get_L0B_fpath(
-    ds: xr.Dataset, processed_dir: str, station_id: str, single_netcdf=False
+    ds: xr.Dataset, processed_dir: str, station_name: str, single_netcdf=False
 ) -> str:
     """Define L0B file path.
 
@@ -334,7 +334,7 @@ def get_L0B_fpath(
         L0B xarray Dataset.
     processed_dir : str
         Path of the processed directory.
-    station_id : str
+    station_name : str
         ID of the station
     single_netcdf : bool
         If False, the file is specified inside the station directory.
@@ -345,10 +345,10 @@ def get_L0B_fpath(
     str
         L0B file path.
     """
-    dir_path = get_L0B_dir(processed_dir, station_id)
+    dir_path = get_L0B_dir(processed_dir, station_name)
     if single_netcdf:
         dir_path = os.path.dirname(dir_path)
-    fname = get_L0B_fname(ds, processed_dir, station_id)
+    fname = get_L0B_fname(ds, processed_dir, station_name)
     fpath = os.path.join(dir_path, fname)
     return fpath
 
@@ -409,7 +409,7 @@ def _get_file_list(raw_dir: str, glob_pattern) -> list:
 
 
 def get_raw_file_list(
-    raw_dir, station_id, glob_patterns, verbose=False, debugging_mode=False
+    raw_dir, station_name, glob_patterns, verbose=False, debugging_mode=False
 ):
     """Get the list of files from a directory based on input parameters.
 
@@ -422,7 +422,7 @@ def get_raw_file_list(
     raw_dir : str
         Directory of the campaign where to search for files.
         Format <..>/DISDRODB/Raw/<data_source>/<campaign_name>
-    station_id : str
+    station_name : str
         ID of the station
     verbose : bool, optional
         Wheter to verbose the processing.
@@ -441,7 +441,7 @@ def get_raw_file_list(
     glob_patterns = check_glob_patterns(glob_patterns)
 
     # Get patterns in the the data directory
-    data_dir = os.path.join("data", station_id)
+    data_dir = os.path.join("data", station_name)
     glob_patterns = [os.path.join(data_dir, pattern) for pattern in glob_patterns]
 
     # Retrieve filepaths list
@@ -471,7 +471,7 @@ def get_raw_file_list(
     return list_fpaths
 
 
-def get_l0a_file_list(processed_dir, station_id, debugging_mode):
+def get_l0a_file_list(processed_dir, station_name, debugging_mode):
     """Retrieve L0A files for a give station.
 
     Parameters
@@ -479,7 +479,7 @@ def get_l0a_file_list(processed_dir, station_id, debugging_mode):
     processed_dir : str
         Directory of the campaign where to search for the L0A files.
         Format <..>/DISDRODB/Processed/<data_source>/<campaign_name>
-    station_id : str
+    station_name : str
         ID of the station
     debugging_mode : bool, optional
         If True, it select maximum 3 files for debugging purposes.
@@ -491,7 +491,7 @@ def get_l0a_file_list(processed_dir, station_id, debugging_mode):
         List of L0A file paths.
 
     """
-    L0A_dir_path = get_L0A_dir(processed_dir, station_id)
+    L0A_dir_path = get_L0A_dir(processed_dir, station_name)
     filepaths = glob.glob(os.path.join(L0A_dir_path, "*.parquet"))
 
     n_files = len(filepaths)
@@ -540,15 +540,15 @@ def _remove_if_exists(fpath: str, force: bool = False) -> None:
     """Remove file or directory if exists and force=True."""
     # If the file does not exist, do nothing
     if not os.path.exists(fpath):
-        return None 
-    
-    # If the file exist and force=False, raise Error 
+        return None
+
+    # If the file exist and force=False, raise Error
     if not force:
         msg = f"--force is False and a file already exists at:{fpath}"
         logger.error(msg)
         raise ValueError(msg)
-    
-    # If force=True, remove the file. 
+
+    # If force=True, remove the file.
     try:
         os.remove(fpath)
     except IsADirectoryError:
@@ -629,14 +629,15 @@ def _check_raw_dir_data_subfolders(raw_dir):
     # -------------------------------------------------------------------------.
     #### Check there are subfolders corresponding to station to process
     raw_data_dir = os.path.join(raw_dir, "data")
-    list_data_station_id = os.listdir(raw_data_dir)
-    if len(list_data_station_id) == 0:
+    list_data_station_name = os.listdir(raw_data_dir)
+    if len(list_data_station_name) == 0:
         raise ValueError("No station directories within {}".format(raw_data_dir))
 
     # -------------------------------------------------------------------------.
-    #### Check there are data files in each list_data_station_id
+    #### Check there are data files in each list_data_station_name
     list_raw_data_station_dir = [
-        os.path.join(raw_data_dir, station_id) for station_id in list_data_station_id
+        os.path.join(raw_data_dir, station_name)
+        for station_name in list_data_station_name
     ]
     list_nfiles_per_station = [
         len(glob.glob(os.path.join(path, "*"))) for path in list_raw_data_station_dir
@@ -656,7 +657,7 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")
-    list_data_station_id = os.listdir(raw_data_dir)
+    list_data_station_name = os.listdir(raw_data_dir)
 
     # Get metadata directory
     metadata_dir = os.path.join(raw_dir, "metadata")
@@ -667,8 +668,8 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
         _create_directory(metadata_dir)
         # - Create default metadata yml file for each station (since the folder didn't existed)
         list_metadata_fpath = [
-            os.path.join(metadata_dir, station_id + ".yml")
-            for station_id in list_data_station_id
+            os.path.join(metadata_dir, station_name + ".yml")
+            for station_name in list_data_station_name
         ]
         _ = [create_metadata(fpath) for fpath in list_metadata_fpath]
         msg = "'raw_dir' {} should have the /metadata subfolder. ".format(raw_dir)
@@ -676,41 +677,43 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
         raise ValueError(msg + msg1)
 
     # -------------------------------------------------------------------------.
-    #### Check there are metadata file for each station_id in /metadata
+    #### Check there are metadata file for each station_name in /metadata
     list_metadata_fpath = glob.glob(os.path.join(metadata_dir, "*.yml"))
     list_metadata_fname = [os.path.basename(fpath) for fpath in list_metadata_fpath]
-    list_metadata_station_id = [fname[:-4] for fname in list_metadata_fname]
+    list_metadata_station_name = [fname[:-4] for fname in list_metadata_fname]
 
     # - Check there is metadata for each station
-    missing_data_station_idx = np.where(
-        np.isin(list_data_station_id, list_metadata_station_id, invert=True)
+    idx_missing_station_data = np.where(
+        np.isin(list_data_station_name, list_metadata_station_name, invert=True)
     )[0]
     # - If missing, create the defaults files and raise an error
-    if len(missing_data_station_idx) > 0:
-        list_missing_station_id = [
-            list_data_station_id[idx] for idx in missing_data_station_idx
+    if len(idx_missing_station_data) > 0:
+        list_missing_station_name = [
+            list_data_station_name[idx] for idx in idx_missing_station_data
         ]
         list_missing_metadata_fpath = [
-            os.path.join(metadata_dir, station_id + ".yml")
-            for station_id in list_missing_station_id
+            os.path.join(metadata_dir, station_name + ".yml")
+            for station_name in list_missing_station_name
         ]
         _ = [create_metadata(fpath) for fpath in list_missing_metadata_fpath]
-        msg = "The metadata files for the following station_id were missing: {}".format(
-            list_missing_station_id
+        msg = (
+            "The metadata files for the following station_name were missing: {}".format(
+                list_missing_station_name
+            )
         )
         raise ValueError(msg + " Now have been created to be filled.")
 
     # - Check not excess metadata compared to present stations
-    excess_metadata_station_idx = np.where(
-        np.isin(list_metadata_station_id, list_data_station_id, invert=True)
+    idx_excess_metadata_station = np.where(
+        np.isin(list_metadata_station_name, list_data_station_name, invert=True)
     )[0]
-    if len(excess_metadata_station_idx) > 0:
-        list_excess_station_id = [
-            list_metadata_station_id[idx] for idx in excess_metadata_station_idx
+    if len(idx_excess_metadata_station) > 0:
+        list_excess_station_name = [
+            list_metadata_station_name[idx] for idx in idx_excess_metadata_station
         ]
         print(
             "There are the following metadata files without corresponding data: {}".format(
-                list_excess_station_id
+                list_excess_station_name
             )
         )
 
@@ -727,7 +730,7 @@ def _check_raw_dir_issue(raw_dir, verbose=True):
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")
-    list_data_station_id = os.listdir(raw_data_dir)
+    list_data_station_name = os.listdir(raw_data_dir)
     # Get issue directory
     issue_dir = os.path.join(raw_dir, "issue")
     # If issue directory does not exist
@@ -736,46 +739,46 @@ def _check_raw_dir_issue(raw_dir, verbose=True):
         _create_directory(issue_dir)
         # - Create issue yml file for each station (since the folder didn't existed)
         list_issue_fpath = [
-            os.path.join(issue_dir, station_id + ".yml")
-            for station_id in list_data_station_id
+            os.path.join(issue_dir, station_name + ".yml")
+            for station_name in list_data_station_name
         ]
         _ = [create_issue_yml(fpath) for fpath in list_issue_fpath]
         msg = "The /issue subfolder has been now created to document and then remove timesteps with problematic data."
         logger.info(msg)
     # -------------------------------------------------------------------------.
-    #### Check there are issue file for each station_id in /issue
+    #### Check there are issue file for each station_name in /issue
     list_issue_fpath = glob.glob(os.path.join(issue_dir, "*.yml"))
     list_issue_fname = [os.path.basename(fpath) for fpath in list_issue_fpath]
-    list_issue_station_id = [fname[:-4] for fname in list_issue_fname]
+    list_issue_station_name = [fname[:-4] for fname in list_issue_fname]
 
     # - Check there is issue for each station
-    missing_data_station_idx = np.where(
-        np.isin(list_data_station_id, list_issue_station_id, invert=True)
+    idx_missing_station_data = np.where(
+        np.isin(list_data_station_name, list_issue_station_name, invert=True)
     )[0]
     # - If missing, create the defaults files and raise an error
-    if len(missing_data_station_idx) > 0:
-        list_missing_station_id = [
-            list_data_station_id[idx] for idx in missing_data_station_idx
+    if len(idx_missing_station_data) > 0:
+        list_missing_station_name = [
+            list_data_station_name[idx] for idx in idx_missing_station_data
         ]
         list_missing_issue_fpath = [
-            os.path.join(issue_dir, station_id + ".yml")
-            for station_id in list_missing_station_id
+            os.path.join(issue_dir, station_name + ".yml")
+            for station_name in list_missing_station_name
         ]
         _ = [create_issue_yml(fpath) for fpath in list_missing_issue_fpath]
-        msg = "The issue files for the following station_id were missing: {}".format(
-            list_missing_station_id
+        msg = "The issue files for the following station_name were missing: {}".format(
+            list_missing_station_name
         )
         log_warning(logger, msg, verbose)
 
     # - Check not excess issue compared to present stations
-    excess_issue_station_idx = np.where(
-        np.isin(list_issue_station_id, list_data_station_id, invert=True)
+    excess_issue_station_namex = np.where(
+        np.isin(list_issue_station_name, list_data_station_name, invert=True)
     )[0]
-    if len(excess_issue_station_idx) > 0:
-        list_excess_station_id = [
-            list_issue_station_id[idx] for idx in excess_issue_station_idx
+    if len(excess_issue_station_namex) > 0:
+        list_excess_station_name = [
+            list_issue_station_name[idx] for idx in excess_issue_station_namex
         ]
-        msg = f"There are the following issue files without corresponding data: {list_excess_station_id}"
+        msg = f"There are the following issue files without corresponding data: {list_excess_station_name}"
         log_warning(logger, msg, verbose)
 
     # -------------------------------------------------------------------------.
@@ -789,9 +792,9 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     Steps:
     1. Check that 'raw_dir' is a valid directory path
     2. Check that 'raw_dir' follows the expect directory structure
-    3. Check that each station_id directory contains data
-    4. Check that for each station_id the mandatory metadata.yml is specified.
-    4. Check that for each station_id the mandatory issue.yml is specified.
+    3. Check that each station_name directory contains data
+    4. Check that for each station_name the mandatory metadata.yml is specified.
+    4. Check that for each station_name the mandatory issue.yml is specified.
 
     Parameters
     ----------
@@ -805,8 +808,8 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     # Check input argument
     _check_raw_dir_input(raw_dir)
-    
-    # Ensure valid path format 
+
+    # Ensure valid path format
     raw_dir = _parse_fpath(raw_dir)
     # -------------------------------------------------------------------------.
     # Check there is valid /data subfolder
@@ -825,17 +828,17 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
 
 
 #### -------------------------------------------------------------------------.
-#### PROCESSED Directory Checks 
+#### PROCESSED Directory Checks
 
 
 def _check_is_processed_dir(processed_dir):
     if not isinstance(processed_dir, str):
         raise TypeError("Provide 'processed_dir' as a string'.")
-        
-    # Parse the fpath 
+
+    # Parse the fpath
     processed_dir = _parse_fpath(processed_dir)
-    
-    # Check is the processed_dir 
+
+    # Check is the processed_dir
     if (
         processed_dir.find("DISDRODB/Processed") == -1
         and processed_dir.find("DISDRODB\\Processed") == -1
@@ -853,8 +856,8 @@ def _check_is_processed_dir(processed_dir):
     ):
         msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
         logger.error(msg)
-        raise ValueError(msg) 
-    return processed_dir 
+        raise ValueError(msg)
+    return processed_dir
 
 
 def _check_campaign_name(raw_dir: str, processed_dir: str) -> str:
@@ -891,20 +894,20 @@ def _check_campaign_name(raw_dir: str, processed_dir: str) -> str:
         raise ValueError(msg)
 
     return upper_campaign_name
-   
-    
+
+
 def _create_processed_dir_folder(processed_dir, dir_name):
     """Create directory <dir_name> inside the processed_dir directory."""
     try:
         folder_path = os.path.join(processed_dir, dir_name)
-        os.makedirs(folder_path, exist_ok = True)
+        os.makedirs(folder_path, exist_ok=True)
     except (Exception) as e:
         msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
         logger.exception(msg)
-        raise FileNotFoundError(msg)  
-        
+        raise FileNotFoundError(msg)
 
-def _copy_station_metadata(raw_dir: str, processed_dir: str, station: str) -> None:
+
+def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) -> None:
     """Copy the station YAML file from the raw_dir/metadata into processed_dir/metadata
 
     Parameters
@@ -923,14 +926,18 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station: str) -> No
     raw_metadata_dir = os.path.join(raw_dir, "metadata")
     processed_metadata_dir = os.path.join(processed_dir, "metadata")
     # Retrieve the metadata fpath in the raw directory
-    metadata_fname = f"{station}.yml"
+    metadata_fname = f"{station_name}.yml"
     raw_metadata_fpath = os.path.join(raw_metadata_dir, metadata_fname)
-    # Check the metadata exists 
+    # Check the metadata exists
     if not os.path.isfile(raw_metadata_fpath):
-        raise ValueError(f"No metadata available for {station} at {raw_metadata_fpath}") 
-    # Define the destination fpath 
-    processed_metadata_fpath = os.path.join(processed_metadata_dir, os.path.basename(raw_metadata_fpath))
-    # Try copying the file 
+        raise ValueError(
+            f"No metadata available for {station_name} at {raw_metadata_fpath}"
+        )
+    # Define the destination fpath
+    processed_metadata_fpath = os.path.join(
+        processed_metadata_dir, os.path.basename(raw_metadata_fpath)
+    )
+    # Try copying the file
     try:
         shutil.copy(raw_metadata_fpath, processed_metadata_fpath)
         msg = f"{metadata_fname} copied at {processed_metadata_fpath}."
@@ -939,28 +946,31 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station: str) -> No
         msg = f"Something went wrong when copying {metadata_fname} into {processed_metadata_dir}.\n The error is: {e}."
         logger.error(msg)
         raise ValueError(msg)
-    return None      
+    return None
 
 
-def _check_pre_existing_station_data(campaign_dir, product_level, station, force=False):
+def _check_pre_existing_station_data(
+    campaign_dir, product_level, station_name, force=False
+):
     """Check for pre-existing station data.
-    
+
     - If force=True, remove all data inside the station folder.
     - If force=False, raise error.
     """
     from disdrodb.api.io import _get_list_stations_with_data
-    
-    # Get list of available stations 
-    list_stations = _get_list_stations_with_data(product_level=product_level, 
-                                                 campaign_dir=campaign_dir)
+
+    # Get list of available stations
+    list_stations = _get_list_stations_with_data(
+        product_level=product_level, campaign_dir=campaign_dir
+    )
     # Check if station data are already present
-    station_already_present = station in list_stations 
-    
+    station_already_present = station_name in list_stations
+
     # Define the station directory path
-    station_dir = os.path.join(campaign_dir, product_level, station)
-        
-    # If the station data are already present: 
-    # - If force=True, remove all data inside the station folder 
+    station_dir = os.path.join(campaign_dir, product_level, station_name)
+
+    # If the station data are already present:
+    # - If force=True, remove all data inside the station folder
     # - If force=False, raise error
     # NOTE:
     # - force=False behaviour could be changed to enable updating of missing files.
@@ -968,9 +978,9 @@ def _check_pre_existing_station_data(campaign_dir, product_level, station, force
     if station_already_present:
         # Check is a directory
         _check_directory_exist(station_dir)
-        # If force=True, remove all the content 
-        if force: 
-            # Remove all station directory content 
+        # If force=True, remove all the content
+        if force:
+            # Remove all station directory content
             shutil.rmtree(station_dir)
         else:
             msg = f"The station directory {station_dir} already exists and force=False."
@@ -984,78 +994,85 @@ def check_processed_dir(processed_dir):
     return processed_dir
 
 
-def create_directory_structure_l0a(raw_dir, 
-                                   processed_dir,
-                                   station, 
-                                   force,
-                                   verbose=False):
+def create_directory_structure_l0a(
+    raw_dir, processed_dir, station_name, force, verbose=False
+):
     """Create directory structure for L0A DISDRODB product."""
     from disdrodb.api.io import _get_list_stations_with_data
-    
+
     # Check inputs
     raw_dir = check_raw_dir(raw_dir=raw_dir, verbose=verbose)
     processed_dir = check_processed_dir(processed_dir=processed_dir)
-    
-    # Check valid campaign name 
+
+    # Check valid campaign name
     # - The campaign_name concides between raw and processed dir
     # - The campaign_name is all upper case
     _ = _check_campaign_name(raw_dir=raw_dir, processed_dir=processed_dir)
-    
+
     # Get list of available stations (at raw level)
-    list_stations = _get_list_stations_with_data(product_level="RAW", 
-                                                 campaign_dir=raw_dir)
-    # Check station is available 
-    if station not in list_stations: 
-        raise ValueError(f"No data available for station {station}. Available stations: {list_stations}.")
-    
+    list_stations = _get_list_stations_with_data(
+        product_level="RAW", campaign_dir=raw_dir
+    )
+    # Check station is available
+    if station_name not in list_stations:
+        raise ValueError(
+            f"No data available for station {station_name}. Available stations: {list_stations}."
+        )
+
     # Create required directory (if they don't exists)
     _create_processed_dir_folder(processed_dir, dir_name="metadata")
     _create_processed_dir_folder(processed_dir, dir_name="info")
     _create_processed_dir_folder(processed_dir, dir_name="L0A")
-    
-    # Copy the station metadata 
-    _copy_station_metadata(raw_dir=raw_dir, 
-                           processed_dir=processed_dir, 
-                           station=station) 
-        
+
+    # Copy the station metadata
+    _copy_station_metadata(
+        raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name
+    )
+
     # Remove <product_level>/<station> directory if force=True
-    _check_pre_existing_station_data(campaign_dir=processed_dir, 
-                                     product_level="L0A",
-                                     station=station, 
-                                     force=force)  
-    
-    
-def  create_directory_structure(processed_dir,
-                                product_level, 
-                                station, 
-                                force,
-                                verbose=False):
+    _check_pre_existing_station_data(
+        campaign_dir=processed_dir,
+        product_level="L0A",
+        station_name=station_name,
+        force=force,
+    )
+
+
+def create_directory_structure(
+    processed_dir, product_level, station_name, force, verbose=False
+):
     """Create directory structure for L0B and higher DISDRODB products."""
     from disdrodb.api.io import check_product_level, _get_list_stations_with_data
-    
+
     # Check inputs
     check_product_level(product_level)
     processed_dir = check_processed_dir(processed_dir=processed_dir)
-    
+
     # Check station is available in the target processed_dir directory
     if product_level == "L0B":
         required_level = "L0A"
-        list_stations = _get_list_stations_with_data(product_level=required_level, 
-                                                     campaign_dir=processed_dir)
-    else: 
+        list_stations = _get_list_stations_with_data(
+            product_level=required_level, campaign_dir=processed_dir
+        )
+    else:
         raise NotImplementedError("product level {product_level} not yet implemented.")
 
-    if station not in list_stations: 
-        raise ValueError(f"No {required_level} data available for station {station}. Available stations: {list_stations}.")
-            
+    if station_name not in list_stations:
+        raise ValueError(
+            f"No {required_level} data available for station {station_name}. Available stations: {list_stations}."
+        )
+
     # Create required directory (if they don't exists)
     _create_processed_dir_folder(processed_dir, dir_name=product_level)
-    
-    # Remove <product_level>/<station> directory if force=True
-    _check_pre_existing_station_data(campaign_dir=processed_dir, 
-                                     product_level=product_level,
-                                     station=station, 
-                                     force=force)
+
+    # Remove <product_level>/<station_name> directory if force=True
+    _check_pre_existing_station_data(
+        campaign_dir=processed_dir,
+        product_level=product_level,
+        station_name=station_name,
+        force=force,
+    )
+
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers

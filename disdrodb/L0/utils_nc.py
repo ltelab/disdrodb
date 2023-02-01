@@ -438,7 +438,8 @@ def get_list_ds(fpaths: str) -> list:
 
         # This context manager is required to avoid random HDF locking
         # - cache=True: store data in memory to avoid reading back from disk
-        with xr.open_dataset(fpath, cache=True) as data:
+        # --> but LRU cache might cause the netCDF to not be closed !
+        with xr.open_dataset(fpath, cache=False) as data:
             ds = data.load()
         return ds
 

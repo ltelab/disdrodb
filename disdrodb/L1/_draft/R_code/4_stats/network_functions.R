@@ -605,7 +605,7 @@ resampleNetworkData = function(data, timespan="5 min",
     # Remove station name
     stationData$station = NULL
     stationRes = resample(stationData)
-    resampled = rbind(resampled, data.frame(station=station, stationRes))
+    resampled = rbind(resampled, data.frame(station_name=station_name, stationRes))
   }
   
   print("Done resampling.")

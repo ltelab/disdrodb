@@ -51,18 +51,18 @@ setup(
     entry_points={
         # <name_to_type_in_terminal>=<module>:<name_of_the_function>
         "console_scripts": [
-            # L0 
+            # L0A
             "run_disdrodb_l0a_station=disdrodb.L0.scripts.run_disdrodb_l0a_station:run_disdrodb_l0a_station",
+            "run_disdrodb_l0a=disdrodb.L0.scripts.run_disdrodb_l0a:run_disdrodb_l0a",
+            # L0B
             "run_disdrodb_l0b_station=disdrodb.L0.scripts.run_disdrodb_l0b_station:run_disdrodb_l0b_station",
-                 
-            # run_disdrodb_l0_station
-            # run_disdrodb_l0
-            # run_disdrodb_l0a
-            # run_disdrodb_l0b
-      
+            "run_disdrodb_l0_station=disdrodb.L0.scripts.run_disdrodb_l0_station:run_disdrodb_l0_station",
             # L0B concatenation
-            "run_disdrodb_l0b_concat_station=disdrodb.L0.scripts.run_disdrodb_concat_l0b_station:run_concat_cmd",
-            "run_disdrodb_l0b_concat=disdrodb.L0.scripts.run_disdrodb_concat_l0b:run_concat_cmd",
+            "run_disdrodb_l0b_concat_station=disdrodb.L0.scripts.run_disdrodb_l0b_concat_station:run_disdrodb_l0b_concat_station",
+            "run_disdrodb_l0b_concat=disdrodb.L0.scripts.run_disdrodb_l0b_concat:run_disdrodb_l0b_concat",
+            # L0
+            "run_disdrodb_l0b=disdrodb.L0.scripts.run_disdrodb_l0b:run_disdrodb_l0b",
+            "run_disdrodb_l0=disdrodb.L0.scripts.run_disdrodb_l0:run_disdrodb_l0",
         ]
     },
 )

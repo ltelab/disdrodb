@@ -23,7 +23,7 @@ from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 def reader(
     raw_dir,
     processed_dir,
-    station,
+    station_name,
     # Processing options
     force=False,
     verbose=False,
@@ -102,7 +102,7 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files within <raw_dir>/data/<station_id>
+    #### - Define glob pattern to search data files within <raw_dir>/data/<station_name>
     files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
@@ -110,7 +110,7 @@ def reader(
     run_l0a(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        station=station,
+        station_name=station_name,
         # Custom arguments of the reader for L0A processing
         files_glob_pattern=files_glob_pattern,
         column_names=column_names,

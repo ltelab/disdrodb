@@ -68,18 +68,18 @@ def test_read_issue():
 
     # Create a mock file path
     raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
-    station_id = "123"
+    station_name = "123"
     issue_dir = os.path.join(raw_dir, "issue")
 
     if not os.path.exists(issue_dir):
         os.makedirs(issue_dir)
 
-    issue_fpath = os.path.join(issue_dir, station_id + ".yml")
+    issue_fpath = os.path.join(issue_dir, station_name + ".yml")
     with open(issue_fpath, "w") as f:
         yaml.safe_dump({"key": "value"}, f)
 
     # Ensure the read_issue function returns the correct output
-    assert issue.read_issue(raw_dir, station_id) == {"key": "value"}
+    assert issue.read_issue(raw_dir, station_name) == {"key": "value"}
 
 
 def test_check_issue_compliance():

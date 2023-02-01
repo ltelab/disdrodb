@@ -1411,7 +1411,7 @@ analyseAllEvents = function(dsdData, events,
       # Mass weighted mean drop diameter.
       Dm_mean = eventAnalysis$summaryStats$Dm$mean[s]
 
-      summaryStats = data.frame(station=station, amount=amount,
+      summaryStats = data.frame(station_name=station_name, amount=amount,
                                 R_mean=R_mean, R_sd=R_sd, R_max=R_max,
                                 Nt_mean=Nt_mean, Dm_mean=Dm_mean,
                                 stringsAsFactors=F)

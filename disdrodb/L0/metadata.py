@@ -51,7 +51,7 @@ def get_attrs_standards() -> dict:
         "campaign_name",
         "project_name",
         # Location
-        "station_id",
+        "station_name",
         "station_name",
         # "station_number",TODO: REMOVE
         "location",
@@ -130,14 +130,14 @@ def create_metadata(fpath: str) -> None:
         yaml.dump(attrs, f, sort_keys=False)
 
 
-def read_metadata(raw_dir: str, station_id: str) -> dict:
+def read_metadata(raw_dir: str, station_name: str) -> dict:
     """Read YAML metadata file.
 
     Parameters
     ----------
     raw_dir : str
         Path of the raw directory
-    station_id : int
+    station_name : int
         Id of the station.
 
     Returns
@@ -146,7 +146,7 @@ def read_metadata(raw_dir: str, station_id: str) -> dict:
         Dictionnary of the metadata.
     """
 
-    metadata_fpath = os.path.join(raw_dir, "metadata", station_id + ".yml")
+    metadata_fpath = os.path.join(raw_dir, "metadata", station_name + ".yml")
     with open(metadata_fpath, "r") as f:
         attrs = yaml.safe_load(f)
     return attrs

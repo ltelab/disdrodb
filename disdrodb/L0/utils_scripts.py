@@ -18,13 +18,32 @@
 # -----------------------------------------------------------------------------.
 
 
-def _execute_cmd(cmd):
+def _execute_cmd(cmd, raise_error=False):
     """Execute command in the terminal, streaming output in python console."""
     from subprocess import Popen, PIPE, CalledProcessError
 
     with Popen(cmd, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
         for line in p.stdout:
-            print(line, end="")  # process line here
+            print(line, end="")
 
-    if p.returncode != 0:
+    # Raise error if command didn't run successfully
+    if p.returncode != 0 and raise_error:
         raise CalledProcessError(p.returncode, p.args)
+
+
+def parse_arg_to_list(args):
+    """Utility to pass list to command line scripts.
+
+    If args = '' --> None
+    If args = 'variable' --> [variable]
+    If args = 'variable1 variable2' --> [variable1, variable2]
+    """
+    # If '', set to None
+    args = None if args == "" else args
+    # - If multiple arguments, split by space
+    if isinstance(args, str):
+        # - Split by space
+        list_args = args.split(" ")
+        # - Remove '' (deal with multi space)
+        args = [args for args in list_args if len(args) > 0]
+    return args

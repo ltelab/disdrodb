@@ -32,8 +32,8 @@ def test_infer_campaign_from_fpath(path_raw_data):
 
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
-def test_infer_station_id_from_fpath(path_raw_data):
-    assert io.infer_station_id_from_fpath(path_raw_data) == "station_name"
+def test_infer_station_name_from_fpath(path_raw_data):
+    assert io.infer_station_name_from_fpath(path_raw_data) == "station_name"
 
 
 PATH_FILE_WINDOWS = "\\DISDRODB\\Raw\\institute_name\\campaign_name"
@@ -67,12 +67,12 @@ PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
 )
 def test_get_L0A_dir(path_process_dir):
     res = (
-        io.get_L0A_dir(path_process_dir, "station_id")
+        io.get_L0A_dir(path_process_dir, "station_name")
         .replace(path_process_dir, "")
         .replace("\\", "")
         .replace("/", "")
     )
-    assert res == "L0Astation_id"
+    assert res == "L0Astation_name"
 
 
 @pytest.mark.parametrize(
@@ -80,12 +80,12 @@ def test_get_L0A_dir(path_process_dir):
 )
 def test_get_L0B_dir(path_process_dir):
     res = (
-        io.get_L0B_dir(path_process_dir, "station_id")
+        io.get_L0B_dir(path_process_dir, "station_name")
         .replace(path_process_dir, "")
         .replace("\\", "")
         .replace("/", "")
     )
-    assert res == "L0Bstation_id"
+    assert res == "L0Bstation_name"
 
 
 def test_get_L0A_fpath():
@@ -97,7 +97,7 @@ def test_get_L0A_fpath():
     # Set variables
     institute_name = "INSTITUTE_NAME"
     campaign_name = "CAMPAIGN_NAME"
-    station_id = "STATIONID"
+    station_name = "STATIONID"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
     start_date_str = start_date.strftime("%Y%m%d%H%M%S")
@@ -122,11 +122,11 @@ def test_get_L0A_fpath():
         version = "dev"
 
     # Test the function
-    res = io.get_L0A_fpath(df, path_campaign_name, station_id)
+    res = io.get_L0A_fpath(df, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"DISDRODB.L0A.{campaign_name.upper()}.{station_id}.s{start_date_str}.e{end_date_str}.{version}.parquet"
-    expected_path = os.path.join(path_campaign_name, "L0A", station_id, expected_name)
+    expected_name = f"DISDRODB.L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.parquet"
+    expected_path = os.path.join(path_campaign_name, "L0A", station_name, expected_name)
     assert res == expected_path
 
 
@@ -139,7 +139,7 @@ def test_get_L0B_fpath():
     # Set variables
     institute_name = "INSTITUTE_NAME"
     campaign_name = "CAMPAIGN_NAME"
-    station_id = "STATIONID"
+    station_name = "STATIONID"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
     start_date_str = start_date.strftime("%Y%m%d%H%M%S")
@@ -170,11 +170,11 @@ def test_get_L0B_fpath():
         version = "dev"
 
     # Test the function
-    res = io.get_L0B_fpath(ds, path_campaign_name, station_id)
+    res = io.get_L0B_fpath(ds, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"DISDRODB.L0B.{campaign_name.upper()}.{station_id}.s{start_date_str}.e{end_date_str}.{version}.nc"
-    expected_path = os.path.join(path_campaign_name, "L0B", station_id, expected_name)
+    expected_name = f"DISDRODB.L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.nc"
+    expected_path = os.path.join(path_campaign_name, "L0B", station_name, expected_name)
     assert res == expected_path
 
 
@@ -197,12 +197,12 @@ def test_get_raw_file_list():
         PATH_TEST_FOLDERS_FILES, "test_L0A_processing", "files"
     )
 
-    station_id = "STATION_ID"
+    station_name = "STATION_NAME"
 
     # Test that the function returns the correct number of files in debugging mode
     file_list = io.get_raw_file_list(
         raw_dir=path_test_directory,
-        station_id=station_id,
+        station_name=station_name,
         glob_patterns="*.txt",
         debugging_mode=True,
     )
@@ -210,7 +210,7 @@ def test_get_raw_file_list():
 
     # Test that the function returns the correct number of files in normal mode
     file_list = io.get_raw_file_list(
-        raw_dir=path_test_directory, station_id=station_id, glob_patterns="*.txt"
+        raw_dir=path_test_directory, station_name=station_name, glob_patterns="*.txt"
     )
     assert len(file_list) == 2
 
@@ -219,13 +219,15 @@ def test_get_raw_file_list():
         ValueError, match="'glob_patterns' must be a str or list of strings."
     ):
         io.get_raw_file_list(
-            raw_dir=path_test_directory, station_id=station_id, glob_patterns=1
+            raw_dir=path_test_directory, station_name=station_name, glob_patterns=1
         )
 
     # Test that the function raises an error if no files are found
     with pytest.raises(ValueError):
         io.get_raw_file_list(
-            raw_dir=path_test_directory, station_id=station_id, glob_patterns="*.csv"
+            raw_dir=path_test_directory,
+            station_name=station_name,
+            glob_patterns="*.csv",
         )
 
 
@@ -288,31 +290,10 @@ def test_check_raw_dir():
         campaign_name,
     )
 
-    assert io.check_raw_dir(path_campaign_name) == path_campaign_name
+    assert io.check_raw_dir(path_campaign_name) is None
 
 
-def test_check_processed_dir():
-    """
-    This function will create the processed folder structure under test_folders_files_creation folder.
-    """
-    # Set variables
-    institute_name = "INSTITUTE_NAME"
-    campaign_name = "CAMPAIGN_NAME"
-
-    # Set paths
-    path_campaign_name = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_creation",
-        "DISDRODB",
-        "Processed",
-        institute_name,
-        campaign_name,
-    )
-
-    assert io.check_processed_dir(path_campaign_name, force=True) is None
-
-
-def test_check_campaign_name():
+def test__check_campaign_name():
     campaign_name = "CAMPAIGN_NAME"
     institute_name = "INSTITUTE_NAME"
     path_raw = os.path.join(
@@ -332,7 +313,7 @@ def test_check_campaign_name():
         campaign_name,
     )
 
-    assert io.check_campaign_name(path_raw, path_process) == campaign_name
+    assert io._check_campaign_name(path_raw, path_process) == campaign_name
 
 
 def test_check_directories():

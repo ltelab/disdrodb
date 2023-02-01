@@ -40,7 +40,9 @@ def _get_list_stations_dirs(product_level, campaign_dir):
         data_path = os.path.join(campaign_dir, product_level)
     # Get list of directories (stations)
     list_stations = os.listdir(data_path)
-    list_stations_dir = [os.path.join(data_path, station) for station in list_stations]
+    list_stations_dir = [
+        os.path.join(data_path, station_name) for station_name in list_stations
+    ]
     return list_stations_dir
 
 
@@ -152,8 +154,8 @@ def _get_data_sources_stations(disdrodb_dir, product_level, data_sources):
             product_level=product_level,
             data_source=data_source,
         )
-        for station in list_available:
-            list_available_stations.append(station)
+        for station_name in list_available:
+            list_available_stations.append(station_name)
 
     # Return all available stations
     return list_available_stations
@@ -181,7 +183,7 @@ def _get_stations(disdrodb_dir, product_level):
 
 
 def _get_metadata_fpath(
-    disdrodb_dir, product_level, data_source, campaign_name, station
+    disdrodb_dir, product_level, data_source, campaign_name, station_name
 ):
     """Get metadata file path a given station."""
     campaign_dir = _get_disdrodb_directory(
@@ -190,14 +192,16 @@ def _get_metadata_fpath(
         data_source=data_source,
         campaign_name=campaign_name,
     )
-    metadata_fpath = os.path.join(campaign_dir, "metadata", station + ".yml")
+    metadata_fpath = os.path.join(campaign_dir, "metadata", station_name + ".yml")
     return metadata_fpath
 
 
-def get_metadata_dict(disdrodb_dir, product_level, data_source, campaign_name, station):
+def get_metadata_dict(
+    disdrodb_dir, product_level, data_source, campaign_name, station_name
+):
     """Get metadata of a given station."""
     metadata_fpath = _get_metadata_fpath(
-        disdrodb_dir, product_level, data_source, campaign_name, station
+        disdrodb_dir, product_level, data_source, campaign_name, station_name
     )
     with open(metadata_fpath, "r") as f:
         metadata_dict = yaml.safe_load(f)

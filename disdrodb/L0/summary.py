@@ -15,7 +15,7 @@ import xarray as xr
 def create_L0B_summary(
     ds: xr.Dataset,
     processed_dir: str,
-    station_id: str,
+    station_name: str,
 ) -> None:
     """Create L0 summary statistics and save it into the station info YAML file.
 
@@ -25,7 +25,7 @@ def create_L0B_summary(
         Input xarray dataset.
     processed_dir : str
         Output file path
-    station_id : str
+    station_name : str
         Station ID
     """
 
@@ -88,7 +88,7 @@ def create_L0B_summary(
 
     ###-----------------------------------------------------------------------.
     # Save to info.yaml
-    info_path = os.path.join(processed_dir, "info", station_id + ".yml")
+    info_path = os.path.join(processed_dir, "info", station_name + ".yml")
     with open(info_path, "w") as f:
         yaml.dump(stats_dict, f, sort_keys=False)
 
@@ -99,5 +99,5 @@ def create_L0B_summary(
 # create_L0B_summary(
 #     ds=ds,
 #     processed_dir=processed_dir,
-#     station_id=station_id,
+#     station_name=station_name,
 # )

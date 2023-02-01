@@ -87,7 +87,7 @@ readAllPluvioData = function(startDate, endDate,
     print(paste("Reading data for pluvio at", stationName))
     stationData = readPluvioDataset(startDate, endDate, stationName, 
                                     inDir, stations)
-    pluvData = rbind(pluvData, data.frame(station=stationName, stationData))
+    pluvData = rbind(pluvData, data.frame(station_name=station_nameName, stationData))
   }
   
   return(pluvData)

@@ -280,18 +280,18 @@ To create a new test, simply add a small, single-station dataset and the associa
 |     			      ├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
 |     				      ├── 📁 `<campaign_name>` : e.g. PARSIVEL_2007
 |     				         ├── 📁 data
-|     				            ├── 📁 `<station_id>`.\*
+|     				            ├── 📁 `<station_name>`.\*
 |     				         ├── 📁 issue
-|     				            ├── 📁 `<station_id>`.yml
+|     				            ├── 📁 `<station_name>`.yml
 |     				         ├── 📁 metadata
-|     				            ├── 📁 `<station_id>`.yml
+|     				            ├── 📁 `<station_name>`.yml
 | ├── 📁 disdrodb/test_ressources_ground_truth 
 |     	├── 📁 DISDRODB
 |     		├── 📁 Processed
 |     			├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
 |     				├── 📁 `<campaign_name>` : e.g. PARSIVEL_2007
 |     				   ├── 📁 L0B
-|     				      ├── 📁 `<station_id>`
+|     				      ├── 📁 `<station_name>`
 |     				         ├── 📜 \*.nc  : NetCDF files containing the L0B products
 
 

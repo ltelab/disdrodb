@@ -607,12 +607,12 @@ def write_L0B(ds: xr.Dataset, fpath: str, force=False) -> None:
     """
     # Create station directory if does not exist
     _create_directory(os.path.dirname(fpath))
-    
-    # Check if the file already exists 
+
+    # Check if the file already exists
     # - If force=True --> Remove it
     # - If force=False --> Raise error
     _remove_if_exists(fpath, force=force)
-    
+
     # Get sensor name from dataset
     sensor_name = ds.attrs.get("sensor_name")
 

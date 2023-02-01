@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Created on Wed Feb  1 10:28:17 2023
+
+@author: ghiggi
+"""
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -18,45 +25,52 @@ import sys
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 import click
+from disdrodb.L0.utils_scripts import parse_arg_to_list
 from disdrodb.L0.L0_processing import (
     click_l0_processing_options,
-    click_l0_station_arguments,
+    click_l0_stations_options,
 )
-
-# -------------------------------------------------------------------------.
-# Click Command Line Interface decorator
 
 
 @click.command()
-@click_l0_station_arguments
+@click.argument("disdrodb_dir", metavar="<disdrodb_dir>")
+@click_l0_stations_options
 @click_l0_processing_options
-def run_disdrodb_l0b_station(
-    # Station arguments
+def run_disdrodb_l0a(
     disdrodb_dir,
-    data_source,
-    campaign_name,
-    station_name,
+    # L0 disdrodb stations options
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
     # Processing options
     force: bool = False,
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
 ):
-    """Run the L0B processing of a specific DISDRODB station from the terminal.
+    """Run the L0A processing of DISDRODB stations.
+
+    This function enable to launch the processing of many DISDRODB stations with a single command.
+    From the list of all available DISDRODB stations, it runs the processing of the
+    stations matching the provided data_sources, campaign_names and station_names.
 
     Parameters
     ----------
     disdrodb_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB
-    data_source : str
-        Institution name (when campaign data spans more than 1 country),
-        or country (when all campaigns (or sensor networks) are inside a given country).
-        Must be UPPER CASE.
-    campaign_name : str
-        Campaign name. Must be UPPER CASE.
-    station_name : str
-        Station name
+    data_sources : str
+        Name of data source(s) to process.
+        The name(s) must be UPPER CASE.
+        If campaign_names and station are not specified, process all stations.
+        To specify multiple data sources, write i.e.: --data_sources 'GPM EPFL NCAR'
+    campaign_names : str
+        Name of the campaign(s) to process.
+        The name(s) must be UPPER CASE.
+        To specify multiple campaigns, write i.e.: --campaign_names 'IPEX IMPACTS'
+    station_names : str
+        Station names.
+        To specify multiple stations, write i.e.: --station_names 'station1 station2'
     force : bool
         If True, overwrite existing data into destination directories.
         If False, raise an error if there are already data into destination directories.
@@ -66,56 +80,38 @@ def run_disdrodb_l0b_station(
         The default is False.
     parallel : bool
         If True, the files are processed simultanously in multiple processes.
-        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        Each process will use a single thread.
         By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0b_station
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0a
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     """
-    import os
-    import dask
-    from dask.distributed import Client, LocalCluster
-    from disdrodb.api.io import _get_disdrodb_directory
-    from disdrodb.L0.L0_processing import run_l0b
+    from disdrodb.L0.L0_processing import run_disdrodb_l0a
 
-    # -------------------------------------------------------------------------.
-    # If parallel=True, set the dask environment
-    if parallel:
-        # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
-        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-        # Retrieve the number of process to run
-        available_workers = os.cpu_count()  # if not set, all CPUs
-        num_workers = dask.config.get("num_workers", available_workers)
-        # Create dask.distributed local cluster
-        cluster = LocalCluster(
-            n_workers=num_workers,
-            threads_per_worker=1,
-            processes=True,
-            # memory_limit='8GB',
-            # silence_logs=False,
-        )
-        client = Client(cluster)
+    # Parse data_sources, campaign_names and station arguments
+    print(data_sources)
+    print(campaign_names)
+    print(station_names)
 
-    # -------------------------------------------------------------------------.
-    # Define processed dir
-    processed_dir = _get_disdrodb_directory(
+    data_sources = parse_arg_to_list(data_sources)
+    campaign_names = parse_arg_to_list(campaign_names)
+    station_names = parse_arg_to_list(station_names)
+
+    # Run processing
+    run_disdrodb_l0a(
         disdrodb_dir=disdrodb_dir,
-        product_level="L0B",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exist=False,
-    )
-    run_l0b(
-        processed_dir=processed_dir,
-        station_name=station_name,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station_names=station_names,
         # Processing options
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
     )
+
     return None
 
 
 if __name__ == "__main__":
-    run_disdrodb_l0b_station()
+    run_disdrodb_l0a()

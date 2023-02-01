@@ -62,14 +62,14 @@ def create_issue_yml(
             yaml.dump(time_period_dict, f, default_flow_style=None)
 
 
-def read_issue(raw_dir: str, station_id: str) -> dict:
+def read_issue(raw_dir: str, station_name: str) -> dict:
     """Read YAML issue file.
 
     Parameters
     ----------
     processed_dir : str
         Path of the processed directory
-    station_id : int
+    station_name : int
         Id of the station.
 
     Returns
@@ -78,7 +78,7 @@ def read_issue(raw_dir: str, station_id: str) -> dict:
         Issue dictionary.
     """
 
-    issue_fpath = os.path.join(raw_dir, "issue", station_id + ".yml")
+    issue_fpath = os.path.join(raw_dir, "issue", station_name + ".yml")
     with open(issue_fpath, "r") as f:
         issue_dict = yaml.safe_load(f)
     # issue_dict = check_issue_compliance(issue_dict)

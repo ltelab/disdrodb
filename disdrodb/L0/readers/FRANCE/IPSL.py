@@ -117,7 +117,7 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
     files_glob_pattern = "*.txt"  # There is only one file without extension
 
     ####----------------------------------------------------------------------.

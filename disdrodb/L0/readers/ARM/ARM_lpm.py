@@ -120,7 +120,7 @@ def reader(
         return ds
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
     raw_data_glob_pattern = "*.nc"
 
     ####-------------------------------------------------------------------.
@@ -144,21 +144,21 @@ def reader(
 
     # ---------------------------------------------------------------------.
     # Get station list
-    list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
+    list_station_name = os.listdir(os.path.join(raw_dir, "data"))
 
     # ---------------------------------------------------------------------.
-    #### Loop over each station_id directory and process the files
-    # station_id = list_stations_id[0]
-    for station_id in list_stations_id:
+    #### Loop over each station_name directory and process the files
+    # station_name = list_station_name[0]
+    for station_name in list_station_name:
         # ---------------------------------------------------------------------.
         t_i = time.time()
-        msg = f" - Processing of station_id {station_id} has started"
+        msg = f" - Processing of station_name {station_name} has started"
         if verbose:
             print(msg)
         logger.info(msg)
         # ---------------------------------------------------------------------.
         # Retrieve metadata
-        attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+        attrs = read_metadata(raw_dir=raw_dir, station_name=station_name)
 
         # Retrieve sensor name
         sensor_name = attrs["sensor_name"]
@@ -167,7 +167,7 @@ def reader(
         # Retrieve list of files to process
         file_list = get_raw_file_list(
             raw_dir=raw_dir,
-            station_id=station_id,
+            station_name=station_name,
             glob_patterns=raw_data_glob_pattern,
             verbose=verbose,
             debugging_mode=debugging_mode,
@@ -179,15 +179,15 @@ def reader(
 
         # -----------------------------------------------------------------.
         #### - Save to DISDRODB netCDF standard
-        fpath = get_L0B_fpath(processed_dir, station_id)
+        fpath = get_L0B_fpath(processed_dir, station_name)
         ds = ds.compute()
         write_L0B(ds, fpath=fpath)
 
         # -----------------------------------------------------------------.
         # End L0 processing
         t_f = time.time() - t_i
-        msg = " - NetCDF standardization of station_id {} ended in {:.2f}s".format(
-            station_id, t_f
+        msg = " - NetCDF standardization of station_name {} ended in {:.2f}s".format(
+            station_name, t_f
         )
         if verbose:
             print(msg)

@@ -32,7 +32,7 @@ from typing import Union
 from disdrodb.L0.standards import get_L0A_dtype
 from disdrodb.L0.check_standards import check_L0A_column_names, check_L0A_standards
 from disdrodb.L0.io import _remove_if_exists, _create_directory
-from disdrodb.L0.io import infer_station_id_from_fpath
+from disdrodb.L0.io import infer_station_name_from_fpath
 
 # Logger
 from disdrodb.utils.logger import (
@@ -44,6 +44,11 @@ from disdrodb.utils.logger import (
 
 logger = logging.getLogger(__name__)
 
+pd.set_option("mode.chained_assignment", None)  # Avoid SettingWithCopyWarning
+# https://pandas.pydata.org/pandas-docs/stable/user_guide/indexing.html#evaluation-order-matters
+
+
+####---------------------------------------------------------------------------.
 # Possible renaming:
 # - write_df_to_parquet --> write_L0A?
 # Remove or refactor
@@ -501,7 +506,7 @@ def process_raw_file(
     # ------------------------------------------------------.
     # - Filter out problematic data reported in issue file
     # TODO: [TEST IMPLEMENTATION] remove_problematic_timestamp in dev/TODO_issue_code.py
-    # issue_dict = read_issue(raw_dir, station_id)
+    # issue_dict = read_issue(raw_dir, station_name)
     # df = remove_problematic_timestamp(df, issue_dict, verbose)
 
     # ------------------------------------------------------.
@@ -561,14 +566,14 @@ def write_df_to_parquet(
     """
 
     # -------------------------------------------------------------------------.
-    # Create station directory if does not exist 
+    # Create station directory if does not exist
     _create_directory(os.path.dirname(fpath))
-    
-    # Check if the file already exists 
+
+    # Check if the file already exists
     # - If force=True --> Remove it
     # - If force=False --> Raise error
     _remove_if_exists(fpath, force=force)
- 
+
     # -------------------------------------------------------------------------.
     # Define writing options
     compression = "snappy"  # 'gzip', 'brotli, 'lz4', 'zstd'

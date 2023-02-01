@@ -36,7 +36,7 @@ from disdrodb.utils.logger import (
 logger = logging.getLogger(__name__)
 
 
-def _concatenate_L0B_files(processed_dir, station_id, remove=False, verbose=False):
+def _concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=False):
     """Concatenate all L0B netCDF files into a single netCDF file.
 
     The single netCDF file is saved at <processed_dir>/L0B.
@@ -44,18 +44,18 @@ def _concatenate_L0B_files(processed_dir, station_id, remove=False, verbose=Fals
     from disdrodb.L0.L0B_processing import write_L0B
 
     # Create logger
-    filename = f"concatenatation_{station_id}"
+    filename = f"concatenatation_{station_name}"
     logger = create_file_logger(
         processed_dir=processed_dir,
         product_level="L0B",
-        station_id="",  # locate outside the station directory
+        station_name="",  # locate outside the station directory
         filename=filename,
         parallel=False,
     )
 
     # -------------------------------------------------------------------------.
     # Retrieve L0B files
-    L0B_dir_path = get_L0B_dir(processed_dir, station_id)
+    L0B_dir_path = get_L0B_dir(processed_dir, station_name)
     file_list = sorted(glob.glob(os.path.join(L0B_dir_path, "*.nc")))
 
     # -------------------------------------------------------------------------.
@@ -77,8 +77,8 @@ def _concatenate_L0B_files(processed_dir, station_id, remove=False, verbose=Fals
 
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
-    single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_id, single_netcdf=True)
-    force=True # TODO add as argument
+    single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_name, single_netcdf=True)
+    force = True  # TODO add as argument
     write_L0B(ds, fpath=single_nc_fpath, force=force)
 
     # -------------------------------------------------------------------------.
@@ -105,32 +105,16 @@ def _concatenate_L0B_files(processed_dir, station_id, remove=False, verbose=Fals
     return None
 
 
-def _concatenate_L0B_station(
-    disdrodb_dir, data_source, campaign_name, station, remove=False, verbose=False
-):
-    """This function concatenate the L0B files of a single DISDRODB station.
-
-    This function is called to run the command:  run_disdrodb_l0b_concat_station
-    """
-    # Retrieve processed_dir
-    processed_dir = os.path.join(disdrodb_dir, "Processed", data_source, campaign_name)
-    _check_directory_exist(processed_dir)
-    # Run concatenation
-    _concatenate_L0B_files(
-        processed_dir=processed_dir, station_id=station, remove=remove, verbose=verbose
-    )
-
-
 ####---------------------------------------------------------------------------.
 #### Wrappers of run_disdrodb_l0b_concat_station call
 
 
-def concatenate_L0B_station(
-    disdrodb_dir, data_source, campaign_name, station, remove=False, verbose=False
+def run_disdrodb_l0b_concat_station(
+    disdrodb_dir, data_source, campaign_name, station_name, remove=False, verbose=False
 ):
     """Concatenate the L0B files of a single DISDRODB station.
 
-    This function calls run_disdrodb_l0b_concat_station in the terminal.
+    This function runs the run_disdrodb_l0b_concat_station script in the terminal.
     """
     cmd = " ".join(
         [
@@ -138,7 +122,7 @@ def concatenate_L0B_station(
             disdrodb_dir,
             data_source,
             campaign_name,
-            station,
+            station_name,
             "--remove",
             str(remove),
             "--verbose",
@@ -148,11 +132,11 @@ def concatenate_L0B_station(
     _execute_cmd(cmd)
 
 
-def concatenate_L0B(
+def run_disdrodb_l0b_concat(
     disdrodb_dir,
     data_sources=None,
     campaign_names=None,
-    station=None,
+    station_names=None,
     remove=False,
     verbose=False,
 ):
@@ -173,8 +157,8 @@ def concatenate_L0B(
         raise ValueError("No stations to concatenate!")
 
     # Filter by provided stations
-    if station is not None:
-        list_info = [info for info in list_info if info[2] in station]
+    if station_names is not None:
+        list_info = [info for info in list_info if info[2] in station_names]
         # If nothing left, raise an error
         if len(list_info) == 0:
             raise ValueError(
@@ -186,12 +170,12 @@ def concatenate_L0B(
     print(f"Concatenation of {n_stations} L0B stations started.")
 
     # Start the loop to launch the concatenation of each station
-    for data_source, campaign_name, station in list_info:
-        concatenate_L0B_station(
+    for data_source, campaign_name, station_name in list_info:
+        run_disdrodb_l0b_concat_station(
             disdrodb_dir=disdrodb_dir,
             data_source=data_source,
             campaign_name=campaign_name,
-            station=station,
+            station_name=station_name,
             remove=remove,
             verbose=verbose,
         )
@@ -202,22 +186,22 @@ def concatenate_L0B(
 ####--------------------------------------------------------------------------.
 
 
-def concatenate_L0B_files(processed_dir, station_id, remove=False, verbose=False):
+def concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=False):
     """Concatenate the L0B files of a single DISDRODB station.
 
     This function calls run_disdrodb_l0b_concat_station in the terminal.
-    It is used by L0_processing.run_L0 functtion if single_netcf=True.
+    It is used by L0_processing.run_L0 function if single_netcf=True.
     """
     from disdrodb.L0.io import get_data_source, get_campaign_name, get_disdrodb_dir
 
     disdrodb_dir = get_disdrodb_dir(processed_dir)
     data_source = get_data_source(processed_dir)
     campaign_name = get_campaign_name(processed_dir)
-    concatenate_L0B_station(
+    run_disdrodb_l0b_concat_station(
         disdrodb_dir=disdrodb_dir,
         data_source=data_source,
         campaign_name=campaign_name,
-        station=station_id,
+        station_name=station_name,
         remove=remove,
         verbose=verbose,
     )
