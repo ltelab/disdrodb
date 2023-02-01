@@ -106,7 +106,7 @@ def reader(
     files_glob_pattern = "*.dat*"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products
+    #### - Create L0A products
     run_l0a(
         raw_dir=raw_dir,
         processed_dir=processed_dir,

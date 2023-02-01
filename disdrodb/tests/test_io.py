@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import xarray as xr
+import shutil
 from disdrodb.L0 import io
 import importlib.metadata
 
@@ -14,30 +15,30 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 
 
 PATH_FILE_WINDOWS = (
-    "\\DISDRODB\\Raw\\institute_name\\campaign_name\\station_name\\file_name.tar.xz"
+    "\\DISDRODB\\Raw\\DATA_SOURCE\\CAMPAIGN_NAME\\STATION_NAME\\file_name.tar.xz"
 )
 PATH_FILE_LINUX = (
-    "/DISDRODB/Raw/institute_name/campaign_name/station_name/file_name.tar.xz"
+    "/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/STATION_NAME/file_name.tar.xz"
 )
 
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
 def test_infer_data_source_from_fpath(path_raw_data):
-    assert io.infer_data_source_from_fpath(path_raw_data) == "institute_name"
+    assert io.infer_data_source_from_fpath(path_raw_data) == "DATA_SOURCE"
 
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
 def test_infer_campaign_from_fpath(path_raw_data):
-    assert io.infer_campaign_from_fpath(path_raw_data) == "campaign_name"
+    assert io.infer_campaign_from_fpath(path_raw_data) == "CAMPAIGN_NAME"
 
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
 def test_infer_station_name_from_fpath(path_raw_data):
-    assert io.infer_station_name_from_fpath(path_raw_data) == "station_name"
+    assert io.infer_station_name_from_fpath(path_raw_data) == "STATION_NAME"
 
 
-PATH_FILE_WINDOWS = "\\DISDRODB\\Raw\\institute_name\\campaign_name"
-PATH_FILE_LINUX = "/DISDRODB/Raw/institute_name/campaign_name"
+PATH_FILE_WINDOWS = "\\DISDRODB\\Raw\\DATA_SOURCE\\CAMPAIGN_NAME"
+PATH_FILE_LINUX = "/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME"
 
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
@@ -47,7 +48,7 @@ def test_get_campaign_name(path_raw_data):
 
 @pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
 def test_get_data_source(path_raw_data):
-    assert io.get_data_source(path_raw_data) == "INSTITUTE_NAME"
+    assert io.get_data_source(path_raw_data) == "DATA_SOURCE"
 
 
 def test_get_dataset_min_max_time():
@@ -67,12 +68,12 @@ PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
 )
 def test_get_L0A_dir(path_process_dir):
     res = (
-        io.get_L0A_dir(path_process_dir, "station_name")
+        io.get_L0A_dir(path_process_dir, "STATION_NAME")
         .replace(path_process_dir, "")
         .replace("\\", "")
         .replace("/", "")
     )
-    assert res == "L0Astation_name"
+    assert res == "L0ASTATION_NAME"
 
 
 @pytest.mark.parametrize(
@@ -80,24 +81,24 @@ def test_get_L0A_dir(path_process_dir):
 )
 def test_get_L0B_dir(path_process_dir):
     res = (
-        io.get_L0B_dir(path_process_dir, "station_name")
+        io.get_L0B_dir(path_process_dir, "STATION_NAME")
         .replace(path_process_dir, "")
         .replace("\\", "")
         .replace("/", "")
     )
-    assert res == "L0Bstation_name"
+    assert res == "L0BSTATION_NAME"
 
 
 def test_get_L0A_fpath():
     """
     Test the naming and the path of the L0A file
-    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/institute_name/campaign_name/metadata/STATIONID.yml"
+    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml"
     """
 
     # Set variables
-    institute_name = "INSTITUTE_NAME"
+    data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
-    station_name = "STATIONID"
+    station_name = "STATION_NAME"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
     start_date_str = start_date.strftime("%Y%m%d%H%M%S")
@@ -109,7 +110,7 @@ def test_get_L0A_fpath():
         "test_folders_files_structure",
         "DISDRODB",
         "Processed",
-        institute_name,
+        data_source,
         campaign_name,
     )
 
@@ -133,13 +134,13 @@ def test_get_L0A_fpath():
 def test_get_L0B_fpath():
     """
     Test the naming and the path of the L0B file
-    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/institute_name/campaign_name/metadata/STATIONID.yml"
+    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml"
     """
 
     # Set variables
-    institute_name = "INSTITUTE_NAME"
+    data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
-    station_name = "STATIONID"
+    station_name = "STATION_NAME"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
     start_date_str = start_date.strftime("%Y%m%d%H%M%S")
@@ -151,7 +152,7 @@ def test_get_L0B_fpath():
         "test_folders_files_structure",
         "DISDRODB",
         "Processed",
-        institute_name,
+        data_source,
         campaign_name,
     )
 
@@ -266,42 +267,42 @@ def test__remove_directory():
 
 
 def test_parse_fpath():
-    path_dir_windows_in = "\\DISDRODB\\Processed\\institute_name\\campaign_name\\"
-    path_dir_windows_out = "\\DISDRODB\\Processed\\institute_name\\campaign_name"
+    path_dir_windows_in = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME\\"
+    path_dir_windows_out = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME"
     assert io._parse_fpath(path_dir_windows_in) == path_dir_windows_out
 
-    path_dir_linux_in = "/DISDRODB/Processed/institute_name/campaign_name/"
-    path_dir_linux_out = "/DISDRODB/Processed/institute_name/campaign_name"
+    path_dir_linux_in = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/"
+    path_dir_linux_out = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME"
     assert io._parse_fpath(path_dir_linux_in) == path_dir_linux_out
 
 
 def test_check_raw_dir():
     # Set variables
-    institute_name = "INSTITUTE_NAME"
+    data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
 
     # Set paths
-    path_campaign_name = os.path.join(
+    raw_dir = os.path.join(
         PATH_TEST_FOLDERS_FILES,
         "test_folders_files_structure",
         "DISDRODB",
         "Raw",
-        institute_name,
+        data_source,
         campaign_name,
     )
 
-    assert io.check_raw_dir(path_campaign_name) is None
+    assert io.check_raw_dir(raw_dir) == raw_dir
 
 
-def test__check_campaign_name():
+def test_check_campaign_name():
     campaign_name = "CAMPAIGN_NAME"
-    institute_name = "INSTITUTE_NAME"
+    data_source = "DATA_SOURCE"
     path_raw = os.path.join(
         PATH_TEST_FOLDERS_FILES,
         "test_folders_files_structure",
         "DISDRODB",
         "Raw",
-        institute_name,
+        data_source,
         campaign_name,
     )
     path_process = os.path.join(
@@ -309,99 +310,138 @@ def test__check_campaign_name():
         "test_folders_files_creation",
         "DISDRODB",
         "Processed",
-        institute_name,
+        data_source,
         campaign_name,
     )
 
     assert io._check_campaign_name(path_raw, path_process) == campaign_name
 
-
-def test_check_directories():
+ 
+def test_copy_station_metadata():
     campaign_name = "CAMPAIGN_NAME"
-    institute_name = "INSTITUTE_NAME"
-    path_raw = os.path.join(
+    data_source = "DATA_SOURCE"
+    station_name = "STATION_NAME"
+    raw_dir = os.path.join(
         PATH_TEST_FOLDERS_FILES,
         "test_folders_files_structure",
         "DISDRODB",
         "Raw",
-        institute_name,
+        data_source,
         campaign_name,
     )
-    path_process = os.path.join(
+    processed_dir = os.path.join(
         PATH_TEST_FOLDERS_FILES,
         "test_folders_files_creation",
         "DISDRODB",
         "Processed",
-        institute_name,
+        data_source,
         campaign_name,
     )
+    destination_metadata_dir = os.path.join(processed_dir, "metadata")
+    
+    # Ensure processed_dir and metadata folder exists
+    if not os.path.exists(processed_dir):
+        os.makedirs(processed_dir)
+    if not os.path.exists(destination_metadata_dir):
+        os.makedirs(destination_metadata_dir)
+   
+    # Define expected metadata file name 
+    expected_metadata_fpath = os.path.join(destination_metadata_dir, f"{station_name}.yml")
+    # Ensure metadata file does not exist 
+    if os.path.exists(expected_metadata_fpath):
+        os.remove(expected_metadata_fpath)
+    assert not os.path.exists(expected_metadata_fpath)
+        
+    # Check the function returns None 
+    assert io._copy_station_metadata(raw_dir, processed_dir, station_name) is None
+    
+    # Check the function has copied the file 
+    assert os.path.exists(expected_metadata_fpath)
+    
 
-    assert io.check_directories(path_raw, path_process, force=True) == (
-        path_raw,
-        path_process,
-    )
-
-
-def test_copy_metadata_from_raw_dir():
-    campaign_name = "CAMPAIGN_NAME"
-    institute_name = "INSTITUTE_NAME"
-    path_raw = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_structure",
-        "DISDRODB",
-        "Raw",
-        institute_name,
-        campaign_name,
-    )
-    path_process = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_creation",
-        "DISDRODB",
-        "Processed",
-        institute_name,
-        campaign_name,
-    )
-
-    # create processed structure if needed
-    if not os.path.exists(path_process):
-        os.makedirs(path_process)
-
-    path_metadata = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_creation",
-        "DISDRODB",
-        "Processed",
-        institute_name,
-        campaign_name,
-        "metadata",
-    )
-    if not os.path.exists(path_metadata):
-        os.makedirs(path_metadata)
-
-    assert io.copy_metadata_from_raw_dir(path_raw, path_process) is None
-
-
-def test_create_directory_structure():
-    campaign_name = "CAMPAIGN_NAME"
-    institute_name = "INSTITUTE_NAME"
-    path_raw = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_structure",
-        "DISDRODB",
-        "Raw",
-        institute_name,
-        campaign_name,
-    )
-    path_process = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
-        "test_folders_files_creation",
-        "DISDRODB",
-        "Processed",
-        institute_name,
-        campaign_name,
-    )
-
-    assert io.create_directory_structure(path_raw, path_process) is None
+# def test_create_directory_structure_l0a():
+#     campaign_name = "CAMPAIGN_NAME"
+#     data_source = "DATA_SOURCE"
+#     station_name = "STATION_NAME"
+#     product_level = "L0A"
+#     force = True
+#     verbose=False
+    
+#     raw_dir = os.path.join(
+#         PATH_TEST_FOLDERS_FILES,
+#         "test_folders_files_structure",
+#         "DISDRODB",
+#         "Raw",
+#         data_source,
+#         campaign_name,
+#     )
+#     processed_dir = os.path.join(
+#         PATH_TEST_FOLDERS_FILES,
+#         "test_folders_files_creation",
+#         "DISDRODB",
+#         "Processed",
+#         data_source,
+#         campaign_name,
+#     )
+#     # Define expected directory
+#     expected_product_dir = os.path.join(processed_dir, product_level)
+    
+#     # TODO: 
+#     # - Need to remove file to check function works, but then next test is invalidated
+#     # - I think we need to create a default directory that we can reinitialize at each test !
+    
+#     # Remove directory if exists already
+#     if os.path.exists(expected_product_dir):
+#         shutil.rmtree(expected_product_dir)
+#     assert not os.path.exists(expected_product_dir)
+    
+#     # Create directories 
+#     assert io.create_directory_structure(processed_dir=processed_dir,
+#                                          product_level=product_level, 
+#                                          station_name=station_name,
+#                                          force=force, 
+#                                          verbose=verbose,
+#                                          ) is None
+#     # Check the directory has been created
+#     assert not os.path.exists(expected_product_dir)
+#     # TODO: 
+#     # - check that if data are already present and force=False, raise Error 
+    
+    
+# def test_create_directory_structure():
+#     campaign_name = "CAMPAIGN_NAME"
+#     data_source = "DATA_SOURCE"
+#     station_name = "STATION_NAME"
+#     product_level = "L0B"
+#     force = True
+#     verbose=False
+    
+#     processed_dir = os.path.join(
+#         PATH_TEST_FOLDERS_FILES,
+#         "test_folders_files_creation",
+#         "DISDRODB",
+#         "Processed",
+#         data_source,
+#         campaign_name,
+#     )
+#     # Define expected directory
+#     expected_product_dir = os.path.join(processed_dir, product_level)
+    
+#     # Remove directory if exists already
+#     if os.path.exists(expected_product_dir):
+#         shutil.rmtree(expected_product_dir)
+#     assert not os.path.exists(expected_product_dir)
+    
+#     # Create directories 
+#     assert io.create_directory_structure(processed_dir=processed_dir,
+#                                          product_level=product_level, 
+#                                          station_name=station_name,
+#                                          force=force, 
+#                                          verbose=verbose,
+#                                          ) is None
+#     # Check the directory has been created
+#     assert not os.path.exists(expected_product_dir)
+#     # TODO - check that if data are already present and force=False, raise Error 
 
 
 def test__read_L0A():

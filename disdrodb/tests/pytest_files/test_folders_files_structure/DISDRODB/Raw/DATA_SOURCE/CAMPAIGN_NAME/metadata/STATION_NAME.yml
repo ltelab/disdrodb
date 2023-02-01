@@ -5,8 +5,8 @@ history: ''
 conventions: ''
 campaign_name: 'DELFT'
 project_name: ''
-station_name: 'STATIONID'
-station_name: 'Cabauw'
+station_name: 'STATION_NAME'
+station_id: ''
 location: ''
 country: 'Netherlands'
 continent: 'Europe'
@@ -19,7 +19,7 @@ EPSG: 4326
 latitude_unit: DegreesNorth
 longitude_unit: DegreesEast
 altitude_unit: MetersAboveSeaLevel
-sensor_name: 'OTT_Parsivel2'
+sensor_name: 'sensor-name'
 sensor_long_name: 'OTT Hydromet Parsivel 2'
 sensor_wavelength: ''
 sensor_serial_number: ''
