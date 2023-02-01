@@ -316,7 +316,7 @@ def test_check_campaign_name():
 
     assert io._check_campaign_name(path_raw, path_process) == campaign_name
 
- 
+
 def test_copy_station_metadata():
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
@@ -338,26 +338,28 @@ def test_copy_station_metadata():
         campaign_name,
     )
     destination_metadata_dir = os.path.join(processed_dir, "metadata")
-    
+
     # Ensure processed_dir and metadata folder exists
     if not os.path.exists(processed_dir):
         os.makedirs(processed_dir)
     if not os.path.exists(destination_metadata_dir):
         os.makedirs(destination_metadata_dir)
-   
-    # Define expected metadata file name 
-    expected_metadata_fpath = os.path.join(destination_metadata_dir, f"{station_name}.yml")
-    # Ensure metadata file does not exist 
+
+    # Define expected metadata file name
+    expected_metadata_fpath = os.path.join(
+        destination_metadata_dir, f"{station_name}.yml"
+    )
+    # Ensure metadata file does not exist
     if os.path.exists(expected_metadata_fpath):
         os.remove(expected_metadata_fpath)
     assert not os.path.exists(expected_metadata_fpath)
-        
-    # Check the function returns None 
+
+    # Check the function returns None
     assert io._copy_station_metadata(raw_dir, processed_dir, station_name) is None
-    
-    # Check the function has copied the file 
+
+    # Check the function has copied the file
     assert os.path.exists(expected_metadata_fpath)
-    
+
 
 # def test_create_directory_structure_l0a():
 #     campaign_name = "CAMPAIGN_NAME"
@@ -366,7 +368,7 @@ def test_copy_station_metadata():
 #     product_level = "L0A"
 #     force = True
 #     verbose=False
-    
+
 #     raw_dir = os.path.join(
 #         PATH_TEST_FOLDERS_FILES,
 #         "test_folders_files_structure",
@@ -385,29 +387,29 @@ def test_copy_station_metadata():
 #     )
 #     # Define expected directory
 #     expected_product_dir = os.path.join(processed_dir, product_level)
-    
-#     # TODO: 
+
+#     # TODO:
 #     # - Need to remove file to check function works, but then next test is invalidated
 #     # - I think we need to create a default directory that we can reinitialize at each test !
-    
+
 #     # Remove directory if exists already
 #     if os.path.exists(expected_product_dir):
 #         shutil.rmtree(expected_product_dir)
 #     assert not os.path.exists(expected_product_dir)
-    
-#     # Create directories 
+
+#     # Create directories
 #     assert io.create_directory_structure(processed_dir=processed_dir,
-#                                          product_level=product_level, 
+#                                          product_level=product_level,
 #                                          station_name=station_name,
-#                                          force=force, 
+#                                          force=force,
 #                                          verbose=verbose,
 #                                          ) is None
 #     # Check the directory has been created
 #     assert not os.path.exists(expected_product_dir)
-#     # TODO: 
-#     # - check that if data are already present and force=False, raise Error 
-    
-    
+#     # TODO:
+#     # - check that if data are already present and force=False, raise Error
+
+
 # def test_create_directory_structure():
 #     campaign_name = "CAMPAIGN_NAME"
 #     data_source = "DATA_SOURCE"
@@ -415,7 +417,7 @@ def test_copy_station_metadata():
 #     product_level = "L0B"
 #     force = True
 #     verbose=False
-    
+
 #     processed_dir = os.path.join(
 #         PATH_TEST_FOLDERS_FILES,
 #         "test_folders_files_creation",
@@ -426,22 +428,22 @@ def test_copy_station_metadata():
 #     )
 #     # Define expected directory
 #     expected_product_dir = os.path.join(processed_dir, product_level)
-    
+
 #     # Remove directory if exists already
 #     if os.path.exists(expected_product_dir):
 #         shutil.rmtree(expected_product_dir)
 #     assert not os.path.exists(expected_product_dir)
-    
-#     # Create directories 
+
+#     # Create directories
 #     assert io.create_directory_structure(processed_dir=processed_dir,
-#                                          product_level=product_level, 
+#                                          product_level=product_level,
 #                                          station_name=station_name,
-#                                          force=force, 
+#                                          force=force,
 #                                          verbose=verbose,
 #                                          ) is None
 #     # Check the directory has been created
 #     assert not os.path.exists(expected_product_dir)
-#     # TODO - check that if data are already present and force=False, raise Error 
+#     # TODO - check that if data are already present and force=False, raise Error
 
 
 def test__read_L0A():

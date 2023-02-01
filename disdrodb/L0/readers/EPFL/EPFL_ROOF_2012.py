@@ -121,4 +121,3 @@ def reader(
         parallel=parallel,
         debugging_mode=debugging_mode,
     )
-
