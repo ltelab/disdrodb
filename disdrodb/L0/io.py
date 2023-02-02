@@ -28,134 +28,139 @@ import xarray as xr
 import importlib.metadata
 from typing import Union
 from disdrodb.utils.logger import log_info, log_warning
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 ####---------------------------------------------------------------------------.
-#### Info from filepath
-def infer_data_source_from_fpath(fpath: str) -> str:
-    """Infer data source from file path.
+#### Info from file or directory
+
+
+def get_disdrodb_dir(path: str) -> str:
+    """Return the disdrodb base directory from a file or directory path.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
-    fpath : str
-        Input file path.
-
-    Returns
-    -------
-    str
-        Name of the institute.
-    """
-    path_pattern = r"(\\|\/)"
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    institute = re.split(path_pattern, disdrodb_fpath)[4]
-    return institute
-
-
-def infer_campaign_from_fpath(fpath: str) -> str:
-    """Infer campaign name from file path.
-
-    Parameters
-    ----------
-    fpath : str
-        Input file path.
-
-    Returns
-    -------
-    str
-        Name of the campaign.
-    """
-    path_pattern = r"(\\|\/)"
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    campaign = re.split(path_pattern, disdrodb_fpath)[6]
-    return campaign
-
-
-def infer_station_name_from_fpath(fpath: str) -> str:
-    """
-    Get the station name from the path of the input raw data.
-
-    Parameters
-    ----------
-    fpath : str
-        Path of the raw file.
-
-    Returns
-    -------
-    str
-        Station name
-    """
-    path_pattern = r"(\\|\/)"
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    station_name = list_path_elements[8]
-    # Optional strip .yml if fpath point to YAML file
-    station_name.strip(".yml")
-    return station_name
-
-
-def get_disdrodb_dir(base_dir: str) -> str:
-    """Return the disdrodb base directory from 'raw_dir' or 'processed_dir' paths.
-
-    Parameters
-    ----------
-    base_dir : str
-        Path 'raw_dir' or 'processed_dir' directory.
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
     str
         Path of the DISDRODB directory.
     """
-    idx_start = base_dir.rfind("DISDRODB")
-    disdrodb_dir = os.path.join(base_dir[:idx_start], "DISDRODB")
+    # Retrieve path elements (os-specific)
+    p = Path(path)
+    list_path_elements = [str(part) for part in p.parts]
+    # Retrieve where "DISDRODB" directory occurs
+    idx_occurence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    # If DISDRODB directory not present, raise error
+    if len(idx_occurence) == 0:
+        raise ValueError(f"The DISDRODB directory is not present in {path}")
+    # Find the rightermost occurence
+    right_most_occurence = max(idx_occurence)
+    # Define the disdrodb_dir path
+    disdrodb_dir = os.path.join(*list_path_elements[: right_most_occurence + 1])
     return disdrodb_dir
 
 
-def get_campaign_name(base_dir: str) -> str:
-    """Return the campaign name from 'raw_dir' or 'processed_dir' paths.
+def get_disdrodb_path(path: str) -> str:
+    """Return the path fron the disdrodb_dir directory.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+
+    Parameters
+    ----------
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    str
+        Path inside the DISDRODB archive.
+        Format: DISDRODB/<Raw or Processed>/<data_source>/...
+    """
+    # Retrieve path elements (os-specific)
+    p = Path(path)
+    list_path_elements = [str(part) for part in p.parts]
+    # Retrieve where "DISDRODB" directory occurs
+    idx_occurence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    # If DISDRODB directory not present, raise error
+    if len(idx_occurence) == 0:
+        raise ValueError(f"The DISDRODB directory is not present in {path}")
+    # Find the rightermost occurence
+    right_most_occurence = max(idx_occurence)
+    # Define the disdrodb path
+    disdrodb_fpath = os.path.join(*list_path_elements[right_most_occurence:])
+    return disdrodb_fpath
+
+
+def _get_disdrodb_path_components(path: str) -> list:
+    """Return a list with the component of the disdrodb_path.
+
+    Parameters
+    ----------
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    list
+        Path element inside the DISDRODB archive.
+        Format: ["DISDRODB", <Raw or Processed>, <data_source>, ...]
+    """
+    # Retrieve disdrodb path
+    disdrodb_fpath = get_disdrodb_path(path)
+    # Retrieve path elements (os-specific)
+    p = Path(disdrodb_fpath)
+    list_path_elements = [str(part) for part in p.parts]
+    return list_path_elements
+
+
+def get_campaign_name(path: str) -> str:
+    """Return the campaign name from a file or directory path.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
     base_dir : str
-        Path 'raw_dir' or 'processed_dir' directory.
+       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
     str
         Name of the campaign.
     """
-    path_pattern = r"(\\|\/)"
-    idx_start = base_dir.rfind("DISDRODB")
-    disdrodb_fpath = base_dir[idx_start:]
-    list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    campaign_name = list_path_elements[-1].upper()
+    list_path_elements = _get_disdrodb_path_components(path)
+    if len(list_path_elements) <= 3:
+        raise ValueError(f"Impossible to determine campaign_name from {path}")
+    campaign_name = list_path_elements[3]
     return campaign_name
 
 
-def get_data_source(base_dir: str) -> str:
-    """Retrieves the data source from 'raw_dir' or processed_dir' paths
+def get_data_source(path: str) -> str:
+    """Return the data_source from a file or directory path.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
     base_dir : str
-        Input paths
+       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
     str
-        Name of the data source
+        Name of the campaign.
     """
-
-    path_pattern = r"(\\|\/)"
-    idx_start = base_dir.rfind("DISDRODB")
-    disdrodb_fpath = base_dir[idx_start:]
-    list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    institute_name = list_path_elements[-3].upper()
-    return institute_name
+    list_path_elements = _get_disdrodb_path_components(path)
+    if len(list_path_elements) <= 2:
+        raise ValueError(f"Impossible to determine data_source from {path}")
+    data_source = list_path_elements[2]
+    return data_source
 
 
 ####--------------------------------------------------------------------------.
@@ -266,7 +271,7 @@ def get_L0A_fname(df, processed_dir, station_name: str) -> str:
     version = importlib.metadata.version("disdrodb").replace(".", "-")
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
-    fname = f"DISDRODB.L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
+    fname = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return fname
 
 
@@ -296,7 +301,7 @@ def get_L0B_fname(ds, processed_dir, station_name: str) -> str:
     version = importlib.metadata.version("disdrodb").replace(".", "-")
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
-    fname = f"DISDRODB.L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    fname = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname
 
 

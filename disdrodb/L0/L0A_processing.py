@@ -32,7 +32,6 @@ from typing import Union
 from disdrodb.L0.standards import get_L0A_dtype
 from disdrodb.L0.check_standards import check_L0A_column_names, check_L0A_standards
 from disdrodb.L0.io import _remove_if_exists, _create_directory
-from disdrodb.L0.io import infer_station_name_from_fpath
 
 # Logger
 from disdrodb.utils.logger import (

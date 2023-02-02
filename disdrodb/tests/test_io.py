@@ -9,46 +9,112 @@ from disdrodb.L0 import io
 import importlib.metadata
 
 
+import pathlib
+
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "pytest_files"
 )
 
 
-PATH_FILE_WINDOWS = (
-    "\\DISDRODB\\Raw\\DATA_SOURCE\\CAMPAIGN_NAME\\STATION_NAME\\file_name.tar.xz"
-)
-PATH_FILE_LINUX = (
-    "/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/STATION_NAME/file_name.tar.xz"
-)
+def get_disdrodb_path():
+    # Assert retrieve correct disdrodb path
+    disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join("whatever_path", disdrodb_path)
+    assert io.get_disdrodb_path(path) == disdrodb_path
+
+    # Assert raise error if not disdrodb path
+    disdrodb_path = os.path.join("no_disdro_dir", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join("whatever_path", disdrodb_path)
+    with pytest.raises(ValueError):
+        io.get_disdrodb_path(path)
+
+    # Assert raise error if not valid DISDRODB directory
+    disdrodb_path = os.path.join(
+        "DISDRODB_UNVALID", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"
+    )
+    path = os.path.join("whatever_path", disdrodb_path)
+    with pytest.raises(ValueError):
+        io.get_disdrodb_path(path)
+
+    # Assert it takes the right most DISDRODB occurence
+    disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join(
+        "whatever_occurence", "DISDRODB", "DISDRODB", "directory", disdrodb_path
+    )
+    assert io.get_disdrodb_path(path) == disdrodb_path
+
+    # Assert behaviour when path == disdrodb_dir
+    disdrodb_dir = os.path.join("home", "DISDRODB")
+    io.get_disdrodb_path(disdrodb_dir) == "DISDRODB"
 
 
-@pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
-def test_infer_data_source_from_fpath(path_raw_data):
-    assert io.infer_data_source_from_fpath(path_raw_data) == "DATA_SOURCE"
+def get_disdrodb_dir():
+    # Assert retrieve correct disdrodb path
+    disdrodb_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
+    disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join(disdrodb_dir, disdrodb_path)
+    assert get_disdrodb_dir(path) == disdrodb_dir
+
+    # Assert raise error if not disdrodb path
+    disdrodb_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
+    disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join(disdrodb_dir, disdrodb_path)
+    with pytest.raises(ValueError):
+        io.get_disdrodb_dir(path)
+
+    # Assert behaviour when path == disdrodb_dir
+    disdrodb_dir = os.path.join("home", "DISDRODB")
+    io.get_disdrodb_dir(disdrodb_dir) == disdrodb_dir
 
 
-@pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
-def test_infer_campaign_from_fpath(path_raw_data):
-    assert io.infer_campaign_from_fpath(path_raw_data) == "CAMPAIGN_NAME"
+def _get_disdrodb_path_components():
+    # Assert retrieve correct disdrodb path
+    path_components = ["DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"]
+    disdrodb_path = os.path.join(*path_components)
+    path = os.path.join("whatever_path", disdrodb_path)
+    assert _get_disdrodb_path_components(path) == path_components
 
 
-@pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
-def test_infer_station_name_from_fpath(path_raw_data):
-    assert io.infer_station_name_from_fpath(path_raw_data) == "STATION_NAME"
+def test_get_data_source():
+    # Assert retrieve correct
+    path = os.path.join(
+        "whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"
+    )
+    assert io.get_data_source(path) == "DATA_SOURCE"
+
+    # Assert raise error if path stop at Raw or Processed
+    path = os.path.join("whatever_path", "DISDRODB", "Raw")
+    with pytest.raises(ValueError):
+        io.get_data_source(path)
+
+    # Assert raise error if path not within DISDRODB
+    path = os.path.join("whatever_path", "is", "not", "valid")
+    with pytest.raises(ValueError):
+        io.get_data_source(path)
 
 
-PATH_FILE_WINDOWS = "\\DISDRODB\\Raw\\DATA_SOURCE\\CAMPAIGN_NAME"
-PATH_FILE_LINUX = "/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME"
+def test_get_campaign_name():
+    # Assert retrieve correct
+    path = os.path.join(
+        "whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "..."
+    )
+    assert io.get_campaign_name(path) == "CAMPAIGN_NAME"
+
+    # Assert raise error if path stop at Raw or Processed
+    path = os.path.join("whatever_path", "DISDRODB", "Raw")
+    with pytest.raises(ValueError):
+        io.get_campaign_name(path)
+
+    # Assert raise error if path not within DISDRODB
+    path = os.path.join("whatever_path", "is", "not", "valid")
+    with pytest.raises(ValueError):
+        io.get_campaign_name(path)
 
 
-@pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
-def test_get_campaign_name(path_raw_data):
-    assert io.get_campaign_name(path_raw_data) == "CAMPAIGN_NAME"
+####--------------------------------------------------------------------------.
 
-
-@pytest.mark.parametrize("path_raw_data", [PATH_FILE_LINUX, PATH_FILE_WINDOWS])
-def test_get_data_source(path_raw_data):
-    assert io.get_data_source(path_raw_data) == "DATA_SOURCE"
+PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed"
+PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
 
 
 def test_get_dataset_min_max_time():
@@ -57,10 +123,6 @@ def test_get_dataset_min_max_time():
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
     res = io.get_dataset_min_max_time(df)
     assert all(pd.to_datetime(res, format="%Y-%m-%d") == [start_date, end_date])
-
-
-PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed"
-PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
 
 
 @pytest.mark.parametrize(
@@ -126,7 +188,7 @@ def test_get_L0A_fpath():
     res = io.get_L0A_fpath(df, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"DISDRODB.L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.parquet"
+    expected_name = f"L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.parquet"
     expected_path = os.path.join(path_campaign_name, "L0A", station_name, expected_name)
     assert res == expected_path
 
@@ -174,7 +236,7 @@ def test_get_L0B_fpath():
     res = io.get_L0B_fpath(ds, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"DISDRODB.L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.nc"
+    expected_name = f"L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.nc"
     expected_path = os.path.join(path_campaign_name, "L0B", station_name, expected_name)
     assert res == expected_path
 
@@ -444,6 +506,9 @@ def test_copy_station_metadata():
 #     # Check the directory has been created
 #     assert not os.path.exists(expected_product_dir)
 #     # TODO - check that if data are already present and force=False, raise Error
+
+
+####--------------------------------------------------------------------------.
 
 
 def test__read_L0A():
