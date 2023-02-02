@@ -33,7 +33,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = []
@@ -61,10 +60,10 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "-.-", ["C"] * 32]
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
-
         # - Import pandas
         import pandas as pd
 
@@ -91,7 +90,6 @@ def reader(
             temp_string = ""
 
             if index % 32 != 0:
-
                 temp_string = value["col_0"].split(" ")
 
                 # Remove blank string from split
@@ -109,7 +107,6 @@ def reader(
                 temp_string_2 += temp_string
 
             else:
-
                 raw = raw.append({"raw_drop_number": temp_string_2}, ignore_index=True)
 
                 temp_string_2 = ""

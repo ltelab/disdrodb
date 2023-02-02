@@ -312,7 +312,6 @@ def test__create_directory():
 
 
 def test__remove_directory():
-
     # Create empty folder if not exists
     if not os.path.exists(path_file_temp):
         io._create_directory(path_file_temp)
@@ -531,7 +530,6 @@ def test__read_L0A():
 
 
 def test_read_L0A_dataframe():
-
     list_of_parquet_file_paths = list()
 
     for i in [0, 1]:

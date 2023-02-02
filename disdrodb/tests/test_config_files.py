@@ -240,7 +240,6 @@ def test_bins_format(yaml_file_path: str) -> None:
     data = read_yaml_file(yaml_file_path)
 
     if data:
-
         # check that the data is a dictionary
         assert is_dict(data)
 
@@ -254,7 +253,6 @@ def test_bins_format(yaml_file_path: str) -> None:
 
         # check the second level
         for first_level_key, first_level_value in data.items():
-
             list_of_second_level_keys = list(first_level_value.keys())
             list_of_second_level_values = list(first_level_value.values())
 

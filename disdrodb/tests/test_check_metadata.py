@@ -47,7 +47,6 @@ def test_identify_missing_metadata():
 
 
 def test_identify_missing_coords():
-
     yaml_temp_path_valid = [
         os.path.join(
             PATH_TEST_FOLDERS_FILES, "test_check_metadata", "valid_coords.yaml"

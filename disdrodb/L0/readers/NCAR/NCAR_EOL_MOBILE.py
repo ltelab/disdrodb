@@ -31,7 +31,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     ####----------------------------------------------------------------------.
     ###########################
     #### CUSTOMIZABLE CODE ####
@@ -166,7 +165,6 @@ def reader(
         for i, v in df.iterrows():
             # Check if v is NaN
             if not v["raw_drop_number"] != v["raw_drop_number"]:
-
                 v["raw_drop_number"] = v["raw_drop_number"].replace("<SPECTRUM>", "")
                 v["raw_drop_number"] = v["raw_drop_number"].replace("</SPECTRUM>", "")
 

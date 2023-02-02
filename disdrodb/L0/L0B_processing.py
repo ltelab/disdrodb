@@ -240,7 +240,6 @@ def retrieve_L0B_arrays(
     dict_data = {}
     unavailable_keys = []
     for key, n_bins in n_bins_dict.items():
-
         # Check key is available in dataframe
         if key not in df.columns:
             unavailable_keys.append(key)

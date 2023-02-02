@@ -31,7 +31,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = ["TO_BE_SPLITTED"]
@@ -65,6 +64,7 @@ def reader(
         "",
         "error",
     ]
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):

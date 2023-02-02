@@ -155,7 +155,6 @@ def test_read_raw_file_list():
 
 
 def test_write_df_to_parquet():
-
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")

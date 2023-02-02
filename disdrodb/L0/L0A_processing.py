@@ -589,7 +589,7 @@ def write_df_to_parquet(
         )
         msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
         log_info(logger=logger, msg=msg, verbose=False)
-    except (Exception) as e:
+    except Exception as e:
         msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)

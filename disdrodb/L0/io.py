@@ -906,7 +906,7 @@ def _create_processed_dir_folder(processed_dir, dir_name):
     try:
         folder_path = os.path.join(processed_dir, dir_name)
         os.makedirs(folder_path, exist_ok=True)
-    except (Exception) as e:
+    except Exception as e:
         msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)

@@ -54,7 +54,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     # Define functions to reformat ARM netCDFs
     def reformat_ARM_files(file_list, attrs):
         """

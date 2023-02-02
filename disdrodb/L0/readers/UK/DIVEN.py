@@ -52,7 +52,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     # Define functions to reformat DIVEN netCDFs
     def reformat_DIVEN_files(file_list, attrs):
         """

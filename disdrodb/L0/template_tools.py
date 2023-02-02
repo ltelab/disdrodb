@@ -591,7 +591,6 @@ def infer_df_str_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int =
     """
     dict_possible_columns = {}
     for i, column in enumerate(df.columns):
-
         # Get string array
         arr = df.iloc[:, i]
         arr = np.asarray(arr).astype(str)

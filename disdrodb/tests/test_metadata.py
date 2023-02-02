@@ -9,7 +9,6 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 
 
 def test_create_metadata():
-
     fpath = os.path.join(
         PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml"
     )
@@ -29,7 +28,6 @@ def test_create_metadata():
 
 
 def test_read_metadata():
-
     raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
     station_name = "123"
 
