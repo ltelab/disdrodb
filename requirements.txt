@@ -9,8 +9,7 @@ sphinx==5.1.1
 sphinx_rtd_theme==1.0.0
 nbsphinx==0.8.9
 jupyter==1.0.0
-dask==2022.9.1
+dask[distributed]==2022.9.1
 pre-commit==2.20.0
 pytest==7.2.0
 pydantic==1.10.4
-distributed==2023.1.1
