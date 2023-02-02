@@ -42,17 +42,21 @@ def get_attrs_standards() -> dict:
 
     # sensor_wavelegth --> sensor_wavelength
 
-    list_attrs = [  # Description
+    list_attrs = [
+        # Mandatory fields
+        "station_name",
+        "reader",
+        "campaign_name",
+        "data_source",
+        "sensor_name",
+        # Description
         "title",
         "description",
         "source",
         "history",
         "conventions",
-        "campaign_name",
         "project_name",
-        # Location
-        "station_name",
-        "station_name",
+        # "campaign_name", (acronym?)
         # "station_number",TODO: REMOVE
         "location",
         "country",
@@ -67,7 +71,7 @@ def get_attrs_standards() -> dict:
         "longitude_unit",
         "altitude_unit",
         # Sensor info
-        "sensor_name",
+        # "sensor_name",
         "sensor_long_name",
         "sensor_wavelength",
         "sensor_serial_number",

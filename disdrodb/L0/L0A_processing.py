@@ -49,7 +49,7 @@ pd.set_option("mode.chained_assignment", None)  # Avoid SettingWithCopyWarning
 
 ####---------------------------------------------------------------------------.
 # Possible renaming:
-# - write_df_to_parquet --> write_L0A?
+# - write_df_to_parquet --> write_l0a?
 # Remove or refactor
 # - _read_raw_data_zipped
 
