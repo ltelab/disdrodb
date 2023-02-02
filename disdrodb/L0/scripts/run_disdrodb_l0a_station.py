@@ -81,7 +81,7 @@ def run_disdrodb_l0a_station(
     import dask
     from dask.distributed import Client, LocalCluster
     from disdrodb.api.io import _get_disdrodb_directory
-    from disdrodb.L0.L0_reader import _get_new_reader
+    from disdrodb.L0.L0_reader import get_station_reader
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
@@ -100,7 +100,7 @@ def run_disdrodb_l0a_station(
         client = Client(cluster)
     # -------------------------------------------------------------------------.
     # Get reader
-    reader = _get_new_reader(
+    reader = get_station_reader(
         disdrodb_dir=disdrodb_dir,
         data_source=data_source,
         campaign_name=campaign_name,

@@ -14,27 +14,24 @@ def test_reader_generic_docstring():
     assert 1 == 1
 
 
-def test_get_available_readers():
+def test_get_available_readers_dict():
     # Check that at least the EPFL institution is included in the list of readers
-    function_return = L0_reader.get_available_readers()
+    function_return = L0_reader.get_available_readers_dict()
     assert "EPFL" in function_return.keys()
 
 
-def test_check_data_source():
+def test_check_reader_data_source():
     # Check that at least the EPFL institution is included in the list of readers
-    function_return = function_return = L0_reader.check_data_source("epfl")
+    function_return = L0_reader._check_reader_data_source("EPFL")
     assert function_return == "EPFL"
 
-
-def test_get_available_readers_by_data_source():
-    # Check that at least the list of EPFL readers are not empty
-    function_return = L0_reader.get_available_readers_by_data_source("epfl")
-    assert function_return is not None
+    function_return = L0_reader._check_reader_data_source("epfl")
+    assert function_return != "EPFL"
 
 
-def test_check_reader_name():
+def test_check_reader_exists():
     # Check if the reader "EPFL_ROOF_2012" within EPFL
-    function_return = L0_reader.check_reader_name("epfl", "EPFL_ROOF_2012")
+    function_return = L0_reader.check_reader_exists("epfl", "EPFL_ROOF_2012")
     assert function_return == "EPFL_ROOF_2012"
 
 
