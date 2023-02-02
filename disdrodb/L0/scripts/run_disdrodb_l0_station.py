@@ -52,56 +52,57 @@ def run_disdrodb_l0_station(
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
-    Parameters
-    ----------
-    disdrodb_dir : str
-        Base directory of DISDRODB
-        Format: <...>/DISDRODB
-    data_source : str
-        Institution name (when campaign data spans more than 1 country),
-        or country (when all campaigns (or sensor networks) are inside a given country).
-        Must be UPPER CASE.
-    campaign_name : str
-        Campaign name. Must be UPPER CASE.
-    station_name : str
-        Station name
+    Parameters \n
+    ---------- \n
+    
+    disdrodb_dir : str \n
+        Base directory of DISDRODB \n
+        Format: <...>/DISDRODB \n
+    data_source : str \n
+        Institution name (when campaign data spans more than 1 country), or country (when all campaigns (or sensor networks) are inside a given country).\n
+        Must be UPPER CASE.\n
+    campaign_name : str \n
+        Campaign name. Must be UPPER CASE.\n
+    station_name : str \n
+        Station name \n
     l0a_processing : bool
       Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
-    l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
-    l0b_concat : bool
-        Whether to concatenate all raw files into a single L0B netCDF file.
-        If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
-        If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.
-        The default is False.
-    remove_l0a : bool
-        Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is False.
-    remove_l0b : bool
-         Whether to remove the L0B files after having concatenated all L0B netCDF files.
-         It takes places only if l0b_concat=True
-        The default is False.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is True.
-    parallel : bool
-        If True, the files are processed simultanously in multiple processes.
-        Each process will use a single thread to avoid issues with the HDF/netCDF library.
-        By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_station
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        For L0A, it processes just the first 3 raw data files for each station.
-        For L0B, it processes just the first 100 rows of 3 L0A files for each station.
-        The default is False.
+      The default is True.\n
+    l0b_processing : bool \n
+      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.\n
+      The default is True.\n
+      
+    l0b_concat : bool \n
+        Whether to concatenate all raw files into a single L0B netCDF file.\n
+        If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.\n
+        If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.\n
+        The default is False.\n
+    remove_l0a : bool \n
+        Whether to keep the L0A files after having generated the L0B netCDF products.\n
+        The default is False.\n
+    remove_l0b : bool \n
+         Whether to remove the L0B files after having concatenated all L0B netCDF files.\n
+         It takes places only if l0b_concat=True\n
+         The default is False.\n
+    force : bool \n
+        If True, overwrite existing data into destination directories.\n
+        If False, raise an error if there are already data into destination directories.\n
+        The default is False.\n
+    verbose : bool \n
+        Whether to print detailed processing information into terminal.\n
+        The default is True.\n
+    parallel : bool \n
+        If True, the files are processed simultanously in multiple processes.\n
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.\n
+        By default, the number of process is defined with os.cpu_count().\n
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_station\n
+        If False, the files are processed sequentially in a single process.\n
+        If False, multi-threading is automatically exploited to speed up I/0 tasks.\n
+    debugging_mode : bool \n
+        If True, it reduces the amount of data to process.\n
+        For L0A, it processes just the first 3 raw data files for each station.\n
+        For L0B, it processes just the first 100 rows of 3 L0A files for each station.\n
+        The default is False.\n
     """
     from disdrodb.L0.L0_processing import run_disdrodb_l0_station
 
