@@ -21,7 +21,6 @@ import os
 import time
 
 # Directory
-from disdrodb.L0.io import check_directories
 from disdrodb.L0.io import get_campaign_name
 from disdrodb.L0.io import create_directory_structure
 

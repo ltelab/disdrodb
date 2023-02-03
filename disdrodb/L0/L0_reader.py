@@ -268,7 +268,6 @@ def _get_expected_reader_arguments():
 
 def check_reader_arguments(reader):
     """Check the reader have the expected input arguments."""
-    # TODO: --> This should be also called for all readers in the CI
     import inspect
 
     signature = inspect.signature(reader)
@@ -426,4 +425,21 @@ def reader_generic_docstring():
     """
 
 
+####--------------------------------------------------------------------------.
+#### Check DISDRODB readers
+
+
+def check_available_readers():
+    """Check the readers arguments of all package."""
+    dict_all_readers =  available_readers(data_sources=None, reader_path=False)
+    for data_source, list_reader_name in dict_all_readers.items():
+        for reader_name in list_reader_name:
+            try: 
+                reader = get_reader(data_source=data_source, reader_name=reader_name)
+                check_reader_arguments(reader)
+            except Exception as e: 
+                raise ValueError(f"Unvalid reader for {data_source}/{reader_name}.py. The error is {e}")
+    return None    
+
+            
 ####--------------------------------------------------------------------------.

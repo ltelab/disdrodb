@@ -20,7 +20,7 @@ import os
 import time
 
 # Directory
-from disdrodb.L0.io import check_directories, get_L0B_fname, get_L0B_fpath
+from disdrodb.L0.io import get_L0B_fname, get_L0B_fpath
 from disdrodb.L0.io import get_campaign_name
 from disdrodb.L0.io import create_directory_structure
 
