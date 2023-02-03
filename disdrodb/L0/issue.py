@@ -29,6 +29,7 @@ def _write_issue_timestamps_docs(f):
     f.write("#               ['2018-08-02 12:44:30', '2018-08-02 12:59:31']] \n")
 
 
+# # TODO: write_default_issue
 def create_issue_yml(
     fpath: str, timestamp: str = None, time_period: str = None
 ) -> None:

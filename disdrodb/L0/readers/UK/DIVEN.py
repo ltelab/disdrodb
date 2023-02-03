@@ -150,7 +150,7 @@ def reader(
         logger.info(msg)
         # ---------------------------------------------------------------------.
         # Retrieve metadata
-        attrs = read_metadata(raw_dir=raw_dir, station_name=station_name)
+        attrs = read_metadata(campaign_dir=raw_dir, station_name=station_name)
 
         # Retrieve sensor name
         sensor_name = attrs["sensor_name"]

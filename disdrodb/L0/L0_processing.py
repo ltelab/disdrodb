@@ -110,7 +110,7 @@ def _generate_l0a(
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(raw_dir=processed_dir, station_name=station_name)
+    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -193,7 +193,7 @@ def _generate_l0b(
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(raw_dir=processed_dir, station_name=station_name)
+    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]

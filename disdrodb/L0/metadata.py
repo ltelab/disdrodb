@@ -20,25 +20,18 @@
 
 import os
 import yaml
+import numpy as np
 
 
-def get_attrs_standards() -> dict:
-    """Get DISDRODB metadata default values.
+def get_valid_metadata_keys() -> list:
+    """Get DISDRODB valid metadata list.
 
     Returns
     -------
-    dict
-        Dictionary of attibutes standard
+    list
+        List of valid metadata keys
     """
-    # TO REMOVE
-    # - station_number
-    # - disdrodb_id
-    # - temporal_resolution
-
     # TO ADD
-    # - comments
-    # - acknoledgements
-    # - license
 
     # sensor_wavelegth --> sensor_wavelength
 
@@ -49,6 +42,9 @@ def get_attrs_standards() -> dict:
         "campaign_name",
         "data_source",
         "sensor_name",
+        # To deprecate
+        "station_name_old",
+        "campaign_name_old",
         # Description
         "title",
         "description",
@@ -56,8 +52,8 @@ def get_attrs_standards() -> dict:
         "history",
         "conventions",
         "project_name",
-        # "campaign_name", (acronym?)
-        # "station_number",TODO: REMOVE
+        "comments",
+        "station_id",
         "location",
         "country",
         "continent",
@@ -80,7 +76,6 @@ def get_attrs_standards() -> dict:
         "firmware_version",
         "sensor_beam_width",
         "sensor_nominal_width",
-        # "temporal_resolution",# TODO REMOVE
         "measurement_interval",
         # Attribution
         "contributors",
@@ -89,6 +84,8 @@ def get_attrs_standards() -> dict:
         "references",
         "documentation",
         "website",
+        "acknoledgements",
+        "license",
         "source_repository",
         "doi",
         "contact",
@@ -98,43 +95,27 @@ def get_attrs_standards() -> dict:
         # DISDRO DB attrs
         "obs_type",
     ]
-    attrs = {key: "" for key in list_attrs}
-    # TODO: temporary attributes for EPFL development
-    # attrs["sensor_name"] = "OTT_Parsivel"
-    attrs["latitude"] = -9999
-    attrs["longitude"] = -9999
-    attrs["altitude"] = -9999
-    # attrs["institution"] = "Laboratoire de Teledetection Environnementale -  Ecole Polytechnique Federale de Lausanne"
-    # attrs["sensor_long_name"] = "OTT Hydromet Parsivel"
-    # attrs["contact_information"] = "http://lte.epfl.ch"
-
-    # Defaults attributes
-    attrs["latitude_unit"] = "DegreesNorth"
-    attrs["longitude_unit"] = "DegreesEast"
-    attrs["altitude_unit"] = "MetersAboveSeaLevel"
-    attrs["crs"] = "WGS84"
-    attrs["EPSG"] = 4326
-    attrs["proj4_string"] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-
-    return attrs
+    return list_attrs
 
 
-# TODO: create_metadata_yml ? Decide similar pattern to create_issue<_yml>
-def create_metadata(fpath: str) -> None:
-    """Create default YAML metadata file.
+####--------------------------------------------------------------------------.
 
-    Parameters
-    ----------
-    fpath : str
-        File path
-    """
 
-    attrs = get_attrs_standards()
+def _read_yaml_file(fpath):
+    """Read a YAML file into dictionary."""
+    with open(fpath, "r") as f:
+        dictionary = yaml.safe_load(f)
+    return dictionary
+
+
+def _write_yaml_file(dictionary, fpath, sort_keys=False):
+    """Write dictionary to YAML file."""
     with open(fpath, "w") as f:
-        yaml.dump(attrs, f, sort_keys=False)
+        yaml.dump(dictionary, f, sort_keys=sort_keys)
+    return None
 
 
-def read_metadata(raw_dir: str, station_name: str) -> dict:
+def read_metadata(campaign_dir: str, station_name: str) -> dict:
     """Read YAML metadata file.
 
     Parameters
@@ -150,31 +131,154 @@ def read_metadata(raw_dir: str, station_name: str) -> dict:
         Dictionnary of the metadata.
     """
 
-    metadata_fpath = os.path.join(raw_dir, "metadata", station_name + ".yml")
-    with open(metadata_fpath, "r") as f:
-        attrs = yaml.safe_load(f)
+    metadata_fpath = os.path.join(campaign_dir, "metadata", station_name + ".yml")
+    metadata = _read_yaml_file(metadata_fpath)
+    return metadata
+
+
+def write_metadata(metadata, fpath, sort_keys=False):
+    """Write dictionary to YAML file."""
+    _write_yaml_file(
+        dictionary=metadata,
+        fpath=fpath,
+        sort_keys=sort_keys,
+    )
+    return None
+
+
+####--------------------------------------------------------------------------.
+def get_default_metadata_dict() -> dict:
+    """Get DISDRODB metadata default values.
+
+    Returns
+    -------
+    dict
+        Dictionary of attibutes standard
+    """
+    # Get valid metadata keys
+    list_attrs = get_valid_metadata_keys()
+    attrs = {key: "" for key in list_attrs}
+
+    # Add default values for certain keys
+    attrs["latitude"] = -9999
+    attrs["longitude"] = -9999
+    attrs["altitude"] = -9999
+
+    # TODO: remove follow and add to L0B coords
+    attrs["latitude_unit"] = "DegreesNorth"
+    attrs["longitude_unit"] = "DegreesEast"
+    attrs["altitude_unit"] = "MetersAboveSeaLevel"
+    attrs["crs"] = "WGS84"
+    attrs["EPSG"] = 4326
+    attrs["proj4_string"] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     return attrs
 
 
-def check_metadata_compliance(raw_dir: str) -> None:
-    """Check YAML metadata files compliance.
+def write_default_metadata(fpath: str) -> None:
+    """Create default YAML metadata file at the specified filepath.
 
     Parameters
     ----------
-    raw_dir : str
-        Path of the raw directory
+    fpath : str
+        File path
     """
 
-    # TODO: MISSING CHECKS
-    # - CHECK NO MISSING IMPORTANT METADATA
-    # - CHECK NO ADDITIONAL METADATA OTHER THAN STANDARDS
-    # - CHECK VALUE VALIDITY OF KEYS REQUIRED FOR PROCESSING
-    # check_sensor_name(sensor_name=sensor_name)
-    pass
-    return
+    metadata = get_default_metadata_dict()
+    write_metadata(metadata=metadata, fpath=fpath, sort_keys=False)
+    return None
 
 
-# def write_metadata(attrs, fpath):
-#     """Write dictionary to YAML file."""
-#     with open(fpath, "w") as f:
-#         yaml.dump(attrs, f, sort_keys=False)
+####--------------------------------------------------------------------------.
+def _check_metadata_campaign_name(metadata, expected_name):
+    """Check metadata campaign_name."""
+    if "campaign_name" not in metadata:
+        raise ValueError("The metadata file does not contain the 'campaign_name' key.")
+    campaign_name = metadata["campaign_name"]
+    if campaign_name == "":
+        raise ValueError("The 'campaign_name' key in the metadata is empty.")
+    if campaign_name != expected_name:
+        raise ValueError(
+            f"The campaign_name in the metadata is '{campaign_name}' but the campaign directory is '{expected_name}'"
+        )
+    return None
+
+
+def _check_metadata_data_source(metadata, expected_name):
+    """Check metadata data_source."""
+    if "data_source" not in metadata:
+        raise ValueError("The metadata file does not contain the 'data_source' key.")
+    data_source = metadata["data_source"]
+    if data_source == "":
+        raise ValueError("The 'data_source' key in the metadata is empty.")
+    if data_source != expected_name:
+        raise ValueError(
+            f"The data_source in the metadata is '{data_source}' but the data_source directory is '{expected_name}'"
+        )
+    return None
+
+
+def _check_metadata_station_name(metadata, expected_name):
+    """Check metadata station name.
+
+    This function does not check that data are available for the station!"""
+    if "station_name" not in metadata:
+        raise ValueError("The metadata file does not contain the 'station_name' key.")
+    station_name = metadata["station_name"]
+    if station_name == "":
+        raise ValueError("The 'station_name' key in the metadata is empty.")
+    if station_name != expected_name:
+        raise ValueError(
+            f"The station_name in the metadata is '{station_name}' but the metadata file is named '{expected_name}.yml'"
+        )
+    return None
+
+
+def _check_metadata_sensor_name(metadata):
+    from disdrodb.L0.check_standards import check_sensor_name
+
+    sensor_name = metadata["sensor_name"]
+    check_sensor_name(sensor_name=sensor_name)
+    return None
+
+
+def _check_metadata_keys(metadata):
+    """Check validity of metadata keys."""
+    keys = list(metadata.keys())
+    valid_keys = get_valid_metadata_keys()
+    # Check all keys are valid
+    idx_unvalid_keys = np.where(np.isin(keys, valid_keys, invert=True))[0]
+    if len(idx_unvalid_keys) > 0:
+        unvalid_keys = np.array(keys)[idx_unvalid_keys].tolist()
+        raise ValueError(f"Unvalid metadata keys: {unvalid_keys}")
+
+    # Check no keys are missing
+    idx_missing_keys = np.where(np.isin(valid_keys, keys, invert=True))[0]
+    if len(idx_missing_keys) > 0:
+        missing_keys = np.array(keys)[idx_missing_keys].tolist()
+        raise ValueError(f"Unvalid metadata keys: {missing_keys}")
+
+    return None
+
+
+def check_metadata_compliance(disdrodb_dir, data_source, campaign_name, station_name):
+    """Check DISDRODB metadata compliance."""
+    from disdrodb.L0.L0_reader import _check_metadata_reader
+    from disdrodb.api.metadata import read_station_metadata
+
+    metadata = read_station_metadata(
+        disdrodb_dir=disdrodb_dir,
+        product_level="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    _check_metadata_keys(metadata)
+    _check_metadata_campaign_name(metadata, expected_name=campaign_name)
+    _check_metadata_data_source(metadata, expected_name=data_source)
+    _check_metadata_station_name(metadata, expected_name=station_name)
+    _check_metadata_sensor_name(metadata)
+    _check_metadata_reader(metadata)
+    return None
+
+
+####--------------------------------------------------------------------------.
