@@ -192,7 +192,7 @@ def reshape_raw_spectrum_to_2D(
         )
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return arr
 
@@ -441,7 +441,7 @@ def create_L0B_from_L0A(
         )
     except Exception as e:
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     # Ensure variables with dtype object are converted to string

@@ -46,7 +46,7 @@ def _check_valid_range(df, dict_value_range, verbose=False):
         msg = (
             f"Columns {list_wrong_columns} has values outside the expected data range."
         )
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
 
@@ -64,7 +64,7 @@ def _check_valid_values(df, dict_valid_values, verbose=False):
 
     if len(list_wrong_columns) > 0:
         msg = "\n".join(list_msg)
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(f"Columns {list_wrong_columns} have invalid values.")
 
 
@@ -94,7 +94,7 @@ def _check_raw_fields_available(
     # Check that raw_drop_number is present
     if not "raw_drop_number" in df.columns:
         msg = "The 'raw_drop_number' column is not present in the dataframe."
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     # Report additional raw arrays that are missing

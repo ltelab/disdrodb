@@ -147,7 +147,7 @@ def _generate_l0a(
     except Exception as e:
         error_type = str(type(e).__name__)
         msg = f"{error_type}: {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         pass
 
     # Close the file logger

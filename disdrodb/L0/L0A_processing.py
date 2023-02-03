@@ -248,7 +248,7 @@ def _check_df_sanitizer_fun(df_sanitizer_fun):
 def _check_not_empty_dataframe(df, verbose=False):
     if len(df.index) == 0:
         msg = " - The file is empty and has been skipped."
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
 
@@ -283,7 +283,7 @@ def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
     # If no valid timesteps, raise error
     if len(df.index) == 0:
         msg = " - There are not valid timestep."
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     # Otherwise, report the number of unvalid timesteps
     n_unvalid_timesteps = n_rows - len(df)
@@ -359,7 +359,7 @@ def cast_column_dtypes(
             df[column] = df[column].astype(dtype_dict[column])
         except ValueError as e:
             msg = f"ValueError: The column {column} has {e}"
-            log_error(logger=logger, msg=msg, verbose=verbose)
+            log_error(logger=logger, msg=msg, verbose=False)
             raise ValueError(msg)
     return df
 
@@ -401,7 +401,7 @@ def coerce_corrupted_values_to_nan(
                 df[column] = pd.to_numeric(df[column], errors="coerce")
             except AttributeError:
                 msg = f"The column {column} is not a numeric column."
-                log_error(logger=logger, msg=msg, verbose=verbose)
+                log_error(logger=logger, msg=msg, verbose=False)
                 raise ValueError(msg)
     return df
 
@@ -442,7 +442,7 @@ def strip_string_spaces(
                 msg = (
                     f"AttributeError: The column {column} is not a string/object dtype."
                 )
-                log_error(logger=logger, msg=msg, verbose=verbose)
+                log_error(logger=logger, msg=msg, verbose=False)
                 raise AttributeError(msg)
     return df
 

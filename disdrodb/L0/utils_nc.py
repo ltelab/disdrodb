@@ -525,7 +525,7 @@ def _concatenate_datasets(list_ds, dim="time", verbose=False):
 
     except Exception as e:
         msg = f"Concatenation with xr.concat failed. Error is {e}."
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return ds
 
@@ -541,7 +541,7 @@ def _merge_datasets(list_ds, verbose=False):
         log_info(logger=logger, msg=msg, verbose=verbose)
     except Exception as e:
         msg = f"Concatenation with xr.merge failed. Error is {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return ds
 
