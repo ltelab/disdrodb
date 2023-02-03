@@ -21,8 +21,6 @@ from disdrodb.L0.metadata import (
 )
 
 #### --------------------------------------------------------------------------.
-# TODO
-# - define dtype of metadata !!!
 
 
 def read_yaml(fpath: str) -> dict:

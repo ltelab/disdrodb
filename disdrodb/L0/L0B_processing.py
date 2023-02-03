@@ -31,9 +31,7 @@ from disdrodb.L0.check_standards import (
     check_sensor_name,
     check_L0B_standards,
     _check_raw_fields_available,
-    # check_array_lengths_consistency,
 )
-from disdrodb.L0.io import _check_directory_exist
 from disdrodb.L0.io import _remove_if_exists, _create_directory
 from disdrodb.L0.standards import (
     get_diameter_bin_center,
@@ -51,10 +49,8 @@ from disdrodb.L0.standards import (
     get_time_encoding,
 )
 from disdrodb.utils.logger import (
-    create_file_logger,
-    close_logger,
     log_info,
-    log_warning,
+    # log_warning,
     # log_debug,
     log_error,
 )

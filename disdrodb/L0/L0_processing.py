@@ -1001,7 +1001,7 @@ def click_l0_archive_options(function: object):
         "--l0b_concat",
         type=bool,
         show_default=True,
-        default=True,
+        default=False,
         help="Produce single L0B netCDF file.",
     )(function)
     function = click.option(
