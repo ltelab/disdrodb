@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jun 23 14:02:12 2022
-
-@author: ghiggi
-"""
 import dask
 import logging
 import numpy as np

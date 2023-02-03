@@ -48,7 +48,6 @@ def get_valid_metadata_keys() -> list:
         "raw_data_type",   # 'raw', 'nc'            # source_data_type
         "platform_type",   # 'fixed', 'mobile' 
         # TODO deprecate
-        "campaign_name_old",
         "crs", # TODO: add to coords ! 
         "proj4_string",
         "EPSG",
@@ -210,7 +209,7 @@ def write_default_metadata(fpath: str) -> None:
     """
 
     metadata = get_default_metadata_dict()
-    write_metadata(metadata=metadata, fpath=fpath, sort_keys=False)
+    write_metadata(metadata=metadata, fpath=fpath)
     return None
 
 

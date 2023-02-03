@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 22 17:42:56 2022
 
-@author: ghiggi
-"""
 import os
 import yaml
 from typing import Union
@@ -125,6 +121,30 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
     return None
 
 
+def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True): 
+    """Return the values of a metadata key for all the archive."""
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_info = []
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        value = metadata[key]
+        info = (data_source, campaign_name, station_name, value)
+        list_info.append(info)
+    if not return_tuple:
+         list_info = [info[3] for info in list_info]
+    return list_info        
+            
+            
 #### --------------------------------------------------------------------------.
 #### Metadata Archive Checks 
 def check_archive_metadata_keys(disdrodb_dir): 
@@ -266,7 +286,6 @@ def check_archive_metadata_compliance(disdrodb_dir):
         data_source = get_data_source(fpath)
         campaign_name = get_campaign_name(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
-        
         try: 
             check_metadata_compliance(disdrodb_dir=disdrodb_dir,
                                       data_source=data_source, 

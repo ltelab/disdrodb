@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Jan  2 14:56:38 2022
 
-@author: ghiggi
-"""
 import numpy as np
 import pandas as pd
 from typing import Union

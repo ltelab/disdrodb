@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jun 23 18:44:52 2022
 
-@author: ghiggi
-"""
 import os
 import yaml
 import logging

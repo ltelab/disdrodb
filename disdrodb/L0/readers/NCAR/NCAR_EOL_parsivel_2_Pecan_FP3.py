@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Fri Jul 29 11:19:11 2022
-
-@author: kimbo
-"""
-
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
