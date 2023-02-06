@@ -424,6 +424,7 @@ def get_list_ds(fpaths: str) -> list:
         List of xarray datasets.
     """
     import xarray as xr
+
     list_ds = []
     for fpath in fpaths:
         # This context manager is required to avoid random HDF locking
@@ -448,7 +449,7 @@ def get_list_ds(fpaths: str) -> list:
 #     list
 #         List of xarray datasets.
 #     """
-#     # WARNING: READING IN PARALLEL USING MULTIPROCESS CAUSE HDF LOCK ERRORS 
+#     # WARNING: READING IN PARALLEL USING MULTIPROCESS CAUSE HDF LOCK ERRORS
 #     @dask.delayed
 #     def open_dataset_delayed(fpath):
 #         import os

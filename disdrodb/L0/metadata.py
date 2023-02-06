@@ -24,7 +24,7 @@ import numpy as np
 
 
 ####--------------------------------------------------------------------------.
-#### Define valid metadata keys 
+#### Define valid metadata keys
 def get_valid_metadata_keys() -> list:
     """Get DISDRODB valid metadata list.
 
@@ -44,25 +44,25 @@ def get_valid_metadata_keys() -> list:
         "station_name",
         "sensor_name",
         "reader",
-        "raw_data_format", # 'raw', 'preprocessed'  # source_data_format
-        "raw_data_type",   # 'raw', 'nc'            # source_data_type
-        "platform_type",   # 'fixed', 'mobile' 
+        "raw_data_format",  # 'raw', 'preprocessed'  # source_data_format
+        "raw_data_type",  # 'raw', 'nc'            # source_data_type
+        "platform_type",  # 'fixed', 'mobile'
         # TODO deprecate
-        "crs", # TODO: add to coords ! 
+        "crs",  # TODO: add to coords !
         "proj4_string",
         "EPSG",
         "latitude_unit",
         "longitude_unit",
         "altitude_unit",
-        # Source 
+        # Source
         "source",
-        "source_convention", 
+        "source_convention",
         "source_processing_date",
         # Description
         "title",
         "description",
         "history",
-        "keywords", 
+        "keywords",
         "conventions",
         "project_name",
         "comments",
@@ -73,10 +73,10 @@ def get_valid_metadata_keys() -> list:
         "latitude",
         "longitude",
         "altitude",
-        "deployment_status",   # 'ended', 'ongoing'
-        "deployment mode",     # 'land', 'ship', 'truck', 'cable'
-        "platform_protection", # 'shielded', 'unshielded'
-        "platform_orientation", # [0-360] from N (clockwise) 
+        "deployment_status",  # 'ended', 'ongoing'
+        "deployment mode",  # 'land', 'ship', 'truck', 'cable'
+        "platform_protection",  # 'shielded', 'unshielded'
+        "platform_orientation",  # [0-360] from N (clockwise)
         # Sensor info
         "sensor_long_name",
         "sensor_manufacturer",
@@ -86,10 +86,10 @@ def get_valid_metadata_keys() -> list:
         "firmware_dsp",
         "firmware_version",
         "sensor_beam_length",
-        "sensor_beam_width",  
-        "sensor_nominal_width", # ? 
+        "sensor_beam_width",
+        "sensor_nominal_width",  # ?
         # effective_measurement_area ?  # 0.54 m^2
-        "measurement_interval", # sampling_interval ? [in seconds]
+        "measurement_interval",  # sampling_interval ? [in seconds]
         "calibration_sensitivity",
         "calibration_certification_date",
         "calibration_certification_url",
@@ -99,7 +99,7 @@ def get_valid_metadata_keys() -> list:
         "authors_url",
         "contact",
         "contact_information",
-        "acknowledgement", # s?
+        "acknowledgement",  # s?
         "references",
         "documentation",
         "website",
@@ -112,7 +112,8 @@ def get_valid_metadata_keys() -> list:
 
 
 ####--------------------------------------------------------------------------.
-#### Metadata reader & writers 
+#### Metadata reader & writers
+
 
 def sort_metadata_dictionary(metadata):
     """Sort the keys of the metadata dictionary by valid_metadata_keys list order."""
@@ -185,10 +186,10 @@ def get_default_metadata_dict() -> dict:
     attrs["latitude"] = -9999
     attrs["longitude"] = -9999
     attrs["altitude"] = -9999
-    attrs["raw_data_format"] = "raw" # ['raw', 'preprocessed']
-    attrs["raw_data_type"] = "raw"   # ['raw', 'nc']
-    attrs["platform_type"] = 'stationary' # ['stationary', 'mobile']
-          
+    attrs["raw_data_format"] = "raw"  # ['raw', 'preprocessed']
+    attrs["raw_data_type"] = "raw"  # ['raw', 'nc']
+    attrs["platform_type"] = "stationary"  # ['stationary', 'mobile']
+
     # TODO: remove follow and add to L0B coords
     attrs["latitude_unit"] = "DegreesNorth"
     attrs["longitude_unit"] = "DegreesEast"
@@ -216,7 +217,8 @@ def write_default_metadata(fpath: str) -> None:
 ####--------------------------------------------------------------------------.
 #### Check metadata file
 
-def get_metadata_missing_keys(metadata): 
+
+def get_metadata_missing_keys(metadata):
     """Return the DISDRODB metadata keys which are missing."""
     keys = list(metadata.keys())
     valid_keys = get_valid_metadata_keys()
@@ -226,7 +228,7 @@ def get_metadata_missing_keys(metadata):
     return missing_keys
 
 
-def get_metadata_unvalid_keys(metadata): 
+def get_metadata_unvalid_keys(metadata):
     """Return the DISDRODB metadata keys which are not valid."""
     keys = list(metadata.keys())
     valid_keys = get_valid_metadata_keys()
@@ -247,7 +249,6 @@ def _check_metadata_keys(metadata):
     if len(missing_keys) > 0:
         raise ValueError(f"Unvalid metadata keys: {missing_keys}")
     return None
-
 
 
 def _check_metadata_campaign_name(metadata, expected_name):
@@ -285,8 +286,10 @@ def _check_metadata_station_name(metadata, expected_name):
     if "station_name" not in metadata:
         raise ValueError("The metadata file does not contain the 'station_name' key.")
     station_name = metadata["station_name"]
-    if not isinstance(station_name, str): 
-        raise ValueError("The 'station_name' key in the metadata is not defined as a string!")
+    if not isinstance(station_name, str):
+        raise ValueError(
+            "The 'station_name' key in the metadata is not defined as a string!"
+        )
     if station_name == "":
         raise ValueError("The 'station_name' key in the metadata is empty.")
     if station_name != expected_name:

@@ -53,7 +53,9 @@ def test_identify_missing_metadata_coords():
         )
     ]
 
-    function_return = check_metadata.identify_missing_metadata_coords(yaml_temp_path_valid)
+    function_return = check_metadata.identify_missing_metadata_coords(
+        yaml_temp_path_valid
+    )
     assert function_return is None
 
     yaml_temp_path_invalid = [

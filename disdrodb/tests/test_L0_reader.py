@@ -25,11 +25,11 @@ def test_check_reader_data_source():
     # Check that at least the EPFL institution is included in the list of readers
     function_return = L0_reader._check_reader_data_source("EPFL")
     assert function_return == "EPFL"
-    
-    # Check raise error if not existing data_source 
+
+    # Check raise error if not existing data_source
     with pytest.raises(ValueError):
         L0_reader._check_reader_data_source("epfl")
-        
+
     with pytest.raises(ValueError):
         L0_reader._check_reader_data_source("dummy")
 
@@ -38,7 +38,7 @@ def test_check_reader_exists():
     # Check existing reader
     function_return = L0_reader.check_reader_exists("EPFL", "EPFL_ROOF_2012")
     assert function_return == "EPFL_ROOF_2012"
-    
+
     # Check unexisting reader
     with pytest.raises(ValueError):
         L0_reader.check_reader_exists("EPFL", "dummy")
