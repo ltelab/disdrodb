@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Aug 14 20:49:06 2022
-@author: ghiggi
-"""
+
 import re
 import os
 import numpy as np

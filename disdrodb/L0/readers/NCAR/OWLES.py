@@ -31,113 +31,118 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
-    ##------------------------------------------------------------------------.
-    #### - Define column names
-    column_names = ["temp"]
+    ####----------------------------------------------------------------------.
+    ###########################
+    #### CUSTOMIZABLE CODE ####
+    ###########################
+    #### - Define raw data headers
+    # Notes
+    # - In all files, the datalogger voltage hasn't the delimeter,
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
+    column_names = [
+        "day",
+        "month",
+        "year",
+        "hour_minute",
+        "second",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_metar_4678",
+        "reflectivity_16bit",
+        "mor_visibility",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+        "unknown_field_to_drop",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
-    # - Skip first row as columns names
-    reader_kwargs["header"] = None
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
+    reader_kwargs["delimiter"] = ","
+
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     ##------------------------------------------------------------------------.
-    #### - Define dataframe sanitizer function for L0 processing
+    #### - Define facultative dataframe sanitizer function for L0 processing
+    # - Enable to deal with bad raw data files
+    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    df_sanitizer_fun = None
+
     def df_sanitizer_fun(df):
-        # - Import pandas and numpy
-        import numpy as np
+        # Import pandas
         import pandas as dd
 
-        # - Reshape dataframe
-        arr = df.to_numpy()
-        arr = arr.reshape(int(len(arr) / 97), 97)
-        df = pd.DataFrame(arr)
+        # Parse time
+        df["time"] = (
+            df["day"].astype(str)
+            + "-"
+            + df["month"].astype(str)
+            + "-"
+            + df["year"].astype(str)
+            + " "
+            + df["hour_minute"].astype(str)
+            + ":"
+            + df["second"].astype(str)
+        )
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
 
-        # - Remove number before data
-        for col in df:
-            df[col] = df[col].str[3:]
-
-        # - Assign column names
-        df.columns = np.arange(1, 98)
-        valid_column_dict = {
-            1: "rainfall_rate_32bit",
-            2: "rainfall_accumulated_32bit",
-            3: "weather_code_synop_4680",
-            4: "weather_code_synop_4677",
-            5: "weather_code_metar_4678",
-            6: "weather_code_nws",
-            7: "reflectivity_32bit",
-            8: "mor_visibility",
-            9: "sample_interval",
-            10: "laser_amplitude",
-            11: "number_particles",
-            12: "sensor_temperature",
-            13: "sensor_serial_number",
-            14: "firmware_iop",
-            15: "firmware_dsp",
-            16: "sensor_heating_current",
-            17: "sensor_battery_voltage",
-            18: "sensor_status",
-            19: "start_time",
-            20: "sensor_time",
-            21: "sensor_date",
-            22: "station_name",
-            23: "station_number",
-            24: "rainfall_amount_absolute_32bit",
-            25: "error_code",
-            30: "rainfall_rate_16_bit_30",
-            31: "rainfall_rate_16_bit_1200",
-            32: "rainfall_accumulated_16bit",
-            90: "raw_drop_concentration",
-            91: "raw_drop_average_velocity",
-            92: "raw_drop_number",
-        }
-        df = df.rename(valid_column_dict, axis=1)
-
-        # - Keep only valid columns
-        df = df[list(valid_column_dict.values())]
-
-        # - Define datetime "time" column
-        df["time"] = pd.to_datetime(
-            df["sensor_date"] + "-" + df["sensor_time"], format="%d.%m.%Y-%H:%M:%S"
+        # Drop unrequired columns for L0
+        df = df.drop(
+            columns=[
+                "unknown_field_to_drop",
+                "day",
+                "month",
+                "year",
+                "hour_minute",
+                "second",
+            ]
         )
 
-        # - Trim weather_code_metar_4678 and weather_code_nws columns
+        # Trim weather_code_metar_4678
         df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
-        df["weather_code_nws"] = df["weather_code_nws"].str.strip()
 
-        # - Drop columns not agreeing with DISDRODB L0 standards
-        columns_to_drop = [
-            "sensor_date",
-            "sensor_time",
-            # "rainfall_rate_16_bit_1200", "rainfall_rate_16_bit_30"
-        ]  # TODO: check if metadata is OTT_Parsivel2
-        df = df.drop(columns=columns_to_drop)
+        # Drop rows with corrupted values
+        # Set NaN rows with corrupted values
+        numeric_columns = [
+            "rainfall_accumulated_32bit",
+            "rainfall_rate_32bit",
+            "reflectivity_16bit",
+            "mor_visibility",
+        ]
+        for c in numeric_columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
     glob_patterns = "*.dat"
 
     ####----------------------------------------------------------------------.

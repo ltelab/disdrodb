@@ -63,7 +63,7 @@ def _concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=Fa
     n_files = len(file_list)
     if n_files == 0:
         msg = f"No L0B file is available for concatenation in {L0B_dir_path}."
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     if n_files == 1:

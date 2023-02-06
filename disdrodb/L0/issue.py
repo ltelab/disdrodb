@@ -1,10 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jun 23 18:44:52 2022
 
-@author: ghiggi
-"""
 import os
 import yaml
 import logging
@@ -29,6 +25,7 @@ def _write_issue_timestamps_docs(f):
     f.write("#               ['2018-08-02 12:44:30', '2018-08-02 12:59:31']] \n")
 
 
+# # TODO: write_default_issue
 def create_issue_yml(
     fpath: str, timestamp: str = None, time_period: str = None
 ) -> None:

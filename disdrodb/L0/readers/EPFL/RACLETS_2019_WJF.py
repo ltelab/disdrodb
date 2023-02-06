@@ -31,7 +31,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = [
@@ -89,6 +88,7 @@ def reader(
         "Error in data reading! 0000.000",
         "Error in data reading! 0002.344",
     ]
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):

@@ -95,7 +95,6 @@ def test_get_coords():
 
 
 def test_convert_object_variables_to_string():
-
     # Create test dataset
     df = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
     ds = xr.Dataset.from_dataframe(df)
@@ -168,7 +167,6 @@ def ds():
 
 
 def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
-
     result = L0B_processing.sanitize_encodings_dict(encoding_dict_1, ds)
 
     assert isinstance(result, dict)

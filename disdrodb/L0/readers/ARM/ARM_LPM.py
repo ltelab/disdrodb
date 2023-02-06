@@ -22,7 +22,6 @@ import os
 import time
 
 # Directory
-from disdrodb.L0.io import check_directories
 from disdrodb.L0.io import get_campaign_name
 from disdrodb.L0.io import create_directory_structure
 
@@ -54,7 +53,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     # Define functions to reformat ARM netCDFs
     def reformat_ARM_files(file_list, attrs):
         """
@@ -156,7 +154,7 @@ def reader(
         logger.info(msg)
         # ---------------------------------------------------------------------.
         # Retrieve metadata
-        attrs = read_metadata(raw_dir=raw_dir, station_name=station_name)
+        attrs = read_metadata(campaign_dir=raw_dir, station_name=station_name)
 
         # Retrieve sensor name
         sensor_name = attrs["sensor_name"]

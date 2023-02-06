@@ -1,18 +1,26 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jun 22 17:42:56 2022
 
-@author: ghiggi
-"""
 import os
-import glob
 import yaml
 from typing import Union
+from disdrodb.L0.io import (
+    get_disdrodb_dir,
+    get_data_source,
+    get_campaign_name,
+) 
+from disdrodb.api.metadata import get_metadata_list, read_station_metadata
+from disdrodb.L0.L0_reader import _check_metadata_reader
+from disdrodb.L0.metadata import (
+    _check_metadata_keys,
+    _check_metadata_data_source,
+    _check_metadata_campaign_name,
+    _check_metadata_station_name,
+    _check_metadata_sensor_name,
+    check_metadata_compliance,
+)
 
-# TODO: to improve a lot !!!
-# - Check metadata !!!
-# - Define rules !!!
+#### --------------------------------------------------------------------------.
 
 
 def read_yaml(fpath: str) -> dict:
@@ -32,9 +40,65 @@ def read_yaml(fpath: str) -> dict:
         attrs = yaml.safe_load(f)
     return attrs
 
+#### --------------------------------------------------------------------------.
+#### Metadata Archive Missing Information 
 
-def identify_missing_metadata(metadata_fpaths: list, keys: Union[str, list]) -> None:
-    """Identify missing metadata.
+
+def check_metadata_geolocation(metadata) -> None:
+    """Identify metadata with missing or wrong geolocation."""
+    # Get longitude, latitude and platform type
+    longitude = metadata.get("longitude")
+    latitude = metadata.get("latitude")
+    platform_type = metadata.get("platform_type")
+    # Check type validity
+    if isinstance(longitude, str):
+        raise TypeError("longitude is not defined as numeric.")
+    if isinstance(latitude, str):
+        raise TypeError("latitude is not defined as numeric.")
+    # Check is not none
+    if isinstance(longitude, type(None)) or isinstance(latitude, type(None)):
+        raise ValueError("Unspecified longitude and latitude coordinates.")
+    else:
+        # Check value validity
+        # - If mobile platform 
+        if platform_type == "mobile":
+            if longitude != -9999 or latitude != -9999:
+                raise ValueError("For mobile platform_type, specify latitude and longitude -9999")
+        # - If fixed platform 
+        else: 
+            if longitude == -9999 or latitude == -9999:
+                raise ValueError("Missing lat lon coordinates (-9999).")
+            elif longitude > 180 or longitude < -180:
+                raise ValueError("Unvalid longitude (outside [-180, 180])")
+            elif latitude > 90 or latitude < -90:
+                raise ValueError("Unvalid latitude (outside [-90, 90])")
+            else:
+                pass
+    return None
+    
+    
+def identify_missing_metadata_coords(metadata_fpaths: str) -> None:
+    """Identify missing coordinates.
+
+    Parameters
+    ----------
+    metadata_fpaths : str
+        Input YAML file path.
+
+    Raises
+    ------
+    TypeError
+        Error if latitude or longitude coordinates are not present or are wrongly formatted.
+
+    """
+    for fpath in metadata_fpaths:
+        metadata = read_yaml(fpath)
+        check_metadata_geolocation(metadata)
+    return None
+
+
+def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) -> None:
+    """Identify empty metadata keys.
 
     Parameters
     ----------
@@ -51,66 +115,205 @@ def identify_missing_metadata(metadata_fpaths: list, keys: Union[str, list]) -> 
         for key in keys:
             metadata = read_yaml(fpath)
             if len(str(metadata.get(key, ""))) == 0:  # ensure is string to avoid error
-                print(f"Missing {key} at: ", fpath)
+                print(f"Empty {key} at: ", fpath)
     return None
 
 
-def identify_missing_coords(metadata_fpaths: str) -> None:
-    """Identify missing coordinates.
+def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True): 
+    """Return the values of a metadata key for all the archive."""
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_info = []
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        value = metadata[key]
+        info = (data_source, campaign_name, station_name, value)
+        list_info.append(info)
+    if not return_tuple:
+         list_info = [info[3] for info in list_info]
+    return list_info        
+            
+            
+#### --------------------------------------------------------------------------.
+#### Metadata Archive Checks 
+def check_archive_metadata_keys(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try: 
+            _check_metadata_keys(metadata)
+        except Exception as e: 
+            print(f"Error for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")
+        
+        
+def check_archive_metadata_campaign_name(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try: 
+            _check_metadata_campaign_name(metadata, expected_name=campaign_name)
+        except Exception as e: 
+            print(f"Error for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")
+            
+ 
+def check_archive_metadata_data_source(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try: 
+            _check_metadata_data_source(metadata, expected_name=data_source)
+        except Exception as e: 
+            print(f"Error for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")     
+    
 
-    Parameters
-    ----------
-    metadata_fpaths : str
-        Input YAML file path.
+def check_archive_metadata_sensor_name(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try: 
+            _check_metadata_sensor_name(metadata)
+        except Exception as e: 
+            print(f"Error for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")  
 
-    Raises
-    ------
-    TypeError
-        Error if latitude or longitude coordinates are not present or are wrongly formatted.
+        
+def check_archive_metadata_station_name(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try: 
+            _check_metadata_station_name(metadata, expected_name=station_name)
+        except Exception as e: 
+            print(f"Error for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")  
+            
 
-    """
-    for fpath in metadata_fpaths:
-        metadata = read_yaml(fpath)
-        longitude = metadata.get("longitude", -9999)
-        latitude = metadata.get("latitude", -9999)
-        # Check type validity
-        if isinstance(longitude, str):
-            raise TypeError(f"longitude is not defined as numeric at {fpath}.")
-        if isinstance(latitude, str):
-            raise TypeError(f"latitude is not defined as numeric at {fpath}.")
-        # Check is not none
-        if isinstance(longitude, type(None)) or isinstance(latitude, type(None)):
-            print(f"Unspecified lat lon coordinates at: {fpath}")
-            continue
-        # Check value validity
-        if longitude == -9999 or latitude == -9999:
-            print(f"Missing lat lon coordinates at: {fpath}")
-        elif longitude > 180 or longitude < -180:
-            print("Unvalid longitude at : ", fpath)
-        elif latitude > 90 or latitude < -90:
-            print("Unvalid latitude at : ", fpath)
-        else:
-            pass
-    return None
+def check_archive_metadata_reader(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try: 
+            _check_metadata_reader(metadata)
+        except Exception as e: 
+            print(f"Error for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")  
+        
+            
+def check_archive_metadata_compliance(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        try: 
+            check_metadata_compliance(disdrodb_dir=disdrodb_dir,
+                                      data_source=data_source, 
+                                      campaign_name=campaign_name, 
+                                      station_name=station_name)
+        except Exception as e: 
+            print(f"Error for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")  
 
 
-# # EXAMPLE
-# ARCHIVE_DIR = "/ltenas3/0_Data/DISDRODB/Raw" # ARCHIVE_DIR = "/ltenas3/0_Data/DISDRODB/Processed"
-# metadata_fpaths = glob.glob(os.path.join(ARCHIVE_DIR, "*/*/metadata/*.yml"))
-# identify_missing_coords(metadata_fpaths)
+def check_archive_metadata_geolocation(disdrodb_dir): 
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    for fpath in list_metadata_paths:
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        
+        metadata = read_station_metadata(
+            disdrodb_dir=disdrodb_dir,
+            product_level="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try: 
+            check_metadata_geolocation(metadata)
+        except Exception as e: 
+            print(f"Missing information for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")  
+            
 
-# identify_missing_metadata(metadata_fpaths, keys="station_name")
-# identify_missing_metadata(metadata_fpaths, keys="station_name")
-# identify_missing_metadata(metadata_fpaths, keys=["station_name","station_name"])
-# identify_missing_metadata(metadata_fpaths, keys="campaign_name")
 
-# -----------------------------------------------------------------------------.
-# TODO
-# - station_name
-# - station_number --> to be replaced by station_name
-# - station_name --> if missing, use station_name
-
-# - TODO: define dtype of metadata !!!
-# - raise error if missing station_name
-# - raise error if missing campaign_name
-#

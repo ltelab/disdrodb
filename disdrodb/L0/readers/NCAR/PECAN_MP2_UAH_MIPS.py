@@ -31,9 +31,14 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
-    ##------------------------------------------------------------------------.
-    #### - Define column names
+    ####----------------------------------------------------------------------.
+    ###########################
+    #### CUSTOMIZABLE CODE ####
+    ###########################
+    #### - Define raw data headers
+    # Notes
+    # - In all files, the datalogger voltage hasn't the delimeter,
+    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
     column_names = [
         "day",
         "month",
@@ -48,7 +53,7 @@ def reader(
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
-        "unknown",
+        "unknown_field_to_drop",
     ]
 
     ##------------------------------------------------------------------------.
@@ -85,12 +90,16 @@ def reader(
     reader_kwargs["encoding"] = "ISO-8859-1"
 
     ##------------------------------------------------------------------------.
-    #### - Define dataframe sanitizer function for L0 processing
-    def df_sanitizer_fun(df):
-        # - Import pandas
-        import pandas as pd
+    #### - Define facultative dataframe sanitizer function for L0 processing
+    # - Enable to deal with bad raw data files
+    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
+    df_sanitizer_fun = None
 
-        # - Define datetime 'time' column
+    def df_sanitizer_fun(df):
+        # Import pandas
+        import pandas as dd
+
+        # Parse time
         df["time"] = (
             df["day"].astype(str)
             + "-"
@@ -100,25 +109,40 @@ def reader(
             + " "
             + df["hour_minute"].astype(str)
             + ":"
-            + df["second"].astype(str)
+            + df["second"]
         )
         df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
 
-        # - Drop columns not agreeing with DISDRODB L0 standards
-        columns_to_drop = [
-            "unknown",
-            "day",
-            "month",
-            "year",
-            "hour_minute",
-            "second",
+        # Drop unrequired columns for L0
+        df = df.drop(
+            columns=[
+                "unknown_field_to_drop",
+                "day",
+                "month",
+                "year",
+                "hour_minute",
+                "second",
+            ]
+        )
+
+        # Trim weather_code_metar_4678
+        df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
+
+        # Set NaN rows with corrupted values
+        numeric_columns = [
+            "rainfall_accumulated_32bit",
+            "rainfall_rate_32bit",
+            "reflectivity_16bit",
+            "mor_visibility",
         ]
-        df = df.drop(columns=columns_to_drop)
+
+        for c in numeric_columns:
+            df[c] = pd.to_numeric(df[c], errors="coerce")
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
     glob_patterns = "*.dat"
 
     ####----------------------------------------------------------------------.

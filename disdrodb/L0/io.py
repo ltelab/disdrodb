@@ -657,7 +657,7 @@ def _check_raw_dir_data_subfolders(raw_dir):
 
 def _check_raw_dir_metadata(raw_dir, verbose=True):
     """Check metadata in the raw_dir directory."""
-    from disdrodb.L0.metadata import create_metadata
+    from disdrodb.L0.metadata import write_default_metadata
     from disdrodb.L0.metadata import check_metadata_compliance
 
     # Get list of stations
@@ -676,7 +676,7 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
             os.path.join(metadata_dir, station_name + ".yml")
             for station_name in list_data_station_name
         ]
-        _ = [create_metadata(fpath) for fpath in list_metadata_fpath]
+        _ = [write_default_metadata(fpath) for fpath in list_metadata_fpath]
         msg = "'raw_dir' {} should have the /metadata subfolder. ".format(raw_dir)
         msg1 = "It has been now created with also empty metadata files to be filled for each station."
         raise ValueError(msg + msg1)
@@ -700,7 +700,7 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
             os.path.join(metadata_dir, station_name + ".yml")
             for station_name in list_missing_station_name
         ]
-        _ = [create_metadata(fpath) for fpath in list_missing_metadata_fpath]
+        _ = [write_default_metadata(fpath) for fpath in list_missing_metadata_fpath]
         msg = (
             "The metadata files for the following station_name were missing: {}".format(
                 list_missing_station_name
@@ -724,7 +724,19 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
 
     # -------------------------------------------------------------------------.
     #### Check metadata compliance
-    _ = [check_metadata_compliance(fpath) for fpath in list_metadata_fpath]
+    for fpath in list_metadata_fpath:
+        # Get station info
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        # Check compliance
+        check_metadata_compliance(
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
     return None
 
 
@@ -906,7 +918,7 @@ def _create_processed_dir_folder(processed_dir, dir_name):
     try:
         folder_path = os.path.join(processed_dir, dir_name)
         os.makedirs(folder_path, exist_ok=True)
-    except (Exception) as e:
+    except Exception as e:
         msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)

@@ -31,7 +31,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     ####----------------------------------------------------------------------.
     ###########################
     #### CUSTOMIZABLE CODE ####
@@ -45,21 +44,17 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
     # - Define delimiter
-    reader_kwargs["delimiter"] = "no_need_it"
+    reader_kwargs["delimiter"] = "\\n"
+
+    # - Avoid first column to become df index !!!
+    reader_kwargs["index_col"] = False
 
     # Skip first row as columns names
     reader_kwargs["header"] = None
 
-    # # Skip header
-    reader_kwargs["skiprows"] = 7
-
     # Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
-
-    # - Avoid first column to become df index !!!
-    reader_kwargs["index_col"] = False
+    reader_kwargs["encoding"] = "latin1"
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
@@ -68,10 +63,6 @@ def reader(
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
-    # - Define on-the-fly decompression of on-disk data
-    #   - Available: gzip, bz2, zip
-    # reader_kwargs['compression'] = 'xz'
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
@@ -99,65 +90,46 @@ def reader(
 
         import pandas as pd
 
-        # Different column and divider into raw order between stations
-        header_1 = "Date,Time,Intensity (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Radar reflectivity (dBz),MOR Visibility (m),Number of detected particles,Temperature in sensor (°C),Weather code METAR/SPECI,Weather code NWS,Signal amplitude of Laserband,Heating current (A),Sensor voltage (V),Spectrum"
-        header_2 = "Date,Time,Intensity (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Weather code METAR/SPECI,Weather code NWS,Radar reflectivity (dBz),MOR Visibility (m),Signal amplitude of Laserband,Number of detected particles,Temperature in sensor (°C),Heating current (A),Sensor voltage (V),Spectrum"
-
-        if df.head().loc[df["TO_SPLIT"] == header_1].empty:
-            df = df[~df.eq(header_2).any(1)]
-            columns = [
-                "date",
-                "time_temp",
-                "rainfall_rate_32bit",
-                "precipitation_since_start_TO_DROP",
-                "weather_code_synop_4680",
-                "weather_code_metar_4678",
-                "weather_code_nws",
-                "reflectivity_32bit",
-                "mor_visibility",
-                "laser_amplitude",
-                "number_particles",
-                "sensor_temperature",
-                "sensor_heating_current",
-                "sensor_battery_voltage",
-                "raw_drop_number",
-            ]
-
-        else:
-            df = df[~df.eq(header_1).any(1)]
-            columns = [
-                "date",
-                "time_temp",
-                "rainfall_rate_32bit",
-                "precipitation_since_start_TO_DROP",
-                "weather_code_synop_4680",
-                "reflectivity_32bit",
-                "mor_visibility",
-                "laser_amplitude",
-                "sensor_temperature",
-                "weather_code_metar_4678",
-                "weather_code_nws",
-                "number_particles",
-                "sensor_heating_current",
-                "sensor_battery_voltage",
-                "raw_drop_number",
-            ]
+        # Remove header columns
+        df = df[
+            ~df.eq(
+                "Date,Time,Intensity of precipitation (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Weather code METAR/SPECI,Weather code NWS,Radar reflectivity (dBz),MOR Visibility (m),Signal amplitude of Laserband,Number of detected particles,Temperature in sensor (°C),Heating current (A),Sensor voltage (V),Kinetic Energy,Spectrum"
+            ).any(1)
+        ]
 
         # Split into columns and assign name
-        df = df["TO_SPLIT"].str.split(",", expand=True, n=14)
+        df = df["TO_SPLIT"].str.split(",", expand=True, n=15)
+
+        columns = [
+            "date",
+            "time_temp",
+            "rainfall_rate_32bit",
+            "precipitation_since_start_TO_DROP",
+            "weather_code_synop_4680",
+            "weather_code_metar_4678",
+            "weather_code_nws",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "laser_amplitude",
+            "number_particles",
+            "sensor_temperature",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "rain_kinetic_energy",
+            "raw_drop_number",
+        ]
+
         df.columns = columns
 
-        # Replace divider into raw_drop_number
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(";", ",")
+        # Drop precipitation_since_start_TO_DROP column
+        df = df.drop(columns=["precipitation_since_start_TO_DROP"])
 
-        # Parse time and drop precipitation_since_start_TO_DROP column
+        # Parse time
         df["time"] = df["date"] + "-" + df["time_temp"]
-        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S")
-        df = df.drop(columns=["date", "time_temp", "precipitation_since_start_TO_DROP"])
+        df["time"] = pd.to_datetime(df["time"], format="%Y.%m.%d-%H:%M:%S")
+        df = df.drop(columns=["date", "time_temp"])
 
         # Set NaN into <SPECTRUM>ZERO</SPECTRUM> in raw_drop_number
-        import numpy as np
-
         df["raw_drop_number"] = df["raw_drop_number"].replace(
             "<SPECTRUM>ZERO</SPECTRUM>", np.NaN
         )
@@ -166,7 +138,6 @@ def reader(
         for i, v in df.iterrows():
             # Check if v is NaN
             if not v["raw_drop_number"] != v["raw_drop_number"]:
-
                 v["raw_drop_number"] = v["raw_drop_number"].replace("<SPECTRUM>", "")
                 v["raw_drop_number"] = v["raw_drop_number"].replace("</SPECTRUM>", "")
 
@@ -189,7 +160,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_name>
-    glob_patterns = "*.dat*"
+    glob_patterns = "*.MIS*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

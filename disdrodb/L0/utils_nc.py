@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jun 23 14:02:12 2022
-
-@author: ghiggi
-"""
 import dask
 import logging
 import numpy as np
@@ -428,26 +423,51 @@ def get_list_ds(fpaths: str) -> list:
     list
         List of xarray datasets.
     """
-
-    @dask.delayed
-    def open_dataset_delayed(fpath):
-        import os
-
-        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-        import xarray as xr
-
+    import xarray as xr
+    list_ds = []
+    for fpath in fpaths:
         # This context manager is required to avoid random HDF locking
         # - cache=True: store data in memory to avoid reading back from disk
         # --> but LRU cache might cause the netCDF to not be closed !
         with xr.open_dataset(fpath, cache=False) as data:
             ds = data.load()
-        return ds
-
-    list_ds_delayed = []
-    for fpath in fpaths:
-        list_ds_delayed.append(open_dataset_delayed(fpath))
-    list_ds = dask.compute(list_ds_delayed)[0]
+        list_ds.append(ds)
     return list_ds
+
+
+# def get_list_ds(fpaths: str) -> list:
+#     """Get list of xarray datasets from file paths.
+
+#     Parameters
+#     ----------
+#     fpaths : list
+#         List of netCDFs file paths.
+
+#     Returns
+#     -------
+#     list
+#         List of xarray datasets.
+#     """
+#     # WARNING: READING IN PARALLEL USING MULTIPROCESS CAUSE HDF LOCK ERRORS 
+#     @dask.delayed
+#     def open_dataset_delayed(fpath):
+#         import os
+
+#         os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+#         import xarray as xr
+
+#         # This context manager is required to avoid random HDF locking
+#         # - cache=True: store data in memory to avoid reading back from disk
+#         # --> but LRU cache might cause the netCDF to not be closed !
+#         with xr.open_dataset(fpath, cache=False) as data:
+#             ds = data.load()
+#         return ds
+
+#     list_ds_delayed = []
+#     for fpath in fpaths:
+#         list_ds_delayed.append(open_dataset_delayed(fpath))
+#     list_ds = dask.compute(list_ds_delayed)[0]
+#     return list_ds
 
 
 ####---------------------------------------------------------------------------
@@ -525,7 +545,7 @@ def _concatenate_datasets(list_ds, dim="time", verbose=False):
 
     except Exception as e:
         msg = f"Concatenation with xr.concat failed. Error is {e}."
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return ds
 
@@ -541,7 +561,7 @@ def _merge_datasets(list_ds, verbose=False):
         log_info(logger=logger, msg=msg, verbose=verbose)
     except Exception as e:
         msg = f"Concatenation with xr.merge failed. Error is {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return ds
 

@@ -8,16 +8,15 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 )
 
 
-def test_create_metadata():
-
+def test_write_default_metadata():
     fpath = os.path.join(
         PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml"
     )
 
-    data = metadata.get_attrs_standards()
+    data = metadata.get_default_metadata_dict()
 
     # create metadata file
-    metadata.create_metadata(str(fpath))
+    metadata.write_default_metadata(str(fpath))
 
     assert os.path.exists(fpath)
 
@@ -29,7 +28,6 @@ def test_create_metadata():
 
 
 def test_read_metadata():
-
     raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
     station_name = "123"
 
@@ -44,10 +42,10 @@ def test_read_metadata():
         os.remove(metadata_path)
 
     # create data
-    data = metadata.get_attrs_standards()
+    data = metadata.get_default_metadata_dict()
 
     # create metadata file
-    metadata.create_metadata(str(metadata_path))
+    metadata.write_default_metadata(str(metadata_path))
 
     # Read the metadata file
     function_return = metadata.read_metadata(raw_dir, station_name)

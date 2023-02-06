@@ -31,9 +31,7 @@ from disdrodb.L0.check_standards import (
     check_sensor_name,
     check_L0B_standards,
     _check_raw_fields_available,
-    # check_array_lengths_consistency,
 )
-from disdrodb.L0.io import _check_directory_exist
 from disdrodb.L0.io import _remove_if_exists, _create_directory
 from disdrodb.L0.standards import (
     get_diameter_bin_center,
@@ -51,10 +49,8 @@ from disdrodb.L0.standards import (
     get_time_encoding,
 )
 from disdrodb.utils.logger import (
-    create_file_logger,
-    close_logger,
     log_info,
-    log_warning,
+    # log_warning,
     # log_debug,
     log_error,
 )
@@ -192,7 +188,7 @@ def reshape_raw_spectrum_to_2D(
         )
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return arr
 
@@ -240,7 +236,6 @@ def retrieve_L0B_arrays(
     dict_data = {}
     unavailable_keys = []
     for key, n_bins in n_bins_dict.items():
-
         # Check key is available in dataframe
         if key not in df.columns:
             unavailable_keys.append(key)
@@ -442,7 +437,7 @@ def create_L0B_from_L0A(
         )
     except Exception as e:
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     # Ensure variables with dtype object are converted to string

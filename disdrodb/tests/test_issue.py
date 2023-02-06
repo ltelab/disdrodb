@@ -34,7 +34,6 @@ def test__write_issue_timestamps_docs():
 
 
 def test_create_issue_yml():
-
     # Create a mock file path
     mock_file_path = os.path.join(
         PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "mock_file_path.yml"
@@ -65,7 +64,6 @@ def test_create_issue_yml():
 
 
 def test_read_issue():
-
     # Create a mock file path
     raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
     station_name = "123"

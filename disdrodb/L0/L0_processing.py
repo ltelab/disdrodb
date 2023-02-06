@@ -110,7 +110,7 @@ def _generate_l0a(
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(raw_dir=processed_dir, station_name=station_name)
+    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -147,7 +147,7 @@ def _generate_l0a(
     except Exception as e:
         error_type = str(type(e).__name__)
         msg = f"{error_type}: {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         pass
 
     # Close the file logger
@@ -193,7 +193,7 @@ def _generate_l0b(
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(raw_dir=processed_dir, station_name=station_name)
+    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -851,7 +851,6 @@ def run_disdrodb_l0a(
     debugging_mode: bool = False,
     parallel: bool = True,
 ):
-
     run_disdrodb_l0(
         disdrodb_dir=disdrodb_dir,
         data_sources=data_sources,
@@ -882,7 +881,6 @@ def run_disdrodb_l0b(
     debugging_mode: bool = False,
     parallel: bool = True,
 ):
-
     run_disdrodb_l0(
         disdrodb_dir=disdrodb_dir,
         data_sources=data_sources,
@@ -1003,7 +1001,7 @@ def click_l0_archive_options(function: object):
         "--l0b_concat",
         type=bool,
         show_default=True,
-        default=True,
+        default=False,
         help="Produce single L0B netCDF file.",
     )(function)
     function = click.option(

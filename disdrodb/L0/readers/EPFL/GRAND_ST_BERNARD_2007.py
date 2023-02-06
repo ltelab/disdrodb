@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jan 23 17:56:48 2023
-
-@author: ghiggi
-"""
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------.
@@ -38,7 +33,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = [
@@ -88,6 +82,7 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):

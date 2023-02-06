@@ -31,7 +31,6 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = ["time", "epoch_time", "TO_BE_SPLITTED"]

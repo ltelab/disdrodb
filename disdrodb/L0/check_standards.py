@@ -46,7 +46,7 @@ def _check_valid_range(df, dict_value_range, verbose=False):
         msg = (
             f"Columns {list_wrong_columns} has values outside the expected data range."
         )
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
 
@@ -64,7 +64,7 @@ def _check_valid_values(df, dict_valid_values, verbose=False):
 
     if len(list_wrong_columns) > 0:
         msg = "\n".join(list_msg)
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(f"Columns {list_wrong_columns} have invalid values.")
 
 
@@ -94,7 +94,7 @@ def _check_raw_fields_available(
     # Check that raw_drop_number is present
     if not "raw_drop_number" in df.columns:
         msg = "The 'raw_drop_number' column is not present in the dataframe."
-        log_error(logger=logger, msg=msg, verbose=verbose)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     # Report additional raw arrays that are missing
@@ -124,11 +124,10 @@ def check_sensor_name(sensor_name: str) -> None:
 
     available_sensor_name = get_available_sensor_name()
     if not isinstance(sensor_name, str):
-        logger.exception("'sensor_name' must be a string'")
-        raise TypeError("'sensor_name' must be a string'")
+        raise TypeError("'sensor_name' must be a string.")
     if sensor_name not in available_sensor_name:
-        msg = f"Valid sensor_name are {available_sensor_name}"
-        logger.exception(msg)
+        msg = f"{sensor_name} not valid {sensor_name}. Valid values are {available_sensor_name}."
+        logger.error(msg)
         raise ValueError(msg)
 
 
@@ -170,7 +169,7 @@ def check_L0A_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     # Check time column is present
     if "time" not in df_columns:
         msg = "The 'time' column is missing in the dataframe."
-        logger.error(msg)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     # --------------------------------------------
     return None
@@ -391,6 +390,7 @@ def get_field_value_options_dict(sensor_name: str) -> dict:
     NotImplementedError
         Error if the name of the sensor is not available.
     """
+    # TODO: this should go in data_format YAML file!
     if sensor_name == "OTT_Parsivel":
         value_dict = {
             "sensor_status": [0, 1, 2, 3],

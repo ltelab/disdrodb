@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = "{{VERSION_PLACEHOLDER}}"
+VERSION = "0.0.0" # VERSION_PLACEHOLDER 
 DESCRIPTION = "This package provides tools to homogenize, process, and analyze global disdrometer data."
 
 

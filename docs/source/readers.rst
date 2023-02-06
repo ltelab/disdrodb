@@ -15,9 +15,9 @@ The following function returns the dictionary of all readers `.
 
 .. code-block:: python
 
-	from disdrodb.L0.L0_processing import get_available_readers
-	get_available_readers()
-
+	from disdrodb.L0 import available_readers
+	available_readers()
+	available_readers(data_sources=["EPFL", "GPM"])
 
 The resulting dictionary has the following shape: 
 
