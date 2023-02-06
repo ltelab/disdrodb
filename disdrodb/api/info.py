@@ -15,7 +15,6 @@ from trollsift import Parser
 ########################
 DISDRODB_FNAME_PATTERN = "{product_level:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}.{version:s}.{data_format:s}"
 
-
 ####---------------------------------------------------------------------------.
 ##########################
 #### Filename parsers ####
