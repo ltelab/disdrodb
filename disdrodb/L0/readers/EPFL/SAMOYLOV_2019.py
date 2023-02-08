@@ -16,22 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-from disdrodb.L0 import run_L0
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0 import run_l0a
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
-    l0a_processing=True,
-    l0b_processing=True,
-    keep_l0a=False,
+    station_name,
+    # Processing options
     force=False,
     verbose=False,
+    parallel=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -102,15 +100,12 @@ def reader(
     # - Enable to deal with bad raw data files
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
+        import pandas as pd
 
         # - Convert time column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
 
         # - Drop rows when  'Error in data reading' in TO_BE_SPLITTED column
         bad_indices = df[
@@ -135,25 +130,23 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.log*"
+    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
+    glob_patterns = "*.log*"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products
-    run_L0(
+    #### - Create L0A products
+    run_l0a(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        force=force,
-        verbose=verbose,
-        debugging_mode=debugging_mode,
-        lazy=lazy,
-        single_netcdf=single_netcdf,
-        # Custom arguments of the reader
-        files_glob_pattern=files_glob_pattern,
+        station_name=station_name,
+        # Custom arguments of the reader for L0A processing
+        glob_patterns=glob_patterns,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
     )

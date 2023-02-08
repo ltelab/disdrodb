@@ -20,7 +20,7 @@ import os
 import time
 
 # Directory
-from disdrodb.L0.io import check_directories, get_L0B_fname, get_L0B_fpath
+from disdrodb.L0.io import get_L0B_fname, get_L0B_fpath
 from disdrodb.L0.io import get_campaign_name
 from disdrodb.L0.io import create_directory_structure
 
@@ -33,28 +33,25 @@ from disdrodb.L0.metadata import read_metadata
 from disdrodb.L0.check_standards import check_sensor_name
 
 # L0 processing
-from disdrodb.L0.L0A_processing import get_file_list
+from disdrodb.L0.io import get_raw_file_list
 from disdrodb.L0.io import get_L0B_fpath
 from disdrodb.L0.L0B_processing import write_L0B
 
 
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
-    l0a_processing,
-    l0b_processing,
-    keep_l0a,
-    force=True,
-    verbose=True,
+    station_name,
+    # Processing options
+    force=False,
+    verbose=False,
+    parallel=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=False,
 ):
-
     # Define functions to reformat DIVEN netCDFs
     def reformat_DIVEN_files(file_list, attrs):
         """
@@ -115,7 +112,7 @@ def reader(
         return ds
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
+    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
     raw_data_glob_pattern = "*.nc*"
 
     ####----------------------------------------------------------------------.
@@ -139,31 +136,31 @@ def reader(
 
     # ---------------------------------------------------------------------.
     # Get station list
-    list_stations_id = os.listdir(os.path.join(raw_dir, "data"))
+    list_station_name = os.listdir(os.path.join(raw_dir, "data"))
 
     # ---------------------------------------------------------------------.
-    #### Loop over each station_id directory and process the files
-    # station_id = list_stations_id[0]
-    for station_id in list_stations_id:
+    #### Loop over each station_name directory and process the files
+    # station_name = list_station_name[0]
+    for station_name in list_station_name:
         # ---------------------------------------------------------------------.
         t_i = time.time()
-        msg = f" - Processing of station_id {station_id} has started"
+        msg = f" - Processing of station_name {station_name} has started"
         if verbose:
             print(msg)
         logger.info(msg)
         # ---------------------------------------------------------------------.
         # Retrieve metadata
-        attrs = read_metadata(raw_dir=raw_dir, station_id=station_id)
+        attrs = read_metadata(campaign_dir=raw_dir, station_name=station_name)
 
         # Retrieve sensor name
         sensor_name = attrs["sensor_name"]
         check_sensor_name(sensor_name)
 
         # Retrieve list of files to process
-        glob_pattern = os.path.join("data", station_id, raw_data_glob_pattern)
-        file_list = get_file_list(
+        file_list = get_raw_file_list(
             raw_dir=raw_dir,
-            glob_pattern=glob_pattern,
+            station_name=station_name,
+            glob_patterns=raw_data_glob_pattern,
             verbose=verbose,
             debugging_mode=debugging_mode,
         )
@@ -174,13 +171,13 @@ def reader(
 
         # -----------------------------------------------------------------.
         #### - Save to DISDRODB netCDF standard
-        fpath = get_L0B_fpath(processed_dir, station_id)
-        write_L0B(ds, fpath=fpath, sensor_name=sensor_name)
+        fpath = get_L0B_fpath(processed_dir, station_name)
+        write_L0B(ds, fpath=fpath)
 
         # End L0 processing
         t_f = time.time() - t_i
-        msg = " - Rename NetCDF processing of station_id {} ended in {:.2f}s".format(
-            station_id, t_f
+        msg = " - Rename NetCDF processing of station_name {} ended in {:.2f}s".format(
+            station_name, t_f
         )
         if verbose:
             print(msg)

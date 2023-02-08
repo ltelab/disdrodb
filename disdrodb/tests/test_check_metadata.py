@@ -36,25 +36,26 @@ def test_read_yaml():
         check_metadata.read_yaml(yaml_temp_path_nvalid)
 
 
-def test_identify_missing_metadata():
+def test_identify_empty_metadata_keys():
     yaml_temp_path = [
         os.path.join(PATH_TEST_FOLDERS_FILES, "test_check_metadata", "valid.yaml")
     ]
 
     keys = ["key1"]
-    function_return = check_metadata.identify_missing_metadata(yaml_temp_path, keys)
+    function_return = check_metadata.identify_empty_metadata_keys(yaml_temp_path, keys)
     assert function_return is None
 
 
-def test_identify_missing_coords():
-
+def test_identify_missing_metadata_coords():
     yaml_temp_path_valid = [
         os.path.join(
             PATH_TEST_FOLDERS_FILES, "test_check_metadata", "valid_coords.yaml"
         )
     ]
 
-    function_return = check_metadata.identify_missing_coords(yaml_temp_path_valid)
+    function_return = check_metadata.identify_missing_metadata_coords(
+        yaml_temp_path_valid
+    )
     assert function_return is None
 
     yaml_temp_path_invalid = [
@@ -64,4 +65,4 @@ def test_identify_missing_coords():
     ]
 
     with pytest.raises(TypeError):
-        check_metadata.identify_missing_coords(yaml_temp_path_invalid)
+        check_metadata.identify_missing_metadata_coords(yaml_temp_path_invalid)

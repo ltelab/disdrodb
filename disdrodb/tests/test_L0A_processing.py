@@ -1,7 +1,7 @@
 import os
 import pytest
+import numpy as np
 import pandas as pd
-import dask.dataframe as dd
 from disdrodb.L0 import L0A_processing
 from disdrodb.L0 import io
 
@@ -11,41 +11,6 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 )
 
 
-def test_check_glob_pattern():
-    function_return = L0A_processing.check_glob_pattern("1")
-    assert function_return is None
-
-    with pytest.raises(TypeError, match="Expect pattern as a string."):
-        L0A_processing.check_glob_pattern(1)
-
-    with pytest.raises(ValueError, match="glob_pattern should not start with /"):
-        L0A_processing.check_glob_pattern("/1")
-
-
-def test_get_file_list():
-    path_test_directory = os.path.join(
-        PATH_TEST_FOLDERS_FILES, "test_L0A_processing", "files"
-    )
-
-    # Test that the function returns the correct number of files in debugging mode
-    file_list = L0A_processing.get_file_list(
-        path_test_directory, "*.txt", debugging_mode=True
-    )
-    assert len(file_list) == 2
-
-    # Test that the function returns the correct number of files in normal mode
-    file_list = L0A_processing.get_file_list(path_test_directory, "*.txt")
-    assert len(file_list) == 2
-
-    # Test that the function raises an error if the glob_pattern is not a str or list
-    # with pytest.raises(ValueError, match="'glob_pattern' must be a str or list of strings."):
-    #     L0A_processing._get_file_list(path_test_directory, 1)
-
-    # Test that the function raises an error if no files are found
-    with pytest.raises(ValueError):
-        L0A_processing.get_file_list(path_test_directory, "*.csv")
-
-
 def test_preprocess_reader_kwargs():
     # Test that the function removes the 'dtype' key from the reader_kwargs dict
     reader_kwargs = {"dtype": "int64", "other_key": "other_value"}
@@ -53,55 +18,27 @@ def test_preprocess_reader_kwargs():
     assert "dtype" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
 
-    # Test that the function removes the 'index_col' key when lazy=True
-    reader_kwargs = {"index_col": 0, "other_key": "other_value"}
-    preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(
-        reader_kwargs, lazy=True
-    )
-    assert "index_col" not in preprocessed_kwargs
-    assert "other_key" in preprocessed_kwargs
-
-    # Test that the function removes the 'blocksize' and 'assume_missing' keys when lazy=False
+    # Test that the function removes the 'blocksize' and 'assume_missing' keys
+    # - This argument expected by dask.dataframe.read_csv
     reader_kwargs = {
         "blocksize": 128,
         "assume_missing": True,
         "other_key": "other_value",
     }
     preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(
-        reader_kwargs, lazy=False
+        reader_kwargs,
     )
     assert "blocksize" not in preprocessed_kwargs
     assert "assume_missing" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
 
-    # Test that the function removes the 'zipped' and 'blocksize' keys when 'zipped' is True
-    reader_kwargs = {
-        "zipped": True,
-        "blocksize": 128,
-        "other_key": "other_value",
-    }
-    preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(reader_kwargs)
-    assert "zipped" not in preprocessed_kwargs
-    assert "blocksize" not in preprocessed_kwargs
-    assert "other_key" in preprocessed_kwargs
-
 
 def test_concatenate_dataframe():
-    # Test that the function returns a Pandas dataframe when lazy=False
+    # Test that the function returns a Pandas dataframe
     df1 = pd.DataFrame({"time": [1, 2, 3], "value": [4, 5, 6]})
     df2 = pd.DataFrame({"time": [7, 8, 9], "value": [10, 11, 12]})
-    concatenated_df = L0A_processing.concatenate_dataframe([df1, df2], lazy=False)
+    concatenated_df = L0A_processing.concatenate_dataframe([df1, df2])
     assert isinstance(concatenated_df, pd.DataFrame)
-
-    # Test that the function returns a Dask dataframe when lazy=True
-    df1 = dd.from_pandas(
-        pd.DataFrame({"time": [1, 2, 3], "value": [4, 5, 6]}), npartitions=2
-    )
-    df2 = dd.from_pandas(
-        pd.DataFrame({"time": [7, 8, 9], "value": [10, 11, 12]}), npartitions=2
-    )
-    concatenated_df = L0A_processing.concatenate_dataframe([df1, df2], lazy=True)
-    assert isinstance(concatenated_df, dd.DataFrame)
 
     # Test that the function raises a ValueError if the list_df is empty
     with pytest.raises(ValueError, match="No objects to concatenate"):
@@ -109,6 +46,9 @@ def test_concatenate_dataframe():
 
     with pytest.raises(ValueError):
         L0A_processing.concatenate_dataframe(["not a dataframe"])
+
+    with pytest.raises(ValueError):
+        L0A_processing.concatenate_dataframe(["not a dataframe", "not a dataframe"])
 
 
 def test_cast_column_dtypes():
@@ -129,6 +69,42 @@ def test_strip_string_spaces():
     assert 1 == 1
 
 
+def test_remove_rows_with_missing_time():
+    # Create dataframe
+    n_rows = 3
+    time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
+    df = pd.DataFrame({"time": time})
+
+    # Add Nat value to a single rows of the time column
+    df.at[0, "time"] = np.datetime64("NaT")
+    # Test it remove the unvalid timestep
+    valid_df = L0A_processing.remove_rows_with_missing_time(df)
+    assert len(valid_df) == n_rows - 1
+    assert not np.any(valid_df["time"].isna())
+
+    # Add only Nat value
+    df["time"] = np.repeat([np.datetime64("NaT")], n_rows).astype("M8[s]")
+
+    # Test it raise an error if no valid timesteps left
+    with pytest.raises(ValueError):
+        L0A_processing.remove_rows_with_missing_time(df=df)
+
+
+def test_remove_duplicated_timesteps():
+    # Create dataframe
+    n_rows = 3
+    time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
+    df = pd.DataFrame({"time": time})
+
+    # Add duplicated timestep value
+    df.at[0, "time"] = df["time"][1]
+
+    # Test it removes the duplicated timesteps
+    valid_df = L0A_processing.remove_duplicated_timesteps(df=df)
+    assert len(valid_df) == n_rows - 1
+    assert len(np.unique(valid_df)) == len(valid_df)
+
+
 def test_read_raw_data():
     # this test relies on "\tests\pytest_files\test_L0A_processing\test_read_raw_data\data.csv"
 
@@ -145,7 +121,6 @@ def test_read_raw_data():
         filepath=path_test_data,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
-        lazy=False,
     )
 
     assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}
@@ -164,27 +139,22 @@ def test_read_raw_data_zipped():
     reader_kwargs["engine"] = "python"
     reader_kwargs["zipped"] = True
 
-    r = L0A_processing.read_raw_data_zipped(
-        path_test_data, ["att_1", "att_2"], reader_kwargs, False
+    r = L0A_processing._read_raw_data_zipped(
+        path_test_data,
+        column_names=["att_1", "att_2"],
+        reader_kwargs=reader_kwargs,
     )
 
     assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}
 
 
-def test_read_L0A_raw_file_list():
+def test_read_raw_file_list():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0A_processing.read_L0A_raw_file_list()
-    assert 1 == 1
-
-
-def test__write_to_parquet():
-    # tested bellow
-    # function_return = L0A_processing._write_to_parquet()
+    # function_return = L0A_processing.read_raw_file_list()
     assert 1 == 1
 
 
 def test_write_df_to_parquet():
-
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")

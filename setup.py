@@ -7,7 +7,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = "{{VERSION_PLACEHOLDER}}"
+VERSION = "0.0.0"  # VERSION_PLACEHOLDER
 DESCRIPTION = "This package provides tools to homogenize, process, and analyze global disdrometer data."
 
 
@@ -49,8 +49,20 @@ setup(
         "Operating System :: Microsoft :: Windows",
     ],
     entry_points={
+        # <name_to_type_in_terminal>=<module>:<name_of_the_function>
         "console_scripts": [
-            "run_disdrodb_l0_reader=disdrodb.L0.run_disdrodb_l0_reader:run_reader_cmd",
+            # L0A
+            "run_disdrodb_l0a_station=disdrodb.L0.scripts.run_disdrodb_l0a_station:run_disdrodb_l0a_station",
+            "run_disdrodb_l0a=disdrodb.L0.scripts.run_disdrodb_l0a:run_disdrodb_l0a",
+            # L0B
+            "run_disdrodb_l0b_station=disdrodb.L0.scripts.run_disdrodb_l0b_station:run_disdrodb_l0b_station",
+            "run_disdrodb_l0_station=disdrodb.L0.scripts.run_disdrodb_l0_station:run_disdrodb_l0_station",
+            # L0B concatenation
+            "run_disdrodb_l0b_concat_station=disdrodb.L0.scripts.run_disdrodb_l0b_concat_station:run_disdrodb_l0b_concat_station",
+            "run_disdrodb_l0b_concat=disdrodb.L0.scripts.run_disdrodb_l0b_concat:run_disdrodb_l0b_concat",
+            # L0
+            "run_disdrodb_l0b=disdrodb.L0.scripts.run_disdrodb_l0b:run_disdrodb_l0b",
+            "run_disdrodb_l0=disdrodb.L0.scripts.run_disdrodb_l0:run_disdrodb_l0",
         ]
     },
 )

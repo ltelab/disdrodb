@@ -18,24 +18,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Reader for CHONGQING campaign."""
-from disdrodb.L0 import run_L0
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0 import run_l0a
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
-    l0a_processing=True,
-    l0b_processing=True,
-    keep_l0a=False,
+    station_name,
+    # Processing options
     force=False,
     verbose=False,
+    parallel=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = []
@@ -63,23 +60,15 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "-.-", ["C"] * 32]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
-    def df_sanitizer_fun(df, lazy=lazy):
-
-        # - Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
+    def df_sanitizer_fun(df):
+        # - Import pandas
+        import pandas as pd
 
         temp_time = df.loc[df.iloc[:, 0].astype(str).str.len() == 16].add_prefix("col_")
-        temp_time["col_0"] = dd.to_datetime(temp_time["col_0"], format="%Y.%m.%d;%H:%M")
+        temp_time["col_0"] = pd.to_datetime(temp_time["col_0"], format="%Y.%m.%d;%H:%M")
 
         # Insert Raw into a series and drop last line
         temp_raw = df.loc[df.iloc[:, 0].astype(str).str.len() != 16].add_prefix("col_")
@@ -92,13 +81,8 @@ def reader(
             raise ValueError(msg)
 
         # Series and variable temporary for parsing raw_drop_number
-        if lazy:
-            import pandas as pd
+        raw = pd.DataFrame({"raw_drop_number": []})
 
-            raw = pd.DataFrame({"raw_drop_number": []})
-            # raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
-        else:
-            raw = pd.DataFrame({"raw_drop_number": []})
         temp_string_2 = ""
 
         # Parse for raw_drop_number
@@ -106,7 +90,6 @@ def reader(
             temp_string = ""
 
             if index % 32 != 0:
-
                 temp_string = value["col_0"].split(" ")
 
                 # Remove blank string from split
@@ -124,47 +107,37 @@ def reader(
                 temp_string_2 += temp_string
 
             else:
-
                 raw = raw.append({"raw_drop_number": temp_string_2}, ignore_index=True)
 
                 temp_string_2 = ""
-
-        if lazy:
-            raw = dd.from_pandas(raw, npartitions=1, chunksize=None)
 
         # Reset all index
         temp_time = temp_time.reset_index(drop=True)
         raw = raw.reset_index(drop=True)
 
-        if lazy:
-            df = dd.concat([temp_time, raw], axis=1, ignore_unknown_divisions=True)
-        else:
-            df = dd.concat([temp_time, raw], axis=1)
-
+        df = pd.concat([temp_time, raw], axis=1)
         df.columns = ["time", "raw_drop_number"]
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
-    files_glob_pattern = "*.txt*"
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    glob_patterns = "*.txt*"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products
-    run_L0(
+    #### - Create L0A products
+    run_l0a(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        force=force,
-        verbose=verbose,
-        debugging_mode=debugging_mode,
-        lazy=lazy,
-        single_netcdf=single_netcdf,
-        # Custom arguments of the reader
-        files_glob_pattern=files_glob_pattern,
+        station_name=station_name,
+        # Custom arguments of the reader for L0A processing
+        glob_patterns=glob_patterns,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
     )

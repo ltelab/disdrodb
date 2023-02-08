@@ -3,7 +3,7 @@ Data
 =========================
 
 
-Access to the disdrometer measurement datasets is available through a separate Github repository : `LTE-disdrodb-data <https://github.com/EPFL-ENAC/LTE-disdrodb-data>`__.
+Access to the disdrometer measurement datasets is available through a separate Github repository : `disdrodb-data <https://github.com/ltelab/disdrodb-data>`__.
 
 
 This GitHub repository includes the following information:

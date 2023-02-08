@@ -8,16 +8,15 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 )
 
 
-def test_create_metadata():
-
+def test_write_default_metadata():
     fpath = os.path.join(
         PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml"
     )
 
-    data = metadata.get_attrs_standards()
+    data = metadata.get_default_metadata_dict()
 
     # create metadata file
-    metadata.create_metadata(str(fpath))
+    metadata.write_default_metadata(str(fpath))
 
     assert os.path.exists(fpath)
 
@@ -29,28 +28,27 @@ def test_create_metadata():
 
 
 def test_read_metadata():
-
     raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
-    station_id = "123"
+    station_name = "123"
 
     metadata_folder_path = os.path.join(raw_dir, "metadata")
 
     if not os.path.exists(metadata_folder_path):
         os.makedirs(metadata_folder_path)
 
-    metadata_path = os.path.join(metadata_folder_path, f"{station_id}.yml")
+    metadata_path = os.path.join(metadata_folder_path, f"{station_name}.yml")
 
     if os.path.exists(metadata_path):
         os.remove(metadata_path)
 
     # create data
-    data = metadata.get_attrs_standards()
+    data = metadata.get_default_metadata_dict()
 
     # create metadata file
-    metadata.create_metadata(str(metadata_path))
+    metadata.write_default_metadata(str(metadata_path))
 
     # Read the metadata file
-    function_return = metadata.read_metadata(raw_dir, station_id)
+    function_return = metadata.read_metadata(raw_dir, station_name)
 
     assert function_return == data
 

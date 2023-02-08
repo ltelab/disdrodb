@@ -16,24 +16,21 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-from disdrodb.L0 import run_L0
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0 import run_l0a
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
-    l0a_processing=True,
-    l0b_processing=True,
-    keep_l0a=False,
+    station_name,
+    # Processing options
     force=False,
     verbose=False,
+    parallel=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
 ):
-
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = ["time", "epoch_time", "TO_BE_SPLITTED"]
@@ -63,24 +60,13 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     # Station 8 has all raw_drop_number corrupted, so it can't be used
 
-    def df_sanitizer_fun(df, lazy=False):
-        # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
-
-        if lazy:
-            df = df.compute()
+    def df_sanitizer_fun(df):
+        # Import pandas
+        import pandas as pd
 
         # # Station 7 throws a bug on rows 105000 and 110000 on dask (000NETDL07 and PAR007 device name)
         # if (df['TO_BE_PARSED'].str.contains('000NETDL07')).any() | (df['TO_BE_PARSED'].str.contains('PAR007')).any():
@@ -94,7 +80,7 @@ def reader(
         df = df.loc[df["time"].astype(str).str.len() == 15]
 
         # - Convert 'time' column to datetime
-        df["time"] = dd.to_datetime(df["time"], format="%Y%m%d-%H%M%S")
+        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d-%H%M%S")
 
         # - Remove rows with duplicate timestep
         df = df.drop_duplicates(subset=["time"])
@@ -158,16 +144,13 @@ def reader(
         df["weather_code_nws"] = df["weather_code_nws"].str.strip()
 
         # - Retrieve raw_drop_concentration and raw_drop_average_velocity columns
-        if lazy:
-            apply_kwargs = {"meta": (None, "object")}
-        else:
-            apply_kwargs = {}
-
         df["raw_drop_concentration"] = df_to_parse.iloc[:, 35:67].apply(
-            lambda x: ",".join(x.dropna().astype(str)), axis=1, **apply_kwargs
+            lambda x: ",".join(x.dropna().astype(str)),
+            axis=1,
         )
         df["raw_drop_average_velocity"] = df_to_parse.iloc[:, 67:99].apply(
-            lambda x: ",".join(x.dropna().astype(str)), axis=1, **apply_kwargs
+            lambda x: ",".join(x.dropna().astype(str)),
+            axis=1,
         )
 
         # - Retrieve raw_drop_number column
@@ -202,26 +185,24 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in <raw_dir>/data/<station_id>
-    # files_glob_pattern= "*.tar.xz"
-    files_glob_pattern = "*.csv"
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    # glob_patterns= "*.tar.xz"
+    glob_patterns = "*.csv"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products
-    run_L0(
+    #### - Create L0A products
+    run_l0a(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        force=force,
-        verbose=verbose,
-        debugging_mode=debugging_mode,
-        lazy=lazy,
-        single_netcdf=single_netcdf,
-        # Custom arguments of the parser
-        files_glob_pattern=files_glob_pattern,
+        station_name=station_name,
+        # Custom arguments of the reader for L0A processing
+        glob_patterns=glob_patterns,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
     )

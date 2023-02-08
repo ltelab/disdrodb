@@ -19,12 +19,90 @@
 import logging
 import numpy as np
 import pandas as pd
-import dask.dataframe as dd
 from typing import Union
 from disdrodb.L0.standards import get_data_format_dict, get_L0A_dtype
 
+# Logger
+from disdrodb.utils.logger import (
+    log_info,
+    log_warning,
+    log_error,
+    log_debug,
+)
 
 logger = logging.getLogger(__name__)
+
+
+def _check_valid_range(df, dict_value_range, verbose=False):
+    """Check valid value range of dataframe columns."""
+    list_wrong_columns = []
+    for column in df.columns:
+        if column in list(dict_value_range.keys()):
+            if dict_value_range[column] is not None:
+                if not df[column].between(*dict_value_range[column]).all():
+                    list_wrong_columns.append(column)
+
+    if len(list_wrong_columns) > 0:
+        msg = (
+            f"Columns {list_wrong_columns} has values outside the expected data range."
+        )
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+
+
+def _check_valid_values(df, dict_valid_values, verbose=False):
+    """Check valid values of dataframe columns."""
+    list_msg = []
+    list_wrong_columns = []
+    for column in df.columns:
+        if column in list(dict_valid_values.keys()):
+            valid_values = dict_valid_values[column]
+            if not df[column].isin(valid_values).all():
+                list_wrong_columns.append(column)
+                msg = f"The column {column} has values different from {valid_values}."
+                list_msg.append(msg)
+
+    if len(list_wrong_columns) > 0:
+        msg = "\n".join(list_msg)
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(f"Columns {list_wrong_columns} have invalid values.")
+
+
+def _check_raw_fields_available(
+    df: pd.DataFrame, sensor_name: str, verbose: bool = False
+) -> None:
+    """Check the presence of the raw spectrum data according to the type of sensor.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Dataframe
+    sensor_name : str
+        Name of the sensor.
+
+    Raises
+    ------
+    ValueError
+        Error if the raw_drop_number field is missing.
+    """
+    from disdrodb.L0.standards import get_raw_field_nbins
+
+    # Retrieve raw arrays that could be available (based on sensor_name)
+    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    raw_vars = np.array(list(n_bins_dict.keys()))
+
+    # Check that raw_drop_number is present
+    if not "raw_drop_number" in df.columns:
+        msg = "The 'raw_drop_number' column is not present in the dataframe."
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+
+    # Report additional raw arrays that are missing
+    missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
+    if len(missing_vars) > 0:
+        msg = f"The following raw array variable aree missing: {missing_vars}"
+        log_info(logger=logger, msg=msg, verbose=verbose)
+    return None
 
 
 def check_sensor_name(sensor_name: str) -> None:
@@ -46,22 +124,19 @@ def check_sensor_name(sensor_name: str) -> None:
 
     available_sensor_name = get_available_sensor_name()
     if not isinstance(sensor_name, str):
-        logger.exception("'sensor_name' must be a string'")
-        raise TypeError("'sensor_name' must be a string'")
+        raise TypeError("'sensor_name' must be a string.")
     if sensor_name not in available_sensor_name:
-        msg = f"Valid sensor_name are {available_sensor_name}"
-        logger.exception(msg)
+        msg = f"{sensor_name} not valid {sensor_name}. Valid values are {available_sensor_name}."
+        logger.error(msg)
         raise ValueError(msg)
 
 
-def check_L0A_column_names(
-    df: Union[pd.DataFrame, dd.DataFrame], sensor_name: str
-) -> None:
+def check_L0A_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     """Checks that the dataframe columns respects DISDRODB standards.
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,dd.DataFrame]
+    df : pd.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -94,27 +169,23 @@ def check_L0A_column_names(
     # Check time column is present
     if "time" not in df_columns:
         msg = "The 'time' column is missing in the dataframe."
-        logger.error(msg)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     # --------------------------------------------
     return None
 
 
 def check_L0A_standards(
-    fpath: str, sensor_name: str, raise_errors: bool = False, verbose: bool = True
+    df: pd.DataFrame, sensor_name: str, verbose: bool = True
 ) -> None:
     """Checks that a file respects the DISDRODB L0A standards.
 
     Parameters
     ----------
-    fpath : str
-        Input Apache Parquet file path.
+    df : pd.DataFrame
+        L0A dataframe.
     sensor_name : str
         Name of the sensor.
-    raise_errors : bool, optional
-        If True: it raises an error in case the file does not respect DISDROB L0A standards.
-        If False: it logs the errors but does not interrupt the checks.
-        By default is set to False.
     verbose : bool, optional
         Wheter to verbose the processing.
         The default is True.
@@ -125,49 +196,19 @@ def check_L0A_standards(
         Error if some columns have inconsistent values.
 
     """
-    # Read parquet
-    df = pd.read_parquet(fpath)
     # -------------------------------------
     # Check data range
-    dict_field_value_range = get_field_value_range_dict(sensor_name)
-    list_wrong_columns = []
-    for column in df.columns:
-        if column in list(dict_field_value_range.keys()):
-            if dict_field_value_range[column] is not None:
-                if not df[column].between(*dict_field_value_range[column]).all():
-                    list_wrong_columns.append(column)
-                    if raise_errors:
-                        raise ValueError(
-                            f"'column' {column} has values outside the expected data range."
-                        )
-
-    if verbose:
-        if len(list_wrong_columns) > 0:
-            print(
-                " - This columns have values outside the expected data range:",
-                list_wrong_columns,
-            )
+    dict_value_range = get_field_value_range_dict(sensor_name)
+    _check_valid_range(df=df, dict_value_range=dict_value_range, verbose=verbose)
 
     # -------------------------------------
     # Check categorical data values
-    dict_field_values = get_field_value_options_dict(sensor_name)
-    list_wrong_columns = []
-    list_msg = []
-    for column in df.columns:
-        if column in list(dict_field_values.keys()):
-            if not df[column].isin(dict_field_values[column]).all():
-                list_wrong_columns.append(column)
-                if raise_errors:
-                    msg = f"'column' {column} has values different from {dict_field_values[column]}"
-                    list_msg.append(msg)
-                    raise ValueError(msg)
-    if verbose:
-        if len(list_wrong_columns) > 0:
-            print(
-                " - The following columns have values outside the expected data range:",
-                list_wrong_columns,
-            )
-            [print(msg) for msg in list_msg]
+    dict_valid_values = get_field_value_options_dict(sensor_name)
+    _check_valid_values(df=df, dict_valid_values=dict_valid_values, verbose=verbose)
+
+    # -------------------------------------
+    # Check if raw spectrum and 1D derivate exists
+    _check_raw_fields_available(df=df, sensor_name=sensor_name, verbose=verbose)
 
     # -------------------------------------
     # Check if latitude and longitude are columns of the dataframe
@@ -187,36 +228,9 @@ def check_L0A_standards(
         logger.info(msg)
 
     # -------------------------------------
-    # Check if raw spectrum and 1D derivate exists
-    list_sprectrum_vars = [
-        "raw_drop_concentration",
-        "raw_drop_average_velocity",
-        "raw_drop_number",
-    ]
-    unavailable_vars = np.array(list_sprectrum_vars)[
-        np.isin(list_sprectrum_vars, df.columns, invert=True)
-    ]
-    # Also if Thies_LPM has list_sprectrum_vars?
-    if len(unavailable_vars) > 0:
-        msg = (
-            f" - The variables {unavailable_vars} are not present in the L0 dataframe."
-        )
-        print(msg)
-        logger.info(msg)
-
-    # -------------------------------------
     # Check that numeric variable are not all NaN
     # - Otherwise raise error
     # - df[column].isna().all()
-
-    # -------------------------------------
-    # Add index to dataframe
-    # TODO
-
-    # -------------------------------------
-    # TODO[GG]:
-    # if not respect standards, print errors and remove file (before raising errors)
-    # - log, verbose ... L0A conforms to DISDRODB standards ;)
 
     # -------------------------------------
 
@@ -351,8 +365,6 @@ def get_field_flag_dict(sensor_name: str) -> dict:
     return d
 
 
-# TODO: get_field_value_realistic_range  # when removing flags
-
 ####--------------------------------------------------------------------------.
 #### Instrument default numeric standards
 # TODO: this is currently used?
@@ -378,6 +390,7 @@ def get_field_value_options_dict(sensor_name: str) -> dict:
     NotImplementedError
         Error if the name of the sensor is not available.
     """
+    # TODO: this should go in data_format YAML file!
     if sensor_name == "OTT_Parsivel":
         value_dict = {
             "sensor_status": [0, 1, 2, 3],
@@ -385,8 +398,8 @@ def get_field_value_options_dict(sensor_name: str) -> dict:
             # TODO: weather codes
             # Faculative/custom fields
             # 'datalogger_temperature': ['NaN']
-            "datalogger_voltage": ["OK", "KO"],
-            "datalogger_error": [0],
+            # "datalogger_voltage": ["OK", "KO"],
+            # "datalogger_error": [0],
         }
     elif sensor_name == "OTT_Parsivel2":
         value_dict = {
@@ -437,7 +450,7 @@ def get_field_error_dict(device: str) -> dict:
     if device == "OTT_Parsivel":
         flag_dict = {
             "sensor_status": [1, 2, 3],
-            "datalogger_error": [1],
+            # "datalogger_error": [1],
             "error_code": [1, 2],
         }
     return flag_dict

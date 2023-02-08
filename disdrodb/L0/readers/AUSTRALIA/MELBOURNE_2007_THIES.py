@@ -16,24 +16,20 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-from disdrodb.L0 import run_L0
-
-
-from disdrodb.L0.L0_processing import reader_generic_docstring, is_documented_by
+from disdrodb.L0 import run_l0a
+from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
 def reader(
     raw_dir,
     processed_dir,
-    l0a_processing=True,
-    l0b_processing=True,
-    keep_l0a=False,
+    station_name,
+    # Processing options
     force=False,
     verbose=False,
+    parallel=False,
     debugging_mode=False,
-    lazy=True,
-    single_netcdf=True,
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
@@ -127,6 +123,10 @@ def reader(
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = "#"
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+    # Skip first 3 rows
+    reader_kwargs["skiprows"] = 3
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -142,17 +142,13 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]
-    # - Define max size of dask dataframe chunks (if lazy=True)
-    #   - If None: use a single block for each file
-    #   - Otherwise: "<max_file_size>MB" by which to cut up larger files
-    reader_kwargs["blocksize"] = None  # "50MB"
-    # Cast all to string
-    reader_kwargs["dtype"] = str
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    # Skip first 3 rows
-    reader_kwargs["skiprows"] = 3
+    reader_kwargs["na_values"] = [
+        "na",
+        "",
+        "error",
+        "NA",
+        "NP   ",
+    ]  # Cast all to string
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
@@ -160,12 +156,9 @@ def reader(
     # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
     df_sanitizer_fun = None
 
-    def df_sanitizer_fun(df, lazy=False):
+    def df_sanitizer_fun(df):
         # Import dask or pandas
-        if lazy:
-            import dask.dataframe as dd
-        else:
-            import pandas as dd
+        import pandas as pd
 
         # Drop header's log rows
         df = df.loc[df["temp"].astype(str).str.len() > 30]
@@ -187,9 +180,9 @@ def reader(
         # Drop rows with invalid date
         df = df.loc[df["time"].astype(str).str.len() == 17]
         try:
-            df["time"] = dd.to_datetime(df["time"], format="%d.%m.%y %H:%M:%S")
+            df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y %H:%M:%S")
         except ValueError:
-            df["time"] = dd.to_datetime(
+            df["time"] = pd.to_datetime(
                 df["time"], format="%d.%m.%y %H:%M:%S", errors="coerce"
             )
             df = df.loc[df.time.notnull()]
@@ -276,25 +269,23 @@ def reader(
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_id>
-    files_glob_pattern = "*.txt*"
+    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
+    glob_patterns = "*.txt*"
 
     ####----------------------------------------------------------------------.
-    #### - Create L0 products
-    run_L0(
+    #### - Create L0A products
+    run_l0a(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        l0a_processing=l0a_processing,
-        l0b_processing=l0b_processing,
-        keep_l0a=keep_l0a,
-        force=force,
-        verbose=verbose,
-        debugging_mode=debugging_mode,
-        lazy=lazy,
-        single_netcdf=single_netcdf,
-        # Custom arguments of the reader
-        files_glob_pattern=files_glob_pattern,
+        station_name=station_name,
+        # Custom arguments of the reader for L0A processing
+        glob_patterns=glob_patterns,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         df_sanitizer_fun=df_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
     )

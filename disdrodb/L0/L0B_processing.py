@@ -23,20 +23,16 @@
 
 # -----------------------------------------------------------------------------.
 import os
-import yaml
 import logging
 import numpy as np
 import pandas as pd
-import dask.array as da
-import dask.dataframe as dd
 import xarray as xr
-from typing import Union
-
 from disdrodb.L0.check_standards import (
     check_sensor_name,
     check_L0B_standards,
-    # check_array_lengths_consistency,
+    _check_raw_fields_available,
 )
+from disdrodb.L0.io import _remove_if_exists, _create_directory
 from disdrodb.L0.standards import (
     get_diameter_bin_center,
     get_diameter_bin_lower,
@@ -52,10 +48,18 @@ from disdrodb.L0.standards import (
     get_L0B_encodings_dict,
     get_time_encoding,
 )
+from disdrodb.utils.logger import (
+    log_info,
+    # log_warning,
+    # log_debug,
+    log_error,
+)
 
 logger = logging.getLogger(__name__)
 
 
+####--------------------------------------------------------------------------.
+#### L0B spectrum processing
 # def get_drop_concentration(arr):
 #     # TODO
 #     logger.info("Computing raw_drop_concentration from raw spectrum.")
@@ -66,30 +70,6 @@ logger = logging.getLogger(__name__)
 #     # TODO
 #     logger.info("Computing raw_drop_average_velocity from raw spectrum.")
 #     return arr[:, 0, :]
-
-
-def check_L0_raw_fields_available(
-    df: Union[pd.DataFrame, dd.DataFrame], sensor_name: str
-) -> None:
-    """Check the presence of the raw spectrum data according to the type of sensor.
-
-    Parameters
-    ----------
-    df : Union[pd.DataFrame,da.DataFrame]
-        Dataframe
-    sensor_name : str
-        Name of the sensor.
-
-    Raises
-    ------
-    ValueError
-        Error if the raw spectrum field is missing.
-    """
-    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
-    raw_vars = np.array(list(n_bins_dict.keys()))
-    missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
-    if len(missing_vars) > 0:
-        raise ValueError(f"The following L0 raw fields are missing: {missing_vars}")
 
 
 def infer_split_str(string: str) -> str:
@@ -176,7 +156,7 @@ def format_string_array(string: str, n_values: int) -> np.array:
 
 
 def reshape_raw_spectrum_to_2D(
-    arr: np.array, n_bins_dict: dict, n_timesteps: int
+    arr: np.array, n_bins_dict: dict, n_timesteps: int, verbose: bool = False
 ) -> np.array:
     """Reshape the raw spectrum to 2D.
 
@@ -208,32 +188,24 @@ def reshape_raw_spectrum_to_2D(
         )
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
-        logger.error(msg)
-        print(msg)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return arr
 
 
 def retrieve_L0B_arrays(
-    df: Union[pd.DataFrame, dd.DataFrame],
+    df: pd.DataFrame,
     sensor_name: str,
-    lazy: bool = True,
     verbose: bool = False,
 ) -> dict:
     """Retrieves the L0B data matrix.
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,dd.DataFrame]
+    df : pd.DataFrame
         Input dataframe
     sensor_name : str
         Name of the sensor
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
-        verbose : bool, optional
-        Whether to verbose the processing.
-        The default is False.
 
     Returns
     -------
@@ -243,12 +215,10 @@ def retrieve_L0B_arrays(
     """
 
     msg = " - Retrieval of L0B data matrix started."
-    if verbose:
-        print(msg)
-    logger.info(msg)
+    log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
-    # check_L0_raw_fields_available(df, sensor_name)
+    _check_raw_fields_available(df=df, sensor_name=sensor_name)
 
     # Retrieve raw fields matrix bins dictionary
     n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
@@ -260,16 +230,12 @@ def retrieve_L0B_arrays(
     n_dim_spectrum = get_raw_spectrum_ndims(sensor_name)
 
     # Retrieve number of timesteps
-    if lazy:
-        n_timesteps = df.shape[0].compute()
-    else:
-        n_timesteps = df.shape[0]
+    n_timesteps = df.shape[0]
 
     # Retrieve available arrays
     dict_data = {}
     unavailable_keys = []
     for key, n_bins in n_bins_dict.items():
-
         # Check key is available in dataframe
         if key not in df.columns:
             unavailable_keys.append(key)
@@ -279,52 +245,31 @@ def retrieve_L0B_arrays(
         df_series = df[key].astype(str)
 
         # Get a numpy array for each row and then stack
-        if lazy:
-            list_arr = df_series.apply(
-                format_string_array, n_values=n_bins, meta=(key, "f8")
-            )
-            arr = da.stack(list_arr, axis=0)
-        else:
-            list_arr = df_series.apply(format_string_array, n_values=n_bins)
-            arr = np.stack(list_arr, axis=0)
+        list_arr = df_series.apply(format_string_array, n_values=n_bins)
+        arr = np.stack(list_arr, axis=0)
 
         # For key='raw_drop_number', if 2D ... reshape to 2D matrix
         # - This applies i.e for OTT_Parsivels and ThiesLPM
         # - This does not apply to RD80
         if key == "raw_drop_number" and n_dim_spectrum == 2:
-            arr = reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps)
+            arr = reshape_raw_spectrum_to_2D(
+                arr, n_bins_dict, n_timesteps, verbose=verbose
+            )
 
         # Define dictionary to pass to xr.Dataset
         dims_order = ["time"] + dims_dict[key]
         dict_data[key] = (dims_order, arr)
 
     # -------------------------------------------------------------------------.
-    # Retrieve unavailable keys from the raw spectrum field
-    # TODO: This should be performed when the xarray object is created !
-    # if len(unavailable_keys) > 0:
-    #     if "raw_drop_number" not in list(dict_data.keys()):
-    #         raise ValueError(
-    #             """The raw spectrum is required to compute the unavailables
-    #             'raw_drop_concentration' and 'raw_drop_average_velocity' fields."""
-    #         )
-    #     if "raw_drop_concentration" in unavailable_keys and n_dim_spectrum == 2:
-    #         # TODO: can this be computed for RD80 ?
-    #         dict_data["raw_drop_concentration"] = get_drop_concentration(
-    #             dict_data["raw_drop_number"]
-    #         )
-    #     if "raw_drop_average_velocity" in unavailable_keys and n_dim_spectrum == 2:
-    #         dict_data["raw_drop_average_velocity"] = get_drop_average_velocity(
-    #             dict_data["raw_drop_number"]
-    #         )
-    # -------------------------------------------------------------------------.
     # Log
     msg = " - Retrieval of L0B data matrices finished."
-    if verbose:
-        print(msg)
-    logger.info(msg)
-
+    log_info(logger=logger, msg=msg, verbose=verbose)
     # Return
     return dict_data
+
+
+####--------------------------------------------------------------------------.
+#### L0B Dataset creation
 
 
 def get_coords(sensor_name: str) -> dict:
@@ -398,22 +343,18 @@ def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
 
 
 def create_L0B_from_L0A(
-    df: Union[pd.DataFrame, dd.DataFrame],
+    df: pd.DataFrame,
     attrs: dict,
-    lazy: bool = True,
     verbose: bool = False,
 ) -> xr.Dataset:
     """Transform the L0A dataframe to the L0B xr.Dataset.
 
     Parameters
     ----------
-    df : Union[pd.DataFrame,dd.DataFrame]
+    df : pd.DataFrame
         DISDRODB L0A dataframe.
     attrs : dict
         Station metadata.
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used.
     verbose : bool, optional
         Wheter to verbose the processing.
         The default is False.
@@ -440,7 +381,7 @@ def create_L0B_from_L0A(
         )
     ):
         # Retrieve dictionary of raw data matrices for xarray Dataset
-        data_vars = retrieve_L0B_arrays(df, sensor_name, lazy=lazy, verbose=verbose)
+        data_vars = retrieve_L0B_arrays(df, sensor_name, verbose=verbose)
     else:
         data_vars = {}
     # -----------------------------------------------------------.
@@ -453,15 +394,7 @@ def create_L0B_from_L0A(
         # longitude and latitude too for moving sensors
     ]
     aux_columns = df.columns[np.isin(df.columns, valid_core_fields, invert=True)]
-    if lazy:
-        aux_data_vars = {
-            column: (["time"], df[column].to_dask_array(lengths=True))
-            for column in aux_columns
-        }
-    else:
-        aux_data_vars = {
-            column: (["time"], df[column].values) for column in aux_columns
-        }
+    aux_data_vars = {column: (["time"], df[column].values) for column in aux_columns}
     data_vars.update(aux_data_vars)
 
     # -----------------------------------------------------------.
@@ -504,7 +437,7 @@ def create_L0B_from_L0A(
         )
     except Exception as e:
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
-        logger.error(msg)
+        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     # Ensure variables with dtype object are converted to string
@@ -527,7 +460,7 @@ def create_L0B_from_L0A(
 
 
 ####--------------------------------------------------------------------------.
-#### Writers
+#### L0B netCDF4 Writer
 
 
 def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
@@ -651,7 +584,7 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     return ds
 
 
-def write_L0B(ds: xr.Dataset, fpath: str, sensor_name: str) -> None:
+def write_L0B(ds: xr.Dataset, fpath: str, force=False) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
@@ -662,96 +595,27 @@ def write_L0B(ds: xr.Dataset, fpath: str, sensor_name: str) -> None:
         Output file path.
     sensor_name : str
         Name of the sensor.
+    force : bool, optional
+        Whether to overwrite existing data.
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories. This is the default.
     """
+    # Create station directory if does not exist
+    _create_directory(os.path.dirname(fpath))
 
-    # Ensure directory exist
-    os.makedirs(os.path.dirname(fpath), exist_ok=True)
+    # Check if the file already exists
+    # - If force=True --> Remove it
+    # - If force=False --> Raise error
+    _remove_if_exists(fpath, force=force)
+
+    # Get sensor name from dataset
+    sensor_name = ds.attrs.get("sensor_name")
 
     # Set encodings
-    ds = set_encodings(ds, sensor_name)
+    ds = set_encodings(ds=ds, sensor_name=sensor_name)
 
     # Write netcdf
-    ds.to_netcdf(fpath, engine="netcdf4")  # , encoding=encoding_dict)
+    ds.to_netcdf(fpath, engine="netcdf4")
 
 
 ####--------------------------------------------------------------------------.
-#### Summary statistics
-def create_summary_statistics(
-    ds: xr.Dataset, processed_dir: str, station_id: str, sensor_name: str
-) -> None:
-    """Create L0 summary statistics and save it into the station info YAML file.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        Input xarray dataset.
-    processed_dir : str
-        Output file path
-    station_id : str
-        Station ID
-    sensor_name : str
-        Name of the sensor
-
-    """
-
-    ###-----------------------------------------------------------------------.
-    # Initialize dictionary
-    stats_dict = {}
-
-    # Infer the sampling interval looking at the difference between timesteps
-    dt, counts = np.unique(np.diff(ds.time.values), return_counts=True)
-    dt_most_frequent = dt[np.argmax(counts)]
-    dt_most_frequent = dt_most_frequent.astype("m8[s]")
-    inferred_sampling_interval = dt_most_frequent.astype(int)
-    stats_dict["inferred_sampling_interval"] = inferred_sampling_interval
-
-    # Number of years, months, days, minutes
-    time = ds.time.values
-    n_timesteps = len(time)
-    n_minutes = inferred_sampling_interval / 60 * n_timesteps
-    n_hours = n_minutes / 60
-    n_days = n_hours / 24
-
-    stats_dict["n_timesteps"] = n_timesteps
-    stats_dict["n_minutes"] = n_minutes
-    stats_dict["n_hours"] = n_hours
-    stats_dict["n_days"] = n_days
-
-    # Add start_time and end_time
-    start_time = pd.DatetimeIndex(time[[0]])
-    end_time = pd.DatetimeIndex(time[[-1]])
-    years = np.unique([start_time.year, end_time.year])
-    if len(years) == 1:
-        years_coverage = str(years[0])
-    else:
-        years_coverage = str(years[0]) + "-" + str(years[-1])
-
-    stats_dict["years_coverage"] = years_coverage
-    stats_dict["start_time"] = start_time[0].isoformat()
-    stats_dict["end_time"] = end_time[0].isoformat()
-
-    ###-----------------------------------------------------------------------.
-    # TODO: Create and save image with temporal coverage
-    # --> Colored using quality flag from sensor_status if available ?
-
-    ###-----------------------------------------------------------------------.
-    # TODO STATISTICS
-    # --> Requiring deriving stats from raw spectrum
-
-    # diameter_min, diameter_max, diameter_sum
-
-    # Total rain events
-
-    # Total rainy minutes
-
-    # Total dry minutes
-
-    # Number of dry/rainy minutes
-
-    ###-----------------------------------------------------------------------.
-    # Save to info.yaml
-    info_path = os.path.join(processed_dir, "info", station_id + ".yml")
-    with open(info_path, "w") as f:
-        yaml.dump(stats_dict, f, sort_keys=False)
-
-    return None

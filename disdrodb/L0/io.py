@@ -22,125 +22,149 @@ import os
 import re
 import shutil
 import glob
-import datetime
 import numpy as np
 import pandas as pd
 import xarray as xr
-import dask.dataframe as dd
 import importlib.metadata
 from typing import Union
 from disdrodb.utils.logger import log_info, log_warning
-from disdrodb.L0.metadata import read_metadata
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
 ####---------------------------------------------------------------------------.
-#### Directory/Filepaths Defaults
-def infer_institute_from_fpath(fpath: str) -> str:
-    """Infer institue name from file path.
+#### Info from file or directory
+
+
+def get_disdrodb_dir(path: str) -> str:
+    """Return the disdrodb base directory from a file or directory path.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
-    fpath : str
-        Input file path.
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
     str
-        Name of the institute.
+        Path of the DISDRODB directory.
     """
-    path_pattern = r"(\\|\/)"
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    institute = re.split(path_pattern, disdrodb_fpath)[4]
-    return institute
+    # Retrieve path elements (os-specific)
+    p = Path(path)
+    list_path_elements = [str(part) for part in p.parts]
+    # Retrieve where "DISDRODB" directory occurs
+    idx_occurence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    # If DISDRODB directory not present, raise error
+    if len(idx_occurence) == 0:
+        raise ValueError(f"The DISDRODB directory is not present in {path}")
+    # Find the rightermost occurence
+    right_most_occurence = max(idx_occurence)
+    # Define the disdrodb_dir path
+    disdrodb_dir = os.path.join(*list_path_elements[: right_most_occurence + 1])
+    return disdrodb_dir
 
 
-def infer_campaign_from_fpath(fpath: str) -> str:
-    """Infer campaign name from file path.
+def get_disdrodb_path(path: str) -> str:
+    """Return the path fron the disdrodb_dir directory.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
-    fpath : str
-        Input file path.
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
     str
-        Name of the campaign.
+        Path inside the DISDRODB archive.
+        Format: DISDRODB/<Raw or Processed>/<data_source>/...
     """
-    path_pattern = r"(\\|\/)"
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    campaign = re.split(path_pattern, disdrodb_fpath)[6]
-    return campaign
+    # Retrieve path elements (os-specific)
+    p = Path(path)
+    list_path_elements = [str(part) for part in p.parts]
+    # Retrieve where "DISDRODB" directory occurs
+    idx_occurence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    # If DISDRODB directory not present, raise error
+    if len(idx_occurence) == 0:
+        raise ValueError(f"The DISDRODB directory is not present in {path}")
+    # Find the rightermost occurence
+    right_most_occurence = max(idx_occurence)
+    # Define the disdrodb path
+    disdrodb_fpath = os.path.join(*list_path_elements[right_most_occurence:])
+    return disdrodb_fpath
 
 
-def infer_station_id_from_fpath(fpath: str) -> str:
-    """
-    Get the station ID from the path of the input raw data.
+def _get_disdrodb_path_components(path: str) -> list:
+    """Return a list with the component of the disdrodb_path.
 
     Parameters
     ----------
-    fpath : str
-        Path of the raw file.
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
-    str
-        Station ID
+    list
+        Path element inside the DISDRODB archive.
+        Format: ["DISDRODB", <Raw or Processed>, <data_source>, ...]
     """
-    path_pattern = r"(\\|\/)"
-    idx_start = fpath.rfind("DISDRODB")
-    disdrodb_fpath = fpath[idx_start:]
-    list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    station_id = list_path_elements[8]
-    # Optional strip .yml if fpath point to YAML file
-    station_id.strip(".yml")
-    return station_id
+    # Retrieve disdrodb path
+    disdrodb_fpath = get_disdrodb_path(path)
+    # Retrieve path elements (os-specific)
+    p = Path(disdrodb_fpath)
+    list_path_elements = [str(part) for part in p.parts]
+    return list_path_elements
 
 
-def get_campaign_name(base_dir: str) -> str:
-    """Return the campaign name from 'raw_dir' or 'processed_dir' paths.
+def get_campaign_name(path: str) -> str:
+    """Return the campaign name from a file or directory path.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
     base_dir : str
-        Path 'raw_dir' or 'processed_dir' directory.
+       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
     str
         Name of the campaign.
     """
-    path_pattern = r"(\\|\/)"
-    idx_start = base_dir.rfind("DISDRODB")
-    disdrodb_fpath = base_dir[idx_start:]
-    list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    campaign_name = list_path_elements[-1].upper()
+    list_path_elements = _get_disdrodb_path_components(path)
+    if len(list_path_elements) <= 3:
+        raise ValueError(f"Impossible to determine campaign_name from {path}")
+    campaign_name = list_path_elements[3]
     return campaign_name
 
 
-def get_data_source(base_dir: str) -> str:
-    """Retrieves the data source from 'raw_dir' or processed_dir' paths
+def get_data_source(path: str) -> str:
+    """Return the data_source from a file or directory path.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
     base_dir : str
-        Input paths
+       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
     -------
     str
-        Name of the data source
+        Name of the campaign.
     """
+    list_path_elements = _get_disdrodb_path_components(path)
+    if len(list_path_elements) <= 2:
+        raise ValueError(f"Impossible to determine data_source from {path}")
+    data_source = list_path_elements[2]
+    return data_source
 
-    path_pattern = r"(\\|\/)"
-    idx_start = base_dir.rfind("DISDRODB")
-    disdrodb_fpath = base_dir[idx_start:]
-    list_path_elements = re.split(path_pattern, disdrodb_fpath)
-    institute_name = list_path_elements[-3].upper()
-    return institute_name
+
+####--------------------------------------------------------------------------.
+#### Directory/Filepaths L0A and L0B products
 
 
 def get_dataset_min_max_time(ds: xr.Dataset):
@@ -163,129 +187,95 @@ def get_dataset_min_max_time(ds: xr.Dataset):
     return (starting_time, ending_time)
 
 
-# TODO: get_dataframe_min_max_time
+def get_dataframe_min_max_time(df: pd.DataFrame):
+    """Retrieves dataframe starting and ending time.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe
+
+    Returns
+    -------
+    tuple
+        (starting_time, ending_time)
+
+    """
+
+    starting_time = df["time"].iloc[0]
+    ending_time = df["time"].iloc[-1]
+    return (starting_time, ending_time)
 
 
-def get_L0A_dir(processed_dir: str, station_id: str) -> str:
-    """Get L0A directory
+def get_L0A_dir(processed_dir: str, station_name: str) -> str:
+    """Define L0A directory.
 
     Parameters
     ----------
     processed_dir : str
         Path of the processed directory
-    station_id : int
-        ID of the station
+    station_name : str
+        Name of the station
 
     Returns
     -------
     str
         L0A directory path.
     """
-    dir_path = os.path.join(processed_dir, "L0A", station_id)
+    dir_path = os.path.join(processed_dir, "L0A", station_name)
     return dir_path
 
 
-def get_L0A_fname(campaign_name: str, station_id: str, suffix: str = "") -> str:
-    """build L0A file name.
-
-    Parameters
-    ----------
-    campaign_name : str
-        Name of the campaign.
-    station_id : int
-        ID of the station
-    suffix : int, optional
-        suffix, by default ""
-
-    Returns
-    -------
-    str
-        L0A file name.
-    """
-    if suffix != "":
-        suffix = "_" + suffix
-    fname = campaign_name + "_s" + station_id + suffix + ".parquet"
-    return fname
-
-
-# TODO: and refactor L0_processing --> remove suffix
-#
-# def get_L0A_fname(df, processed_dir, station_id: str) -> str:
-#     """Define L0A file name.
-
-#     Parameters
-#     ----------
-#     ds : pd.DataFrame
-#         L0A DataFrame
-#     processed_dir : str
-#         Path of the processed directory
-#     station_id : int
-#         ID of the station
-
-#     Returns
-#     -------
-#     str
-#         L0B file name.
-#     """
-#     starting_time, ending_time = get_dataframe_min_max_time(ds)
-#     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-#     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-#     # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-#     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
-#     institute_name = get_data_source(processed_dir).replace(".", "-")
-#     metadata_dict = read_metadata(processed_dir, station_id)
-#     sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
-#     version = importlib.metadata.version("disdrodb").replace(".", "-")
-#     if version == "-VERSION-PLACEHOLDER-":
-#         version = "dev"
-#     fname = f"DISDRODB.L0A.Raw.{institute_name}.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.{version}.parquet"
-#     return fname
-
-
-def get_L0A_fpath(processed_dir: str, station_id: str, suffix: str = "") -> str:
-    """build L0A file path.
-
-    Parameters
-    ----------
-    campaign_name : str
-        Name of the campaign.
-    station_id : int
-        ID of the station
-    suffix : int, optional
-        suffix, by default ""
-
-    Returns
-    -------
-    str
-        L0A file path.
-    """
-    campaign_name = get_campaign_name(processed_dir)
-    fname = get_L0A_fname(campaign_name, station_id, suffix=suffix)
-    dir_path = get_L0A_dir(processed_dir, station_id)
-    fpath = os.path.join(dir_path, fname)
-    return fpath
-
-
-def get_L0B_dir(processed_dir: str, station_id: str) -> str:
-    """Build L0B directory
+def get_L0B_dir(processed_dir: str, station_name: str) -> str:
+    """Define L0B directory.
 
     Parameters
     ----------
     processed_dir : str
         Path of the processed directory
-    station_id : int
-        ID of the station
+    station_name : int
+        Name of the station
 
     Returns
     -------
     str
         Path of the L0B directory
     """
-    dir_path = os.path.join(processed_dir, "L0B", station_id)
+    dir_path = os.path.join(processed_dir, "L0B", station_name)
     return dir_path
 
 
-def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
+def get_L0A_fname(df, processed_dir, station_name: str) -> str:
+    """Define L0A file name.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        L0A DataFrame
+    processed_dir : str
+        Path of the processed directory
+    station_name : str
+        Name of the station
+
+    Returns
+    -------
+    str
+        L0A file name.
+    """
+    starting_time, ending_time = get_dataframe_min_max_time(df)
+    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    campaign_name = get_campaign_name(processed_dir).replace(".", "-")
+    # metadata_dict = read_metadata(processed_dir, station_name)
+    # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
+    version = importlib.metadata.version("disdrodb").replace(".", "-")
+    if version == "-VERSION-PLACEHOLDER-":
+        version = "dev"
+    fname = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
+    return fname
+
+
+def get_L0B_fname(ds, processed_dir, station_name: str) -> str:
     """Define L0B file name.
 
     Parameters
@@ -294,8 +284,8 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
         L0B xarray Dataset
     processed_dir : str
         Path of the processed directory
-    station_id : int
-        ID of the station
+    station_name : str
+        Name of the station
 
     Returns
     -------
@@ -305,57 +295,246 @@ def get_L0B_fname(ds, processed_dir, station_id: str) -> str:
     starting_time, ending_time = get_dataset_min_max_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-    # production_time = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    # institute_name = get_data_source(processed_dir).replace(".", "-") # TODO: data_source
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
-    metadata_dict = read_metadata(processed_dir, station_id)
-    sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
-
+    # metadata_dict = read_metadata(processed_dir, station_name)
+    # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = importlib.metadata.version("disdrodb").replace(".", "-")
-
     if version == "-VERSION-PLACEHOLDER-":
         version = "dev"
-    fname = f"DISDRODB.L0B.Raw.{campaign_name}.{station_id}.{sensor_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    fname = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname
 
 
-def get_L0B_fpath(ds, processed_dir: str, station_id: str) -> str:
+def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> str:
+    """Define L0A file path.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        L0A DataFrame.
+    processed_dir : str
+        Path of the processed directory.
+    station_name : str
+        Name of the station.
+
+    Returns
+    -------
+    str
+        L0A file path.
+    """
+    fname = get_L0A_fname(df=df, processed_dir=processed_dir, station_name=station_name)
+    dir_path = get_L0A_dir(processed_dir=processed_dir, station_name=station_name)
+    fpath = os.path.join(dir_path, fname)
+    return fpath
+
+
+def get_L0B_fpath(
+    ds: xr.Dataset, processed_dir: str, station_name: str, l0b_concat=False
+) -> str:
     """Define L0B file path.
 
     Parameters
     ----------
     ds : xr.Dataset
-        L0B xarray Dataset
+        L0B xarray Dataset.
     processed_dir : str
-        Path of the processed directory
-    station_id : int
+        Path of the processed directory.
+    station_name : str
         ID of the station
+    l0b_concat : bool
+        If False, the file is specified inside the station directory.
+        If True, the file is specified outside the station directory.
 
     Returns
     -------
     str
         L0B file path.
     """
-    dir_path = get_L0B_dir(processed_dir, station_id)
-    fname = get_L0B_fname(ds, processed_dir, station_id)
+    dir_path = get_L0B_dir(processed_dir, station_name)
+    if l0b_concat:
+        dir_path = os.path.dirname(dir_path)
+    fname = get_L0B_fname(ds, processed_dir, station_name)
     fpath = os.path.join(dir_path, fname)
     return fpath
 
 
 ####--------------------------------------------------------------------------.
-#### Directory/File Creation/Deletion
+#### List Station Files
 
 
-def _create_directory(path: str) -> None:
+def check_glob_pattern(pattern: str) -> None:
+    """Check if the input parameters is a string and if it can be used as pattern.
+
+    Parameters
+    ----------
+    pattern : str
+        String to be checked.
+
+    Raises
+    ------
+    TypeError
+        The input parameter is not a string.
+    ValueError
+        The input parameter can not be used as pattern.
+    """
+    if not isinstance(pattern, str):
+        raise TypeError("Expect pattern as a string.")
+    if pattern[0] == "/":
+        raise ValueError("glob_pattern should not start with /")
+
+
+def check_glob_patterns(patterns: Union[str, list]) -> list:
+    """Check if glob patterns are valids."""
+    if not isinstance(patterns, (str, list)):
+        raise ValueError("'glob_patterns' must be a str or list of strings.")
+    if isinstance(patterns, str):
+        patterns = [patterns]
+    _ = [check_glob_pattern(pattern) for pattern in patterns]
+    return patterns
+
+
+def _get_file_list(raw_dir: str, glob_pattern) -> list:
+    """Get the list of files from a directory based on pattern.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Directory of the raw dataset.
+    glob_pattern : str
+        Pattern to match.
+
+    Returns
+    -------
+    list
+        List of file paths.
+    """
+    glob_fpath_pattern = os.path.join(raw_dir, glob_pattern)
+    list_fpaths = sorted(glob.glob(glob_fpath_pattern))
+    return list_fpaths
+
+
+def get_raw_file_list(
+    raw_dir, station_name, glob_patterns, verbose=False, debugging_mode=False
+):
+    """Get the list of files from a directory based on input parameters.
+
+    Currently concatenates all files provided by the glob patterns.
+    In future, this might be modified to enable DISDRODB processing when raw data
+    are separated in multiple files.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Directory of the campaign where to search for files.
+        Format <..>/DISDRODB/Raw/<data_source>/<campaign_name>
+    station_name : str
+        ID of the station
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
+    debugging_mode : bool, optional
+        If True, it select maximum 3 files for debugging purposes.
+        The default is False.
+
+    Returns
+    -------
+    list_fpaths : list
+        List of files file paths.
+
+    """
+    # Check glob patterns
+    glob_patterns = check_glob_patterns(glob_patterns)
+
+    # Get patterns in the the data directory
+    data_dir = os.path.join("data", station_name)
+    glob_patterns = [os.path.join(data_dir, pattern) for pattern in glob_patterns]
+
+    # Retrieve filepaths list
+    list_fpaths = [_get_file_list(raw_dir, pattern) for pattern in glob_patterns]
+    list_fpaths = [x for xs in list_fpaths for x in xs]  # flatten list
+
+    # Check there are files
+    n_files = len(list_fpaths)
+    if n_files == 0:
+        glob_fpath_patterns = [
+            os.path.join(raw_dir, pattern) for pattern in glob_patterns
+        ]
+        raise ValueError(f"No file found at {glob_fpath_patterns}.")
+
+    # Subset file_list if debugging_mode
+    if debugging_mode:
+        max_files = min(3, n_files)
+        list_fpaths = list_fpaths[0:max_files]
+
+    # Log
+    n_files = len(list_fpaths)
+    full_dir = os.path.join(raw_dir, data_dir)
+    msg = f" - {n_files} files to process in {full_dir}"
+    log_info(logger=logger, msg=msg, verbose=verbose)
+
+    # Return file list
+    return list_fpaths
+
+
+def get_l0a_file_list(processed_dir, station_name, debugging_mode):
+    """Retrieve L0A files for a give station.
+
+    Parameters
+    ----------
+    processed_dir : str
+        Directory of the campaign where to search for the L0A files.
+        Format <..>/DISDRODB/Processed/<data_source>/<campaign_name>
+    station_name : str
+        ID of the station
+    debugging_mode : bool, optional
+        If True, it select maximum 3 files for debugging purposes.
+        The default is False.
+
+    Returns
+    -------
+    list_fpaths : list
+        List of L0A file paths.
+
+    """
+    L0A_dir_path = get_L0A_dir(processed_dir, station_name)
+    filepaths = glob.glob(os.path.join(L0A_dir_path, "*.parquet"))
+
+    n_files = len(filepaths)
+
+    # Subset file_list if debugging_mode
+    if debugging_mode:
+        max_files = min(3, n_files)
+        filepaths = filepaths[0:max_files]
+
+    # If no file available, raise error
+    if n_files == 0:
+        msg = f"No L0A Apache Parquet file is available in {L0A_dir_path}. Run L0A processing first."
+        raise ValueError(msg)
+
+    return filepaths
+
+
+####--------------------------------------------------------------------------.
+#### Directory/File Checks/Creation/Deletion
+
+
+def _check_directory_exist(dir_path):
+    """Check if the directory exist."""
+    # Check the directory exist
+    if not os.path.exists(dir_path):
+        raise ValueError(f"{dir_path} directory does not exist.")
+    if not os.path.isdir(dir_path):
+        raise ValueError(f"{dir_path} is not a directory.")
+
+
+def _create_directory(path: str, exist_ok=True) -> None:
+    """Create a directory."""
     if not isinstance(path, str):
         raise TypeError("'path' must be a strig.")
     try:
-        os.makedirs(path)
+        os.makedirs(path, exist_ok=exist_ok)
         logger.debug(f"Created directory {path}.")
-    except FileExistsError:
-        logger.debug(f"Directory {path} already exists.")
-        pass
-    except (Exception) as e:
+    except Exception as e:
         dir_name = os.path.basename(path)
         msg = f"Can not create folder {dir_name} inside <path>. Error: {e}"
         logger.exception(msg)
@@ -363,36 +542,41 @@ def _create_directory(path: str) -> None:
 
 
 def _remove_if_exists(fpath: str, force: bool = False) -> None:
-    if os.path.exists(fpath):
-        if not force:
-            msg = f"--force is False and a file already exists at:{fpath}"
-            logger.error(msg)
-            raise ValueError(msg)
+    """Remove file or directory if exists and force=True."""
+    # If the file does not exist, do nothing
+    if not os.path.exists(fpath):
+        return None
+
+    # If the file exist and force=False, raise Error
+    if not force:
+        msg = f"--force is False and a file already exists at:{fpath}"
+        logger.error(msg)
+        raise ValueError(msg)
+
+    # If force=True, remove the file.
+    try:
+        os.remove(fpath)
+    except IsADirectoryError:
         try:
-            os.remove(fpath)
-        except IsADirectoryError:
+            os.rmdir(fpath)
+        except OSError:
             try:
+                # shutil.rmtree(fpath.rpartition('.')[0])
+                for f in glob.glob(fpath + "/*"):
+                    try:
+                        os.remove(f)
+                    except OSError as e:
+                        msg = f"Can not delete file {f}, error: {e.strerror}"
+                        logger.exception(msg)
                 os.rmdir(fpath)
-            except OSError:
-                try:
-                    # shutil.rmtree(fpath.rpartition('.')[0])
-                    for f in glob.glob(fpath + "/*"):
-                        try:
-                            os.remove(f)
-                        except OSError as e:
-                            msg = f"Can not delete file {f}, error: {e.strerror}"
-                            logger.exception(msg)
-                    os.rmdir(fpath)
-                except:
-                    msg = f"Something wrong with: {fpath}"
-                    logger.error(msg)
-                    raise ValueError(msg)
-        logger.info(f"Deleted folder {fpath}")
+            except:
+                msg = f"Something wrong with: {fpath}"
+                logger.error(msg)
+                raise ValueError(msg)
+    logger.info(f"Deleted folder {fpath}")
 
 
-####--------------------------------------------------------------------------.
-#### Directory checks
-def parse_fpath(fpath: str) -> str:
+def _parse_fpath(fpath: str) -> str:
     """Ensure fpath does not end with /.
 
     Parameters
@@ -412,7 +596,7 @@ def parse_fpath(fpath: str) -> str:
     """
 
     if not isinstance(fpath, str):
-        raise TypeError("'parse_fpath' expects a directory/filepath string.")
+        raise TypeError("'_parse_fpath' expects a directory/filepath string.")
     if fpath[-1] == "/":
         print("{} should not end with /.".format(fpath))
         fpath = fpath[:-1]
@@ -425,47 +609,20 @@ def parse_fpath(fpath: str) -> str:
 
 
 ####--------------------------------------------------------------------------.
-#### L0 processing directory checks
-def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
-    """Check validity of raw_dir.
-
-    Steps:
-    1. Check that 'raw_dir' is a valid directory path
-    2. Check that 'raw_dir' follows the expect directory structure
-    3. Check that each station_id directory contains data
-    4. Check that for each station_id the mandatory metadata are specified.
+#### RAW Directory Checks
 
 
-
-    Parameters
-    ----------
-    raw_dir : str
-        Input raw directory
-    verbose : bool, optional
-        Wheter to verbose the processing.
-        The default is False.
-
-    Raises
-    ------
-    TypeError
-        Error if not complient.
-    """
-
-    from disdrodb.L0.metadata import create_metadata
-    from disdrodb.L0.metadata import check_metadata_compliance
-    from disdrodb.L0.issue import create_issue_yml
-    from disdrodb.L0.issue import check_issue_compliance
-
-    # -------------------------------------------------------------------------.
-    # Check input argument
+def _check_raw_dir_input(raw_dir):
     if not isinstance(raw_dir, str):
         raise TypeError("Provide 'raw_dir' as a string'.")
     if not os.path.exists(raw_dir):
         raise ValueError("'raw_dir' {} directory does not exist.".format(raw_dir))
     if not os.path.isdir(raw_dir):
         raise ValueError("'raw_dir' {} is not a directory.".format(raw_dir))
-    # -------------------------------------------------------------------------.
-    #### Check there is /data subfolders
+
+
+def _check_raw_dir_data_subfolders(raw_dir):
+    """Check `data` directory in raw dir."""
     list_subfolders = os.listdir(raw_dir)
     if len(list_subfolders) == 0:
         raise ValueError("There are not subfolders in {}".format(raw_dir))
@@ -477,14 +634,15 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # -------------------------------------------------------------------------.
     #### Check there are subfolders corresponding to station to process
     raw_data_dir = os.path.join(raw_dir, "data")
-    list_data_station_id = os.listdir(raw_data_dir)
-    if len(list_data_station_id) == 0:
+    list_data_station_name = os.listdir(raw_data_dir)
+    if len(list_data_station_name) == 0:
         raise ValueError("No station directories within {}".format(raw_data_dir))
 
     # -------------------------------------------------------------------------.
-    #### Check there are data files in each list_data_station_id
+    #### Check there are data files in each list_data_station_name
     list_raw_data_station_dir = [
-        os.path.join(raw_data_dir, station_id) for station_id in list_data_station_id
+        os.path.join(raw_data_dir, station_name)
+        for station_name in list_data_station_name
     ]
     list_nfiles_per_station = [
         len(glob.glob(os.path.join(path, "*"))) for path in list_raw_data_station_dir
@@ -496,144 +654,208 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
             "The following data directories are empty: {}".format(empty_station_dir)
         )
 
-    # -------------------------------------------------------------------------.
-    #### Check there is /metadata subfolders
+
+def _check_raw_dir_metadata(raw_dir, verbose=True):
+    """Check metadata in the raw_dir directory."""
+    from disdrodb.L0.metadata import write_default_metadata
+    from disdrodb.L0.metadata import check_metadata_compliance
+
+    # Get list of stations
+    raw_data_dir = os.path.join(raw_dir, "data")
+    list_data_station_name = os.listdir(raw_data_dir)
+
+    # Get metadata directory
     metadata_dir = os.path.join(raw_dir, "metadata")
-    if "metadata" not in list_subfolders:
+
+    # If does not exists
+    if "metadata" not in os.listdir(raw_dir):
         # - Create metadata directory
         _create_directory(metadata_dir)
         # - Create default metadata yml file for each station (since the folder didn't existed)
         list_metadata_fpath = [
-            os.path.join(metadata_dir, station_id + ".yml")
-            for station_id in list_data_station_id
+            os.path.join(metadata_dir, station_name + ".yml")
+            for station_name in list_data_station_name
         ]
-        _ = [create_metadata(fpath) for fpath in list_metadata_fpath]
+        _ = [write_default_metadata(fpath) for fpath in list_metadata_fpath]
         msg = "'raw_dir' {} should have the /metadata subfolder. ".format(raw_dir)
         msg1 = "It has been now created with also empty metadata files to be filled for each station."
         raise ValueError(msg + msg1)
 
     # -------------------------------------------------------------------------.
-    #### Check there are metadata file for each station_id in /metadata
+    #### Check there are metadata file for each station_name in /metadata
     list_metadata_fpath = glob.glob(os.path.join(metadata_dir, "*.yml"))
     list_metadata_fname = [os.path.basename(fpath) for fpath in list_metadata_fpath]
-    list_metadata_station_id = [fname[:-4] for fname in list_metadata_fname]
+    list_metadata_station_name = [fname[:-4] for fname in list_metadata_fname]
 
     # - Check there is metadata for each station
-    missing_data_station_idx = np.where(
-        np.isin(list_data_station_id, list_metadata_station_id, invert=True)
+    idx_missing_station_data = np.where(
+        np.isin(list_data_station_name, list_metadata_station_name, invert=True)
     )[0]
     # - If missing, create the defaults files and raise an error
-    if len(missing_data_station_idx) > 0:
-        list_missing_station_id = [
-            list_data_station_id[idx] for idx in missing_data_station_idx
+    if len(idx_missing_station_data) > 0:
+        list_missing_station_name = [
+            list_data_station_name[idx] for idx in idx_missing_station_data
         ]
         list_missing_metadata_fpath = [
-            os.path.join(metadata_dir, station_id + ".yml")
-            for station_id in list_missing_station_id
+            os.path.join(metadata_dir, station_name + ".yml")
+            for station_name in list_missing_station_name
         ]
-        _ = [create_metadata(fpath) for fpath in list_missing_metadata_fpath]
-        msg = "The metadata files for the following station_id were missing: {}".format(
-            list_missing_station_id
+        _ = [write_default_metadata(fpath) for fpath in list_missing_metadata_fpath]
+        msg = (
+            "The metadata files for the following station_name were missing: {}".format(
+                list_missing_station_name
+            )
         )
         raise ValueError(msg + " Now have been created to be filled.")
 
     # - Check not excess metadata compared to present stations
-    excess_metadata_station_idx = np.where(
-        np.isin(list_metadata_station_id, list_data_station_id, invert=True)
+    idx_excess_metadata_station = np.where(
+        np.isin(list_metadata_station_name, list_data_station_name, invert=True)
     )[0]
-    if len(excess_metadata_station_idx) > 0:
-        list_excess_station_id = [
-            list_metadata_station_id[idx] for idx in excess_metadata_station_idx
+    if len(idx_excess_metadata_station) > 0:
+        list_excess_station_name = [
+            list_metadata_station_name[idx] for idx in idx_excess_metadata_station
         ]
         print(
             "There are the following metadata files without corresponding data: {}".format(
-                list_excess_station_id
+                list_excess_station_name
             )
         )
 
     # -------------------------------------------------------------------------.
     #### Check metadata compliance
-    _ = [check_metadata_compliance(fpath) for fpath in list_metadata_fpath]
-    # TODO: MISSING IMPLEMENTATION OF check_metadata_compliance
-    # -------------------------------------------------------------------------.
-    #### Check there is /issue subfolder
+    for fpath in list_metadata_fpath:
+        # Get station info
+        disdrodb_dir = get_disdrodb_dir(fpath)
+        data_source = get_data_source(fpath)
+        campaign_name = get_campaign_name(fpath)
+        station_name = os.path.basename(fpath).replace(".yml", "")
+        # Check compliance
+        check_metadata_compliance(
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+    return None
+
+
+def _check_raw_dir_issue(raw_dir, verbose=True):
+    """Check issue yaml files in the raw_dir directory."""
+    from disdrodb.L0.issue import create_issue_yml
+    from disdrodb.L0.issue import check_issue_compliance
+
+    # Get list of stations
+    raw_data_dir = os.path.join(raw_dir, "data")
+    list_data_station_name = os.listdir(raw_data_dir)
+    # Get issue directory
     issue_dir = os.path.join(raw_dir, "issue")
-    if "issue" not in list_subfolders:
+    # If issue directory does not exist
+    if "issue" not in os.listdir(raw_dir):
         # - Create issue directory
         _create_directory(issue_dir)
         # - Create issue yml file for each station (since the folder didn't existed)
         list_issue_fpath = [
-            os.path.join(issue_dir, station_id + ".yml")
-            for station_id in list_data_station_id
+            os.path.join(issue_dir, station_name + ".yml")
+            for station_name in list_data_station_name
         ]
         _ = [create_issue_yml(fpath) for fpath in list_issue_fpath]
         msg = "The /issue subfolder has been now created to document and then remove timesteps with problematic data."
         logger.info(msg)
     # -------------------------------------------------------------------------.
-    #### Check there are issue file for each station_id in /issue
+    #### Check there are issue file for each station_name in /issue
     list_issue_fpath = glob.glob(os.path.join(issue_dir, "*.yml"))
     list_issue_fname = [os.path.basename(fpath) for fpath in list_issue_fpath]
-    list_issue_station_id = [fname[:-4] for fname in list_issue_fname]
+    list_issue_station_name = [fname[:-4] for fname in list_issue_fname]
 
     # - Check there is issue for each station
-    missing_data_station_idx = np.where(
-        np.isin(list_data_station_id, list_issue_station_id, invert=True)
+    idx_missing_station_data = np.where(
+        np.isin(list_data_station_name, list_issue_station_name, invert=True)
     )[0]
     # - If missing, create the defaults files and raise an error
-    if len(missing_data_station_idx) > 0:
-        list_missing_station_id = [
-            list_data_station_id[idx] for idx in missing_data_station_idx
+    if len(idx_missing_station_data) > 0:
+        list_missing_station_name = [
+            list_data_station_name[idx] for idx in idx_missing_station_data
         ]
         list_missing_issue_fpath = [
-            os.path.join(issue_dir, station_id + ".yml")
-            for station_id in list_missing_station_id
+            os.path.join(issue_dir, station_name + ".yml")
+            for station_name in list_missing_station_name
         ]
         _ = [create_issue_yml(fpath) for fpath in list_missing_issue_fpath]
-        msg = "The issue files for the following station_id were missing: {}".format(
-            list_missing_station_id
+        msg = "The issue files for the following station_name were missing: {}".format(
+            list_missing_station_name
         )
+        log_warning(logger, msg, verbose)
 
     # - Check not excess issue compared to present stations
-    excess_issue_station_idx = np.where(
-        np.isin(list_issue_station_id, list_data_station_id, invert=True)
+    excess_issue_station_namex = np.where(
+        np.isin(list_issue_station_name, list_data_station_name, invert=True)
     )[0]
-    if len(excess_issue_station_idx) > 0:
-        list_excess_station_id = [
-            list_issue_station_id[idx] for idx in excess_issue_station_idx
+    if len(excess_issue_station_namex) > 0:
+        list_excess_station_name = [
+            list_issue_station_name[idx] for idx in excess_issue_station_namex
         ]
-        msg = f"There are the following issue files without corresponding data: {list_excess_station_id}"
+        msg = f"There are the following issue files without corresponding data: {list_excess_station_name}"
         log_warning(logger, msg, verbose)
 
     # -------------------------------------------------------------------------.
     #### Check issue compliance
     _ = [check_issue_compliance(fpath) for fpath in list_issue_fpath]
-    # TODO: MISSING IMPLEMENTATION OF check_issue_compliance
-    # -------------------------------------------------------------------------.
 
 
-def check_processed_dir(processed_dir: str, force: bool = False) -> None:
-    """Check that 'processed_dir' is a valid directory path.
+def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
+    """Check validity of raw_dir.
+
+    Steps:
+    1. Check that 'raw_dir' is a valid directory path
+    2. Check that 'raw_dir' follows the expect directory structure
+    3. Check that each station_name directory contains data
+    4. Check that for each station_name the mandatory metadata.yml is specified.
+    4. Check that for each station_name the mandatory issue.yml is specified.
 
     Parameters
     ----------
-    processed_dir : str
-        Path of the processed directory
-    force : bool, optional
-        If True, overwrite existing data into processed directory.
-        If False, raise an error if there are already data into processed directory.
-
-    Raises
-    ------
-    TypeError
-        Error if path pattern not respected or can not be created.
-
+    raw_dir : str
+        Input raw directory
+    verbose : bool, optional
+        Wheter to verbose the processing.
+        The default is False.
 
     """
+    # -------------------------------------------------------------------------.
+    # Check input argument
+    _check_raw_dir_input(raw_dir)
 
+    # Ensure valid path format
+    raw_dir = _parse_fpath(raw_dir)
+    # -------------------------------------------------------------------------.
+    # Check there is valid /data subfolder
+    _check_raw_dir_data_subfolders(raw_dir)
+
+    # -------------------------------------------------------------------------.
+    # Check there is valid /metadata subfolder
+    _check_raw_dir_metadata(raw_dir, verbose=verbose)
+
+    # -------------------------------------------------------------------------.
+    # Check there is valid /issue subfolder
+    _check_raw_dir_issue(raw_dir, verbose=verbose)
+
+    # -------------------------------------------------------------------------.
+    return raw_dir
+
+
+#### -------------------------------------------------------------------------.
+#### PROCESSED Directory Checks
+
+
+def _check_is_processed_dir(processed_dir):
     if not isinstance(processed_dir, str):
         raise TypeError("Provide 'processed_dir' as a string'.")
-    # ------------------------------
-    # Check processed_dir has "DISDRODB/Processed" to avoid deleting precious stuffs
+
+    # Parse the fpath
+    processed_dir = _parse_fpath(processed_dir)
+
+    # Check is the processed_dir
     if (
         processed_dir.find("DISDRODB/Processed") == -1
         and processed_dir.find("DISDRODB\\Processed") == -1
@@ -652,39 +874,10 @@ def check_processed_dir(processed_dir: str, force: bool = False) -> None:
         msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
         logger.error(msg)
         raise ValueError(msg)
-
-    # ------------------------------
-    # If forcing overwriting
-    if force:
-        # Check processed_dir is a directory before removing the content
-        if os.path.exists(processed_dir):
-            if not os.path.isdir(processed_dir):
-                msg = f"'processed_dir' {processed_dir} already exist but is not a directory."
-                logger.error(msg)
-                raise ValueError(msg)
-            # Remove content of existing processed_dir
-            # TODO: maybe remove also the campaign name directory, not only the content of it
-            shutil.rmtree(processed_dir)  # TODO: !! TOO DANGEROUS ??? !!!
-
-    # ------------------------------
-    # If avoiding overwriting
-    if not force:
-        if os.path.exists(processed_dir):
-            msg = f"'processed_dir' {processed_dir} already exists and force=False."
-            logger.error(msg)
-            raise ValueError(msg)
-
-    # ------------------------------
-    # Recreate processed_dir
-    if not os.path.exists(processed_dir):
-        os.makedirs(processed_dir)
-    else:
-        msg = "Please report the BUG. This should not happen."
-        logger.error(msg)
-        raise ValueError(msg)
+    return processed_dir
 
 
-def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
+def _check_campaign_name(raw_dir: str, processed_dir: str) -> str:
     """Check that 'raw_dir' and 'processed_dir' have same campaign_name.
 
     Parameters
@@ -704,7 +897,6 @@ def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
     ValueError
         Error if both paths do not match.
     """
-
     upper_campaign_name = os.path.basename(raw_dir).upper()
     raw_campaign_name = os.path.basename(raw_dir)
     processed_campaign_name = os.path.basename(processed_dir)
@@ -721,62 +913,19 @@ def check_campaign_name(raw_dir: str, processed_dir: str) -> str:
     return upper_campaign_name
 
 
-def check_directories(raw_dir: str, processed_dir: str, force: bool = False) -> tuple:
-    """Check that the specified directories respect the standards.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Path of the raw directory
-    processed_dir : str
-        Path of the processed directory
-    force : bool, optional
-        If True, overwrite existing data into processed directory.
-        If False, raise an error if there are already data into processed directory.
-
-    Returns
-    -------
-    tuple
-        raw directory and processed directory
-    """
-
-    raw_dir = parse_fpath(raw_dir)
-    processed_dir = parse_fpath(processed_dir)
-    check_raw_dir(raw_dir)
-    check_processed_dir(processed_dir, force=force)
-    check_campaign_name(raw_dir, processed_dir)
-    return raw_dir, processed_dir
-
-
-def check_metadata_dir(processed_path: str) -> None:
-    """Create metadata folder into process directory.
-
-    Parameters
-    ----------
-    processed_path : str
-        Path of the processed directory
-
-    Raises
-    ------
-    FileNotFoundError
-        Error metadat already existed or can not be created.
-    """
-    # Create metadata folder
+def _create_processed_dir_folder(processed_dir, dir_name):
+    """Create directory <dir_name> inside the processed_dir directory."""
     try:
-        metadata_folder_path = os.path.join(processed_path, "metadata")
-        os.makedirs(metadata_folder_path)
-        logger.debug(f"Created {metadata_folder_path}.")
-    except FileExistsError:
-        logger.debug(f"{metadata_folder_path} already existed.")
-        pass
-    except (Exception) as e:
-        msg = f"Folder metadata can not be created in {metadata_folder_path}>. \n The error is: {e}."
+        folder_path = os.path.join(processed_dir, dir_name)
+        os.makedirs(folder_path, exist_ok=True)
+    except Exception as e:
+        msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
 
 
-def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
-    """Copy yaml files in raw_dir/metadata into processed_dir/metadata
+def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) -> None:
+    """Copy the station YAML file from the raw_dir/metadata into processed_dir/metadata
 
     Parameters
     ----------
@@ -790,121 +939,170 @@ def copy_metadata_from_raw_dir(raw_dir: str, processed_dir: str) -> None:
     ValueError
         Error if the copy fails.
     """
-
     # Get src and dst metadata directory
     raw_metadata_dir = os.path.join(raw_dir, "metadata")
     processed_metadata_dir = os.path.join(processed_dir, "metadata")
-    # Retrieve metadata fpaths in raw directory
-    raw_metadata_fpaths = glob.glob(os.path.join(raw_metadata_dir, "*.yml"))
-    # Copy all metadata yml files into the "processed" folder
-    for raw_metadata_fpath in raw_metadata_fpaths:
-        # Check if is a files
-        if os.path.isfile(raw_metadata_fpath):
-            metadata_fname = os.path.basename(raw_metadata_fpath)
-            processed_metadata_fpath = os.path.join(
-                processed_metadata_dir, metadata_fname
-            )
-            try:
-                # Copy every file
-                shutil.copy(raw_metadata_fpath, processed_metadata_fpath)
-                msg = f"{metadata_fname} copied into {processed_metadata_dir}."
-                logger.info(msg)
-            except (Exception) as e:
-                msg = f"Something went wrong when copying {metadata_fname} into {processed_metadata_dir}.\n The error is: {e}."
-                logger.error(msg)
+    # Retrieve the metadata fpath in the raw directory
+    metadata_fname = f"{station_name}.yml"
+    raw_metadata_fpath = os.path.join(raw_metadata_dir, metadata_fname)
+    # Check the metadata exists
+    if not os.path.isfile(raw_metadata_fpath):
+        raise ValueError(
+            f"No metadata available for {station_name} at {raw_metadata_fpath}"
+        )
+    # Define the destination fpath
+    processed_metadata_fpath = os.path.join(
+        processed_metadata_dir, os.path.basename(raw_metadata_fpath)
+    )
+    # Try copying the file
+    try:
+        shutil.copy(raw_metadata_fpath, processed_metadata_fpath)
+        msg = f"{metadata_fname} copied at {processed_metadata_fpath}."
+        logger.info(msg)
+    except Exception as e:
+        msg = f"Something went wrong when copying {metadata_fname} into {processed_metadata_dir}.\n The error is: {e}."
+        logger.error(msg)
+        raise ValueError(msg)
+    return None
+
+
+def _check_pre_existing_station_data(
+    campaign_dir, product_level, station_name, force=False
+):
+    """Check for pre-existing station data.
+
+    - If force=True, remove all data inside the station folder.
+    - If force=False, raise error.
+    """
+    from disdrodb.api.io import _get_list_stations_with_data
+
+    # Get list of available stations
+    list_stations = _get_list_stations_with_data(
+        product_level=product_level, campaign_dir=campaign_dir
+    )
+    # Check if station data are already present
+    station_already_present = station_name in list_stations
+
+    # Define the station directory path
+    station_dir = os.path.join(campaign_dir, product_level, station_name)
+
+    # If the station data are already present:
+    # - If force=True, remove all data inside the station folder
+    # - If force=False, raise error
+    # NOTE:
+    # - force=False behaviour could be changed to enable updating of missing files.
+    #   This would require also adding code to check whether a downstream file already exist.
+    if station_already_present:
+        # Check is a directory
+        _check_directory_exist(station_dir)
+        # If force=True, remove all the content
+        if force:
+            # Remove all station directory content
+            shutil.rmtree(station_dir)
         else:
-            msg = f"Cannot copy {metadata_fname} into {processed_metadata_dir}."
+            msg = f"The station directory {station_dir} already exists and force=False."
             logger.error(msg)
             raise ValueError(msg)
-    metadata_fnames = [
-        os.path.basename(metadata_fpath) for metadata_fpath in raw_metadata_fpaths
-    ]
-    msg = f"The metadata of stations ({metadata_fnames}) have been copied into {processed_metadata_dir}."
-    logger.info(msg)
 
 
-####--------------------------------------------------------------------------.
-#### L0 processing directory structure
+def check_processed_dir(processed_dir):
+    # Check input, format and validity of the directory path
+    processed_dir = _check_is_processed_dir(processed_dir)
+    return processed_dir
 
 
-def create_directory_structure(raw_dir: str, processed_dir: str) -> None:
-    """Create directory structure for L0A and L0B processing.
+def create_directory_structure_l0a(
+    raw_dir, processed_dir, station_name, force, verbose=False
+):
+    """Create directory structure for L0A DISDRODB product."""
+    from disdrodb.api.io import _get_list_stations_with_data
 
-    Parameters
-    ----------
-    raw_dir : str
-        Path of the raw directory
-    processed_dir : str
-        Path of the processed directory
+    # Check inputs
+    raw_dir = check_raw_dir(raw_dir=raw_dir, verbose=verbose)
+    processed_dir = check_processed_dir(processed_dir=processed_dir)
 
-    Raises
-    ------
-    FileNotFoundError
-        Error is folder structure can not be created.
-    """
+    # Check valid campaign name
+    # - The campaign_name concides between raw and processed dir
+    # - The campaign_name is all upper case
+    _ = _check_campaign_name(raw_dir=raw_dir, processed_dir=processed_dir)
 
-    # -----------------------------------------------------.
-    #### Create metadata folder inside processed_dir
-    check_metadata_dir(processed_dir)
-    copy_metadata_from_raw_dir(raw_dir, processed_dir)
+    # Get list of available stations (at raw level)
+    list_stations = _get_list_stations_with_data(
+        product_level="RAW", campaign_dir=raw_dir
+    )
+    # Check station is available
+    if station_name not in list_stations:
+        raise ValueError(
+            f"No data available for station {station_name}. Available stations: {list_stations}."
+        )
 
-    # -----------------------------------------------------.
-    #### Create info folder inside processed_dir
-    try:
-        info_folder_path = os.path.join(processed_dir, "info")
-        os.makedirs(info_folder_path)
-        logger.debug(f"Created {info_folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {info_folder_path}")
-        pass
-    except (Exception) as e:
-        msg = f"Can not create folder metadata inside <info_folder_path>. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
+    # Create required directory (if they don't exists)
+    _create_processed_dir_folder(processed_dir, dir_name="metadata")
+    _create_processed_dir_folder(processed_dir, dir_name="info")
+    _create_processed_dir_folder(processed_dir, dir_name="L0A")
 
-    # -----------------------------------------------------.
-    #### Create L0A folder inside processed_dir
-    try:
-        L0A_folder_path = os.path.join(processed_dir, "L0A")
-        os.makedirs(L0A_folder_path)
-        logger.debug(f"Created {L0A_folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {L0A_folder_path}")
-        pass
-    except (Exception) as e:
-        msg = f"Can not create folder L0A inside {processed_dir}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
+    # Copy the station metadata
+    _copy_station_metadata(
+        raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name
+    )
 
-    # -----------------------------------------------------.
-    #### Create L0B folder inside processed_dir
-    try:
-        L0B_folder_path = os.path.join(processed_dir, "L0B")
-        os.makedirs(L0B_folder_path)
-        logger.debug(f"Created {L0B_folder_path}")
-    except FileExistsError:
-        logger.debug(f"Found {L0B_folder_path}")
-        pass
-    except (Exception) as e:
-        msg = f"Can not create folder L0B inside {processed_dir}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
-    return
+    # Remove <product_level>/<station> directory if force=True
+    _check_pre_existing_station_data(
+        campaign_dir=processed_dir,
+        product_level="L0A",
+        station_name=station_name,
+        force=force,
+    )
+
+
+def create_directory_structure(
+    processed_dir, product_level, station_name, force, verbose=False
+):
+    """Create directory structure for L0B and higher DISDRODB products."""
+    from disdrodb.api.io import check_product_level, _get_list_stations_with_data
+
+    # Check inputs
+    check_product_level(product_level)
+    processed_dir = check_processed_dir(processed_dir=processed_dir)
+
+    # Check station is available in the target processed_dir directory
+    if product_level == "L0B":
+        required_level = "L0A"
+        list_stations = _get_list_stations_with_data(
+            product_level=required_level, campaign_dir=processed_dir
+        )
+    else:
+        raise NotImplementedError("product level {product_level} not yet implemented.")
+
+    if station_name not in list_stations:
+        raise ValueError(
+            f"No {required_level} data available for station {station_name}. Available stations: {list_stations}."
+        )
+
+    # Create required directory (if they don't exists)
+    _create_processed_dir_folder(processed_dir, dir_name=product_level)
+
+    # Remove <product_level>/<station_name> directory if force=True
+    _check_pre_existing_station_data(
+        campaign_dir=processed_dir,
+        product_level=product_level,
+        station_name=station_name,
+        force=force,
+    )
 
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers
 def _read_L0A(
-    fpath: str, lazy: bool = True, verbose: bool = False
-) -> Union[pd.DataFrame, dd.DataFrame]:
+    fpath: str, verbose: bool = False, debugging_mode: bool = False
+) -> pd.DataFrame:
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} started."
     log_info(logger, msg, verbose)
-    # Read
-    if lazy:
-        df = dd.read_parquet(fpath)
-    else:
-        df = pd.read_parquet(fpath)
+    # Open file
+    df = pd.read_parquet(fpath)
+    if debugging_mode:
+        df = df.iloc[0:100]
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} ended."
     log_info(logger, msg, verbose)
@@ -913,10 +1111,9 @@ def _read_L0A(
 
 def read_L0A_dataframe(
     fpaths: Union[str, list],
-    lazy: bool = True,
     verbose: bool = False,
     debugging_mode: bool = False,
-) -> Union[pd.DataFrame, dd.DataFrame]:
+) -> pd.DataFrame:
     """Read DISDRODB L0A Apache Parquet file(s).
 
     Parameters
@@ -929,131 +1126,38 @@ def read_L0A_dataframe(
     debugging_mode : bool
         If True, it reduces the amount of data to process.
         If fpaths is a list, it reads only the first 3 files
+        For each file it select only the first 100 rows.
         The default is False.
-    lazy : bool
-        Whether to read the dataframe lazily with dask.
-        If lazy=True, it returns a dask.dataframe.
-        If lazy=False, it returns a pandas.DataFrame
-        The default is True.
 
     Returns
     -------
-    Union[pd.DataFrame,dd.DataFrame]
-        Dataframe
+    pd.DataFrame
+        L0A Dataframe.
 
-    Raises
-    ------
-    TypeError
-        Error if the reading fails
     """
 
     from disdrodb.L0.L0A_processing import concatenate_dataframe
 
     # ----------------------------------------
-    # Check fpaths validity
+    # Check filepaths validity
     if not isinstance(fpaths, (list, str)):
         raise TypeError("Expecting fpaths to be a string or a list of strings.")
-    # TODO:
-    # - CHECK ENDS WITH .parquet
     # ----------------------------------------
-    # If list of length 1, convert to string
-    if isinstance(fpaths, list) and len(fpaths) == 1:
-        fpaths = fpaths[0]
+    # If fpath is a string, convert to list
+    if isinstance(fpaths, str):
+        fpaths = [fpaths]
     # ---------------------------------------------------
-    # If more than 1 fpath, read and concantenate first
-    if isinstance(fpaths, list):
-        if debugging_mode:
-            fpaths = fpaths[0:3]  # select first 3 fpaths
-        list_df = [_read_L0A(fpath, lazy=lazy, verbose=verbose) for fpath in fpaths]
-        df = concatenate_dataframe(list_df, verbose=verbose, lazy=lazy)
-    # Else read the single file
-    else:
-        df = _read_L0A(fpaths, lazy=lazy, verbose=verbose)
+    # - If debugging_mode=True, it reads only the first 3 fpaths
+    if debugging_mode:
+        fpaths = fpaths[0:3]  # select first 3 fpaths
+
+    # - Define the list of dataframe
+    list_df = [
+        _read_L0A(fpath, verbose=verbose, debugging_mode=debugging_mode)
+        for fpath in fpaths
+    ]
+    # - Concatenate dataframe
+    df = concatenate_dataframe(list_df, verbose=verbose)
     # ---------------------------------------------------
     # Return dataframe
     return df
-
-
-####---------------------------------------------------------------------------.
-
-
-def check_L0_is_available(
-    processed_dir: str, station_id: str, suffix: str = ""
-) -> None:
-    """Check if the Apache parquet file has been found
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    station_id : int
-        Id of the station.
-    suffix : str, optional
-        Suffix, by default ""
-
-    Raises
-    ------
-    ValueError
-        Check if the Apache parquet file has not been found
-    """
-    fpath = get_L0A_fpath(processed_dir, station_id, suffix=suffix)
-    if not os.path.exists(fpath):
-        msg = f"Need to run L0 processing first. The Apache Parquet file {fpath} is not available."
-        logger.exception(msg)
-        raise ValueError(msg)
-    # Log
-    msg = f"Found parquet file: {fpath}"
-    logger.info(msg)
-
-
-def read_L0_data(
-    processed_dir: str,
-    station_id: str,
-    suffix: str = "",
-    lazy: bool = True,
-    verbose: bool = False,
-    debugging_mode: bool = False,
-) -> Union[pd.DataFrame, dd.DataFrame]:
-    """Read L0 Apache Parquet into dataframe.
-
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    station_id : int
-        Id of the station.
-    suffix : str, optional
-        Suffix, by default ""
-    lazy : bool, optional
-        If True : Dask is used.
-        If False : Pandas is used
-        by default True
-    verbose : bool, optional
-        Wheter to verbose the processing.
-        The default is False.
-    debugging_mode : bool, optional
-        If True, return just a subset of total rows, by default False
-
-    Returns
-    -------
-    Union[pd.DataFrame,dd.DataFrame]
-        Dataframe
-    """
-
-    # Check L0 is available
-    check_L0_is_available(processed_dir, station_id, suffix=suffix)
-    # Define fpath
-    fpath = get_L0A_fpath(processed_dir, station_id, suffix=suffix)
-    # Read L0A Apache Parquet file
-    df = _read_L0A(fpath, lazy=lazy, verbose=verbose)
-    # Subset dataframe if debugging_mode = True
-    if debugging_mode:
-        if not lazy:
-            df = df.iloc[0:100, :]
-        else:
-            NotImplementedError
-    return df
-
-
-####--------------------------------------------------------------------------.

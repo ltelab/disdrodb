@@ -12,12 +12,6 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 )
 
 
-def test_check_L0_raw_fields_available():
-    # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.check_L0_raw_fields_available()
-    assert 1 == 1
-
-
 def test_infer_split_str():
     # Test strings with no delimiter
     assert L0B_processing.infer_split_str("") == None
@@ -101,7 +95,6 @@ def test_get_coords():
 
 
 def test_convert_object_variables_to_string():
-
     # Create test dataset
     df = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
     ds = xr.Dataset.from_dataframe(df)
@@ -174,7 +167,6 @@ def ds():
 
 
 def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
-
     result = L0B_processing.sanitize_encodings_dict(encoding_dict_1, ds)
 
     assert isinstance(result, dict)
@@ -225,10 +217,4 @@ def test_set_encodings():
 def test_write_L0B():
     # not tested yet because relies on config files that can be modified
     # function_return = L0B_processing.write_L0B()
-    assert 1 == 1
-
-
-def test_create_summary_statistics():
-    # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.create_summary_statistics()
     assert 1 == 1
