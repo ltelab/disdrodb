@@ -75,6 +75,10 @@ def reader(
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
 
+    # - Define encoding
+    # --> Avoid UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf0
+    reader_kwargs["encoding"] = "latin-1"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
@@ -105,7 +109,9 @@ def reader(
         import pandas as pd
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce"
+        )
 
         # - Drop rows when  'Error in data reading' in TO_BE_SPLITTED column
         bad_indices = df[
@@ -124,6 +130,8 @@ def reader(
             "TO_BE_SPLITTED",
             "datalogger_temperature",
             "datalogger_error",
+            "latitude",
+            "longitude",
         ]
         df = df.drop(columns=columns_to_drop)
 

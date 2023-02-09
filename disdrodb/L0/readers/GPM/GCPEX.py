@@ -42,10 +42,6 @@ def reader(
     reader_kwargs["header"] = None
     # Skip file with encoding errors
     reader_kwargs["encoding_errors"] = "ignore"
-    # - Need for zipped raw file (GPM files)
-    reader_kwargs["zipped"] = True
-    # Searched file into tar files
-    reader_kwargs["file_name_to_read_zipped"] = "raw.txt"
     # - Define delimiter
     reader_kwargs["delimiter"] = ";"
     # - Avoid first column to become df index !!!
@@ -79,12 +75,12 @@ def reader(
 
         # - Assign column names
         column_names = [
-            "sensor_id",
+            "station_name",
             "sensor_status",
             "sensor_temperature",
             "number_particles",
             "rainfall_rate_32bit",
-            "reflectivity_32bit",
+            "reflectivity_16bit",
             "mor_visibility",
             "weather_code_synop_4680",
             "weather_code_synop_4677",
@@ -96,12 +92,12 @@ def reader(
         df["time"] = df_time
 
         # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["sensor_id"])
+        df = df.drop(columns=["station_name"])
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.tar"
+    glob_patterns = "*_raw.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

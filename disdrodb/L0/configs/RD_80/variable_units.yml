@@ -1,6 +1,6 @@
 date: ''
 time: ''
-status: ''
+sensor_status: ''
 interval: 's'
 raw_drop_number: ''
 RI: 'mm/h'

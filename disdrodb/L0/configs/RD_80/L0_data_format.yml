@@ -5,7 +5,7 @@ time:
   n_naturals: null
   data_range: null
   nan_flags: null
-status:
+sensor_status:
   n_digits: null
   n_characters: null
   n_decimals: null

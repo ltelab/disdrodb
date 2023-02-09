@@ -35,13 +35,14 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = []
+    column_names = ["TO_SPLIT"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
+    reader_kwargs["delimiter"] = ","
     # - No header
-    reader_kwargs["header"] = None
+    # reader_kwargs["header"] = None
     # - Define encoding
     reader_kwargs["encoding"] = "latin-1"
     # - Avoid first column to become df index
@@ -59,64 +60,54 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", ["C"] * 32]
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", "C" * 32]
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
+        import numpy as np
         import pandas as pd
 
-        temp_time = df.loc[df.iloc[:, 0].astype(str).str.len() == 16].add_prefix("col_")
-        temp_time["col_0"] = pd.to_datetime(temp_time["col_0"], format="%Y.%m.%d;%H:%M")
+        # - Drop unvalid rows
+        # --> C*32 that is nan
+        df = df.dropna()
 
-        # Insert Raw into a series and drop last line
-        temp_raw = df.loc[df.iloc[:, 0].astype(str).str.len() != 16].add_prefix("col_")
-        temp_raw["col_0"] = temp_raw["col_0"].str.lstrip("   ")
-        temp_raw = temp_raw.dropna()
+        # - Check if there are valid data
+        if len(df) == 0:
+            raise ValueError("No data available")
 
-        # If raw_drop_number series is not a 32 multiple, throw error
-        if len(temp_raw) % 32 != 0:
-            msg = "Wrong column number on raw_drop_number, can not parse!"
-            raise ValueError(msg)
+        # - Retrieve timesteps
+        df_time = df["TO_SPLIT"].iloc[0::33]
+        df_time = pd.to_datetime(df_time, format="%Y.%m.%d;%H:%M", errors="coerce")
+        df_time = df_time.rename("time")
+        df_time = df_time.reset_index(drop=True)
+        # - Retrieve data
+        idx = np.ones(len(df)).astype(bool)
+        idx[0::33] = False
+        df_data = df[idx]
 
-        # Series and variable temporary for parsing raw_drop_number
-        raw = pd.DataFrame({"raw_drop_number": []})
+        # - Check consistency (no missing rows)
+        n_expected_data_rows = int(len(df_time) * 32)
+        if len(df_data) != n_expected_data_rows:
+            raise ValueError("Not same amount of timesteps and data.")
 
-        temp_string_2 = ""
+        # - Replace heterogenous number of spaces with a single space
+        df_data["TO_SPLIT"] = (
+            df_data["TO_SPLIT"].str.replace(r" +", " ", regex=True).str.strip(" ")
+        )
 
-        # Parse for raw_drop_number
-        for index, value in temp_raw.iterrows():
-            temp_string = ""
+        # - Retrieve arrays
+        arr = df_data["TO_SPLIT"].str.split(" ", expand=True).to_numpy()
+        # - Flatten by row and then reshape to n_timesteps x 1024
+        arr = arr.flatten(order="C").reshape(len(df_time), 1024)
+        # - Then concat all the 1024 bins
+        df_arr = pd.DataFrame(arr, dtype="str")
+        df_raw_drop_number = df_arr.agg(",".join, axis=1)
+        df_raw_drop_number = df_raw_drop_number.rename("raw_drop_number")
 
-            if index % 32 != 0:
-                temp_string = value["col_0"].split(" ")
-
-                # Remove blank string from split
-                temp_string = list(filter(None, temp_string))
-
-                # Cast list to int
-                temp_string = [int(i) for i in temp_string]
-
-                # Join list separate by comma
-                temp_string = ", ".join(map(str, temp_string))
-
-                # Add last comma
-                temp_string += ", "
-
-                temp_string_2 += temp_string
-
-            else:
-                raw = raw.append({"raw_drop_number": temp_string_2}, ignore_index=True)
-
-                temp_string_2 = ""
-
-        # Reset all index
-        temp_time = temp_time.reset_index(drop=True)
-        raw = raw.reset_index(drop=True)
-
-        df = pd.concat([temp_time, raw], axis=1)
-        df.columns = ["time", "raw_drop_number"]
+        # - Create dataframe
+        df = pd.concat([df_time, df_raw_drop_number], axis=1)
 
         return df
 

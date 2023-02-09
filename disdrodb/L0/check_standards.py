@@ -39,7 +39,11 @@ def _check_valid_range(df, dict_value_range, verbose=False):
     for column in df.columns:
         if column in list(dict_value_range.keys()):
             if dict_value_range[column] is not None:
-                if not df[column].between(*dict_value_range[column]).all():
+                # If nan occurs, assume it as valid values
+                idx_nan = np.isnan(df[column])
+                idx_valid = df[column].between(*dict_value_range[column])
+                idx_valid = np.logical_or(idx_valid, idx_nan)
+                if not idx_valid.all():
                     list_wrong_columns.append(column)
 
     if len(list_wrong_columns) > 0:
@@ -57,7 +61,11 @@ def _check_valid_values(df, dict_valid_values, verbose=False):
     for column in df.columns:
         if column in list(dict_valid_values.keys()):
             valid_values = dict_valid_values[column]
-            if not df[column].isin(valid_values).all():
+            # If nan occurs, assume it as valid values
+            idx_nan = np.isnan(df[column])
+            idx_valid = df[column].isin(valid_values)
+            idx_valid = np.logical_or(idx_valid, idx_nan)
+            if not idx_valid.all():
                 list_wrong_columns.append(column)
                 msg = f"The column {column} has values different from {valid_values}."
                 list_msg.append(msg)
@@ -100,7 +108,7 @@ def _check_raw_fields_available(
     # Report additional raw arrays that are missing
     missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
     if len(missing_vars) > 0:
-        msg = f"The following raw array variable aree missing: {missing_vars}"
+        msg = f"The following raw array variable are missing: {missing_vars}"
         log_info(logger=logger, msg=msg, verbose=verbose)
     return None
 
@@ -151,7 +159,7 @@ def check_L0A_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     # Get valid columns
     dtype_dict = get_L0A_dtype(sensor_name)
     valid_columns = list(dtype_dict)
-    valid_columns = valid_columns + ["time"]
+    valid_columns = valid_columns + ["time", "latitude", "longitude"]
     valid_columns = set(valid_columns)
     # Get dataframe column names
     df_columns = list(df.columns)
@@ -217,20 +225,13 @@ def check_L0A_standards(
         msg = " - The L0A dataframe has column 'latitude'. "
         "This should be included only if the sensor is moving. "
         "Otherwise, specify the 'latitude' in the metadata !"
-        print(msg)
-        logger.info(msg)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     if "longitude" in df.columns:
         msg = " - The L0A dataframe has column 'longitude'. "
         "This should be included only if the sensor is moving. "
         "Otherwise, specify the 'longitude' in the metadata !"
-        print(msg)
-        logger.info(msg)
-
-    # -------------------------------------
-    # Check that numeric variable are not all NaN
-    # - Otherwise raise error
-    # - df[column].isna().all()
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     # -------------------------------------
 
@@ -428,6 +429,8 @@ def get_field_value_options_dict(sensor_name: str) -> dict:
             # TODO: weather codes
             # Faculative/custom fields
         }
+    elif sensor_name == "RD_80":
+        value_dict = {"status": [0, 1]}
     else:
         raise NotImplementedError
 

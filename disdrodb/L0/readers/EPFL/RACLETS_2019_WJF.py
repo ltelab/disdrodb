@@ -45,9 +45,9 @@ def reader(
         "weather_code_synop_4677",
         "reflectivity_32bit",
         "mor_visibility",
-        "sample_interval",
         "laser_amplitude",
         "number_particles",
+        "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
         "sensor_status",
@@ -81,13 +81,7 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "Error in data reading! 0000.000",
-        "Error in data reading! 0002.344",
-    ]
+    reader_kwargs["na_values"] = ["na", "", "error"]
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
@@ -115,7 +109,9 @@ def reader(
         df = df.drop(columns=columns_to_drop)
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce"
+        )
 
         return df
 

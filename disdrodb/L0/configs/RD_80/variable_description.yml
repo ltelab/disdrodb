@@ -1,5 +1,5 @@
 time: 'Measurement start time'
-status: 'Sensor status'
+sensor_status: 'Sensor status'
 interval: 'Time interval between measurement'
 raw_drop_number: 'Drop counts per diameter'
 RI: 'Rain intensity (mm/h)'

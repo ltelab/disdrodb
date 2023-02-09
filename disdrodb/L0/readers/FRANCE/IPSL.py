@@ -99,7 +99,9 @@ def reader(
 
         # Define the time column
         df["time"] = df["date"] + "-" + df["time"]
-        df["time"] = pd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce"
+        )
         df = df.drop(columns=["date"])
 
         # Preprocess the raw spectrum

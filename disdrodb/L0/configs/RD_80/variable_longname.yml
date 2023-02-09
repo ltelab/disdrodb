@@ -1,0 +1,7 @@
+time: 'Measurement start time'
+sensor_status: 'Sensor status'
+interval: 'Time interval between measurement'
+raw_drop_number: 'Drop counts per diameter'
+RI: 'Rain intensity (mm/h)'
+RA: 'Rain amount (mm)'
+RAT: 'Total rain amount since start of measurement (mm)'

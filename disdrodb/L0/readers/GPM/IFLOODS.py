@@ -98,7 +98,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.zip"
+    glob_patterns = "*_raw.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

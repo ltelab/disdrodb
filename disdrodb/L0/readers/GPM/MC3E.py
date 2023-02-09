@@ -33,15 +33,11 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column name
-    columns_names = ["time", "TO_BE_SPLITTED"]
+    column_names = ["time", "TO_BE_SPLITTED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-    # - Need for zipped raw file (GPM files)
-    reader_kwargs["zipped"] = True
-    # - Searched file into tar files
-    reader_kwargs["file_name_to_read_zipped"] = "raw.txt"
     # - Define delimiter
     reader_kwargs["delimiter"] = ";"
     # - Skip first row as columns names
@@ -71,14 +67,13 @@ def reader(
         # - Import pandas
         import pandas as pd
 
-        # - Convert time column to datetime
+        # - Define 'time' datetime
         df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
 
         # - Split the 'TO_BE_SPLITTED' column
-        df_to_parse = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1032)
+        df = df["TO_BE_SPLITTED"].str.split(",", n=9, expand=True)
 
-        # - Select DISDRODB compliants columns
-        df = df_to_parse.iloc[:, :9]
+        # - Assign column names
         column_names = [
             "station_name",
             "sensor_status",
@@ -89,30 +84,20 @@ def reader(
             "mor_visibility",
             "weather_code_synop_4680",
             "weather_code_synop_4677",
+            "raw_drop_number",
         ]
         df.columns = column_names
-
-        # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["station_name"])
 
         # - Add the time column
         df["time"] = df_time
 
-        # - Derive the raw_drop_number column
-        df_raw_drop_number = df_to_parse.iloc[:, 9:]
-        df_raw_drop_number = df_raw_drop_number.apply(
-            lambda x: ",".join(x.dropna().astype(str)), axis=1
-        )
-        df_raw_drop_number = df_raw_drop_number.to_frame("raw_drop_number")
-
-        # - Add the time column
-        df["raw_drop_number"] = df_raw_drop_number
-
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        df = df.drop(columns=["station_name"])
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.tar"
+    glob_patterns = "*_raw.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

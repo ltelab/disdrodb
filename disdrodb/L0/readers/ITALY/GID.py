@@ -161,7 +161,9 @@ def reader(
         df["time"] = df["date_sensor"].astype(str) + " " + df["time_sensor"].astype(str)
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y %H:%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d.%m.%y %H:%M:%S", errors="coerce"
+        )
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         df = df.drop(columns=["date_sensor", "time_sensor"])
