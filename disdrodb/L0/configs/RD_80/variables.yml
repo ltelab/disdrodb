@@ -1,6 +1,6 @@
 '01': date
 '02': time
-'03': status
+'03': sensor_status
 '04': interval
 '05': n1
 '06': n2

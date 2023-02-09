@@ -33,90 +33,7 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names_temp = ["temp"]
-
-    column_names = [
-        "start_identifier",
-        "device_address",
-        "sensor_serial_number",
-        "date_sensor",
-        "time_sensor",
-        "weather_code_synop_4677_5min",
-        "weather_code_synop_4680_5min",
-        "weather_code_metar_4678_5min",
-        "precipitation_rate_5min",
-        "weather_code_synop_4677",
-        "weather_code_synop_4680",
-        "weather_code_metar_4678",
-        "precipitation_rate",
-        "rainfall_rate",
-        "snowfall_rate",
-        "precipitation_accumulated",
-        "mor_visibility",
-        "reflectivity",
-        "quality_index",
-        "max_hail_diameter",
-        "laser_status",
-        "static_signal",
-        "laser_temperature_analog_status",
-        "laser_temperature_digital_status",
-        "laser_current_analog_status",
-        "laser_current_digital_status",
-        "sensor_voltage_supply_status",
-        "current_heating_pane_transmitter_head_status",
-        "current_heating_pane_receiver_head_status",
-        "temperature_sensor_status",
-        "current_heating_voltage_supply_status",
-        "current_heating_house_status",
-        "current_heating_heads_status",
-        "current_heating_carriers_status",
-        "control_output_laser_power_status",
-        "reserve_status",
-        "temperature_interior",
-        "laser_temperature",
-        "laser_current_average",
-        "control_voltage",
-        "optical_control_voltage_output",
-        "sensor_voltage_supply",
-        "current_heating_pane_transmitter_head",
-        "current_heating_pane_receiver_head",
-        "temperature_ambient",
-        "current_heating_voltage_supply",
-        "current_heating_house",
-        "current_heating_heads",
-        "current_heating_carriers",
-        "number_particles",
-        "number_particles_internal_data",
-        "number_particles_min_speed",
-        "number_particles_min_speed_internal_data",
-        "number_particles_max_speed",
-        "number_particles_max_speed_internal_data",
-        "number_particles_min_diameter",
-        "number_particles_min_diameter_internal_data",
-        "number_particles_no_hydrometeor",
-        "number_particles_no_hydrometeor_internal_data",
-        "number_particles_unknown_classification",
-        "number_particles_unknown_classification_internal_data",
-        "number_particles_class_1",
-        "number_particles_class_1_internal_data",
-        "number_particles_class_2",
-        "number_particles_class_2_internal_data",
-        "number_particles_class_3",
-        "number_particles_class_3_internal_data",
-        "number_particles_class_4",
-        "number_particles_class_4_internal_data",
-        "number_particles_class_5",
-        "number_particles_class_5_internal_data",
-        "number_particles_class_6",
-        "number_particles_class_6_internal_data",
-        "number_particles_class_7",
-        "number_particles_class_7_internal_data",
-        "number_particles_class_8",
-        "number_particles_class_8_internal_data",
-        "number_particles_class_9",
-        "number_particles_class_9_internal_data",
-        "raw_drop_number",
-    ]
+    column_names = ["TO_BE_PARSED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
@@ -126,7 +43,7 @@ def reader(
     # Skip first row as columns names
     reader_kwargs["header"] = None
     # Skip first 3 rows
-    reader_kwargs["skiprows"] = 3
+    reader_kwargs["skiprows"] = 2
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -142,56 +59,42 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-        "NP   ",
-    ]  # Cast all to string
+    reader_kwargs["na_values"] = ["na", "", "error", "NA"]  # NP
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
 
     def df_sanitizer_fun(df):
-        # Import dask or pandas
+        # Import pandas
         import pandas as pd
 
-        # Drop header's log rows
-        df = df.loc[df["temp"].astype(str).str.len() > 30]
+        # Retrieve time
+        df_time = df[::2]
 
-        # Split first 80 columns
-        df = df["temp"].str.split(";", n=79, expand=True)
-
-        df.columns = column_names
-
-        # Clean raw_drop_number (ignore last 5 column)
-        df["raw_drop_number"] = df["raw_drop_number"].str[:1760]
-
-        # Drop row if start_identifier different than 00
-        df = df.loc[df["start_identifier"].astype(str) == "00"]
-
-        # Merge time
-        df["time"] = df["date_sensor"].astype(str) + " " + df["time_sensor"]
-
-        # Drop rows with invalid date
-        df = df.loc[df["time"].astype(str).str.len() == 17]
-        try:
-            df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y %H:%M:%S")
-        except ValueError:
-            df["time"] = pd.to_datetime(
-                df["time"], format="%d.%m.%y %H:%M:%S", errors="coerce"
+        # Retrieve data
+        df_data = df[1::2]
+        if len(df_time) != len(df_data):
+            raise ValueError(
+                "Likely corrupted data. Not same number of timesteps and data."
             )
-            df = df.loc[df.time.notnull()]
 
-        # Drop invalid rows
-        df = df.loc[df["raw_drop_number"].astype(str).str.len() == 1760]
+        # Remove starting - from timestep
+        df_time = df_time["TO_BE_PARSED"].str.replace("-", "", n=1)
 
-        # Columns to drop
-        columns_to_drop = [
+        # Create dataframe
+        df_data["time"] = df_time.to_numpy()
+
+        # Drop rows with invalid time
+        df_data = df_data[df_data["time"].astype(str).str.len() == 19]
+
+        # Count number of delimiters to identify valid rows
+        df_data = df_data[df_data["TO_BE_PARSED"].str.count(";") == 524]
+
+        # Split by ; delimiter
+        df = df_data["TO_BE_PARSED"].str.split(";", expand=True, n=79)
+
+        # Assign column names
+        column_names = [
             "start_identifier",
             "device_address",
             "sensor_serial_number",
@@ -200,7 +103,16 @@ def reader(
             "weather_code_synop_4677_5min",
             "weather_code_synop_4680_5min",
             "weather_code_metar_4678_5min",
+            "precipitation_rate_5min",
+            "weather_code_synop_4677",
+            "weather_code_synop_4680",
             "weather_code_metar_4678",
+            "precipitation_rate",
+            "rainfall_rate",
+            "snowfall_rate",
+            "precipitation_accumulated",
+            "mor_visibility",
+            "reflectivity",
             "quality_index",
             "max_hail_diameter",
             "laser_status",
@@ -220,11 +132,14 @@ def reader(
             "control_output_laser_power_status",
             "reserve_status",
             "temperature_interior",
+            "laser_temperature",
             "laser_current_average",
+            "control_voltage",
             "optical_control_voltage_output",
             "sensor_voltage_supply",
             "current_heating_pane_transmitter_head",
             "current_heating_pane_receiver_head",
+            "temperature_ambient",
             "current_heating_voltage_supply",
             "current_heating_house",
             "current_heating_heads",
@@ -259,12 +174,26 @@ def reader(
             "number_particles_class_8_internal_data",
             "number_particles_class_9",
             "number_particles_class_9_internal_data",
+            "raw_drop_number",
         ]
+        df.columns = column_names
 
-        df = df.drop(columns=columns_to_drop)
+        # Add valid timestep
+        df["time"] = pd.to_datetime(
+            df_data["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
+        )
 
-        # Some values could be nan
-        df = df.dropna()
+        # Drop row if start_identifier different than 00
+        df = df[df["start_identifier"].astype(str) == "00"]
+
+        # Clean raw_drop_number (ignore last 5 column)
+        df["raw_drop_number"] = df["raw_drop_number"].str[:1760]
+
+        # Drop rows with invalid raw_drop_number
+        df = df[df["raw_drop_number"].astype(str).str.len() == 1760]
+
+        # Drop columns with unvalid values
+        df = df.drop(columns=["start_identifier", "device_address"])
 
         return df
 

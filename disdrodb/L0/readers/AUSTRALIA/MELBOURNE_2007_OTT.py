@@ -33,35 +33,20 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = [
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "weather_code_metar_4678",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "laser_amplitude",
-        "number_particles",
-        "unknow2",
-        "datalogger_temperature",
-        "sensor_status",
-        "station_name",
-        "unknow3",
-        "unknow4",
-        "error_code",
-        "TO_BE_SPLITTED",
-    ]
+    column_names = ["TO_BE_PARSED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
 
     # - Define delimiter
-    reader_kwargs["delimiter"] = "!"
+    reader_kwargs["delimiter"] = "/\n"
 
     # Skip first row as columns names
     reader_kwargs["header"] = None
+
+    # Skip first 2 rows
+    reader_kwargs["skiprows"] = 2
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
@@ -82,65 +67,75 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "NP   "]
+    reader_kwargs["na_values"] = ["na", "", "error", "NA"]
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
 
     def df_sanitizer_fun(df):
-        # Import dask or pandas
+        # Import pandas
         import pandas as pd
 
-        # Data format:
-        # -2015-01-09 00:02:16
-        # 0000.063;0012.33;51;51;  -DZ; ...
+        # Retrieve time
+        df_time = df[::2]
 
-        # Convert 'temp' column to string
-        df["temp"] = df["temp"].astype(str)
+        # Retrieve data
+        df_data = df[1::2]
+        if len(df_time) != len(df_data):
+            raise ValueError(
+                "Likely corrupted data. Not same number of timesteps and data."
+            )
 
-        # Infer time
-        df_time = df.loc[df["temp"].str.len() == 20]
-        df_time["time"] = pd.to_datetime(df_time["temp"], format="-%Y-%m-%d %H:%M:%S")
-        df_time = df_time.drop(columns=["temp"])
+        # Remove starting - from timestep
+        df_time = df_time["TO_BE_PARSED"].str.replace("-", "", n=1)
 
-        # Drop header's log and corrupted rows
-        df = df.loc[df["temp"].str.len() > 620]
+        # Create dataframe
+        df_data["time"] = df_time.to_numpy()
 
-        # Split first 80 columns
-        df = df["temp"].str.split(";", n=16, expand=True)
-        df.columns = column_names
+        # Count number of delimiters to identify valid rows
+        df_data = df_data[df_data["TO_BE_PARSED"].str.count(";") == 1104]
 
-        # Retrieve raw_drop* fields
-        df["raw_drop_concentration"] = df["TO_BE_SPLITTED"].str[:224]
-        df["raw_drop_average_velocity"] = df["TO_BE_SPLITTED"].str[224:448]
-        df["raw_drop_number"] = df["TO_BE_SPLITTED"].str[448:]
+        # Split by ; delimiter
+        df = df_data["TO_BE_PARSED"].str.split(";", expand=True, n=16)
 
-        # Concat df and df_time
-        df = df.reset_index(drop=True)
-        df_time = df_time.reset_index(drop=True)
-        df = pd.concat([df_time, df], axis=1, ignore_unknown_divisions=True)
-
-        # Drop last columns (all nan)
-        df = df.dropna(thresh=(len(df.columns) - 19), how="all")
-
-        # Drops columns not compliant with DISDRODB L0 standard
-        columns_to_drop = [
-            "TO_BE_SPLITTED",
-            "datalogger_temperature",
+        # Assign column names
+        column_names = [
+            "rainfall_rate_32bit",
+            "rainfall_accumulated_32bit",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "weather_code_metar_4678",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "laser_amplitude",
+            "number_particles",
+            "unknown1",
+            "sensor_battery_voltage",
+            "sensor_status",
             "station_name",
-            "unknow2",
-            "unknow3",
-            "unknow4",
+            "sensor_temperature",
+            "rainfall_amount_absolute_32bit",
+            "error_code",
+            "RAW_TO_PARSE",
         ]
-        df = df.drop(columns=columns_to_drop)
+
+        df.columns = column_names
+        # Add valid timestep
+        df["time"] = pd.to_datetime(df_data["time"], format="%Y-%m-%d %H:%M:%S")
+
+        # Add raw array
+        df["raw_drop_concentration"] = df["RAW_TO_PARSE"].str[:224]
+        df["raw_drop_average_velocity"] = df["RAW_TO_PARSE"].str[224:448]
+        df["raw_drop_number"] = df["RAW_TO_PARSE"].str[448:]
+
+        # Drop columns not agreeing with DISDRODB L0 standards
+        df = df.drop(columns=["station_name", "RAW_TO_PARSE", "unknown1"])
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.txt*"
+    glob_patterns = "*.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

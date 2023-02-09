@@ -1,4 +1,4 @@
-status:
+sensor_status:
     dtype: uint8
     zlib: true
     complevel: 3

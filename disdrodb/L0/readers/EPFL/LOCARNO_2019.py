@@ -87,7 +87,9 @@ def reader(
         import pandas as pd
 
         # - Convert time column to datetime with resolution in seconds
-        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce"
+        )
 
         # - Split TO_BE_SPLITTED columns
         df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)

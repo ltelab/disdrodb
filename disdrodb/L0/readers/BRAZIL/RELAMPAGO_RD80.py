@@ -36,7 +36,7 @@ def reader(
     column_names = [
         "date",
         "time",
-        "status",
+        "sensor_status",
         "interval",
         "n1",
         "n2",
@@ -98,7 +98,7 @@ def reader(
         import pandas as pd
 
         # - Replace 'status' NaN with 0
-        df["status"] = df["status"].fillna(0)
+        df["sensor_status"] = df["sensor_status"].fillna(0)
 
         # - Replace all ',' with '.' in RI, RA, RAT
         df["RI"] = df["RI"].replace({",": "."}, regex=True)
@@ -107,36 +107,20 @@ def reader(
 
         # - Define 'time' datetime column
         df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
-        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
+        )
         df = df.drop(columns=["date"])
 
-        # - Create raw_drop_number string
-        bin_columns = [
-            "n1",
-            "n2",
-            "n3",
-            "n4",
-            "n5",
-            "n6",
-            "n7",
-            "n8",
-            "n9",
-            "n10",
-            "n11",
-            "n12",
-            "n13",
-            "n14",
-            "n15",
-            "n16",
-            "n17",
-            "n18",
-            "n19",
-            "n20",
-        ]
-        df["raw_drop_number"] = ""
-        for c in bin_columns:
-            df["raw_drop_number"] += df[c].astype(str) + ";"
+        # - Create raw_drop_number column
+        bin_columns = ["n" + str(i) for i in range(1, 21)]
+        df_arr = df[bin_columns]
+        df_raw_drop_number = df_arr.agg(";".join, axis=1)
+        df["raw_drop_number"] = df_raw_drop_number
+
+        # - Remove bins columns
         df = df.drop(columns=bin_columns)
+
         return df
 
     ##------------------------------------------------------------------------.

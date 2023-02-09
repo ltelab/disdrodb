@@ -33,7 +33,7 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["time", "epoch_time", "TO_BE_SPLITTED"]
+    column_names = ["time", "epoch_time", "TO_BE_PARSED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
@@ -68,26 +68,19 @@ def reader(
         # Import pandas
         import pandas as pd
 
-        # # Station 7 throws a bug on rows 105000 and 110000 on dask (000NETDL07 and PAR007 device name)
-        # if (df['TO_BE_PARSED'].str.contains('000NETDL07')).any() | (df['TO_BE_PARSED'].str.contains('PAR007')).any():
-        #     # df = df.loc[105000:110000]
-        #     df.drop(df.index[105000:110000], axis=0, inplace=True)
-
         # - Remove rows that have a corrupted "TO_BE_PARSED" column
-        df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() > 50]
-
-        # - Drop rows with bad 'time' column
-        df = df.loc[df["time"].astype(str).str.len() == 15]
+        df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() == 3726]
 
         # - Convert 'time' column to datetime
-        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d-%H%M%S")
+        df_time = pd.to_datetime(df["time"], format="%Y%m%d-%H%M%S", errors="coerce")
 
-        # - Remove rows with duplicate timestep
-        df = df.drop_duplicates(subset=["time"])
-        df_time = df["time"]
+        # - Strip values from start and end of the string
+        df["TO_BE_PARSED"] = (
+            df["TO_BE_PARSED"].str.lstrip("b'").str.rstrip("'").str.rstrip("\\r\\n'")
+        )
 
-        # - Split the column 'TO_BE_SPLITTED'
-        df_to_parse = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=99)
+        # - Split the column 'TO_BE_PARSED'
+        df_to_parse = df["TO_BE_PARSED"].str.split(";", expand=True, n=99)
 
         # - Retrieve DISDRODB compliant columns
         df = df_to_parse.iloc[:, 0:35]
@@ -129,40 +122,29 @@ def reader(
             "rain_kinetic_energy",
             "snowfall_rate",
             "number_particles_all",
-            "number_particles_all_detected",
+            # "number_particles_all_detected",
         ]
         df.columns = column_names
 
         # - Add time column
         df["time"] = df_time
 
-        # - Remove char from rain intensity
-        df["rainfall_rate_32bit"] = df["rainfall_rate_32bit"].str.lstrip("b'")
-
-        # - Remove spaces on weather_code_metar_4678 and weather_code_nws
-        df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
-        df["weather_code_nws"] = df["weather_code_nws"].str.strip()
-
-        # - Retrieve raw_drop_concentration and raw_drop_average_velocity columns
+        # - Retrieve raw_drop_concentration
         df["raw_drop_concentration"] = df_to_parse.iloc[:, 35:67].apply(
             lambda x: ",".join(x.dropna().astype(str)),
             axis=1,
         )
+        # - Retrieve raw_drop_average_velocity
         df["raw_drop_average_velocity"] = df_to_parse.iloc[:, 67:99].apply(
             lambda x: ",".join(x.dropna().astype(str)),
             axis=1,
         )
 
-        # - Retrieve raw_drop_number column
+        # - Retrieve raw_drop_number
         df_raw_drop_number = df_to_parse.iloc[:, 99].squeeze()
         df_raw_drop_number = df_raw_drop_number.str.replace(
             r"(\w{3})", r"\1,", regex=True
         )
-        if df["station_name"].iloc[0] == "PAR008":
-            rstrip_pattern = "\\r\\n'"  # \r\n' at end
-        else:
-            rstrip_pattern = "'"
-        df_raw_drop_number = df_raw_drop_number.str.rstrip(rstrip_pattern)
         df["raw_drop_number"] = df_raw_drop_number
 
         # - Drop columns not agreeing with DISDRODB L0 standards
@@ -175,10 +157,10 @@ def reader(
             "station_name",
             "station_number",
             "sensor_serial_number",
-            "epoch_time",
             "sample_interval",
             "sensor_serial_number",
-            "number_particles_all_detected",
+            # "epoch_time",
+            # "number_particles_all_detected",
         ]
         df = df.drop(columns=columns_to_drop)
 
@@ -186,8 +168,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    # glob_patterns= "*.tar.xz"
-    glob_patterns = "*.csv"
+    glob_patterns = "*/*/*.csv"  # <year>/<yearmonth>/*csv
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

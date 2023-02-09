@@ -69,6 +69,8 @@ def reader(
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+    # --> Avoid UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf0
+    reader_kwargs["encoding"] = "latin-1"
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
@@ -89,7 +91,9 @@ def reader(
         import pandas as pd
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
+        )
 
         # - Drop rows when "raw_drop_number" is "NA"
         # --> This is used to drop all rows where all values are "NA"

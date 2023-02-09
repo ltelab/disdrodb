@@ -612,7 +612,7 @@ def get_raw_field_nbins(sensor_name: str) -> dict:
     diameter_dict = get_diameter_bins_dict(sensor_name)
     velocity_dict = get_velocity_bins_dict(sensor_name)
     n_d = len(diameter_dict["center"])
-    # For instruments measuring size and velocity (i.e. OTT Parsivel, ThiesLPM)
+    # For instruments measuring size and velocity (i.e. OTT Parsivel, Thies_LPM)
     if velocity_dict is not None:
         n_v = len(velocity_dict["center"])
         nbins_dict = {
@@ -648,13 +648,13 @@ def get_raw_field_dim_order(sensor_name: str) -> dict:
     """
     # TODO: this should go into a config file ...
     # TODO: also think to set dimensions as diameter and velocity ... TO DISCUSS
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "ThiesLPM"]:
+    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
         dim_dict = {
             "raw_drop_concentration": ["diameter_bin_center"],
             "raw_drop_average_velocity": ["velocity_bin_center"],
             "raw_drop_number": ["diameter_bin_center", "velocity_bin_center"],
         }
-    elif sensor_name in ["RD80"]:
+    elif sensor_name in ["RD_80"]:
         dim_dict = {"raw_drop_number": ["diameter_bin_center"]}
     else:
         raise NotImplementedError()

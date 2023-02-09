@@ -32,6 +32,7 @@ from typing import Union
 from disdrodb.L0.standards import get_L0A_dtype
 from disdrodb.L0.check_standards import check_L0A_column_names, check_L0A_standards
 from disdrodb.L0.io import _remove_if_exists, _create_directory
+from disdrodb.L0.L0B_processing import infer_split_str
 
 # Logger
 from disdrodb.utils.logger import (
@@ -447,6 +448,63 @@ def strip_string_spaces(
     return df
 
 
+def _strip_delimiter(string):
+    if not isinstance(string, str):
+        return string
+    split_str = infer_split_str(string=string)
+    string = string.strip(split_str)
+    return string
+
+
+def strip_delimiter_from_raw_arrays(df):
+    """Remove the first and last delimiter occurence from the raw array fields."""
+    # Possible fields
+    possible_fields = [
+        "raw_drop_number",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+    ]
+    available_fields = list(df.columns[np.isin(df.columns, possible_fields)])
+    # Loop over the fields and strip away the delimiter
+    for field in available_fields:
+        df[field] = df[field].apply(_strip_delimiter)
+    # Return the dataframe
+    return df
+
+
+def _is_not_corrupted(string):
+    """Check if the raw array is corrupted."""
+    if not isinstance(string, str):
+        return False
+    split_str = infer_split_str(string=string)
+    list_values = string.split(split_str)
+    values = pd.to_numeric(list_values, errors="coerce")
+    return ~np.any(np.isnan(values))
+
+
+def remove_corrupted_rows(df):
+    """Remove corrupted rows by checking conversion of raw fields to numeric.
+
+    Note: The raw array must be stripped away from delimiter at start and end !
+    """
+    # Possible fields
+    possible_fields = [
+        "raw_drop_number",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+    ]
+    available_fields = list(df.columns[np.isin(df.columns, possible_fields)])
+    # Loop over the fields and remove corrupted ones
+    for field in available_fields:
+        if len(df) != 0:
+            df = df[df[field].apply(_is_not_corrupted)]
+    # Check if there are rows left
+    if len(df) == 0:
+        raise ValueError("No remaining rows after data corruption checks.")
+    # Return the dataframe
+    return df
+
+
 def process_raw_file(
     filepath,
     column_names,
@@ -514,6 +572,12 @@ def process_raw_file(
 
     # - Strip trailing/leading space from string columns
     df = strip_string_spaces(df, sensor_name=sensor_name, verbose=verbose)
+
+    # - Strip first and last delimiter from the raw arrays
+    df = strip_delimiter_from_raw_arrays(df)
+
+    # - Remove corrupted rows.
+    df = remove_corrupted_rows(df)
 
     # - Cast dataframe to dtypes
     df = cast_column_dtypes(df, sensor_name=sensor_name, verbose=verbose)

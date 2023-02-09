@@ -70,6 +70,9 @@ def reader(
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
 
+    # --> Avoid UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf0
+    reader_kwargs["encoding"] = "latin-1"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
@@ -83,49 +86,41 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-    ]
+    reader_kwargs["na_values"] = ["na", "", "error"]
 
     # Different enconding for this campaign
     reader_kwargs["encoding"] = "latin-1"
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
 
     def df_sanitizer_fun(df):
-        # Import dask or pandas
+        # Import pandas
+        import numpy as np
         import pandas as pd
 
-        # - Drop rows when  'Error in data reading' in rainfall_rate_32bit column
-        bad_indexes = df[
+        # - Special parsing if 'Error in data reading' in rainfall_rate_32bit column
+        if np.any(
             df["rainfall_rate_32bit"].str.startswith("Error in data reading!", na=False)
-        ].index
-        df = df.drop(bad_indexes)
-
-        # - Interrupt process if no data available
-        if len(df.index) == 0:
-            raise ValueError("No valid data available.")
+        ):
+            df["rainfall_rate_32bit"] = df["rainfall_rate_32bit"].str.replace(
+                "Error in data reading!", ""
+            )
+            df["rainfall_amount_absolute_32bit"].str[7:]
+            df["raw_drop_number"] = df["raw_drop_average_velocity"]
+            df["raw_drop_average_velocity"] = df["raw_drop_concentration"]
+            df["raw_drop_concentration"] = df["error_code"]
+            df["error_code"] = df["rainfall_amount_absolute_32bit"].str[7:]
+            df["rainfall_amount_absolute_32bit"] = df[
+                "rainfall_amount_absolute_32bit"
+            ].str[:7]
 
         # - Convert time column to datetime
         df["time"] = pd.to_datetime(
             df["time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
         )
 
-        # - Discard rows where time data are corrupted
-        corrupted_indices = df[df["time"].isna()].index
-        df = df.drop(corrupted_indices)
-
-        # - Discard rows with corrupted values in raw_drop_number
-        corrupted_indexes = df[
-            df["raw_drop_number"].str.contains("0\x100") == False
-        ].index
-        df = df.drop(corrupted_indexes)
+        # - Rows with data corruption or missing timesteps are removed by L0A processing.
 
         return df
 

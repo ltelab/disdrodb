@@ -33,13 +33,11 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["time", "TO_BE_PARSED"]
+    column_names = ["time", "TO_BE_SPLITTED"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-    # - Need for zipped raw file (GPM files)
-    reader_kwargs["zipped"] = True
     # - Define delimiter
     reader_kwargs["delimiter"] = ";"
     # - Skip first row as columns names
@@ -62,34 +60,32 @@ def reader(
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error", "-.-"]
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     # Deal with changing file format after 25 feb 2011 by the documentation
     # - https://ghrc.nsstc.nasa.gov/pub/fieldCampaigns/gpmValidation/relatedProjects/nsstc/parsivel/doc/gpm_parsivel_nsstc_dataset.html).
-    # - TODO: code below might exploit df['time'] instead of n_delimiters
 
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
 
-        # - Check 'time' string length
-        # --> Enable to detect rows which are corrupted
+        # - Check 'time' string length to detect corrupted rows
         df = df[df["time"].str.len() == 14]
 
         # - Convert time column to datetime
         df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
 
-        # Compute number of delimiters in the column to be parsed
-        # - Count commas on the first row to determine the columns number
-        n_delimiters = df["TO_BE_PARSED"].iloc[0].count(",").item()
+        # Count number of delimiters in the column to be parsed
+        n_delimiters = df["TO_BE_SPLITTED"].iloc[0].count(",")
 
         if n_delimiters == 1027:
             # - Select valid rows
-            df = df.loc[df["TO_BE_PARSED"].str.count(",") == 1027]
+            df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1027]
             # - Get time column
             df_time = df["time"]
-            # - Split the column be parsed
-            df = df["TO_BE_PARSED"].str.split(",", expand=True, n=3)
+            # - Split the 'TO_BE_SPLITTED' column
+            df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=3)
             # - Assign column names
             column_names = [
                 "station_name",
@@ -98,23 +94,26 @@ def reader(
                 "raw_drop_number",
             ]
             df.columns = column_names
-            # - Add missing columns with NAN value
-            df["number_particles"] = "NaN"
-            df["rainfall_rate_32bit"] = "NaN"
-            df["reflectivity_32bit"] = "NaN"
-            df["mor_visibility"] = "NaN"
-            df["weather_code_synop_4680"] = "NaN"
-            df["weather_code_synop_4677"] = "NaN"
             # - Add time column
             df["time"] = df_time
-
+            # - Add missing columns and set NaN value
+            missing_columns = [
+                "number_particles",
+                "rainfall_rate_32bit",
+                "reflectivity_16bit",
+                "mor_visibility",
+                "weather_code_synop_4680",
+                "weather_code_synop_4677",
+            ]
+            for column in missing_columns:
+                df[column] = "NaN"
         elif n_delimiters == 1033:
             # - Select valid rows
-            df = df.loc[df["TO_BE_PARSED"].str.count(",") == 1033]
+            df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1033]
             # - Get time column
             df_time = df["time"]
             # - Split the column be parsed
-            df = df["TO_BE_PARSED"].str.split(",", expand=True, n=9)
+            df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=9)
             # - Assign column names
             column_names = [
                 "station_name",
@@ -122,7 +121,7 @@ def reader(
                 "sensor_temperature",
                 "number_particles",
                 "rainfall_rate_32bit",
-                "reflectivity_32bit",
+                "reflectivity_16bit",
                 "mor_visibility",
                 "weather_code_synop_4680",
                 "weather_code_synop_4677",
@@ -131,20 +130,22 @@ def reader(
             df.columns = column_names
             # - Add time column
             df["time"] = df_time
-
         else:
             # Wrong number of delimiters ... likely a corrupted file
-            raise SyntaxError("Something wrong with columns number!")
+            raise ValueError("Unexpected number of comma delimiters !")
+
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        df = df.drop(columns=["station_name"])
 
         # - Detect corrupted row by analyzing raw_drop_number
         # TODO: to be discarded in future by timestep ...
-        df = df[df["raw_drop_number"].str.contains("0p0") == False]
+        # df = df[df["raw_drop_number"].str.contains("0p0") == False]
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.tar"
+    glob_patterns = "*.dat"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products
