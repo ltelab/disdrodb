@@ -244,6 +244,7 @@ def check_L0B_standards(x: str) -> None:
 
 ####--------------------------------------------------------------------------.
 #### Get instrument default string standards
+# TODO: This should be moved to standards.py !!!
 def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
     """Get number of digits on the left side of the comma from the instrument default string standards.
 

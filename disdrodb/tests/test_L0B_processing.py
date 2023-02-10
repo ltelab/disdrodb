@@ -88,9 +88,9 @@ def test_retrieve_L0B_arrays():
     assert 1 == 1
 
 
-def test_get_coords():
+def test_get_bin_coords():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.get_coords()
+    # function_return = L0B_processing.get_bin_coords()
     assert 1 == 1
 
 

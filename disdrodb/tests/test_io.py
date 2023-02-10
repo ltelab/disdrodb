@@ -422,7 +422,7 @@ def test_copy_station_metadata():
     assert os.path.exists(expected_metadata_fpath)
 
 
-# def test_create_directory_structure_l0a():
+# def test_create_initial_directory_structure():
 #     campaign_name = "CAMPAIGN_NAME"
 #     data_source = "DATA_SOURCE"
 #     station_name = "STATION_NAME"

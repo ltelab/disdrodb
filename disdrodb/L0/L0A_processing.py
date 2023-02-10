@@ -513,7 +513,7 @@ def process_raw_file(
     sensor_name,
     verbose,
 ):
-    """Read and parse a raw files into a L0A dataframe.
+    """Read and parse a raw text files into a L0A dataframe.
 
     Parameters
     ----------

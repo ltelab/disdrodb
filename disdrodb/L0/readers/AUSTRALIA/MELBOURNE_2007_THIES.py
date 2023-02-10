@@ -70,9 +70,11 @@ def reader(
 
         # Retrieve time
         df_time = df[::2]
-
+        df_time = df_time.reset_index(drop=True)
         # Retrieve data
         df_data = df[1::2]
+        df_data = df_data.reset_index(drop=True)
+
         if len(df_time) != len(df_data):
             raise ValueError(
                 "Likely corrupted data. Not same number of timesteps and data."
@@ -81,11 +83,14 @@ def reader(
         # Remove starting - from timestep
         df_time = df_time["TO_BE_PARSED"].str.replace("-", "", n=1)
 
+        # Format time in datetime64
+        df_time = pd.to_datetime(df_time, format="%Y-%m-%d %H:%M:%S", errors="coerce")
+
         # Create dataframe
         df_data["time"] = df_time.to_numpy()
 
         # Drop rows with invalid time
-        df_data = df_data[df_data["time"].astype(str).str.len() == 19]
+        df_data = df_data.dropna(subset="time")
 
         # Count number of delimiters to identify valid rows
         df_data = df_data[df_data["TO_BE_PARSED"].str.count(";") == 524]
@@ -178,12 +183,8 @@ def reader(
         ]
         df.columns = column_names
 
-        # Add valid timestep
-        df["time"] = pd.to_datetime(
-            df_data["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
-        )
-
         # Drop row if start_identifier different than 00
+        df["time"] = df_data["time"]
         df = df[df["start_identifier"].astype(str) == "00"]
 
         # Clean raw_drop_number (ignore last 5 column)
