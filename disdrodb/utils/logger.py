@@ -138,6 +138,7 @@ def define_summary_log(list_logs):
     It select only logged lines with root, WARNING and ERROR keywords.
     It write the summary log in the parent directory.
     """
+    list_logs = sorted(list_logs)
     logs_dir = os.path.dirname(list_logs[0])
     station_name = logs_dir.split(os.path.sep)[-1]
     summary_logs_dir = os.path.dirname(logs_dir)
@@ -164,6 +165,7 @@ def define_summary_log(list_logs):
     # - Copy the log of files with warnings and error
     list_keywords = ["WARNING", "ERROR"]
     re_keyword = re.compile("|".join(list_keywords))
+    any_problem = False
     with open(problem_fpath, "w") as output_file:
         for log_fpath in list_logs:
             log_with_problem = False
@@ -172,6 +174,7 @@ def define_summary_log(list_logs):
                 for line in input_file:
                     if re_keyword.search(line):
                         log_with_problem = True
+                        any_problem = True
                         break
             # If it is reported, copy the log file in the logs_problem file
             if log_with_problem:
@@ -179,7 +182,7 @@ def define_summary_log(list_logs):
                     output_file.write(input_file.read())
 
     # If no problems occured, remove the logs_problem_<station_name>.log file
-    if not log_with_problem:
+    if not any_problem:
         os.remove(problem_fpath)
     return None
 

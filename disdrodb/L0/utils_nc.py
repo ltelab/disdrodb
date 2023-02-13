@@ -328,86 +328,6 @@ def ensure_monotonic_dimension(
 # ds_index = np.array(ds_index)
 
 
-####---------------------------------------------------------------------------.
-
-
-def get_common_coords(list_ds: list) -> set:
-    """Get the common set of coordinates across xarray datasets.
-
-    Parameters
-    ----------
-    list_ds : list
-        List of xarray datasets.
-
-    Returns
-    -------
-    set
-        The common set of coordinates.
-    """
-    # Get common data vars
-    coords_ref = set(list_ds[0].coords)
-    for ds in list_ds:
-        coords_ref = set(ds.coords).intersection(coords_ref)
-    return coords_ref
-
-
-def get_common_vars(list_ds: list) -> tuple:
-    """Get the common set of variables across xarray datasets.
-
-    Parameters
-    ----------
-    list_ds : list
-        List of xarray datasets
-
-    Returns
-    -------
-    tuple
-        (The common set of variables, Dictionary to collect problems)
-    """
-    # Initialize variables in first file
-    vars_init = set(list_ds[0].data_vars)
-    n_vars_init = len(vars_init)
-    # Initialize common variable reference
-    common_vars_ref = set(list_ds[0].data_vars)
-    # Initialize dictionary to collect problems
-    dict_problems = {}
-    dict_problems["missing_versus_first"] = {}
-    dict_problems["additional_versus_first"] = {}
-    dict_problems["evolution"] = {}
-    dict_problems["missing_versus_first"]["ref"] = vars_init
-    dict_problems["additional_versus_first"]["ref"] = vars_init
-    dict_problems["evolution"]["ref"] = vars_init
-    # Loop over all datasets
-    for i, ds in enumerate(list_ds):
-        # Extract current dataset variable info
-        vars_ds = set(ds.data_vars)
-        len(vars_ds)
-        # Check if missing variable compared to first
-        vars_intersection_vs_first = vars_ds.intersection(vars_init)
-        # Collect information on missing variables (compared to first)
-        if len(vars_intersection_vs_first) != n_vars_init:
-            if len(vars_init.difference(vars_ds)) > 0:
-                dict_problems["missing_versus_first"][i] = vars_init.difference(vars_ds)
-            if len(vars_ds.difference(vars_init)) > 0:
-                dict_problems["additional_versus_first"][i] = vars_ds.difference(
-                    vars_init
-                )
-        # Check if missing an additional variable compared to past common variables
-        common_vars_ref_new = vars_ds.intersection(common_vars_ref)
-        # If missing, collect information on additional missing variable
-        if len(common_vars_ref_new) != len(common_vars_ref):
-            dict_problems["evolution"][i] = common_vars_ref.difference(
-                common_vars_ref_new
-            )
-
-        # Redefine variables common to all datasets
-        common_vars_ref = common_vars_ref_new
-
-    # ---------------------------------------------.
-    # Return results
-    return common_vars_ref, dict_problems
-
-
 ####---------------------------------------------------------------------------
 def get_list_ds(fpaths: str) -> list:
     """Get list of xarray datasets from file paths.
@@ -471,66 +391,6 @@ def get_list_ds(fpaths: str) -> list:
 
 
 ####---------------------------------------------------------------------------
-def _get_coord_values(ds, coord):
-    values = ds[coord].values.tolist()
-    if not isinstance(values, list):
-        values = [values]
-    return values
-
-
-def _check_coord_values(list_ds, coord):
-    coord_values = _get_coord_values(list_ds[0], coord)
-    ref_set = set(coord_values)
-    dict_coord = {}
-    dict_coord["ref"] = ref_set
-    for i, ds in enumerate(list_ds):
-        values = _get_coord_values(ds, coord)
-        values = set(values)
-        if ref_set != values:
-            dict_coord[i] = values
-            list_ds[i] = ds.assign_coords({coord: list(ref_set)})
-    return dict_coord
-
-
-def ensure_constant_coords(list_ds: list, coords: list) -> tuple:
-    """Check coordinates are invariant across xarray datasets.
-
-    It takes the first dataset as reference.
-
-    Parameters
-    ----------
-    list_ds : list
-        List of xarray datasets.
-    coords : list
-        List of coordinates names.
-
-    Returns
-    -------
-    tuple
-        (List of xarray datasets, Dictionary to collect problems)
-    """
-    dict_problems = {}
-    # dict_problems = {}
-    # for coord in coords:
-    #     dict_coord = _check_coord_values(list_ds, coord)
-    #     dict_problems[coord] = dict_coord
-    # return list_ds, dict_problems
-    for coord in coords:
-        coord_values = _get_coord_values(ds=list_ds[0], coord=coord)
-        ref_set = set(coord_values)
-        dict_coord = {}
-        dict_coord["ref"] = ref_set
-        for i, ds in enumerate(list_ds):
-            values = _get_coord_values(ds=ds, coord=coords)
-            values = set(values)
-            if ref_set != values:
-                dict_coord[i] = values
-                list_ds[i] = ds.assign_coords({coord: list(ref_set)})
-        dict_problems[coord] = dict_coord
-    return list_ds, dict_problems
-
-
-####---------------------------------------------------------------------------
 
 
 def _concatenate_datasets(list_ds, dim="time", verbose=False):
@@ -550,29 +410,10 @@ def _concatenate_datasets(list_ds, dim="time", verbose=False):
     return ds
 
 
-def _merge_datasets(list_ds, verbose=False):
-    try:
-        msg = "Start concatenating with xr.merge."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-        ds = xr.merge(
-            list_ds, compat="override", join="outer", combine_attrs="override"
-        )
-        msg = "Concatenation with xr.merge has been successful."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-    except Exception as e:
-        msg = f"Concatenation with xr.merge failed. Error is {e}"
-        log_error(logger=logger, msg=msg, verbose=False)
-        raise ValueError(msg)
-    return ds
-
-
 def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
     """Concat xr.Dataset in a robust and parallel way.
 
     1. It checks for time dimension monotonicity
-    2. It checks by default for a minimum common set of variables
-    Note: client = Client(processes=True) to execute it fast !
-
 
     Parameters
     ----------
@@ -607,96 +448,8 @@ def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
     )
 
     # --------------------------------------.
-    # Ensure coordinate outside time do not vary
-    # coords_var = get_common_coords(list_ds)
-    # coords_without_time = coords_var.difference(
-    #     set(["time", "latitude", "longitude", "lat", "lon"])
-    # )
-    # list_ds, dict_problems = ensure_constant_coords(list_ds, coords=coords_without_time)
-
-    # --------------------------------------.
-    # - Log the possible problems
-    # for coord in coords_without_time:
-    #     dict_problem = dict_problems[coord]
-    #     ref = dict_problem.pop("ref")
-    #     n_problems = len(dict_problem)
-    #     n_files = len(list_ds)
-    #     if len(dict_problem) != 0:
-    #         msg = f"Difference found in {n_problems}/{n_files} files."
-    #         logger.debug(msg)
-    #         msg = f"In the first file, the coordinate {coord} has values {ref}."
-    #         logger.debug(msg)
-    #         for i, values in dict_problem.items():
-    #             fpath = fpaths[i]
-    #             msg = f"In {fpath}, the coordinate {coord} has values {values}."
-    #             logger.debug(msg)
-    #             logger.info(
-    #                 "Such coordinates have been replaced with the one observed in the first file."
-    #             )
-
-    # --------------------------------------.
-    # Get set of common_vars
-    common_vars, dict_problems = get_common_vars(list_ds)
-
-    # --------------------------------------.
-    # Log the missing variables compared to first file
-
-    # --------------------------------------.
-    dict_problem = dict_problems["missing_versus_first"]
-    n_problems = len(dict_problem)
-    n_files = len(list_ds)
-    _ = dict_problem.pop("ref")
-    if len(dict_problem) != 0:
-        msg = f"Difference found in {n_problems}/{n_files} files."
-        log_warning(logger=logger, msg=msg, verbose=verbose)
-        for i, vars in dict_problem.items():
-            fpath = fpaths[i]
-            msg = f"At file {i}/{n_files} ({fpath}), the variables {vars} are missing (compared to first file)."
-            log_warning(logger=logger, msg=msg, verbose=verbose)
-
-    # --------------------------------------.
-    # Log the additional variables compared to first file
-    dict_problem = dict_problems["additional_versus_first"]
-    n_problems = len(dict_problem)
-    n_files = len(list_ds)
-    _ = dict_problem.pop("ref")
-    if len(dict_problem) != 0:
-        msg = f"Difference found in {n_problems}/{n_files} files."
-        log_warning(logger=logger, msg=msg, verbose=verbose)
-        for i, vars in dict_problem.items():
-            fpath = fpaths[i]
-            msg = f"At file {i}/{n_files} ({fpath}), there are the variables {vars} which are missing in the first file."
-            log_warning(logger=logger, msg=msg, verbose=verbose)
-
-    # --------------------------------------.
-    # Log the progressively shrinkage of common variables
-    dict_problem = dict_problems["evolution"]
-    n_problems = len(dict_problem)
-    n_files = len(list_ds)
-    _ = dict_problem.pop("ref")
-    if len(dict_problem) != 0:
-        msg = "Here we report the file which led to shrinkage of the set of common variables."
-        log_warning(logger=logger, msg=msg, verbose=verbose)
-        for i, removed_vars in dict_problem.items():
-            fpath = fpaths[i]
-            for var in removed_vars:
-                msg = f"At file {i}/{n_files} ({fpath}), the {var} is removed from the common set of variables."
-                log_warning(logger=logger, msg=msg, verbose=verbose)
-
-    # --------------------------------------.
-    # Concat/merge all netCDFs
-    # - If there are common variables, use xr.concat
-    if len(common_vars) > 0:
-        # Ensure common set of variables across xr.Datasets
-        for i, ds in enumerate(list_ds):
-            list_ds[i] = ds[common_vars]
-
-        # Try concatenating
-        ds = _concatenate_datasets(list_ds=list_ds, dim="time", verbose=verbose)
-
-    # - Otherwise use xr.merge
-    else:
-        ds = _merge_datasets(list_ds=list_ds, verbose=verbose)
+    # Concatenate all netCDFs
+    ds = _concatenate_datasets(list_ds=list_ds, dim="time", verbose=verbose)
 
     # --------------------------------------.
     # Return xr.Dataset

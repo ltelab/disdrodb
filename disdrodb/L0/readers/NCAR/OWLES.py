@@ -98,6 +98,7 @@ def reader(
     def df_sanitizer_fun(df):
         # Import pandas
         import pandas as pd
+
         # Parse time
         df["time"] = (
             df["day"].astype(str)

@@ -1,4 +1,3 @@
-
 # The yaml files are tested in the test_config_files.py file
 
 """
