@@ -13,7 +13,7 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 
 def test_preprocess_reader_kwargs():
     # Test that the function removes the 'dtype' key from the reader_kwargs dict
-    reader_kwargs = {"dtype": "int64", "other_key": "other_value"}
+    reader_kwargs = {"dtype": "int64", "other_key": "other_value", "delimiter": ","}
     preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(reader_kwargs)
     assert "dtype" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
@@ -24,6 +24,7 @@ def test_preprocess_reader_kwargs():
         "blocksize": 128,
         "assume_missing": True,
         "other_key": "other_value",
+        "delimiter": ","
     }
     preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(
         reader_kwargs,
@@ -31,7 +32,12 @@ def test_preprocess_reader_kwargs():
     assert "blocksize" not in preprocessed_kwargs
     assert "assume_missing" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
-
+    
+    # Test raise error if delimiter is not specified 
+    reader_kwargs = {"dtype": "int64", "other_key": "other_value"}
+    with pytest.raises(ValueError):
+        L0A_processing.preprocess_reader_kwargs(reader_kwargs)
+    
 
 def test_concatenate_dataframe():
     # Test that the function returns a Pandas dataframe
@@ -165,35 +171,13 @@ def test_read_raw_data():
     assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}
 
 
-def test_read_raw_data_zipped():
-    # this test relies on "\tests\pytest_files\test_L0A_processing\test_read_raw_data\data.tar"
-
-    path_test_data = os.path.join(
-        PATH_TEST_FOLDERS_FILES, "test_L0A_processing", "test_read_raw_data", "data.tar"
-    )
-
-    reader_kwargs = {}
-    reader_kwargs["delimiter"] = ","
-    reader_kwargs["header"] = 0
-    reader_kwargs["engine"] = "python"
-    reader_kwargs["zipped"] = True
-
-    r = L0A_processing._read_raw_data_zipped(
-        path_test_data,
-        column_names=["att_1", "att_2"],
-        reader_kwargs=reader_kwargs,
-    )
-
-    assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}
-
-
 def test_read_raw_file_list():
     # not tested yet because relies on config files that can be modified
     # function_return = L0A_processing.read_raw_file_list()
     assert 1 == 1
 
 
-def test_write_df_to_parquet():
+def test_write_l0a():
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")
@@ -205,7 +189,7 @@ def test_write_df_to_parquet():
         "test_folders_files_creation",
         "fake_data_sample.parquet",
     )
-    L0A_processing.write_df_to_parquet(df, path_parquet_file, True, False)
+    L0A_processing.write_l0a(df, path_parquet_file, True, False)
 
     # Read parquet file
     df_written = io.read_L0A_dataframe([path_parquet_file], False)

@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
-# File content
-# - Functions to process raw data files into L0A Apache parquet.
+"""Code to process raw text files into DISDRODB L0A Apache Parquet."""
 
 # -----------------------------------------------------------------------------.
 import os
@@ -49,12 +47,6 @@ pd.set_option("mode.chained_assignment", None)  # Avoid SettingWithCopyWarning
 
 
 ####---------------------------------------------------------------------------.
-# Possible renaming:
-# - write_df_to_parquet --> write_l0a?
-# Remove or refactor
-# - _read_raw_data_zipped
-
-####---------------------------------------------------------------------------.
 #### Raw file readers
 
 
@@ -71,6 +63,10 @@ def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     dict
         Parameter dictionary that matches either Pandas or Dask.
     """
+    # Check delimiter is specified ! 
+    if "delimiter" not in reader_kwargs:
+        raise ValueError("The 'delimiter' key must be specified in reader_kwargs dictionary!")
+    
     # Remove dtype key
     # - The dtype is enforced to be 'object' in the read function !
     reader_kwargs.pop("dtype", None)
@@ -81,11 +77,6 @@ def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     # Remove kwargs expected by dask dataframe read_csv
     reader_kwargs.pop("blocksize", None)
     reader_kwargs.pop("assume_missing", None)
-
-    # TODO: Remove this when removing _read_raw_data_zipped
-    if reader_kwargs.get("zipped", False):
-        reader_kwargs.pop("zipped", None)
-        reader_kwargs.pop("file_name_to_read_zipped", None)
 
     return reader_kwargs
 
@@ -117,117 +108,18 @@ def read_raw_data(
     # Enforce all raw files columns with dtype = 'object'
     dtype = "object"
 
-    # If zipped in reader_kwargs, use __read_raw_data_zipped
-    if reader_kwargs.get("zipped"):
-        df = _read_raw_data_zipped(
-            filepath=filepath,
-            column_names=column_names,
-            reader_kwargs=reader_kwargs,
-        )
-    else:
-        try:
-            df = pd.read_csv(filepath, names=column_names, dtype=dtype, **reader_kwargs)
-        except pd.errors.EmptyDataError:
-            msg = f" - Is empty, skip file: {filepath}"
-            log_warning(logger=logger, msg=msg, verbose=False)
-            pass
+    # Try to read the data
+    try:
+        df = pd.read_csv(filepath, names=column_names, dtype=dtype, **reader_kwargs)
+    except pd.errors.EmptyDataError:
+        msg = f" - Is empty, skip file: {filepath}"
+        log_warning(logger=logger, msg=msg, verbose=False)
+        pass
+    
     # Return dataframe
     return df
 
 
-def _read_raw_data_zipped(
-    filepath: str,
-    column_names: list,
-    reader_kwargs: dict,
-) -> pd.DataFrame:
-    """Read zipped raw data into a dataframe.
-    Used because some campaign has tar with multiple files inside,
-    and in some situation only one files has to be read.
-    Tar reading work only with pandas.
-    Put the only file name to read into file_name_to_read_zipped variable,
-    if file_name_to_read_zipped is none, all the tar contenet will be
-    read and concat into a single dataframe.
-
-
-    Parameters
-    ----------
-    filepath : str
-        Raw file path.
-    column_names : list
-        Column names.
-    reader_kwargs : dict
-        Dask or Pandas reading parameters
-
-    Returns
-    -------
-    pandas.DataFrame
-        Pandas dataframe
-
-    Raises
-    ------
-    pd.errors.EmptyDataError
-        File is empty
-    pd.errors.ParserError
-        File can not be read
-    UnicodeDecodeError
-        File can not be decoded
-    """
-
-    df = pd.DataFrame()
-    tar = tarfile.open(filepath)
-
-    file_name_to_read_zipped = reader_kwargs.get("file_name_to_read_zipped")
-
-    # TODO: deprecate reading zipped files !
-    # This function should ready only a single file !
-
-    # Loop tar files
-    for file in tar.getnames():
-        # Check if pass only particular file to read
-        if file_name_to_read_zipped is not None:
-            if file.endswith(file_name_to_read_zipped):
-                filepath = file
-            else:
-                continue
-
-        try:
-            # If need only to read one file, exit loop file in tar
-            if file_name_to_read_zipped is not None:
-                # Read the data
-                df = read_raw_data(
-                    filepath=tar.extractfile(filepath),
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                )
-                break
-            else:
-                # Read the data
-                df_temp = read_raw_data(
-                    filepath=tar.extractfile(file),
-                    column_names=column_names,
-                    reader_kwargs=reader_kwargs,
-                )
-
-                # Concat all files in tar
-                df = pd.concat((df, df_temp))
-
-        except pd.errors.EmptyDataError:
-            msg = f" - Is empty, skip file: {file}"
-            log_warning(logger=logger, msg=msg, verbose=False)
-            pass
-        except pd.errors.ParserError:
-            msg = f" - Cannot parse, skip file: {file}"
-            log_error(logger=logger, msg=msg, verbose=False)
-            raise pd.errors.ParserError(msg)
-        except UnicodeDecodeError:
-            msg = f" - Unicode error, skip file: {file}"
-            log_error(logger=logger, msg=msg, verbose=False)
-            raise UnicodeDecodeError(msg)
-
-    # Close zipped file
-    tar.close()
-
-    return df
 
 
 ####---------------------------------------------------------------------------.
@@ -598,7 +490,7 @@ def process_raw_file(
 #### L0A Apache Parquet Writer
 
 
-def write_df_to_parquet(
+def write_l0a(
     df: pd.DataFrame,
     fpath: str,
     force: bool = False,

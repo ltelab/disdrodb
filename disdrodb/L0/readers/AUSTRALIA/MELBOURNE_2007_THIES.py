@@ -194,7 +194,15 @@ def reader(
         df = df[df["raw_drop_number"].astype(str).str.len() == 1760]
 
         # Drop columns with unvalid values
-        df = df.drop(columns=["start_identifier", "device_address"])
+        df = df.drop(
+            columns=[
+                "start_identifier",
+                "device_address",
+                "sensor_serial_number",
+                "date_sensor",
+                "time_sensor",
+            ]
+        )
 
         return df
 

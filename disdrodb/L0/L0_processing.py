@@ -91,7 +91,7 @@ def _generate_l0a(
     from disdrodb.L0.io import get_L0A_fpath
     from disdrodb.L0.L0A_processing import (
         process_raw_file,
-        write_df_to_parquet,
+        write_l0a,
     )
 
     ##------------------------------------------------------------------------.
@@ -136,7 +136,7 @@ def _generate_l0a(
         fpath = get_L0A_fpath(
             df=df, processed_dir=processed_dir, station_name=station_name
         )
-        write_df_to_parquet(df=df, fpath=fpath, force=force, verbose=verbose)
+        write_l0a(df=df, fpath=fpath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
         # Clean environment
