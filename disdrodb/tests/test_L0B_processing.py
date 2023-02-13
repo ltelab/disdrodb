@@ -79,7 +79,7 @@ def test_format_string_array():
 
 def test_reshape_raw_spectrum():
     from disdrodb.L0.standards import (
-        get_raw_field_dim_order,
+        get_raw_array_dims_order,
         get_dims_size_dict,
     )
 
@@ -115,11 +115,11 @@ def test_reshape_raw_spectrum():
         else:
             raise NotImplementedError(f"Unavailable test for {sensor_name}")
 
-        # Create array [time, ...] to mock retrieve_L0B_arrays code
+        # Create array [time, ...] to mock retrieve_l0b_arrays code
         arr = np.stack([flat_spectrum], axis=0)
 
         # Now reshape spectrum and check is correct
-        dims_order_dict = get_raw_field_dim_order(sensor_name=sensor_name)
+        dims_order_dict = get_raw_array_dims_order(sensor_name=sensor_name)
         dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
         dims_order = dims_order_dict["raw_drop_number"]
         arr, dims = L0B_processing.reshape_raw_spectrum(
@@ -147,7 +147,7 @@ def test_reshape_raw_spectrum():
         )
 
 
-def test_retrieve_L0B_arrays():
+def test_retrieve_l0b_arrays():
     from disdrodb.L0.standards import (
         get_dims_size_dict,
     )
@@ -188,8 +188,8 @@ def test_retrieve_L0B_arrays():
         raw_spectrum = ",".join(flat_spectrum)
         df = pd.DataFrame({"dummy": ["row1", "row2"], "raw_drop_number": raw_spectrum})
 
-        # Use retrieve_L0B_arrays
-        data_vars = L0B_processing.retrieve_L0B_arrays(
+        # Use retrieve_l0b_arrays
+        data_vars = L0B_processing.retrieve_l0b_arrays(
             df=df, sensor_name=sensor_name, verbose=False
         )
         # Create Dataset
@@ -245,9 +245,9 @@ def test_convert_object_variables_to_string():
     assert ds["b"].dtype == "float"
 
 
-def test_create_L0B_from_L0A():
+def test_create_l0b_from_l0a():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.create_L0B_from_L0A()
+    # function_return = L0B_processing.create_l0b_from_l0a()
     assert 1 == 1
 
 
@@ -337,7 +337,7 @@ def test_set_encodings():
     assert 1 == 1
 
 
-def test_write_L0B():
+def test_write_l0b():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.write_L0B()
+    # function_return = L0B_processing.write_l0b()
     assert 1 == 1

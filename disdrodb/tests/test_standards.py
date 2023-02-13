@@ -105,12 +105,12 @@ def test_get_velocity_bin_width():
     function_return = standards.get_velocity_bin_width()
     assert function_return ==
 
-def test_get_raw_field_nbins():
-    function_return = standards.get_raw_field_nbins()
+def test_get_raw_array_nvalues():
+    function_return = standards.get_raw_array_nvalues()
     assert function_return ==
 
-def test_get_raw_field_dim_order():
-    function_return = standards.get_raw_field_dim_order()
+def test_get_raw_array_dims_order():
+    function_return = standards.get_raw_array_dims_order()
     assert function_return ==
 
 def test_get_raw_spectrum_ndims():

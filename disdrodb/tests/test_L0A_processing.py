@@ -24,7 +24,7 @@ def test_preprocess_reader_kwargs():
         "blocksize": 128,
         "assume_missing": True,
         "other_key": "other_value",
-        "delimiter": ","
+        "delimiter": ",",
     }
     preprocessed_kwargs = L0A_processing.preprocess_reader_kwargs(
         reader_kwargs,
@@ -32,12 +32,12 @@ def test_preprocess_reader_kwargs():
     assert "blocksize" not in preprocessed_kwargs
     assert "assume_missing" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
-    
-    # Test raise error if delimiter is not specified 
+
+    # Test raise error if delimiter is not specified
     reader_kwargs = {"dtype": "int64", "other_key": "other_value"}
     with pytest.raises(ValueError):
         L0A_processing.preprocess_reader_kwargs(reader_kwargs)
-    
+
 
 def test_concatenate_dataframe():
     # Test that the function returns a Pandas dataframe

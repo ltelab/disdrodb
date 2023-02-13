@@ -39,7 +39,7 @@ def _concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=Fa
 
     The single netCDF file is saved at <processed_dir>/L0B.
     """
-    from disdrodb.L0.L0B_processing import write_L0B
+    from disdrodb.L0.L0B_processing import write_l0b
 
     # Create logger
     filename = f"concatenatation_{station_name}"
@@ -77,7 +77,7 @@ def _concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=Fa
     # Define the filepath of the concatenated L0B netCDF
     single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_name, l0b_concat=True)
     force = True  # TODO add as argument
-    write_L0B(ds, fpath=single_nc_fpath, force=force)
+    write_l0b(ds, fpath=single_nc_fpath, force=force)
 
     # -------------------------------------------------------------------------.
     # Close file and delete

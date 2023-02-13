@@ -736,7 +736,7 @@ def get_n_velocity_bins(sensor_name):
     return get_dims_size_dict(sensor_name)["velocity_bin_center"]
 
 
-def get_raw_field_dim_order(sensor_name: str) -> dict:
+def get_raw_array_dims_order(sensor_name: str) -> dict:
     """Get the dimention order of the raw fields.
 
     The order of dimension specified for raw_drop_number controls the
@@ -782,7 +782,7 @@ def get_raw_field_dim_order(sensor_name: str) -> dict:
 
 
 # TODO: RENAME
-def get_raw_field_nbins(sensor_name: str) -> dict:
+def get_raw_array_nvalues(sensor_name: str) -> dict:
     """Get the raw field number of values.
 
     Parameters
@@ -874,7 +874,7 @@ def get_valid_names(sensor_name):
 def get_variables_dimension(sensor_name: str):
     encoding_dict = get_L0B_encodings_dict(sensor_name)
     variables = list(encoding_dict.keys())
-    raw_field_dims = get_raw_field_dim_order(sensor_name)
+    raw_field_dims = get_raw_array_dims_order(sensor_name)
     var_dim_dict = {}
     for var in variables:
         print(var)

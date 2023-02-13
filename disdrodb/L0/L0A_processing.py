@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Code to process raw text files into DISDRODB L0A Apache Parquet."""
+"""Functions to process raw text files into DISDRODB L0A Apache Parquet."""
 
 # -----------------------------------------------------------------------------.
 import os
@@ -63,10 +63,12 @@ def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     dict
         Parameter dictionary that matches either Pandas or Dask.
     """
-    # Check delimiter is specified ! 
+    # Check delimiter is specified !
     if "delimiter" not in reader_kwargs:
-        raise ValueError("The 'delimiter' key must be specified in reader_kwargs dictionary!")
-    
+        raise ValueError(
+            "The 'delimiter' key must be specified in reader_kwargs dictionary!"
+        )
+
     # Remove dtype key
     # - The dtype is enforced to be 'object' in the read function !
     reader_kwargs.pop("dtype", None)
@@ -115,11 +117,9 @@ def read_raw_data(
         msg = f" - Is empty, skip file: {filepath}"
         log_warning(logger=logger, msg=msg, verbose=False)
         pass
-    
+
     # Return dataframe
     return df
-
-
 
 
 ####---------------------------------------------------------------------------.
