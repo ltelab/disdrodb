@@ -91,7 +91,7 @@ def _generate_l0a(
     from disdrodb.L0.io import get_L0A_fpath
     from disdrodb.L0.L0A_processing import (
         process_raw_file,
-        write_df_to_parquet,
+        write_l0a,
     )
 
     ##------------------------------------------------------------------------.
@@ -136,7 +136,7 @@ def _generate_l0a(
         fpath = get_L0A_fpath(
             df=df, processed_dir=processed_dir, station_name=station_name
         )
-        write_df_to_parquet(df=df, fpath=fpath, force=force, verbose=verbose)
+        write_l0a(df=df, fpath=fpath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
         # Clean environment
@@ -173,8 +173,8 @@ def _generate_l0b(
     from disdrodb.utils.logger import create_file_logger
     from disdrodb.L0.io import get_L0B_fpath, read_L0A_dataframe
     from disdrodb.L0.L0B_processing import (
-        create_L0B_from_L0A,
-        write_L0B,
+        create_l0b_from_l0a,
+        write_l0b,
     )
 
     # -----------------------------------------------------------------.
@@ -210,12 +210,12 @@ def _generate_l0b(
         )
         # -----------------------------------------------------------------.
         # Create xarray Dataset
-        ds = create_L0B_from_L0A(df=df, attrs=attrs, verbose=verbose)
+        ds = create_l0b_from_l0a(df=df, attrs=attrs, verbose=verbose)
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
         fpath = get_L0B_fpath(ds, processed_dir, station_name)
-        write_L0B(ds, fpath=fpath, force=force)
+        write_l0b(ds, fpath=fpath, force=force)
 
         ##--------------------------------------------------------------------.
         # Clean environment
@@ -252,7 +252,7 @@ def _generate_l0b_from_nc(
 ):
     from disdrodb.utils.logger import create_file_logger
     from disdrodb.L0.io import get_L0B_fpath
-    from disdrodb.L0.L0B_processing import process_raw_nc, write_L0B
+    from disdrodb.L0.L0B_processing import process_raw_nc, write_l0b
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -293,7 +293,7 @@ def _generate_l0b_from_nc(
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
         fpath = get_L0B_fpath(ds, processed_dir, station_name)
-        write_L0B(ds, fpath=fpath, force=force)
+        write_l0b(ds, fpath=fpath, force=force)
 
         ##--------------------------------------------------------------------.
         # Clean environment

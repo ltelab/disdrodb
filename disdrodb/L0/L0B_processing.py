@@ -17,9 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-
-# File content
-# - Functions to convert L0A Apache parquet files to L0B netCDF files
+"""Functions to process DISDRODB L0A files into DISDRODB L0B netCDF files."""
 
 # -----------------------------------------------------------------------------.
 import os
@@ -42,8 +40,8 @@ from disdrodb.L0.standards import (
     get_velocity_bin_lower,
     get_velocity_bin_upper,
     get_velocity_bin_width,
-    get_raw_field_nbins,
-    get_raw_field_dim_order,
+    get_raw_array_nvalues,
+    get_raw_array_dims_order,
     get_dims_size_dict,
     get_L0B_encodings_dict,
     get_time_encoding,
@@ -65,17 +63,7 @@ logger = logging.getLogger(__name__)
 
 
 ####--------------------------------------------------------------------------.
-#### L0B Raw Text Spectrum Processing
-# def get_drop_concentration(arr):
-#     # TODO
-#     logger.info("Computing raw_drop_concentration from raw spectrum.")
-#     return arr[:, :, 0]
-
-
-# def get_drop_average_velocity(arr):
-#     # TODO
-#     logger.info("Computing raw_drop_average_velocity from raw spectrum.")
-#     return arr[:, 0, :]
+#### L0B Raw Precipitation Spectrum Processing
 
 
 def infer_split_str(string: str) -> str:
@@ -219,45 +207,7 @@ def reshape_raw_spectrum(
     return arr, dims
 
 
-def reshape_raw_spectrum_to_2D(
-    arr: np.array, n_bins_dict: dict, n_timesteps: int, verbose: bool = False
-) -> np.array:
-    """Reshape the raw spectrum to 2D.
-
-    Parameters
-    ----------
-    arr : np.array
-        Input array.
-    n_bins_dict : dict
-        Raw field number of bins.
-    n_timesteps : int
-        Number of timesteps.
-
-    Returns
-    -------
-    np.array
-        Output array.
-
-    Raises
-    ------
-    ValueError
-        Impossible to reshape the raw_spectrum matrix
-    """
-
-    try:
-        arr = arr.reshape(
-            n_timesteps,
-            n_bins_dict["raw_drop_concentration"],
-            n_bins_dict["raw_drop_average_velocity"],
-        )
-    except Exception as e:
-        msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=False)
-        raise ValueError(msg)
-    return arr
-
-
-def retrieve_L0B_arrays(
+def retrieve_l0b_arrays(
     df: pd.DataFrame,
     sensor_name: str,
     verbose: bool = False,
@@ -284,12 +234,12 @@ def retrieve_L0B_arrays(
     # Check L0 raw field availability
     _check_raw_fields_available(df=df, sensor_name=sensor_name)
 
-    # Retrieve raw fields matrix bins dictionary
-    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)  # TODO: rename
+    # Retrieve the number of values expected for each array
+    n_values_dict = get_raw_array_nvalues(sensor_name=sensor_name)
 
-    # Retrieve raw fields dimension order dictionary
+    # Retrieve the dimension order for each raw array
     # - For the raw spectrum (raw_drop_number), it controls the way data are reshaped !
-    dims_order_dict = get_raw_field_dim_order(sensor_name=sensor_name)  # TODO: rename
+    dims_order_dict = get_raw_array_dims_order(sensor_name=sensor_name)
 
     # Retrieve number of bins for each dimension
     dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
@@ -300,7 +250,7 @@ def retrieve_L0B_arrays(
     # Retrieve available arrays
     dict_data = {}
     unavailable_keys = []
-    for key, n_bins in n_bins_dict.items():
+    for key, n_values in n_values_dict.items():
         # Check key is available in dataframe
         if key not in df.columns:
             unavailable_keys.append(key)
@@ -310,7 +260,7 @@ def retrieve_L0B_arrays(
         df_series = df[key].astype(str)
 
         # Get a numpy array for each row and then stack
-        list_arr = df_series.apply(format_string_array, n_values=n_bins)
+        list_arr = df_series.apply(format_string_array, n_values=n_values)
         arr = np.stack(list_arr, axis=0)
 
         # Retrieve dimensions
@@ -488,7 +438,7 @@ def set_dataset_attrs(ds, sensor_name):
 #### L0B Raw DataFrame Preprocessing
 
 
-def create_L0B_from_L0A(
+def create_l0b_from_l0a(
     df: pd.DataFrame,
     attrs: dict,
     verbose: bool = False,
@@ -527,7 +477,7 @@ def create_L0B_from_L0A(
         )
     ):
         # Retrieve dictionary of raw data matrices for xarray Dataset
-        data_vars = retrieve_L0B_arrays(df, sensor_name, verbose=verbose)
+        data_vars = retrieve_l0b_arrays(df, sensor_name, verbose=verbose)
     else:
         data_vars = {}
     # -----------------------------------------------------------.
@@ -680,7 +630,7 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     return ds
 
 
-def write_L0B(ds: xr.Dataset, fpath: str, force=False) -> None:
+def write_l0b(ds: xr.Dataset, fpath: str, force=False) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
