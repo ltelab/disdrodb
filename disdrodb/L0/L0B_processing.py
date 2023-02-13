@@ -681,6 +681,7 @@ def _check_dict_names_validity(dict_names, sensor_name):
         msg = f"The following dict_names values are not valid: {unvalid_dict}"
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
+    return None
 
 
 def _get_dict_names_variables(dict_names, sensor_name):
@@ -714,8 +715,8 @@ def rename_dataset_dimension(ds, dict_names, sensor_name):
 
 def rename_dataset(ds, dict_names):
     """Rename Dataset variables and coordinates."""
-    # Get valid variables, coordinates, dimensions of the dataset
-    ds_keys = list(ds.data_vars) + list(ds.coords) + list(ds.dims)
+    # Get valid variables and coordinates of the dataset
+    ds_keys = list(ds.data_vars) + list(ds.coords)
     # Get valid dictionary
     # - Remove keys which are missing from the dataset
     valid_dict = {k: v for k, v in dict_names.items() if k in ds_keys}
@@ -730,11 +731,11 @@ def subset_dataset(ds, dict_names, sensor_name):
     # Get variables availables in the dict_names and dataset
     dataset_variables = list(ds.data_vars)
     dictionary_names = list(dict_names.values())
-    subset_variables = [
-        var
-        for var in dataset_variables
-        if var in dictionary_names and var in possible_variables
-    ]
+    # Get subset variables
+    subset_variables = []
+    for var in dataset_variables:
+        if var in dictionary_names and var in possible_variables:
+            subset_variables.append(var)
     # Subset the dataset
     ds = ds[subset_variables]
     return ds
@@ -787,7 +788,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     _check_dict_names_validity(dict_names=dict_names, sensor_name=sensor_name)
 
     # Rename dataset dimensions
-    rename_dataset_dimension
+    ds = rename_dataset_dimension(ds, dict_names=dict_names, sensor_name=sensor_name)
 
     # Rename dataset variables and coordinates
     ds = rename_dataset(ds=ds, dict_names=dict_names)
