@@ -8,21 +8,30 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 )
 
 
+def test_get_default_metadata():
+    assert isinstance(metadata.get_default_metadata_dict(), dict)
+
+
 def test_write_default_metadata():
     fpath = os.path.join(
         PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml"
     )
 
-    metadata.get_default_metadata_dict()
-
     # create metadata file
     metadata.write_default_metadata(str(fpath))
 
+    # check file exist
     assert os.path.exists(fpath)
 
+    # open it
     with open(str(fpath), "r") as f:
-        yaml.safe_load(f)
+        dictionary = yaml.safe_load(f)
 
+    # check is the expected dictionary
+    expected_dict = metadata.get_default_metadata_dict()
+    assert expected_dict == dictionary
+
+    # remove dictionary
     if os.path.exists(fpath):
         os.remove(fpath)
 

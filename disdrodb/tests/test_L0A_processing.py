@@ -75,19 +75,19 @@ def test_strip_delimiter():
 def test_is_not_corrupted():
     # Test empty string
     s = ""
-    assert L0A_processing._is_not_corrupted(s) is True
+    assert L0A_processing._is_not_corrupted(s)
     # Test valid string (convertable to numeric, after split by ,)
     s = "000,001,000"
-    assert L0A_processing._is_not_corrupted(s) is True
+    assert L0A_processing._is_not_corrupted(s)
     # Test corrupted string (not convertable to numeric, after split by ,)
     s = "000,xa,000"
-    assert L0A_processing._is_not_corrupted(s) is False
+    assert not L0A_processing._is_not_corrupted(s)
     # Test None is considered corrupted
     s = None
-    assert L0A_processing._is_not_corrupted(s) is False
+    assert not L0A_processing._is_not_corrupted(s)
     # Test np.nan is considered corrupted
     s = np.nan
-    assert L0A_processing._is_not_corrupted(s) is False
+    assert not L0A_processing._is_not_corrupted(s)
 
 
 def test_cast_column_dtypes():
