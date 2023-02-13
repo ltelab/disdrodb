@@ -44,9 +44,15 @@ from disdrodb.L0.standards import (
     get_velocity_bin_width,
     get_raw_field_nbins,
     get_raw_field_dim_order,
-    get_raw_spectrum_ndims,
+    get_dims_size_dict,
     get_L0B_encodings_dict,
     get_time_encoding,
+    get_valid_names,
+    get_valid_variable_names,
+    get_valid_dimension_names,
+    # get_valid_coordinates_names,
+    get_coords_attrs_dict,
+    set_disdrodb_attrs,
 )
 from disdrodb.utils.logger import (
     log_info,
@@ -59,7 +65,7 @@ logger = logging.getLogger(__name__)
 
 
 ####--------------------------------------------------------------------------.
-#### L0B spectrum processing
+#### L0B Raw Text Spectrum Processing
 # def get_drop_concentration(arr):
 #     # TODO
 #     logger.info("Computing raw_drop_concentration from raw spectrum.")
@@ -85,6 +91,8 @@ def infer_split_str(string: str) -> str:
     str
         Inferred delimiter.
     """
+    if not isinstance(string, str):
+        raise TypeError("infer_split_str expects a string")
     if len(string) > 0:
         valid_delims = [";", ","]  # here we can add others if needed [|, ... ]
         counts = np.array([string.count(delim) for delim in valid_delims])
@@ -100,13 +108,20 @@ def infer_split_str(string: str) -> str:
     return split_str
 
 
+def _replace_empty_strings_with_zeros(values):
+    values[np.char.str_len(values) == 0] = "0"
+    return values
+
+
 def format_string_array(string: str, n_values: int) -> np.array:
     """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
         e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
 
-    If empty string ("") --> Assume no precipitation recorded
-    If the list length is not n_values or n_values+1 --> Set np.nan
+    If empty string ("") --> Return an arrays of zeros
+    If the list length is not n_values -> Return an arrays of np.nan
+
+    The function strip potential delimiters at start and end before splitting.
 
     Parameters
     ----------
@@ -122,20 +137,14 @@ def format_string_array(string: str, n_values: int) -> np.array:
     """
 
     split_str = infer_split_str(string)
-    values = np.array(string.split(split_str))
+    values = np.array(string.strip(split_str).split(split_str))
 
     # -------------------------------------------------------------------------.
     ## Assumptions !!!
-    # If empty list --> Assume no precipitation recorded
+    # If empty list --> Assume no precipitation recorded. Return an arrays of zeros
     if len(values) == 0:
         values = np.zeros(n_values)
         return values
-
-    # If the length of the array is + 1 than the expected, but the last character of
-    #  the string is a delimiter --> Drop the last array value
-    if len(values) == (n_values + 1):
-        if string[-1] == split_str:
-            values = np.delete(values, -1)
 
     # -------------------------------------------------------------------------.
     # If the length is not as expected --> Assume data corruption
@@ -146,13 +155,68 @@ def format_string_array(string: str, n_values: int) -> np.array:
         # Ensure string type
         values = values.astype("str")
         # Replace '' with 0
-        values[values == ""] = "0"
+        values = _replace_empty_strings_with_zeros(values)
         # Replace "-9.999" with 0
         values = np.char.replace(values, "-9.999", "0")
         # Cast values to float type
         # --> Note: the disk encoding is specified in the L0B_encodings.yml
         values = values.astype(float)
     return values
+
+
+def reshape_raw_spectrum(
+    arr: np.array,
+    dims_order: list,
+    dims_size_dict: dict,
+    n_timesteps: int,
+) -> np.array:
+    """Reshape the raw spectrum to a 2D+time array.
+
+    The array has dimensions ["time"] + dims_order
+
+    Parameters
+    ----------
+    arr : np.array
+        Input array.
+    dims_order : list
+        The order of dimension in the raw spectrum.
+        Examples:
+            OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
+            --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
+            Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
+            --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+    dims_size_dict : dict
+        Dictionary with the number of bins for each dimension.
+        For OTT_Parsivel:
+            {"diameter_bin_center": 32,
+             "velocity_bin_center": 32}
+        For This_LPM
+            {"diameter_bin_center": 22,
+             "velocity_bin_center": 20}
+    n_timesteps : int
+        Number of timesteps.
+
+    Returns
+    -------
+    np.array
+        Output array.
+
+    Raises
+    ------
+    ValueError
+        Impossible to reshape the raw_spectrum matrix
+    """
+    # Define output dimensions
+    dims = ["time"] + dims_order
+    # Retrieve reshaping dimensions as function of dimension order
+    reshape_dims = [n_timesteps] + [dims_size_dict[dim] for dim in dims_order]
+    try:
+        arr = arr.reshape(reshape_dims)
+    except Exception as e:
+        msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+    return arr, dims
 
 
 def reshape_raw_spectrum_to_2D(
@@ -221,13 +285,14 @@ def retrieve_L0B_arrays(
     _check_raw_fields_available(df=df, sensor_name=sensor_name)
 
     # Retrieve raw fields matrix bins dictionary
-    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)  # TODO: rename
 
-    # Retrieve dimension order dictionary
-    dims_dict = get_raw_field_dim_order(sensor_name)
+    # Retrieve raw fields dimension order dictionary
+    # - For the raw spectrum (raw_drop_number), it controls the way data are reshaped !
+    dims_order_dict = get_raw_field_dim_order(sensor_name=sensor_name)  # TODO: rename
 
-    # Retrieve dimension of the raw_drop_number field
-    n_dim_spectrum = get_raw_spectrum_ndims(sensor_name)
+    # Retrieve number of bins for each dimension
+    dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
 
     # Retrieve number of timesteps
     n_timesteps = df.shape[0]
@@ -248,17 +313,26 @@ def retrieve_L0B_arrays(
         list_arr = df_series.apply(format_string_array, n_values=n_bins)
         arr = np.stack(list_arr, axis=0)
 
-        # For key='raw_drop_number', if 2D ... reshape to 2D matrix
-        # - This applies i.e for OTT_Parsivels and ThiesLPM
+        # Retrieve dimensions
+        dims_order = dims_order_dict[key]
+
+        # For key='raw_drop_number', if 2D spectrum, reshape to 2D matrix
+        # Example:
+        # - This applies i.e for OTT_Parsivel* and Thies_LPM
         # - This does not apply to RD80
-        if key == "raw_drop_number" and n_dim_spectrum == 2:
-            arr = reshape_raw_spectrum_to_2D(
-                arr, n_bins_dict, n_timesteps, verbose=verbose
+        if key == "raw_drop_number" and len(dims_order) == 2:
+            arr, dims = reshape_raw_spectrum(
+                arr=arr,
+                dims_order=dims_order,
+                dims_size_dict=dims_size_dict,
+                n_timesteps=n_timesteps,
             )
+        else:
+            # Otherwise just define the dimensions of the array
+            dims = ["time"] + dims_order
 
         # Define dictionary to pass to xr.Dataset
-        dims_order = ["time"] + dims_dict[key]
-        dict_data[key] = (dims_order, arr)
+        dict_data[key] = (dims, arr)
 
     # -------------------------------------------------------------------------.
     # Log
@@ -269,11 +343,11 @@ def retrieve_L0B_arrays(
 
 
 ####--------------------------------------------------------------------------.
-#### L0B Dataset creation
+#### L0B Coords and attributes
 
 
-def get_coords(sensor_name: str) -> dict:
-    """Retrieve coordinates.
+def get_bin_coords(sensor_name: str) -> dict:
+    """Retrieve diameter (and velocity) bin coordinates.
 
     Parameters
     ----------
@@ -342,6 +416,78 @@ def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
+def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
+    """Set attributes to each xr.Dataset variable.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    ds
+        xr.Dataset.
+    """
+    from disdrodb.L0.standards import (
+        get_description_dict,
+        get_units_dict,
+        get_long_name_dict,
+        get_data_range_dict,
+    )
+
+    # Retrieve attributes dictionaries
+    description_dict = get_description_dict(sensor_name)
+    units_dict = get_units_dict(sensor_name)
+    long_name_dict = get_long_name_dict(sensor_name)
+    data_range_dict = get_data_range_dict(sensor_name)
+
+    # Assign attributes to each variable
+    for var in ds.data_vars:
+        ds[var].attrs = {}
+        ds[var].attrs["description"] = description_dict[var]
+        ds[var].attrs["units"] = units_dict[var]
+        ds[var].attrs["long_name"] = long_name_dict[var]
+        if var in data_range_dict:
+            ds[var].attrs["valid_min"] = data_range_dict[var][0]
+            ds[var].attrs["valid_max"] = data_range_dict[var][1]
+    return ds
+
+
+def _set_attrs_dict(ds, attrs_dict):
+    for var in attrs_dict.keys():
+        if var in ds:
+            ds[var].attrs.update(attrs_dict[var])
+
+
+def set_coordinate_attributes(ds):
+    # Get attributes dictionary
+    attrs_dict = get_coords_attrs_dict(ds)
+    # Set attributes
+    _set_attrs_dict(ds, attrs_dict)
+    return ds
+
+
+def set_dataset_attrs(ds, sensor_name):
+    """Set variable and coordinates attributes."""
+    # - Add netCDF variable attributes
+    # --> Attributes: long_name, units, descriptions, valid_min, valid_max
+    ds = set_variable_attributes(ds=ds, sensor_name=sensor_name)
+
+    # - Add netCDF coordinate attributes
+    ds = set_coordinate_attributes(ds=ds)
+
+    #  - Set DISDRODB global attributes
+    ds = set_disdrodb_attrs(ds=ds, product_level="L0B")
+    return ds
+
+
+####--------------------------------------------------------------------------.
+#### L0B Raw DataFrame Preprocessing
+
+
 def create_L0B_from_L0A(
     df: pd.DataFrame,
     attrs: dict,
@@ -398,34 +544,22 @@ def create_L0B_from_L0A(
     data_vars.update(aux_data_vars)
 
     # -----------------------------------------------------------.
-    # Drop lat/lon array if present (TODO: in future L0 should not contain it)
-    # if "latitude" in data_vars:
-    #     _ = data_vars.pop("latitude")
-    # if "longitude" in data_vars:
-    #     _ = data_vars.pop("longitude")
-    # if "altitude" in data_vars:
-    #     _ = data_vars.pop("altitude")
-
-    # -----------------------------------------------------------.
     # Define coordinates for xarray Dataset
-    coords = get_coords(sensor_name=sensor_name)
+    # - Diameter and velocity
+    coords = get_bin_coords(sensor_name=sensor_name)
+    # - Time
     coords["time"] = df["time"].values
+    # - CRS
     coords["crs"] = attrs["crs"]
-    if "latitude" in data_vars:
-        coords["latitude"] = data_vars["latitude"]
-        _ = data_vars.pop("latitude")
-    else:
-        coords["latitude"] = attrs["latitude"]
-    if "longitude" in data_vars:
-        coords["longitude"] = data_vars["longitude"]
-        _ = data_vars.pop("longitude")
-    else:
-        coords["longitude"] = attrs["longitude"]
-    if "altitude" in data_vars:
-        coords["altitude"] = data_vars["altitude"]
-        _ = data_vars.pop("altitude")
-    else:
-        coords["altitude"] = attrs["altitude"]
+    # - Geolocation
+    geolocation_vars = ["latitude", "longitude", "altitude"]
+    for var in geolocation_vars:
+        if var in data_vars:
+            coords[var] = data_vars[var]
+            _ = data_vars.pop(var)
+        else:
+            coords[var] = attrs[var]
+            _ = attrs.pop(var)
 
     # -----------------------------------------------------------
     # Create xarray Dataset
@@ -443,17 +577,14 @@ def create_L0B_from_L0A(
     # Ensure variables with dtype object are converted to string
     ds = convert_object_variables_to_string(ds)
 
-    # -----------------------------------------------------------
-    # - Add netCDF variable attributes
-    # -_> Attributes: long_name, units, descriptions
-    ds = set_variable_attributes(ds=ds, sensor_name=sensor_name)
+    # Set netCDF dimension order
+    ds = ds.transpose("time", "diameter_bin_center", ...)
 
-    # -----------------------------------------------------------
+    # Add netCDF variable and coordinate attributes
+    ds = set_dataset_attrs(ds, sensor_name)
+
     # Check L0B standards
     check_L0B_standards(ds)
-
-    # -----------------------------------------------------------
-    # TODO: Replace NA flags
 
     # -----------------------------------------------------------
     return ds
@@ -461,41 +592,6 @@ def create_L0B_from_L0A(
 
 ####--------------------------------------------------------------------------.
 #### L0B netCDF4 Writer
-
-
-def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
-    """Set attributes to each xr.Dataset variable.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        Input dataset.
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    ds
-        xr.Dataset.
-    """
-    from disdrodb.L0.standards import (
-        get_description_dict,
-        get_units_dict,
-        get_long_name_dict,
-    )
-
-    # Retrieve attributes dictionaries
-    description_dict = get_description_dict(sensor_name)
-    units_dict = get_units_dict(sensor_name)
-    long_name_dict = get_long_name_dict(sensor_name)
-
-    # Assign attributes to each variable
-    for var in ds.data_vars:
-        ds[var].attrs["description"] = description_dict[var]
-        ds[var].attrs["units"] = units_dict[var]
-        ds[var].attrs["long_name"] = long_name_dict[var]
-
-    return ds
 
 
 def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
@@ -616,6 +712,225 @@ def write_L0B(ds: xr.Dataset, fpath: str, force=False) -> None:
 
     # Write netcdf
     ds.to_netcdf(fpath, engine="netcdf4")
+
+
+####--------------------------------------------------------------------------.
+#### L0B Raw netCDFs Preprocessing
+
+
+def _check_dict_names_validity(dict_names, sensor_name):
+    """Check dict_names dictionary values validity."""
+    valid_names = get_valid_names(sensor_name)
+    keys = np.array(list(dict_names.keys()))
+    values = np.array(list(dict_names.values()))
+    # Get unvalid keys
+    unvalid_keys = keys[np.isin(values, valid_names, invert=True)]
+    if len(unvalid_keys) > 0:
+        # Report unvalid keys and raise error
+        unvalid_dict = {k: dict_names[k] for k in unvalid_keys}
+        msg = f"The following dict_names values are not valid: {unvalid_dict}"
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+
+
+def _get_dict_names_variables(dict_names, sensor_name):
+    """Get DISDRODB variables specified in dict_names."""
+    possible_variables = get_valid_variable_names(sensor_name)
+    dictionary_names = list(dict_names.values())
+    variables = [name for name in dictionary_names if name in possible_variables]
+    return variables
+
+
+def _get_dict_names_dimensions(dict_names, sensor_name):
+    """Get DISDRODB dimensions specified in dict_names."""
+    possible_dims = get_valid_dimension_names(sensor_name)
+    dictionary_names = list(dict_names.values())
+    dims = [name for name in dictionary_names if name in possible_dims]
+    return dims
+
+
+def _get_dict_dims(dict_names, sensor_name):
+    dims = _get_dict_names_dimensions(dict_names, sensor_name)
+    dict_dims = {k: v for k, v in dict_names.items() if v in dims}
+    return dict_dims
+
+
+def rename_dataset_dimension(ds, dict_names, sensor_name):
+    """Rename Dataset dimensions."""
+    dict_dims = _get_dict_dims(dict_names, sensor_name)
+    ds = ds.rename_dims(dict_dims)
+    return ds
+
+
+def rename_dataset(ds, dict_names):
+    """Rename Dataset variables and coordinates."""
+    # Get valid variables, coordinates, dimensions of the dataset
+    ds_keys = list(ds.data_vars) + list(ds.coords) + list(ds.dims)
+    # Get valid dictionary
+    # - Remove keys which are missing from the dataset
+    valid_dict = {k: v for k, v in dict_names.items() if k in ds_keys}
+    # Rename dataset
+    ds = ds.rename(valid_dict)
+    return ds
+
+
+def subset_dataset(ds, dict_names, sensor_name):
+    # Get valid variable names
+    possible_variables = get_valid_variable_names(sensor_name)
+    # Get variables availables in the dict_names and dataset
+    dataset_variables = list(ds.data_vars)
+    dictionary_names = list(dict_names.values())
+    subset_variables = [
+        var
+        for var in dataset_variables
+        if var in dictionary_names and var in possible_variables
+    ]
+    # Subset the dataset
+    ds = ds[subset_variables]
+    return ds
+
+
+def add_dataset_missing_variables(ds, missing_vars, sensor_name):
+    """Add missing Dataset variables as nan DataArrays."""
+    from disdrodb.L0.standards import get_variables_dimension
+
+    # Get dimension of each variables
+    var_dims_dict = get_variables_dimension(sensor_name)
+    # Attach a nan DataArray to the Dataset for each missing variable
+    for var in missing_vars:
+        # Get variable dimension
+        dims = var_dims_dict[var]
+        # Retrieve expected shape
+        expected_shape = [ds.dims[dim] for dim in dims]
+        # Create DataArray
+        arr = np.zeros(expected_shape) * np.nan
+        da = xr.DataArray(arr, dims=dims)
+        # Attach to dataset
+        ds[var] = da
+    return ds
+
+
+def preprocess_raw_netcdf(ds, dict_names, sensor_name):
+    """This function preprocess raw netCDF to improve compatibility with DISDRODB standards.
+
+    This function checks validity of the dict_names, rename and subset the data accordingly.
+    If some variables specified in the dict_names are missing, it adds a NaN DataArray !
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Raw netCDF to be converted to DISDRODB standards.
+    dict_names : dict
+        Dictionary mapping raw netCDF variables/coordinates/dimension names
+        to DISDRODB standards.
+    sensor_name : str
+        Sensor name.
+
+    Returns
+    -------
+    ds : xr.Dataset
+        xarray Dataset with DISDRODB-compliant variable naming conventions.
+
+    """
+    # Check variable_dict has valid values
+    # - Check valid DISDRODB variables + dimensions + coords
+    _check_dict_names_validity(dict_names=dict_names, sensor_name=sensor_name)
+
+    # Rename dataset dimensions
+    rename_dataset_dimension
+
+    # Rename dataset variables and coordinates
+    ds = rename_dataset(ds=ds, dict_names=dict_names)
+
+    # Subset dataset with expected variables
+    ds = subset_dataset(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
+
+    # If missing variables, infill with NaN array
+    expected_vars = set(_get_dict_names_variables(dict_names, sensor_name))
+    dataset_vars = set(ds.data_vars)
+    missing_vars = expected_vars.difference(dataset_vars)
+    if len(missing_vars) > 0:
+        ds = add_dataset_missing_variables(
+            ds=ds, missing_vars=missing_vars, sensor_name=sensor_name
+        )
+
+    # Update the coordinates for (diameter and velocity)
+    coords = get_bin_coords(sensor_name)
+    ds = ds.assign_coords(coords)
+
+    # Return dataset
+    return ds
+
+
+def process_raw_nc(
+    filepath,
+    dict_names,
+    ds_sanitizer_fun,
+    sensor_name,
+    verbose,
+    attrs,
+):
+    """Read and convert a raw netCDF into a DISDRODB L0B netCDF.
+
+    Parameters
+    ----------
+    filepath : str
+        netCDF file path.
+    dict_names : dict
+        Dictionary mapping raw netCDF variables/coordinates/dimension names
+        to DISDRODB standards.
+    ds_sanitizer_fun : function
+        Sanitizer function to do ad-hoc processing of the xr.Dataset.
+    attrs: dict
+        Global metadata to attach as global attributes to the xr.Dataset.
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+
+    Returns
+    -------
+    xr.Dataset
+        L0B xr.Dataset
+    """
+    # Open the netCDF
+    ds = xr.open_dataset(filepath)
+
+    # Preprocess netcdf
+    ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
+
+    # Add CRS and geolocation information
+    attrs = attrs.copy()
+    coords = {}
+    coords["crs"] = attrs["crs"]
+    geolocation_vars = ["latitude", "longitude", "altitude"]
+    for var in geolocation_vars:
+        if var not in ds:
+            coords[var] = attrs[var]
+        _ = attrs.pop(var)
+    ds = ds.assign_coords(coords)
+
+    # Add global attributes
+    ds.attrs = attrs
+
+    # Apply dataset sanitizer function
+    ds = ds_sanitizer_fun(ds)
+
+    # Ensure variables with dtype object are converted to string
+    ds = convert_object_variables_to_string(ds)
+
+    # Set netCDF dimension order
+    ds = ds.transpose("time", "diameter_bin_center", ...)
+
+    # Add netCDF variable and coordinate attributes
+    ds = set_dataset_attrs(ds, sensor_name)
+
+    # Check L0B standards
+    check_L0B_standards(ds)
+
+    # Return dataset
+    return ds
 
 
 ####--------------------------------------------------------------------------.

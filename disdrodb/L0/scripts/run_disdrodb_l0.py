@@ -15,8 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 import sys
-
-sys.tracebacklimit = 0  # avoid full traceback error if occur
 import click
 from disdrodb.L0.utils_scripts import parse_arg_to_list
 from disdrodb.L0.L0_processing import (
@@ -24,6 +22,8 @@ from disdrodb.L0.L0_processing import (
     click_l0_stations_options,
     click_l0_archive_options,
 )
+
+sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()

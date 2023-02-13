@@ -89,19 +89,19 @@ for current_df in df_list:
     df.to_csv(path_csv_file, index=False)
 
     # populate rst text
-    metadata_keys_text += f"\n"
-    metadata_keys_text += f"\n"
-    metadata_keys_text += f"\n| "
+    metadata_keys_text += "\n"
+    metadata_keys_text += "\n"
+    metadata_keys_text += "\n| "
     metadata_keys_text += f"\n{df_name}"
     line = len(df_name) * "="
     metadata_keys_text += f"\n{line}"
-    metadata_keys_text += f"\n"
+    metadata_keys_text += "\n"
     metadata_keys_text += f"\n.. csv-table:: {df_name}"
     path_csv = os.path.join(os.path.dirname(__file__), "csv", f"{df_name}.csv")
-    metadata_keys_text += f"\n   :align: left"
+    metadata_keys_text += "\n   :align: left"
     metadata_keys_text += f"\n   :file: {path_csv}"
-    metadata_keys_text += f"\n   :widths: auto"
-    metadata_keys_text += f"\n   :header-rows: 1"
+    metadata_keys_text += "\n   :widths: auto"
+    metadata_keys_text += "\n   :header-rows: 1"
 
 
 # Save rst text as file

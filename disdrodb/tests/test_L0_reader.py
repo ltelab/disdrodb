@@ -11,7 +11,7 @@ def test_is_documented_by():
 
 def test_reader_generic_docstring():
     # Uncheck function.
-    function_return = L0_reader.reader_generic_docstring()
+    L0_reader.reader_generic_docstring()
     assert 1 == 1
 
 

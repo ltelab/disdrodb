@@ -15,14 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 import sys
-
-sys.tracebacklimit = 0  # avoid full traceback error if occur
-
 import click
 from disdrodb.L0.L0_processing import (
     click_l0_processing_options,
     click_l0_station_arguments,
 )
+
+sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 # -------------------------------------------------------------------------.
 # Click Command Line Interface decorator
@@ -44,6 +43,8 @@ def run_disdrodb_l0a_station(
     debugging_mode: bool = False,
 ):
     """Run the L0A processing of a specific DISDRODB station from the terminal.
+
+    Note: this function is used also for processing raw netCDF into L0B format.
 
     Parameters
     ----------
@@ -86,6 +87,8 @@ def run_disdrodb_l0a_station(
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
     if parallel:
+        # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
+        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
         # Retrieve the number of process to run
         available_workers = os.cpu_count()  # if not set, all CPUs
         num_workers = dask.config.get("num_workers", available_workers)
@@ -97,7 +100,7 @@ def run_disdrodb_l0a_station(
             # memory_limit='8GB',
             # silence_logs=False,
         )
-        client = Client(cluster)
+        Client(cluster)
     # -------------------------------------------------------------------------.
     # Get reader
     reader = get_station_reader(
@@ -115,7 +118,7 @@ def run_disdrodb_l0a_station(
     )
     processed_dir = _get_disdrodb_directory(
         disdrodb_dir=disdrodb_dir,
-        product_level="L0B",
+        product_level="L0A",
         data_source=data_source,
         campaign_name=campaign_name,
         check_exist=False,
@@ -123,7 +126,7 @@ def run_disdrodb_l0a_station(
 
     # Run L0A processing
     # --> The reader call the run_l0a within the custom defined reader function
-    # --> For the special case of raw netCDF data, it calls the run_l0a_nc function
+    # --> For the special case of raw netCDF data, it calls the run_l0b_from_nc function
     reader(
         raw_dir=raw_dir,
         processed_dir=processed_dir,

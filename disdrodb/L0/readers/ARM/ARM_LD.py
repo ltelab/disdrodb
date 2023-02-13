@@ -17,25 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Reader for ARM OTT Parsivel sensor."""
-import os
-import time
-
-# Directory
-from disdrodb.L0.io import get_campaign_name
-from disdrodb.L0.io import create_directory_structure
-
-# Logger
-from disdrodb.utils.logger import create_l0_logger
-from disdrodb.utils.logger import close_logger
-
-# Metadata
-from disdrodb.L0.metadata import read_metadata
-from disdrodb.L0.check_standards import check_sensor_name
-
-# L0 processing
-from disdrodb.L0.io import get_raw_file_list
-from disdrodb.L0.io import get_L0B_fpath
-from disdrodb.L0.L0B_processing import write_L0B
+from disdrodb.L0 import run_l0b_from_nc
 from disdrodb.L0.L0_reader import reader_generic_docstring, is_documented_by
 
 
@@ -50,149 +32,85 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-    # Define functions to reformat ARM netCDFs
-    def reformat_ARM_files(file_list, attrs):
-        """
-        Reformat OTT Parsivel ARM netCDF files.
+    # Define dictionary mapping dataset variables to select and rename
+    dict_names = {
+        ### Dimensions
+        "particle_size": "diameter_bin_center",
+        "raw_fall_velocity": "velocity_bin_center",
+        ### Variables
+        # 'base_time': 'base_time',
+        # 'time_offset'
+        # 'class_size_width',
+        # 'fall_velocity_calculated',
+        # "lat": "latitude",
+        # "lon": "longitude",
+        # "alt": "altitude",
+        "weather_code": "weather_code_synop_4680",
+        "equivalent_radar_reflectivity_ott": "reflectivity_32bit",
+        "mor_visibility": "mor_visibility",
+        "sensor_temperature": "sensor_temperature",
+        "laserband_amplitude": "laser_amplitude",
+        "heating_current": "sensor_heating_current",
+        "sensor_voltage": "sensor_battery_voltage",
+        "number_detected_particles": "number_particles",
+        "snow_depth_intensity": "snowfall_rate",  # Only available > 2019
+        "number_density_drops": "raw_drop_concentration",
+        "raw_spectrum": "raw_drop_number",
+        ### ARM retrievals
+        # 'moment1',
+        # 'moment2',
+        # 'moment3',
+        # 'moment4',
+        # 'moment5',
+        # 'moment6',
+        # 'diameter_min':
+        # 'diameter_max':
+        # 'median_volume_diameter'
+        # 'intercept_parameter',
+        # 'slope_parameter'
+        # 'liquid_water_content',
+        # 'liquid_water_distribution_mean'
+        # 'precip_rate':
+        # 'equivalent_radar_reflectivity',
+        # Possible QC variables
+        # 'qc_time',
+        # 'qc_precip_rate':
+        # 'qc_number_detected_particles':
+        # 'qc_mor_visibility':
+        # 'qc_heating_current':
+        # 'qc_snow_depth_intensity':
+        # 'qc_laserband_amplitude':
+        # 'qc_weather_code':
+        # 'qc_equivalent_radar_reflectivity_ott':
+        # 'qc_sensor_voltage':
+    }
 
-        Parameters
-        ----------
-        file_list : list
-            Filepaths of NetCDFs to combine and reformat.
-        attrs : dict
-            DISDRODB metadata about the station.
-        """
-        from disdrodb.L0.utils_nc import xr_concat_datasets
-        from disdrodb.L0.L0B_processing import get_coords
-        from disdrodb.L0.auxiliary import get_ARM_LPM_dict
-        from disdrodb.L0.standards import set_DISDRODB_L0_attrs
-
-        sensor_name = attrs["sensor_name"]
-        # --------------------------------------------------------
-        #### Open netCDFs
-        file_list = sorted(file_list)
-        try:
-            ds = xr_concat_datasets(file_list)
-        except Exception as e:
-            msg = f"Error in concatenating netCDF datasets. The error is: \n {e}"
-            raise RuntimeError(msg)
-
-        # --------------------------------------------------------
-        # Select DISDRODB variable and rename
-        dict_ARM = get_ARM_LPM_dict(sensor_name=sensor_name)
-        vars_ARM = set(dict_ARM.keys())
-        vars_ds = set(ds.data_vars)
-        vars_selection = vars_ds.intersection(vars_ARM)
-        dict_ARM_selection = {k: dict_ARM[k] for k in vars_selection}
-        ds = ds[vars_selection]
-        ds = ds.rename(dict_ARM_selection)
-
-        # --------------------------------------------------------
-        # Rename dimensions
-        dict_dims = {
-            "particle_size": "diameter_bin_center",
-            "raw_fall_velocity": "velocity_bin_center",
-        }
-        ds = ds.rename_dims(dict_dims)
-        ds = ds.rename(dict_dims)
-        # --------------------------------------------------------
-        # Update coordinates
-        coords = get_coords(attrs["sensor_name"])
-        coords["crs"] = attrs["crs"]
-        coords["longitude"] = attrs["longitude"]
-        coords["latitude"] = attrs["latitude"]
-        coords["altitude"] = attrs["altitude"]
-        ds = ds.drop(["latitude", "longitude", "altitude"])
-        ds = ds.assign_coords(coords)
-
-        # --------------------------------------------------------
-        # Set DISDRODB attributes
-        ds = set_DISDRODB_L0_attrs(ds, attrs)
-
-        # --------------------------------------------------------
+    # Define dataset sanitizer
+    def ds_sanitizer_fun(ds):
+        # Drop coordinates not DISDRODB-compliants
+        pass
+        # Return dataset
         return ds
 
-    ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
-    raw_data_glob_pattern = "*.cdf"
+    # Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    glob_patterns = "*.cdf"
 
-    ####-------------------------------------------------------------------.
-    ####################
-    #### FIXED CODE ####
-    ####################
-    # ---------------------------------------------------------------------.
-    # Initial directory checks
-    raw_dir, processed_dir = check_directories(raw_dir, processed_dir, force=force)
+    ####----------------------------------------------------------------------.
+    #### - Create L0A products
+    run_l0b_from_nc(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        station_name=station_name,
+        # Custom arguments of the reader
+        glob_patterns=glob_patterns,
+        dict_names=dict_names,
+        ds_sanitizer_fun=ds_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
+    )
 
-    # Retrieve campaign name
-    campaign_name = get_campaign_name(raw_dir)
 
-    # --------------------------------------------------------------------.
-    # Define logging settings
-    logger = create_l0_logger(processed_dir, campaign_name)
-
-    # ---------------------------------------------------------------------.
-    # Create directory structure
-    create_directory_structure(raw_dir, processed_dir)
-
-    # ---------------------------------------------------------------------.
-    # Get station list
-    list_station_name = os.listdir(os.path.join(raw_dir, "data"))
-
-    # ---------------------------------------------------------------------.
-    #### Loop over each station_name directory and process the files
-    # station_name = list_station_name[0]
-    for station_name in list_station_name:
-        # ---------------------------------------------------------------------.
-        t_i = time.time()
-        msg = f" - Processing of station_name {station_name} has started"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        # ---------------------------------------------------------------------.
-        # Retrieve metadata
-        attrs = read_metadata(campaign_dir=raw_dir, station_name=station_name)
-
-        # Retrieve sensor name
-        sensor_name = attrs["sensor_name"]
-        check_sensor_name(sensor_name)
-
-        # Retrieve list of files to process
-        file_list = get_raw_file_list(
-            raw_dir=raw_dir,
-            station_name=station_name,
-            glob_patterns=raw_data_glob_pattern,
-            verbose=verbose,
-            debugging_mode=debugging_mode,
-        )
-
-        # -----------------------------------------------------------------.
-        #### - Reformat netCDF to DISDRODB standards
-        ds = reformat_ARM_files(file_list=file_list, attrs=attrs)
-
-        # -----------------------------------------------------------------.
-        #### - Save to DISDRODB netCDF standard
-        fpath = get_L0B_fpath(processed_dir, station_name)
-        write_L0B(ds, fpath=fpath)
-
-        # -----------------------------------------------------------------.
-        # End L0 processing
-        t_f = time.time() - t_i
-        msg = " - NetCDF standardization of station_name {} ended in {:.2f}s".format(
-            station_name, t_f
-        )
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        msg = " --------------------------------------------------"
-        if verbose:
-            print(msg)
-        logger.info(msg)
-        # -----------------------------------------------------------------.
-    # -----------------------------------------------------------------.
-    msg = "### Script finish ###"
-    print("\n  " + msg + "\n")
-    logger.info(msg)
-
-    close_logger(logger)
-    # -----------------------------------------------------------------.
+# -----------------------------------------------------------------.

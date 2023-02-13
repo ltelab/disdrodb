@@ -105,8 +105,8 @@ def reader(
         df = df.drop(columns=["date"])
 
         # Preprocess the raw spectrum
-        # - The '<SPECTRUM>ZERO</SPECTRUM>'  indicates no drops detected
-        # - So replace the string with '' so that L0B processing generate a matrix filled by 0s.
+        # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+        # --> "" generates an array of zeros in L0B processing
         df["raw_drop_number"] = df["raw_drop_number"].str.replace(
             "<SPECTRUM>ZERO</SPECTRUM>", "''"
         )

@@ -46,6 +46,10 @@ def _get_readers_data_sources() -> list:
     list_data_sources = [
         os.path.basename(f.path) for f in os.scandir(reader_folder_path) if f.is_dir()
     ]
+    # Directory to remove
+    bad_dirs = ["__pycache__", ".ipynb_checkpoints", "TUTORIAL"]
+    list_data_sources = [name for name in list_data_sources if name not in bad_dirs]
+
     return list_data_sources
 
 

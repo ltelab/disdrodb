@@ -97,7 +97,7 @@ def reader(
 
     def df_sanitizer_fun(df):
         # Import pandas
-        import pandas as dd
+        import pandas as pd
 
         # Parse time
         df["time"] = (

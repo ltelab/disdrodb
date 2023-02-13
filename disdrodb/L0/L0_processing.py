@@ -25,7 +25,10 @@ import datetime
 
 # Directory
 from disdrodb.L0.io import get_raw_file_list, get_l0a_file_list
-from disdrodb.L0.io import create_directory_structure_l0a, create_directory_structure
+from disdrodb.L0.io import (
+    create_initial_directory_structure,
+    create_directory_structure,
+)
 
 # Metadata
 from disdrodb.L0.metadata import read_metadata
@@ -236,6 +239,84 @@ def _generate_l0b(
     return logger_fpath
 
 
+@_delayed_based_on_kwargs
+def _generate_l0b_from_nc(
+    filepath,
+    processed_dir,
+    station_name,  # retrievable from filepath
+    dict_names,
+    ds_sanitizer_fun,
+    force,
+    verbose,
+    parallel,
+):
+    from disdrodb.utils.logger import create_file_logger
+    from disdrodb.L0.io import get_L0B_fpath
+    from disdrodb.L0.L0B_processing import process_raw_nc, write_L0B
+
+    # -----------------------------------------------------------------.
+    # Create file logger
+    filename = os.path.basename(filepath)
+    logger = create_file_logger(
+        processed_dir=processed_dir,
+        product_level="L0B",
+        station_name=station_name,
+        filename=filename,
+        parallel=parallel,
+    )
+    logger_fpath = logger.handlers[0].baseFilename
+
+    ##------------------------------------------------------------------------.
+    # Log start processing
+    msg = f"L0B processing of {filename} has started."
+    log_info(logger, msg, verbose=verbose)
+
+    ##------------------------------------------------------------------------.
+    # Retrieve metadata
+    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
+
+    # Retrieve sensor name
+    sensor_name = attrs["sensor_name"]
+    check_sensor_name(sensor_name)
+
+    ##------------------------------------------------------------------------.
+    try:
+        # Read the raw netCDF and convert to DISDRODB format
+        ds = process_raw_nc(
+            filepath=filepath,
+            dict_names=dict_names,
+            ds_sanitizer_fun=ds_sanitizer_fun,
+            sensor_name=sensor_name,
+            verbose=verbose,
+            attrs=attrs,
+        )
+        # -----------------------------------------------------------------.
+        # Write L0B netCDF4 dataset
+        fpath = get_L0B_fpath(ds, processed_dir, station_name)
+        write_L0B(ds, fpath=fpath, force=force)
+
+        ##--------------------------------------------------------------------.
+        # Clean environment
+        del ds
+
+        # Log end processing
+        msg = f"L0B processing of {filename} has ended."
+        log_info(logger, msg, verbose=verbose)
+
+    # Otherwise log the error
+    except Exception as e:
+        error_type = str(type(e).__name__)
+        msg = f"{error_type}: {e}"
+        log_error(logger, msg, verbose=verbose)
+        pass
+
+    # Close the file logger
+    close_logger(logger)
+
+    # Return the logger file path
+    return logger_fpath
+
+
 ####------------------------------------------------------------------------.
 #### Creation of L0A and L0B Single Station Files
 
@@ -280,18 +361,26 @@ def run_l0a(
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     station_name : str
         Station name
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
+    glob_patterns: str
+        Glob pattern to search data files in <raw_dir>/data/<station_name>
+    column_names : list
+        Columns names of the raw text file.
+    reader_kwargs : dict
+         Pandas `read_csv` arguments to open the text file.
+    df_sanitizer_fun : object, optional
+        Sanitizer function to format the datafame into DISDRODB L0A standard.
     parallel : bool
         If True, the files are processed simultanously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is False.
+    force : bool
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
+        The default is False.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
         It processes just the first 100 rows of 3 raw data files.
@@ -307,11 +396,13 @@ def run_l0a(
 
     # ------------------------------------------------------------------------.
     # Create directory structure
-    create_directory_structure_l0a(
+    create_initial_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
+        product_level="L0A",
         station_name=station_name,
         force=force,
+        verbose=verbose,
     )
 
     # -------------------------------------------------------------------------.
@@ -418,6 +509,14 @@ def run_l0b(
         The default is False.
     """
     # -----------------------------------------------------------------.
+    # Retrieve metadata
+    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
+
+    # Skip run_l0b processing if the raw data are netCDFs
+    if attrs["raw_data_type"] == "nc":
+        return None
+
+    # -----------------------------------------------------------------.
     # Start L0B processing
     if verbose:
         t_i = time.time()
@@ -431,6 +530,7 @@ def run_l0b(
         product_level="L0B",
         station_name=station_name,
         force=force,
+        verbose=verbose,
     )
 
     ##----------------------------------------------------------------.
@@ -474,6 +574,142 @@ def run_l0b(
         msg = f"L0B processing of station_name {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
     return None
+
+
+def run_l0b_from_nc(
+    raw_dir,
+    processed_dir,
+    station_name,
+    # Reader argument
+    glob_patterns,
+    dict_names,
+    ds_sanitizer_fun,
+    # Processing options
+    parallel,
+    verbose,
+    force,
+    debugging_mode,
+):
+    """Run the L0B processing for a specific DISDRODB station with raw netCDFs.
+
+    Parameters
+    ----------
+    raw_dir : str
+        The directory path where all the raw content of a specific campaign is stored.
+        The path must have the following structure:
+            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        Inside the raw_dir directory, it is required to adopt the following structure:
+        - /data/<station_name>/<raw_files>
+        - /metadata/<station_name>.yaml
+        Important points:
+        - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
+        - The <campaign_name> must semantically match between:
+           - the raw_dir and processed_dir directory paths;
+           - with the key 'campaign_name' within the metadata YAML files.
+        - The campaign_name are expected to be UPPER CASE.
+    processed_dir : str
+        The desired directory path for the processed DISDRODB L0B products.
+        The path should have the following structure:
+            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        For testing purpose, this function exceptionally accept also a directory path simply ending
+        with <campaign_name> (i.e. /tmp/<campaign_name>).
+    station_name : str
+        Station name
+    glob_patterns: str
+        Glob pattern to search data files in <raw_dir>/data/<station_name>.
+        Example: glob_patterns = "*.nc"
+    dict_names : dict
+        Dictionary mapping raw netCDF variables/coordinates/dimension names
+        to DISDRODB standards.
+    ds_sanitizer_fun : object, optional
+        Sanitizer function to format the raw netCDF into DISDRODB L0B standard.
+    force : bool
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
+        The default is False.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is False.
+    parallel : bool
+        If True, the files are processed simultanously in multiple processes.
+        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
+        If False, the files are processed sequentially in a single process.
+        If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        It processes just the first 3 raw netCDF files.
+        The default is False.
+    """
+
+    # ------------------------------------------------------------------------.
+    # Start L0A processing
+    if verbose:
+        t_i = time.time()
+        msg = f"L0B processing of station {station_name} has started."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+    # ------------------------------------------------------------------------.
+    # Create directory structure
+    create_initial_directory_structure(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        product_level="L0B",
+        station_name=station_name,
+        force=force,
+        verbose=verbose,
+    )
+
+    # -------------------------------------------------------------------------.
+    # List files to process
+    filepaths = get_raw_file_list(
+        raw_dir=raw_dir,
+        station_name=station_name,
+        # Reader argument
+        glob_patterns=glob_patterns,
+        # Processing options
+        verbose=verbose,
+        debugging_mode=debugging_mode,
+    )
+
+    # -----------------------------------------------------------------.
+    # Generate L0B files
+    # - Loop over the raw netCDF files and convert it to DISDRODB netCDF format.
+    # - If parallel=True, it does that in parallel using dask.delayed
+    list_tasks = []
+    for filepath in filepaths:
+        list_tasks.append(
+            _generate_l0b_from_nc(
+                filepath=filepath,
+                processed_dir=processed_dir,
+                station_name=station_name,
+                # Reader arguments
+                dict_names=dict_names,
+                ds_sanitizer_fun=ds_sanitizer_fun,
+                # Processing options
+                force=force,
+                verbose=verbose,
+                parallel=parallel,
+            )
+        )
+    if parallel:
+        list_logs = dask.compute(*list_tasks)
+    else:
+        list_logs = list_tasks
+    # -----------------------------------------------------------------.
+    # Define L0B summary logs
+    define_summary_log(list_logs)
+
+    # ---------------------------------------------------------------------.
+    # End L0B processing
+    if verbose:
+        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        msg = f"L0B processing of station {station_name} completed in {timedelta_str}"
+        log_info(logger=logger, msg=msg, verbose=verbose)
+    return None
+
+
+####--------------------------------------------------------------------------.
+#### Wrapper to call from terminal
 
 
 def run_disdrodb_l0a_station(

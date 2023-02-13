@@ -93,6 +93,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
+    # - Rows with data corruption are removed by L0A processing.
 
     def df_sanitizer_fun(df):
         # Import pandas
@@ -119,8 +120,6 @@ def reader(
         df["time"] = pd.to_datetime(
             df["time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
         )
-
-        # - Rows with data corruption or missing timesteps are removed by L0A processing.
 
         return df
 

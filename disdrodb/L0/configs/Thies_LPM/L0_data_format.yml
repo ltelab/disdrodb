@@ -50,14 +50,13 @@ time_sensor:
   nan_flags: null
   
 ###
-
 weather_code_synop_4677_5min:
   n_digits: 2
   n_characters: 2
   n_decimals: 0
   n_naturals: 2
   data_range:
-  - 0
+  - -1  # -1 sensor error 
   - 99
   nan_flags: null
 weather_code_synop_4680_5min:
@@ -66,7 +65,7 @@ weather_code_synop_4680_5min:
   n_decimals: 0
   n_naturals: 2
   data_range:
-  - 0
+  - -1  # -1 sensor error 
   - 99
   nan_flags: null
 weather_code_metar_4678_5min:
@@ -75,7 +74,7 @@ weather_code_metar_4678_5min:
   n_decimals: 0
   n_naturals: 0
   data_range: null
-  nan_flags: null
+  nan_flags: null  # ????? sensor_error
 precipitation_rate_5min:
   n_digits: 6
   n_characters: 7
@@ -91,7 +90,7 @@ weather_code_synop_4677:
   n_decimals: 0
   n_naturals: 0
   data_range:
-  - 0
+  - -1 # -1 sensor error 
   - 99
   nan_flags: null
 weather_code_synop_4680:
@@ -100,7 +99,7 @@ weather_code_synop_4680:
   n_decimals: 0
   n_naturals: 0
   data_range:
-  - 0
+  - -1 # -1 sensor error 
   - 99
   nan_flags: null
 weather_code_metar_4678:
@@ -108,8 +107,8 @@ weather_code_metar_4678:
   n_characters: 5
   n_decimals: 0
   n_naturals: 0
-  data_range: null
-  nan_flags: null
+  data_range: null   
+  nan_flags: null   # ????? sensor_error
 precipitation_rate: # intensity_total
   n_digits: 6
   n_characters: 7
@@ -144,7 +143,7 @@ precipitation_accumulated: # accum_precip
   n_naturals: 2
   data_range:
   - 00.0000
-  - 99.9999
+  - 9999.99
   nan_flags: null
 mor_visibility: # maximum_visibility
   n_digits: 5
@@ -171,7 +170,7 @@ quality_index:
   n_naturals: 0
   data_range:
   - 0
-  - 100
+  - 999 # 100 ... 999 nan flag 
   nan_flags: null
 max_hail_diameter:
   n_digits: 2
@@ -383,8 +382,8 @@ optical_control_voltage_output:
   n_decimals: 4
   n_naturals: 0
   data_range:
-  - 1000
-  - 6500
+  - 0    # 1000
+  - 9999 # 6500 in the doc, 6660 occurence found
   nan_flags: null
 
 sensor_voltage_supply:

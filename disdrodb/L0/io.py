@@ -19,7 +19,6 @@
 # -----------------------------------------------------------------------------.
 import logging
 import os
-import re
 import shutil
 import glob
 import numpy as np
@@ -1011,10 +1010,15 @@ def check_processed_dir(processed_dir):
     return processed_dir
 
 
-def create_directory_structure_l0a(
-    raw_dir, processed_dir, station_name, force, verbose=False
+# TODO: rename create_initial_directory_structure --> create_initial_directory_structure
+def create_initial_directory_structure(
+    raw_dir, processed_dir, station_name, force, verbose=False, product_level="L0A"
 ):
-    """Create directory structure for L0A DISDRODB product."""
+    """Create directory structure for the first L0 DISDRODB product.
+
+    If the input data are raw text files --> product_level = "L0A"    (run_l0a)
+    If the input data are raw netCDF files --> product_level = "L0B"  (run_l0b_nc)
+    """
     from disdrodb.api.io import _get_list_stations_with_data
 
     # Check inputs
@@ -1039,7 +1043,7 @@ def create_directory_structure_l0a(
     # Create required directory (if they don't exists)
     _create_processed_dir_folder(processed_dir, dir_name="metadata")
     _create_processed_dir_folder(processed_dir, dir_name="info")
-    _create_processed_dir_folder(processed_dir, dir_name="L0A")
+    _create_processed_dir_folder(processed_dir, dir_name=product_level)
 
     # Copy the station metadata
     _copy_station_metadata(
@@ -1049,7 +1053,7 @@ def create_directory_structure_l0a(
     # Remove <product_level>/<station> directory if force=True
     _check_pre_existing_station_data(
         campaign_dir=processed_dir,
-        product_level="L0A",
+        product_level=product_level,
         station_name=station_name,
         force=force,
     )

@@ -4,12 +4,9 @@ import pytest
 import numpy as np
 import pandas as pd
 import xarray as xr
-import shutil
 from disdrodb.L0 import io
 import importlib.metadata
 
-
-import pathlib
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "pytest_files"
@@ -422,7 +419,7 @@ def test_copy_station_metadata():
     assert os.path.exists(expected_metadata_fpath)
 
 
-# def test_create_directory_structure_l0a():
+# def test_create_initial_directory_structure():
 #     campaign_name = "CAMPAIGN_NAME"
 #     data_source = "DATA_SOURCE"
 #     station_name = "STATION_NAME"
