@@ -1,11 +1,12 @@
-start_identifier: 
-  dtype: uint8
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
+# start_identifier: 
+#   dtype: uint8
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes: 5000
+#   _FillValue: 255
 device_address: 
   dtype: uint8
   zlib: true
@@ -14,38 +15,40 @@ device_address:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-sensor_serial_number: 
-  dtype: uint16
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
-software_version: 
-  dtype: float32
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
-date_sensor: 
-  dtype: object
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
-time_sensor: 
-  dtype: object
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  chunksizes: 5000
+  _FillValue: 255
+# sensor_serial_number: 
+#   dtype: uint16
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes: 5000
+#   _FillValue: 65535
+# software_version: 
+#   dtype: float32
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes: 5000
+# date_sensor: 
+#   dtype: object
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes: 5000
+# time_sensor: 
+#   dtype: object
+#   zlib: true
+#   complevel: 3
+#   shuffle: true
+#   fletcher32: false
+#   contiguous: false
+#   chunksizes: 5000
 weather_code_synop_4677_5min: 
   dtype: uint8
   zlib: true
@@ -498,6 +501,7 @@ number_particles_no_hydrometeor:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_no_hydrometeor_internal_data: 
   dtype: float32
   zlib: true
@@ -514,6 +518,7 @@ number_particles_unknown_classification:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_unknown_classification_internal_data: 
   dtype: float32
   zlib: true
@@ -530,6 +535,7 @@ number_particles_class_1:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_1_internal_data: 
   dtype: float32
   zlib: true
@@ -546,6 +552,7 @@ number_particles_class_2:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_2_internal_data: 
   dtype: float32
   zlib: true
@@ -562,6 +569,7 @@ number_particles_class_3:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_3_internal_data: 
   dtype: float32
   zlib: true
@@ -578,6 +586,7 @@ number_particles_class_4:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_4_internal_data: 
   dtype: float32
   zlib: true
@@ -594,6 +603,7 @@ number_particles_class_5:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_5_internal_data: 
   dtype: float32
   zlib: true
@@ -610,6 +620,7 @@ number_particles_class_6:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_6_internal_data: 
   dtype: float32
   zlib: true
@@ -626,6 +637,7 @@ number_particles_class_7:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_7_internal_data: 
   dtype: float32
   zlib: true
@@ -642,6 +654,7 @@ number_particles_class_8:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_8_internal_data: 
   dtype: float32
   zlib: true
@@ -658,6 +671,7 @@ number_particles_class_9:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 65535
 number_particles_class_9_internal_data: 
   dtype: float32
   zlib: true
@@ -667,34 +681,15 @@ number_particles_class_9_internal_data:
   contiguous: false
   chunksizes: 5000
 raw_drop_number: 
-  dtype: uint64
+  dtype: uint16
   zlib: true
   complevel: 3
   shuffle: true
   fletcher32: false
   contiguous: false
-  _FillValue: 18446744073709551614
+  _FillValue: 65535
   chunksizes:
   - 5000
-  - 22
-  - 20
-# raw_drop_concentration: 
-#   dtype: float32
-#   zlib: true
-#   complevel: 3
-#   shuffle: true
-#   fletcher32: false
-#   contiguous: false
-#   chunksizes:
-#   - 5000
-#   - 22
-# raw_drop_average_velocity: 
-#   dtype: float32
-#   zlib: true
-#   complevel: 3
-#   shuffle: true
-#   fletcher32: false
-#   contiguous: false
-#   chunksizes:
-#   - 5000
-#   - 20
+  - 22 # diameter
+  - 20 # velocity
+  
