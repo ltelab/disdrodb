@@ -101,7 +101,7 @@ def run_disdrodb_l0a_station(
             # memory_limit='8GB',
             # silence_logs=False,
         )
-        client = Client(cluster)
+        Client(cluster)
     # -------------------------------------------------------------------------.
     # Get reader
     reader = get_station_reader(

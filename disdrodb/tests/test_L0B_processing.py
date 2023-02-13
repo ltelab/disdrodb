@@ -4,7 +4,6 @@ import pandas as pd
 import numpy as np
 import xarray as xr
 from disdrodb.L0 import L0B_processing
-from disdrodb.L0 import io
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -13,9 +12,14 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 
 
 def test_infer_split_str():
+    # Test type eror if string=None
+    with pytest.raises(TypeError):
+        L0B_processing.infer_split_str(None)
+
     # Test strings with no delimiter
-    assert L0B_processing.infer_split_str("") == None
-    assert L0B_processing.infer_split_str("abc") == None
+    assert L0B_processing.infer_split_str("") is None
+    assert L0B_processing.infer_split_str("") is None
+    assert L0B_processing.infer_split_str("abc") is None
 
     # Test strings with semicolon delimiter
     assert L0B_processing.infer_split_str("a;b;c") == ";"
@@ -26,66 +30,185 @@ def test_infer_split_str():
     assert L0B_processing.infer_split_str("a,b,c,") == ","
 
     # Test strings with both semicolon and comma delimiters
-    assert L0B_processing.infer_split_str("a;b,c;d,e") == ";"
-    assert L0B_processing.infer_split_str("a,b;c,d;e") == ";"
+    assert L0B_processing.infer_split_str("a;b,c;d;e") == ";"
+
+
+def test_replace_empty_strings_with_zeros():
+    values = np.array(["", "0", "", "1"])
+    output = L0B_processing._replace_empty_strings_with_zeros(values).tolist()
+    expected_output = np.array(["0", "0", "0", "1"]).tolist()
+    assert output == expected_output
 
 
 def test_format_string_array():
+    # Tests splitter behaviour with None
+    assert "".split(None) == []
+
     # Test empty string
     assert np.allclose(L0B_processing.format_string_array("", 4), [0, 0, 0, 0])
 
-    # Test strings with semicolon delimiter
+    # Test strings with semicolon and column delimiter
     assert np.allclose(
         L0B_processing.format_string_array("2;44;22;33", 4), [2, 44, 22, 33]
     )
     assert np.allclose(
-        L0B_processing.format_string_array("2;44;22;33;", 4), [2, 44, 22, 33]
-    )
-
-    # Test strings with comma delimiter
-    assert np.allclose(
         L0B_processing.format_string_array("2,44,22,33", 4), [2, 44, 22, 33]
     )
     assert np.allclose(
-        L0B_processing.format_string_array("2,44,22,33,", 4), [2, 44, 22, 33]
+        L0B_processing.format_string_array("000;000;000;001", 4), [0, 0, 0, 1]
     )
 
+    # Test strip away excess delimiters
+    assert np.allclose(
+        L0B_processing.format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33]
+    )
     # Test strings with incorrect number of values
+    arr_nan = [np.nan, np.nan, np.nan, np.nan]
     assert np.allclose(
-        L0B_processing.format_string_array("2,44,22", 4),
-        [np.nan, np.nan, np.nan, np.nan],
-        equal_nan=True,
-    )
-    assert np.allclose(
-        L0B_processing.format_string_array("2,44,22,33,44", 4),
-        [np.nan, np.nan, np.nan, np.nan],
-        equal_nan=True,
+        L0B_processing.format_string_array("2,44,22", 4), arr_nan, equal_nan=True
     )
 
+    assert np.allclose(
+        L0B_processing.format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True
+    )
+    # Test strings with incorrect format
+    assert np.allclose(
+        L0B_processing.format_string_array(",,2,", 4), arr_nan, equal_nan=True
+    )
 
-def test_reshape_raw_spectrum_to_2D():
-    # Test valid input array
-    arr = np.arange(12).reshape(2, 6)
-    n_bins_dict = {"raw_drop_concentration": 2, "raw_drop_average_velocity": 3}
-    n_timesteps = 2
 
-    res_arr = L0B_processing.reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps)
-    expected_arr = np.array([[[0, 1, 2], [3, 4, 5]], [[6, 7, 8], [9, 10, 11]]])
+def test_reshape_raw_spectrum():
+    from disdrodb.L0.standards import (
+        get_raw_field_dim_order,
+        get_dims_size_dict,
+    )
 
-    assert np.allclose(res_arr, expected_arr)
+    list_sensor_name = ["Thies_LPM", "OTT_Parsivel"]
+    # sensor_name = "Thies_LPM"
+    # sensor_name = "OTT_Parsivel"
 
-    # Test invalid input array
-    arr = np.arange(12).reshape(2, 6)
-    n_bins_dict = {"raw_drop_concentration": 2, "raw_drop_average_velocity": 3}
-    n_timesteps = 4
+    for sensor_name in list_sensor_name:
+        # Retrieve number of bins
+        dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
+        n_diameter_bins = dims_size_dict["diameter_bin_center"]
+        n_velocity_bins = dims_size_dict["velocity_bin_center"]
+
+        # Define expected spectrum
+        # --> row: velocity bins, columns : diameter bins
+        expected_spectrum = np.zeros((n_velocity_bins, n_diameter_bins)).astype(str)
+        for i in range(0, n_velocity_bins):
+            for j in range(0, n_diameter_bins):
+                expected_spectrum[i, j] = f"v{i}d{j}"  # v{velocity_bin}d{diameter_bin}
+                # expected_spectrum[i, j] = f"{i}.{j}"  # {velocity_bin}.{diameter_bin}
+
+        da_expected_spectrum = xr.DataArray(
+            data=expected_spectrum, dims=["velocity_bin_center", "diameter_bin_center"]
+        )
+
+        # Define flattened raw spectrum
+        # - OTT: first all diameters bins for velocity bin 1, ...
+        # - Thies: first al velocity bins for diameter bin 1, ...
+        if sensor_name in ["Thies_LPM"]:
+            flat_spectrum = expected_spectrum.flatten(order="F")
+        elif sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+            flat_spectrum = expected_spectrum.flatten(order="C")
+        else:
+            raise NotImplementedError(f"Unavailable test for {sensor_name}")
+
+        # Create array [time, ...] to mock retrieve_L0B_arrays code
+        arr = np.stack([flat_spectrum], axis=0)
+
+        # Now reshape spectrum and check is correct
+        dims_order_dict = get_raw_field_dim_order(sensor_name=sensor_name)
+        dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
+        dims_order = dims_order_dict["raw_drop_number"]
+        arr, dims = L0B_processing.reshape_raw_spectrum(
+            arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
+        )
+        # Create DataArray and enforce same dimension order as da_expected_spectrum
+        da = xr.DataArray(data=arr, dims=dims)
+        da = da.isel(time=0)
+        da = da.transpose("velocity_bin_center", "diameter_bin_center")
+
+        # Check reshape correctness
+        assert (
+            da.isel({"velocity_bin_center": 10, "diameter_bin_center": 5}).data.item()
+            == "v10d5"
+        )
+
+        # Check value correctness
+        xr.testing.assert_equal(da, da_expected_spectrum)
+
+    # Test unvalid inputs
+    dims_size_dict["diameter_bin_center"] = 20
     with pytest.raises(ValueError):
-        L0B_processing.reshape_raw_spectrum_to_2D(arr, n_bins_dict, n_timesteps)
+        L0B_processing.reshape_raw_spectrum(
+            arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
+        )
 
 
 def test_retrieve_L0B_arrays():
-    # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.retrieve_L0B_arrays()
-    assert 1 == 1
+    from disdrodb.L0.standards import (
+        get_dims_size_dict,
+    )
+
+    list_sensor_name = ["Thies_LPM", "OTT_Parsivel"]
+    # sensor_name = "Thies_LPM"
+    # sensor_name = "OTT_Parsivel"
+
+    for sensor_name in list_sensor_name:
+        # Retrieve number of bins
+        dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
+        n_diameter_bins = dims_size_dict["diameter_bin_center"]
+        n_velocity_bins = dims_size_dict["velocity_bin_center"]
+
+        # Define expected spectrum
+        # --> row: velocity bins, columns : diameter bins
+        expected_spectrum = np.zeros((n_velocity_bins, n_diameter_bins)).astype(str)
+        for i in range(0, n_velocity_bins):
+            for j in range(0, n_diameter_bins):
+                expected_spectrum[i, j] = f"{i}.{j}"  # v{velocity_bin}.{diameter_bin}
+
+        da_expected_spectrum = xr.DataArray(
+            data=expected_spectrum.astype(float),
+            dims=["velocity_bin_center", "diameter_bin_center"],
+        )
+
+        # Define flattened raw spectrum
+        # - OTT: first all diameters bins for velocity bin 1, ...
+        # - Thies: first al velocity bins for diameter bin 1, ...
+        if sensor_name in ["Thies_LPM"]:
+            flat_spectrum = expected_spectrum.flatten(order="F")
+        elif sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+            flat_spectrum = expected_spectrum.flatten(order="C")
+        else:
+            raise NotImplementedError(f"Unavailable test for {sensor_name}")
+
+        # Create L0A dataframe with single row
+        raw_spectrum = ",".join(flat_spectrum)
+        df = pd.DataFrame({"dummy": ["row1", "row2"], "raw_drop_number": raw_spectrum})
+
+        # Use retrieve_L0B_arrays
+        data_vars = L0B_processing.retrieve_L0B_arrays(
+            df=df, sensor_name=sensor_name, verbose=False
+        )
+        # Create Dataset
+        ds = xr.Dataset(data_vars=data_vars)
+
+        # Retrieve DataArray
+        da = ds["raw_drop_number"].isel(time=0)
+
+        # Enforce same dimension order and type as da_expected_spectrum
+        da = da.transpose("velocity_bin_center", "diameter_bin_center").astype(float)
+
+        # Check reshape correctness
+        assert (
+            da.isel({"velocity_bin_center": 10, "diameter_bin_center": 5}).data.item()
+            == 10.5
+        )
+
+        # Check value correctness
+        xr.testing.assert_equal(da, da_expected_spectrum)
 
 
 def test_get_bin_coords():

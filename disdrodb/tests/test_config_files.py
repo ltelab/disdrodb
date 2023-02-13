@@ -1,7 +1,7 @@
 import os
 import yaml
-from typing import Dict, List, Set, Union, Optional
-from pydantic import BaseModel, ValidationError, validator
+from typing import Dict, List, Union, Optional
+from pydantic import BaseModel, validator
 import pytest
 
 
@@ -102,7 +102,7 @@ def validate_schema_pytest(
     """
 
     try:
-        model = schema(**schema_to_validate)
+        schema(**schema_to_validate)
         return True
     except:
         return False
@@ -221,7 +221,7 @@ def test_L0_data_format(yaml_file_path: str):
 
 
 # Test *_bins.yaml formatting and content
-list_of_files = ["diameter_bins.yml", "velocity_bins.yml"]
+list_of_files = ["bins_diameter.yml", "bins_velocity.yml"]
 list_of_yaml_file_paths = []
 
 for i in list_of_files:
@@ -230,7 +230,7 @@ for i in list_of_files:
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
 def test_bins_format(yaml_file_path: str) -> None:
-    """Test the format and the content of *_bins.yml files
+    """Test the format and the content of bins_*.yml files
 
     Parameters
     ----------

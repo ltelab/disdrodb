@@ -98,7 +98,7 @@ def run_disdrodb_l0b_station(
             # memory_limit='8GB',
             # silence_logs=False,
         )
-        client = Client(cluster)
+        Client(cluster)
 
     # -------------------------------------------------------------------------.
     # Define processed dir

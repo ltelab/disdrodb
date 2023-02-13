@@ -19,7 +19,6 @@
 # -----------------------------------------------------------------------------.
 import logging
 import os
-import re
 import shutil
 import glob
 import numpy as np

@@ -1,5 +1,3 @@
-import yaml
-from disdrodb.L0 import standards
 
 # The yaml files are tested in the test_config_files.py file
 

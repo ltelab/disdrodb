@@ -94,7 +94,6 @@ def reader(
     def df_sanitizer_fun(df):
         # Import dask or pandas
         # Cannot implement dask for this loop, so only pandas for now
-        import numpy as np
 
         import pandas as pd
 

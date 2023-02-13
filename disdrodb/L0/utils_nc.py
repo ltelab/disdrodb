@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import dask
 import logging
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import List, Tuple
+from typing import Tuple
 from disdrodb.utils.logger import log_info, log_warning, log_error
 
 logger = logging.getLogger(__name__)
@@ -382,7 +381,7 @@ def get_common_vars(list_ds: list) -> tuple:
     for i, ds in enumerate(list_ds):
         # Extract current dataset variable info
         vars_ds = set(ds.data_vars)
-        n_vars = len(vars_ds)
+        len(vars_ds)
         # Check if missing variable compared to first
         vars_intersection_vs_first = vars_ds.intersection(vars_init)
         # Collect information on missing variables (compared to first)

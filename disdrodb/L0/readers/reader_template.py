@@ -80,7 +80,6 @@ def reader(
 
     def df_sanitizer_fun(df):
         # Import dask or pandas
-        import pandas as pd
 
         # [ADD YOUR CUSTOM CODE HERE]
         #             ...

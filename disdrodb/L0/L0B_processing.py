@@ -44,7 +44,7 @@ from disdrodb.L0.standards import (
     get_velocity_bin_width,
     get_raw_field_nbins,
     get_raw_field_dim_order,
-    get_raw_spectrum_ndims,
+    get_dims_size_dict,
     get_L0B_encodings_dict,
     get_time_encoding,
     get_valid_names,
@@ -91,6 +91,8 @@ def infer_split_str(string: str) -> str:
     str
         Inferred delimiter.
     """
+    if not isinstance(string, str):
+        raise TypeError("infer_split_str expects a string")
     if len(string) > 0:
         valid_delims = [";", ","]  # here we can add others if needed [|, ... ]
         counts = np.array([string.count(delim) for delim in valid_delims])
@@ -106,13 +108,20 @@ def infer_split_str(string: str) -> str:
     return split_str
 
 
+def _replace_empty_strings_with_zeros(values):
+    values[np.char.str_len(values) == 0] = "0"
+    return values
+
+
 def format_string_array(string: str, n_values: int) -> np.array:
     """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
         e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
 
-    If empty string ("") --> Assume no precipitation recorded
-    If the list length is not n_values or n_values+1 --> Set np.nan
+    If empty string ("") --> Return an arrays of zeros
+    If the list length is not n_values -> Return an arrays of np.nan
+
+    The function strip potential delimiters at start and end before splitting.
 
     Parameters
     ----------
@@ -128,20 +137,14 @@ def format_string_array(string: str, n_values: int) -> np.array:
     """
 
     split_str = infer_split_str(string)
-    values = np.array(string.split(split_str))
+    values = np.array(string.strip(split_str).split(split_str))
 
     # -------------------------------------------------------------------------.
     ## Assumptions !!!
-    # If empty list --> Assume no precipitation recorded
+    # If empty list --> Assume no precipitation recorded. Return an arrays of zeros
     if len(values) == 0:
         values = np.zeros(n_values)
         return values
-
-    # If the length of the array is + 1 than the expected, but the last character of
-    #  the string is a delimiter --> Drop the last array value
-    if len(values) == (n_values + 1):
-        if string[-1] == split_str:
-            values = np.delete(values, -1)
 
     # -------------------------------------------------------------------------.
     # If the length is not as expected --> Assume data corruption
@@ -152,13 +155,68 @@ def format_string_array(string: str, n_values: int) -> np.array:
         # Ensure string type
         values = values.astype("str")
         # Replace '' with 0
-        values[values == ""] = "0"
+        values = _replace_empty_strings_with_zeros(values)
         # Replace "-9.999" with 0
         values = np.char.replace(values, "-9.999", "0")
         # Cast values to float type
         # --> Note: the disk encoding is specified in the L0B_encodings.yml
         values = values.astype(float)
     return values
+
+
+def reshape_raw_spectrum(
+    arr: np.array,
+    dims_order: list,
+    dims_size_dict: dict,
+    n_timesteps: int,
+) -> np.array:
+    """Reshape the raw spectrum to a 2D+time array.
+
+    The array has dimensions ["time"] + dims_order
+
+    Parameters
+    ----------
+    arr : np.array
+        Input array.
+    dims_order : list
+        The order of dimension in the raw spectrum.
+        Examples:
+            OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
+            --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
+            Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
+            --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+    dims_size_dict : dict
+        Dictionary with the number of bins for each dimension.
+        For OTT_Parsivel:
+            {"diameter_bin_center": 32,
+             "velocity_bin_center": 32}
+        For This_LPM
+            {"diameter_bin_center": 22,
+             "velocity_bin_center": 20}
+    n_timesteps : int
+        Number of timesteps.
+
+    Returns
+    -------
+    np.array
+        Output array.
+
+    Raises
+    ------
+    ValueError
+        Impossible to reshape the raw_spectrum matrix
+    """
+    # Define output dimensions
+    dims = ["time"] + dims_order
+    # Retrieve reshaping dimensions as function of dimension order
+    reshape_dims = [n_timesteps] + [dims_size_dict[dim] for dim in dims_order]
+    try:
+        arr = arr.reshape(reshape_dims)
+    except Exception as e:
+        msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+    return arr, dims
 
 
 def reshape_raw_spectrum_to_2D(
@@ -227,13 +285,14 @@ def retrieve_L0B_arrays(
     _check_raw_fields_available(df=df, sensor_name=sensor_name)
 
     # Retrieve raw fields matrix bins dictionary
-    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)
+    n_bins_dict = get_raw_field_nbins(sensor_name=sensor_name)  # TODO: rename
 
-    # Retrieve dimension order dictionary
-    dims_dict = get_raw_field_dim_order(sensor_name)
+    # Retrieve raw fields dimension order dictionary
+    # - For the raw spectrum (raw_drop_number), it controls the way data are reshaped !
+    dims_order_dict = get_raw_field_dim_order(sensor_name=sensor_name)  # TODO: rename
 
-    # Retrieve dimension of the raw_drop_number field
-    n_dim_spectrum = get_raw_spectrum_ndims(sensor_name)
+    # Retrieve number of bins for each dimension
+    dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
 
     # Retrieve number of timesteps
     n_timesteps = df.shape[0]
@@ -254,17 +313,26 @@ def retrieve_L0B_arrays(
         list_arr = df_series.apply(format_string_array, n_values=n_bins)
         arr = np.stack(list_arr, axis=0)
 
-        # For key='raw_drop_number', if 2D ... reshape to 2D matrix
-        # - This applies i.e for OTT_Parsivels and ThiesLPM
+        # Retrieve dimensions
+        dims_order = dims_order_dict[key]
+
+        # For key='raw_drop_number', if 2D spectrum, reshape to 2D matrix
+        # Example:
+        # - This applies i.e for OTT_Parsivel* and Thies_LPM
         # - This does not apply to RD80
-        if key == "raw_drop_number" and n_dim_spectrum == 2:
-            arr = reshape_raw_spectrum_to_2D(
-                arr, n_bins_dict, n_timesteps, verbose=verbose
+        if key == "raw_drop_number" and len(dims_order) == 2:
+            arr, dims = reshape_raw_spectrum(
+                arr=arr,
+                dims_order=dims_order,
+                dims_size_dict=dims_size_dict,
+                n_timesteps=n_timesteps,
             )
+        else:
+            # Otherwise just define the dimensions of the array
+            dims = ["time"] + dims_order
 
         # Define dictionary to pass to xr.Dataset
-        dims_order = ["time"] + dims_dict[key]
-        dict_data[key] = (dims_order, arr)
+        dict_data[key] = (dims, arr)
 
     # -------------------------------------------------------------------------.
     # Log

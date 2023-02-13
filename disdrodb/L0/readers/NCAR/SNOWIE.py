@@ -66,7 +66,6 @@ def reader(
     def df_sanitizer_fun(df):
         # - Import pandas and numpy
         import numpy as np
-        import pandas as dd
 
         # - Reshape dataframe
         arr = df.to_numpy()

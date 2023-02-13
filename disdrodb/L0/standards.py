@@ -280,7 +280,7 @@ def get_diameter_bins_dict(sensor_name: str) -> dict:
         sensor_name diameter bins information
     """
 
-    d = read_config_yml(sensor_name=sensor_name, filename="diameter_bins.yml")
+    d = read_config_yml(sensor_name=sensor_name, filename="bins_diameter.yml")
     # TODO: Check dict contains center, bounds and width keys
     return d
 
@@ -299,7 +299,7 @@ def get_velocity_bins_dict(sensor_name: str) -> dict:
         Sensor_name diameter bins information
     """
 
-    d = read_config_yml(sensor_name=sensor_name, filename="velocity_bins.yml")
+    d = read_config_yml(sensor_name=sensor_name, filename="bins_velocity.yml")
     return d
 
 
@@ -697,8 +697,93 @@ def get_velocity_bin_width(sensor_name: str) -> list:
 # TODO: to improve
 
 
+def get_dims_size_dict(sensor_name: str) -> dict:
+    """Get the number of bins for each dimension.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with the number of bins for each dimension.
+    """
+    # Retrieve number of bins
+    diameter_dict = get_diameter_bins_dict(sensor_name)
+    velocity_dict = get_velocity_bins_dict(sensor_name)
+    n_diameter_bins = len(diameter_dict["center"])
+    if velocity_dict is None:
+        n_velocity_bins = 0
+    else:
+        n_velocity_bins = len(velocity_dict["center"])
+    # Define the dictionary
+    dims_size_dict = {
+        "diameter_bin_center": n_diameter_bins,
+        "velocity_bin_center": n_velocity_bins,
+    }
+    return dims_size_dict
+
+
+def get_n_diameter_bins(sensor_name):
+    """Get the number of diameter bins."""
+    return get_dims_size_dict(sensor_name)["diameter_bin_center"]
+
+
+def get_n_velocity_bins(sensor_name):
+    """Get the number of velocity bins."""
+    return get_dims_size_dict(sensor_name)["velocity_bin_center"]
+
+
+def get_raw_field_dim_order(sensor_name: str) -> dict:
+    """Get the dimention order of the raw fields.
+
+    The order of dimension specified for raw_drop_number controls the
+    reshaping of the precipitation raw spectrum.
+
+    Examples:
+        OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
+        --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+        Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
+        --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor
+
+    Returns
+    -------
+    dict
+        Dimension order dictionary
+
+    Raises
+    ------
+    NotImplementedError
+        Name of the sensor not implemented.
+    """
+
+    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+        dim_dict = {
+            "raw_drop_concentration": ["diameter_bin_center"],
+            "raw_drop_average_velocity": ["velocity_bin_center"],
+            "raw_drop_number": ["velocity_bin_center", "diameter_bin_center"],
+        }
+    elif sensor_name in ["Thies_LPM"]:
+        dim_dict = {
+            "raw_drop_number": ["diameter_bin_center", "velocity_bin_center"],
+        }
+    elif sensor_name in ["RD_80"]:
+        dim_dict = {"raw_drop_number": ["diameter_bin_center"]}
+    else:
+        raise NotImplementedError()
+    return dim_dict
+
+
+# TODO: RENAME
 def get_raw_field_nbins(sensor_name: str) -> dict:
-    """Get the raw field number of bins
+    """Get the raw field number of values.
 
     Parameters
     ----------
@@ -728,39 +813,6 @@ def get_raw_field_nbins(sensor_name: str) -> dict:
             "raw_drop_number": n_d,
         }
     return nbins_dict
-
-
-def get_raw_field_dim_order(sensor_name: str) -> dict:
-    """Get dimention order  dictionnary
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor
-
-    Returns
-    -------
-    dict
-        Dimention order  dictionnary
-
-    Raises
-    ------
-    NotImplementedError
-        Name of the sensor not implemented.
-    """
-    # TODO: this should go into a config file ...
-    # TODO: also think to set dimensions as diameter and velocity ... TO DISCUSS
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
-        dim_dict = {
-            "raw_drop_concentration": ["diameter_bin_center"],
-            "raw_drop_average_velocity": ["velocity_bin_center"],
-            "raw_drop_number": ["diameter_bin_center", "velocity_bin_center"],
-        }
-    elif sensor_name in ["RD_80"]:
-        dim_dict = {"raw_drop_number": ["diameter_bin_center"]}
-    else:
-        raise NotImplementedError()
-    return dim_dict
 
 
 def get_raw_spectrum_ndims(sensor_name: str):

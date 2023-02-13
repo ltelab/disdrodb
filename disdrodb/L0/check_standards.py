@@ -19,15 +19,12 @@
 import logging
 import numpy as np
 import pandas as pd
-from typing import Union
 from disdrodb.L0.standards import get_data_format_dict, get_L0A_dtype
 
 # Logger
 from disdrodb.utils.logger import (
     log_info,
-    log_warning,
     log_error,
-    log_debug,
 )
 
 logger = logging.getLogger(__name__)
@@ -100,7 +97,7 @@ def _check_raw_fields_available(
     raw_vars = np.array(list(n_bins_dict.keys()))
 
     # Check that raw_drop_number is present
-    if not "raw_drop_number" in df.columns:
+    if "raw_drop_number" not in df.columns:
         msg = "The 'raw_drop_number' column is not present in the dataframe."
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)

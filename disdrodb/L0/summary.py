@@ -27,7 +27,7 @@ def create_L0B_summary(
 
     ###-----------------------------------------------------------------------.
     # Get the sensor name
-    sensor_name = ds.attrs.get("sensor_name")
+    ds.attrs.get("sensor_name")
 
     # Initialize dictionary
     stats_dict = {}

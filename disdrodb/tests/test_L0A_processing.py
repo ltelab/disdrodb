@@ -51,6 +51,45 @@ def test_concatenate_dataframe():
         L0A_processing.concatenate_dataframe(["not a dataframe", "not a dataframe"])
 
 
+def test_strip_delimiter():
+    # Test it strips all external  delimiters
+    s = ",,,,,"
+    assert L0A_processing._strip_delimiter(s) == ""
+    s = "0000,00,"
+    assert L0A_processing._strip_delimiter(s) == "0000,00"
+    s = ",0000,00,"
+    assert L0A_processing._strip_delimiter(s) == "0000,00"
+    s = ",,,0000,00,,"
+    assert L0A_processing._strip_delimiter(s) == "0000,00"
+    # Test if empty string, return the empty string
+    s = ""
+    assert L0A_processing._strip_delimiter(s) == ""
+    # Test if None returns None
+    s = None
+    assert isinstance(L0A_processing._strip_delimiter(s), type(None))
+    # Test if np.nan returns np.nan
+    s = np.nan
+    assert np.isnan(L0A_processing._strip_delimiter(s))
+
+
+def test_is_not_corrupted():
+    # Test empty string
+    s = ""
+    assert L0A_processing._is_not_corrupted(s) is True
+    # Test valid string (convertable to numeric, after split by ,)
+    s = "000,001,000"
+    assert L0A_processing._is_not_corrupted(s) is True
+    # Test corrupted string (not convertable to numeric, after split by ,)
+    s = "000,xa,000"
+    assert L0A_processing._is_not_corrupted(s) is False
+    # Test None is considered corrupted
+    s = None
+    assert L0A_processing._is_not_corrupted(s) is False
+    # Test np.nan is considered corrupted
+    s = np.nan
+    assert L0A_processing._is_not_corrupted(s) is False
+
+
 def test_cast_column_dtypes():
     # not tested yet because relies on config files that can be modified
 

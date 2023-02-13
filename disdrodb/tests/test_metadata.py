@@ -13,7 +13,7 @@ def test_write_default_metadata():
         PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml"
     )
 
-    data = metadata.get_default_metadata_dict()
+    metadata.get_default_metadata_dict()
 
     # create metadata file
     metadata.write_default_metadata(str(fpath))
@@ -21,7 +21,7 @@ def test_write_default_metadata():
     assert os.path.exists(fpath)
 
     with open(str(fpath), "r") as f:
-        data = yaml.safe_load(f)
+        yaml.safe_load(f)
 
     if os.path.exists(fpath):
         os.remove(fpath)

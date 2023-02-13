@@ -19,8 +19,6 @@
 import os
 import glob
 import logging
-import xarray as xr
-from disdrodb.L0.io import _check_directory_exist
 from disdrodb.L0.io import get_L0B_dir, get_L0B_fpath
 from disdrodb.L0.utils_nc import xr_concat_datasets
 from disdrodb.L0.utils_scripts import _execute_cmd

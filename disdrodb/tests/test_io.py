@@ -4,12 +4,10 @@ import pytest
 import numpy as np
 import pandas as pd
 import xarray as xr
-import shutil
 from disdrodb.L0 import io
 import importlib.metadata
 
 
-import pathlib
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "pytest_files"

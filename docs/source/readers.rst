@@ -1,17 +1,44 @@
-=========================
+3:=========================
 Readers
 =========================
 
 
+DISDRODB supports reading and loading data from many input file formats.
+The following subsections describe, first, what a reader is and how it can be defined.
+Then, it illustrates multiple methods how a reader can be called (i.e. from terminal or within python)
+to process raw data into DISDRODB L0 products.
 
-DISDRODB supports reading and loading data from many input file formats and schemes. The following sections describe the different way data can be loaded, requested, or added to the DISDRODB project.
-
-
-
-Available Readers
+What is a reader
 ======================
 
-The following function returns the dictionary of all readers `.
+A DISDRODB reader is python function encoding all the required information to convert 
+raw disdrometer text (or netcdf) data into DISDRODB L0A and/or DISDRODB L0B products. 
+
+To be more precise, a reader contains:
+1. a glob string specifying the pattern to select all files to process within a station directory
+2. the name of the variables present in the raw files (i.e. the file header/columns) 
+3. some special arguments required to open and read the raw files (i.e the delimiter)
+4. an optional ad-hoc function to make the raw data compliant with the DISDRODB standards.
+
+If the raw data are text-based files, the reader will take care of first converting the data 
+into the DISDRODB L0A dataframe format, and subsequently to reshape the data into the DISDRODB L0B netCDF format.
+Instead, if the raw data are netCDFs files, the reader will take care to the reformat the source netCDF into 
+the DISDRODB L0B netCDF format.
+
+In the DISDRODB metadata of each station, the ``reader`` key specifies the DISDRODB reader required to
+to process the raw data.
+This enable to process the DISDRODB archive 
+
+
+Available readers
+======================
+
+The readers are archived in the disdrodb software by data source. 
+You can have a preliminary look on how the readers looks like by exploring 
+the `DISDRODB.L0.readers directory <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers>`_
+
+The function `available_readers` returns a dictionary with all readers currently available within DISDRODB`.
+By specifying the ``data_sources`` argument, only the readers for the specified data sources are returned.
 
 .. code-block:: python
 
@@ -19,288 +46,191 @@ The following function returns the dictionary of all readers `.
 	available_readers()
 	available_readers(data_sources=["EPFL", "GPM"])
 
-The resulting dictionary has the following shape: 
-
+The dictionary has the following shape: 
 
 .. code-block::
 
-	`{
-		"Data source 1": 
-			{
-				"Campaign name 1 ":"File path 1" ,
-				"Campaign name 2 ":"File path 2" ,
-				...
-				"Campaign name n ":"File path n" ,
-			
-			}
+	`{"<DataSource1>": [<ReaderName1>, <ReaderName2>],
 		...
-		"Data source n": 
-			{
-				"Campaign name 1 ":"File path 1" ,
-				"Campaign name 2 ":"File path 2" ,
-				...
-				"Campaign name n ":"File path n" ,
-			
-			}
+	  "<DataSourceN": [<ReaderNameY>, <ReaderNameZ>]
 	}`
 
 
-
-
-
-Using a reader
+Reader structure   
 ======================
 
-Running a reader can be done by command line or directly in python. In both ways, the following parameters must or could be defined. 
+A reader it s defined by the following arguments:
 
+.. code-block:: python
 
+    def reader(
+        raw_dir,
+        processed_dir,
+        station_name,
+        # Processing options
+        force=False,
+        verbose=False,
+        parallel=False,
+        debugging_mode=False,
+    ):
+    
 
-
-Readers parameters
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-* ``data_source`` : str - Name of the data source. 
-
-		* Example data_source: 'EPFL'.
-		* Check the `available Readers <#available-readers>`__ function to get the list of the available data sources. 
-
-
-* ``campaign_name`` : str - Name of the campaign. 
-
-		* Example data_source: 'EPFL_ROOF_2012'.
-		* Check the `available Readers <#available-readers>`__  function to get the list of the available campaign.  
-
-
-* ``raw_dir`` : str - Directory path where all the raw content of a specific campaign is stored.
+* ``raw_dir`` : str - Directory path where all the raw data of a specific campaign/network are stored.
 
 		* The path must have the following structure: '<...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
 		* Inside the raw_dir directory, the software expects to find the following structure:
-          - /data/<station_name>/<raw_files>
-          - /metadata/<station_name>.yaml
+           * <raw_dir>/data/<station_name>/<raw_files>
+           * <raw_dir>/metadata/<station_name>.yaml
 
 
 * ``processed_dir`` : str - Desired directory path for the processed DISDRODB L0A and L0B products.
 
         * The path should have the following structure: '<...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        * For testing purpose, this function exceptionally accept also a directory path simply ending 
-          with <campaign_name> (i.e. /tmp/<campaign_name>).
         * The <campaign_name> must match with the one specified in the raw_dir path.
+        * For reader testing purposes, you can define i.e. '/tmp/DISDRODB/Processed/<data_source>/<campaign_name>'
+   
+   
+* ``station_name`` : str - Name of the station to be processed. 
 
-
-* ``--l0a_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0A Apache Parquet file(s) from raw data.
-
-
-* ``--l0b_processing`` : bool [ **true** \|false] - Whether to launch processing to generate DISDRODB L0B netCDF4 file(s) from L0A data.
-
-
-* ``--remove_l0a`` : bool [true\| **false** ] - Whether to keep the L0A files after having generated the L0B netCDF products.
-
-
-* ``--l0b_concat`` : bool  [ **true** \| false] - Whether to concatenate all raw files into a single DISDRODB L0B netCDF file.
-
-
-        * If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
-        * If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.
-
-
+		
 * ``--force`` : bool [true\| **false** ] - Whether to overwrite existing data.
 
         *  If True, overwrite existing data into destination directories.
         *  If False, raise an error if there are already data into destination directories.
 
 
-* ``--verbose`` : bool [true\| **false** ] -  Whether to print detailed processing information into terminal.
-
+* ``--verbose`` : bool [true\| **false** ] - Whether to print detailed processing information into terminal.
 
 
 * ``--debugging_mode`` : bool [true\| **false** ] -  If True, it reduces the amount of data to process.
 
-        * For L0A processing, it processes just 3 raw data files.
-        * For L0B processing, it takes a small subset of the L0A Apache Parquet dataframe.
-
+        * It processes just 3 raw data files.
 
 * ``--parallel`` : bool [ **true** \|false] - Whether to process multiple files simultanously.
 
-        * If parallel=False, the file are processed sequentially. 
-        * If parallel=True, each file is processed by a separate core.  
+        * If parallel=False, the raw files are processed sequentially. 
+        * If parallel=True, each file is processed in a separate core.  
 
 
-Launch DISDRODB L0 processing for a specific station
-~~~~~~~~~~~~~~~~~~~~~~~~
+Inside the reader function, a few components must be customized. 
 
 
-There are two ways of process a station using DISDRODB. 
+Reader components for raw text files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
 
-1. By command line : 
+If the input raw data are text files, the reader must defines the following components:
 
+1. The ``glob_patterns`` to search for the raw data files within the <raw_dir>/data/<station_name> directory.
 
-	.. code-block::
+2. The ``column_names`` list defines the header of the raw text file.
 
-		run_disdrodb_l0_station <disdrodb_dir> <data_source> <campaign_name> <station_name> [parameters]
+3. The ``reader_kwargs`` dictionary containing all specifications to open the text file into 
+   a pandas dataframe.
+   The  possible key-value arguments are listed `here <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
 
-	
-	Example :
+4. The ``df_sanitizer_fun(df)`` function takes as input the raw dataframe and apply ad-hoc
+   processing to make the dataframe compliant to the DISDRODB L0A standards. 
+   Typically, this function is used to drop columns not compliant with the expected set of DISDRODB variables
+   and to create the DISDRODB expected ``time`` column into UTC datetime format.
+   In the output dataframe, each row must correspond to a timestep!
 
-	.. code-block::
+It's important to note that the internal L0A processing already takes care of: 
+* removing rows with undefined timestep
+* removing rows with corrupted values
+* sanitize string column with trailing spaces 
+* dropping rows with duplicated timesteps (keeping only the first occurence)
 
-		run_disdrodb_l0_station /ltenas8/DISDRODB EPFL  EPFL_2008 10 --l0a_processing True --l0b_processing True --force True --verbose True --parallel False 
-	 
+In DISDRODB L0A format, the raw precipitation spectrum, named ``raw_drop_number`` , it is expected
+to be defined as a string with a series of values seperated by a delimiter like ``,`` or ``;``. 
+Therefore, the ``raw_drop_number`` field value is expected to look like ``"000,001,002, ..., 001"``
+For example, if the ``raw_drop_number`` looks like the following three cases, you need to preprocess it accordingly 
+into the ``df_sanitizer_fun``: 
 
-2. By calling a python function 
+* Case 1: ``"000001002 ...001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/NETHERLANDS/DELFT.py>`_ 
+* Case 2: ``"000 001 002 ... 001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/CHINA/CHONGQING.py>`_
+* Case 3: ``",,,1,2,...,,,"``. Convert to ``"0,0,0,1,2,...,0,0,0"``.  Example reader here
 
+Finally, the reader will call the ``run_l0`` function, by passing to it all the above described arguments. 
 
-	.. code-block:: python
-
-		from disdrodb.L0 import run_disdrodb_l0_station
-		run_disdrodb_l0_station(<disdrodb_dir> <data_source>, <campaign_name>, <station_name>, ...)
-
-
-	Example :
-
-	.. code-block:: python
-
-		from disdrodb.L0 import run_disdrodb_l0_station
-
-		disdrodb_dir = "...\\DISDRODB"
-		data_source='EPFL'
-		campaign_name='EPFL_2008'
-		station_name="10"
-
-		# L0 processing settings 
-		l0a_processing=True
-		l0b_processing=True
-		l0b_concat=True
-		remove_l0a=False
-		remove_l0b=False
-
-		# L0 processing options
-		force=True
-		verbose=True
-		debugging_mode=True
-		parallel=False
-		# Run the processing
-
-		run_disdrodb_l0_station(   
-			disdrodb_dir=disdrodb_dir,
-			data_source=data_source,
-			campaign_name=campaign_name,
-			station_name=station_name, 
-			# L0 processing settings 
-			l0a_processing=l0a_processing,
-			l0b_processing=l0b_processing,
-			l0b_concat=l0b_concat, 
-			remove_l0a=remove_l0a,
-			remove_l0b=remove_l0b,
-			# L0 processing options 
-			parallel=parallel, 
-			verbose=verbose,
-			force=force, 
-			debugging_mode=debugging_mode,
-		)
+.. code-block:: python
+    run_l0a(
+            raw_dir=raw_dir,
+            processed_dir=processed_dir,
+            station_name=station_name,
+            # Custom arguments of the reader for L0A processing
+            glob_patterns=glob_patterns,
+            column_names=column_names,
+            reader_kwargs=reader_kwargs,
+            df_sanitizer_fun=df_sanitizer_fun,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            parallel=parallel,
+            debugging_mode=debugging_mode,
+        )
 
 
-Launch DISDRODB L0 processing for all stations within a campaign
-~~~~~~~~~~~~~~~~~~~~~~~~
+Reader components for raw netCDF files
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+
+On the other hand, if the input raw data are netCDF files, the reader must defines the following components: 
+
+1. The ``glob_patterns`` to search for the raw netCDF files within the <raw_dir>/data/<station_name> directory.
+
+2. The ``dict_names`` dictionary mapping the dimension and variables names of the source netCDF to the DISDRODB L0B standards.
+   Variables not present the dict_names are dropped from the dataset.
+   Variables specified in dict_names but missing in the dataset, are added as NaN arrays.
+   Here is an example of dict_names: 
+   .. code-block:: python
+        dict_names = {
+            # Dimensions 
+            "timestep": "time"
+            "diameter_bin": "diameter_bin_center"
+            "velocity_bin": "velocity_bin_center"
+            # Variables
+            "reflectivity": "reflectivity_32bit"
+            "precipitation_spectrum": "raw_drop_number",
+        }
+
+3. The ``ds_sanitizer_fun(ds)`` function takes as input the raw netCDF file (in xr.Dataset format) and apply ad-hoc
+   processing to make the xr.Dataset compliant to the DISDRODB L0B standards.
+   Typically, this function is used to drop xr.Dataset coordinates not compliant with the expected set of DISDRODB coordinates.
 
 
-DISDRODB offers an utility to run the process of multiple stations with a single command.
-
-In the code example belows, if --data_sources, --campaign_names, --station_names  
-are not specified, the command will process all stations available within the <disdrodb_dir>.
-Starting from all the available stations, the optional specification of the --data_sources , --campaign_names
-and --station_names will restrict the stations that will be processed.
-For example, if only --campaign_names are specified, DISDRODB will process only the stations of such campaigns.
-
-
-1. By command line : 
-
-
-	.. code-block::
-
-		run_disdrodb_l0 <disdrodb_dir> --data_sources <data_sources> --campaign_names <campaign_names> --station_names <station_names> [parameters]
-
-	
-	Where the parameters are defined `here <#readers-parameters>`__.
-
-
-	Example :
-
-	.. code-block::
-
-		run_disdrodb_l0 /ltenas8/DISDRODB --campaign_names EPFL_2008 --l0a_processing True --l0b_processing True --parallel False  
-	
-	To  specify multiple campaigns you can do the follow 
-
-	.. code-block::
-
-		run_disdrodb_l0 /ltenas8/DISDRODB --campaign_names 'EPFL_2008 LOCARNO_2018' --l0a_processing True --l0b_processing True --parallel False  
-
-
-
-2. By calling a python function 
-
-	2.1 Wrapping function : 
-
-		.. code-block:: python
-
-			from disdrodb.L0 import run_disdrodb_l0
-			run_disdrodb_l0(<disdrodb_dir> <data_source>, <campaign_name>, ...)
-
-
-		Example :
-
-		.. code-block:: python
-
-			from disdrodb.L0 import run_disdrodb_l0
-
-			disdrodb_dir = "...\\DISDRODB"
-			data_sources=['EPFL']
-			campaign_names=['EPFL_2008']
-			# L0 processing settings 
-			l0a_processing=True
-			l0b_processing=True
-			l0b_concat=False
-			remove_l0a=False
-			remove_l0b=False
-			# L0 processing options
-			force=True
-			verbose=True
-			debugging_mode=True
-			parallel=False
-			l0b_concat=True
-
-			run_disdrodb_l0(   
-				disdrodb_dir=disdrodb_dir,
-				data_sources=data_sources,      # optional 
-				campaign_names=campaign_names,  # optional 
-				# station_names=station_names,  # optional 
-   		     	# L0 processing settings 
-				l0a_processing=l0a_processing,
-				l0b_processing=l0b_processing,
-				l0b_concat=l0b_concat, 
-				remove_l0a=remove_l0a,
-				remove_l0b=remove_l0b,
-				# L0 processing options 
-				parallel=parallel, 
-				verbose=verbose,
-				force=force, 
-				debugging_mode=debugging_mode,
-			)
-
+Finally, the reader will call the ``run_l0b_from_nc`` function, by passing to it all the above described arguments. 
+ 
+.. code-block:: python
+  run_l0b_from_nc(
+      raw_dir=raw_dir,
+      processed_dir=processed_dir,
+      station_name=station_name,
+      # Custom arguments of the reader
+      glob_patterns=glob_patterns,
+      dict_names=dict_names,
+      ds_sanitizer_fun=ds_sanitizer_fun,
+      # Processing options
+      force=force,
+      verbose=verbose,
+      parallel=parallel,
+      debugging_mode=debugging_mode,
+  )
 
 
 Adding a new reader
 ======================
 
-We describe here the 4 steps to create a reader locally. To publish the reader to the community, please refer to the `Contributing guide <contributors_guidelines.html>`__.
+We describe here the 4 steps to create a reader locally. 
+To share the reader with the community, please also read the `Contributing guide <contributors_guidelines.html>`__.
 
 
-* `Step 1 <#step-1-set-the-folder-structure-for-raw-and-processed-datasets>`_ : Set the folder structure for raw and processed datasets
-* `Step 2 <#step-2-analyse-the-data-and-define-the-reader-components>`_ :  Read and analyse the data
-* `Step 3 <#step-3-create-and-share-your-reader>`_ :  Create the reader
+* `Step 1 <#step-1-set-the-folder-structure-for-raw-and-processed-datasets>`_ : Set the DISDRODB "Raw" directory structure
+* `Step 2 <#step-2-analyse-the-data-and-define-the-reader-components>`_ :  Analyse the data and implement the reader
+* `Step 3 <#step-3-create-and-share-your-reader>`_ :  Share the reader
 * `Step 4 <#step-4-define-reader-testing-files>`_ :  Create the test files
-
+* TODO Description
+* Step X: add metadata and check validity 
+* Step X: check the reader is searchable 
+* Step X: check the L0 processing with run_disdrodb_l0_station 
 
 
 
@@ -321,7 +251,7 @@ The raw and processed data folder must follow strictly the following structure:
 |       ├── 📁 `<campaign_name>`
 |           ├── 📁 data
 |               ├── 📁 `<station_name>`
-|                  ├── 📜 \*.\*  : raw files
+|                    ├── 📜 \*.\*  : raw files
 |           ├── 📁 info
 |           ├── 📁 issue
 |               ├── 📜 <station_name>.yml
@@ -352,8 +282,8 @@ The raw and processed data folder must follow strictly the following structure:
 
 
 
-*Data processed folder*  (for your information) :
-
+The "Processed Directories Tree" will be created automatically when launching the DISDRODB L0 processing.
+It will look like this:
 
 | 📁 DISDRODB
 | ├── 📁 Processed
@@ -361,18 +291,13 @@ The raw and processed data folder must follow strictly the following structure:
 |       ├── 📁 `<campaign_name>`
 |           ├── 📁 L0A
 |               ├── 📁 `<station_name>`
-|                  ├── 📜 \*.parquet
+|                   ├── 📜 \*.parquet
 |           ├── 📁 L0B
 |               ├── 📁 `<station_name>`
-|                  ├── 📜 \*.parquet
+|                    ├── 📜 \*.nc
 |           ├── 📁 info
 |           ├── 📁 metadata
 |               ├── 📜 <station_name>.yml
-
-
-
-Note that this folder will be created automatically, no need to create it while developping the new reader
-
 
 
 Step 2 : Analyse the data and define the reader components
