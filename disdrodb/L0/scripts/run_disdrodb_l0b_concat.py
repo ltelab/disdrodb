@@ -18,15 +18,13 @@
 ## Wrapper to concat L0B files by command lines ##
 ##################################################
 import sys
-
-sys.tracebacklimit = 0  # avoid full traceback error if occur
 import click
 from disdrodb.L0.utils_scripts import parse_arg_to_list
 from disdrodb.L0.L0_processing import (
     click_l0_stations_options,
     click_l0b_concat_options,
 )
-
+sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 @click.command()
 @click.argument("disdrodb_dir", metavar="<DISDRODB base directory>")

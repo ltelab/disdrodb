@@ -59,7 +59,7 @@ pd.set_option("mode.chained_assignment", None)  # Avoid SettingWithCopyWarning
 
 
 def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
-    """Define a dictionary with the parameters required for reading the raw data with Pandas or Dask.
+    """Preprocess arguments required to read raw text file into Pandas.
 
     Parameters
     ----------

@@ -34,7 +34,6 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    # - When no data are logged (every 30 seconds), all columns (except time) have "NA" values
     column_names = [
         "time",
         "id",
