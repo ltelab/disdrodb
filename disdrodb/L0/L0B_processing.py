@@ -27,7 +27,7 @@ import pandas as pd
 import xarray as xr
 from disdrodb.L0.check_standards import (
     check_sensor_name,
-    check_L0B_standards,
+    check_l0b_standards,
     _check_raw_fields_available,
 )
 from disdrodb.L0.io import _remove_if_exists, _create_directory
@@ -534,7 +534,7 @@ def create_l0b_from_l0a(
     ds = set_dataset_attrs(ds, sensor_name)
 
     # Check L0B standards
-    check_L0B_standards(ds)
+    check_l0b_standards(ds)
 
     # -----------------------------------------------------------
     return ds
@@ -878,7 +878,7 @@ def process_raw_nc(
     ds = set_dataset_attrs(ds, sensor_name)
 
     # Check L0B standards
-    check_L0B_standards(ds)
+    check_l0b_standards(ds)
 
     # Return dataset
     return ds

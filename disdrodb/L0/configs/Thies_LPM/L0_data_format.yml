@@ -34,14 +34,14 @@ software_version:
   - 0
   - 9.99
   nan_flags: null
-date_sensor:
+sensor_date:
   n_digits: 6
   n_characters: 8
   n_decimals: 6
   n_naturals: 0
   data_range: null
   nan_flags: null
-time_sensor:
+sensor_time:
   n_digits: 6
   n_characters: 8
   n_decimals: 6
@@ -56,18 +56,18 @@ weather_code_synop_4677_5min:
   n_decimals: 0
   n_naturals: 2
   data_range:
-  - -1  # -1 sensor error 
+  - -1 
   - 99
-  nan_flags: null
+  nan_flags: -1  # -1 sensor error 
 weather_code_synop_4680_5min:
   n_digits: 2
   n_characters: 2
   n_decimals: 0
   n_naturals: 2
   data_range:
-  - -1  # -1 sensor error 
+  - -1   
   - 99
-  nan_flags: null
+  nan_flags: -1 # -1 sensor error
 weather_code_metar_4678_5min:
   n_digits: 0
   n_characters: 5
@@ -90,18 +90,18 @@ weather_code_synop_4677:
   n_decimals: 0
   n_naturals: 0
   data_range:
-  - -1 # -1 sensor error 
+  - -1 
   - 99
-  nan_flags: null
+  nan_flags: -1 # -1 sensor error 
 weather_code_synop_4680:
   n_digits: 0
   n_characters: 5
   n_decimals: 0
   n_naturals: 0
   data_range:
-  - -1 # -1 sensor error 
+  - -1 
   - 99
-  nan_flags: null
+  nan_flags: -1 # -1 sensor error 
 weather_code_metar_4678:
   n_digits: 0
   n_characters: 5
@@ -170,8 +170,8 @@ quality_index:
   n_naturals: 0
   data_range:
   - 0
-  - 999 # 100 ... 999 nan flag 
-  nan_flags: null
+  - 100
+  nan_flags: 999
 max_hail_diameter:
   n_digits: 2
   n_characters: 3
@@ -193,6 +193,9 @@ laser_status:
   - 0
   - 1
   nan_flags: null # (OK/on:0, off:1)
+  valid_values: 
+  - 0
+  - 1
 static_signal:
   n_digits: 1
   n_characters: 1
@@ -213,6 +216,9 @@ laser_temperature_analog_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
+  valid_values: 
+  - 0
+  - 1
 laser_temperature_digital_status:
   n_digits: 1
   n_characters: 1
@@ -222,6 +228,9 @@ laser_temperature_digital_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
+  valid_values: 
+  - 0
+  - 1
 laser_current_analog_status:
   n_digits: 1
   n_characters: 1
@@ -231,6 +240,9 @@ laser_current_analog_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
+  valid_values: 
+  - 0
+  - 1
 laser_current_digital_status:
   n_digits: 1
   n_characters: 1
@@ -240,6 +252,9 @@ laser_current_digital_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
+  valid_values: 
+  - 0
+  - 1
   
 ### Heating: glass(panes), housing, heads, carriers
 
@@ -252,6 +267,9 @@ sensor_voltage_supply_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
+  valid_values: 
+  - 0
+  - 1
 
 current_heating_pane_transmitter_head_status:
   n_digits: 1
@@ -271,6 +289,9 @@ current_heating_pane_receiver_head_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
+  valid_values: 
+  - 0
+  - 1
 
 temperature_sensor_status:
   n_digits: 1
@@ -281,6 +302,9 @@ temperature_sensor_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
+  valid_values: 
+  - 0
+  - 1
 
 current_heating_voltage_supply_status:
   n_digits: 1
@@ -291,6 +315,9 @@ current_heating_voltage_supply_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
+  valid_values: 
+  - 0
+  - 1
 current_heating_house_status:
   n_digits: 1
   n_characters: 1
@@ -300,6 +327,9 @@ current_heating_house_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
+  valid_values: 
+  - 0
+  - 1
 current_heating_heads_status:
   n_digits: 1
   n_characters: 1
@@ -309,6 +339,9 @@ current_heating_heads_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
+  valid_values: 
+  - 0
+  - 1
 current_heating_carriers_status:
   n_digits: 1
   n_characters: 1
@@ -318,7 +351,9 @@ current_heating_carriers_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-
+  valid_values: 
+  - 0
+  - 1
 control_output_laser_power_status:
   n_digits: 1
   n_characters: 1
@@ -328,6 +363,9 @@ control_output_laser_power_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
+  valid_values: 
+  - 0
+  - 1
 reserve_status:
   n_digits: 1
   n_characters: 1
@@ -337,6 +375,9 @@ reserve_status:
   - 0
   - 0
   nan_flags: null
+  valid_values: 
+  - 0
+  - 1
 
 ### Values
 

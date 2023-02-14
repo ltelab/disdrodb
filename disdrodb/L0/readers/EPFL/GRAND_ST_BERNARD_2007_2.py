@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -35,6 +37,9 @@ def reader(
     #### - Define column names
     column_names = [
         "time",
+        "id",
+        "data_logger_temperature",
+        "data_logger_voltage",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
@@ -57,75 +62,47 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
-
-    # Skip first row as columns names
+    reader_kwargs["delimiter"] = ","
+    # - Skip first row as columns names
     reader_kwargs["header"] = None
-
+    # - Skip first 4 rows (it's a header)
+    reader_kwargs["skiprows"] = 4
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
-    # - Avoid UnicodeDecodeError: 'utf-8' codec can't decode byte 0xf0
-    reader_kwargs["encoding"] = "latin-1"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error"]
-
-    # Different enconding for this campaign
-    reader_kwargs["encoding"] = "latin-1"
+    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
 
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Rows with data corruption are removed by L0A processing.
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
-        # Import pandas
-        import numpy as np
+        # - Import pandas
         import pandas as pd
-
-        # - Special parsing if 'Error in data reading' in rainfall_rate_32bit column
-        if np.any(
-            df["rainfall_rate_32bit"].str.startswith("Error in data reading!", na=False)
-        ):
-            df["rainfall_rate_32bit"] = df["rainfall_rate_32bit"].str.replace(
-                "Error in data reading!", ""
-            )
-            df["rainfall_amount_absolute_32bit"].str[7:]
-            df["raw_drop_number"] = df["raw_drop_average_velocity"]
-            df["raw_drop_average_velocity"] = df["raw_drop_concentration"]
-            df["raw_drop_concentration"] = df["error_code"]
-            df["error_code"] = df["rainfall_amount_absolute_32bit"].str[7:]
-            df["rainfall_amount_absolute_32bit"] = df[
-                "rainfall_amount_absolute_32bit"
-            ].str[:7]
 
         # - Convert time column to datetime
         df["time"] = pd.to_datetime(
-            df["time"], format="%d/%m/%Y %H:%M:%S", errors="coerce"
+            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
         )
 
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        df = df.drop(columns=["id", "data_logger_temperature", "data_logger_voltage"])
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
-    glob_patterns = "*.log*"
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    glob_patterns = "*.dat*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

@@ -33,7 +33,7 @@ device_address:
 #   fletcher32: false
 #   contiguous: false
 #   chunksizes: 5000
-# date_sensor: 
+# sensor_date: 
 #   dtype: object
 #   zlib: true
 #   complevel: 3
@@ -41,7 +41,7 @@ device_address:
 #   fletcher32: false
 #   contiguous: false
 #   chunksizes: 5000
-# time_sensor: 
+# sensor_time: 
 #   dtype: object
 #   zlib: true
 #   complevel: 3
@@ -318,6 +318,7 @@ reserve_status:
   fletcher32: false
   contiguous: false
   chunksizes: 5000
+  _FillValue: 255
 temperature_interior: 
   dtype: uint16
   zlib: true

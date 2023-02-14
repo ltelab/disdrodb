@@ -34,7 +34,7 @@ from disdrodb.utils.logger import (
 logger = logging.getLogger(__name__)
 
 
-def _concatenate_L0B_files(processed_dir, station_name, remove=False, verbose=False):
+def _concatenate_l0b_files(processed_dir, station_name, remove=False, verbose=False):
     """Concatenate all L0B netCDF files into a single netCDF file.
 
     The single netCDF file is saved at <processed_dir>/L0B.

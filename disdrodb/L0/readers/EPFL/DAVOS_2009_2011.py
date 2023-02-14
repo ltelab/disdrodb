@@ -67,6 +67,8 @@ def reader(
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+    # - Avoid UnicodeDecodeError: 'utf-8' codec can't decode byte ...
+    reader_kwargs["encoding"] = "latin-1"
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete

@@ -74,8 +74,8 @@ def reader(
             "start_identifier",
             "sensor_serial_number",
             "software_version",
-            "date_sensor",
-            "time_sensor",
+            "sensor_date",
+            "sensor_time",
             "weather_code_synop_4677_5min",
             "weather_code_synop_4680_5min",
             "weather_code_metar_4678_5min",
@@ -158,7 +158,7 @@ def reader(
         df["raw_drop_number"] = df["raw_drop_number"].str.slice(stop=1760)
 
         # - Define 'time column
-        df["time"] = df["date_sensor"].astype(str) + " " + df["time_sensor"].astype(str)
+        df["time"] = df["sensor_date"].astype(str) + " " + df["sensor_time"].astype(str)
 
         # - Convert time column to datetime
         df["time"] = pd.to_datetime(
@@ -166,7 +166,16 @@ def reader(
         )
 
         # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["date_sensor", "time_sensor"])
+        columns_to_drop = [
+            "start_identifier",
+            "software_version",
+            "sensor_serial_number",
+            "sensor_date",
+            "sensor_time",
+        ]
+        df = df.drop(columns=columns_to_drop)
+
+        df = df.drop(columns=["sensor_date", "sensor_time"])
 
         return df
 
