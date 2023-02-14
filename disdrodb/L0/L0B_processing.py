@@ -706,22 +706,26 @@ def _get_dict_dims(dict_names, sensor_name):
     return dict_dims
 
 
-def rename_dataset_dimension(ds, dict_names, sensor_name):
-    """Rename Dataset dimensions."""
-    dict_dims = _get_dict_dims(dict_names, sensor_name)
-    ds = ds.rename_dims(dict_dims)
-    return ds
-
-
 def rename_dataset(ds, dict_names):
-    """Rename Dataset variables and coordinates."""
-    # Get valid variables and coordinates of the dataset
-    ds_keys = list(ds.data_vars) + list(ds.coords)
-    # Get valid dictionary
+    """Rename Dataset variables, coordinates and dimensions."""
+    # Get dataset variables, coordinates and dimensions of the dataset
+    ds_vars = list(ds.data_vars)
+    ds_dims = list(ds.dims)
+    ds_coords = list(ds.coords)
+    # Possible keys
+    possible_keys = ds_vars + ds_coords + ds_dims
+    # Get keys that are dimensions but not coordinates
+    rename_dim_keys = [dim for dim in ds_dims if dim not in ds_coords]
+    # Get rename keys (coords + variables)
+    rename_keys = [k for k in possible_keys if k not in rename_dim_keys]
+    # Get rename dictionary
     # - Remove keys which are missing from the dataset
-    valid_dict = {k: v for k, v in dict_names.items() if k in ds_keys}
+    rename_dict = {k: v for k, v in dict_names.items() if k in rename_keys}
     # Rename dataset
-    ds = ds.rename(valid_dict)
+    ds = ds.rename(rename_dict)
+    # Rename dimensions
+    rename_dim_dict = {k: v for k, v in dict_names.items() if k in rename_dim_keys}
+    ds = ds.rename_dims(rename_dim_dict)
     return ds
 
 
@@ -787,9 +791,6 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     # - Check valid DISDRODB variables + dimensions + coords
     _check_dict_names_validity(dict_names=dict_names, sensor_name=sensor_name)
 
-    # Rename dataset dimensions
-    ds = rename_dataset_dimension(ds, dict_names=dict_names, sensor_name=sensor_name)
-
     # Rename dataset variables and coordinates
     ds = rename_dataset(ds=ds, dict_names=dict_names)
 
@@ -846,7 +847,8 @@ def process_raw_nc(
         L0B xr.Dataset
     """
     # Open the netCDF
-    ds = xr.open_dataset(filepath)
+    with xr.open_dataset(filepath, cache=False) as data:
+        ds = data.load()
 
     # Preprocess netcdf
     ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
@@ -879,6 +881,34 @@ def process_raw_nc(
 
     # Check L0B standards
     check_l0b_standards(ds)
+
+    # Return dataset
+    return ds
+
+
+def replace_custom_nan_flags(ds, dict_nan_flags):
+    """Set values corresponding to nan_flags to np.nan.
+
+    Parameters
+    ----------
+    df : xr.Dataset
+        Input xarray dataset
+    dict_nan_flags : dict
+        Dictionary with nan flags value to set as np.nan
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without nan_flags values.
+    """
+    # Loop over the needed variable, and replace nan_flags values with np.nan
+    for var, nan_flags in dict_nan_flags.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get occurence of nan_flags
+            is_a_nan_flag = ds[var].isin(nan_flags)
+            # Replace with np.nan
+            ds[var] = ds[var].where(~is_a_nan_flag)
 
     # Return dataset
     return ds

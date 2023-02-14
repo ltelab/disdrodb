@@ -102,8 +102,30 @@ def reader(
 
     # Define dataset sanitizer
     def ds_sanitizer_fun(ds):
-        # Drop coordinates not DISDRODB-compliants
-        pass
+        from disdrodb.L0.L0B_processing import replace_custom_nan_flags
+
+        # Replace nan flags with np.nan
+        # - ARM use the -9999 flags
+        nan_flags_variables = [
+            "weather_code_synop_4677_5min",
+            "weather_code_synop_4680_5min",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "mor_visibility",
+            "quality_index",
+            "temperature_interior",
+            "laser_temperature",
+            "laser_current_average",
+            "number_particles",
+            "number_particles_min_speed",
+            "number_particles_max_speed",
+            "number_particles_min_diameter",
+            "number_particles_max_diameter",
+            "raw_drop_number",
+        ]
+        dict_nan_flags = {var: [-9999] for var in nan_flags_variables}
+        ds = replace_custom_nan_flags(ds, dict_nan_flags=dict_nan_flags)
+
         # Return dataset
         return ds
 

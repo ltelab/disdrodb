@@ -1022,7 +1022,6 @@ def get_variables_dimension(sensor_name: str):
     raw_field_dims = get_raw_array_dims_order(sensor_name)
     var_dim_dict = {}
     for var in variables:
-        print(var)
         chunk_sizes = encoding_dict[var]["chunksizes"]
         if len(chunk_sizes) == 1:
             var_dim_dict[var] = ["time"]
