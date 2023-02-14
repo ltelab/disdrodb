@@ -19,7 +19,11 @@
 import logging
 import numpy as np
 import pandas as pd
-from disdrodb.L0.standards import get_data_format_dict, get_L0A_dtype
+from disdrodb.L0.standards import (
+    get_l0a_dtype,
+    get_valid_values_dict,
+    get_data_range_dict,
+)
 
 # Logger
 from disdrodb.utils.logger import (
@@ -30,18 +34,20 @@ from disdrodb.utils.logger import (
 logger = logging.getLogger(__name__)
 
 
-def _check_valid_range(df, dict_value_range, verbose=False):
-    """Check valid value range of dataframe columns."""
+def _check_valid_range(df, dict_data_range, verbose=False):
+    """Check valid value range of dataframe columns.
+
+    It assumes the dict_data_range values are list [min_val, max_val]
+    """
     list_wrong_columns = []
     for column in df.columns:
-        if column in list(dict_value_range.keys()):
-            if dict_value_range[column] is not None:
-                # If nan occurs, assume it as valid values
-                idx_nan = np.isnan(df[column])
-                idx_valid = df[column].between(*dict_value_range[column])
-                idx_valid = np.logical_or(idx_valid, idx_nan)
-                if not idx_valid.all():
-                    list_wrong_columns.append(column)
+        if column in list(dict_data_range.keys()):
+            # If nan occurs, assume it as valid values
+            idx_nan = np.isnan(df[column])
+            idx_valid = df[column].between(*dict_data_range[column])
+            idx_valid = np.logical_or(idx_valid, idx_nan)
+            if not idx_valid.all():
+                list_wrong_columns.append(column)
 
     if len(list_wrong_columns) > 0:
         msg = (
@@ -52,7 +58,10 @@ def _check_valid_range(df, dict_value_range, verbose=False):
 
 
 def _check_valid_values(df, dict_valid_values, verbose=False):
-    """Check valid values of dataframe columns."""
+    """Check valid values of dataframe columns.
+
+    It assumes the dict_valid_values values are list [...].
+    """
     list_msg = []
     list_wrong_columns = []
     for column in df.columns:
@@ -136,7 +145,7 @@ def check_sensor_name(sensor_name: str) -> None:
         raise ValueError(msg)
 
 
-def check_L0A_column_names(df: pd.DataFrame, sensor_name: str) -> None:
+def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     """Checks that the dataframe columns respects DISDRODB standards.
 
     Parameters
@@ -154,7 +163,7 @@ def check_L0A_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     """
 
     # Get valid columns
-    dtype_dict = get_L0A_dtype(sensor_name)
+    dtype_dict = get_l0a_dtype(sensor_name)
     valid_columns = list(dtype_dict)
     valid_columns = valid_columns + ["time", "latitude", "longitude"]
     valid_columns = set(valid_columns)
@@ -180,7 +189,7 @@ def check_L0A_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     return None
 
 
-def check_L0A_standards(
+def check_l0a_standards(
     df: pd.DataFrame, sensor_name: str, verbose: bool = True
 ) -> None:
     """Checks that a file respects the DISDRODB L0A standards.
@@ -203,12 +212,12 @@ def check_L0A_standards(
     """
     # -------------------------------------
     # Check data range
-    dict_value_range = get_field_value_range_dict(sensor_name)
-    _check_valid_range(df=df, dict_value_range=dict_value_range, verbose=verbose)
+    dict_data_range = get_data_range_dict(sensor_name)
+    _check_valid_range(df=df, dict_data_range=dict_data_range, verbose=verbose)
 
     # -------------------------------------
     # Check categorical data values
-    dict_valid_values = get_field_value_options_dict(sensor_name)
+    dict_valid_values = get_valid_values_dict(sensor_name)
     _check_valid_values(df=df, dict_valid_values=dict_valid_values, verbose=verbose)
 
     # -------------------------------------
@@ -233,225 +242,7 @@ def check_L0A_standards(
     # -------------------------------------
 
 
-def check_L0B_standards(x: str) -> None:
+def check_l0b_standards(x: str) -> None:
     # TODO:
     # - Check for realistic values after having removed the flags !!!!
     pass
-
-
-####--------------------------------------------------------------------------.
-#### Get instrument default string standards
-# TODO: This should be moved to standards.py !!!
-def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
-    """Get number of digits on the left side of the comma from the instrument default string standards.
-
-    Example: 123,45 -> 123 --> 3 natural digits
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Dictionary with the expected number of natural digits for each data field.
-    """
-
-    data_dict = get_data_format_dict(sensor_name)
-    d = {k: v["n_naturals"] for k, v in data_dict.items()}
-    return d
-
-
-def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
-    """Get number of digits on the right side of the comma from the instrument default string standards.
-
-    Example: 123,45 -> 45 --> 2 decimal digits
-    Parameters
-    ----------
-    sensor_name : dict
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Dictionary with the expected number of decimal digits for each data field.
-    """
-
-    data_dict = get_data_format_dict(sensor_name)
-    d = {k: v["n_decimals"] for k, v in data_dict.items()}
-    return d
-
-
-def get_field_ndigits_dict(sensor_name: str) -> dict:
-    """Get number of digits from the instrument default string standards.
-
-    Important note: it excludes the comma but it counts the minus sign !!!
-
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-    Returns
-    -------
-    dict
-        Dictionary with the expected number of digits for each data field.
-    """
-
-    data_dict = get_data_format_dict(sensor_name)
-    d = {k: v["n_digits"] for k, v in data_dict.items()}
-    return d
-
-
-def get_field_nchar_dict(sensor_name: str) -> dict:
-    """Get the total number of characters from the instrument default string standards.
-
-    Important note: it accounts also for the comma and the minus sign !!!
-
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Dictionary with the expected number of characters for each data field.
-    """
-
-    data_dict = get_data_format_dict(sensor_name)
-    d = {k: v["n_characters"] for k, v in data_dict.items()}
-    return d
-
-
-def get_field_value_range_dict(sensor_name: str) -> dict:
-    """Get the variable data range.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Dictionary with the expected data value range for each data field.
-    """
-
-    data_dict = get_data_format_dict(sensor_name)
-    d = {k: v["data_range"] for k, v in data_dict.items()}
-    return d
-
-
-def get_field_flag_dict(sensor_name: str) -> dict:
-    """Get the variable nan flags.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Dictionary with the expected nan flag for each data field.
-    """
-
-    data_dict = get_data_format_dict(sensor_name)
-    d = {k: v["nan_flags"] for k, v in data_dict.items()}
-    return d
-
-
-####--------------------------------------------------------------------------.
-#### Instrument default numeric standards
-# TODO: this is currently used?
-# --> YAML file with a list of variables providing error infos?
-# --> And provide values that represents errors?
-
-
-def get_field_value_options_dict(sensor_name: str) -> dict:
-    """Get the dictionary of field values.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Dictionary of field values.
-
-    Raises
-    ------
-    NotImplementedError
-        Error if the name of the sensor is not available.
-    """
-    # TODO: this should go in data_format YAML file!
-    if sensor_name == "OTT_Parsivel":
-        value_dict = {
-            "sensor_status": [0, 1, 2, 3],
-            "error_code": [0, 1, 2],
-            # TODO: weather codes
-            # Faculative/custom fields
-            # 'datalogger_temperature': ['NaN']
-            # "datalogger_voltage": ["OK", "KO"],
-            # "datalogger_error": [0],
-        }
-    elif sensor_name == "OTT_Parsivel2":
-        value_dict = {
-            "sensor_status": [0, 1, 2, 3],
-            "error_code": [0, 1, 2],
-            # TODO: weather codes
-            # Faculative/custom fields
-        }
-    elif sensor_name == "Thies_LPM":
-        value_dict = {
-            "laser_status": [0, 1],
-            "laser_temperature_analog_status": [0, 1],
-            "laser_temperature_digital_status": [0, 1],
-            "laser_current_analog_status": [0, 1],
-            "laser_current_digital_status": [0, 1],
-            "sensor_voltage_supply_status": [0, 1],
-            "current_heating_pane_transmitter_head_status": [0, 1],
-            "current_heating_pane_receiver_head_status": [0, 1],
-            "temperature_sensor_status": [0, 1],
-            "current_heating_voltage_supply_status": [0, 1],
-            "current_heating_house_status": [0, 1],
-            "current_heating_heads_status": [0, 1],
-            "current_heating_carriers_status": [0, 1],
-            "control_output_laser_power_status": [0, 1],
-            "reserve_status": [0, 1]
-            # TODO: weather codes
-            # Faculative/custom fields
-        }
-    elif sensor_name == "RD_80":
-        value_dict = {"status": [0, 1]}
-    else:
-        raise NotImplementedError
-
-    return value_dict
-
-
-def get_field_error_dict(device: str) -> dict:
-    """Get field error dictionnary
-
-    Parameters
-    ----------
-    device : str
-        Name of the sensor
-
-    Returns
-    -------
-    dict
-        Dictionnary of the field error
-    """
-    if device == "OTT_Parsivel":
-        flag_dict = {
-            "sensor_status": [1, 2, 3],
-            # "datalogger_error": [1],
-            "error_code": [1, 2],
-        }
-    return flag_dict

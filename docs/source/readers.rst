@@ -1,4 +1,4 @@
-3:=========================
+=========================
 Readers
 =========================
 
@@ -27,7 +27,6 @@ the DISDRODB L0B netCDF format.
 
 In the DISDRODB metadata of each station, the ``reader`` key specifies the DISDRODB reader required to
 to process the raw data.
-This enable to process the DISDRODB archive 
 
 
 Available readers
@@ -59,7 +58,7 @@ The dictionary has the following shape:
 Reader structure   
 ======================
 
-A reader it s defined by the following arguments:
+A reader it s a function defined by the following arguments:
 
 .. code-block:: python
 
@@ -93,20 +92,20 @@ A reader it s defined by the following arguments:
 * ``station_name`` : str - Name of the station to be processed. 
 
 		
-* ``--force`` : bool [true\| **false** ] - Whether to overwrite existing data.
+* ``force`` : bool [true\| **false** ] - Whether to overwrite existing data.
 
         *  If True, overwrite existing data into destination directories.
         *  If False, raise an error if there are already data into destination directories.
 
 
-* ``--verbose`` : bool [true\| **false** ] - Whether to print detailed processing information into terminal.
+* ``verbose`` : bool [true\| **false** ] - Whether to print detailed processing information into terminal.
 
 
-* ``--debugging_mode`` : bool [true\| **false** ] -  If True, it reduces the amount of data to process.
+* ``debugging_mode`` : bool [true\| **false** ] -  If True, it reduces the amount of data to process.
 
         * It processes just 3 raw data files.
 
-* ``--parallel`` : bool [ **true** \|false] - Whether to process multiple files simultanously.
+* ``parallel`` : bool [ **true** \|false] - Whether to process multiple files simultanously.
 
         * If parallel=False, the raw files are processed sequentially. 
         * If parallel=True, each file is processed in a separate core.  

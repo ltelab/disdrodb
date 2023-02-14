@@ -27,8 +27,13 @@ import tarfile
 import pandas as pd
 import numpy as np
 from typing import Union
-from disdrodb.L0.standards import get_L0A_dtype
-from disdrodb.L0.check_standards import check_L0A_column_names, check_L0A_standards
+from disdrodb.L0.standards import (
+    get_l0a_dtype,
+    get_nan_flags_dict,
+    get_data_range_dict,
+    get_valid_values_dict,
+)
+from disdrodb.L0.check_standards import check_l0a_column_names, check_l0a_standards
 from disdrodb.L0.io import _remove_if_exists, _create_directory
 from disdrodb.L0.L0B_processing import infer_split_str
 
@@ -237,7 +242,7 @@ def cast_column_dtypes(
     """
 
     # Cast dataframe to dtypes
-    dtype_dict = get_L0A_dtype(sensor_name)
+    dtype_dict = get_l0a_dtype(sensor_name)
     # Ensure time column is saved with seconds resolution
     dtype_dict["time"] = "M8[s]"
     # Add latitude, longitude and elevation for mobile disdrometers
@@ -277,7 +282,7 @@ def coerce_corrupted_values_to_nan(
         Dataframe with string columns without corrupted values.
     """
     # Cast dataframe to dtypes
-    dtype_dict = get_L0A_dtype(sensor_name)
+    dtype_dict = get_l0a_dtype(sensor_name)
 
     # Get string columns
     numeric_columns = [
@@ -319,7 +324,7 @@ def strip_string_spaces(
         Dataframe with string columns without leading/trailing spaces.
     """
     # Cast dataframe to dtypes
-    dtype_dict = get_L0A_dtype(sensor_name)
+    dtype_dict = get_l0a_dtype(sensor_name)
 
     # Get string columns
     string_columns = [k for k, dtype in dtype_dict.items() if dtype == "str"]
@@ -393,7 +398,122 @@ def remove_corrupted_rows(df):
     # Check if there are rows left
     if len(df) == 0:
         raise ValueError("No remaining rows after data corruption checks.")
+    # If only one row available, raise also error
+    if len(df) == 1:
+        raise ValueError(
+            "Only 1 rows remains after data corruption checks. Check the file."
+        )
     # Return the dataframe
+    return df
+
+
+def replace_nan_flags(df, sensor_name, verbose):
+    """Set values corresponding to nan_flags to np.nan.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe without nan_flags values.
+    """
+    # Get dictionary of nan flags
+    dict_nan_flags = get_nan_flags_dict(sensor_name)
+    # Loop over the needed variable, and replace nan_flags values with np.nan
+    for var, nan_flags in dict_nan_flags.items():
+        # If the variable is in the dataframe
+        if var in df:
+            # Get array with occurence of nan_flags
+            is_a_nan_flag = df[var].isin(nan_flags)
+            # If nan_flags values are present, replace with np.nan
+            n_nan_flags_values = np.sum(is_a_nan_flag)
+            if n_nan_flags_values > 0:
+                msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                df[var][is_a_nan_flag] = np.nan
+    # Return dataframe
+    return df
+
+
+def set_nan_outside_data_range(df, sensor_name, verbose):
+    """Set values outside the data range as np.nan.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe without values outside the expected data range.
+    """
+    # Get dictionary of data_range
+    dict_data_range = get_data_range_dict(sensor_name)
+    # Loop over the variable with a defined data_range
+    for var, data_range in dict_data_range.items():
+        # If the variable is in the dataframe
+        if var in df:
+            # Get min and max value
+            min_val = data_range[0]
+            max_val = data_range[1]
+            # Check within data range or already np.nan
+            is_valid = (df[var] >= min_val) & (df[var] <= max_val) | df[var].isna()
+            # If there are values outside the data range, set to np.nan
+            n_unvalid = np.sum(~is_valid)
+            if n_unvalid > 0:
+                msg = f"{n_unvalid} {var} values were outside the data range and were set to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                df[var] = df[var].where(is_valid)  # set not valid to np.nan
+
+    # Return dataframe
+    return df
+
+
+def set_nan_unvalid_values(df, sensor_name, verbose):
+    """Set unvalid (class) values to np.nan.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe without unvalid values.
+    """
+    # Get dictionary of valid values
+    dict_valid_values = get_valid_values_dict(sensor_name)
+    # Loop over the variable with a defined data_range
+    for var, valid_values in dict_valid_values.items():
+        # If the variable is in the dataframe
+        if var in df:
+            # Get array with occurence of correct values (or already np.nan)
+            is_valid_values = df[var].isin(valid_values) | df[var].isna()
+            # If unvalid values are present, replace with np.nan
+            n_unvalid_values = np.sum(~is_valid_values)
+            if n_unvalid_values > 0:
+                msg = f"{n_unvalid_values} {var} values were unvalid and were replaced to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                df[var] = df[var].where(is_valid_values)  # set not valid to np.nan
+
+    # Return dataframe
     return df
 
 
@@ -468,18 +588,27 @@ def process_raw_file(
     # - Strip first and last delimiter from the raw arrays
     df = strip_delimiter_from_raw_arrays(df)
 
-    # - Remove corrupted rows.
+    # - Remove corrupted rows
     df = remove_corrupted_rows(df)
 
     # - Cast dataframe to dtypes
     df = cast_column_dtypes(df, sensor_name=sensor_name, verbose=verbose)
 
+    # - Replace nan flags values with np.nans
+    df = replace_nan_flags(df, sensor_name=sensor_name, verbose=verbose)
+
+    # - Set values outside the data range to np.nan
+    df = set_nan_outside_data_range(df, sensor_name=sensor_name, verbose=verbose)
+
+    # - Replace unvalid values with np.nan
+    df = set_nan_unvalid_values(df, sensor_name=sensor_name, verbose=verbose)
+
     # ------------------------------------------------------.
     # - Check column names agrees to DISDRODB standards
-    check_L0A_column_names(df, sensor_name=sensor_name)
+    check_l0a_column_names(df, sensor_name=sensor_name)
 
     # - Check the dataframe respects the DISDRODB standards
-    check_L0A_standards(df=df, sensor_name=sensor_name, verbose=verbose)
+    check_l0a_standards(df=df, sensor_name=sensor_name, verbose=verbose)
 
     # ------------------------------------------------------.
     # Return the L0A dataframe

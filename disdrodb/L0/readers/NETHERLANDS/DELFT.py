@@ -69,7 +69,10 @@ def reader(
         import pandas as pd
 
         # - Remove rows that have a corrupted "TO_BE_PARSED" column
-        df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() == 3726]
+        # - PAR001, PAR002 have length 3726 (no station_name)
+        # - PAR007 have length 3736 ()
+        df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() >= 3726]
+        df = df.loc[df["TO_BE_PARSED"].astype(str).str.len() <= 3736]
 
         # - Convert 'time' column to datetime
         df_time = pd.to_datetime(df["time"], format="%Y%m%d-%H%M%S", errors="coerce")
@@ -105,7 +108,7 @@ def reader(
             "sensor_heating_current",
             "sensor_battery_voltage",
             "sensor_status",
-            "date_time_measurement_start",
+            "sensor_time_measurement_start",
             "sensor_time",
             "sensor_date",
             "station_name",
@@ -151,7 +154,7 @@ def reader(
         columns_to_drop = [
             "firmware_iop",
             "firmware_dsp",
-            "date_time_measurement_start",
+            "sensor_time_measurement_start",
             "sensor_time",
             "sensor_date",
             "station_name",

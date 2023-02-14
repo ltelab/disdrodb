@@ -105,6 +105,9 @@ def get_configs_dir(sensor_name: str) -> str:
     return config_sensor_dir_path
 
 
+####--------------------------------------------------------------------------.
+
+
 def get_available_sensor_name() -> sorted:
     """Get available names of sensors.
 
@@ -137,23 +140,6 @@ def get_variables_dict(sensor_name: str) -> dict:
     return read_config_yml(sensor_name=sensor_name, filename="variables.yml")
 
 
-def get_sensor_variables(sensor_name: str) -> list:
-    """Get sensor variable names list.
-
-    Parameters
-    ----------
-    sensor_name : str
-         Name of the sensor.
-
-    Returns
-    -------
-    list
-        List of the variables values
-    """
-
-    return list(get_variables_dict(sensor_name).values())
-
-
 def get_data_format_dict(sensor_name: str) -> dict:
     """Get a dictionary containing the data format of each sensor variable.
 
@@ -171,6 +157,81 @@ def get_data_format_dict(sensor_name: str) -> dict:
     return read_config_yml(sensor_name=sensor_name, filename="L0_data_format.yml")
 
 
+def get_sensor_variables(sensor_name: str) -> list:
+    """Get sensor variable names list.
+
+    Parameters
+    ----------
+    sensor_name : str
+         Name of the sensor.
+
+    Returns
+    -------
+    list
+        List of the variables values
+    """
+
+    return list(get_variables_dict(sensor_name).values())
+
+
+####-------------------------------------------------------------------------.
+#### Valid names
+
+
+def get_valid_coordinates_names(sensor_name):
+    common_coords = [
+        "time",
+        "latitude",
+        "longitude",
+        # "altitude",
+        # crs,
+        "diameter_bin_center",
+        "diameter_bin_width",
+        "diameter_bin_lower",
+        "diameter_bin_upper",
+    ]
+    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
+        velocity_coordinates = [
+            "velocity_bin_center",
+            "velocity_bin_width",
+            "velocity_bin_lower",
+            "velocity_bin_upper",
+        ]
+        coordinates = common_coords + velocity_coordinates
+    elif sensor_name in ["RD_80"]:
+        coordinates = common_coords
+    else:
+        raise NotImplementedError()
+    return coordinates
+
+
+def get_valid_dimension_names(sensor_name):
+    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
+        dimensions = ["time", "velocity_bin_center", "diameter_bin_center"]
+    elif sensor_name in ["RD_80"]:
+        dimensions = ["time", "diameter_bin_center"]
+    else:
+        raise NotImplementedError()
+    return dimensions
+
+
+def get_valid_variable_names(sensor_name):
+    variables = list(get_L0B_encodings_dict(sensor_name).keys())
+    return variables
+
+
+def get_valid_names(sensor_name):
+    variables = get_valid_variable_names(sensor_name)
+    coordinates = get_valid_dimension_names(sensor_name)
+    dimensions = get_valid_coordinates_names(sensor_name)
+    names = np.unique(variables + coordinates + dimensions).tolist()
+    return names
+
+
+####--------------------------------------------------------------------------.
+#### Variables validity dictionary
+
+
 def get_data_range_dict(sensor_name: str) -> dict:
     """Get the variable data range.
 
@@ -183,19 +244,162 @@ def get_data_range_dict(sensor_name: str) -> dict:
     -------
     dict
         Dictionary with the expected data value range for each data field.
-        It excludes variables without specified data_range.
+        It excludes variables without specified data_range key.
     """
 
     data_format_dict = get_data_format_dict(sensor_name)
     dict_data_range = {}
     for k in data_format_dict.keys():
-        data_range = data_format_dict[k]["data_range"]
-        if data_range is not None:
-            dict_data_range[k] = data_range
+        if "data_range" in data_format_dict[k]:
+            data_range = data_format_dict[k]["data_range"]
+            if data_range is not None:
+                dict_data_range[k] = data_range
     return dict_data_range
 
 
+def get_nan_flags_dict(sensor_name: str) -> dict:
+    """Get the variable nan_flags.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with the expected nan_flags list for each data field.
+        It excludes variables without specified nan_flags key.
+    """
+
+    data_format_dict = get_data_format_dict(sensor_name)
+    dict_nan_flags = {}
+    for k in data_format_dict.keys():
+        if "nan_flags" in data_format_dict[k]:
+            nan_flags = data_format_dict[k]["nan_flags"]
+            if nan_flags is not None:
+                if not isinstance(nan_flags, list):
+                    nan_flags = [nan_flags]
+                dict_nan_flags[k] = nan_flags
+    return dict_nan_flags
+
+
+def get_valid_values_dict(sensor_name: str) -> dict:
+    """Get the list of valid values for a variable.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with the expected values for specific variables.
+        It excludes variables without specified valid_values key.
+    """
+    data_format_dict = get_data_format_dict(sensor_name)
+    dict_valid_values = {}
+    for k in data_format_dict.keys():
+        if "valid_values" in data_format_dict[k]:
+            valid_values = data_format_dict[k]["valid_values"]
+            if valid_values is not None:
+                if not isinstance(valid_values, list):
+                    valid_values = [valid_values]
+                dict_valid_values[k] = valid_values
+    return dict_valid_values
+
+
+####--------------------------------------------------------------------------.
+#### Get variable string format
+def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
+    """Get number of digits on the left side of the comma from the instrument default string standards.
+
+    Example: 123,45 -> 123 --> 3 natural digits
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with the expected number of natural digits for each data field.
+    """
+
+    data_dict = get_data_format_dict(sensor_name)
+    d = {k: v["n_naturals"] for k, v in data_dict.items()}
+    return d
+
+
+def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
+    """Get number of digits on the right side of the comma from the instrument default string standards.
+
+    Example: 123,45 -> 45 --> 2 decimal digits
+    Parameters
+    ----------
+    sensor_name : dict
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with the expected number of decimal digits for each data field.
+    """
+
+    data_dict = get_data_format_dict(sensor_name)
+    d = {k: v["n_decimals"] for k, v in data_dict.items()}
+    return d
+
+
+def get_field_ndigits_dict(sensor_name: str) -> dict:
+    """Get number of digits from the instrument default string standards.
+
+    Important note: it excludes the comma but it counts the minus sign !!!
+
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+    Returns
+    -------
+    dict
+        Dictionary with the expected number of digits for each data field.
+    """
+
+    data_dict = get_data_format_dict(sensor_name)
+    d = {k: v["n_digits"] for k, v in data_dict.items()}
+    return d
+
+
+def get_field_nchar_dict(sensor_name: str) -> dict:
+    """Get the total number of characters from the instrument default string standards.
+
+    Important note: it accounts also for the comma and the minus sign !!!
+
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with the expected number of characters for each data field.
+    """
+
+    data_dict = get_data_format_dict(sensor_name)
+    d = {k: v["n_characters"] for k, v in data_dict.items()}
+    return d
+
+
 ####-------------------------------------------------------------------------.
+#### Variable attributes
+
+
 def get_description_dict(sensor_name: str) -> dict:
     """Get a dictionary containing the description of each sensor variable.
 
@@ -248,155 +452,7 @@ def get_units_dict(sensor_name: str) -> dict:
 
 
 ####-------------------------------------------------------------------------.
-def get_sensor_name_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the description of each sensor variable.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Description of each sensor variable
-    """
-
-    d = read_config_yml(sensor_name=sensor_name, filename="variable_description.yml")
-    return d
-
-
-def get_diameter_bins_dict(sensor_name: str) -> dict:
-    """Get dictionary with sensor_name diameter bins information.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        sensor_name diameter bins information
-    """
-
-    d = read_config_yml(sensor_name=sensor_name, filename="bins_diameter.yml")
-    # TODO: Check dict contains center, bounds and width keys
-    return d
-
-
-def get_velocity_bins_dict(sensor_name: str) -> dict:
-    """Get velocity with sensor_name diameter bins information.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Sensor_name diameter bins information
-    """
-
-    d = read_config_yml(sensor_name=sensor_name, filename="bins_velocity.yml")
-    return d
-
-
-####-------------------------------------------------------------------------.
-def get_L0A_dtype(sensor_name: str) -> dict:
-    """Get a dictionary containing the L0A dtype.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        L0A dtype
-    """
-
-    # Note: This function could extract the info from get_L0A_encodings_dict in future.
-    d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
-    return d
-
-
-def get_L0A_encodings_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the L0A encodings
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        L0A encodings
-    """
-
-    # - L0A_encodings currently specify only the dtype. This could be expanded in the future.
-    d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
-    return d
-
-
-def get_L0B_encodings_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the encoding to write L0B netCDFs.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Encoding to write L0B netCDFs
-    """
-
-    d = read_config_yml(sensor_name=sensor_name, filename="L0B_encodings.yml")
-
-    # Ensure chunksize is a list
-    for var in d.keys():
-        if not isinstance(d[var]["chunksizes"], (list, type(None))):
-            d[var]["chunksizes"] = [d[var]["chunksizes"]]
-
-    # Sanitize encodings
-    for var in d.keys():
-        # Ensure contiguous=True if chunksizes is None
-        if isinstance(d[var]["chunksizes"], type(None)) and not d[var]["contiguous"]:
-            # These changes are required to enable netCDF writing
-            d[var]["contiguous"] = True
-            d[var]["fletcher32"] = False
-            d[var]["zlib"] = False
-            print(f"Set contiguous=True for variable {var} because chunksizes=None")
-            print(f"Set fletcher32=False for variable {var} because contiguous=True")
-            print(f"Set zlib=False for variable {var} because contiguous=True")
-        # Ensure contiguous=False if chunksizes is not None
-        if d[var]["contiguous"] and not isinstance(d[var]["chunksizes"], type(None)):
-            d[var]["contiguous"] = False
-            print(
-                f"Set contiguous=False for variable {var} because chunksizes is defined!"
-            )
-
-    return d
-
-
-####-------------------------------------------------------------------------.
-def get_time_encoding() -> dict:
-    """Create time encoding
-
-    Returns
-    -------
-    dict
-        Time encoding
-    """
-    encoding = {}
-    encoding["units"] = EPOCH
-    encoding["calendar"] = "proleptic_gregorian"
-    return encoding
+#### Coordinates attributes
 
 
 def get_coords_attrs_dict(ds):
@@ -498,6 +554,10 @@ def get_coords_attrs_dict(ds):
     return attrs_dict
 
 
+####-------------------------------------------------------------------------.
+#### DISDRODB attributes
+
+
 def set_disdrodb_attrs(ds, product_level: str):
     """Add DISDRODB processing information to the netCDF global attributes.
 
@@ -524,9 +584,26 @@ def set_disdrodb_attrs(ds, product_level: str):
 
 
 ####-------------------------------------------------------------------------.
-#############################################
-#### Get diameter and velocity bins info ####
-#############################################
+#### Coordinates information
+
+
+def get_diameter_bins_dict(sensor_name: str) -> dict:
+    """Get dictionary with sensor_name diameter bins information.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        sensor_name diameter bins information
+    """
+
+    d = read_config_yml(sensor_name=sensor_name, filename="bins_diameter.yml")
+    # TODO: Check dict contains center, bounds and width keys
+    return d
 
 
 def get_diameter_bin_center(sensor_name: str) -> list:
@@ -603,6 +680,24 @@ def get_diameter_bin_width(sensor_name: str) -> list:
     diameter_dict = get_diameter_bins_dict(sensor_name)
     diameter_bin_width = list(diameter_dict["width"].values())
     return diameter_bin_width
+
+
+def get_velocity_bins_dict(sensor_name: str) -> dict:
+    """Get velocity with sensor_name diameter bins information.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Sensor_name diameter bins information
+    """
+
+    d = read_config_yml(sensor_name=sensor_name, filename="bins_velocity.yml")
+    return d
 
 
 def get_velocity_bin_center(sensor_name: str) -> list:
@@ -693,8 +788,125 @@ def get_velocity_bin_width(sensor_name: str) -> list:
     return velocity_bin_width
 
 
+def get_n_diameter_bins(sensor_name):
+    """Get the number of diameter bins."""
+    # Retrieve number of bins
+    diameter_dict = get_diameter_bins_dict(sensor_name)
+    n_diameter_bins = len(diameter_dict["center"])
+    return n_diameter_bins
+
+
+def get_n_velocity_bins(sensor_name):
+    """Get the number of velocity bins."""
+    # Retrieve number of bins
+    velocity_dict = get_velocity_bins_dict(sensor_name)
+    if velocity_dict is None:
+        n_velocity_bins = 0
+    else:
+        n_velocity_bins = len(velocity_dict["center"])
+    return n_velocity_bins
+
+
 ####-------------------------------------------------------------------------.
-# TODO: to improve
+#### Encodings
+
+
+def get_l0a_dtype(sensor_name: str) -> dict:
+    """Get a dictionary containing the L0A dtype.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        L0A dtype
+    """
+
+    # Note: This function could extract the info from get_L0A_encodings_dict in future.
+    d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
+    return d
+
+
+def get_L0A_encodings_dict(sensor_name: str) -> dict:
+    """Get a dictionary containing the L0A encodings
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        L0A encodings
+    """
+
+    # - L0A_encodings currently specify only the dtype. This could be expanded in the future.
+    d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
+    return d
+
+
+def get_L0B_encodings_dict(sensor_name: str) -> dict:
+    """Get a dictionary containing the encoding to write L0B netCDFs.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Encoding to write L0B netCDFs
+    """
+
+    d = read_config_yml(sensor_name=sensor_name, filename="L0B_encodings.yml")
+
+    # Ensure chunksize is a list
+    for var in d.keys():
+        if not isinstance(d[var]["chunksizes"], (list, type(None))):
+            d[var]["chunksizes"] = [d[var]["chunksizes"]]
+
+    # Sanitize encodings
+    for var in d.keys():
+        # Ensure contiguous=True if chunksizes is None
+        if isinstance(d[var]["chunksizes"], type(None)) and not d[var]["contiguous"]:
+            # These changes are required to enable netCDF writing
+            d[var]["contiguous"] = True
+            d[var]["fletcher32"] = False
+            d[var]["zlib"] = False
+            print(f"Set contiguous=True for variable {var} because chunksizes=None")
+            print(f"Set fletcher32=False for variable {var} because contiguous=True")
+            print(f"Set zlib=False for variable {var} because contiguous=True")
+        # Ensure contiguous=False if chunksizes is not None
+        if d[var]["contiguous"] and not isinstance(d[var]["chunksizes"], type(None)):
+            d[var]["contiguous"] = False
+            print(
+                f"Set contiguous=False for variable {var} because chunksizes is defined!"
+            )
+
+    return d
+
+
+def get_time_encoding() -> dict:
+    """Create time encoding
+
+    Returns
+    -------
+    dict
+        Time encoding
+    """
+    encoding = {}
+    encoding["units"] = EPOCH
+    encoding["calendar"] = "proleptic_gregorian"
+    return encoding
+
+
+####-------------------------------------------------------------------------.
+#### L0B processing tools
 
 
 def get_dims_size_dict(sensor_name: str) -> dict:
@@ -711,29 +923,14 @@ def get_dims_size_dict(sensor_name: str) -> dict:
         Dictionary with the number of bins for each dimension.
     """
     # Retrieve number of bins
-    diameter_dict = get_diameter_bins_dict(sensor_name)
-    velocity_dict = get_velocity_bins_dict(sensor_name)
-    n_diameter_bins = len(diameter_dict["center"])
-    if velocity_dict is None:
-        n_velocity_bins = 0
-    else:
-        n_velocity_bins = len(velocity_dict["center"])
+    n_diameter_bins = get_n_diameter_bins(sensor_name)
+    n_velocity_bins = get_n_velocity_bins(sensor_name)
     # Define the dictionary
     dims_size_dict = {
         "diameter_bin_center": n_diameter_bins,
         "velocity_bin_center": n_velocity_bins,
     }
     return dims_size_dict
-
-
-def get_n_diameter_bins(sensor_name):
-    """Get the number of diameter bins."""
-    return get_dims_size_dict(sensor_name)["diameter_bin_center"]
-
-
-def get_n_velocity_bins(sensor_name):
-    """Get the number of velocity bins."""
-    return get_dims_size_dict(sensor_name)["velocity_bin_center"]
 
 
 def get_raw_array_dims_order(sensor_name: str) -> dict:
@@ -781,9 +978,8 @@ def get_raw_array_dims_order(sensor_name: str) -> dict:
     return dim_dict
 
 
-# TODO: RENAME
 def get_raw_array_nvalues(sensor_name: str) -> dict:
-    """Get the raw field number of values.
+    """Get a dictionary with the number of values expected for each raw array.
 
     Parameters
     ----------
@@ -795,89 +991,37 @@ def get_raw_array_nvalues(sensor_name: str) -> dict:
     dict
         Field definition.
     """
+    # Retrieve number of bins
+    n_d = get_n_diameter_bins(sensor_name)
+    n_v = get_n_velocity_bins(sensor_name)
 
-    diameter_dict = get_diameter_bins_dict(sensor_name)
-    velocity_dict = get_velocity_bins_dict(sensor_name)
-    n_d = len(diameter_dict["center"])
-    # For instruments measuring size and velocity (i.e. OTT Parsivel, Thies_LPM)
-    if velocity_dict is not None:
-        n_v = len(velocity_dict["center"])
+    # Define specification for each sensor
+    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
         nbins_dict = {
             "raw_drop_concentration": n_d,
             "raw_drop_average_velocity": n_v,
             "raw_drop_number": n_d * n_v,
         }
-    # For instruments measuring only size (i.e. RD80)
-    else:
+    elif sensor_name in ["Thies_LPM"]:
+        nbins_dict = {
+            "raw_drop_number": n_d * n_v,
+        }
+    elif sensor_name in ["RD_80"]:
         nbins_dict = {
             "raw_drop_number": n_d,
         }
+    else:
+        raise NotImplementedError()
     return nbins_dict
 
 
-def get_raw_spectrum_ndims(sensor_name: str):
-    encoding_dict = get_L0B_encodings_dict(sensor_name)
-    ndim = len(encoding_dict["raw_drop_number"]["chunksizes"]) - 1
-    return ndim
-
-
-def get_valid_coordinates_names(sensor_name):
-    common_coords = [
-        "time",
-        "latitude",
-        "longitude",
-        # "altitude",
-        # crs,
-        "diameter_bin_center",
-        "diameter_bin_width",
-        "diameter_bin_lower",
-        "diameter_bin_upper",
-    ]
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
-        velocity_coordinates = [
-            "velocity_bin_center",
-            "velocity_bin_width",
-            "velocity_bin_lower",
-            "velocity_bin_upper",
-        ]
-        coordinates = common_coords + velocity_coordinates
-    elif sensor_name in ["RD_80"]:
-        coordinates = common_coords
-    else:
-        raise NotImplementedError()
-    return coordinates
-
-
-def get_valid_dimension_names(sensor_name):
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
-        dimensions = ["time", "velocity_bin_center", "diameter_bin_center"]
-    elif sensor_name in ["RD_80"]:
-        dimensions = ["time", "diameter_bin_center"]
-    else:
-        raise NotImplementedError()
-    return dimensions
-
-
-def get_valid_variable_names(sensor_name):
-    variables = list(get_L0B_encodings_dict(sensor_name).keys())
-    return variables
-
-
-def get_valid_names(sensor_name):
-    variables = get_valid_variable_names(sensor_name)
-    coordinates = get_valid_dimension_names(sensor_name)
-    dimensions = get_valid_coordinates_names(sensor_name)
-    names = np.unique(variables + coordinates + dimensions).tolist()
-    return names
-
-
 def get_variables_dimension(sensor_name: str):
+    """Returns a dictionary with the variable dimensions of a L0B product."""
     encoding_dict = get_L0B_encodings_dict(sensor_name)
     variables = list(encoding_dict.keys())
     raw_field_dims = get_raw_array_dims_order(sensor_name)
     var_dim_dict = {}
     for var in variables:
-        print(var)
         chunk_sizes = encoding_dict[var]["chunksizes"]
         if len(chunk_sizes) == 1:
             var_dim_dict[var] = ["time"]

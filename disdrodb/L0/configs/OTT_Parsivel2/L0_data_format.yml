@@ -148,6 +148,11 @@ sensor_status:
   - 0
   - 3
   nan_flags: null
+  valid_values: 
+  - 0
+  - 1
+  - 2
+  - 3
 start_time:
   n_digits: null
   n_characters: null
@@ -201,6 +206,10 @@ error_code:
   - 0
   - 3
   nan_flags: null
+  valid_values: 
+  - 0
+  - 1
+  - 2
 sensor_temperature_pcb:
   n_digits: null
   n_characters: null

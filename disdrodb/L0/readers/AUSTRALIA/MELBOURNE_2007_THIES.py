@@ -65,12 +65,26 @@ def reader(
     #### - Define facultative dataframe sanitizer function for L0 processing
 
     def df_sanitizer_fun(df):
-        # Import pandas
+        # Import numpy and pandas
+        import numpy as np
         import pandas as pd
+
+        # Remove rows with consecutive timesteps
+        # - Keep last timestep occurence
+        idx_timesteps = np.where(df["TO_BE_PARSED"].str.len() == 20)[0]
+        idx_without_data = (
+            np.where(np.diff(idx_timesteps) == 1)[0].flatten().astype(int)
+        )
+        idx_timesteps_without_data = idx_timesteps[idx_without_data]
+        df = df.drop(labels=idx_timesteps_without_data)
+
+        if len(df) == 0 or len(df) == 1:
+            raise ValueError("No data to process.")
 
         # Retrieve time
         df_time = df[::2]
         df_time = df_time.reset_index(drop=True)
+
         # Retrieve data
         df_data = df[1::2]
         df_data = df_data.reset_index(drop=True)
@@ -103,8 +117,8 @@ def reader(
             "start_identifier",
             "device_address",
             "sensor_serial_number",
-            "date_sensor",
-            "time_sensor",
+            "sensor_date",
+            "sensor_time",
             "weather_code_synop_4677_5min",
             "weather_code_synop_4680_5min",
             "weather_code_metar_4678_5min",
@@ -193,16 +207,15 @@ def reader(
         # Drop rows with invalid raw_drop_number
         df = df[df["raw_drop_number"].astype(str).str.len() == 1760]
 
-        # Drop columns with unvalid values
-        df = df.drop(
-            columns=[
-                "start_identifier",
-                "device_address",
-                "sensor_serial_number",
-                "date_sensor",
-                "time_sensor",
-            ]
-        )
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        columns_to_drop = [
+            "start_identifier",
+            "device_address",
+            "sensor_serial_number",
+            "sensor_date",
+            "sensor_time",
+        ]
+        df = df.drop(columns=columns_to_drop)
 
         return df
 

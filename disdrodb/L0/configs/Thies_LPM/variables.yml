@@ -2,8 +2,8 @@
 '02': device_address
 '03': sensor_serial_number
 '04': software_version
-'05': date_sensor
-'06': time_sensor
+'05': sensor_date
+'06': sensor_time
 
 '07': weather_code_synop_4677_5min
 '08': weather_code_synop_4680_5min 

@@ -4,8 +4,8 @@
 import numpy as np
 import pandas as pd
 from typing import Union
-from disdrodb.L0.standards import get_L0A_dtype
-from disdrodb.L0.check_standards import (
+from disdrodb.L0.standards import (
+    get_l0a_dtype,
     get_field_nchar_dict,
     get_field_ndigits_dict,
     get_field_ndigits_decimals_dict,
@@ -32,7 +32,7 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
     if not isinstance(column_names, list):
         raise TypeError("'column_names' must be a list of strings.")
     # Get valid columns
-    dtype_dict = get_L0A_dtype(sensor_name)
+    dtype_dict = get_l0a_dtype(sensor_name)
     valid_columns = list(dtype_dict)
     valid_columns = valid_columns + ["time"]
     # --------------------------------------------
@@ -56,14 +56,6 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
         )
     # --------------------------------------------
     return None
-
-    def check_L0_column_names(x):
-        # TODO:
-        # check_L0_column_names(column_names, sensor_name)
-        # --> Move in for loop
-        # --> Print message with columns to be drop in df_sanitizer
-        # --> Print message of columns to be derived in df_sanitizer (i.e. time)
-        pass
 
 
 def print_df_first_n_rows(
@@ -153,7 +145,7 @@ def print_valid_L0_column_names(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    print(list(get_L0A_dtype(sensor_name)))
+    print(list(get_l0a_dtype(sensor_name)))
     return None
 
 

@@ -12,6 +12,9 @@ sensor_status:
   n_naturals: null
   data_range: null
   nan_flags: null
+  valid_values: 
+  - 0
+  - 1
 interval:
   n_digits: 4
   n_characters: 0

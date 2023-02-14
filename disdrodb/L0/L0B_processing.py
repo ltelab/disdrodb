@@ -21,13 +21,14 @@
 
 # -----------------------------------------------------------------------------.
 import os
+import copy
 import logging
 import numpy as np
 import pandas as pd
 import xarray as xr
 from disdrodb.L0.check_standards import (
     check_sensor_name,
-    check_L0B_standards,
+    check_l0b_standards,
     _check_raw_fields_available,
 )
 from disdrodb.L0.io import _remove_if_exists, _create_directory
@@ -51,6 +52,9 @@ from disdrodb.L0.standards import (
     # get_valid_coordinates_names,
     get_coords_attrs_dict,
     set_disdrodb_attrs,
+    get_nan_flags_dict,
+    get_data_range_dict,
+    get_valid_values_dict,
 )
 from disdrodb.utils.logger import (
     log_info,
@@ -534,7 +538,7 @@ def create_l0b_from_l0a(
     ds = set_dataset_attrs(ds, sensor_name)
 
     # Check L0B standards
-    check_L0B_standards(ds)
+    check_l0b_standards(ds)
 
     # -----------------------------------------------------------
     return ds
@@ -706,22 +710,26 @@ def _get_dict_dims(dict_names, sensor_name):
     return dict_dims
 
 
-def rename_dataset_dimension(ds, dict_names, sensor_name):
-    """Rename Dataset dimensions."""
-    dict_dims = _get_dict_dims(dict_names, sensor_name)
-    ds = ds.rename_dims(dict_dims)
-    return ds
-
-
 def rename_dataset(ds, dict_names):
-    """Rename Dataset variables and coordinates."""
-    # Get valid variables and coordinates of the dataset
-    ds_keys = list(ds.data_vars) + list(ds.coords)
-    # Get valid dictionary
+    """Rename Dataset variables, coordinates and dimensions."""
+    # Get dataset variables, coordinates and dimensions of the dataset
+    ds_vars = list(ds.data_vars)
+    ds_dims = list(ds.dims)
+    ds_coords = list(ds.coords)
+    # Possible keys
+    possible_keys = ds_vars + ds_coords + ds_dims
+    # Get keys that are dimensions but not coordinates
+    rename_dim_keys = [dim for dim in ds_dims if dim not in ds_coords]
+    # Get rename keys (coords + variables)
+    rename_keys = [k for k in possible_keys if k not in rename_dim_keys]
+    # Get rename dictionary
     # - Remove keys which are missing from the dataset
-    valid_dict = {k: v for k, v in dict_names.items() if k in ds_keys}
+    rename_dict = {k: v for k, v in dict_names.items() if k in rename_keys}
     # Rename dataset
-    ds = ds.rename(valid_dict)
+    ds = ds.rename(rename_dict)
+    # Rename dimensions
+    rename_dim_dict = {k: v for k, v in dict_names.items() if k in rename_dim_keys}
+    ds = ds.rename_dims(rename_dim_dict)
     return ds
 
 
@@ -787,9 +795,6 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     # - Check valid DISDRODB variables + dimensions + coords
     _check_dict_names_validity(dict_names=dict_names, sensor_name=sensor_name)
 
-    # Rename dataset dimensions
-    ds = rename_dataset_dimension(ds, dict_names=dict_names, sensor_name=sensor_name)
-
     # Rename dataset variables and coordinates
     ds = rename_dataset(ds=ds, dict_names=dict_names)
 
@@ -846,13 +851,14 @@ def process_raw_nc(
         L0B xr.Dataset
     """
     # Open the netCDF
-    ds = xr.open_dataset(filepath)
+    with xr.open_dataset(filepath, cache=False) as data:
+        ds = data.load()
 
     # Preprocess netcdf
     ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
     # Add CRS and geolocation information
-    attrs = attrs.copy()
+    attrs = copy.deepcopy(attrs)
     coords = {}
     coords["crs"] = attrs["crs"]
     geolocation_vars = ["latitude", "longitude", "altitude"]
@@ -868,6 +874,15 @@ def process_raw_nc(
     # Apply dataset sanitizer function
     ds = ds_sanitizer_fun(ds)
 
+    # - Replace nan flags values with np.nans
+    ds = replace_nan_flags(ds, sensor_name=sensor_name, verbose=verbose)
+
+    # - Set values outside the data range to np.nan
+    ds = set_nan_outside_data_range(ds, sensor_name=sensor_name, verbose=verbose)
+
+    # - Replace unvalid values with np.nan
+    ds = set_nan_unvalid_values(ds, sensor_name=sensor_name, verbose=verbose)
+
     # Ensure variables with dtype object are converted to string
     ds = convert_object_variables_to_string(ds)
 
@@ -878,7 +893,146 @@ def process_raw_nc(
     ds = set_dataset_attrs(ds, sensor_name)
 
     # Check L0B standards
-    check_L0B_standards(ds)
+    check_l0b_standards(ds)
+
+    # Return dataset
+    return ds
+
+
+def replace_custom_nan_flags(ds, dict_nan_flags):
+    """Set values corresponding to nan_flags to np.nan.
+
+    Parameters
+    ----------
+    df : xr.Dataset
+        Input xarray dataset
+    dict_nan_flags : dict
+        Dictionary with nan flags value to set as np.nan
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without nan_flags values.
+    """
+    # Loop over the needed variable, and replace nan_flags values with np.nan
+    for var, nan_flags in dict_nan_flags.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get occurence of nan_flags
+            is_a_nan_flag = ds[var].isin(nan_flags)
+            # Replace with np.nan
+            ds[var] = ds[var].where(~is_a_nan_flag)
+
+    # Return dataset
+    return ds
+
+
+def replace_nan_flags(ds, sensor_name, verbose):
+    """Set values corresponding to nan_flags to np.nan.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset
+    dict_nan_flags : dict
+        Dictionary with nan flags value to set as np.nan
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without nan_flags values.
+    """
+    # Get dictionary of nan flags
+    dict_nan_flags = get_nan_flags_dict(sensor_name)
+
+    # Loop over the needed variable, and replace nan_flags values with np.nan
+    for var, nan_flags in dict_nan_flags.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get occurence of nan_flags
+            is_a_nan_flag = ds[var].isin(nan_flags)
+            n_nan_flags_values = np.sum(is_a_nan_flag.data)
+            if n_nan_flags_values > 0:
+                msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                # Replace with np.nan
+                ds[var] = ds[var].where(~is_a_nan_flag)
+
+    # Return dataset
+    return ds
+
+
+def set_nan_outside_data_range(ds, sensor_name, verbose):
+    """Set values outside the data range as np.nan.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without values outside the expected data range.
+    """
+    # Get dictionary of data_range
+    dict_data_range = get_data_range_dict(sensor_name)
+    # Loop over the variable with a defined data_range
+    for var, data_range in dict_data_range.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get min and max value
+            min_val = data_range[0]
+            max_val = data_range[1]
+            # Check within data range or already np.nan
+            is_valid = (ds[var] >= min_val) & (ds[var] <= max_val) | np.isnan(ds[var])
+            # If there are values outside the data range, set to np.nan
+            n_unvalid = np.sum(~is_valid.data)
+            if n_unvalid > 0:
+                msg = f"{n_unvalid} {var} values were outside the data range and were set to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                ds[var] = ds[var].where(is_valid)  # set not valid to np.nan
+    # Return dataset
+    return ds
+
+
+def set_nan_unvalid_values(ds, sensor_name, verbose):
+    """Set unvalid (class) values to np.nan.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without unvalid values.
+    """
+    # Get dictionary of valid values
+    dict_valid_values = get_valid_values_dict(sensor_name)
+    # Loop over the variable with a defined data_range
+    for var, valid_values in dict_valid_values.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get array with occurence of correct values (or already np.nan)
+            is_valid_values = ds[var].isin(valid_values) | np.isnan(ds[var])
+            # If unvalid values are present, replace with np.nan
+            n_unvalid_values = np.sum(~is_valid_values.data)
+            if n_unvalid_values > 0:
+                msg = f"{n_unvalid_values} {var} values were unvalid and were replaced to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                ds[var] = ds[var].where(is_valid_values)  # set not valid to np.nan
 
     # Return dataset
     return ds

@@ -113,6 +113,9 @@ def reader(
             df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce"
         )
 
+        # Drop rows with None value
+        df = df[~df["TO_BE_SPLITTED"].isnull()]
+
         # - Drop rows when  'Error in data reading' in TO_BE_SPLITTED column
         bad_indices = df[
             df["TO_BE_SPLITTED"].str.contains("Error in data reading!")

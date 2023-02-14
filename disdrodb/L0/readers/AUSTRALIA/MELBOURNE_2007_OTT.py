@@ -73,14 +73,30 @@ def reader(
     #### - Define dataframe sanitizer
 
     def df_sanitizer_fun(df):
-        # Import pandas
+        # Import numpy and pandas
+        import numpy as np
         import pandas as pd
+
+        # Remove rows with consecutive timesteps
+        # - Keep last timestep occurence
+        idx_timesteps = np.where(df["TO_BE_PARSED"].str.len() == 20)[0]
+        idx_without_data = (
+            np.where(np.diff(idx_timesteps) == 1)[0].flatten().astype(int)
+        )
+        idx_timesteps_without_data = idx_timesteps[idx_without_data]
+        df = df.drop(labels=idx_timesteps_without_data)
+
+        if len(df) == 0 or len(df) == 1:
+            raise ValueError("No data to process.")
 
         # Retrieve time
         df_time = df[::2]
+        df_time = df_time.reset_index(drop=True)
 
         # Retrieve data
         df_data = df[1::2]
+        df_data = df_data.reset_index(drop=True)
+
         if len(df_time) != len(df_data):
             raise ValueError(
                 "Likely corrupted data. Not same number of timesteps and data."
