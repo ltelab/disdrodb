@@ -387,7 +387,7 @@ temperature_interior:
   n_decimals: 3
   n_naturals: 0
   data_range:
-  - 0
+  - -30 # or 0 ?
   - 999
   nan_flags: null
 

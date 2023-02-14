@@ -21,6 +21,7 @@
 
 # -----------------------------------------------------------------------------.
 import os
+import copy
 import logging
 import numpy as np
 import pandas as pd
@@ -51,6 +52,9 @@ from disdrodb.L0.standards import (
     # get_valid_coordinates_names,
     get_coords_attrs_dict,
     set_disdrodb_attrs,
+    get_nan_flags_dict,
+    get_data_range_dict,
+    get_valid_values_dict,
 )
 from disdrodb.utils.logger import (
     log_info,
@@ -854,7 +858,7 @@ def process_raw_nc(
     ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
     # Add CRS and geolocation information
-    attrs = attrs.copy()
+    attrs = copy.deepcopy(attrs)
     coords = {}
     coords["crs"] = attrs["crs"]
     geolocation_vars = ["latitude", "longitude", "altitude"]
@@ -869,6 +873,15 @@ def process_raw_nc(
 
     # Apply dataset sanitizer function
     ds = ds_sanitizer_fun(ds)
+
+    # - Replace nan flags values with np.nans
+    ds = replace_nan_flags(ds, sensor_name=sensor_name, verbose=verbose)
+
+    # - Set values outside the data range to np.nan
+    ds = set_nan_outside_data_range(ds, sensor_name=sensor_name, verbose=verbose)
+
+    # - Replace unvalid values with np.nan
+    ds = set_nan_unvalid_values(ds, sensor_name=sensor_name, verbose=verbose)
 
     # Ensure variables with dtype object are converted to string
     ds = convert_object_variables_to_string(ds)
@@ -909,6 +922,117 @@ def replace_custom_nan_flags(ds, dict_nan_flags):
             is_a_nan_flag = ds[var].isin(nan_flags)
             # Replace with np.nan
             ds[var] = ds[var].where(~is_a_nan_flag)
+
+    # Return dataset
+    return ds
+
+
+def replace_nan_flags(ds, sensor_name, verbose):
+    """Set values corresponding to nan_flags to np.nan.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset
+    dict_nan_flags : dict
+        Dictionary with nan flags value to set as np.nan
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without nan_flags values.
+    """
+    # Get dictionary of nan flags
+    dict_nan_flags = get_nan_flags_dict(sensor_name)
+
+    # Loop over the needed variable, and replace nan_flags values with np.nan
+    for var, nan_flags in dict_nan_flags.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get occurence of nan_flags
+            is_a_nan_flag = ds[var].isin(nan_flags)
+            n_nan_flags_values = np.sum(is_a_nan_flag.data)
+            if n_nan_flags_values > 0:
+                msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                # Replace with np.nan
+                ds[var] = ds[var].where(~is_a_nan_flag)
+
+    # Return dataset
+    return ds
+
+
+def set_nan_outside_data_range(ds, sensor_name, verbose):
+    """Set values outside the data range as np.nan.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without values outside the expected data range.
+    """
+    # Get dictionary of data_range
+    dict_data_range = get_data_range_dict(sensor_name)
+    # Loop over the variable with a defined data_range
+    for var, data_range in dict_data_range.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get min and max value
+            min_val = data_range[0]
+            max_val = data_range[1]
+            # Check within data range or already np.nan
+            is_valid = (ds[var] >= min_val) & (ds[var] <= max_val) | np.isnan(ds[var])
+            # If there are values outside the data range, set to np.nan
+            n_unvalid = np.sum(~is_valid.data)
+            if n_unvalid > 0:
+                msg = f"{n_unvalid} {var} values were outside the data range and were set to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                ds[var] = ds[var].where(is_valid)  # set not valid to np.nan
+    # Return dataset
+    return ds
+
+
+def set_nan_unvalid_values(ds, sensor_name, verbose):
+    """Set unvalid (class) values to np.nan.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input xarray dataset
+    sensor_name : str
+        Name of the sensor.
+    verbose : bool
+        Wheter to verbose the processing.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset without unvalid values.
+    """
+    # Get dictionary of valid values
+    dict_valid_values = get_valid_values_dict(sensor_name)
+    # Loop over the variable with a defined data_range
+    for var, valid_values in dict_valid_values.items():
+        # If the variable is in the dataframe
+        if var in ds:
+            # Get array with occurence of correct values (or already np.nan)
+            is_valid_values = ds[var].isin(valid_values) | np.isnan(ds[var])
+            # If unvalid values are present, replace with np.nan
+            n_unvalid_values = np.sum(~is_valid_values.data)
+            if n_unvalid_values > 0:
+                msg = f"{n_unvalid_values} {var} values were unvalid and were replaced to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                ds[var] = ds[var].where(is_valid_values)  # set not valid to np.nan
 
     # Return dataset
     return ds

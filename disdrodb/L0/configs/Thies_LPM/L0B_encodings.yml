@@ -320,14 +320,14 @@ reserve_status:
   chunksizes: 5000
   _FillValue: 255
 temperature_interior: 
-  dtype: uint16
+  dtype: float32 # uint with offset?
   zlib: true
   complevel: 3
   shuffle: true
   fletcher32: false
   contiguous: false
   chunksizes: 5000
-  _FillValue: 65535
+  # _FillValue: 65535
 laser_temperature: 
   dtype: uint16
   zlib: true
