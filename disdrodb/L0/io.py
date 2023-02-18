@@ -741,8 +741,8 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
 
 def _check_raw_dir_issue(raw_dir, verbose=True):
     """Check issue yaml files in the raw_dir directory."""
-    from disdrodb.L0.issue import create_issue_yml
-    from disdrodb.L0.issue import check_issue_compliance
+    from disdrodb.L0.issue import write_default_issue
+    from disdrodb.L0.issue import check_issue_file
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")
@@ -758,7 +758,7 @@ def _check_raw_dir_issue(raw_dir, verbose=True):
             os.path.join(issue_dir, station_name + ".yml")
             for station_name in list_data_station_name
         ]
-        _ = [create_issue_yml(fpath) for fpath in list_issue_fpath]
+        _ = [write_default_issue(fpath) for fpath in list_issue_fpath]
         msg = "The /issue subfolder has been now created to document and then remove timesteps with problematic data."
         logger.info(msg)
     # -------------------------------------------------------------------------.
@@ -780,7 +780,7 @@ def _check_raw_dir_issue(raw_dir, verbose=True):
             os.path.join(issue_dir, station_name + ".yml")
             for station_name in list_missing_station_name
         ]
-        _ = [create_issue_yml(fpath) for fpath in list_missing_issue_fpath]
+        _ = [write_default_issue(fpath) for fpath in list_missing_issue_fpath]
         msg = "The issue files for the following station_name were missing: {}".format(
             list_missing_station_name
         )
@@ -799,7 +799,7 @@ def _check_raw_dir_issue(raw_dir, verbose=True):
 
     # -------------------------------------------------------------------------.
     #### Check issue compliance
-    _ = [check_issue_compliance(fpath) for fpath in list_issue_fpath]
+    _ = [check_issue_file(fpath) for fpath in list_issue_fpath]
 
 
 def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:

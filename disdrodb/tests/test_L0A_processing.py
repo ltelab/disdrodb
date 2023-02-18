@@ -150,6 +150,82 @@ def test_remove_duplicated_timesteps():
     assert len(np.unique(valid_df)) == len(valid_df)
 
 
+def test_drop_timesteps():
+    # Number last timesteps to drop
+    n = 2
+    # Create an array of datetime values for the time column
+    # - Add also a NaT
+    time = pd.date_range(
+        start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min"
+    ).to_numpy()
+    time[0] = np.datetime64("NaT")
+    # Create a random array for the dummy column
+    dummy = np.random.rand(len(time) - n)
+    # Create the dataframe with the two columns
+    df = pd.DataFrame({"time": time[:-n], "dummy": dummy})
+
+    # Define timesteps to drop
+    # - One inside, n-1 outside
+    timesteps = time[-(n + 1) :]
+
+    # Remove timesteps
+    df_out = L0A_processing.drop_timesteps(df, timesteps)
+
+    # Test np.NaT is conserved
+    assert np.isnan(df_out["time"])[0]
+
+    # Test all timesteps were dropped
+    assert not np.any(df_out["time"].isin(timesteps))
+
+    # Test error is raised if all timesteps are dropped
+    with pytest.raises(ValueError):
+        L0A_processing.drop_timesteps(df, timesteps=time)
+
+
+def test_drop_time_periods():
+    # Create an array of datetime values for the time column
+    time = pd.date_range(
+        start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min"
+    ).to_numpy()
+
+    # Define inside time_periods
+    inside_time_periods = [time[[10, 20]]]
+
+    # Define outside time periods
+    outside_time_period = [
+        [np.datetime64("2022-12-01 00:00:00"), np.datetime64("2022-12-20 00:00:00")]
+    ]
+
+    # Define time_period removing all data
+    full_time_period = [time[[0, len(time) - 1]]]
+
+    # Create the dataframe with the two columns
+    dummy = np.random.rand(len(time))
+    df = pd.DataFrame({"time": time, "dummy": dummy})
+
+    # Test outside time_periods
+    df_out = L0A_processing.drop_time_periods(df, time_periods=outside_time_period)
+    pd.testing.assert_frame_equal(df_out, df)
+
+    # Test inside time_periods
+    df_out = L0A_processing.drop_time_periods(df, time_periods=inside_time_periods)
+    assert not np.any(
+        df_out["time"].between(
+            inside_time_periods[0][0], inside_time_periods[0][1], inclusive=True
+        )
+    )
+
+    # Test raise error if all rows are discarded
+    with pytest.raises(ValueError):
+        L0A_processing.drop_time_periods(df, time_periods=full_time_period)
+
+    # Test code do not break if all rows are removed after first time_period iteration
+    # --> Would raise IndexError otherwise
+    time_periods = [full_time_period[0], [inside_time_periods[0]]]
+    with pytest.raises(ValueError):
+        L0A_processing.drop_time_periods(df, time_periods=time_periods)
+
+
 def test_read_raw_data():
     # this test relies on "\tests\pytest_files\test_L0A_processing\test_read_raw_data\data.csv"
 

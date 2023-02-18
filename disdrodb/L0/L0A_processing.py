@@ -221,6 +221,75 @@ def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
     return df
 
 
+def drop_timesteps(df, timesteps):
+    """Drop problematic time steps."""
+    df = df[~df["time"].isin(timesteps)]
+    # Check there are row left
+    if len(df) == 0:
+        msg = "No rows left after removing problematic timesteps. Maybe you need to adjust the issue YAML file."
+        log_warning(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+    return df
+
+
+def drop_time_periods(df, time_periods):
+    """Drop problematic time_period."""
+    for time_period in time_periods:
+        if len(df) > 0:
+            start_time = time_period[0]
+            end_time = time_period[1]
+            df = df[(df["time"] < start_time) | (df["time"] > end_time)]
+    # Check there are row left
+    if len(df) == 0:
+        msg = "No rows left after removing problematic time_periods. Maybe you need to adjust the issue YAML file."
+        log_warning(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+
+    return df
+
+
+def remove_issue_timesteps(df, issue_dict, verbose=False):
+    """Drop dataframe rows with timesteps listed in the issue dictionary.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input dataframe.
+    issue_dict : dict
+        Issue dictionary
+
+    Returns
+    -------
+    pd.DataFrame
+        Dataframe with problematic timesteps removed.
+
+    """
+    # Retrieve number of initial rows
+    n_initial_rows = len(df)
+
+    # Retrieve timesteps and time_periods
+    timesteps = issue_dict.get("timesteps", None)
+    time_periods = issue_dict.get("time_periods", None)
+
+    # Drop rows of specified timesteps
+    if timesteps:
+        df = drop_timesteps(df=df, timesteps=timesteps)
+
+    # Drop rows within specified time_period
+    if time_periods:
+        df = drop_time_periods(df, time_periods=time_periods)
+
+    # Report number fo dropped rows
+    n_rows_dropped = n_initial_rows - len(df)
+    if n_rows_dropped > 0:
+        msg = (
+            f"{n_rows_dropped} rows were dropped following the issue YAML file content."
+        )
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+    return df
+
+
 def cast_column_dtypes(
     df: pd.DataFrame, sensor_name: str, verbose: bool = False
 ) -> pd.DataFrame:
@@ -523,7 +592,8 @@ def process_raw_file(
     reader_kwargs,
     df_sanitizer_fun,
     sensor_name,
-    verbose,
+    verbose=True,
+    issue_dict={},
 ):
     """Read and parse a raw text files into a L0A dataframe.
 
@@ -535,12 +605,20 @@ def process_raw_file(
         Columns names.
     reader_kwargs : dict
          Pandas `read_csv` arguments.
+    df_sanitizer_fun : object, optional
+        Sanitizer function to format the datafame.
     sensor_name : str
         Name of the sensor.
     verbose : bool
         Wheter to verbose the processing.
-    df_sanitizer_fun : object, optional
-        Sanitizer function to format the datafame.
+        The default is True
+    issue_dict : dict
+        Issue dictionary providing information on timesteps to remove.
+        The default is an empty dictionary {}.
+        Valid issue_dict key are 'timesteps' and 'time_periods'.
+        Valid issue_dict values are list of datetime64 values (with second accuracy).
+        To correctly format and check the validity of the issue_dict, use
+        the disdrodb.L0.issue.check_issue_dict function.
 
     Returns
     -------
@@ -572,13 +650,9 @@ def process_raw_file(
     # - Remove duplicated timesteps
     df = remove_duplicated_timesteps(df, verbose=verbose)
 
-    # ------------------------------------------------------.
-    # - Filter out problematic data reported in issue file
-    # TODO: [TEST IMPLEMENTATION] remove_problematic_timestamp in dev/TODO_issue_code.py
-    # issue_dict = read_issue(raw_dir, station_name)
-    # df = remove_problematic_timestamp(df, issue_dict, verbose)
+    # - Filter out problematic tiemsteps reported in the issue YAML file
+    df = remove_issue_timesteps(df, issue_dict=issue_dict, verbose=verbose)
 
-    # ------------------------------------------------------.
     # - Coerce numeric columns corrupted values to np.nan
     df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name, verbose=verbose)
 
