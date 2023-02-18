@@ -33,89 +33,95 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["TO_BE_PARSED"]
+    column_names = [
+        "date",
+        "time",
+        "sensor_battery_voltage",
+        "laser_amplitude",
+        "sensor_heating_current",
+        "sensor_temperature",
+        "number_particles",
+        "mor_visibility",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "reflectivity_32bit",
+        "weather_code_nws",
+        "weather_code_metar_4678",
+        "raw_drop_number",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
+    # - Define delimiter
+    reader_kwargs["delimiter"] = ","
+
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
+    # - Define on-the-fly decompression of on-disk data
+    #   - Available: gzip, bz2, zip
+    reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "-.-", " NA"]
+    reader_kwargs["na_values"] = ["na", "", "error"]
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
-        # Import pandas
+        # - Import pandas
         import pandas as pd
 
-        # - Read date from header
-        date = df.loc[0][0]
-        date = date[:10]
-
-        # - Retrieve the dataframe
-        df = df.loc[1:]
-
-        # Temporary column name
-        df.columns = ["TO_BE_PARSED"]
-
-        # Extract time column
-        df[["time", "TO_BE_SPLITTED"]] = df["TO_BE_PARSED"].str.split(
-            " ", n=1, expand=True
+        # - Define datetime 'time' column
+        df["time"] = df["date"] + "-" + df["time"]
+        df["time"] = pd.to_datetime(
+            df["time"], format="%Y%m%d-%H:%M:%S", errors="coerce"
         )
 
-        # - Define datetime 'time' column
-        df["time"] = df["time"].str[:-3]
-        df["time"] = df["time"] + "-" + date
-        df["time"] = pd.to_datetime(df["time"], format="%M%S-%m/%d/%Y")
+        # Preprocess the raw spectrum
+        # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+        # --> "" generates an array of zeros in L0B processing
+        df["raw_drop_number"] = df["raw_drop_number"].replace(
+            "<SPECTRUM>ZERO</SPECTRUM>", ""
+        )
 
-        # Split columns
-        columns = [
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "reflectivity_32bit",
-            "number_particles",
-            "sensor_status",
-            "error_code",
-            "raw_drop_concentration",
-            "raw_drop_average_velocity",
-            # 'raw_drop_number'
-        ]
+        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
 
-        for c in columns:
-            df["TO_BE_SPLITTED"] = df["TO_BE_SPLITTED"].str.strip()
-            df[[c, "TO_BE_SPLITTED"]] = df["TO_BE_SPLITTED"].str.split(
-                " ", n=1, expand=True
-            )
-
-        # Add 0 digits to raw_drop_number
-        for i, r in df.iterrows():
-            temp_raw = r["TO_SPLIT"].split(",")
-            raw = ""
-            for n in temp_raw:
-                raw += "%03d" % int(n) + ","
-            df["raw_drop_number"] = raw
+        # Preprocess the raw spectrum and raw_drop_average_velocity
+        # - Add 0 before every ; if ; not preceded by a digit
+        # - Example: ';;1;;' --> '0;0;1;0;'
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
+            r"(?<!\d);", "0;", regex=True
+        )
 
         # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["TO_BE_SPLITTED"])
-
-        # Reset index
-        df = df.reset_index(drop=True)
+        df = df.drop(columns=["date"])
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
-    glob_patterns = "*.txt*"
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    glob_patterns = "*.csv"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -31,119 +31,96 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-    ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
+    ##------------------------------------------------------------------------.
+    #### - Define column names
     column_names = [
-        "day",
-        "month",
-        "year",
-        "hour_minute",
-        "second",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "weather_code_metar_4678",
-        "reflectivity_16bit",
-        "mor_visibility",
-        "raw_drop_concentration",
-        "raw_drop_average_velocity",
-        "raw_drop_number",
-        "unknown_field_to_drop",
+        "date",
+        "time",
+        "sensor_status",
+        "interval",
+        "n1",
+        "n2",
+        "n3",
+        "n4",
+        "n5",
+        "n6",
+        "n7",
+        "n8",
+        "n9",
+        "n10",
+        "n11",
+        "n12",
+        "n13",
+        "n14",
+        "n15",
+        "n16",
+        "n17",
+        "n18",
+        "n19",
+        "n20",
+        "RI",
+        "RA",
+        "RAT",
     ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ","
-
+    reader_kwargs["delimiter"] = "\\t"
+    # Skip header
+    reader_kwargs["header"] = None
+    # Skip first row as columns names
+    reader_kwargs["skiprows"] = 1
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
-
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
 
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
-
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
-
+    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
-        # Import pandas
+        # - Import pandas
         import pandas as pd
 
-        # Parse time
-        df["time"] = (
-            df["day"].astype(str)
-            + "-"
-            + df["month"].astype(str)
-            + "-"
-            + df["year"].astype(str)
-            + " "
-            + df["hour_minute"].astype(str)
-            + ":"
-            + df["second"].astype(str)
+        # - Replace 'status' NaN with 0
+        df["sensor_status"] = df["sensor_status"].fillna(0)
+
+        # - Define 'time' datetime column
+        df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
+        df["time"] = pd.to_datetime(
+            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
         )
-        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
+        df = df.drop(columns=["date"])
 
-        # Drop unrequired columns for L0
-        df = df.drop(
-            columns=[
-                "unknown_field_to_drop",
-                "day",
-                "month",
-                "year",
-                "hour_minute",
-                "second",
-            ]
-        )
+        # - Create raw_drop_number column
+        bin_columns = ["n" + str(i) for i in range(1, 21)]
+        df_arr = df[bin_columns]
+        df_raw_drop_number = df_arr.agg(";".join, axis=1)
+        df["raw_drop_number"] = df_raw_drop_number
 
-        # Trim weather_code_metar_4678
-        df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
-
-        # Drop rows with corrupted values
-        # Set NaN rows with corrupted values
-        numeric_columns = [
-            "rainfall_accumulated_32bit",
-            "rainfall_rate_32bit",
-            "reflectivity_16bit",
-            "mor_visibility",
-        ]
-        for c in numeric_columns:
-            df[c] = pd.to_numeric(df[c], errors="coerce")
+        # - Remove bins columns
+        df = df.drop(columns=bin_columns)
 
         return df
 
     ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files in raw_dir/data/<station_name>
-    glob_patterns = "*.dat"
+    #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
+    glob_patterns = "*.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

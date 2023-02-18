@@ -32,13 +32,7 @@ def reader(
     debugging_mode=False,
 ):
     ####----------------------------------------------------------------------.
-    ###########################
-    #### CUSTOMIZABLE CODE ####
-    ###########################
-    #### - Define raw data headers
-    # Notes
-    # - In all files, the datalogger voltage hasn't the delimeter,
-    #   so need to be split to obtain datalogger_voltage and rainfall_rate_32bit
+    #### - Define column names
     column_names = ["TO_SPLIT"]
 
     ##------------------------------------------------------------------------.
@@ -46,15 +40,15 @@ def reader(
     reader_kwargs = {}
 
     # - Define delimiter
-    reader_kwargs["delimiter"] = "no_need_it"
+    reader_kwargs["delimiter"] = "\\n"
 
-    # Skip first row as columns names
+    # - Skip first row as columns names
     reader_kwargs["header"] = None
 
-    # # Skip header
+    # - Skip header
     reader_kwargs["skiprows"] = 7
 
-    # Define encoding
+    # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Avoid first column to become df index !!!
@@ -76,110 +70,60 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = [
-        "na",
-        "",
-        "error",
-        "NA",
-        "-.-",
-        " NA",
-    ]
+    reader_kwargs["na_values"] = ["na", "error", "-.-", " NA"]
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-    df_sanitizer_fun = None
-
     def df_sanitizer_fun(df):
-        # Import dask or pandas
-        # Cannot implement dask for this loop, so only pandas for now
-
+        # Import pandas
         import pandas as pd
 
-        # Different column and divider into raw order between stations
-        header_1 = "Date,Time,Intensity (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Radar reflectivity (dBz),MOR Visibility (m),Number of detected particles,Temperature in sensor (°C),Weather code METAR/SPECI,Weather code NWS,Signal amplitude of Laserband,Heating current (A),Sensor voltage (V),Spectrum"
-        header_2 = "Date,Time,Intensity (mm/h),Precipitation since start (mm),Weather code SYNOP WaWa,Weather code METAR/SPECI,Weather code NWS,Radar reflectivity (dBz),MOR Visibility (m),Signal amplitude of Laserband,Number of detected particles,Temperature in sensor (°C),Heating current (A),Sensor voltage (V),Spectrum"
-
-        if df.head().loc[df["TO_SPLIT"] == header_1].empty:
-            df = df[~df.eq(header_2).any(1)]
-            columns = [
-                "date",
-                "time_temp",
-                "rainfall_rate_32bit",
-                "precipitation_since_start_TO_DROP",
-                "weather_code_synop_4680",
-                "weather_code_metar_4678",
-                "weather_code_nws",
-                "reflectivity_32bit",
-                "mor_visibility",
-                "laser_amplitude",
-                "number_particles",
-                "sensor_temperature",
-                "sensor_heating_current",
-                "sensor_battery_voltage",
-                "raw_drop_number",
-            ]
-
-        else:
-            df = df[~df.eq(header_1).any(1)]
-            columns = [
-                "date",
-                "time_temp",
-                "rainfall_rate_32bit",
-                "precipitation_since_start_TO_DROP",
-                "weather_code_synop_4680",
-                "reflectivity_32bit",
-                "mor_visibility",
-                "laser_amplitude",
-                "sensor_temperature",
-                "weather_code_metar_4678",
-                "weather_code_nws",
-                "number_particles",
-                "sensor_heating_current",
-                "sensor_battery_voltage",
-                "raw_drop_number",
-            ]
+        # Remove repeated headers (with length 301)
+        df = df[df["TO_SPLIT"].str.len() != 301]
 
         # Split into columns and assign name
         df = df["TO_SPLIT"].str.split(",", expand=True, n=14)
+        columns = [
+            "date",
+            "time",
+            "rainfall_rate_32bit",
+            "rainfall_accumulated_32bit",
+            "weather_code_synop_4680",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "laser_amplitude",
+            "sensor_temperature",
+            "weather_code_metar_4678",
+            "weather_code_nws",
+            "number_particles",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "raw_drop_number",
+        ]
         df.columns = columns
 
-        # Replace divider into raw_drop_number
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(";", ",")
+        # Add datetime time column
+        df["time"] = df["date"] + "-" + df["time"]
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce"
+        )
+        df = df.drop(columns=["date"])
 
-        # Parse time and drop precipitation_since_start_TO_DROP column
-        df["time"] = df["date"] + "-" + df["time_temp"]
-        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S")
-        df = df.drop(columns=["date", "time_temp", "precipitation_since_start_TO_DROP"])
-
-        # Set NaN into <SPECTRUM>ZERO</SPECTRUM> in raw_drop_number
-        import numpy as np
-
+        # Preprocess the raw spectrum
+        # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+        # --> "" generates an array of zeros in L0B processing
         df["raw_drop_number"] = df["raw_drop_number"].replace(
-            "<SPECTRUM>ZERO</SPECTRUM>", np.NaN
+            "<SPECTRUM>ZERO</SPECTRUM>", ""
         )
 
-        # Cannot implement dask for this loop, so only pandas for now
-        for i, v in df.iterrows():
-            # Check if v is NaN
-            if not v["raw_drop_number"] != v["raw_drop_number"]:
-                v["raw_drop_number"] = v["raw_drop_number"].replace("<SPECTRUM>", "")
-                v["raw_drop_number"] = v["raw_drop_number"].replace("</SPECTRUM>", "")
+        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
 
-                # Add 0 digits to raw_drop_number
-                temp_raw = v["raw_drop_number"].split(",")
-                raw = ""
-                for n in temp_raw:
-                    if n == "":
-                        raw += "000,"
-                    else:
-                        raw += "%03d" % int(n) + ","
-                df.loc[i, "raw_drop_number"] = raw[:-4]
-
-        # Assign 0 value into raw_drop_number NaN values
-        df["raw_drop_number"] = df["raw_drop_number"].fillna(
-            "000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,000,"
+        # Add 0 before every , if , not preceded by a digit
+        # Example: ',,1,,' --> '0,0,1,0,'
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
+            r"(?<!\d),", "0,", regex=True
         )
 
         return df

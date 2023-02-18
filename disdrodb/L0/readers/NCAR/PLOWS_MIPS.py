@@ -40,14 +40,14 @@ def reader(
         "hour_minute",
         "second",
         "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
+        "number_particles",
         "weather_code_metar_4678",
-        "reflectivity_16bit",
+        "reflectivity_32bit",
         "mor_visibility",
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
-        "unknown",
+        "rainfall_accumulated_32bit",
     ]
 
     ##------------------------------------------------------------------------.
@@ -101,11 +101,12 @@ def reader(
             + ":"
             + df["second"].astype(str)
         )
-        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d-%m-%Y %H%M:%S", errors="coerce"
+        )
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
-            "unknown",
             "day",
             "month",
             "year",

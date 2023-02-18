@@ -33,17 +33,28 @@ def reader(
 ):
     ####----------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["temp"]
+    column_names = [
+        "day",
+        "month",
+        "year",
+        "hour_minute",
+        "second",
+        "rainfall_rate_32bit",
+        "number_particles",
+        "weather_code_metar_4678",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+        "rainfall_accumulated_32bit",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
+    reader_kwargs["delimiter"] = ","
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
@@ -66,108 +77,49 @@ def reader(
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
 
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
 
     ##------------------------------------------------------------------------.
     #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards  (i.e. time to datetime)
-
     def df_sanitizer_fun(df):
-        # Import pandas and numpy
-        import numpy as np
+        # Import pandas
         import pandas as pd
 
-        # Reshape dataframe
-        a = df.to_numpy()
-        a = a.reshape(int(len(a) / 97), 97)
-        df = pd.DataFrame(a)
-
-        # Remove number before data
-        for col in df:
-            df[col] = df[col].str[3:]
-
-        # Rename columns
-        df.columns = np.arange(1, 98)
-
-        col = {
-            1: "rainfall_rate_32bit",
-            2: "rainfall_accumulated_32bit",
-            3: "weather_code_synop_4680",
-            4: "weather_code_synop_4677",
-            5: "weather_code_metar_4678",
-            6: "weather_code_nws",
-            7: "reflectivity_32bit",
-            8: "mor_visibility",
-            9: "sample_interval",
-            10: "laser_amplitude",
-            11: "number_particles",
-            12: "sensor_temperature",
-            13: "sensor_serial_number",
-            14: "firmware_iop",
-            15: "firmware_dsp",
-            16: "sensor_heating_current",
-            17: "sensor_battery_voltage",
-            18: "sensor_status",
-            19: "start_time",
-            20: "sensor_time",
-            21: "sensor_date",
-            22: "station_name",
-            23: "station_number",
-            24: "rainfall_amount_absolute_32bit",
-            25: "error_code",
-            26: "sensor_temperature_pcb",
-            27: "sensor_temperature_receiver",
-            28: "sensor_temperature_trasmitter",
-            30: "rainfall_rate_16_bit_30",
-            31: "rainfall_rate_16_bit_1200",
-            32: "rainfall_accumulated_16bit",
-            33: "reflectivity_16bit",
-            34: "rain_kinetic_energy",
-            35: "snowfall_rate",
-            60: "number_particles_all",
-            61: "list_particles",
-            90: "raw_drop_concentration",
-            91: "raw_drop_average_velocity",
-            92: "raw_drop_number",
-        }
-
-        df = df.rename(col, axis=1)
-
-        # Cast time
-        df["time"] = pd.to_datetime(
-            df["sensor_date"] + "-" + df["sensor_time"], format="%d.%m.%Y-%H:%M:%S"
+        # Define datetime time column
+        df["time"] = (
+            df["day"].astype(str)
+            + "-"
+            + df["month"].astype(str)
+            + "-"
+            + df["year"].astype(str)
+            + " "
+            + df["hour_minute"].astype(str)
+            + ":"
+            + df["second"].astype(str)
         )
-        df = df.drop(columns=["sensor_date", "sensor_time"])
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d-%m-%Y %H%M:%S", errors="coerce"
+        )
 
-        # Drop useless columns
-        df.replace("", np.nan, inplace=True)
-        df.dropna(how="all", axis=1, inplace=True)
-        col_to_drop = [40, 41, 50, 51, 93, 94, 95, 96, 97]
-        df = df.drop(columns=col_to_drop)
-
-        # Trim weather_code_metar_4678 and weather_code_nws
-        df["weather_code_metar_4678"] = df["weather_code_metar_4678"].str.strip()
-        df["weather_code_nws"] = df["weather_code_nws"].str.strip()
-
-        # Delete invalid columsn by check_L0A
-        col_to_drop = [
-            "sensor_temperature_trasmitter",
-            "sensor_temperature_pcb",
-            "rainfall_rate_16_bit_1200",
-            "sensor_temperature_receiver",
-            "snowfall_rate",
-            "rain_kinetic_energy",
-            "rainfall_rate_16_bit_30",
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        columns_to_drop = [
+            "day",
+            "month",
+            "year",
+            "hour_minute",
+            "second",
         ]
-        df = df.drop(columns=col_to_drop)
+        df = df.drop(columns=columns_to_drop)
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in raw_dir/data/<station_name>
-    glob_patterns = "*"  # There is only one file without extension
+    glob_patterns = "*.dat"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

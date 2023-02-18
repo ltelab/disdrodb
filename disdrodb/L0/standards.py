@@ -972,7 +972,10 @@ def get_raw_array_dims_order(sensor_name: str) -> dict:
             "raw_drop_number": ["diameter_bin_center", "velocity_bin_center"],
         }
     elif sensor_name in ["RD_80"]:
-        dim_dict = {"raw_drop_number": ["diameter_bin_center"]}
+        dim_dict = {
+            "raw_drop_number": ["diameter_bin_center"],
+            "ND": ["diameter_bin_center"],
+        }
     else:
         raise NotImplementedError()
     return dim_dict
@@ -1009,6 +1012,7 @@ def get_raw_array_nvalues(sensor_name: str) -> dict:
     elif sensor_name in ["RD_80"]:
         nbins_dict = {
             "raw_drop_number": n_d,
+            "ND": n_d,
         }
     else:
         raise NotImplementedError()

@@ -33,32 +33,68 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["TO_PARSE"]
+    column_names = [
+        "logger_time",
+        "record_number",
+        "battery_voltage",
+        "logger_temperature",
+        "wind_direction",
+        "wind_speed",
+        "wind_flag",
+        "fast_temperature",
+        "slow_temperature",
+        "relative_humidity",
+        "pressure",
+        "compass_direction",
+        "gps_time",
+        "gps_status",
+        "gps_latitude",  # DD.DM, DM = decimal minutes/100, DD = degrees
+        "gps_latitude_hemisphere",  # N/S
+        "gps_longitude",
+        "gps_longitude_hemisphere",  # W/E
+        "gps_speed",
+        "gps_direction",
+        "gps_date",
+        "gps_magnetic_version",
+        "gps_altitude",
+        "relative_wind_direction",
+        "dew_point_temperature",
+        "rh",
+        "disdrometer_data",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
-    # - Skip first row as columns names
-    # - Define encoding
-    reader_kwargs["encoding"] = "latin"  # "ISO-8859-1"
+    reader_kwargs["delimiter"] = ","
+
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
@@ -66,99 +102,59 @@ def reader(
         # - Import pandas
         import pandas as pd
 
-        # Create ID and Value columns
-        df = df["TO_PARSE"].str.split(":", expand=True, n=1)
-        df.columns = ["ID", "Value"]
+        # - Drop timesteps without disdrometer data
+        df = df[~df["disdrometer_data"].isna()]
 
-        # Drop rows with no values
-        df = df[df["Value"].astype(bool)]
+        # - Retrieve disdrometer data
+        df_data = df["disdrometer_data"].str.split(";", expand=True, n=11)
+        # - Assign column names
+        column_names = [
+            "serial_number",
+            "rainfall_rate_32bit",
+            "rainfall_accumulated_32bit",
+            "reflectivity_32bit",
+            "sample_interval",
+            "laser_amplitude",
+            "number_particles",
+            "sensor_temperature",
+            "sensor_battery_voltage",
+            "sensor_time",  # Note: logger_time is currently used !
+            "sensor_date",
+            "raw_drop_number",
+        ]
+        df_data.columns = column_names
 
-        # Create the dataframe with each row corresponding to a timestep
-        # - Group rows based on when ID values restart
-        groups = df.groupby((df["ID"].astype(int).diff() <= 0).cumsum())
-
-        # - Reshape the dataframe
-        group_dfs = []
-        for name, group in groups:
-            group_df = group.set_index("ID").T
-            group_dfs.append(group_df)
-
-        # - Merge each timestep dataframe
-        # --> Missing columns are infilled by NaN
-        df = pd.concat(group_dfs, axis=0)
-
-        # Assign column names
-        column_dict = {
-            "01": "rainfall_rate_32bit",
-            "02": "rainfall_accumulated_32bit",
-            "03": "weather_code_synop_4680",
-            "04": "weather_code_synop_4677",
-            "05": "weather_code_metar_4678",
-            "06": "weather_code_nws",
-            "07": "reflectivity_32bit",
-            "08": "mor_visibility",
-            "09": "sample_interval",
-            "10": "laser_amplitude",
-            "11": "number_particles",
-            "12": "sensor_temperature",
-            # "13": "sensor_serial_number",
-            # "14": "firmware_iop",
-            # "15": "firmware_dsp",
-            "16": "sensor_heating_current",
-            "17": "sensor_battery_voltage",
-            "18": "sensor_status",
-            # "19": "start_time",
-            "20": "sensor_time",
-            "21": "sensor_date",
-            # "22": "station_name",
-            # "23": "station_number",
-            "24": "rainfall_amount_absolute_32bit",
-            "25": "error_code",
-            "30": "rainfall_rate_16_bit_30",
-            "31": "rainfall_rate_16_bit_1200",
-            "32": "rainfall_accumulated_16bit",
-            "90": "raw_drop_concentration",
-            "91": "raw_drop_average_velocity",
-            "93": "raw_drop_number",
-        }
-        df = df.rename(column_dict, axis=1)
-
-        # - Keep only columns defined in the dictionary
-        df = df[list(column_dict.values())]
-
-        # - Define datetime "time" column
-        df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-        df["time"] = pd.to_datetime(
-            df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce"
+        # - Retrieve time and coordinates information
+        # --> Latitude in degrees_north
+        # --> Longitude in degrees_east
+        df_time = pd.to_datetime(df["logger_time"], errors="coerce")
+        df_lat_sign = (
+            df["gps_latitude_hemisphere"].str.replace("N", "1").str.replace("S", "-1")
         )
+        df_lon_sign = (
+            df["gps_longitude_hemisphere"].str.replace("E", "1").str.replace("W", "-1")
+        )
+        df_lat_sign = df_lat_sign.astype(float)
+        df_lon_sign = df_lon_sign.astype(float)
+        df_lon = df["gps_longitude"].astype(float)
+        df_lat = df["gps_latitude"].astype(float)
+        df_lon = df_lon * df_lon_sign
+        df_lat = df_lat * df_lat_sign
+
+        # Create dataframe
+        df = df_data
+        df["time"] = df_time
+        df["latitude"] = df_lat
+        df["longitude"] = df_lon
 
         # - Drop columns not agreeing with DISDRODB L0 standards
-        columns_to_drop = [
-            "sensor_date",
-            "sensor_time",
-            # "firmware_iop",
-            # "firmware_dsp",
-            # "sensor_serial_number",
-            # "station_name",
-            # "station_number",
-        ]
-        df = df.drop(columns=columns_to_drop)
-
-        # Preprocess the raw spectrum and raw_drop_average_velocity
-        # - Add 0 before every ; if ; not preceded by a digit
-        # - Example: ';;1;;' --> '0;0;1;0;'
-        df["raw_drop_average_velocity"] = df["raw_drop_average_velocity"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
+        df = df.drop(columns=["serial_number", "sensor_time", "serial_number"])
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.dat"
+    glob_patterns = "*.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products
