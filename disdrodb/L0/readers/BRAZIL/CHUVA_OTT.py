@@ -144,21 +144,11 @@ def reader(
         ]
         df = df.drop(columns=columns_to_drop)
 
-        # Preprocess the raw spectrum and raw_drop_average_velocity
-        # - Add 0 before every ; if ; not preceded by a digit
-        # - Example: ';;1;;' --> '0;0;1;0;'
-        df["raw_drop_average_velocity"] = df["raw_drop_average_velocity"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
-
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.dat"
+    glob_patterns = "*.gz"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

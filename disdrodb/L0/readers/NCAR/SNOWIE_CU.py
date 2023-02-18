@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 17 19:08:17 2023
+
+@author: ghiggi
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -158,7 +165,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.dat"
+    glob_patterns = "*.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

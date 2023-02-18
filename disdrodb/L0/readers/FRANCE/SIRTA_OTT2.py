@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -33,20 +34,23 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["TO_PARSE"]
+    column_names = ["TO_SPLIT"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
-    # - Skip first row as columns names
-    # - Define encoding
-    reader_kwargs["encoding"] = "latin"  # "ISO-8859-1"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+    # Skip the first row (header)
+    reader_kwargs["skiprows"] = 1
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+    # Define encoding
+    reader_kwargs["encoding"] = "latin1"
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
@@ -63,93 +67,55 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
-        # - Import pandas
+        # Import  pandas
         import pandas as pd
 
-        # Create ID and Value columns
-        df = df["TO_PARSE"].str.split(":", expand=True, n=1)
-        df.columns = ["ID", "Value"]
+        # The delimiter ; is used for separating both the variables and the
+        #   values of the raw spectrum. So we need to retrieve the columns
+        #   inside the sanitizer assuming a fixed number of columns.
+        df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
 
-        # Drop rows with no values
-        df = df[df["Value"].astype(bool)]
-
-        # Create the dataframe with each row corresponding to a timestep
-        # - Group rows based on when ID values restart
-        groups = df.groupby((df["ID"].astype(int).diff() <= 0).cumsum())
-
-        # - Reshape the dataframe
-        group_dfs = []
-        for name, group in groups:
-            group_df = group.set_index("ID").T
-            group_dfs.append(group_df)
-
-        # - Merge each timestep dataframe
-        # --> Missing columns are infilled by NaN
-        df = pd.concat(group_dfs, axis=0)
-
-        # Assign column names
-        column_dict = {
-            "01": "rainfall_rate_32bit",
-            "02": "rainfall_accumulated_32bit",
-            "03": "weather_code_synop_4680",
-            "04": "weather_code_synop_4677",
-            "05": "weather_code_metar_4678",
-            "06": "weather_code_nws",
-            "07": "reflectivity_32bit",
-            "08": "mor_visibility",
-            "09": "sample_interval",
-            "10": "laser_amplitude",
-            "11": "number_particles",
-            "12": "sensor_temperature",
-            # "13": "sensor_serial_number",
-            # "14": "firmware_iop",
-            # "15": "firmware_dsp",
-            "16": "sensor_heating_current",
-            "17": "sensor_battery_voltage",
-            "18": "sensor_status",
-            # "19": "start_time",
-            "20": "sensor_time",
-            "21": "sensor_date",
-            # "22": "station_name",
-            # "23": "station_number",
-            "24": "rainfall_amount_absolute_32bit",
-            "25": "error_code",
-            "30": "rainfall_rate_16_bit_30",
-            "31": "rainfall_rate_16_bit_1200",
-            "32": "rainfall_accumulated_16bit",
-            "90": "raw_drop_concentration",
-            "91": "raw_drop_average_velocity",
-            "93": "raw_drop_number",
-        }
-        df = df.rename(column_dict, axis=1)
-
-        # - Keep only columns defined in the dictionary
-        df = df[list(column_dict.values())]
-
-        # - Define datetime "time" column
-        df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-        df["time"] = pd.to_datetime(
-            df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce"
-        )
-
-        # - Drop columns not agreeing with DISDRODB L0 standards
-        columns_to_drop = [
-            "sensor_date",
-            "sensor_time",
-            # "firmware_iop",
-            # "firmware_dsp",
-            # "sensor_serial_number",
-            # "station_name",
-            # "station_number",
+        # Define the column names
+        column_names = [
+            "date",
+            "time",
+            "rainfall_rate_32bit",
+            "rainfall_accumulated_32bit",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "laser_amplitude",
+            "number_particles",
+            "sensor_temperature",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "rain_kinetic_energy",
+            "snowfall_rate",
+            "weather_code_synop_4680",
+            "weather_code_metar_4678",
+            "weather_code_nws",
+            "raw_drop_number",
         ]
-        df = df.drop(columns=columns_to_drop)
+        df.columns = column_names
 
-        # Preprocess the raw spectrum and raw_drop_average_velocity
-        # - Add 0 before every ; if ; not preceded by a digit
-        # - Example: ';;1;;' --> '0;0;1;0;'
-        df["raw_drop_average_velocity"] = df["raw_drop_average_velocity"].str.replace(
-            r"(?<!\d);", "0;", regex=True
+        # Define the time column
+        df["time"] = df["date"] + "-" + df["time"]
+        df["time"] = pd.to_datetime(
+            df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce"
         )
+        df = df.drop(columns=["date"])
+
+        # Preprocess the raw spectrum
+        # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+        # --> "" generates an array of zeros in L0B processing
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
+            "<SPECTRUM>ZERO</SPECTRUM>", ""
+        )
+        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+
+        # Add 0 before every ; if ; not preceded by a digit
+        # Example: ';;1;;' --> '0;0;1;0;'
         df["raw_drop_number"] = df["raw_drop_number"].str.replace(
             r"(?<!\d);", "0;", regex=True
         )
@@ -158,7 +124,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.dat"
+    glob_patterns = "*.txt"  # There is only one file without extension
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

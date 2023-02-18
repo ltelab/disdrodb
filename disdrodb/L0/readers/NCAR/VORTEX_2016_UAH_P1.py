@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+"""
+Created on Fri Feb 17 20:47:10 2023
 
+@author: ghiggi
+"""
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -34,91 +40,91 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["TO_SPLIT"]
+    column_names = [
+        "day",
+        "month",
+        "year",
+        "hour_minute",
+        "second",
+        "rainfall_rate_32bit",
+        "number_particles",
+        "weather_code_metar_4678",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+        "rainfall_accumulated_32bit",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\\n"
+    reader_kwargs["delimiter"] = ","
+
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    # Skip the first row (header)
-    reader_kwargs["skiprows"] = 1
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-    # Define encoding
-    reader_kwargs["encoding"] = "latin1"
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
 
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
-        # Import  pandas
+        # - Import pandas
         import pandas as pd
 
-        # The delimiter ; is used for separating both the variables and the
-        #   values of the raw spectrum. So we need to retrieve the columns
-        #   inside the sanitizer assuming a fixed number of columns.
-        df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
+        # - Define datetime 'time' column
+        df["time"] = (
+            df["day"].astype(str)
+            + "-"
+            + df["month"].astype(str)
+            + "-"
+            + df["year"].astype(str)
+            + " "
+            + df["hour_minute"].astype(str)
+            + ":"
+            + df["second"].astype(str)
+        )
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H%M:%S")
 
-        # Define the column names
-        column_names = [
-            "date",
-            "time",
-            "rainfall_rate_32bit",
-            "rainfall_accumulated_32bit",
-            "reflectivity_32bit",
-            "mor_visibility",
-            "laser_amplitude",
-            "number_particles",
-            "sensor_temperature",
-            "sensor_heating_current",
-            "sensor_battery_voltage",
-            "rain_kinetic_energy",
-            "snowfall_rate",
-            "weather_code_synop_4680",
-            "weather_code_metar_4678",
-            "weather_code_nws",
-            "raw_drop_number",
+        # - Drop columns not agreeing with DISDRODB L0 standards
+        columns_to_drop = [
+            "day",
+            "month",
+            "year",
+            "hour_minute",
+            "second",
         ]
-        df.columns = column_names
-
-        # Define the time column
-        df["time"] = df["date"] + "-" + df["time"]
-        df["time"] = pd.to_datetime(
-            df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce"
-        )
-        df = df.drop(columns=["date"])
-
-        # Preprocess the raw spectrum
-        # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
-        # --> "" generates an array of zeros in L0B processing
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            "<SPECTRUM>ZERO</SPECTRUM>", "''"
-        )
-        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+        df = df.drop(columns=columns_to_drop)
 
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.txt"  # There is only one file without extension
+    glob_patterns = "*.dat"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

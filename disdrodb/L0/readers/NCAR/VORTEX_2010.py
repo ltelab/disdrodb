@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -31,7 +32,7 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
-    ##------------------------------------------------------------------------.
+    ####----------------------------------------------------------------------.
     #### - Define column names
     column_names = ["TO_PARSE"]
 
@@ -40,28 +41,38 @@ def reader(
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
-    # - Skip first row as columns names
-    # - Define encoding
-    reader_kwargs["encoding"] = "latin"  # "ISO-8859-1"
+
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
+    # Skip the first row (header)
+    reader_kwargs["skiprows"] = 0
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
 
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
     ##------------------------------------------------------------------------.
-    #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
@@ -144,21 +155,11 @@ def reader(
         ]
         df = df.drop(columns=columns_to_drop)
 
-        # Preprocess the raw spectrum and raw_drop_average_velocity
-        # - Add 0 before every ; if ; not preceded by a digit
-        # - Example: ';;1;;' --> '0;0;1;0;'
-        df["raw_drop_average_velocity"] = df["raw_drop_average_velocity"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
-
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.dat"
+    glob_patterns = "*.dat"  # There is only one file without extension
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

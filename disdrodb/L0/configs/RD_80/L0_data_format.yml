@@ -17,7 +17,7 @@ sensor_status:
   - 1
 interval:
   n_digits: 4
-  n_characters: 0
+  n_characters: 4
   n_decimals: 4
   n_naturals: 0
   data_range:
@@ -32,29 +32,111 @@ raw_drop_number:
   data_range: null
   nan_flags: null
 RI:  
-  n_digits: 8
-  n_characters: 1
-  n_decimals: 3
-  n_naturals: 4
+  n_digits: 7
+  n_characters: 8
+  n_decimals: 4
+  n_naturals: 3
   data_range:
   - 0
   - 999.9999
   nan_flags: null
 RA:  
-  n_digits: 7
-  n_characters: 1
-  n_decimals: 2
-  n_naturals: 4
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 4
+  n_naturals: 1
   data_range:
   - 0
-  - 99.9999
+  - 9.9999
   nan_flags: null
 RAT:
-  n_digits: 7
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+  - 0
+  - 9.9999
+  nan_flags: null
+W:
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+  - 0
+  - 9.9999
+  nan_flags: null
+Wg:
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+  - 0
+  - 9.9999
+  nan_flags: null
+Z:
+  n_digits: 6
   n_characters: 1
-  n_decimals: 2
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+  - -99.9999
+  - 99.9999
+  nan_flags: -Inf
+# ZdB:
+#   n_digits: 6
+#   n_characters: 1
+#   n_decimals: 4
+#   n_naturals: 1
+#   data_range:
+#   - -99.9999
+#   - 99.9999
+#   nan_flags: -Inf
+EF:
+  n_digits: 7
+  n_characters: 8
+  n_decimals: 4
   n_naturals: 4
   data_range:
   - 0
-  - 99.9999
+  - 9999.999
   nan_flags: null
+# EG:
+#   n_digits: 7
+#   n_characters: 8
+#   n_decimals: 4
+#   n_naturals: 4
+#   data_range:
+#   - 0
+#   - 9999.999
+#   nan_flags: null
+N0:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 4
+  n_naturals: 4
+  data_range:
+  - 0
+  - 9999.9999
+  nan_flags: null
+slope:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+  - 0
+  - 9.9999
+  nan_flags: null
+Dmax:
+  n_digits: 8
+  n_characters: 9
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+  - 0
+  - 9.9999
+  nan_flags: null
+

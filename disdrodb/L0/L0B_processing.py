@@ -469,8 +469,8 @@ def create_l0b_from_l0a(
     ValueError
         Error if the DISDRODB L0B xarray dataset can not be created.
     """
-
     # Retrieve sensor name
+    attrs = attrs.copy()
     sensor_name = attrs["sensor_name"]
     # -----------------------------------------------------------.
     # Preprocess raw_spectrum, diameter and velocity arrays if available
