@@ -65,6 +65,7 @@ def get_valid_metadata_keys() -> list:
         "keywords",
         "conventions",
         "project_name",
+        "summary",
         "comments",
         "station_id",
         "location",
