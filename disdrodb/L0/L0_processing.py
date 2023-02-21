@@ -30,8 +30,9 @@ from disdrodb.L0.io import (
     create_directory_structure,
 )
 
-# Metadata
+# Metadata & Issue
 from disdrodb.L0.metadata import read_metadata
+from disdrodb.L0.issue import read_issue
 
 # Standards
 from disdrodb.L0.check_standards import check_sensor_name
@@ -87,6 +88,7 @@ def _generate_l0a(
     force,
     verbose,
     parallel,
+    issue_dict={},
 ):
     from disdrodb.L0.io import get_L0A_fpath
     from disdrodb.L0.L0A_processing import (
@@ -129,6 +131,7 @@ def _generate_l0a(
             df_sanitizer_fun=df_sanitizer_fun,
             sensor_name=sensor_name,
             verbose=verbose,
+            issue_dict=issue_dict,
         )
 
         ##--------------------------------------------------------------------.
@@ -418,6 +421,10 @@ def run_l0a(
     )
 
     # -----------------------------------------------------------------.
+    # Read issue YAML file
+    issue_dict = read_issue(raw_dir=raw_dir, station_name=station_name)
+
+    # -----------------------------------------------------------------.
     # Generate L0A files
     # - Loop over the files and save the L0A Apache Parquet files.
     # - If parallel=True, it does that in parallel using dask.delayed
@@ -432,6 +439,7 @@ def run_l0a(
                 column_names=column_names,
                 reader_kwargs=reader_kwargs,
                 df_sanitizer_fun=df_sanitizer_fun,
+                issue_dict=issue_dict,
                 # Processing options
                 force=force,
                 verbose=verbose,
