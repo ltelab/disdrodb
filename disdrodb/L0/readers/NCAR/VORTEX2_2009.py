@@ -73,10 +73,10 @@ def reader(
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
-        
+
         # Split into columns and assign name
         df = df["TO_PARSE"].str.split(";", expand=True, n=9)
-        
+
         columns = [
             "date",
             "time",
@@ -90,7 +90,7 @@ def reader(
             "raw_drop_number",
         ]
         df.columns = columns
-        
+
         # Add datetime time column
         df["time"] = df["date"] + "-" + df["time"]
         df["time"] = pd.to_datetime(
@@ -104,11 +104,11 @@ def reader(
         df["raw_drop_number"] = df["raw_drop_number"].replace(
             "<SPECTRUM>ZERO</SPECTRUM>", ""
         )
-        
+
         # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
         df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
         df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
-        
+
         # Add 0 before every ; if ; not preceded by a digit
         # Example: ';;1;;' --> '0;0;1;0;'
         df["raw_drop_number"] = df["raw_drop_number"].str.replace(

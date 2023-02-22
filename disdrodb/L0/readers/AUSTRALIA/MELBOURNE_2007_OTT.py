@@ -76,13 +76,13 @@ def reader(
         # Import numpy and pandas
         import numpy as np
         import pandas as pd
-        
-        # Remove rows with unvalid length 
-        # - time: 20 
+
+        # Remove rows with unvalid length
+        # - time: 20
         # - data: 4638
         df = df[df["TO_BE_PARSED"].str.len().isin([20, 4638])]
         df = df.reset_index(drop=True)
-        
+
         # Remove rows with consecutive timesteps
         # - Keep last timestep occurence
         idx_timesteps = np.where(df["TO_BE_PARSED"].str.len() == 20)[0]
@@ -91,12 +91,12 @@ def reader(
         )
         idx_timesteps_without_data = idx_timesteps[idx_without_data]
         df = df.drop(labels=idx_timesteps_without_data)
-        
-        # If the last row is a timestep, remove it 
+
+        # If the last row is a timestep, remove it
         if df["TO_BE_PARSED"].str.len().iloc[-1] == 20:
             df = df[:-1]
-        
-        # Check there are data to process 
+
+        # Check there are data to process
         if len(df) == 0 or len(df) == 1:
             raise ValueError("No data to process.")
 
