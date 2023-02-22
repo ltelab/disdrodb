@@ -33,77 +33,93 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["time", "TO_BE_SPLITTED"]
+    column_names = ["TO_PARSE"]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
-    # - Skip first row as columns names
-    reader_kwargs["header"] = None
-    # - Skip file with encoding errors
-    reader_kwargs["encoding_errors"] = "ignore"
+    reader_kwargs["delimiter"] = "\\n"
+
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
+    reader_kwargs["na_values"] = ["na", "", "error"]
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
         import pandas as pd
-
-        # - Convert time column to datetime
-        df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
-
-        # - Split the 'TO_BE_SPLITTED' column
-        df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=9)
-
-        # - Assign column names
-        columns_names = [
-            "station_name",
-            "sensor_status",
-            "sensor_temperature",
-            "number_particles",
+        
+        # Split into columns and assign name
+        df = df["TO_PARSE"].str.split(";", expand=True, n=9)
+        
+        columns = [
+            "date",
+            "time",
             "rainfall_rate_32bit",
-            "reflectivity_16bit",
-            "mor_visibility",
+            "rainfall_accumulated_32bit",
             "weather_code_synop_4680",
-            "weather_code_synop_4677",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "number_particles",
+            "sensor_temperature",
             "raw_drop_number",
         ]
-        df.columns = columns_names
-
-        # - Add the time column
-        df["time"] = df_time
-
-        # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["station_name"])
+        df.columns = columns
         
-        # - Drop rows with unvalid values 
-        # --> Ensure that weather_code_synop_4677 has length 2
-        # --> If a previous column is missing it will have 000 
-        df = df[df["weather_code_synop_4677"].str.len() == 2]
+        # Add datetime time column
+        df["time"] = df["date"] + "-" + df["time"]
+        df["time"] = pd.to_datetime(
+            df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce"
+        )
+        df = df.drop(columns=["date"])
+
+        # Preprocess the raw spectrum
+        # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+        # --> "" generates an array of zeros in L0B processing
+        df["raw_drop_number"] = df["raw_drop_number"].replace(
+            "<SPECTRUM>ZERO</SPECTRUM>", ""
+        )
         
+        # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+        
+        # Add 0 before every ; if ; not preceded by a digit
+        # Example: ';;1;;' --> '0;0;1;0;'
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
+            r"(?<!\d);", "0;", regex=True
+        )
+
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*_raw.txt"
+    glob_patterns = "*.txt"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

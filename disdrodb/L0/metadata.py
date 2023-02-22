@@ -189,7 +189,7 @@ def get_default_metadata_dict() -> dict:
     attrs["altitude"] = -9999
     attrs["raw_data_format"] = "raw"  # ['raw', 'preprocessed']
     attrs["raw_data_type"] = "raw"  # ['raw', 'nc']
-    attrs["platform_type"] = "stationary"  # ['stationary', 'mobile']
+    attrs["platform_type"] = "fixed"  # ['fixed', 'mobile']
 
     # TODO: remove follow and add to L0B coords
     attrs["latitude_unit"] = "DegreesNorth"
@@ -249,6 +249,17 @@ def _check_metadata_keys(metadata):
     missing_keys = get_metadata_missing_keys(metadata)
     if len(missing_keys) > 0:
         raise ValueError(f"Unvalid metadata keys: {missing_keys}")
+    return None
+
+
+def _check_metadata_values(metadata): 
+    """Check validity of metadata values
+    
+    If null is specified in the YAML files (or None in the dict) raise error.
+    """
+    for key, value in metadata.items():
+        if isinstance(value, type(None)): 
+            raise ValueError(f"The metadata key {key} has None or null value. Use '' instead.")
     return None
 
 
@@ -321,6 +332,7 @@ def check_metadata_compliance(disdrodb_dir, data_source, campaign_name, station_
         station_name=station_name,
     )
     _check_metadata_keys(metadata)
+    _check_metadata_values(metadata)
     _check_metadata_campaign_name(metadata, expected_name=campaign_name)
     _check_metadata_data_source(metadata, expected_name=data_source)
     _check_metadata_station_name(metadata, expected_name=station_name)

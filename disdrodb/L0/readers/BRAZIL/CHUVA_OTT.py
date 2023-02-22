@@ -148,7 +148,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.gz"
+    glob_patterns = "DISL*"
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

@@ -1,6 +1,6 @@
 rainfall_rate_32bit:
-  n_digits: 8
-  n_characters: 7
+  n_digits: 7
+  n_characters: 8
   n_decimals: 3
   n_naturals: 4
   data_range:
@@ -23,7 +23,7 @@ weather_code_synop_4680:
   n_naturals: 2
   data_range:
   - 0
-  - 99
+  - 89
   nan_flags: null
 weather_code_synop_4677:
   n_digits: 2
@@ -32,7 +32,7 @@ weather_code_synop_4677:
   n_naturals: 2
   data_range:
   - 0
-  - 99
+  - 90
   nan_flags: null
 weather_code_metar_4678:
   n_digits: null
@@ -61,17 +61,19 @@ mor_visibility:
   n_digits: 4
   n_characters: 4
   n_decimals: 0
-  n_naturals: 5
+  n_naturals: 4
   data_range:
   - 0
   - 20000
   nan_flags: null
 sample_interval:
-  n_digits: null
-  n_characters: null
-  n_decimals: null
-  n_naturals: null
-  data_range: null
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range: 
+  - 0
+  - 3600
   nan_flags: null
 laser_amplitude:
   n_digits: 5
@@ -211,10 +213,10 @@ error_code:
   - 1
   - 2
 sensor_temperature_pcb:
-  n_digits: null
-  n_characters: null
-  n_decimals: null
-  n_naturals: null
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 0
+  n_naturals: 3
   data_range: 
   - -99
   - 100
@@ -223,7 +225,7 @@ sensor_temperature_receiver:
   n_digits: 3
   n_characters: 3
   n_decimals: 0
-  n_naturals: 2
+  n_naturals: 3
   data_range:
   - -99
   - 100
@@ -232,7 +234,7 @@ sensor_temperature_trasmitter:
   n_digits: 3
   n_characters: 3
   n_decimals: 0
-  n_naturals: 2
+  n_naturals: 3
   data_range:
   - -99
   - 100
@@ -256,8 +258,8 @@ rainfall_rate_16_bit_1200:
   - 1200
   nan_flags: null
 rainfall_accumulated_16bit:
-  n_digits: 7
-  n_characters: 6
+  n_digits: 6
+  n_characters: 7
   n_decimals: 2
   n_naturals: 4
   data_range:
@@ -270,12 +272,12 @@ reflectivity_16bit:
   n_decimals: 2
   n_naturals: 2
   data_range:
-  - -9.999
-  - 99.999
+  - -9.99
+  - 99.99
   nan_flags: null
 rain_kinetic_energy:
-  n_digits: 7
-  n_characters: 6
+  n_digits: 6
+  n_characters: 7
   n_decimals: 3
   n_naturals: 3
   data_range:
@@ -283,8 +285,8 @@ rain_kinetic_energy:
   - 999.999
   nan_flags: null
 snowfall_rate:
-  n_digits: 7
-  n_characters: 6
+  n_digits: 6
+  n_characters: 7
   n_decimals: 2
   n_naturals: 4
   data_range:
@@ -295,7 +297,7 @@ number_particles_all:
   n_digits: 8
   n_characters: 8
   n_decimals: 0
-  n_naturals: 2
+  n_naturals: 8
   data_range:
   - 0
   - 8192
