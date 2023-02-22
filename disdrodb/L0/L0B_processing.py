@@ -949,6 +949,7 @@ def replace_nan_flags(ds, sensor_name, verbose):
 
     # Loop over the needed variable, and replace nan_flags values with np.nan
     for var, nan_flags in dict_nan_flags.items():
+        print(var)
         # If the variable is in the dataframe
         if var in ds:
             # Get occurence of nan_flags

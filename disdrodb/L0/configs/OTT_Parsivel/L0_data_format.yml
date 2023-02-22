@@ -23,7 +23,7 @@ weather_code_synop_4680:
   n_naturals: 2
   data_range:
   - 0
-  - 99
+  - 89
   nan_flags: null
 weather_code_synop_4677:
   n_digits: 2
@@ -32,7 +32,7 @@ weather_code_synop_4677:
   n_naturals: 2
   data_range:
   - 0
-  - 99
+  - 90
   nan_flags: null
 weather_code_metar_4678:
   n_digits: null
@@ -67,11 +67,13 @@ mor_visibility:
   - 20000
   nan_flags: null
 sample_interval:
-  n_digits: null
-  n_characters: null
-  n_decimals: null
-  n_naturals: null
-  data_range: null
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range: 
+  - 0
+  - 3600
   nan_flags: null
 laser_amplitude:
   n_digits: 5
@@ -211,24 +213,24 @@ error_code:
   - 1
   - 2
 rainfall_rate_16bit:
-  n_digits: 8
-  n_characters: 5
-  n_decimals: 4
-  n_naturals: 4
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 3
+  n_naturals: 2
   data_range:
   - 0
   - 9999.999
   nan_flags: null
 rainfall_rate_12bit:
-  n_digits: null
-  n_characters: null
-  n_decimals: null
-  n_naturals: null
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 1
+  n_naturals: 4
   data_range: null
   nan_flags: null
 rainfall_accumulated_16bit:
-  n_digits: 7
-  n_characters: 6
+  n_digits: 6
+  n_characters: 7
   n_decimals: 2
   n_naturals: 4
   data_range:
@@ -241,8 +243,8 @@ reflectivity_16bit:
   n_decimals: 2
   n_naturals: 2
   data_range:
-  - -9.999
-  - 99.999
+  - -9.99
+  - 99.99
   nan_flags: null
 raw_drop_concentration:
   n_digits: 0

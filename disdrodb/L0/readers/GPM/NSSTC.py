@@ -68,16 +68,19 @@ def reader(
 
     def df_sanitizer_fun(df):
         # - Import pandas
+        import numpy as np
         import pandas as pd
 
         # - Check 'time' string length to detect corrupted rows
         df = df[df["time"].str.len() == 14]
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S")
+        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
         # Count number of delimiters in the column to be parsed
-        n_delimiters = df["TO_BE_SPLITTED"].iloc[0].count(",")
+        # --> Some first rows are corrupted, so count the most frequent occurence 
+        possible_delimeters, counts = np.unique(df["TO_BE_SPLITTED"].str.count(","), return_counts=True)
+        n_delimiters = possible_delimeters[np.argmax(counts)]
 
         if n_delimiters == 1027:
             # - Select valid rows
@@ -136,10 +139,6 @@ def reader(
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         df = df.drop(columns=["station_name"])
-
-        # - Detect corrupted row by analyzing raw_drop_number
-        # TODO: to be discarded in future by timestep ...
-        # df = df[df["raw_drop_number"].str.contains("0p0") == False]
 
         return df
 

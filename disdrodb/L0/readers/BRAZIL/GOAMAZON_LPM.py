@@ -70,8 +70,6 @@ def reader(
         df = df[df["TO_BE_PARSED"].str.count(";") == 520]
 
         # Split by ; delimiter
-
-        # Create ID and Value columns
         df = df["TO_BE_PARSED"].str.split(";", expand=True, n=79)
 
         # Assign column names
@@ -188,7 +186,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*.txt"
+    glob_patterns = "*/*/DISL*" # <year>/<month>
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

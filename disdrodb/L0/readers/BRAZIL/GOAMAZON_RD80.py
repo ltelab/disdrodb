@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
 #
@@ -33,17 +33,47 @@ def reader(
 ):
     ##------------------------------------------------------------------------.
     #### - Define column names
-    column_names = ["time", "TO_BE_SPLITTED"]
+    column_names = [
+        "date",
+        "time",
+        "sensor_status",
+        "interval",
+        "n1",
+        "n2",
+        "n3",
+        "n4",
+        "n5",
+        "n6",
+        "n7",
+        "n8",
+        "n9",
+        "n10",
+        "n11",
+        "n12",
+        "n13",
+        "n14",
+        "n15",
+        "n16",
+        "n17",
+        "n18",
+        "n19",
+        "n20",
+        "RI",
+        "RA",
+        "RAT",
+    ]
 
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
     # - Define delimiter
-    reader_kwargs["delimiter"] = ";"
-    # - Skip first row as columns names
+    reader_kwargs["delimiter"] = "\\t"
+    # Skip header
     reader_kwargs["header"] = None
-    # - Skip file with encoding errors
-    reader_kwargs["encoding_errors"] = "ignore"
+    # Skip first row as columns names
+    reader_kwargs["skiprows"] = 1
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -59,7 +89,7 @@ def reader(
     #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
     #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
+    reader_kwargs["na_values"] = ["na", "", "error"]
 
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
@@ -67,43 +97,30 @@ def reader(
         # - Import pandas
         import pandas as pd
 
-        # - Convert time column to datetime
-        df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
+        # - Replace 'status' NaN with 0
+        df["sensor_status"] = df["sensor_status"].fillna(0)
 
-        # - Split the 'TO_BE_SPLITTED' column
-        df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=9)
+        # - Define 'time' datetime column
+        df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
+        df["time"] = pd.to_datetime(
+            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
+        )
+        df = df.drop(columns=["date"])
 
-        # - Assign column names
-        columns_names = [
-            "station_name",
-            "sensor_status",
-            "sensor_temperature",
-            "number_particles",
-            "rainfall_rate_32bit",
-            "reflectivity_16bit",
-            "mor_visibility",
-            "weather_code_synop_4680",
-            "weather_code_synop_4677",
-            "raw_drop_number",
-        ]
-        df.columns = columns_names
+        # - Create raw_drop_number column
+        bin_columns = ["n" + str(i) for i in range(1, 21)]
+        df_arr = df[bin_columns]
+        df_raw_drop_number = df_arr.agg(";".join, axis=1)
+        df["raw_drop_number"] = df_raw_drop_number
 
-        # - Add the time column
-        df["time"] = df_time
+        # - Remove bins columns
+        df = df.drop(columns=bin_columns)
 
-        # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["station_name"])
-        
-        # - Drop rows with unvalid values 
-        # --> Ensure that weather_code_synop_4677 has length 2
-        # --> If a previous column is missing it will have 000 
-        df = df[df["weather_code_synop_4677"].str.len() == 2]
-        
         return df
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*_raw.txt"
+    glob_patterns = "*/*/DISL*" # <year>/<month>
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

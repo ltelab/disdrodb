@@ -56,8 +56,8 @@ weather_code_synop_4677_5min:
   n_decimals: 0
   n_naturals: 2
   data_range:
-  - -1 
-  - 99
+  - -4 
+  - 90
   nan_flags: -1  # -1 sensor error 
 weather_code_synop_4680_5min:
   n_digits: 2
@@ -66,7 +66,7 @@ weather_code_synop_4680_5min:
   n_naturals: 2
   data_range:
   - -1   
-  - 99
+  - 89
   nan_flags: -1 # -1 sensor error
 weather_code_metar_4678_5min:
   n_digits: 0
@@ -90,8 +90,8 @@ weather_code_synop_4677:
   n_decimals: 0
   n_naturals: 0
   data_range:
-  - -1 
-  - 99
+  - -4 
+  - 90
   nan_flags: -1 # -1 sensor error 
 weather_code_synop_4680:
   n_digits: 0
@@ -100,7 +100,7 @@ weather_code_synop_4680:
   n_naturals: 0
   data_range:
   - -1 
-  - 99
+  - 89
   nan_flags: -1 # -1 sensor error 
 weather_code_metar_4678:
   n_digits: 0
