@@ -44,8 +44,8 @@ def get_valid_metadata_keys() -> list:
         "station_name",
         "sensor_name",
         "reader",
-        "raw_data_format",  # 'raw', 'preprocessed'  # source_data_format
-        "raw_data_type",  # 'raw', 'nc'            # source_data_type
+        "raw_data_format",  # 'raw', 'preprocessed'  # source_data_format # maybe to deprecate one day ...only raw
+        "raw_data_type",  # 'raw', 'nc'              # source_data_type
         "platform_type",  # 'fixed', 'mobile'
         # TODO deprecate
         "crs",  # TODO: add to coords !
@@ -71,9 +71,9 @@ def get_valid_metadata_keys() -> list:
         "location",
         "country",
         "continent",
-        "latitude",           # in degrees North
-        "longitude",          # in degrees East
-        "altitude",           # in meter above sea level
+        "latitude",  # in degrees North
+        "longitude",  # in degrees East
+        "altitude",  # in meter above sea level
         "deployment_status",  # 'ended', 'ongoing'
         "deployment mode",  # 'land', 'ship', 'truck', 'cable'
         "platform_protection",  # 'shielded', 'unshielded'
@@ -248,18 +248,20 @@ def _check_metadata_keys(metadata):
     # Check no keys are missing
     missing_keys = get_metadata_missing_keys(metadata)
     if len(missing_keys) > 0:
-        raise ValueError(f"Unvalid metadata keys: {missing_keys}")
+        raise ValueError(f"Missing metadata keys: {missing_keys}")
     return None
 
 
-def _check_metadata_values(metadata): 
+def _check_metadata_values(metadata):
     """Check validity of metadata values
-    
+
     If null is specified in the YAML files (or None in the dict) raise error.
     """
     for key, value in metadata.items():
-        if isinstance(value, type(None)): 
-            raise ValueError(f"The metadata key {key} has None or null value. Use '' instead.")
+        if isinstance(value, type(None)):
+            raise ValueError(
+                f"The metadata key {key} has None or null value. Use '' instead."
+            )
     return None
 
 

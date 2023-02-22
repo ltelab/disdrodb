@@ -120,7 +120,7 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### - Define glob pattern to search data files in <raw_dir>/data/<station_name>
-    glob_patterns = "*/*/DISL*" # <year>/<month>
+    glob_patterns = "*/*/DISL*"  # <year>/<month>
 
     ####----------------------------------------------------------------------.
     #### - Create L0A products

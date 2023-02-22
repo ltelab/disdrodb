@@ -78,8 +78,10 @@ def reader(
         df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
         # Count number of delimiters in the column to be parsed
-        # --> Some first rows are corrupted, so count the most frequent occurence 
-        possible_delimeters, counts = np.unique(df["TO_BE_SPLITTED"].str.count(","), return_counts=True)
+        # --> Some first rows are corrupted, so count the most frequent occurence
+        possible_delimeters, counts = np.unique(
+            df["TO_BE_SPLITTED"].str.count(","), return_counts=True
+        )
         n_delimiters = possible_delimeters[np.argmax(counts)]
 
         if n_delimiters == 1027:

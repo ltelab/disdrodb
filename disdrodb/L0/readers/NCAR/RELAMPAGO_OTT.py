@@ -41,10 +41,10 @@ def reader(
 
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
-    
+
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
-    
+
     # Skip first row as columns names
     reader_kwargs["header"] = None
 
@@ -97,7 +97,7 @@ def reader(
         # - Merge each timestep dataframe
         # --> Missing columns are infilled by NaN
         df = pd.concat(group_dfs, axis=0)
-        
+
         # Assign column names
         column_dict = {
             1: "rainfall_rate_32bit",
