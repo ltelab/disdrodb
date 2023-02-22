@@ -90,7 +90,7 @@ def run_disdrodb_l0a_station(
         # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
         os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
         # Retrieve the number of process to run
-        available_workers = os.cpu_count()  # if not set, all CPUs
+        available_workers = os.cpu_count() - 2  # if not set, all CPUs
         num_workers = dask.config.get("num_workers", available_workers)
         # Create dask.distributed local cluster
         cluster = LocalCluster(
