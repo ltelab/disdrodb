@@ -118,6 +118,10 @@ def run_disdrodb_l0b_station(
         debugging_mode=debugging_mode,
         parallel=parallel,
     )
+    # -------------------------------------------------------------------------.
+    # Close the cluster 
+    if parallel: 
+        cluster.close()
     return None
 
 
