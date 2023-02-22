@@ -71,9 +71,9 @@ def get_valid_metadata_keys() -> list:
         "location",
         "country",
         "continent",
-        "latitude",
-        "longitude",
-        "altitude",
+        "latitude",           # in degrees North
+        "longitude",          # in degrees East
+        "altitude",           # in meter above sea level
         "deployment_status",  # 'ended', 'ongoing'
         "deployment mode",  # 'land', 'ship', 'truck', 'cable'
         "platform_protection",  # 'shielded', 'unshielded'
@@ -100,7 +100,7 @@ def get_valid_metadata_keys() -> list:
         "authors_url",
         "contact",
         "contact_information",
-        "acknowledgement",  # s?
+        "acknowledgement",  # acknowledgements?
         "references",
         "documentation",
         "website",
