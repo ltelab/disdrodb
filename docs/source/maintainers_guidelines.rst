@@ -12,8 +12,6 @@ List of the core contributors
 * Current Release Manager : Ghiggi Gionata
 * Testing Team : Ghiggi Gionata
 
-To do  : define roles here 
-
 
 
 Versions guidelines
@@ -103,7 +101,7 @@ This webhook is linked to the DISDRODB core developper XXX.
 
 .. image:: /static/documentation_pipepline.png
 
-Ghiggi Gionata owns the readthedoc account.  
+Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.  
 
 
 Package releases pipeline
@@ -113,7 +111,7 @@ One  `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is defined to
 
 .. image:: /static/package_pipepline.png
 
-The pypi project is shared beween the core contributors.
+The `PyPi <https://pypi.org/>`__ project is shared beween the core contributors.
 
 
 
@@ -128,13 +126,13 @@ To do : define test process
 Testing processes
 ============================
 
-Currently, only one github action is configured to run black on pull requests. 
+Currently, on each Pull Request, GitHub Actions are configured to: 
+* Test that the code complies with the black style format.
+* Test that the code complies with the ruff linter rules. 
+* Check that the introduced changes does not break the disdrodb software (on multiple OS and environments).
+* Run tools that checks the code quality and the unit tests coverage (using i.e. 
+`Coveralls <https://coveralls.io/>`__, `CodeFactor <https://www.codefactor.io/>`, `CodeBeat <https://codebeat.co/>`__, ...)
 
-Side notes :
-
-* the black workflow is only executed in the context of a branch they exist in. If someone creates a PR with a change for a workflow file that targets main, it won’t run on main until that PR is merged into main. 
-
-* black is run on the whole directory (not only the commited files)
 
 
 

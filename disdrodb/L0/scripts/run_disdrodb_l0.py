@@ -16,7 +16,7 @@
 # -----------------------------------------------------------------------------.
 import sys
 import click
-from disdrodb.L0.utils_scripts import parse_arg_to_list
+from disdrodb.utils.scripts import parse_arg_to_list
 from disdrodb.L0.L0_processing import (
     click_l0_processing_options,
     click_l0_stations_options,

@@ -38,7 +38,7 @@ from disdrodb.L0.issue import read_issue
 from disdrodb.L0.check_standards import check_sensor_name
 
 # L0B_processing
-from disdrodb.L0.utils_scripts import _execute_cmd
+from disdrodb.utils.scripts import _execute_cmd
 
 # Logger
 from disdrodb.utils.logger import (
