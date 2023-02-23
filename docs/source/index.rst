@@ -12,12 +12,13 @@ Welcome to disdroDB's documentation!
    :maxdepth: 2
    
    overview
-   install
-   readers
+   installation
    data
+   readers
+   l0_processing
+   metadata
    contributors_guidelines
    maintainers_guidelines
-   metadata_keys
    
    
    

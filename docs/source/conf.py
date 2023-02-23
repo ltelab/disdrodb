@@ -38,6 +38,7 @@ out_path = os.path.join(os.getcwd(), "reader_preparation.ipynb")
 
 shutil.copyfile(in_path, out_path)
 
+# -- Metadata table  -----------------------------------------------------
 
 # Get key metadata from google sheet
 doc_id = "1z1bh55BFTwp7u-069PD8NF6r_ZmpCQwr7i78W6RBY_g"
@@ -60,7 +61,7 @@ for f in filelist:
 # create rst text
 metadata_keys_text = """
 =========================
-Metadata keys
+Metadata
 =========================
 
 
@@ -105,7 +106,7 @@ for current_df in df_list:
 
 
 # Save rst text as file
-metadata_keys_file = open("metadata_keys.rst", "w")
+metadata_keys_file = open("metadata.rst", "w")
 metadata_keys_file.writelines(metadata_keys_text)
 metadata_keys_file.close()
 

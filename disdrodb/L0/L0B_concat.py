@@ -20,8 +20,8 @@ import os
 import glob
 import logging
 from disdrodb.L0.io import get_L0B_dir, get_L0B_fpath
-from disdrodb.L0.utils_nc import xr_concat_datasets
-from disdrodb.L0.utils_scripts import _execute_cmd
+from disdrodb.utils.netcdf import xr_concat_datasets
+from disdrodb.utils.scripts import _execute_cmd
 from disdrodb.utils.logger import (
     create_file_logger,
     close_logger,
