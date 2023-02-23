@@ -7,7 +7,7 @@
 
 # Folders
 /dask-worker-space/
-/0_Docs/
+/data/DISDRODB/Processed
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
