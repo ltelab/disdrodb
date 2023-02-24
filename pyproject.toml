@@ -50,4 +50,4 @@ run_disdrodb_l0b_concat_station="disdrodb.l0.scripts.run_disdrodb_l0b_concat_sta
 run_disdrodb_l0b_concat="disdrodb.l0.scripts.run_disdrodb_l0b_concat:run_disdrodb_l0b_concat"
 # L0
 run_disdrodb_l0b="disdrodb.l0.scripts.run_disdrodb_l0b:run_disdrodb_l0b"
-run_disdrodb_l0="disdrodb.L0.scripts.run_disdrodb_l0:run_disdrodb_l0"
+run_disdrodb_l0="disdrodb.l0.scripts.run_disdrodb_l0:run_disdrodb_l0"
