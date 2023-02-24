@@ -22,6 +22,7 @@ import click
 import logging
 import functools
 import datetime
+import dask.bag as db
 
 # Directory
 from disdrodb.L0.io import get_raw_file_list, get_l0a_file_list
@@ -163,7 +164,6 @@ def _generate_l0a(
     return logger_fpath
 
 
-@_delayed_based_on_kwargs
 def _generate_l0b(
     filepath,
     processed_dir,  # retrievable from filepath
@@ -242,7 +242,6 @@ def _generate_l0b(
     return logger_fpath
 
 
-@_delayed_based_on_kwargs
 def _generate_l0b_from_nc(
     filepath,
     processed_dir,
@@ -521,7 +520,7 @@ def run_l0b(
     attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
 
     # Skip run_l0b processing if the raw data are netCDFs
-    if attrs["raw_data_type"] == "nc":
+    if attrs["raw_data_format"] == "netcdf":
         return None
 
     # -----------------------------------------------------------------.
@@ -551,25 +550,35 @@ def run_l0b(
 
     # -----------------------------------------------------------------.
     # Generate L0B files
-    # - Loop over the L0A files and save the L0B netCDF files.
-    # - If parallel=True, it does that in parallel using dask.delayed
-    list_tasks = []
-    for filepath in filepaths:
-        list_tasks.append(
-            _generate_l0b(
-                filepath=filepath,
-                processed_dir=processed_dir,  # can be derived by filepath
-                station_name=station_name,  # can be derived by filepath
-                force=force,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-                parallel=parallel,
+    # Loop over the L0A files and save the L0B netCDF files.
+    # - If parallel=True, it does that in parallel using dask.bag
+    #   Settings npartitions=len(filepaths) enable to wait prior task on a core
+    #   finish before starting a new one.
+    if not parallel:
+        list_logs = []
+        for filepath in filepaths:
+            list_logs.append(
+                _generate_l0b(
+                    filepath=filepath,
+                    processed_dir=processed_dir,
+                    station_name=station_name,
+                    force=force,
+                    verbose=verbose,
+                    debugging_mode=debugging_mode,
+                    parallel=parallel,
+                )
             )
-        )
-    if parallel:
-        list_logs = dask.compute(*list_tasks)
     else:
-        list_logs = list_tasks
+        bag = db.from_sequence(filepaths, npartitions=len(filepaths))
+        list_logs = bag.map(
+            _generate_l0b,
+            processed_dir=processed_dir,
+            station_name=station_name,
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        ).compute()
 
     # -----------------------------------------------------------------.
     # Define L0B summary logs
@@ -682,27 +691,41 @@ def run_l0b_from_nc(
     # -----------------------------------------------------------------.
     # Generate L0B files
     # - Loop over the raw netCDF files and convert it to DISDRODB netCDF format.
-    # - If parallel=True, it does that in parallel using dask.delayed
-    list_tasks = []
-    for filepath in filepaths:
-        list_tasks.append(
-            _generate_l0b_from_nc(
-                filepath=filepath,
-                processed_dir=processed_dir,
-                station_name=station_name,
-                # Reader arguments
-                dict_names=dict_names,
-                ds_sanitizer_fun=ds_sanitizer_fun,
-                # Processing options
-                force=force,
-                verbose=verbose,
-                parallel=parallel,
+    # - If parallel=True, it does that in parallel using dask.bag
+    #   Settings npartitions=len(filepaths) enable to wait prior task on a core
+    #   finish before starting a new one.
+    if not parallel:
+        list_logs = []
+        for filepath in filepaths:
+            list_logs.append(
+                _generate_l0b_from_nc(
+                    filepath=filepath,
+                    processed_dir=processed_dir,
+                    station_name=station_name,
+                    # Reader arguments
+                    dict_names=dict_names,
+                    ds_sanitizer_fun=ds_sanitizer_fun,
+                    # Processing options
+                    force=force,
+                    verbose=verbose,
+                    parallel=parallel,
+                )
             )
-        )
-    if parallel:
-        list_logs = dask.compute(*list_tasks)
     else:
-        list_logs = list_tasks
+        bag = db.from_sequence(filepaths, npartitions=len(filepaths))
+        list_logs = bag.map(
+            _generate_l0b_from_nc,
+            processed_dir=processed_dir,
+            station_name=station_name,
+            # Reader arguments
+            dict_names=dict_names,
+            ds_sanitizer_fun=ds_sanitizer_fun,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            parallel=parallel,
+        ).compute()
+
     # -----------------------------------------------------------------.
     # Define L0B summary logs
     define_summary_log(list_logs)
@@ -869,7 +892,7 @@ def run_disdrodb_l0_station(
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.
         The default is False.
     """
-    from disdrodb.L0.L0B_concat import run_disdrodb_l0b_concat_station
+    from disdrodb.L0.l0b_concat import run_disdrodb_l0b_concat_station
     from disdrodb.api.io import _get_disdrodb_directory
 
     # ---------------------------------------------------------------------.
