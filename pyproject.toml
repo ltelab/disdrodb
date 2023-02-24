@@ -47,7 +47,7 @@ run_disdrodb_l0b_station="disdrodb.l0.scripts.run_disdrodb_l0b_station:run_disdr
 run_disdrodb_l0_station="disdrodb.l0.scripts.run_disdrodb_l0_station:run_disdrodb_l0_station"
 # L0B concatenation
 run_disdrodb_l0b_concat_station="disdrodb.l0.scripts.run_disdrodb_l0b_concat_station:run_disdrodb_l0b_concat_station"
-run_disdrodb_l0b_concat="disdrodb.L0.scripts.run_disdrodb_l0b_concat:run_disdrodb_l0b_concat"
+run_disdrodb_l0b_concat="disdrodb.l0.scripts.run_disdrodb_l0b_concat:run_disdrodb_l0b_concat"
 # L0
 run_disdrodb_l0b="disdrodb.L0.scripts.run_disdrodb_l0b:run_disdrodb_l0b"
 run_disdrodb_l0="disdrodb.L0.scripts.run_disdrodb_l0:run_disdrodb_l0"
