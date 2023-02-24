@@ -21,7 +21,7 @@
 import os
 import yaml
 import numpy as np
-
+from disdrodb.L0.io import get_campaign_name, get_data_source
 
 ####--------------------------------------------------------------------------.
 #### Define valid metadata keys
@@ -40,16 +40,8 @@ def get_valid_metadata_keys() -> list:
         "station_name",
         "sensor_name",
         "reader",
-        "raw_data_format",  # 'raw', 'preprocessed'  # source_data_format # maybe to deprecate one day ...only raw
-        "raw_data_type",  # 'raw', 'nc'              # source_data_type
+        "raw_data_format",  # 'txt', 'netcdf'   
         "platform_type",  # 'fixed', 'mobile'
-        ## TODO deprecate
-        "crs",  # TODO: add to coords !
-        "proj4_string",
-        "EPSG",
-        "latitude_unit",
-        "longitude_unit",
-        "altitude_unit",
         ## Source
         "source",
         "source_convention",
@@ -183,17 +175,8 @@ def get_default_metadata_dict() -> dict:
     attrs["latitude"] = -9999
     attrs["longitude"] = -9999
     attrs["altitude"] = -9999
-    attrs["raw_data_format"] = "raw"  # ['raw', 'preprocessed']
-    attrs["raw_data_type"] = "raw"  # ['raw', 'nc']
+    attrs["raw_data_format"] = "txt"  # ['txt', 'netcdf']
     attrs["platform_type"] = "fixed"  # ['fixed', 'mobile']
-
-    # TODO: remove follow and add to L0B coords
-    attrs["latitude_unit"] = "DegreesNorth"
-    attrs["longitude_unit"] = "DegreesEast"
-    attrs["altitude_unit"] = "MetersAboveSeaLevel"
-    attrs["crs"] = "WGS84"
-    attrs["EPSG"] = 4326
-    attrs["proj4_string"] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     return attrs
 
 
@@ -205,9 +188,19 @@ def write_default_metadata(fpath: str) -> None:
     fpath : str
         File path
     """
+    # Get default metadata dict 
     metadata = get_default_metadata_dict()
-    # TODO: infer data_source, campaign_name and station_name from fpath 
-    
+    # Try infer the data_source, campaign_name and station_name from fpath 
+    try: 
+        campaign_name = get_campaign_name(fpath)
+        data_source = get_data_source(fpath)
+        station_name = os.path.basename(fpath).split(".yml")[0]
+        metadata["data_source"] = data_source
+        metadata["campaign_name"] = campaign_name
+        metadata["station_name"] = station_name
+    except Exception: 
+        pass 
+    # Write the metadata 
     write_metadata(metadata=metadata, fpath=fpath)
     return None
 
@@ -359,3 +352,21 @@ def check_metadata_compliance(disdrodb_dir, data_source, campaign_name, station_
 
 
 ####--------------------------------------------------------------------------.
+#### Metadata manipulation tools 
+def remove_unvalid_metadata_keys(metadata):
+    """Remove unvalid keys from the metadata dictionary."""
+    unvalid_keys = get_metadata_unvalid_keys(metadata)
+    for k in unvalid_keys:
+        _ = metadata.pop(k)
+    return metadata 
+ 
+
+def add_missing_metadata_keys(metadata):
+    """Add missing keys to the metadata dictionary."""
+    missing_keys = get_metadata_missing_keys(metadata)
+    for k in missing_keys:
+        metadata[k] = ""
+    return metadata 
+
+
+

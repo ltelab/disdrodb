@@ -94,11 +94,12 @@ across the time (and diameter and/or velocity) dimensions.
 The specified key values are used to define, for each variable, the specific 
 netCDF encodings. 
  
-L0_data_format.yml file 
+raw_data_format.yml file 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  
 This file contains the "numeric" information related to the variables logged by the sensor.
 The following keys should be specified for each numeric variable: 
+
     * ``n_digits``: the number of digits logged by the sensor (excluding the comma)
     * ``n_characters``: the number of characters (digits plus comma and sign)
     * ``n_decimals``: the number of decimals digits (right side of the comma)
@@ -117,6 +118,28 @@ The ``n_digits``, ``n_characters``, ``n_decimals`` and ``n_naturals`` informatio
 is used to infer the raw files header when this is unknown. 
 See usage of the ``infer_column_names`` function in the 
 `reader_preparation.ipynb Jupyter Notebook <https://github.com/ltelab/disdrodb/tree/main/tutorial>`_.
+
+For the variables which values do not depend only from the time dimension, it is necessary 
+to specify 2 additional keys: ``n_values`` and ``dimension_order``
+
+The ``n_values`` key corresponds to the total number of the array variable values. 
+For example, for the precipitation spectrum of the OTT Parsivel sensor, 
+characterized by 32 diameter and 32 velocity bins, n_values = 1024 (32*32).
+
+The ``dimension_order`` controls how the precipitation spectrum counts logged by the 
+sensor has to be reshaped into a 2D matrix. 
+
+For example, the OTT Parsivel logs the precipitation spectrum by first providing 
+the drop count in each bin diameters for the velocity bin 1, then for velocity bin 2 and so on. 
+The flattened array looks like [v1d1 ... v1d32, v2d1, ..., v2d32, ...] and therefore
+``dimension_order = ["velocity_bin_center", "diameter_bin_center"]``
+
+The Thies LPM logs the precipitation spectrum by first providing 
+the drop count in each velocity bin for the diameter bin 1, then for diameter bin 2 and so on. 
+The flattened array looks like [v1d1 ... v20d1, v1d2, ..., v20d2, ...]
+and therefore ``dimension_order = ["diameter_bin_center", "velocity_bin_center"]``
+ 
+
 
 variables.yml file 
 ~~~~~~~~~~~~~~~~~~~~~~~

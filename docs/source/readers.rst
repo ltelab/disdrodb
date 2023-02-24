@@ -27,7 +27,7 @@ the DISDRODB L0B netCDF format.
 
 In the DISDRODB metadata of each station: 
 * the ``reader`` key specifies the DISDRODB reader required to process the raw data.
-* the ``raw_data_type`` indicates if the source data are `raw` text or `nc` (netcdf) files.
+* the ``raw_data_format`` indicates if the source data are `txt` text or `netcdf` files.
 
 
 Available readers
@@ -376,7 +376,7 @@ There are 7 metadata keys for which is mandatory to specify the value :
 * the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_name()``.
   If the sensor which produced your data is not within the available sensors, you first need to add the sensor 
   configurations. For this task, read the section `Add new sensor configs` TODO ADD LINK.
-* the ``raw_data_type`` must be either 'raw' or 'nc'. 'raw' if the source data are text/ASCII files. 'nc' if source data are netCDFs.
+* the ``raw_data_format`` must be either 'txt' or 'netcdf'. 'txt' if the source data are text/ASCII files. 'netcdf' if source data are netCDFs.
 * the ``platform_type`` must be either 'fixed' or 'mobile'. If 'mobile', the DISDRODB L0 processing accepts latitude/longitude/altitude coordinates to vary with time.
 * the ``reader`` name is essential to enable to select the correct reader when processing the station. 
 

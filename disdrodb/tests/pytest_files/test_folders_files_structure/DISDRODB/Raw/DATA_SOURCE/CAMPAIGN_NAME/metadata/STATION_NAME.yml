@@ -3,8 +3,7 @@ campaign_name: 'CAMPAIGN_NAME'
 station_name: 'STATION_NAME'
 sensor_name: 'OTT_Parsivel'
 reader: 'EPFL/EPFL_2009'
-raw_data_format: raw
-raw_data_type: raw
+raw_data_format: txt
 platform_type: fixed
 crs: WGS84
 proj4_string: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
@@ -20,9 +19,8 @@ description: ''
 summary: ''
 history: ''
 keywords: ''
-conventions: ''
 project_name: ''
-comments: ''
+comment: ''
 station_id: ''
 location: ''
 country: ''
