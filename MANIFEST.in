@@ -1,6 +1,6 @@
 prune .github
 prune data
 prune docs
-prune disdrodb/L0/manuals
+prune disdrodb/l0/manuals
 prune disdrodb/L0/scripts
 prune disdrodb/tests
