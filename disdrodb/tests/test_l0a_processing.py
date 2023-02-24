@@ -211,7 +211,7 @@ def test_drop_time_periods():
     df_out = l0a_processing.drop_time_periods(df, time_periods=inside_time_periods)
     assert not np.any(
         df_out["time"].between(
-            inside_time_periods[0][0], inside_time_periods[0][1], inclusive='both'
+            inside_time_periods[0][0], inside_time_periods[0][1], inclusive="both"
         )
     )
 
