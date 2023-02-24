@@ -494,7 +494,7 @@ def get_coords_attrs_dict(ds):
 
 def set_disdrodb_attrs(ds, product_level: str):
     """Add DISDRODB processing information to the netCDF global attributes.
-    
+
     It assumes stations metadata are already added the dataset.
 
     Parameters
@@ -509,21 +509,21 @@ def set_disdrodb_attrs(ds, product_level: str):
     xarray dataset
         Dataset
     """
-    # Add dataset conventions 
+    # Add dataset conventions
     ds.attrs["Conventions"] = CONVENTIONS
-    
-    # Add featureType 
-    platform_type = ds.attrs["platform_type"] 
-    if platform_type == "fixed": 
+
+    # Add featureType
+    platform_type = ds.attrs["platform_type"]
+    if platform_type == "fixed":
         ds.attrs["featureType"] = "timeSeries"
-    else: 
+    else:
         ds.attrs["featureType"] = "trajectory"
-        
+
     # Add time_coverage_start and time_coverage_end
     ds.attrs["time_coverage_start"] = str(ds["time"].data[0])
     ds.attrs["time_coverage_end"] = str(ds["time"].data[-1])
-    
-    # DISDRODDB attributes 
+
+    # DISDRODDB attributes
     # - Add DISDRODB processing info
     now = datetime.datetime.utcnow()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -532,7 +532,7 @@ def set_disdrodb_attrs(ds, product_level: str):
     ds.attrs["disdrodb_product_version"] = PRODUCT_VERSION
     ds.attrs["disdrodb_software_version"] = SOFTWARE_VERSION
     ds.attrs["disdrodb_product_level"] = product_level
-    
+
     return ds
 
 
@@ -910,13 +910,13 @@ def get_raw_array_dims_order(sensor_name: str) -> dict:
     """
     # Retrieve data format dictionary
     data_format = get_data_format_dict(sensor_name)
-    # Retrieve the dimension order for each array variable 
+    # Retrieve the dimension order for each array variable
     dim_dict = {}
     for var, var_dict in data_format.items():
-        if "dimension_order" in var_dict: 
+        if "dimension_order" in var_dict:
             dim_dict[var] = var_dict["dimension_order"]
-    return dim_dict    
-    
+    return dim_dict
+
 
 def get_raw_array_nvalues(sensor_name: str) -> dict:
     """Get a dictionary with the number of values expected for each raw array.
@@ -933,12 +933,12 @@ def get_raw_array_nvalues(sensor_name: str) -> dict:
     """
     # Retrieve data format dictionary
     data_format = get_data_format_dict(sensor_name)
-    # Retrieve the number of values for each array variable 
+    # Retrieve the number of values for each array variable
     nvalues_dict = {}
     for var, var_dict in data_format.items():
-        if "n_values" in var_dict: 
+        if "n_values" in var_dict:
             nvalues_dict[var] = var_dict["n_values"]
-    return nvalues_dict 
+    return nvalues_dict
 
 
 def get_variables_dimension(sensor_name: str):
@@ -968,19 +968,19 @@ def get_valid_variable_names(sensor_name):
 
 def get_valid_dimension_names(sensor_name):
     """Get list of valid dimension names."""
-    # Retrieve dimension order dictionary 
+    # Retrieve dimension order dictionary
     dims_dict = get_raw_array_dims_order(sensor_name=sensor_name)
-    # Retrieve possible dimensions 
-    list_dimensions = list(dims_dict.values()) # for each array variable 
+    # Retrieve possible dimensions
+    list_dimensions = list(dims_dict.values())  # for each array variable
     list_dimensions = [item for sublist in list_dimensions for item in sublist]
     valid_dims = np.unique(list_dimensions).tolist()
-    dimensions = ["time"] + valid_dims   
+    dimensions = ["time"] + valid_dims
     return dimensions
 
 
 def get_valid_coordinates_names(sensor_name):
     """Get list of valid coordinates."""
-    # Define diameter and velocity coordinates 
+    # Define diameter and velocity coordinates
     velocity_coordinates = [
         "velocity_bin_center",
         "velocity_bin_width",
@@ -993,7 +993,7 @@ def get_valid_coordinates_names(sensor_name):
         "diameter_bin_lower",
         "diameter_bin_upper",
     ]
-    # Define common coordinates 
+    # Define common coordinates
     coordinates = [
         "time",
         "latitude",
@@ -1003,11 +1003,11 @@ def get_valid_coordinates_names(sensor_name):
     ]
     # Since diameter is always present, add to valid coordinates
     coordinates = coordinates + diameter_coordinates
-    # Add velocity if velocity_bin_center is a valid dimension 
+    # Add velocity if velocity_bin_center is a valid dimension
     valid_dims = get_valid_dimension_names(sensor_name)
     if "velocity_bin_center" in valid_dims:
         coordinates = coordinates + velocity_coordinates
-    # Return valid coordinates 
+    # Return valid coordinates
     return coordinates
 
 
@@ -1017,4 +1017,6 @@ def get_valid_names(sensor_name):
     dimensions = get_valid_coordinates_names(sensor_name)
     names = np.unique(variables + coordinates + dimensions).tolist()
     return names
+
+
 # -----------------------------------------------------------------------------.
