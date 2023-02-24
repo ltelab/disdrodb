@@ -4,7 +4,7 @@ from disdrodb.api.io import (
     available_data_sources,
 )
 from disdrodb.api.metadata import read_station_metadata
-from disdrodb.L0.standards import available_sensor_name
+from disdrodb.l0.standards import available_sensor_name
 
 __all__ = [
     "available_stations",

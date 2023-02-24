@@ -3,7 +3,7 @@ import os
 import yaml
 import pytest
 import pandas as pd
-from disdrodb.L0 import standards
+from disdrodb.l0 import standards
 
 # Set paths
 ROOT_DISDRODB_FOLDER = os.path.join(

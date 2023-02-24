@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def _get_readers_directory() -> str:
-    """Returns the path to the disdrodb.L0.readers directory within the disdrodb package."""
+    """Returns the path to the disdrodb.l0.readers directory within the disdrodb package."""
     # Current file path
     l0_folder_path = os.path.dirname(__file__)
 
@@ -38,7 +38,7 @@ def _get_readers_directory() -> str:
 
 
 def _get_readers_data_sources() -> list:
-    """Returns the readers data sources available at disdrodb.L0.readers"""
+    """Returns the readers data sources available at disdrodb.l0.readers"""
     # Readers folder path
     reader_folder_path = _get_readers_directory()
 
@@ -54,7 +54,7 @@ def _get_readers_data_sources() -> list:
 
 
 def _get_readers_data_sources_path() -> list:
-    """Returns the list of readers data sources directory paths within disdrodb.L0.readers"""
+    """Returns the list of readers data sources directory paths within disdrodb.l0.readers"""
     # Readers folder path
     reader_folder_path = _get_readers_directory()
 
@@ -72,7 +72,7 @@ def _get_readers_paths_by_data_source(data_source):
     reader_folder_path = _get_readers_directory()
     reader_data_source_path = os.path.join(reader_folder_path, data_source)
     if not os.path.isdir(reader_data_source_path):
-        raise ValueError(f"No {data_source} directory in disdrodb.L0.readers")
+        raise ValueError(f"No {data_source} directory in disdrodb.l0.readers")
     # Retrieve list of available readers paths
     list_readers_paths = [
         f.path
@@ -117,14 +117,14 @@ def _check_reader_data_source(reader_data_source: str) -> str:
     Raises
     ------
     ValueError
-        Error if the data source name provided is not a directory within the disdrodb.L0.readers directory.
+        Error if the data source name provided is not a directory within the disdrodb.l0.readers directory.
     """
 
     # List available readers data sources
     available_reader_data_sources = _get_readers_data_sources()
     # If not valid data_source, raise error
     if reader_data_source not in available_reader_data_sources:
-        msg = f"Reader data source {reader_data_source} is not a directory inside the disdrodb.L0.readers directory."
+        msg = f"Reader data source {reader_data_source} is not a directory inside the disdrodb.l0.readers directory."
         logger.error(msg)
         raise ValueError(msg)
     return reader_data_source
@@ -247,7 +247,7 @@ def get_reader(reader_data_source: str, reader_name: str) -> object:
     )
     # Retrive reader function
     if reader_name:
-        full_name = f"disdrodb.L0.readers.{reader_data_source}.{reader_name}.reader"
+        full_name = f"disdrodb.l0.readers.{reader_data_source}.{reader_name}.reader"
         module_name, unit_name = full_name.rsplit(".", 1)
         my_reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
 
@@ -296,7 +296,7 @@ def _check_metadata_reader(metadata):
     if "reader" not in metadata:
         raise ValueError("The reader is not specified in the metadata.")
     # If the reader name is specified, test it is valid.
-    # - Convention: reader: "<data_source>/<reader_name>" in disdrodb.L0.readers
+    # - Convention: reader: "<data_source>/<reader_name>" in disdrodb.l0.readers
     reader_reference = metadata.get("reader")
     # - Check it contains /
     if "/" not in reader_reference:
@@ -323,7 +323,7 @@ def _check_metadata_reader(metadata):
 def get_reader_from_metadata_reader_key(reader_data_source_name):
     """Retrieve the reader from the `reader` metadata value.
 
-    The convention for metadata reader key: <data_source/reader_name> in disdrodb.L0.readers
+    The convention for metadata reader key: <data_source/reader_name> in disdrodb.l0.readers
     """
     reader_data_source = reader_data_source_name.split("/")[0]
     reader_name = reader_data_source_name.split("/")[1]
@@ -334,7 +334,7 @@ def get_reader_from_metadata_reader_key(reader_data_source_name):
 def _get_reader_from_metadata(metadata):
     """Retrieve the reader from the metadata key `reader`
 
-    The convention for metadata reader key: <data_source/reader_name> in disdrodb.L0.readers
+    The convention for metadata reader key: <data_source/reader_name> in disdrodb.l0.readers
     """
     reader_data_source_name = metadata.get("reader")
     return get_reader_from_metadata_reader_key(reader_data_source_name)

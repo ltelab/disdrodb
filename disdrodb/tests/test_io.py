@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import xarray as xr
-from disdrodb.L0 import io
+from disdrodb.l0 import io
 import importlib.metadata
 
 

@@ -4,14 +4,14 @@
 import os
 import yaml
 from typing import Union
-from disdrodb.L0.io import (
+from disdrodb.l0.io import (
     get_disdrodb_dir,
     get_data_source,
     get_campaign_name,
 )
 from disdrodb.api.metadata import get_metadata_list, read_station_metadata
-from disdrodb.L0.l0_reader import _check_metadata_reader
-from disdrodb.L0.metadata import (
+from disdrodb.l0.l0_reader import _check_metadata_reader
+from disdrodb.l0.metadata import (
     _check_metadata_keys,
     _check_metadata_data_source,
     _check_metadata_campaign_name,

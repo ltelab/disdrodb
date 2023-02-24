@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import numpy as np
-from disdrodb.L0.standards import (
+from disdrodb.l0.standards import (
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,

@@ -19,7 +19,7 @@
 import os
 import glob
 import logging
-from disdrodb.L0.io import get_L0B_dir, get_L0B_fpath
+from disdrodb.l0.io import get_L0B_dir, get_L0B_fpath
 from disdrodb.utils.netcdf import xr_concat_datasets
 from disdrodb.utils.scripts import _execute_cmd
 from disdrodb.utils.logger import (
@@ -39,7 +39,7 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
 
     The single netCDF file is saved at <processed_dir>/L0B.
     """
-    from disdrodb.L0.l0b_processing import write_l0b
+    from disdrodb.l0.l0b_processing import write_l0b
 
     # Create logger
     filename = f"concatenatation_{station_name}"

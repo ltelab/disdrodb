@@ -4,7 +4,7 @@
 import numpy as np
 import pandas as pd
 from typing import Union
-from disdrodb.L0.standards import (
+from disdrodb.l0.standards import (
     get_l0a_dtype,
     get_field_nchar_dict,
     get_field_ndigits_dict,

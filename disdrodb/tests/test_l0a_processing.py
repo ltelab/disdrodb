@@ -2,8 +2,8 @@ import os
 import pytest
 import numpy as np
 import pandas as pd
-from disdrodb.L0 import l0a_processing
-from disdrodb.L0 import io
+from disdrodb.l0 import l0a_processing
+from disdrodb.l0 import io
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),

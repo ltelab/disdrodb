@@ -3,7 +3,7 @@ import pytest
 import yaml
 
 
-from disdrodb.L0 import check_metadata
+from disdrodb.l0 import check_metadata
 
 
 PATH_TEST_FOLDERS_FILES = os.path.join(

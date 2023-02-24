@@ -20,7 +20,7 @@
 import sys
 import click
 from disdrodb.utils.scripts import parse_arg_to_list
-from disdrodb.L0.l0_processing import (
+from disdrodb.l0.l0_processing import (
     click_l0_stations_options,
     click_l0b_concat_options,
 )
@@ -70,7 +70,7 @@ def run_disdrodb_l0b_concat(
         Whether to print detailed processing information into terminal.
         The default is False.
     """
-    from disdrodb.L0.L0B_concat import run_disdrodb_l0b_concat
+    from disdrodb.l0.L0B_concat import run_disdrodb_l0b_concat
 
     # Parse data_sources, campaign_names and station arguments
     data_sources = parse_arg_to_list(data_sources)

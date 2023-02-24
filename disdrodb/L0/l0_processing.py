@@ -25,18 +25,18 @@ import datetime
 import dask.bag as db
 
 # Directory
-from disdrodb.L0.io import get_raw_file_list, get_l0a_file_list
-from disdrodb.L0.io import (
+from disdrodb.l0.io import get_raw_file_list, get_l0a_file_list
+from disdrodb.l0.io import (
     create_initial_directory_structure,
     create_directory_structure,
 )
 
 # Metadata & Issue
-from disdrodb.L0.metadata import read_metadata
-from disdrodb.L0.issue import read_issue
+from disdrodb.l0.metadata import read_metadata
+from disdrodb.l0.issue import read_issue
 
 # Standards
-from disdrodb.L0.check_standards import check_sensor_name
+from disdrodb.l0.check_standards import check_sensor_name
 
 # L0B_processing
 from disdrodb.utils.scripts import _execute_cmd
@@ -91,8 +91,8 @@ def _generate_l0a(
     parallel,
     issue_dict={},
 ):
-    from disdrodb.L0.io import get_L0A_fpath
-    from disdrodb.L0.l0a_processing import (
+    from disdrodb.l0.io import get_L0A_fpath
+    from disdrodb.l0.l0a_processing import (
         process_raw_file,
         write_l0a,
     )
@@ -174,8 +174,8 @@ def _generate_l0b(
     parallel,
 ):
     from disdrodb.utils.logger import create_file_logger
-    from disdrodb.L0.io import get_L0B_fpath, read_L0A_dataframe
-    from disdrodb.L0.l0b_processing import (
+    from disdrodb.l0.io import get_L0B_fpath, read_L0A_dataframe
+    from disdrodb.l0.l0b_processing import (
         create_l0b_from_l0a,
         write_l0b,
     )
@@ -253,8 +253,8 @@ def _generate_l0b_from_nc(
     parallel,
 ):
     from disdrodb.utils.logger import create_file_logger
-    from disdrodb.L0.io import get_L0B_fpath
-    from disdrodb.L0.l0b_processing import process_raw_nc, write_l0b
+    from disdrodb.l0.io import get_L0B_fpath
+    from disdrodb.l0.l0b_processing import process_raw_nc, write_l0b
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -892,7 +892,7 @@ def run_disdrodb_l0_station(
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.
         The default is False.
     """
-    from disdrodb.L0.l0b_concat import run_disdrodb_l0b_concat_station
+    from disdrodb.l0.l0b_concat import run_disdrodb_l0b_concat_station
     from disdrodb.api.io import _get_disdrodb_directory
 
     # ---------------------------------------------------------------------.

@@ -23,8 +23,8 @@ Created on Fri Feb 17 20:47:10 2023
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-from disdrodb.L0 import run_l0a
-from disdrodb.L0.l0_reader import reader_generic_docstring, is_documented_by
+from disdrodb.l0 import run_l0a
+from disdrodb.l0.l0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)

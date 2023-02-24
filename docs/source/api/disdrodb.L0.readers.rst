@@ -1,13 +1,13 @@
-disdrodb.L0.readers package
+disdrodb.l0.readers package
 ===========================
 
 Submodules
 ----------
 
-disdrodb.L0.readers.reader\_template module
+disdrodb.l0.readers.reader\_template module
 -------------------------------------------
 
-.. automodule:: disdrodb.L0.readers.reader_template
+.. automodule:: disdrodb.l0.readers.reader_template
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,7 +15,7 @@ disdrodb.L0.readers.reader\_template module
 Module contents
 ---------------
 
-.. automodule:: disdrodb.L0.readers
+.. automodule:: disdrodb.l0.readers
    :members:
    :undoc-members:
    :show-inheritance:

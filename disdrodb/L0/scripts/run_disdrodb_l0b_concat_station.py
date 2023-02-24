@@ -19,7 +19,7 @@
 ##################################################
 import sys
 import click
-from disdrodb.L0.l0_processing import (
+from disdrodb.l0.l0_processing import (
     click_l0_station_arguments,
     click_l0b_concat_options,
 )
@@ -64,7 +64,7 @@ def run_disdrodb_l0b_concat_station(
     """
     from disdrodb.api.io import _get_disdrodb_directory
 
-    from disdrodb.L0.L0B_concat import _concatenate_netcdf_files
+    from disdrodb.l0.L0B_concat import _concatenate_netcdf_files
 
     # Retrieve processed_dir
     processed_dir = _get_disdrodb_directory(
