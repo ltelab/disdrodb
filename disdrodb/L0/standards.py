@@ -372,7 +372,7 @@ def get_long_name_dict(sensor_name: str) -> dict:
         Long name of each sensor variable.
     """
 
-    return read_config_yml(sensor_name=sensor_name, filename="variable_longname.yml")
+    return read_config_yml(sensor_name=sensor_name, filename="variable_long_name.yml")
 
 
 def get_units_dict(sensor_name: str) -> dict:

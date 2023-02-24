@@ -74,7 +74,8 @@ def reader(
 
     ##------------------------------------------------------------------------.
     def df_sanitizer_fun(df):
-        # - Import pandas
+        # Import numpy and pandas
+        import numpy as np
         import pandas as pd
 
         # Create ID and Value columns
@@ -97,8 +98,9 @@ def reader(
         # - Merge each timestep dataframe
         # --> Missing columns are infilled by NaN
         df = pd.concat(group_dfs, axis=0)
+        df.columns = df.columns.astype(str).str.pad(width=2, side="left", fillchar="0")
 
-        # Assign column names
+        # Define column names
         column_dict = {
             "01": "rainfall_rate_32bit",
             # "02": "rainfall_accumulated_32bit",
@@ -132,18 +134,29 @@ def reader(
             # "91": "raw_drop_average_velocity",
             "93": "raw_drop_number",
         }
+
+        # Identify missing columns and add NaN
+        expected_columns = np.array(list(column_dict.keys()))
+        missing_columns = expected_columns[
+            np.isin(expected_columns, df.columns, invert=True)
+        ].tolist()
+        if len(missing_columns) > 0:
+            for column in missing_columns:
+                df[column] = "NaN"
+
+        # Rename columns
         df = df.rename(column_dict, axis=1)
 
-        # - Keep only columns defined in the dictionary
+        # Keep only columns defined in the dictionary
         df = df[list(column_dict.values())]
 
-        # - Define datetime "time" column
+        # Define datetime "time" column
         df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
         df["time"] = pd.to_datetime(
             df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce"
         )
 
-        # - Drop columns not agreeing with DISDRODB L0 standards
+        # Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
             "sensor_date",
             "sensor_time",
@@ -155,7 +168,8 @@ def reader(
         ]
         df = df.drop(columns=columns_to_drop)
 
-        # TODO: UF4-7 have NAN at the end
+        # Stations UF4-7 have NAN at the end of the raw drop number
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("NaN;", "").iloc[0]
 
         return df
 
