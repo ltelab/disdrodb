@@ -16,7 +16,7 @@
 # -----------------------------------------------------------------------------.
 import sys
 import click
-from disdrodb.L0.L0_processing import (
+from disdrodb.L0.l0_processing import (
     click_l0_processing_options,
     click_l0_station_arguments,
     click_l0_archive_options,
@@ -104,7 +104,7 @@ def run_disdrodb_l0_station(
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.\n
         The default is False.\n
     """
-    from disdrodb.L0.L0_processing import run_disdrodb_l0_station
+    from disdrodb.L0.l0_processing import run_disdrodb_l0_station
 
     run_disdrodb_l0_station(
         disdrodb_dir=disdrodb_dir,

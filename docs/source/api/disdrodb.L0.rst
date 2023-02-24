@@ -12,42 +12,42 @@ Subpackages
 Submodules
 ----------
 
-disdrodb.L0.L0A\_processing module
+disdrodb.L0.l0a\_processing module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.L0A_processing
+.. automodule:: disdrodb.L0.l0a_processing
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.L0B\_processing module
+disdrodb.L0.l0b\_processing module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.L0B_processing
+.. automodule:: disdrodb.L0.l0b_processing
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.L0B\_concat module
+disdrodb.L0.l0b\_concat module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.L0B_concat
+.. automodule:: disdrodb.L0.l0b_concat
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.L0\_processing module
+disdrodb.L0.l0\_processing module
 ---------------------------------
 
-.. automodule:: disdrodb.L0.L0_processing
+.. automodule:: disdrodb.L0.l0_processing
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.L0\_reader module
+disdrodb.L0.l0\_reader module
 --------------------------------------------
 
-.. automodule:: disdrodb.L0.L0_reader
+.. automodule:: disdrodb.L0.l0_reader
    :members:
    :undoc-members:
    :show-inheritance:

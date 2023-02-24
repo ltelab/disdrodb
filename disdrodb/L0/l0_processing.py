@@ -91,7 +91,7 @@ def _generate_l0a(
     issue_dict={},
 ):
     from disdrodb.L0.io import get_L0A_fpath
-    from disdrodb.L0.L0A_processing import (
+    from disdrodb.L0.l0a_processing import (
         process_raw_file,
         write_l0a,
     )
@@ -175,7 +175,7 @@ def _generate_l0b(
 ):
     from disdrodb.utils.logger import create_file_logger
     from disdrodb.L0.io import get_L0B_fpath, read_L0A_dataframe
-    from disdrodb.L0.L0B_processing import (
+    from disdrodb.L0.l0b_processing import (
         create_l0b_from_l0a,
         write_l0b,
     )
@@ -255,7 +255,7 @@ def _generate_l0b_from_nc(
 ):
     from disdrodb.utils.logger import create_file_logger
     from disdrodb.L0.io import get_L0B_fpath
-    from disdrodb.L0.L0B_processing import process_raw_nc, write_l0b
+    from disdrodb.L0.l0b_processing import process_raw_nc, write_l0b
 
     # -----------------------------------------------------------------.
     # Create file logger

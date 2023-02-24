@@ -35,7 +35,7 @@ from disdrodb.L0.standards import (
 )
 from disdrodb.L0.check_standards import check_l0a_column_names, check_l0a_standards
 from disdrodb.L0.io import _remove_if_exists, _create_directory
-from disdrodb.L0.L0B_processing import infer_split_str
+from disdrodb.L0.l0b_processing import infer_split_str
 
 # Logger
 from disdrodb.utils.logger import (
