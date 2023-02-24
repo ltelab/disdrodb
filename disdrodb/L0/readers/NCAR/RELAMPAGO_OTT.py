@@ -97,50 +97,61 @@ def reader(
         # - Merge each timestep dataframe
         # --> Missing columns are infilled by NaN
         df = pd.concat(group_dfs, axis=0)
+        df.columns = df.columns.astype(str).str.pad(width=2, side="left", fillchar="0")
 
         # Assign column names
         column_dict = {
-            1: "rainfall_rate_32bit",
-            2: "rainfall_accumulated_32bit",
-            3: "weather_code_synop_4680",
-            4: "weather_code_synop_4677",
-            5: "weather_code_metar_4678",
-            6: "weather_code_nws",
-            7: "reflectivity_32bit",
-            8: "mor_visibility",
-            9: "sample_interval",
-            10: "laser_amplitude",
-            11: "number_particles",
-            12: "sensor_temperature",
-            # 13: "sensor_serial_number",
-            # 14: "firmware_iop",
-            # 15: "firmware_dsp",
-            16: "sensor_heating_current",
-            17: "sensor_battery_voltage",
-            18: "sensor_status",
-            19: "start_time",
-            20: "sensor_time",
-            21: "sensor_date",
-            # 22: "station_name",
-            # 23: "station_number",
-            24: "rainfall_amount_absolute_32bit",
-            25: "error_code",
-            26: "sensor_temperature_pcb",
-            27: "sensor_temperature_receiver",
-            28: "sensor_temperature_trasmitter",
-            30: "rainfall_rate_16_bit_30",
-            31: "rainfall_rate_16_bit_1200",
-            32: "rainfall_accumulated_16bit",
-            33: "reflectivity_16bit",
-            34: "rain_kinetic_energy",
-            35: "snowfall_rate",
+            "01": "rainfall_rate_32bit",
+            "02": "rainfall_accumulated_32bit",
+            "03": "weather_code_synop_4680",
+            "04": "weather_code_synop_4677",
+            "05": "weather_code_metar_4678",
+            "06": "weather_code_nws",
+            "07": "reflectivity_32bit",
+            "08": "mor_visibility",
+            "09": "sample_interval",
+            "10": "laser_amplitude",
+            "11": "number_particles",
+            "12": "sensor_temperature",
+            # "13": "sensor_serial_number",
+            # "14": "firmware_iop",
+            # "15": "firmware_dsp",
+            "16": "sensor_heating_current",
+            "17": "sensor_battery_voltage",
+            "18": "sensor_status",
+            # "19": "start_time",
+            "20": "sensor_time",
+            "21": "sensor_date",
+            # "22": "station_name",
+            # "23": "station_number",
+            "24": "rainfall_amount_absolute_32bit",
+            "25": "error_code",
+            "26": "sensor_temperature_pcb",
+            "27": "sensor_temperature_receiver",
+            "28": "sensor_temperature_trasmitter",
+            "30": "rainfall_rate_16_bit_30",
+            "31": "rainfall_rate_16_bit_1200",
+            "32": "rainfall_accumulated_16bit",
+            "33": "reflectivity_16bit",
+            "34": "rain_kinetic_energy",
+            "35": "snowfall_rate",
             # 60: "number_particles_all",
             # 61: "list_particles",
-            90: "raw_drop_concentration",
-            91: "raw_drop_average_velocity",
-            92: "raw_drop_number",
+            "90": "raw_drop_concentration",
+            "91": "raw_drop_average_velocity",
+            "93": "raw_drop_number",
         }
 
+        # Identify missing columns and add NaN
+        expected_columns = np.array(list(column_dict.keys()))
+        missing_columns = expected_columns[
+            np.isin(expected_columns, df.columns, invert=True)
+        ].tolist()
+        if len(missing_columns) > 0:
+            for column in missing_columns:
+                df[column] = "NaN"
+
+        # Rename columns
         df = df.rename(column_dict, axis=1)
 
         # - Keep only columns defined in the dictionary

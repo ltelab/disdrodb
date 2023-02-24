@@ -163,7 +163,7 @@ def define_summary_log(list_logs):
     # Define problem logs file name
     problem_fpath = os.path.join(summary_logs_dir, f"logs_problem_{station_name}.log")
     # - Copy the log of files with warnings and error
-    list_keywords = ["WARNING", "ERROR"]
+    list_keywords = ["ERROR"]  # "WARNING"
     re_keyword = re.compile("|".join(list_keywords))
     any_problem = False
     with open(problem_fpath, "w") as output_file:

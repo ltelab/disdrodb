@@ -63,7 +63,8 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
-        # - Import pandas
+        # Import numpy and pandas
+        import numpy as np
         import pandas as pd
 
         # Create ID and Value columns
@@ -73,9 +74,15 @@ def reader(
         # Drop rows with no values
         df = df[df["Value"].astype(bool)]
 
+        # Convert ID to integer
+        # - First convert to numeric and if errors arise (corrupted rows), drop rows
+        df["ID"] = pd.to_numeric(df["ID"], errors="coerce")
+        df = df.dropna(subset="ID")
+        df["ID"] = df["ID"].astype(int)
+
         # Create the dataframe with each row corresponding to a timestep
         # - Group rows based on when ID values restart
-        groups = df.groupby((df["ID"].astype(int).diff() <= 0).cumsum())
+        groups = df.groupby((df["ID"].diff() <= 0).cumsum())
 
         # - Reshape the dataframe
         group_dfs = []
@@ -86,8 +93,9 @@ def reader(
         # - Merge each timestep dataframe
         # --> Missing columns are infilled by NaN
         df = pd.concat(group_dfs, axis=0)
+        df.columns = df.columns.astype(str).str.pad(width=2, side="left", fillchar="0")
 
-        # Assign column names
+        # Define available column names
         column_dict = {
             "01": "rainfall_rate_32bit",
             "02": "rainfall_accumulated_32bit",
@@ -121,6 +129,17 @@ def reader(
             "91": "raw_drop_average_velocity",
             "93": "raw_drop_number",
         }
+
+        # Identify missing columns and add NaN
+        expected_columns = np.array(list(column_dict.keys()))
+        missing_columns = expected_columns[
+            np.isin(expected_columns, df.columns, invert=True)
+        ].tolist()
+        if len(missing_columns) > 0:
+            for column in missing_columns:
+                df[column] = "NaN"
+
+        # Rename columns
         df = df.rename(column_dict, axis=1)
 
         # - Keep only columns defined in the dictionary
