@@ -41,7 +41,7 @@ where = ["disdrodb"]
 [project.scripts]
 # L0A
 run_disdrodb_l0a_station="disdrodb.l0.scripts.run_disdrodb_l0a_station:run_disdrodb_l0a_station"
-run_disdrodb_l0a="disdrodb.L0.scripts.run_disdrodb_l0a:run_disdrodb_l0a"
+run_disdrodb_l0a="disdrodb.l0.scripts.run_disdrodb_l0a:run_disdrodb_l0a"
 # L0B
 run_disdrodb_l0b_station="disdrodb.L0.scripts.run_disdrodb_l0b_station:run_disdrodb_l0b_station"
 run_disdrodb_l0_station="disdrodb.L0.scripts.run_disdrodb_l0_station:run_disdrodb_l0_station"
