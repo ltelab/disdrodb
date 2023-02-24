@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 import numpy as np
 import xarray as xr
-from disdrodb.L0 import L0B_processing
+from disdrodb.L0 import l0b_processing
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -14,28 +14,28 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 def test_infer_split_str():
     # Test type eror if string=None
     with pytest.raises(TypeError):
-        L0B_processing.infer_split_str(None)
+        l0b_processing.infer_split_str(None)
 
     # Test strings with no delimiter
-    assert L0B_processing.infer_split_str("") is None
-    assert L0B_processing.infer_split_str("") is None
-    assert L0B_processing.infer_split_str("abc") is None
+    assert l0b_processing.infer_split_str("") is None
+    assert l0b_processing.infer_split_str("") is None
+    assert l0b_processing.infer_split_str("abc") is None
 
     # Test strings with semicolon delimiter
-    assert L0B_processing.infer_split_str("a;b;c") == ";"
-    assert L0B_processing.infer_split_str("a;b;c;") == ";"
+    assert l0b_processing.infer_split_str("a;b;c") == ";"
+    assert l0b_processing.infer_split_str("a;b;c;") == ";"
 
     # Test strings with comma delimiter
-    assert L0B_processing.infer_split_str("a,b,c") == ","
-    assert L0B_processing.infer_split_str("a,b,c,") == ","
+    assert l0b_processing.infer_split_str("a,b,c") == ","
+    assert l0b_processing.infer_split_str("a,b,c,") == ","
 
     # Test strings with both semicolon and comma delimiters
-    assert L0B_processing.infer_split_str("a;b,c;d;e") == ";"
+    assert l0b_processing.infer_split_str("a;b,c;d;e") == ";"
 
 
 def test_replace_empty_strings_with_zeros():
     values = np.array(["", "0", "", "1"])
-    output = L0B_processing._replace_empty_strings_with_zeros(values).tolist()
+    output = l0b_processing._replace_empty_strings_with_zeros(values).tolist()
     expected_output = np.array(["0", "0", "0", "1"]).tolist()
     assert output == expected_output
 
@@ -45,35 +45,35 @@ def test_format_string_array():
     assert "".split(None) == []
 
     # Test empty string
-    assert np.allclose(L0B_processing.format_string_array("", 4), [0, 0, 0, 0])
+    assert np.allclose(l0b_processing.format_string_array("", 4), [0, 0, 0, 0])
 
     # Test strings with semicolon and column delimiter
     assert np.allclose(
-        L0B_processing.format_string_array("2;44;22;33", 4), [2, 44, 22, 33]
+        l0b_processing.format_string_array("2;44;22;33", 4), [2, 44, 22, 33]
     )
     assert np.allclose(
-        L0B_processing.format_string_array("2,44,22,33", 4), [2, 44, 22, 33]
+        l0b_processing.format_string_array("2,44,22,33", 4), [2, 44, 22, 33]
     )
     assert np.allclose(
-        L0B_processing.format_string_array("000;000;000;001", 4), [0, 0, 0, 1]
+        l0b_processing.format_string_array("000;000;000;001", 4), [0, 0, 0, 1]
     )
 
     # Test strip away excess delimiters
     assert np.allclose(
-        L0B_processing.format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33]
+        l0b_processing.format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33]
     )
     # Test strings with incorrect number of values
     arr_nan = [np.nan, np.nan, np.nan, np.nan]
     assert np.allclose(
-        L0B_processing.format_string_array("2,44,22", 4), arr_nan, equal_nan=True
+        l0b_processing.format_string_array("2,44,22", 4), arr_nan, equal_nan=True
     )
 
     assert np.allclose(
-        L0B_processing.format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True
+        l0b_processing.format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True
     )
     # Test strings with incorrect format
     assert np.allclose(
-        L0B_processing.format_string_array(",,2,", 4), arr_nan, equal_nan=True
+        l0b_processing.format_string_array(",,2,", 4), arr_nan, equal_nan=True
     )
 
 
@@ -122,7 +122,7 @@ def test_reshape_raw_spectrum():
         dims_order_dict = get_raw_array_dims_order(sensor_name=sensor_name)
         dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
         dims_order = dims_order_dict["raw_drop_number"]
-        arr, dims = L0B_processing.reshape_raw_spectrum(
+        arr, dims = l0b_processing.reshape_raw_spectrum(
             arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
         )
         # Create DataArray and enforce same dimension order as da_expected_spectrum
@@ -142,7 +142,7 @@ def test_reshape_raw_spectrum():
     # Test unvalid inputs
     dims_size_dict["diameter_bin_center"] = 20
     with pytest.raises(ValueError):
-        L0B_processing.reshape_raw_spectrum(
+        l0b_processing.reshape_raw_spectrum(
             arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
         )
 
@@ -189,7 +189,7 @@ def test_retrieve_l0b_arrays():
         df = pd.DataFrame({"dummy": ["row1", "row2"], "raw_drop_number": raw_spectrum})
 
         # Use retrieve_l0b_arrays
-        data_vars = L0B_processing.retrieve_l0b_arrays(
+        data_vars = l0b_processing.retrieve_l0b_arrays(
             df=df, sensor_name=sensor_name, verbose=False
         )
         # Create Dataset
@@ -213,7 +213,7 @@ def test_retrieve_l0b_arrays():
 
 def test_get_bin_coords():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.get_bin_coords()
+    # function_return = l0b_processing.get_bin_coords()
     assert 1 == 1
 
 
@@ -226,7 +226,7 @@ def test_convert_object_variables_to_string():
     assert pd.api.types.is_object_dtype(ds["b"])
 
     # Convert variables with object dtype to string
-    ds = L0B_processing.convert_object_variables_to_string(ds)
+    ds = l0b_processing.convert_object_variables_to_string(ds)
 
     # Check that variable 'b' is not of type object
     assert not pd.api.types.is_object_dtype(ds["b"])
@@ -239,7 +239,7 @@ def test_convert_object_variables_to_string():
     ds = xr.Dataset.from_dataframe(df)
 
     # Convert variables with object dtype to string
-    ds = L0B_processing.convert_object_variables_to_string(ds)
+    ds = l0b_processing.convert_object_variables_to_string(ds)
 
     # Check that variable 'b' is of type 'float'
     assert ds["b"].dtype == "float"
@@ -247,13 +247,13 @@ def test_convert_object_variables_to_string():
 
 def test_create_l0b_from_l0a():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.create_l0b_from_l0a()
+    # function_return = l0b_processing.create_l0b_from_l0a()
     assert 1 == 1
 
 
 def test_set_variable_attributes():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.set_variable_attributes()
+    # function_return = l0b_processing.set_variable_attributes()
     assert 1 == 1
 
 
@@ -290,7 +290,7 @@ def ds():
 
 
 def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
-    result = L0B_processing.sanitize_encodings_dict(encoding_dict_1, ds)
+    result = l0b_processing.sanitize_encodings_dict(encoding_dict_1, ds)
 
     assert isinstance(result, dict)
 
@@ -301,7 +301,7 @@ def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
     for var in result.keys():
         assert tuple(result[var]["chunksizes"]) <= ds[var].shape
 
-    result = L0B_processing.sanitize_encodings_dict(encoding_dict_2, ds)
+    result = l0b_processing.sanitize_encodings_dict(encoding_dict_2, ds)
 
     assert isinstance(result, dict)
 
@@ -326,18 +326,18 @@ def test_rechunk_dataset():
     encoding_dict = {"a": {"chunksizes": (1, 2)}, "b": {"chunksizes": (2, 1)}}
 
     # Test the rechunk_dataset function
-    ds_rechunked = L0B_processing.rechunk_dataset(ds, encoding_dict)
+    ds_rechunked = l0b_processing.rechunk_dataset(ds, encoding_dict)
     assert ds_rechunked["a"].chunks == ((1, 1), (2, 1))
     assert ds_rechunked["b"].chunks == ((2,), (1, 1, 1))
 
 
 def test_set_encodings():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.set_encodings()
+    # function_return = l0b_processing.set_encodings()
     assert 1 == 1
 
 
 def test_write_l0b():
     # not tested yet because relies on config files that can be modified
-    # function_return = L0B_processing.write_l0b()
+    # function_return = l0b_processing.write_l0b()
     assert 1 == 1

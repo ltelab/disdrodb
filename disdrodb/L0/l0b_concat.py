@@ -39,7 +39,7 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
 
     The single netCDF file is saved at <processed_dir>/L0B.
     """
-    from disdrodb.L0.L0B_processing import write_l0b
+    from disdrodb.L0.l0b_processing import write_l0b
 
     # Create logger
     filename = f"concatenatation_{station_name}"

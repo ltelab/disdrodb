@@ -1140,7 +1140,7 @@ def read_L0A_dataframe(
 
     """
 
-    from disdrodb.L0.L0A_processing import concatenate_dataframe
+    from disdrodb.L0.l0a_processing import concatenate_dataframe
 
     # ----------------------------------------
     # Check filepaths validity

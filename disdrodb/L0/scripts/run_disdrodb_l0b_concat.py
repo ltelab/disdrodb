@@ -20,7 +20,7 @@
 import sys
 import click
 from disdrodb.utils.scripts import parse_arg_to_list
-from disdrodb.L0.L0_processing import (
+from disdrodb.L0.l0_processing import (
     click_l0_stations_options,
     click_l0b_concat_options,
 )

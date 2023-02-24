@@ -19,7 +19,7 @@
 ##################################################
 import sys
 import click
-from disdrodb.L0.L0_processing import (
+from disdrodb.L0.l0_processing import (
     click_l0_station_arguments,
     click_l0b_concat_options,
 )

@@ -10,7 +10,7 @@ from disdrodb.L0.io import (
     get_campaign_name,
 )
 from disdrodb.api.metadata import get_metadata_list, read_station_metadata
-from disdrodb.L0.L0_reader import _check_metadata_reader
+from disdrodb.L0.l0_reader import _check_metadata_reader
 from disdrodb.L0.metadata import (
     _check_metadata_keys,
     _check_metadata_data_source,
