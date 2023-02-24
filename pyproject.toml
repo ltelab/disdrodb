@@ -23,6 +23,7 @@ dependencies = [
 	"click",
 	"h5py",
 	"netCDF4",
+	"trollsift",
 	"pyarrow",
 	"PyYAML",
 	"setuptools",
