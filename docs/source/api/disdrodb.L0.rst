@@ -52,13 +52,6 @@ disdrodb.L0.L0\_reader module
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.auxiliary module
-----------------------------
-
-.. automodule:: disdrodb.L0.auxiliary
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 disdrodb.L0.check\_configs module
 ---------------------------------
@@ -132,21 +125,6 @@ disdrodb.L0.template\_tools module
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.utils\_nc module
-----------------------------
-
-.. automodule:: disdrodb.L0.utils_nc
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-disdrodb.L0.utils\_script module
-----------------------------
-
-.. automodule:: disdrodb.L0.utils_scripts
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 Module contents
 ---------------

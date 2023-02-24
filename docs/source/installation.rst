@@ -158,6 +158,7 @@ To set up a virtual environment, follow these steps :
 
 			conda activate disdrodb-dev
 
+
 Run DISDRODB on Jupyter Notebooks
 ==================================	
 

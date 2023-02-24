@@ -1,0 +1,12 @@
+Keys, Description
+title, Station dataset title
+description, Station dataset description
+project_name, Full project/campaign name of the station
+keywords, Keywords related to the station and the campaign
+summary, Summary information of the station
+comment, Comment on the station measurements
+history, History of the raw data file 
+station_id,ID of the station
+location, Village, town or region where the disdrometer is located
+country, Country where the disdrometer is located
+continent,Continent where the disdrometer is located
