@@ -31,12 +31,8 @@ logger = logging.getLogger(__name__)
 
 PRODUCT_VERSION = "V0"
 SOFTWARE_VERSION = "V0"
+CONVENTIONS = "CF-1.10, ACDD-1.3"
 EPOCH = "seconds since 1970-01-01 00:00:00"
-
-
-# Notes:
-# - L0A_encodings currently specify only the dtype. This could be expanded in the future.
-# - disdrodb.configs ... the netcdf chunk size could be an option to be specified
 
 
 def read_config_yml(sensor_name: str, filename: str) -> dict:
@@ -119,7 +115,6 @@ def available_sensor_name() -> sorted:
 
     dir_path = os.path.dirname(__file__)
     config_dir_path = os.path.join(dir_path, "configs")
-    # TODO: here add checks that contains all required yaml file
     return sorted(os.listdir(config_dir_path))
 
 
@@ -154,7 +149,7 @@ def get_data_format_dict(sensor_name: str) -> dict:
         Data format of each sensor variable
     """
 
-    return read_config_yml(sensor_name=sensor_name, filename="L0_data_format.yml")
+    return read_config_yml(sensor_name=sensor_name, filename="raw_data_format.yml")
 
 
 def get_sensor_variables(sensor_name: str) -> list:
@@ -172,60 +167,6 @@ def get_sensor_variables(sensor_name: str) -> list:
     """
 
     return list(get_variables_dict(sensor_name).values())
-
-
-####-------------------------------------------------------------------------.
-#### Valid names
-
-
-def get_valid_coordinates_names(sensor_name):
-    common_coords = [
-        "time",
-        "latitude",
-        "longitude",
-        # "altitude",
-        # crs,
-        "diameter_bin_center",
-        "diameter_bin_width",
-        "diameter_bin_lower",
-        "diameter_bin_upper",
-    ]
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
-        velocity_coordinates = [
-            "velocity_bin_center",
-            "velocity_bin_width",
-            "velocity_bin_lower",
-            "velocity_bin_upper",
-        ]
-        coordinates = common_coords + velocity_coordinates
-    elif sensor_name in ["RD_80"]:
-        coordinates = common_coords
-    else:
-        raise NotImplementedError()
-    return coordinates
-
-
-def get_valid_dimension_names(sensor_name):
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]:
-        dimensions = ["time", "velocity_bin_center", "diameter_bin_center"]
-    elif sensor_name in ["RD_80"]:
-        dimensions = ["time", "diameter_bin_center"]
-    else:
-        raise NotImplementedError()
-    return dimensions
-
-
-def get_valid_variable_names(sensor_name):
-    variables = list(get_L0B_encodings_dict(sensor_name).keys())
-    return variables
-
-
-def get_valid_names(sensor_name):
-    variables = get_valid_variable_names(sensor_name)
-    coordinates = get_valid_dimension_names(sensor_name)
-    dimensions = get_valid_coordinates_names(sensor_name)
-    names = np.unique(variables + coordinates + dimensions).tolist()
-    return names
 
 
 ####--------------------------------------------------------------------------.
@@ -534,15 +475,8 @@ def get_coords_attrs_dict(ds):
         "standard_name": "altitude",
         "long_name": "Altitude",
         "units": "m",
-        "description": "Altitude above sea level",
+        "description": "Elevation above sea level",
     }
-
-    # Define crs attributes
-    # TODO
-    # - CF compliant
-    # - wkt
-    # - add grid_mapping name
-
     # Define time attributes
     attrs_dict["time"] = {
         "name": "time",
@@ -560,6 +494,8 @@ def get_coords_attrs_dict(ds):
 
 def set_disdrodb_attrs(ds, product_level: str):
     """Add DISDRODB processing information to the netCDF global attributes.
+    
+    It assumes stations metadata are already added the dataset.
 
     Parameters
     ----------
@@ -573,13 +509,30 @@ def set_disdrodb_attrs(ds, product_level: str):
     xarray dataset
         Dataset
     """
-    # Add DISDRODB processing info
+    # Add dataset conventions 
+    ds.attrs["Conventions"] = CONVENTIONS
+    
+    # Add featureType 
+    platform_type = ds.attrs["platform_type"] 
+    if platform_type == "fixed": 
+        ds.attrs["featureType"] = "timeSeries"
+    else: 
+        ds.attrs["featureType"] = "trajectory"
+        
+    # Add time_coverage_start and time_coverage_end
+    ds.attrs["time_coverage_start"] = str(ds["time"].data[0])
+    ds.attrs["time_coverage_end"] = str(ds["time"].data[-1])
+    
+    # DISDRODDB attributes 
+    # - Add DISDRODB processing info
     now = datetime.datetime.utcnow()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
     ds.attrs["disdrodb_processing_date"] = current_time
+    # - Add DISDRODB product and version
     ds.attrs["disdrodb_product_version"] = PRODUCT_VERSION
     ds.attrs["disdrodb_software_version"] = SOFTWARE_VERSION
     ds.attrs["disdrodb_product_level"] = product_level
+    
     return ds
 
 
@@ -602,7 +555,6 @@ def get_diameter_bins_dict(sensor_name: str) -> dict:
     """
 
     d = read_config_yml(sensor_name=sensor_name, filename="bins_diameter.yml")
-    # TODO: Check dict contains center, bounds and width keys
     return d
 
 
@@ -934,16 +886,16 @@ def get_dims_size_dict(sensor_name: str) -> dict:
 
 
 def get_raw_array_dims_order(sensor_name: str) -> dict:
-    """Get the dimention order of the raw fields.
+    """Get the dimension order of the raw fields.
 
     The order of dimension specified for raw_drop_number controls the
     reshaping of the precipitation raw spectrum.
 
     Examples:
         OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
-        --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+        --> dimension_order = ["velocity_bin_center", "diameter_bin_center"]
         Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
-        --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
+        --> dimension_order = ["diameter_bin_center", "velocity_bin_center"]
 
     Parameters
     ----------
@@ -955,31 +907,16 @@ def get_raw_array_dims_order(sensor_name: str) -> dict:
     dict
         Dimension order dictionary
 
-    Raises
-    ------
-    NotImplementedError
-        Name of the sensor not implemented.
     """
-
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
-        dim_dict = {
-            "raw_drop_concentration": ["diameter_bin_center"],
-            "raw_drop_average_velocity": ["velocity_bin_center"],
-            "raw_drop_number": ["velocity_bin_center", "diameter_bin_center"],
-        }
-    elif sensor_name in ["Thies_LPM"]:
-        dim_dict = {
-            "raw_drop_number": ["diameter_bin_center", "velocity_bin_center"],
-        }
-    elif sensor_name in ["RD_80"]:
-        dim_dict = {
-            "raw_drop_number": ["diameter_bin_center"],
-            "ND": ["diameter_bin_center"],
-        }
-    else:
-        raise NotImplementedError()
-    return dim_dict
-
+    # Retrieve data format dictionary
+    data_format = get_data_format_dict(sensor_name)
+    # Retrieve the dimension order for each array variable 
+    dim_dict = {}
+    for var, var_dict in data_format.items():
+        if "dimension_order" in var_dict: 
+            dim_dict[var] = var_dict["dimension_order"]
+    return dim_dict    
+    
 
 def get_raw_array_nvalues(sensor_name: str) -> dict:
     """Get a dictionary with the number of values expected for each raw array.
@@ -994,29 +931,14 @@ def get_raw_array_nvalues(sensor_name: str) -> dict:
     dict
         Field definition.
     """
-    # Retrieve number of bins
-    n_d = get_n_diameter_bins(sensor_name)
-    n_v = get_n_velocity_bins(sensor_name)
-
-    # Define specification for each sensor
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
-        nbins_dict = {
-            "raw_drop_concentration": n_d,
-            "raw_drop_average_velocity": n_v,
-            "raw_drop_number": n_d * n_v,
-        }
-    elif sensor_name in ["Thies_LPM"]:
-        nbins_dict = {
-            "raw_drop_number": n_d * n_v,
-        }
-    elif sensor_name in ["RD_80"]:
-        nbins_dict = {
-            "raw_drop_number": n_d,
-            "ND": n_d,
-        }
-    else:
-        raise NotImplementedError()
-    return nbins_dict
+    # Retrieve data format dictionary
+    data_format = get_data_format_dict(sensor_name)
+    # Retrieve the number of values for each array variable 
+    nvalues_dict = {}
+    for var, var_dict in data_format.items():
+        if "n_values" in var_dict: 
+            nvalues_dict[var] = var_dict["n_values"]
+    return nvalues_dict 
 
 
 def get_variables_dimension(sensor_name: str):
@@ -1034,4 +956,65 @@ def get_variables_dimension(sensor_name: str):
     return var_dim_dict
 
 
+####-------------------------------------------------------------------------.
+#### Valid names
+
+
+def get_valid_variable_names(sensor_name):
+    """Get list of valid variables."""
+    variables = list(get_L0B_encodings_dict(sensor_name).keys())
+    return variables
+
+
+def get_valid_dimension_names(sensor_name):
+    """Get list of valid dimension names."""
+    # Retrieve dimension order dictionary 
+    dims_dict = get_raw_array_dims_order(sensor_name=sensor_name)
+    # Retrieve possible dimensions 
+    list_dimensions = list(dims_dict.values()) # for each array variable 
+    list_dimensions = [item for sublist in list_dimensions for item in sublist]
+    valid_dims = np.unique(list_dimensions).tolist()
+    dimensions = ["time"] + valid_dims   
+    return dimensions
+
+
+def get_valid_coordinates_names(sensor_name):
+    """Get list of valid coordinates."""
+    # Define diameter and velocity coordinates 
+    velocity_coordinates = [
+        "velocity_bin_center",
+        "velocity_bin_width",
+        "velocity_bin_lower",
+        "velocity_bin_upper",
+    ]
+    diameter_coordinates = [
+        "diameter_bin_center",
+        "diameter_bin_width",
+        "diameter_bin_lower",
+        "diameter_bin_upper",
+    ]
+    # Define common coordinates 
+    coordinates = [
+        "time",
+        "latitude",
+        "longitude",
+        # "altitude",
+        # crs,
+    ]
+    # Since diameter is always present, add to valid coordinates
+    coordinates = coordinates + diameter_coordinates
+    # Add velocity if velocity_bin_center is a valid dimension 
+    valid_dims = get_valid_dimension_names(sensor_name)
+    if "velocity_bin_center" in valid_dims:
+        coordinates = coordinates + velocity_coordinates
+    # Return valid coordinates 
+    return coordinates
+
+
+def get_valid_names(sensor_name):
+    variables = get_valid_variable_names(sensor_name)
+    coordinates = get_valid_dimension_names(sensor_name)
+    dimensions = get_valid_coordinates_names(sensor_name)
+    names = np.unique(variables + coordinates + dimensions).tolist()
+    return names
 # -----------------------------------------------------------------------------.

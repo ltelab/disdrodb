@@ -27,8 +27,7 @@ difficult to share, analyse, compare and re-use.
 
 Additionally, very limited software is currently publicly available for DSD processing.
 
-
-
+This software aims to define a standard format to save disdrometer data.
 
 
 Software Structure

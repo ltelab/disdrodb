@@ -316,6 +316,9 @@ raw_drop_concentration:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  dimension_order:
+  - diameter_bin_center
+  n_values: 32
 raw_drop_average_velocity:
   n_digits: 0
   n_characters: 224
@@ -323,6 +326,9 @@ raw_drop_average_velocity:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  dimension_order:
+  - velocity_bin_center
+  n_values: 32
 raw_drop_number:
   n_digits: 0
   n_characters: 4096
@@ -330,3 +336,7 @@ raw_drop_number:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  dimension_order:
+  - velocity_bin_center
+  - diameter_bin_center
+  n_values: 1024

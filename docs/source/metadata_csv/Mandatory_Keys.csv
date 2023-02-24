@@ -1,7 +1,7 @@
 Keys, Description
 data_source, Station data source. 
-campaign_name, Station campaign name
-station_name, Name of the stations (and the metadata file)
+campaign_name, Station campaign name.
+station_name, Name of the stations (and the metadata file).
 sensor_name, Sensor name. It defines the processing chain in DISDRODB.  
-raw_data_type, File format of the raw data. Either ‘raw’ or ‘nc’ 
-platform_type, Type of station. Either ‘fixed’ or ‘mobile’
+raw_data_format, File format of the raw data. Either ‘txt’ or ‘netcdf’.
+platform_type, Type of station. Either ‘fixed’ or ‘mobile’.

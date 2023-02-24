@@ -24,13 +24,6 @@ interval:
   - 0
   - 9999
   nan_flags: null
-raw_drop_number:
-  n_digits: 0
-  n_characters: null # To change
-  n_decimals: 0
-  n_naturals: 0
-  data_range: null
-  nan_flags: null
 RI:  
   n_digits: 7
   n_characters: 8
@@ -139,4 +132,24 @@ Dmax:
   - 0
   - 9.9999
   nan_flags: null
+raw_drop_number:
+  n_digits: 0
+  n_characters: null  
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  dimension_order:
+  - diameter_bin_center
+  n_values: 20
+ND:
+  n_digits: 0
+  n_characters: null  
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  dimension_order:
+  - diameter_bin_center
+  n_values: 20
 
