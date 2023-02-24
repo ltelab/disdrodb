@@ -7,9 +7,9 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   disdrodb.L0
-   disdrodb.L1
-   disdrodb.L2
+   disdrodb.l0
+   disdrodb.l1
+   disdrodb.l2
    disdrodb.api
    disdrodb.utils
 

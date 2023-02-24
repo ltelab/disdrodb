@@ -19,7 +19,7 @@
 import logging
 import numpy as np
 import pandas as pd
-from disdrodb.L0.standards import (
+from disdrodb.l0.standards import (
     get_l0a_dtype,
     get_valid_values_dict,
     get_data_range_dict,
@@ -99,7 +99,7 @@ def _check_raw_fields_available(
     ValueError
         Error if the raw_drop_number field is missing.
     """
-    from disdrodb.L0.standards import get_raw_array_nvalues
+    from disdrodb.l0.standards import get_raw_array_nvalues
 
     # Retrieve raw arrays that could be available (based on sensor_name)
     n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
@@ -134,7 +134,7 @@ def check_sensor_name(sensor_name: str) -> None:
     ValueError
         Error if the input sensor name has not been found in the list of available sensors.
     """
-    from disdrodb.L0.standards import available_sensor_name
+    from disdrodb.l0.standards import available_sensor_name
 
     available_sensor_name = available_sensor_name()
     if not isinstance(sensor_name, str):

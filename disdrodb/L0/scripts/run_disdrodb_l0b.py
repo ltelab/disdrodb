@@ -19,7 +19,7 @@
 import sys
 import click
 from disdrodb.utils.scripts import parse_arg_to_list
-from disdrodb.L0.l0_processing import (
+from disdrodb.l0.l0_processing import (
     click_l0_processing_options,
     click_l0_stations_options,
 )
@@ -85,7 +85,7 @@ def run_disdrodb_l0b(
         It processes just the first 100 rows of 3 L0A files for each station.
         The default is False.
     """
-    from disdrodb.L0.l0_processing import run_disdrodb_l0b
+    from disdrodb.l0.l0_processing import run_disdrodb_l0b
 
     # Parse data_sources, campaign_names and station arguments
     data_sources = parse_arg_to_list(data_sources)

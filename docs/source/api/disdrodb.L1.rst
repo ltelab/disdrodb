@@ -1,13 +1,13 @@
-disdrodb.L1 package
+disdrodb.l1 package
 ===================
 
 Submodules
 ----------
 
-disdrodb.L1.utils module
+disdrodb.l1.utils module
 ------------------------
 
-.. automodule:: disdrodb.L1.utils
+.. automodule:: disdrodb.l1.utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -15,7 +15,7 @@ disdrodb.L1.utils module
 Module contents
 ---------------
 
-.. automodule:: disdrodb.L1
+.. automodule:: disdrodb.l1
    :members:
    :undoc-members:
    :show-inheritance:

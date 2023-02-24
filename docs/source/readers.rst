@@ -42,7 +42,7 @@ By specifying the ``data_sources`` argument, only the readers for the specified 
 
 .. code-block:: python
 
-	from disdrodb.L0 import available_readers
+	from disdrodb.l0 import available_readers
 	available_readers()
 	available_readers(data_sources=["EPFL", "GPM"])
 
@@ -317,7 +317,7 @@ Despite being not yet implemented and working, your reader function can now be r
 
 .. code-block:: python
 
-     from disdrodb.L0.L0_reader import get_station_reader
+     from disdrodb.l0.L0_reader import get_station_reader
      
      disdrodb_dir = "<...>/DISDRODB"
      campaign_name = "CAMPAIGN_NAME"
@@ -396,7 +396,7 @@ adapt the following piece of code to your use case:
 
 .. code-block:: python
 
-     from disdrodb.L0.L0_reader import get_reader_from_metadata_reader_key
+     from disdrodb.l0.L0_reader import get_reader_from_metadata_reader_key
      
      metadata_reader_value = "GPM/IFLOODS"
      reader = get_reader_from_metadata_reader_key(metadata_reader_value)

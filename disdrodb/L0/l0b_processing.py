@@ -26,13 +26,13 @@ import logging
 import numpy as np
 import pandas as pd
 import xarray as xr
-from disdrodb.L0.check_standards import (
+from disdrodb.l0.check_standards import (
     check_sensor_name,
     check_l0b_standards,
     _check_raw_fields_available,
 )
-from disdrodb.L0.io import _remove_if_exists, _create_directory
-from disdrodb.L0.standards import (
+from disdrodb.l0.io import _remove_if_exists, _create_directory
+from disdrodb.l0.standards import (
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,
@@ -384,7 +384,7 @@ def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     ds
         xr.Dataset.
     """
-    from disdrodb.L0.standards import (
+    from disdrodb.l0.standards import (
         get_description_dict,
         get_units_dict,
         get_long_name_dict,
@@ -765,7 +765,7 @@ def subset_dataset(ds, dict_names, sensor_name):
 
 def add_dataset_missing_variables(ds, missing_vars, sensor_name):
     """Add missing Dataset variables as nan DataArrays."""
-    from disdrodb.L0.standards import get_variables_dimension
+    from disdrodb.l0.standards import get_variables_dimension
 
     # Get dimension of each variables
     var_dims_dict = get_variables_dimension(sensor_name)

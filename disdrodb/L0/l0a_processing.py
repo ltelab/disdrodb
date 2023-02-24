@@ -27,15 +27,15 @@ import tarfile
 import pandas as pd
 import numpy as np
 from typing import Union
-from disdrodb.L0.standards import (
+from disdrodb.l0.standards import (
     get_l0a_dtype,
     get_nan_flags_dict,
     get_data_range_dict,
     get_valid_values_dict,
 )
-from disdrodb.L0.check_standards import check_l0a_column_names, check_l0a_standards
-from disdrodb.L0.io import _remove_if_exists, _create_directory
-from disdrodb.L0.l0b_processing import infer_split_str
+from disdrodb.l0.check_standards import check_l0a_column_names, check_l0a_standards
+from disdrodb.l0.io import _remove_if_exists, _create_directory
+from disdrodb.l0.l0b_processing import infer_split_str
 
 # Logger
 from disdrodb.utils.logger import (
@@ -618,7 +618,7 @@ def process_raw_file(
         Valid issue_dict key are 'timesteps' and 'time_periods'.
         Valid issue_dict values are list of datetime64 values (with second accuracy).
         To correctly format and check the validity of the issue_dict, use
-        the disdrodb.L0.issue.check_issue_dict function.
+        the disdrodb.l0.issue.check_issue_dict function.
 
     Returns
     -------

@@ -1,4 +1,4 @@
-disdrodb.L0 package
+disdrodb.l0 package
 ===================
 
 Subpackages
@@ -7,120 +7,120 @@ Subpackages
 .. toctree::
    :maxdepth: 4
 
-   disdrodb.L0.readers
+   disdrodb.l0.readers
 
 Submodules
 ----------
 
-disdrodb.L0.l0a\_processing module
+disdrodb.l0.l0a\_processing module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.l0a_processing
+.. automodule:: disdrodb.l0.l0a_processing
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.l0b\_processing module
+disdrodb.l0.l0b\_processing module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.l0b_processing
+.. automodule:: disdrodb.l0.l0b_processing
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.l0b\_concat module
+disdrodb.l0.l0b\_concat module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.l0b_concat
+.. automodule:: disdrodb.l0.l0b_concat
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.l0\_processing module
+disdrodb.l0.l0\_processing module
 ---------------------------------
 
-.. automodule:: disdrodb.L0.l0_processing
+.. automodule:: disdrodb.l0.l0_processing
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.l0\_reader module
+disdrodb.l0.l0\_reader module
 --------------------------------------------
 
-.. automodule:: disdrodb.L0.l0_reader
+.. automodule:: disdrodb.l0.l0_reader
    :members:
    :undoc-members:
    :show-inheritance:
 
 
-disdrodb.L0.check\_configs module
+disdrodb.l0.check\_configs module
 ---------------------------------
 
-.. automodule:: disdrodb.L0.check_configs
+.. automodule:: disdrodb.l0.check_configs
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.check\_metadata module
+disdrodb.l0.check\_metadata module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.check_metadata
+.. automodule:: disdrodb.l0.check_metadata
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.check\_standards module
+disdrodb.l0.check\_standards module
 -----------------------------------
 
-.. automodule:: disdrodb.L0.check_standards
+.. automodule:: disdrodb.l0.check_standards
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.io module
+disdrodb.l0.io module
 ---------------------
 
-.. automodule:: disdrodb.L0.io
+.. automodule:: disdrodb.l0.io
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.issue module
+disdrodb.l0.issue module
 ------------------------
 
-.. automodule:: disdrodb.L0.issue
+.. automodule:: disdrodb.l0.issue
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.metadata module
+disdrodb.l0.metadata module
 ---------------------------
 
-.. automodule:: disdrodb.L0.metadata
+.. automodule:: disdrodb.l0.metadata
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.standards module
+disdrodb.l0.standards module
 ----------------------------
 
-.. automodule:: disdrodb.L0.standards
+.. automodule:: disdrodb.l0.standards
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.summary module
+disdrodb.l0.summary module
 ----------------------------
 
-.. automodule:: disdrodb.L0.summary
+.. automodule:: disdrodb.l0.summary
    :members:
    :undoc-members:
    :show-inheritance:
 
-disdrodb.L0.template\_tools module
+disdrodb.l0.template\_tools module
 ----------------------------------
 
-.. automodule:: disdrodb.L0.template_tools
+.. automodule:: disdrodb.l0.template_tools
    :members:
    :undoc-members:
    :show-inheritance:
@@ -129,7 +129,7 @@ disdrodb.L0.template\_tools module
 Module contents
 ---------------
 
-.. automodule:: disdrodb.L0
+.. automodule:: disdrodb.l0
    :members:
    :undoc-members:
    :show-inheritance:

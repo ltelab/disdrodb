@@ -19,7 +19,7 @@
 import sys
 import click
 from disdrodb.utils.scripts import parse_arg_to_list
-from disdrodb.L0.l0_processing import (
+from disdrodb.l0.l0_processing import (
     click_l0_processing_options,
     click_l0_stations_options,
 )
@@ -85,7 +85,7 @@ def run_disdrodb_l0a(
         It processes just the first 3 raw data files for each station.
         The default is False.
     """
-    from disdrodb.L0.l0_processing import run_disdrodb_l0a
+    from disdrodb.l0.l0_processing import run_disdrodb_l0a
 
     # Parse data_sources, campaign_names and station arguments
     print(data_sources)

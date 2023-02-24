@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 import numpy as np
 import xarray as xr
-from disdrodb.L0 import l0b_processing
+from disdrodb.l0 import l0b_processing
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -78,7 +78,7 @@ def test_format_string_array():
 
 
 def test_reshape_raw_spectrum():
-    from disdrodb.L0.standards import (
+    from disdrodb.l0.standards import (
         get_raw_array_dims_order,
         get_dims_size_dict,
     )
@@ -148,7 +148,7 @@ def test_reshape_raw_spectrum():
 
 
 def test_retrieve_l0b_arrays():
-    from disdrodb.L0.standards import (
+    from disdrodb.l0.standards import (
         get_dims_size_dict,
     )
 

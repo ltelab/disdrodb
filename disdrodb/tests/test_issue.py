@@ -2,7 +2,7 @@ import os
 import yaml
 import numpy as np
 from io import StringIO
-from disdrodb.L0 import issue
+from disdrodb.l0 import issue
 
 
 PATH_TEST_FOLDERS_FILES = os.path.join(

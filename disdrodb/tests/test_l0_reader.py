@@ -1,6 +1,6 @@
 import inspect
 import pytest
-from disdrodb.L0 import l0_reader
+from disdrodb.l0 import l0_reader
 
 
 def test_is_documented_by():

@@ -656,8 +656,8 @@ def _check_raw_dir_data_subfolders(raw_dir):
 
 def _check_raw_dir_metadata(raw_dir, verbose=True):
     """Check metadata in the raw_dir directory."""
-    from disdrodb.L0.metadata import write_default_metadata
-    from disdrodb.L0.metadata import check_metadata_compliance
+    from disdrodb.l0.metadata import write_default_metadata
+    from disdrodb.l0.metadata import check_metadata_compliance
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")
@@ -741,8 +741,8 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
 
 def _check_raw_dir_issue(raw_dir, verbose=True):
     """Check issue yaml files in the raw_dir directory."""
-    from disdrodb.L0.issue import write_default_issue
-    from disdrodb.L0.issue import check_issue_file
+    from disdrodb.l0.issue import write_default_issue
+    from disdrodb.l0.issue import check_issue_file
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")
@@ -1140,7 +1140,7 @@ def read_L0A_dataframe(
 
     """
 
-    from disdrodb.L0.l0a_processing import concatenate_dataframe
+    from disdrodb.l0.l0a_processing import concatenate_dataframe
 
     # ----------------------------------------
     # Check filepaths validity

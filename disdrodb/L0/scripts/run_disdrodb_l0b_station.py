@@ -16,7 +16,7 @@
 # -----------------------------------------------------------------------------.
 import sys
 import click
-from disdrodb.L0.l0_processing import (
+from disdrodb.l0.l0_processing import (
     click_l0_processing_options,
     click_l0_station_arguments,
 )
@@ -80,7 +80,7 @@ def run_disdrodb_l0b_station(
     import dask
     from dask.distributed import Client, LocalCluster
     from disdrodb.api.io import _get_disdrodb_directory
-    from disdrodb.L0.l0_processing import run_l0b
+    from disdrodb.l0.l0_processing import run_l0b
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment

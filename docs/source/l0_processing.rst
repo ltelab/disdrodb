@@ -31,7 +31,7 @@ There are two ways of process a station using DISDRODB.
 
 	.. code-block:: python
 
-		from disdrodb.L0 import run_disdrodb_l0_station
+		from disdrodb.l0 import run_disdrodb_l0_station
 		run_disdrodb_l0_station(<disdrodb_dir> <data_source>, <campaign_name>, <station_name>, ...)
 
 
@@ -39,7 +39,7 @@ There are two ways of process a station using DISDRODB.
 
 	.. code-block:: python
 
-		from disdrodb.L0 import run_disdrodb_l0_station
+		from disdrodb.l0 import run_disdrodb_l0_station
 
 		disdrodb_dir = "...\\DISDRODB"
 		data_source='EPFL'
@@ -119,7 +119,7 @@ For example, if only --campaign_names are specified, DISDRODB will process only 
 
 		.. code-block:: python
 
-			from disdrodb.L0 import run_disdrodb_l0
+			from disdrodb.l0 import run_disdrodb_l0
 			run_disdrodb_l0(<disdrodb_dir> <data_source>, <campaign_name>, ...)
 
 
@@ -127,7 +127,7 @@ For example, if only --campaign_names are specified, DISDRODB will process only 
 
 		.. code-block:: python
 
-			from disdrodb.L0 import run_disdrodb_l0
+			from disdrodb.l0 import run_disdrodb_l0
 
 			disdrodb_dir = "...\\DISDRODB"
 			data_sources=['EPFL']

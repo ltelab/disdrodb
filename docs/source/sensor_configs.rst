@@ -16,7 +16,7 @@ by typing the command :
 
 
 The sensor configurations are stored within the disdrodb software 
-`disdrodb.L0.configs <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers/GPM/IFLOODS.py>`_ directory. 
+`disdrodb.l0.configs <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers/GPM/IFLOODS.py>`_ directory. 
 In this directory, the name of the subdirectories correspond to ``the sensor_name``.
 
 For each sensor, the following list of configuration YAML files are required: 
@@ -43,7 +43,7 @@ Once you added a new sensor configuration, check the validity with the following
 
     .. code-block:: python
     
-         from disdrodb.L0.check_configs import check_sensor_configs
+         from disdrodb.l0.check_configs import check_sensor_configs
          
          sensor_name = "OTT_Parsivel" # Change with your sensor_name
          check_sensor_configs(sensor_name)

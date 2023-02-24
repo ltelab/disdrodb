@@ -1,10 +1,10 @@
-disdrodb.L2 package
+disdrodb.l2 package
 ===================
 
 Module contents
 ---------------
 
-.. automodule:: disdrodb.L2
+.. automodule:: disdrodb.l2
    :members:
    :undoc-members:
    :show-inheritance:

@@ -17,8 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Reader for ARM Thies LPM sensor."""
-from disdrodb.L0 import run_l0b_from_nc
-from disdrodb.L0.l0_reader import reader_generic_docstring, is_documented_by
+from disdrodb.l0 import run_l0b_from_nc
+from disdrodb.l0.l0_reader import reader_generic_docstring, is_documented_by
 
 
 @is_documented_by(reader_generic_docstring)
@@ -102,7 +102,7 @@ def reader(
 
     # Define dataset sanitizer
     def ds_sanitizer_fun(ds):
-        from disdrodb.L0.l0b_processing import replace_custom_nan_flags
+        from disdrodb.l0.l0b_processing import replace_custom_nan_flags
 
         # Replace nan flags with np.nan
         # - ARM use the -9999 flags
