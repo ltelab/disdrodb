@@ -439,11 +439,11 @@ def set_dataset_attrs(ds, sensor_name):
 
 def add_dataset_crs_coords(ds):
     "Add the CRS coordinate to the xr.Dataset"
-    # TODO: define CF-compliant CRS ! 
+    # TODO: define CF-compliant CRS !
     # - CF compliant
     # - wkt
     # - add grid_mapping name
-    # -->    
+    # -->
     # attrs["EPSG"] = 4326
     # attrs["proj4_string"] = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     ds = ds.assign_coords({"crs": ["WGS84"]})
@@ -515,7 +515,7 @@ def create_l0b_from_l0a(
     coords = get_bin_coords(sensor_name=sensor_name)
     # - Time
     coords["time"] = df["time"].values
-   
+
     # - Geolocation
     geolocation_vars = ["latitude", "longitude", "altitude"]
     for var in geolocation_vars:
@@ -538,10 +538,10 @@ def create_l0b_from_l0a(
         msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
-    
+
     # Add dataset CRS coordinate
     ds = add_dataset_crs_coords(ds)
-    
+
     # Ensure variables with dtype object are converted to string
     ds = convert_object_variables_to_string(ds)
 
@@ -881,7 +881,7 @@ def process_raw_nc(
         _ = attrs.pop(var)
     ds = ds.assign_coords(coords)
     ds = add_dataset_crs_coords(ds)
-    
+
     # Add global attributes
     ds.attrs = attrs
 

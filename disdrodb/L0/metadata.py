@@ -23,6 +23,7 @@ import yaml
 import numpy as np
 from disdrodb.L0.io import get_campaign_name, get_data_source
 
+
 ####--------------------------------------------------------------------------.
 #### Define valid metadata keys
 def get_valid_metadata_keys() -> list:
@@ -40,7 +41,7 @@ def get_valid_metadata_keys() -> list:
         "station_name",
         "sensor_name",
         "reader",
-        "raw_data_format",  # 'txt', 'netcdf'   
+        "raw_data_format",  # 'txt', 'netcdf'
         "platform_type",  # 'fixed', 'mobile'
         ## Source
         "source",
@@ -188,35 +189,38 @@ def write_default_metadata(fpath: str) -> None:
     fpath : str
         File path
     """
-    # Get default metadata dict 
+    # Get default metadata dict
     metadata = get_default_metadata_dict()
-    # Try infer the data_source, campaign_name and station_name from fpath 
-    try: 
+    # Try infer the data_source, campaign_name and station_name from fpath
+    try:
         campaign_name = get_campaign_name(fpath)
         data_source = get_data_source(fpath)
         station_name = os.path.basename(fpath).split(".yml")[0]
         metadata["data_source"] = data_source
         metadata["campaign_name"] = campaign_name
         metadata["station_name"] = station_name
-    except Exception: 
-        pass 
-    # Write the metadata 
+    except Exception:
+        pass
+    # Write the metadata
     write_metadata(metadata=metadata, fpath=fpath)
     return None
 
 
-def create_campaign_default_metadata(disdrodb_dir,
-                                     campaign_name,
-                                     data_source, 
-    ):
+def create_campaign_default_metadata(
+    disdrodb_dir,
+    campaign_name,
+    data_source,
+):
     """Create default YAML metadata files for all stations within a campaign.
-    
+
     Use the function with caution to avoid overwrite existing YAML files.
     """
     data_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "data")
-    metadata_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "metadata")
+    metadata_dir = os.path.join(
+        disdrodb_dir, "Raw", data_source, campaign_name, "metadata"
+    )
     station_names = os.listdir(data_dir)
-    for station_name in station_names: 
+    for station_name in station_names:
         metadata_fpath = os.path.join(metadata_dir, station_name + ".yml")
         write_default_metadata(fpath=metadata_fpath)
     print(f"The default metadata were created for stations {station_names}.")
@@ -352,21 +356,18 @@ def check_metadata_compliance(disdrodb_dir, data_source, campaign_name, station_
 
 
 ####--------------------------------------------------------------------------.
-#### Metadata manipulation tools 
+#### Metadata manipulation tools
 def remove_unvalid_metadata_keys(metadata):
     """Remove unvalid keys from the metadata dictionary."""
     unvalid_keys = get_metadata_unvalid_keys(metadata)
     for k in unvalid_keys:
         _ = metadata.pop(k)
-    return metadata 
- 
+    return metadata
+
 
 def add_missing_metadata_keys(metadata):
     """Add missing keys to the metadata dictionary."""
     missing_keys = get_metadata_missing_keys(metadata)
     for k in missing_keys:
         metadata[k] = ""
-    return metadata 
-
-
-
+    return metadata

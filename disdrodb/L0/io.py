@@ -161,6 +161,7 @@ def get_data_source(path: str) -> str:
     data_source = list_path_elements[2]
     return data_source
 
+
 ####--------------------------------------------------------------------------.
 #### Directory/Filepaths L0A and L0B products
 

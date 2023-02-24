@@ -106,7 +106,7 @@ def _check_reader_data_source(reader_data_source: str) -> str:
     Parameters
     ----------
     reader_data_source : str
-        The directory within which the reader_name is located in the 
+        The directory within which the reader_name is located in the
         disdrodb.l0.readers directory.
 
     Returns
@@ -138,7 +138,7 @@ def check_reader_exists(reader_data_source: str, reader_name: str) -> str:
     Parameters
     ----------
     reader_data_source : str
-        The directory within which the reader_name is located in the 
+        The directory within which the reader_name is located in the
         disdrodb.l0.readers directory.
     reader_name : str
         Campaign name
@@ -229,7 +229,7 @@ def get_reader(reader_data_source: str, reader_name: str) -> object:
     Parameters
     ----------
     reader_data_source : str
-        The directory within which the reader_name is located in the 
+        The directory within which the reader_name is located in the
         disdrodb.l0.readers directory.
     reader_name : str
         The reader name.
@@ -242,7 +242,9 @@ def get_reader(reader_data_source: str, reader_name: str) -> object:
     """
     # Check data source and reader_name validity
     reader_data_source = _check_reader_data_source(reader_data_source)
-    reader_name = check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
+    reader_name = check_reader_exists(
+        reader_data_source=reader_data_source, reader_name=reader_name
+    )
     # Retrive reader function
     if reader_name:
         full_name = f"disdrodb.L0.readers.{reader_data_source}.{reader_name}.reader"
@@ -313,20 +315,20 @@ def _check_metadata_reader(metadata):
     reader_name = reader_components[1]
 
     # - Check the reader is available
-    check_reader_exists(data_source=reader_data_source, reader_name=reader_name)
+    check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
 
     return None
-    
 
-def get_reader_from_metadata_reader_key(reader_data_source_name): 
+
+def get_reader_from_metadata_reader_key(reader_data_source_name):
     """Retrieve the reader from the `reader` metadata value.
-    
+
     The convention for metadata reader key: <data_source/reader_name> in disdrodb.L0.readers
     """
     reader_data_source = reader_data_source_name.split("/")[0]
     reader_name = reader_data_source_name.split("/")[1]
     reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
-    return reader 
+    return reader
 
 
 def _get_reader_from_metadata(metadata):
@@ -447,7 +449,9 @@ def check_available_readers():
     for reader_data_source, list_reader_name in dict_all_readers.items():
         for reader_name in list_reader_name:
             try:
-                reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
+                reader = get_reader(
+                    reader_data_source=reader_data_source, reader_name=reader_name
+                )
                 check_reader_arguments(reader)
             except Exception as e:
                 raise ValueError(

@@ -154,8 +154,8 @@ def reader(
             # "station_number",
         ]
         df = df.drop(columns=columns_to_drop)
-        
-        # TODO: UF4-7 have NAN at the end 
+
+        # TODO: UF4-7 have NAN at the end
 
         return df
 
