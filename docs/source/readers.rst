@@ -1,6 +1,6 @@
-=========================
+========
 Readers
-=========================
+========
 
 
 DISDRODB supports reading and loading data from many input file formats.
@@ -9,7 +9,7 @@ Then, it illustrates multiple methods how a reader can be called (i.e. from term
 to process raw data into DISDRODB L0 products.
 
 What is a reader
-======================
+=================
 
 A DISDRODB reader is a python function encoding all the required information to convert 
 raw disdrometer text (or netcdf) data into DISDRODB L0A and/or DISDRODB L0B products. 
@@ -79,8 +79,9 @@ A reader is a function defined by the following input arguments:
 
 		* The path must have the following structure: `<...>/DISDRODB/Raw/<data_source>/<campaign_name>`.
 		* Inside the raw_dir directory, the software expects to find the following structure:
-           * `<raw_dir>/data/<station_name>/<raw_files>`
-           * `<raw_dir>/metadata/<station_name>.yml`
+
+            * `<raw_dir>/data/<station_name>/<raw_files>`
+            * `<raw_dir>/metadata/<station_name>.yml`
 
 
 * ``processed_dir`` : str - The desired directory path where to save the DISDRODB L0A and L0B products.
@@ -172,7 +173,7 @@ Finally, the reader will call the ``run_l0a`` function, by passing to it all the
 
 
 Reader components for raw netCDF files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 On the other hand, if the input raw data are netCDF files, the reader must define the following components: 
 
@@ -307,8 +308,8 @@ Here in after we will refer to the reader name with ``<READER_NAME>``.
     * The <READER_NAME> should corresponds to the name of the <CAMPAIGN_NAME>. 
     * The <READER_NAME> must be defined UPPER CASE, without spaces.
     * However, if a campaign requires different readers (because of different file formats or sensors), the <READER_NAME>
-      is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed.
-      Example: "RELAMPAGO_OTT" and RELAMPAGO_RD80
+    is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed.
+    Example: "RELAMPAGO_OTT" and RELAMPAGO_RD80
     * Have a look at the `pre-implemented DISDRODB readers <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers>`_ to grasp the terminology.
 
   
