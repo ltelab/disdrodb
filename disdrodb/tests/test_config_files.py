@@ -35,7 +35,7 @@ class L0B_encodings_2n_level(BaseModel):
 ROOT_DISDRODB_FOLDER = os.path.join(
     os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
 )
-CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "L0", "configs")
+CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "l0", "configs")
 
 
 def list_files(path: str, file_name: str) -> List[str]:

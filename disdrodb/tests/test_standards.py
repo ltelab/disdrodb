@@ -9,7 +9,7 @@ from disdrodb.l0 import standards
 ROOT_DISDRODB_FOLDER = os.path.join(
     os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
 )
-CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "L0", "configs")
+CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "l0", "configs")
 
 
 @pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
