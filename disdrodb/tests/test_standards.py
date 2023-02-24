@@ -59,8 +59,8 @@ def test_get_configs_dir():
     function_return = standards.get_configs_dir()
     assert function_return ==
 
-def test_get_available_sensor_name():
-    function_return = standards.get_available_sensor_name()
+def test_available_sensor_name():
+    function_return = standards.available_sensor_name()
     assert function_return ==
 
 def test_get_variables_dict():

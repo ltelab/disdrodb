@@ -282,7 +282,7 @@ def test_bins_format(yaml_file_path: str) -> None:
 list_of_files = [
     "L0A_encodings.yml",
     "variable_description.yml",
-    "variable_longname.yml",
+    "variable_long_name.yml",
     "variable_units.yml",
     "variables.yml",
 ]

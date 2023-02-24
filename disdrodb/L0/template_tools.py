@@ -560,8 +560,8 @@ def search_possible_columns(string: str, sensor_name: str) -> list:
     return possible_keys
 
 
-def infer_df_str_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
-    """Try to guess the columns names base on sting patterns.
+def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
+    """Try to guess the dataframe columns names based on string characteristics.
 
     Parameters
     ----------

@@ -172,11 +172,10 @@ def reshape_raw_spectrum(
         Input array.
     dims_order : list
         The order of dimension in the raw spectrum.
+
         Examples:
-            OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
-            --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
-            Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
-            --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+        - OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32] --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
+        - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2] --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
     dims_size_dict : dict
         Dictionary with the number of bins for each dimension.
         For OTT_Parsivel:
