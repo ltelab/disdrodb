@@ -23,8 +23,8 @@ There are 7 metadata keys for which is mandatory to specify the value :
     * <READER_DATA_SOURCE> is the parent directory within the disdrodb software where the reader is defined.
     Typically it coincides with the <DATA_SOURCE> of the DISDRODB archive.
     * <READER_NAME> is the name of the python file where the reader is defined.        
-    * For example, to use the GPM IFLOODS reader (defined at `disdrodb.l0.reader.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers/GPM/IFLOODS.py>`_)
-      to process the data, you specify the reader name ``GPM/IFLOODS``.
+    * For example, to use the GPM IFLOODS reader (defined at `disdrodb.l0.reader.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers/GPM/IFLOODS.py>`_) 
+    to process the data, you specify the reader name ``GPM/IFLOODS``.
       
       
 The list of the standard metadata keys and their description is provided here below:  
