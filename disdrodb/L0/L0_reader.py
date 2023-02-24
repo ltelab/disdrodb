@@ -98,16 +98,16 @@ def _get_readers_names_by_data_source(data_source):
 ####--------------------------------------------------------------------------.
 
 
-def _check_reader_data_source(data_source: str) -> str:
+def _check_reader_data_source(reader_data_source: str) -> str:
     """Check if the provided data source exists within the available readers.
 
     Please run get_available_readers_dict() to get the list of all available reader.
 
     Parameters
     ----------
-    data_source : str
-        Institution name when campaign data spans more than 1 country.
-        Country when all campaigns (or sensor networks) are inside a given country.
+    reader_data_source : str
+        The directory within which the reader_name is located in the 
+        disdrodb.l0.readers directory.
 
     Returns
     -------
@@ -123,23 +123,23 @@ def _check_reader_data_source(data_source: str) -> str:
     # List available readers data sources
     available_reader_data_sources = _get_readers_data_sources()
     # If not valid data_source, raise error
-    if data_source not in available_reader_data_sources:
-        msg = f"Data source {data_source} is not a directory inside the disdrodb.L0.readers directory."
+    if reader_data_source not in available_reader_data_sources:
+        msg = f"Reader data source {reader_data_source} is not a directory inside the disdrodb.L0.readers directory."
         logger.error(msg)
         raise ValueError(msg)
-    return data_source
+    return reader_data_source
 
 
-def check_reader_exists(data_source: str, reader_name: str) -> str:
+def check_reader_exists(reader_data_source: str, reader_name: str) -> str:
     """Check if the provided data source exists and reader names exists within the available readers.
 
     Please run get_available_readers_dict() to get the list of all available reader.
 
     Parameters
     ----------
-    data_source : str
-        Institution name when campaign data spans more than 1 country.
-        Country when all campaigns (or sensor networks) are inside a given country.
+    reader_data_source : str
+        The directory within which the reader_name is located in the 
+        disdrodb.l0.readers directory.
     reader_name : str
         Campaign name
 
@@ -155,9 +155,9 @@ def check_reader_exists(data_source: str, reader_name: str) -> str:
         Error if the reader name provided for the campaign has not been found.
     """
     # Check valid data_source
-    data_source = _check_reader_data_source(data_source)
+    reader_data_source = _check_reader_data_source(reader_data_source)
     # Get available reader names
-    list_readers_names = _get_readers_names_by_data_source(data_source)
+    list_readers_names = _get_readers_names_by_data_source(reader_data_source)
     # If not valid reader_name, raise error
     if reader_name not in list_readers_names:
         msg = f"Reader {reader_name} is not valid. Valid readers {list_readers_names}."
@@ -223,16 +223,16 @@ def available_readers(data_sources=None, reader_path=False):
 ####--------------------------------------------------------------------------.
 
 
-def get_reader(data_source: str, reader_name: str) -> object:
+def get_reader(reader_data_source: str, reader_name: str) -> object:
     """Returns the reader function based on input parameters.
 
     Parameters
     ----------
-    data_source : str
-        Institution name when campaign data spans more than 1 country.
-        Country when all campaigns (or sensor networks) are inside a given country.
+    reader_data_source : str
+        The directory within which the reader_name is located in the 
+        disdrodb.l0.readers directory.
     reader_name : str
-        Campaign name
+        The reader name.
 
     Returns
     -------
@@ -241,11 +241,11 @@ def get_reader(data_source: str, reader_name: str) -> object:
 
     """
     # Check data source and reader_name validity
-    data_source = _check_reader_data_source(data_source)
-    reader_name = check_reader_exists(data_source=data_source, reader_name=reader_name)
+    reader_data_source = _check_reader_data_source(reader_data_source)
+    reader_name = check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
     # Retrive reader function
     if reader_name:
-        full_name = f"disdrodb.L0.readers.{data_source}.{reader_name}.reader"
+        full_name = f"disdrodb.L0.readers.{reader_data_source}.{reader_name}.reader"
         module_name, unit_name = full_name.rsplit(".", 1)
         my_reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
 
@@ -316,6 +316,17 @@ def _check_metadata_reader(metadata):
     check_reader_exists(data_source=reader_data_source, reader_name=reader_name)
 
     return None
+    
+
+def get_reader_from_metadata_reader_key(reader_data_source_name): 
+    """Retrieve the reader from the `reader` metadata value.
+    
+    The convention for metadata reader key: <data_source/reader_name> in disdrodb.L0.readers
+    """
+    reader_data_source = reader_data_source_name.split("/")[0]
+    reader_name = reader_data_source_name.split("/")[1]
+    reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
+    return reader 
 
 
 def _get_reader_from_metadata(metadata):
@@ -324,10 +335,7 @@ def _get_reader_from_metadata(metadata):
     The convention for metadata reader key: <data_source/reader_name> in disdrodb.L0.readers
     """
     reader_data_source_name = metadata.get("reader")
-    reader_data_source = reader_data_source_name.split("/")[0]
-    reader_name = reader_data_source_name.split("/")[1]
-    reader = get_reader(data_source=reader_data_source, reader_name=reader_name)
-    return reader
+    return get_reader_from_metadata_reader_key(reader_data_source_name)
 
 
 def get_station_reader(disdrodb_dir, data_source, campaign_name, station_name):
@@ -436,14 +444,14 @@ def reader_generic_docstring():
 def check_available_readers():
     """Check the readers arguments of all package."""
     dict_all_readers = available_readers(data_sources=None, reader_path=False)
-    for data_source, list_reader_name in dict_all_readers.items():
+    for reader_data_source, list_reader_name in dict_all_readers.items():
         for reader_name in list_reader_name:
             try:
-                reader = get_reader(data_source=data_source, reader_name=reader_name)
+                reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
                 check_reader_arguments(reader)
             except Exception as e:
                 raise ValueError(
-                    f"Unvalid reader for {data_source}/{reader_name}.py. The error is {e}"
+                    f"Unvalid reader for {reader_data_source}/{reader_name}.py. The error is {e}"
                 )
     return None
 

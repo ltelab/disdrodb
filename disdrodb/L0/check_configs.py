@@ -27,7 +27,9 @@ from disdrodb.L0.standards import (
 
 def check_bin_consistency(sensor_name: str) -> None:
     """Check bin consistency from config file.
-
+    
+    Do not check the first and last bin ! 
+    
     Parameters
     ----------
     sensor_name : str
@@ -42,15 +44,20 @@ def check_bin_consistency(sensor_name: str) -> None:
     diameter_bin_upper = np.array(diameter_bin_upper)
     diameter_bin_center = np.array(diameter_bin_center)
     diameter_bin_width = np.array(diameter_bin_width)
-
+    
+    expected_diameter_width = diameter_bin_upper - diameter_bin_lower
     np.testing.assert_allclose(
-        diameter_bin_upper - diameter_bin_lower, diameter_bin_width
+        expected_diameter_width[1:-1], diameter_bin_width[1:-1]
     )
+    
+    expected_diameter_center = diameter_bin_lower + diameter_bin_width / 2
     np.testing.assert_allclose(
-        diameter_bin_lower + diameter_bin_width / 2, diameter_bin_center
+       expected_diameter_center[1:-1] , diameter_bin_center[1:-1]
     )
+    
+    expected_diameter_center = diameter_bin_upper - diameter_bin_width / 2
     np.testing.assert_allclose(
-        diameter_bin_upper - diameter_bin_width / 2, diameter_bin_center
+        expected_diameter_center[1:-1], diameter_bin_center[1:-1]
     )
 
     velocity_bin_lower = get_velocity_bin_lower(sensor_name)
@@ -102,3 +109,21 @@ def check_variable_keys_consistency(sensor_name: str) -> None:
     units_vars.difference(encoding_vars)
     description_vars.difference(encoding_vars)
     long_name_vars.difference(encoding_vars)
+
+
+def check_sensor_configs(sensor_name: str) -> None: 
+    """Check the validity of the sensor configurations.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+    """
+    check_bin_consistency(sensor_name=sensor_name)
+   
+    check_variable_keys_consistency(sensor_name=sensor_name)
+    # TODO: Add checks added to test_config_files 
+   
+    print(f"The configuration for sensor {sensor_name} is valid !")
+    return None
+

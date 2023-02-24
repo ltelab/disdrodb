@@ -64,7 +64,7 @@ def run_disdrodb_l0b_concat_station(
     """
     from disdrodb.api.io import _get_disdrodb_directory
 
-    from disdrodb.L0.L0B_concat import _concatenate_l0b_files
+    from disdrodb.L0.L0B_concat import _concatenate_netcdf_files
 
     # Retrieve processed_dir
     processed_dir = _get_disdrodb_directory(
@@ -76,7 +76,7 @@ def run_disdrodb_l0b_concat_station(
     )
 
     # Run concatenation
-    _concatenate_l0b_files(
+    _concatenate_netcdf_files(
         processed_dir=processed_dir,
         station_name=station_name,
         remove=remove_l0b,

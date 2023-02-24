@@ -33,12 +33,8 @@ def get_valid_metadata_keys() -> list:
     list
         List of valid metadata keys
     """
-    # TO ADD
-
-    # sensor_wavelegth --> sensor_wavelength
-
     list_attrs = [
-        # Mandatory fields
+        ## Mandatory fields
         "data_source",
         "campaign_name",
         "station_name",
@@ -47,30 +43,30 @@ def get_valid_metadata_keys() -> list:
         "raw_data_format",  # 'raw', 'preprocessed'  # source_data_format # maybe to deprecate one day ...only raw
         "raw_data_type",  # 'raw', 'nc'              # source_data_type
         "platform_type",  # 'fixed', 'mobile'
-        # TODO deprecate
+        ## TODO deprecate
         "crs",  # TODO: add to coords !
         "proj4_string",
         "EPSG",
         "latitude_unit",
         "longitude_unit",
         "altitude_unit",
-        # Source
+        ## Source
         "source",
         "source_convention",
         "source_processing_date",
-        # Description
+        ## Description
         "title",
         "description",
-        "history",
-        "keywords",
-        "conventions",
         "project_name",
+        "keywords",
         "summary",
-        "comments",
+        "history",
+        "comment",
         "station_id",
         "location",
         "country",
         "continent",
+        ## Deployment Info
         "latitude",  # in degrees North
         "longitude",  # in degrees East
         "altitude",  # in meter above sea level
@@ -78,7 +74,7 @@ def get_valid_metadata_keys() -> list:
         "deployment mode",  # 'land', 'ship', 'truck', 'cable'
         "platform_protection",  # 'shielded', 'unshielded'
         "platform_orientation",  # [0-360] from N (clockwise)
-        # Sensor info
+        ## Sensor info
         "sensor_long_name",
         "sensor_manufacturer",
         "sensor_wavelength",
@@ -89,12 +85,12 @@ def get_valid_metadata_keys() -> list:
         "sensor_beam_length",
         "sensor_beam_width",
         "sensor_nominal_width",  # ?
-        # effective_measurement_area ?  # 0.54 m^2
+        ## effective_measurement_area ?  # 0.54 m^2
         "measurement_interval",  # sampling_interval ? [in seconds]
         "calibration_sensitivity",
         "calibration_certification_date",
         "calibration_certification_url",
-        # Attribution
+        ## Attribution
         "contributors",
         "authors",
         "authors_url",
@@ -209,9 +205,28 @@ def write_default_metadata(fpath: str) -> None:
     fpath : str
         File path
     """
-
     metadata = get_default_metadata_dict()
+    # TODO: infer data_source, campaign_name and station_name from fpath 
+    
     write_metadata(metadata=metadata, fpath=fpath)
+    return None
+
+
+def create_campaign_default_metadata(disdrodb_dir,
+                                     campaign_name,
+                                     data_source, 
+    ):
+    """Create default YAML metadata files for all stations within a campaign.
+    
+    Use the function with caution to avoid overwrite existing YAML files.
+    """
+    data_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "data")
+    metadata_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "metadata")
+    station_names = os.listdir(data_dir)
+    for station_name in station_names: 
+        metadata_fpath = os.path.join(metadata_dir, station_name + ".yml")
+        write_default_metadata(fpath=metadata_fpath)
+    print(f"The default metadata were created for stations {station_names}.")
     return None
 
 

@@ -8,7 +8,7 @@ import pandas as pd
 import xarray as xr
 
 
-def _create_l0b_summary(
+def _create_summary(
     ds: xr.Dataset,
     processed_dir: str,
     station_name: str,
@@ -92,7 +92,7 @@ def _create_l0b_summary(
 
 
 # TODO: Add command line script
-# _create_l0b_summary(
+# _create_summary(
 #     ds=ds,
 #     processed_dir=processed_dir,
 #     station_name=station_name,

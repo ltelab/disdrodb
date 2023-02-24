@@ -108,7 +108,7 @@ def get_configs_dir(sensor_name: str) -> str:
 ####--------------------------------------------------------------------------.
 
 
-def get_available_sensor_name() -> sorted:
+def available_sensor_name() -> sorted:
     """Get available names of sensors.
 
     Returns
