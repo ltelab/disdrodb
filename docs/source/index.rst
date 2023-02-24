@@ -14,9 +14,10 @@ Welcome to disdroDB's documentation!
    overview
    installation
    data
-   readers
-   l0_processing
    metadata
+   readers
+   sensor_configs
+   l0_processing
    contributors_guidelines
    maintainers_guidelines
    

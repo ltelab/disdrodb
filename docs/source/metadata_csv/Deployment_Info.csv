@@ -1,0 +1,9 @@
+Keys, Description
+latitude, WGS84 latitude in degree north [-90,90]. If the disdrometer is moving, specify -9999
+longitude, WGS84 longitude in degree east [-180,180]. If the disdrometer is moving, specify -9999
+altitude, Elevation above the sea level in meters. If the disdrometer is moving, specify -9999
+deployment_status, Deployment status. Possible values: 'terminated' or 'ongoing'
+deployment_mode, Deployment mode. Possible values: 'land', 'ship', 'truck', 'cable'   
+platform_type, Platform type. Possible values: ' fixed' or 'mobile'
+platform_protection, Platform protection. Possible values: 'N/A', 'shielded', 'unshielded’
+platform_orientation, Platform orientation in 0-360 degrees from the North direction (clockwise)
