@@ -1,3 +1,5 @@
+from importlib.metadata import version, PackageNotFoundError
+
 from disdrodb.api.io import (
     available_stations,
     available_campaigns,
@@ -14,5 +16,9 @@ __all__ = [
     "read_station_metadata",
 ]
 
-# TODO: GET VERSION
-# __version__ = ...
+# Get version
+try:
+    __version__ = version("disdrodb")
+except PackageNotFoundError:
+    # package is not installed
+    pass
