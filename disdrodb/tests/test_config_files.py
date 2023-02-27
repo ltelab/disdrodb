@@ -6,7 +6,7 @@ import pytest
 
 
 # Define the pydantic models for *.bins.yaml config files
-class L0_data_format_2n_level(BaseModel):
+class raw_data_format_2n_level(BaseModel):
     n_digits: Optional[int]
     n_characters: Optional[int]
     n_decimals: Optional[int]
@@ -35,7 +35,7 @@ class L0B_encodings_2n_level(BaseModel):
 ROOT_DISDRODB_FOLDER = os.path.join(
     os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
 )
-CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "L0", "configs")
+CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "l0", "configs")
 
 
 def list_files(path: str, file_name: str) -> List[str]:
@@ -198,12 +198,12 @@ def is_string_list(obj: list) -> bool:
         return False
 
 
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "L0_data_format.yml")
+list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "raw_data_format.yml")
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_L0_data_format(yaml_file_path: str):
-    """Test the format and the content of the L0_data_format.yml file.
+def test_raw_data_format(yaml_file_path: str):
+    """Test the format and the content of the raw_data_format.yml file.
 
     Parameters
     ----------
@@ -217,7 +217,7 @@ def test_L0_data_format(yaml_file_path: str):
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
-        assert validate_schema_pytest(value, L0_data_format_2n_level)
+        assert validate_schema_pytest(value, raw_data_format_2n_level)
 
 
 # Test *_bins.yaml formatting and content
@@ -282,7 +282,7 @@ def test_bins_format(yaml_file_path: str) -> None:
 list_of_files = [
     "L0A_encodings.yml",
     "variable_description.yml",
-    "variable_longname.yml",
+    "variable_long_name.yml",
     "variable_units.yml",
     "variables.yml",
 ]

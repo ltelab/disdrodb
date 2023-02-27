@@ -31,7 +31,7 @@ def _get_disdrodb_directory(
     campaign_name="",
     check_exist=True,
 ):
-    from disdrodb.L0.io import _check_directory_exist
+    from disdrodb.l0.io import _check_directory_exist
 
     # Get directory
     if product_level.upper() == "RAW":

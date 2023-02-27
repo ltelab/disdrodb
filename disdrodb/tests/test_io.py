@@ -4,7 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import xarray as xr
-from disdrodb.L0 import io
+from disdrodb.l0 import io
 import importlib.metadata
 
 
@@ -254,7 +254,7 @@ def test_check_glob_pattern():
 
 def test_get_raw_file_list():
     path_test_directory = os.path.join(
-        PATH_TEST_FOLDERS_FILES, "test_L0A_processing", "files"
+        PATH_TEST_FOLDERS_FILES, "test_l0a_processing", "files"
     )
 
     station_name = "STATION_NAME"

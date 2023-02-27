@@ -1,12 +1,13 @@
-3:=========================
+============================
 Run DISDRODB L0 processing
-=========================
+============================
 
 Launch DISDRODB L0 processing for a specific station
-======================
+======================================================
 
 
 There are two ways of process a station using DISDRODB. 
+
 
 1. By command line : 
 
@@ -21,14 +22,16 @@ There are two ways of process a station using DISDRODB.
 	.. code-block::
 
 		run_disdrodb_l0_station /ltenas8/DISDRODB EPFL  EPFL_2008 10 --l0a_processing True --l0b_processing True --force True --verbose True --parallel False 
-	 
+    
+    Type ``run_disdrodb_l0_station --help`` in the terminal to get more information on the possible parameters.
+
 
 2. By calling a python function 
 
 
 	.. code-block:: python
 
-		from disdrodb.L0 import run_disdrodb_l0_station
+		from disdrodb.l0 import run_disdrodb_l0_station
 		run_disdrodb_l0_station(<disdrodb_dir> <data_source>, <campaign_name>, <station_name>, ...)
 
 
@@ -36,7 +39,7 @@ There are two ways of process a station using DISDRODB.
 
 	.. code-block:: python
 
-		from disdrodb.L0 import run_disdrodb_l0_station
+		from disdrodb.l0 import run_disdrodb_l0_station
 
 		disdrodb_dir = "...\\DISDRODB"
 		data_source='EPFL'
@@ -77,7 +80,7 @@ There are two ways of process a station using DISDRODB.
 
 
 Launch DISDRODB L0 processing for all stations within a campaign
-======================
+==================================================================
 
 
 DISDRODB offers an utility to run the process of multiple stations with a single command.
@@ -96,31 +99,27 @@ For example, if only --campaign_names are specified, DISDRODB will process only 
 
 		run_disdrodb_l0 <disdrodb_dir> --data_sources <data_sources> --campaign_names <campaign_names> --station_names <station_names> [parameters]
 
-	
-	Where the parameters are defined `here <#readers-parameters>`__.
-
-
 	Example :
 
-	.. code-block::
+	.. code-block:: bash
 
 		run_disdrodb_l0 /ltenas8/DISDRODB --campaign_names EPFL_2008 --l0a_processing True --l0b_processing True --parallel False  
 	
 	To  specify multiple campaigns you can do the follow 
 
-	.. code-block::
+	.. code-block:: bash
 
 		run_disdrodb_l0 /ltenas8/DISDRODB --campaign_names 'EPFL_2008 LOCARNO_2018' --l0a_processing True --l0b_processing True --parallel False  
 
-
+     Type ``run_disdrodb_l0 --help`` in the terminal to get more information on the possible parameters.
+ 
 
 2. By calling a python function 
 
-	2.1 Wrapping function : 
 
 		.. code-block:: python
 
-			from disdrodb.L0 import run_disdrodb_l0
+			from disdrodb.l0 import run_disdrodb_l0
 			run_disdrodb_l0(<disdrodb_dir> <data_source>, <campaign_name>, ...)
 
 
@@ -128,7 +127,7 @@ For example, if only --campaign_names are specified, DISDRODB will process only 
 
 		.. code-block:: python
 
-			from disdrodb.L0 import run_disdrodb_l0
+			from disdrodb.l0 import run_disdrodb_l0
 
 			disdrodb_dir = "...\\DISDRODB"
 			data_sources=['EPFL']

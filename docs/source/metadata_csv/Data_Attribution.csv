@@ -1,0 +1,14 @@
+Keys, Description
+contributors, People contributing to the disdrometer dataset
+authors, People responsible and to to be contacted for questions
+authors_url,Web url to contact the authors
+contact, People to contact to request further information
+contact_information, Email address of the contact people
+acknowledgements, Ackwnowledgements
+references, Literature references describing the usage of the sensor
+documentation, Further documentation describing the sensor/campaign/network
+website, Website reporting sensor information
+institution, Institution providing funding or operating the sensor
+source_repository, Repository where the original raw file can be retrieved
+license, Data license  
+doi, Digital Object Identifier of the sensor/campaign/network dataset

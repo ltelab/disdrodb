@@ -1,0 +1,15 @@
+Keys, Description
+sensor_long_name, Sensor long name 
+sensor_manufacturer, Sensor manufacturer. Examples: Thies Clima, OTT Hydromet, Vaisala, Campbell, …
+sensor_wavelength, Sensor wavelength 
+sensor_serial_number, Sensor serial number
+firmware_iop, TO BE DEFINED  [Available for OTT Parsivels]
+firmware_dsp, Digital signal processor firmware [Available for OTT Parsivels]
+firmware_version, Firmware version TO BE DEFINED
+sensor_beam_length,TO BE DEFINED
+sensor_beam_width,TO BE DEFINED
+sensor_nominal_width, TO BE DEFINED
+measurement_interval, Number of seconds over which measurements are taken  
+calibration_sensitivity, TO BE DEFINED  
+calibration_certification_date, Sensor calibration date(s)
+calibration_certification_url, Sensor calibration certification url 

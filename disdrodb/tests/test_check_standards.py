@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from disdrodb.L0 import check_standards
+from disdrodb.l0 import check_standards
 
 
 def test_check_raw_fields_available():

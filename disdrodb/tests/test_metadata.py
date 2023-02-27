@@ -1,6 +1,6 @@
 import os
 import yaml
-from disdrodb.L0 import metadata
+from disdrodb.l0 import metadata
 
 
 PATH_TEST_FOLDERS_FILES = os.path.join(

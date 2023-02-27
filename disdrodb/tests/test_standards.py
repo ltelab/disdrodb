@@ -3,13 +3,13 @@ import os
 import yaml
 import pytest
 import pandas as pd
-from disdrodb.L0 import standards
+from disdrodb.l0 import standards
 
 # Set paths
 ROOT_DISDRODB_FOLDER = os.path.join(
     os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
 )
-CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "L0", "configs")
+CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "l0", "configs")
 
 
 @pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
@@ -59,8 +59,8 @@ def test_get_configs_dir():
     function_return = standards.get_configs_dir()
     assert function_return ==
 
-def test_get_available_sensor_name():
-    function_return = standards.get_available_sensor_name()
+def test_available_sensor_name():
+    function_return = standards.available_sensor_name()
     assert function_return ==
 
 def test_get_variables_dict():
