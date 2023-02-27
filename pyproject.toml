@@ -18,7 +18,7 @@ classifiers = [
 	"Operating System :: MacOS :: MacOS X",
 	"Operating System :: Microsoft :: Windows",
 ]
-requires-python = ">=3.10"
+requires-python = ">=3.8"
 dependencies = [
 	"click",
 	"h5py",
