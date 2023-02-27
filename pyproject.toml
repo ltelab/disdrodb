@@ -35,8 +35,8 @@ dynamic = ["version"]
 [tool.setuptools_scm]
 write_to = "disdrodb/_version.py"
 
-[tool.setuptools.packages.find]
-where = ["disdrodb"]
+[tool.setuptools]
+packages = ["disdrodb"]
 
 [project.scripts]
 # L0A
