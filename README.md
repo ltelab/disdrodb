@@ -1,6 +1,6 @@
 # DISDRODB - A package to standardize, process and analyze global disdrometer data.
 
-[![DOI](https://zenodo.org/badge/DOI/XXX)](https://doi.org/10.5281/zenodo.XXXX)
+[![DOI](https://zenodo.org/badge/429018433.svg)](https://zenodo.org/badge/latestdoi/429018433)
 [![PyPI version](https://badge.fury.io/py/disdrodb.svg)](https://badge.fury.io/py/disdrodb)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/disdrodb.svg)](https://anaconda.org/conda-forge/disdrodb)
 [![Build Status](https://github.com/ltelab/disdrodb/workflows/Continuous%20Integration/badge.svg?branch=main)](https://github.com/ltelab/disdrodb/actions)
@@ -55,6 +55,14 @@ DISDRODB can be installed from PyPI with pip:
 * [Jacopo Grazioli](https://people.epfl.ch/jacopo.grazioli) 
 * [Alexis Berne](https://people.epfl.ch/alexis.berne?lang=en)
 
+## Citation 
+
+You can cite the DISDRODB software by:
+
+> Gionata Ghiggi, Kim Candolfi, Régis Longchamp, Charlotte Weil, Alexis Berne (2023). ltelab/disdrodb  Zenodo. https://doi.org/10.5281/zenodo.7680581
+
+If you want to cite a specific version, have a look at the [Zenodo site](https://doi.org/10.5281/zenodo.7680581)
+
 ## License
 
-The content of this repository is released under the terms of the [MIT license](LICENSE.txt).
+The content of this repository is released under the terms of the [GPL 3.0 license](LICENSE).
