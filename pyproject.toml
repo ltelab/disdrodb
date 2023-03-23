@@ -41,6 +41,7 @@ dev = [
 	"pre-commit",
 	"pytest",
 	"pydantic",
+	"coverage",
 ]
 
 [tool.setuptools_scm]

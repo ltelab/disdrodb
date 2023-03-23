@@ -16,6 +16,11 @@ jobs:
             python-version: "3.10"
             experimental: true
 
+          - os: "ubuntu-latest"
+            python-version: "3.10"
+            experimental: false
+            coverage: true
+
     steps:
       - uses: actions/checkout@v3
 
@@ -38,4 +43,29 @@ jobs:
 
       - name: Test with pytest
         run: |
-          pytest
+          coverage run -m pytest
+
+      - name: Codecov
+        uses: codecov/codecov-action@v3
+        if: matrix.coverage
+
+      - name: Generate coverage report
+        if: matrix.coverage
+        run: |
+          coverage lcov -o coverage/lcov.info
+
+      - name: Coveralls Parallel
+        uses: coverallsapp/github-action@v1
+        if: matrix.coverage
+        with:
+          parallel: true
+
+  end-coveralls:
+    needs: [tests]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+    - name: Coveralls Finished
+      uses: coverallsapp/github-action@v1
+      with:
+        parallel-finished: true
