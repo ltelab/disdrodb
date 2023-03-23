@@ -32,6 +32,17 @@ dependencies = [
 ]
 dynamic = ["version"]
 
+[project.optional-dependencies]
+dev = [
+	"sphinx",
+	"sphinx_rtd_theme",
+	"nbsphinx",
+	"jupyter",
+	"pre-commit",
+	"pytest",
+	"pydantic",
+]
+
 [tool.setuptools_scm]
 write_to = "disdrodb/_version.py"
 
