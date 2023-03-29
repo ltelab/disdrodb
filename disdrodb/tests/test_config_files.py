@@ -28,7 +28,7 @@ class L0B_encodings_2n_level(BaseModel):
     fletcher32: bool
     contiguous: bool
     _FillValue: Optional[Union[int, float]]
-    chunksizes: Union[int, list[int]]
+    chunksizes: Union[int, List[int]]
 
 
 # Set paths
