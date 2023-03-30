@@ -17,3 +17,7 @@ jobs:
           options: "--check --verbose"
           version: "22.8.0"
         continue-on-error: true
+
+      - name: Check failures
+        if: steps.Ruff.outcome != 'success' || steps.Black.outcome != 'success'
+        run: exit 1
