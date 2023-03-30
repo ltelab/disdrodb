@@ -8,16 +8,12 @@ jobs:
       - uses: actions/checkout@v3
 
       - name: Ruff
+        if: success() || failure()
         uses: jpetrucciani/ruff-check@main
-        continue-on-error: true
 
       - name: Black
+        if: success() || failure()
         uses: psf/black@stable
         with:
           options: "--check --verbose"
           version: "22.8.0"
-        continue-on-error: true
-
-      - name: Check failures
-        if: steps.Ruff.outcome != 'success' || steps.Black.outcome != 'success'
-        run: exit 1
