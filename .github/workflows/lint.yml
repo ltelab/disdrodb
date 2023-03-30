@@ -1,0 +1,17 @@
+name: Lint
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Ruff
+        uses: jpetrucciani/ruff-check@main
+
+      - name: Black
+        uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          version: "22.8.0"
