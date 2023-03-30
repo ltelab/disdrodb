@@ -78,12 +78,18 @@ commit and prints the error. Currently, DISDRODB only tests that the
 code to be committed complies with black’s format style.
 
 In case that the commit is aborted, you only need to run black agains you code.
-This can be done by running ``black .`` or ``pre-commit run --all-files``. The latter is recommended since it
-indicates if the commit contained any formatting errors (that are automatically corrected).
+This can be done by running ``pytest disdrodb`` or  ``black .``  or    ``ruff check .``     
 
 .. note::
-	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.
+	To maintain consitency, please use version and configuration defined into `.pre-commit-config.yaml`).
 
+
+
+The can also be done with  ``pre-commit run --all-files``. This is recommended since it
+indicates if the commit contained any formatting errors (that are automatically corrected).
+
+
+More info on pre-commit and CI tools in the Code quality ans testing section  `Code quality and testing section <#code-quality-control-and-testing>`__ 
 
 
 
@@ -230,13 +236,45 @@ You should configure VS code as follow :
 
 
 
-Running test units
-~~~~~~~~~~~~~~~~~~~~~~
+Code quality control and testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Every code change must be tested !
 
-DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package.
 
+To maintain a high code quality, we use `pre-commit <https://pre-commit.com/>`__ to run a series of checks on the code before each commit. The checks are defined in the .pre-commit-config.yaml file. The checks include:
+
+
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+|                                                                                               | Aim                                                              | pre-commit | CI/CD | Python version                            |
++===============================================================================================+==================================================================+============+=======+===========================================+
+| `Pytest  <https://docs.pytest.org>`__                                                         | Execute unit tests and functional tests                          | 👍         | 👍    |                                           |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `Black <https://black.readthedocs.io/en/stable/>`__                                           | Python code formatter                                            | 👍         | 👍    | No python version (Black version 22.8.0)  |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `Ruff  <https://github.com/charliermarsh/ruff>`__                                             | Python linter                                                    | 👍         | 👍    | ?                                         |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `pre-commit.ci   <https://pre-commit.ci/>`__                                                  | Run pre-commit                                                   |            |       |                                           |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| Coverage                                                                                      | Measure the code coverage of the project's unit tests            | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeCov    <https://about.codecov.io/>`__                                                    | Uses the "coverage" package to generate a code coverage report.  | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `Coveralls    <https://coveralls.io/>`__                                                      | Uses the "coverage" to track the quality of your code over time. | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeBeat      <https://codebeat.co/>`__                                                      | Automated code review and analysis tools                         | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeScene <https://codescene.com/>`__                                                        | Automated code review and analysis tools                         | -          | 👍    | ?                                         |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeFactor <https://www.codefactor.io/>`__                                                   | Automated code review and analysis tools                         | -          | 👍    | ?                                         |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+
+In the table above, some CI tool are mentioned for your information, but does not need to be installed on your computer. They are automatically run when you push your changes to the main repository via a GitHub Pull Request.
+
+
+**Pytest**
+
+DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. 
 
 DISDRODB full testing pipeline can be executed by running:
 
@@ -245,9 +283,6 @@ DISDRODB full testing pipeline can be executed by running:
 	pytest disdrodb
 
 
-
-**Unit tests**
-
 The tests located in the `disdrob/tests` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
 
 .. code-block:: bash
@@ -255,9 +290,6 @@ The tests located in the `disdrob/tests` folder are used to test various functio
 	pytest disdrodb/tests
 
 
-
-
-**Integration tests**
 
 Tests located in the `disdrob/test_readers` folder are utilized to test readers. They are **not** run automatically when you push your changes to the main repository via a GitHub Pull Request.
 
@@ -298,6 +330,44 @@ To create a new test, simply add a small, single-station dataset and the associa
 
 
 This test will run all readers that data have been put in the above structure. The raw data `test_ressources_raw_data` will be processed and the resulting netCDF files will be compared to the ground truth `test_ressources_ground_truth`.
+
+
+
+**Black**
+
+Black should be used that way :
+
+.. code-block:: bash
+
+	black .
+
+
+
+.. note::
+	To maintain consitency, make sure to stick to version defined in the `.pre-commit-config.yaml` file. This version will be used in the CI. 
+
+
+
+
+
+
+**Ruff**
+
+Ruff should be used that way :
+
+.. code-block:: bash
+
+	ruff check .
+
+
+.. note::
+	To maintain consitency, make sure to stick to version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is be used in the CI. 
+   
+
+
+
+
+
 
 
 
