@@ -75,10 +75,10 @@ The pre-commit hooks are scripts executed automatically in every commit
 to identify simple code quality issues. When an issue is identified
 (the pre-commit script exits with non-zero status), the hook aborts the
 commit and prints the error. Currently, DISDRODB only tests that the
-code to be committed complies with black’s format style.
+code to be committed complies with black's format style and the ruff linter.
 
 In case that the commit is aborted, you only need to run black agains you code.
-This can be done by running ``pytest disdrodb`` or  ``black .``  or    ``ruff check .``     
+This can be done by running   ``black .``  or   ``ruff check .``     
 
 .. note::
 	To maintain consitency, please use version and configuration defined into `.pre-commit-config.yaml`).
@@ -248,7 +248,7 @@ To maintain a high code quality, we use `pre-commit <https://pre-commit.com/>`__
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
 |                                                                                               | Aim                                                              | pre-commit | CI/CD | Python version                            |
 +===============================================================================================+==================================================================+============+=======+===========================================+
-| `Pytest  <https://docs.pytest.org>`__                                                         | Execute unit tests and functional tests                          | 👍         | 👍    |                                           |
+| `Pytest  <https://docs.pytest.org>`__                                                         | Execute unit tests and functional tests                          | -          | 👍    |                                           |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
 | `Black <https://black.readthedocs.io/en/stable/>`__                                           | Python code formatter                                            | 👍         | 👍    | No python version (Black version 22.8.0)  |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
@@ -361,7 +361,7 @@ Ruff should be used that way :
 
 
 .. note::
-	To maintain consitency, make sure to stick to version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is be used in the CI. 
+	To maintain consitency, make sure to stick to version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is used in the CI. 
    
 
 
@@ -377,11 +377,11 @@ Push your changes to your fork repository
 During this process, pre-commit hooks will be run. Your commit will be
 allowed only if quality requirements are fulfilled.
 
-If you encounter errors, Black can be run using the following command :
+If you encounter errors, Black ad Ruff can be run using the following command :
 
 ::
 
-   pre-commit run --all-file
+   pre-commit run --all-files
 
 We follow a `commit message convention <https://www.conventionalcommits.org/en/v1.0.0/>`__, to have consistent git messages.
 The goal is to increase readability and ease of contribution. We use `commit-lint <https://github.com/conventional-changelog/commitlint>`__
