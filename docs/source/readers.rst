@@ -42,18 +42,19 @@ By specifying the ``data_sources`` argument, only the readers for the specified 
 
 .. code-block:: python
 
-	from disdrodb.l0 import available_readers
-	available_readers()
-	available_readers(data_sources=["EPFL", "GPM"])
+    from disdrodb.l0 import available_readers
+
+    available_readers()
+    available_readers(data_sources=["EPFL", "GPM"])
 
 The dictionary has the following structure:
 
-.. code-block::
+.. code-block:: text
 
     {
         "<DataSource1>": [<ReaderName1>, <ReaderName2>],
         ...
-        "<DataSourceN>": [<ReaderNameY>, <ReaderNameZ>]
+        "<DataSourceN>": [<ReaderNameY>, <ReaderNameZ>],
     }
 
 
@@ -74,12 +75,13 @@ A reader is a function defined by the following input arguments:
         parallel=False,
         debugging_mode=False,
     ):
+        pass
 
 
 * ``raw_dir`` : str - The directory path where all the raw data of a specific campaign/network are stored.
 
-		* The path must have the following structure: `<...>/DISDRODB/Raw/<data_source>/<campaign_name>`.
-		* Inside the raw_dir directory, the software expects to find the following structure:
+        * The path must have the following structure: `<...>/DISDRODB/Raw/<data_source>/<campaign_name>`.
+        * Inside the raw_dir directory, the software expects to find the following structure:
 
             * `<raw_dir>/data/<station_name>/<raw_files>`
             * `<raw_dir>/metadata/<station_name>.yml`
@@ -156,20 +158,20 @@ Finally, the reader will call the ``run_l0a`` function, by passing to it all the
 .. code-block:: python
 
     run_l0a(
-            raw_dir=raw_dir,
-            processed_dir=processed_dir,
-            station_name=station_name,
-            # Custom arguments of the reader for L0A processing
-            glob_patterns=glob_patterns,
-            column_names=column_names,
-            reader_kwargs=reader_kwargs,
-            df_sanitizer_fun=df_sanitizer_fun,
-            # Processing options
-            force=force,
-            verbose=verbose,
-            parallel=parallel,
-            debugging_mode=debugging_mode,
-        )
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        station_name=station_name,
+        # Custom arguments of the reader for L0A processing
+        glob_patterns=glob_patterns,
+        column_names=column_names,
+        reader_kwargs=reader_kwargs,
+        df_sanitizer_fun=df_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
+    )
 
 
 
@@ -187,15 +189,15 @@ On the other hand, if the input raw data are netCDF files, the reader must defin
 
    .. code-block:: python
 
-        dict_names = {
-            # Dimensions
-            "timestep": "time"
-            "diameter_bin": "diameter_bin_center"
-            "velocity_bin": "velocity_bin_center"
-            # Variables
-            "reflectivity": "reflectivity_32bit"
-            "precipitation_spectrum": "raw_drop_number",
-        }
+       dict_names = {
+           # Dimensions
+           "timestep": "time",
+           "diameter_bin": "diameter_bin_center",
+           "velocity_bin": "velocity_bin_center",
+           # Variables
+           "reflectivity": "reflectivity_32bit",
+           "precipitation_spectrum": "raw_drop_number",
+       }
 
 
 3. The ``ds_sanitizer_fun(ds)`` function takes as input the raw netCDF file (in xr.Dataset format) and apply ad-hoc
@@ -207,20 +209,20 @@ Finally, the reader will call the ``run_l0b_from_nc`` function, by passing to it
 
 .. code-block:: python
 
-  run_l0b_from_nc(
-      raw_dir=raw_dir,
-      processed_dir=processed_dir,
-      station_name=station_name,
-      # Custom arguments of the reader
-      glob_patterns=glob_patterns,
-      dict_names=dict_names,
-      ds_sanitizer_fun=ds_sanitizer_fun,
-      # Processing options
-      force=force,
-      verbose=verbose,
-      parallel=parallel,
-      debugging_mode=debugging_mode,
-  )
+    run_l0b_from_nc(
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        station_name=station_name,
+        # Custom arguments of the reader
+        glob_patterns=glob_patterns,
+        dict_names=dict_names,
+        ds_sanitizer_fun=ds_sanitizer_fun,
+        # Processing options
+        force=force,
+        verbose=verbose,
+        parallel=parallel,
+        debugging_mode=debugging_mode,
+    )
 
 
 
@@ -318,16 +320,15 @@ Despite being not yet implemented and working, your reader function can now be r
 
 .. code-block:: python
 
-     from disdrodb.l0.L0_reader import get_station_reader
+    from disdrodb.l0.L0_reader import get_station_reader
 
-     disdrodb_dir = "<...>/DISDRODB"
-     campaign_name = "CAMPAIGN_NAME"
-     data_source = "DATA_SOURCE"
-     station_name = "STATION_NAME"
-     reader = get_station_reader(disdrodb_dir=disdrodb_dir,
-                                 data_source=data_source,
-                                 campaign_name=campaign_name,
-                                 station_name=station_name)
+    disdrodb_dir = "<...>/DISDRODB"
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+    station_name = "STATION_NAME"
+    reader = get_station_reader(
+        disdrodb_dir=disdrodb_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
 
 
 The reader will be customized successively, after having completed `Step 4 <#step-4-analyse-the-data-and-define-the-reader-components>`_
@@ -345,15 +346,16 @@ run the following code to generate a default metadata YAML file for each station
 
 .. code-block:: python
 
-     from disdrodb.l0.metadata import create_campaign_default_metadata
+    from disdrodb.l0.metadata import create_campaign_default_metadata
 
-     disdrodb_dir = "<...>/DISDRODB"
-     campaign_name = "CAMPAIGN_NAME"
-     data_source = "DATA_SOURCE"
-     create_campaign_default_metadata(disdrodb_dir=disdrodb_dir,
-                                      campaign_name=campaign_name,
-                                      data_source=data_source,
-     )
+    disdrodb_dir = "<...>/DISDRODB"
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+    create_campaign_default_metadata(
+        disdrodb_dir=disdrodb_dir,
+        campaign_name=campaign_name,
+        data_source=data_source,
+    )
 
 
 .. note::
@@ -397,11 +399,11 @@ adapt the following piece of code to your use case:
 
 .. code-block:: python
 
-     from disdrodb.l0.L0_reader import get_reader_from_metadata_reader_key
+    from disdrodb.l0.L0_reader import get_reader_from_metadata_reader_key
 
-     metadata_reader_value = "GPM/IFLOODS"
-     reader = get_reader_from_metadata_reader_key(metadata_reader_value)
-     print(reader)
+    metadata_reader_value = "GPM/IFLOODS"
+    reader = get_reader_from_metadata_reader_key(metadata_reader_value)
+    print(reader)
 
 
 Once you defined your metadata YAML files, check their validity by running:
@@ -411,7 +413,7 @@ Once you defined your metadata YAML files, check their validity by running:
 
     from disdrodb.l0 import check_archive_metadata_compliance, check_archive_metadata_geolocation
 
-    disdrodb_dir = '<...>/DISDRODB'
+    disdrodb_dir = "<...>/DISDRODB"
     check_archive_metadata_compliance(disdrodb_dir)
     check_archive_metadata_geolocation(disdrodb_dir)
 
@@ -457,14 +459,14 @@ DISDRODB L0 processing of the stations for which you added the reader.
 
 To run the processing of a single station, you can run:
 
-    .. code-block:: python
+    .. code-block:: bash
 
         run_disdrodb_l0_station <disdrodb_dir> <data_source> <campaign_name> <station_name> [parameters]
 
 
 For example, to process the data of station 10 of the EPFL_2008 campaign, you would run:
 
-    .. code-block:: python
+    .. code-block:: bash
 
         run_disdrodb_l0_station /ltenas8/disdrodb-data/DISDRODB EPFL  EPFL_2008 10 --force True --verbose True --parallel False
 
