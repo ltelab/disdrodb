@@ -8,9 +8,7 @@ from disdrodb.l0 import io
 import importlib.metadata
 
 
-PATH_TEST_FOLDERS_FILES = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "pytest_files"
-)
+PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
 
 
 def get_disdrodb_path():
@@ -26,18 +24,14 @@ def get_disdrodb_path():
         io.get_disdrodb_path(path)
 
     # Assert raise error if not valid DISDRODB directory
-    disdrodb_path = os.path.join(
-        "DISDRODB_UNVALID", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"
-    )
+    disdrodb_path = os.path.join("DISDRODB_UNVALID", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
     with pytest.raises(ValueError):
         io.get_disdrodb_path(path)
 
     # Assert it takes the right most DISDRODB occurence
     disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join(
-        "whatever_occurence", "DISDRODB", "DISDRODB", "directory", disdrodb_path
-    )
+    path = os.path.join("whatever_occurence", "DISDRODB", "DISDRODB", "directory", disdrodb_path)
     assert io.get_disdrodb_path(path) == disdrodb_path
 
     # Assert behaviour when path == disdrodb_dir
@@ -74,9 +68,7 @@ def _get_disdrodb_path_components():
 
 def test_get_data_source():
     # Assert retrieve correct
-    path = os.path.join(
-        "whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"
-    )
+    path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     assert io.get_data_source(path) == "DATA_SOURCE"
 
     # Assert raise error if path stop at Raw or Processed
@@ -92,9 +84,7 @@ def test_get_data_source():
 
 def test_get_campaign_name():
     # Assert retrieve correct
-    path = os.path.join(
-        "whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "..."
-    )
+    path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
     assert io.get_campaign_name(path) == "CAMPAIGN_NAME"
 
     # Assert raise error if path stop at Raw or Processed
@@ -122,9 +112,7 @@ def test_get_dataset_min_max_time():
     assert all(pd.to_datetime(res, format="%Y-%m-%d") == [start_date, end_date])
 
 
-@pytest.mark.parametrize(
-    "path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX]
-)
+@pytest.mark.parametrize("path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX])
 def test_get_L0A_dir(path_process_dir):
     res = (
         io.get_L0A_dir(path_process_dir, "STATION_NAME")
@@ -135,9 +123,7 @@ def test_get_L0A_dir(path_process_dir):
     assert res == "L0ASTATION_NAME"
 
 
-@pytest.mark.parametrize(
-    "path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX]
-)
+@pytest.mark.parametrize("path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX])
 def test_get_L0B_dir(path_process_dir):
     res = (
         io.get_L0B_dir(path_process_dir, "STATION_NAME")
@@ -151,7 +137,8 @@ def test_get_L0B_dir(path_process_dir):
 def test_get_L0A_fpath():
     """
     Test the naming and the path of the L0A file
-    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml"
+    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
+    metadata/STATION_NAME.yml"
     """
 
     # Set variables
@@ -193,7 +180,8 @@ def test_get_L0A_fpath():
 def test_get_L0B_fpath():
     """
     Test the naming and the path of the L0B file
-    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml"
+    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
+    metadata/STATION_NAME.yml"
     """
 
     # Set variables
@@ -253,9 +241,7 @@ def test_check_glob_pattern():
 
 
 def test_get_raw_file_list():
-    path_test_directory = os.path.join(
-        PATH_TEST_FOLDERS_FILES, "test_l0a_processing", "files"
-    )
+    path_test_directory = os.path.join(PATH_TEST_FOLDERS_FILES, "test_l0a_processing", "files")
 
     station_name = "STATION_NAME"
 
@@ -269,18 +255,12 @@ def test_get_raw_file_list():
     assert len(file_list) == 2  # max(2, 3)
 
     # Test that the function returns the correct number of files in normal mode
-    file_list = io.get_raw_file_list(
-        raw_dir=path_test_directory, station_name=station_name, glob_patterns="*.txt"
-    )
+    file_list = io.get_raw_file_list(raw_dir=path_test_directory, station_name=station_name, glob_patterns="*.txt")
     assert len(file_list) == 2
 
     # Test that the function raises an error if the glob_patterns is not a str or list
-    with pytest.raises(
-        ValueError, match="'glob_patterns' must be a str or list of strings."
-    ):
-        io.get_raw_file_list(
-            raw_dir=path_test_directory, station_name=station_name, glob_patterns=1
-        )
+    with pytest.raises(ValueError, match="'glob_patterns' must be a str or list of strings."):
+        io.get_raw_file_list(raw_dir=path_test_directory, station_name=station_name, glob_patterns=1)
 
     # Test that the function raises an error if no files are found
     with pytest.raises(ValueError):
@@ -294,9 +274,7 @@ def test_get_raw_file_list():
 ####--------------------------------------------------------------------------.
 
 folder_name = "folder_creation_deletion_test"
-path_file_temp = os.path.join(
-    PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", folder_name
-)
+path_file_temp = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", folder_name)
 
 
 def test__create_directory():
@@ -404,9 +382,7 @@ def test_copy_station_metadata():
         os.makedirs(destination_metadata_dir)
 
     # Define expected metadata file name
-    expected_metadata_fpath = os.path.join(
-        destination_metadata_dir, f"{station_name}.yml"
-    )
+    expected_metadata_fpath = os.path.join(destination_metadata_dir, f"{station_name}.yml")
     # Ensure metadata file does not exist
     if os.path.exists(expected_metadata_fpath):
         os.remove(expected_metadata_fpath)

@@ -87,13 +87,9 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
     # -------------------------------------------------------------------------.
     # If remove = True, remove all the single files
     if remove:
-        log_info(
-            logger=logger, msg="Removal of single L0B files started.", verbose=verbose
-        )
+        log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
         _ = [os.remove(fpath) for fpath in file_list]
-        log_info(
-            logger=logger, msg="Removal of single L0B files ended.", verbose=verbose
-        )
+        log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
 
     # -------------------------------------------------------------------------.
     # Close the file logger
@@ -164,9 +160,7 @@ def run_disdrodb_l0b_concat(
         list_info = [info for info in list_info if info[2] in station_names]
         # If nothing left, raise an error
         if len(list_info) == 0:
-            raise ValueError(
-                "No stations to concatenate given the provided `station` argument!"
-            )
+            raise ValueError("No stations to concatenate given the provided `station` argument!")
 
     # Print message
     n_stations = len(list_info)

@@ -1,13 +1,10 @@
 import os
-import yaml
 import numpy as np
 from io import StringIO
 from disdrodb.l0 import issue
 
 
-PATH_TEST_FOLDERS_FILES = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "pytest_files"
-)
+PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
 
 ####--------------------------------------------------------------------------.
 #### Checks
@@ -16,19 +13,19 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 def test_is_numpy_array_string():
     # Test string array
     arr = np.array(["foo", "bar"], dtype=np.str_)
-    assert issue.is_numpy_array_string(arr) == True
+    assert issue.is_numpy_array_string(arr) is True
 
     # Test unicode array
     arr = np.array(["foo", "bar"], dtype=np.unicode_)
-    assert issue.is_numpy_array_string(arr) == True
+    assert issue.is_numpy_array_string(arr) is True
 
     # Test nonstring array
     arr = np.array([1, 2, 3])
-    assert issue.is_numpy_array_string(arr) == False
+    assert issue.is_numpy_array_string(arr) is False
 
     # Test mixed type array
     arr = np.array(["foo", 1, 2.0], dtype=np.object_)
-    assert issue.is_numpy_array_string(arr) == False
+    assert issue.is_numpy_array_string(arr) is False
 
 
 def test_check_issue_file():

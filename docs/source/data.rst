@@ -15,26 +15,24 @@ The `disdrodb-data` GitHub repository includes:
 * Some python code to curate the metadata archive.
 
 
-You can clone the disdrodb-data repository with 
+You can clone the disdrodb-data repository with
 
 .. code-block:: bash
 
    git clone https://github.com/ltelab/disdrodb-data.git
-   
-   
-However, if you plan to add new data or metadata to the archive, first fork the 
+
+
+However, if you plan to add new data or metadata to the archive, first fork the
 repository on your GitHub account and then clone the forked repository.
 
 Download DISDRODB Raw Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 TODO: @ Régis : add docs related to disdrodb-data repo
 
 
 Upload DISDRODB Raw Data
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ 
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 TODO: @ Régis : add docs related to disdrodb-data repo
- 
- 

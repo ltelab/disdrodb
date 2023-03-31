@@ -91,9 +91,7 @@ def reader(
         df = df.loc[df["id"].astype(str).str.len() < 10]
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(
-            df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce")
 
         # - Split TO_BE_SPLITTED columns
         df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)

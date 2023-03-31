@@ -20,4 +20,4 @@ Please describe the performance issue.
 
 ## Benchmarks
 
-How poorly does DISDRODB perform? 
+How poorly does DISDRODB perform?

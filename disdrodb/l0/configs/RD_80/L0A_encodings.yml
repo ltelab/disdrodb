@@ -14,5 +14,3 @@ slope: 'float32'
 Dmax: 'float32'
 ND: 'str'
 raw_drop_number: 'str'
-
-

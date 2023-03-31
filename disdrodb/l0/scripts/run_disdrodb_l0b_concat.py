@@ -83,7 +83,7 @@ def run_disdrodb_l0b_concat(
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
-        remove=remove,
+        remove_l0b=remove_l0b,
         verbose=verbose,
     )
 

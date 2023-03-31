@@ -48,7 +48,7 @@ sensor_time:
   n_naturals: 0
   data_range: null
   nan_flags: null
-  
+
 ###
 weather_code_synop_4677_5min:
   n_digits: 2
@@ -56,16 +56,16 @@ weather_code_synop_4677_5min:
   n_decimals: 0
   n_naturals: 2
   data_range:
-  - -4 
+  - -4
   - 90
-  nan_flags: -1  # -1 sensor error 
+  nan_flags: -1  # -1 sensor error
 weather_code_synop_4680_5min:
   n_digits: 2
   n_characters: 2
   n_decimals: 0
   n_naturals: 2
   data_range:
-  - -1   
+  - -1
   - 89
   nan_flags: -1 # -1 sensor error
 weather_code_metar_4678_5min:
@@ -90,24 +90,24 @@ weather_code_synop_4677:
   n_decimals: 0
   n_naturals: 0
   data_range:
-  - -4 
+  - -4
   - 90
-  nan_flags: -1 # -1 sensor error 
+  nan_flags: -1 # -1 sensor error
 weather_code_synop_4680:
   n_digits: 0
   n_characters: 5
   n_decimals: 0
   n_naturals: 0
   data_range:
-  - -1 
+  - -1
   - 89
-  nan_flags: -1 # -1 sensor error 
+  nan_flags: -1 # -1 sensor error
 weather_code_metar_4678:
   n_digits: 0
   n_characters: 5
   n_decimals: 0
   n_naturals: 0
-  data_range: null   
+  data_range: null
   nan_flags: null   # ????? sensor_error
 precipitation_rate: # intensity_total
   n_digits: 6
@@ -181,7 +181,7 @@ max_hail_diameter:
   - 0.0
   - 9.9
   nan_flags: null
-  
+
 ### Status
 
 laser_status:
@@ -193,7 +193,7 @@ laser_status:
   - 0
   - 1
   nan_flags: null # (OK/on:0, off:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 static_signal:
@@ -216,7 +216,7 @@ laser_temperature_analog_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 laser_temperature_digital_status:
@@ -228,7 +228,7 @@ laser_temperature_digital_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 laser_current_analog_status:
@@ -240,7 +240,7 @@ laser_current_analog_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 laser_current_digital_status:
@@ -252,10 +252,10 @@ laser_current_digital_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
-  
+
 ### Heating: glass(panes), housing, heads, carriers
 
 sensor_voltage_supply_status:
@@ -267,7 +267,7 @@ sensor_voltage_supply_status:
   - 0
   - 1
   nan_flags: null # (OK:0, Error:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 
@@ -289,7 +289,7 @@ current_heating_pane_receiver_head_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 
@@ -302,7 +302,7 @@ temperature_sensor_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 
@@ -315,7 +315,7 @@ current_heating_voltage_supply_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 current_heating_house_status:
@@ -327,7 +327,7 @@ current_heating_house_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 current_heating_heads_status:
@@ -339,7 +339,7 @@ current_heating_heads_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 current_heating_carriers_status:
@@ -351,7 +351,7 @@ current_heating_carriers_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 control_output_laser_power_status:
@@ -363,7 +363,7 @@ control_output_laser_power_status:
   - 0
   - 1
   nan_flags: null # (OK:0, warning:1)
-  valid_values: 
+  valid_values:
   - 0
   - 1
 reserve_status:
@@ -375,7 +375,7 @@ reserve_status:
   - 0
   - 0
   nan_flags: null
-  valid_values: 
+  valid_values:
   - 0
   - 1
 
@@ -776,53 +776,3 @@ raw_drop_number:
 # '522': relative_humidity
 # '523': wind_speed
 # '524': wind_direction
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -50,9 +50,7 @@ def _check_valid_range(df, dict_data_range, verbose=False):
                 list_wrong_columns.append(column)
 
     if len(list_wrong_columns) > 0:
-        msg = (
-            f"Columns {list_wrong_columns} has values outside the expected data range."
-        )
+        msg = f"Columns {list_wrong_columns} has values outside the expected data range."
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
@@ -82,9 +80,7 @@ def _check_valid_values(df, dict_valid_values, verbose=False):
         raise ValueError(f"Columns {list_wrong_columns} have invalid values.")
 
 
-def _check_raw_fields_available(
-    df: pd.DataFrame, sensor_name: str, verbose: bool = False
-) -> None:
+def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> None:
     """Check the presence of the raw spectrum data according to the type of sensor.
 
     Parameters
@@ -174,9 +170,7 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     # Check there aren't valid columns
     unvalid_columns = list(df_columns.difference(valid_columns))
     if len(unvalid_columns) > 0:
-        msg = (
-            f"The following columns do no met the DISDRODB standards: {unvalid_columns}"
-        )
+        msg = f"The following columns do no met the DISDRODB standards: {unvalid_columns}"
         logger.error(msg)
         raise ValueError(msg)
     # --------------------------------------------
@@ -189,9 +183,7 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     return None
 
 
-def check_l0a_standards(
-    df: pd.DataFrame, sensor_name: str, verbose: bool = True
-) -> None:
+def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True) -> None:
     """Checks that a file respects the DISDRODB L0A standards.
 
     Parameters

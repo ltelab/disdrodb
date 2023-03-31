@@ -59,7 +59,10 @@ def _check_timestep_string_second_accuracy(timesteps, n=19):
     n_characters = np.char.str_len(timesteps)
     mispecified_timesteps = timesteps[n_characters != 19]
     if len(mispecified_timesteps) > 0:
-        msg = f"The following timesteps are mispecified: {mispecified_timesteps}. Expecting the YYYY-mm-dd HH:MM:SS format."
+        msg = (
+            f"The following timesteps are mispecified: {mispecified_timesteps}. Expecting the YYYY-mm-dd HH:MM:SS"
+            " format."
+        )
         log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return timesteps
@@ -73,14 +76,15 @@ def _check_timesteps_string(timesteps):
     timesteps = np.asarray(timesteps)
     timesteps = _check_timestep_string_second_accuracy(timesteps)
     # Reformat as datetime64 with second accuracy
-    new_timesteps = pd.to_datetime(
-        timesteps, format="%Y-%m-%d %H:%M:%S", errors="coerce"
-    ).astype("M8[s]")
+    new_timesteps = pd.to_datetime(timesteps, format="%Y-%m-%d %H:%M:%S", errors="coerce").astype("M8[s]")
     # Raise errors if timesteps are mispecified
     idx_mispecified = np.isnan(new_timesteps)
     mispecified_timesteps = timesteps[idx_mispecified].tolist()
     if len(mispecified_timesteps) > 0:
-        msg = f"The following timesteps are mispecified: {mispecified_timesteps}. Expecting the YYYY-mm-dd HH:MM:SS format."
+        msg = (
+            f"The following timesteps are mispecified: {mispecified_timesteps}. Expecting the YYYY-mm-dd HH:MM:SS"
+            " format."
+        )
         log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
     # Convert to numpy
@@ -174,9 +178,7 @@ def check_issue_dict(issue_dict):
     keys = list(issue_dict.keys())
     unvalid_keys = [k for k in keys if k not in valid_keys]
     if len(unvalid_keys) > 0:
-        msg = (
-            f"Unvalid {unvalid_keys} keys. The issue YAML file accept only {valid_keys}"
-        )
+        msg = f"Unvalid {unvalid_keys} keys. The issue YAML file accept only {valid_keys}"
         log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
@@ -320,7 +322,7 @@ class NoDatesSafeLoader(yaml.SafeLoader):
         go on to serialise as json which doesn't have the advanced types
         of yaml, and leads to incompatibilities down the track.
         """
-        if not "yaml_implicit_resolvers" in cls.__dict__:
+        if "yaml_implicit_resolvers" not in cls.__dict__:
             cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
 
         for first_letter, mappings in cls.yaml_implicit_resolvers.items():

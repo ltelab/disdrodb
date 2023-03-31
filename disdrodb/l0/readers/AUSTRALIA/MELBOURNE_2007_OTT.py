@@ -86,9 +86,7 @@ def reader(
         # Remove rows with consecutive timesteps
         # - Keep last timestep occurence
         idx_timesteps = np.where(df["TO_BE_PARSED"].str.len() == 20)[0]
-        idx_without_data = (
-            np.where(np.diff(idx_timesteps) == 1)[0].flatten().astype(int)
-        )
+        idx_without_data = np.where(np.diff(idx_timesteps) == 1)[0].flatten().astype(int)
         idx_timesteps_without_data = idx_timesteps[idx_without_data]
         df = df.drop(labels=idx_timesteps_without_data)
 
@@ -109,9 +107,7 @@ def reader(
         df_data = df_data.reset_index(drop=True)
 
         if len(df_time) != len(df_data):
-            raise ValueError(
-                "Likely corrupted data. Not same number of timesteps and data."
-            )
+            raise ValueError("Likely corrupted data. Not same number of timesteps and data.")
 
         # Remove starting - from timestep
         df_time = df_time["TO_BE_PARSED"].str.replace("-", "", n=1)

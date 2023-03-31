@@ -174,8 +174,10 @@ def reshape_raw_spectrum(
         The order of dimension in the raw spectrum.
 
         Examples:
-        - OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32] --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
-        - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2] --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+        - OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
+          --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
+        - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
+          --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
     dims_size_dict : dict
         Dictionary with the number of bins for each dimension.
         For OTT_Parsivel:
@@ -581,10 +583,7 @@ def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
         shape = ds[var].shape
         chunks = encoding_dict[var]["chunksizes"]
         if chunks is not None:
-            chunks = [
-                shape[i] if chunks[i] > shape[i] else chunks[i]
-                for i in range(len(chunks))
-            ]
+            chunks = [shape[i] if chunks[i] > shape[i] else chunks[i] for i in range(len(chunks))]
             encoding_dict[var]["chunksizes"] = chunks
     return encoding_dict
 
@@ -820,9 +819,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     dataset_vars = set(ds.data_vars)
     missing_vars = expected_vars.difference(dataset_vars)
     if len(missing_vars) > 0:
-        ds = add_dataset_missing_variables(
-            ds=ds, missing_vars=missing_vars, sensor_name=sensor_name
-        )
+        ds = add_dataset_missing_variables(ds=ds, missing_vars=missing_vars, sensor_name=sensor_name)
 
     # Update the coordinates for (diameter and velocity)
     coords = get_bin_coords(sensor_name)

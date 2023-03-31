@@ -3,9 +3,7 @@ import yaml
 from disdrodb.l0 import metadata
 
 
-PATH_TEST_FOLDERS_FILES = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "pytest_files"
-)
+PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
 
 
 def test_get_default_metadata():
@@ -13,9 +11,7 @@ def test_get_default_metadata():
 
 
 def test_write_default_metadata():
-    fpath = os.path.join(
-        PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml"
-    )
+    fpath = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml")
 
     # create metadata file
     metadata.write_default_metadata(str(fpath))

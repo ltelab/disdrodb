@@ -53,12 +53,7 @@ def list_files(path: str, file_name: str) -> List[str]:
     List[str]
         list of path files within a directory and subdirectories for file with a given name
     """
-    return [
-        os.path.join(root, name)
-        for root, dirs, files in os.walk(path)
-        for name in files
-        if name == file_name
-    ]
+    return [os.path.join(root, name) for root, dirs, files in os.walk(path) for name in files if name == file_name]
 
 
 def read_yaml_file(path_file: str) -> Dict:
@@ -83,9 +78,7 @@ def read_yaml_file(path_file: str) -> Dict:
     return data
 
 
-def validate_schema_pytest(
-    schema_to_validate: Union[str, list], schema: BaseModel
-) -> bool:
+def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseModel) -> bool:
     """function that validate the schema of a given file path with pytest and raise exception if faile to validate
 
     Parameters

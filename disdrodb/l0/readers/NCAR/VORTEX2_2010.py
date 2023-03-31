@@ -137,9 +137,7 @@ def reader(
 
         # Identify missing columns and add NaN
         expected_columns = np.array(list(column_dict.keys()))
-        missing_columns = expected_columns[
-            np.isin(expected_columns, df.columns, invert=True)
-        ].tolist()
+        missing_columns = expected_columns[np.isin(expected_columns, df.columns, invert=True)].tolist()
         if len(missing_columns) > 0:
             for column in missing_columns:
                 df[column] = "NaN"
@@ -152,9 +150,7 @@ def reader(
 
         # Define datetime "time" column
         df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-        df["time"] = pd.to_datetime(
-            df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce")
 
         # Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [

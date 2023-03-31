@@ -78,9 +78,7 @@ def reader(
         df_time = pd.to_datetime(df["time"], format="%Y%m%d-%H%M%S", errors="coerce")
 
         # - Strip values from start and end of the string
-        df["TO_BE_PARSED"] = (
-            df["TO_BE_PARSED"].str.lstrip("b'").str.rstrip("'").str.rstrip("\\r\\n'")
-        )
+        df["TO_BE_PARSED"] = df["TO_BE_PARSED"].str.lstrip("b'").str.rstrip("'").str.rstrip("\\r\\n'")
 
         # - Split the column 'TO_BE_PARSED'
         df_to_parse = df["TO_BE_PARSED"].str.split(";", expand=True, n=99)
@@ -145,9 +143,7 @@ def reader(
 
         # - Retrieve raw_drop_number
         df_raw_drop_number = df_to_parse.iloc[:, 99].squeeze()
-        df_raw_drop_number = df_raw_drop_number.str.replace(
-            r"(\w{3})", r"\1,", regex=True
-        )
+        df_raw_drop_number = df_raw_drop_number.str.replace(r"(\w{3})", r"\1,", regex=True)
         df["raw_drop_number"] = df_raw_drop_number
 
         # - Drop columns not agreeing with DISDRODB L0 standards

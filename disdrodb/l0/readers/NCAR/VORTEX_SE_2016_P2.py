@@ -92,16 +92,12 @@ def reader(
 
         # - Define datetime 'time' column
         df["time"] = df["date"] + "-" + df["time"]
-        df["time"] = pd.to_datetime(
-            df["time"], format="%Y%m%d-%H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d-%H:%M:%S", errors="coerce")
 
         # Preprocess the raw spectrum
         # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
         # --> "" generates an array of zeros in L0B processing
-        df["raw_drop_number"] = df["raw_drop_number"].replace(
-            "<SPECTRUM>ZERO</SPECTRUM>", ""
-        )
+        df["raw_drop_number"] = df["raw_drop_number"].replace("<SPECTRUM>ZERO</SPECTRUM>", "")
 
         # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
         df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
@@ -110,9 +106,7 @@ def reader(
         # Preprocess the raw spectrum and raw_drop_average_velocity
         # - Add 0 before every ; if ; not preceded by a digit
         # - Example: ';;1;;' --> '0;0;1;0;'
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         df = df.drop(columns=["date"])

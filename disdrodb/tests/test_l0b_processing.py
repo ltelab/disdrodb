@@ -48,33 +48,19 @@ def test_format_string_array():
     assert np.allclose(l0b_processing.format_string_array("", 4), [0, 0, 0, 0])
 
     # Test strings with semicolon and column delimiter
-    assert np.allclose(
-        l0b_processing.format_string_array("2;44;22;33", 4), [2, 44, 22, 33]
-    )
-    assert np.allclose(
-        l0b_processing.format_string_array("2,44,22,33", 4), [2, 44, 22, 33]
-    )
-    assert np.allclose(
-        l0b_processing.format_string_array("000;000;000;001", 4), [0, 0, 0, 1]
-    )
+    assert np.allclose(l0b_processing.format_string_array("2;44;22;33", 4), [2, 44, 22, 33])
+    assert np.allclose(l0b_processing.format_string_array("2,44,22,33", 4), [2, 44, 22, 33])
+    assert np.allclose(l0b_processing.format_string_array("000;000;000;001", 4), [0, 0, 0, 1])
 
     # Test strip away excess delimiters
-    assert np.allclose(
-        l0b_processing.format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33]
-    )
+    assert np.allclose(l0b_processing.format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33])
     # Test strings with incorrect number of values
     arr_nan = [np.nan, np.nan, np.nan, np.nan]
-    assert np.allclose(
-        l0b_processing.format_string_array("2,44,22", 4), arr_nan, equal_nan=True
-    )
+    assert np.allclose(l0b_processing.format_string_array("2,44,22", 4), arr_nan, equal_nan=True)
 
-    assert np.allclose(
-        l0b_processing.format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True
-    )
+    assert np.allclose(l0b_processing.format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True)
     # Test strings with incorrect format
-    assert np.allclose(
-        l0b_processing.format_string_array(",,2,", 4), arr_nan, equal_nan=True
-    )
+    assert np.allclose(l0b_processing.format_string_array(",,2,", 4), arr_nan, equal_nan=True)
 
 
 def test_reshape_raw_spectrum():
@@ -101,9 +87,7 @@ def test_reshape_raw_spectrum():
                 expected_spectrum[i, j] = f"v{i}d{j}"  # v{velocity_bin}d{diameter_bin}
                 # expected_spectrum[i, j] = f"{i}.{j}"  # {velocity_bin}.{diameter_bin}
 
-        da_expected_spectrum = xr.DataArray(
-            data=expected_spectrum, dims=["velocity_bin_center", "diameter_bin_center"]
-        )
+        da_expected_spectrum = xr.DataArray(data=expected_spectrum, dims=["velocity_bin_center", "diameter_bin_center"])
 
         # Define flattened raw spectrum
         # - OTT: first all diameters bins for velocity bin 1, ...
@@ -131,10 +115,7 @@ def test_reshape_raw_spectrum():
         da = da.transpose("velocity_bin_center", "diameter_bin_center")
 
         # Check reshape correctness
-        assert (
-            da.isel({"velocity_bin_center": 10, "diameter_bin_center": 5}).data.item()
-            == "v10d5"
-        )
+        assert da.isel({"velocity_bin_center": 10, "diameter_bin_center": 5}).data.item() == "v10d5"
 
         # Check value correctness
         xr.testing.assert_equal(da, da_expected_spectrum)
@@ -189,9 +170,7 @@ def test_retrieve_l0b_arrays():
         df = pd.DataFrame({"dummy": ["row1", "row2"], "raw_drop_number": raw_spectrum})
 
         # Use retrieve_l0b_arrays
-        data_vars = l0b_processing.retrieve_l0b_arrays(
-            df=df, sensor_name=sensor_name, verbose=False
-        )
+        data_vars = l0b_processing.retrieve_l0b_arrays(df=df, sensor_name=sensor_name, verbose=False)
         # Create Dataset
         ds = xr.Dataset(data_vars=data_vars)
 
@@ -202,10 +181,7 @@ def test_retrieve_l0b_arrays():
         da = da.transpose("velocity_bin_center", "diameter_bin_center").astype(float)
 
         # Check reshape correctness
-        assert (
-            da.isel({"velocity_bin_center": 10, "diameter_bin_center": 5}).data.item()
-            == 10.5
-        )
+        assert da.isel({"velocity_bin_center": 10, "diameter_bin_center": 5}).data.item() == 10.5
 
         # Check value correctness
         xr.testing.assert_equal(da, da_expected_spectrum)
@@ -297,7 +273,8 @@ def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
     # Test that the dictionary contains the same keys as the input dictionary
     assert set(result.keys()) == set(encoding_dict_1.keys())
 
-    # Test that the chunk sizes in the returned dictionary are smaller than or equal to the corresponding array shapes in the dataset
+    # Test that the chunk sizes in the returned dictionary are smaller than or equal to the corresponding array shapes
+    # in the dataset
     for var in result.keys():
         assert tuple(result[var]["chunksizes"]) <= ds[var].shape
 
@@ -308,7 +285,8 @@ def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
     # Test that the dictionary contains the same keys as the input dictionary
     assert set(result.keys()) == set(encoding_dict_2.keys())
 
-    # Test that the chunk sizes in the returned dictionary are smaller than or equal to the corresponding array shapes in the dataset
+    # Test that the chunk sizes in the returned dictionary are smaller than or equal to the corresponding array shapes
+    # in the dataset
     for var in result.keys():
         assert tuple(result[var]["chunksizes"]) <= ds[var].shape
 

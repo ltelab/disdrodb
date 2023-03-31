@@ -92,9 +92,7 @@ def reader(
         import pandas as pd
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(
-            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         df = df.drop(columns=["id", "data_logger_temperature", "data_logger_voltage"])

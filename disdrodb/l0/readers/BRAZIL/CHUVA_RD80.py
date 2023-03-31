@@ -102,9 +102,7 @@ def reader(
 
         # - Define 'time' datetime column
         df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
-        df["time"] = pd.to_datetime(
-            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
         df = df.drop(columns=["date"])
 
         # - Create raw_drop_number column

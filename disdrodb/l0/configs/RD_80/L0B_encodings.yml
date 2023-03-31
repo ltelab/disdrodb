@@ -24,7 +24,7 @@ RI:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-RA: 
+RA:
     dtype: float32
     zlib: true
     complevel: 3
@@ -32,7 +32,7 @@ RA:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-RAT: 
+RAT:
     dtype: float32
     zlib: true
     complevel: 3
@@ -40,7 +40,7 @@ RAT:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-W: 
+W:
     dtype: float32
     zlib: true
     complevel: 3
@@ -48,7 +48,7 @@ W:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-Wg: 
+Wg:
     dtype: float32
     zlib: true
     complevel: 3
@@ -56,7 +56,7 @@ Wg:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-Z: 
+Z:
     dtype: float32
     zlib: true
     complevel: 3
@@ -64,7 +64,7 @@ Z:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-ZdB: 
+ZdB:
     dtype: float32
     zlib: true
     complevel: 3
@@ -72,7 +72,7 @@ ZdB:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-EK: 
+EK:
     dtype: float32
     zlib: true
     complevel: 3
@@ -80,7 +80,7 @@ EK:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-EF: 
+EF:
     dtype: float32
     zlib: true
     complevel: 3
@@ -88,7 +88,7 @@ EF:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-N0: 
+N0:
     dtype: float32
     zlib: true
     complevel: 3
@@ -96,7 +96,7 @@ N0:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-slope: 
+slope:
     dtype: float32
     zlib: true
     complevel: 3
@@ -104,7 +104,7 @@ slope:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-Dmax: 
+Dmax:
     dtype: float32
     zlib: true
     complevel: 3
@@ -112,7 +112,7 @@ Dmax:
     fletcher32: false
     contiguous: false
     chunksizes: 5000
-ND: 
+ND:
     dtype: float32
     zlib: true
     complevel: 3
@@ -133,4 +133,3 @@ raw_drop_number:
   chunksizes:
   - 5000
   - 20
- 

@@ -53,28 +53,18 @@ def _get_list_stations_dirs(product_level, campaign_dir):
         data_path = os.path.join(campaign_dir, product_level)
     # Get list of directories (stations)
     list_stations = os.listdir(data_path)
-    list_stations_dir = [
-        os.path.join(data_path, station_name) for station_name in list_stations
-    ]
+    list_stations_dir = [os.path.join(data_path, station_name) for station_name in list_stations]
     return list_stations_dir
 
 
 def _get_list_stations_with_data(product_level, campaign_dir):
     """Get the list of stations with data inside."""
     # Get stations directory
-    list_stations_dir = _get_list_stations_dirs(
-        product_level=product_level, campaign_dir=campaign_dir
-    )
+    list_stations_dir = _get_list_stations_dirs(product_level=product_level, campaign_dir=campaign_dir)
     # Count number of files within directory
-    list_nfiles_per_station = [
-        len(glob.glob(os.path.join(path, "*"))) for path in list_stations_dir
-    ]
+    list_nfiles_per_station = [len(glob.glob(os.path.join(path, "*"))) for path in list_stations_dir]
     # Keep only stations with at least one file
-    list_stations = [
-        os.path.basename(path)
-        for n, path in zip(list_nfiles_per_station, list_stations_dir)
-        if n >= 1
-    ]
+    list_stations = [os.path.basename(path) for n, path in zip(list_nfiles_per_station, list_stations_dir) if n >= 1]
     return list_stations
 
 
@@ -84,9 +74,7 @@ def _get_list_stations_with_metadata(campaign_dir):
     # List metadata files
     list_metadata_files = glob.glob(os.path.join(metadata_path, "*.yml"))
     # Return stations with metadata
-    list_stations = [
-        os.path.basename(fpath).replace(".yml", "") for fpath in list_metadata_files
-    ]
+    list_stations = [os.path.basename(fpath).replace(".yml", "") for fpath in list_metadata_files]
     return list_stations
 
 
@@ -100,9 +88,7 @@ def _get_campaign_stations(disdrodb_dir, product_level, data_source, campaign_na
     )
 
     # Get list of stations with data and metadata
-    list_stations_data = _get_list_stations_with_data(
-        product_level=product_level, campaign_dir=campaign_dir
-    )
+    list_stations_data = _get_list_stations_with_data(product_level=product_level, campaign_dir=campaign_dir)
     list_stations_metadata = _get_list_stations_with_metadata(campaign_dir)
     # Get list of stations with both data and metadata
     list_stations = list(set(list_stations_data).intersection(list_stations_metadata))
@@ -195,9 +181,7 @@ def _get_stations(disdrodb_dir, product_level):
     return list_available_stations
 
 
-def _get_metadata_fpath(
-    disdrodb_dir, product_level, data_source, campaign_name, station_name
-):
+def _get_metadata_fpath(disdrodb_dir, product_level, data_source, campaign_name, station_name):
     """Get metadata file path a given station."""
     campaign_dir = _get_disdrodb_directory(
         disdrodb_dir=disdrodb_dir,
@@ -209,13 +193,9 @@ def _get_metadata_fpath(
     return metadata_fpath
 
 
-def get_metadata_dict(
-    disdrodb_dir, product_level, data_source, campaign_name, station_name
-):
+def get_metadata_dict(disdrodb_dir, product_level, data_source, campaign_name, station_name):
     """Get metadata of a given station."""
-    metadata_fpath = _get_metadata_fpath(
-        disdrodb_dir, product_level, data_source, campaign_name, station_name
-    )
+    metadata_fpath = _get_metadata_fpath(disdrodb_dir, product_level, data_source, campaign_name, station_name)
     with open(metadata_fpath, "r") as f:
         metadata_dict = yaml.safe_load(f)
     return metadata_dict
@@ -247,9 +227,7 @@ def check_data_sources(disdrodb_dir, product_level, data_sources):
     # Remove duplicates
     data_sources = np.unique(np.array(data_sources))
     # Get directory
-    dir_path = _get_disdrodb_directory(
-        disdrodb_dir=disdrodb_dir, product_level=product_level
-    )
+    dir_path = _get_disdrodb_directory(disdrodb_dir=disdrodb_dir, product_level=product_level)
     # Get data sources directory
     list_dir = os.listdir(dir_path)
     # Check if there are unvalid data_sources
@@ -261,7 +239,7 @@ def check_data_sources(disdrodb_dir, product_level, data_sources):
     data_sources = data_sources.tolist()
     return data_sources
     """Check DISDRODB data_sources are valid.
-    
+
     It checks only if the directory exist within the product level.
     """
     # If data_sources is None, return None
@@ -273,9 +251,7 @@ def check_data_sources(disdrodb_dir, product_level, data_sources):
     # Remove duplicates
     data_sources = np.unique(np.array(data_sources))
     # Get product level directory path
-    dir_path = _get_disdrodb_directory(
-        disdrodb_dir=disdrodb_dir, product_level=product_level
-    )
+    dir_path = _get_disdrodb_directory(disdrodb_dir=disdrodb_dir, product_level=product_level)
     # Get data sources directory
     list_data_sources = os.listdir(dir_path)
     # Check if there are unvalid data_sources
@@ -302,9 +278,7 @@ def _check_campaign_names(disdrodb_dir, product_level, campaign_names):
     # Remove duplicates
     campaign_names = np.unique(np.array(campaign_names))
     # Get product level directory path
-    dir_path = _get_disdrodb_directory(
-        disdrodb_dir=disdrodb_dir, product_level=product_level
-    )
+    dir_path = _get_disdrodb_directory(disdrodb_dir=disdrodb_dir, product_level=product_level)
     # Get campaigns directory path
     list_campaigns_path = glob.glob(os.path.join(dir_path, "*", "*"))
     # Get campaigns names
@@ -329,17 +303,13 @@ def available_data_sources(disdrodb_dir, product_level):
     """Return data sources for which stations data are available."""
     product_level = check_product_level(product_level)
     # Get available stations
-    list_available_stations = _get_stations(
-        disdrodb_dir=disdrodb_dir, product_level=product_level
-    )
+    list_available_stations = _get_stations(disdrodb_dir=disdrodb_dir, product_level=product_level)
     data_sources = [info[0] for info in list_available_stations]
     data_sources = np.unique(data_sources).tolist()
     return data_sources
 
 
-def available_campaigns(
-    disdrodb_dir, product_level, data_sources=None, return_tuple=True
-):
+def available_campaigns(disdrodb_dir, product_level, data_sources=None, return_tuple=True):
     """Return campaigns for which stations data are available."""
     # Checks
     product_level = check_product_level(product_level)
@@ -350,9 +320,7 @@ def available_campaigns(
     )
     # Get available stations
     if data_sources is None:
-        list_available_stations = _get_stations(
-            disdrodb_dir=disdrodb_dir, product_level=product_level
-        )
+        list_available_stations = _get_stations(disdrodb_dir=disdrodb_dir, product_level=product_level)
     else:
         list_available_stations = _get_data_sources_stations(
             disdrodb_dir=disdrodb_dir,
@@ -397,9 +365,7 @@ def available_stations(
 
     # If data_source is None, first retrieve all stations
     if data_sources is None:
-        list_info = _get_stations(
-            disdrodb_dir=disdrodb_dir, product_level=product_level
-        )
+        list_info = _get_stations(disdrodb_dir=disdrodb_dir, product_level=product_level)
     # Otherwise retrieve all stations for the specified data sources
     else:
         list_info = _get_data_sources_stations(

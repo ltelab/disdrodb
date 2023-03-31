@@ -3,10 +3,10 @@ Maintainers guidelines
 ========================
 
 
-The section is dedicated to the DISDRODB core developers (maintainers). 
+The section is dedicated to the DISDRODB core developers (maintainers).
 
 
-List of the core contributors 
+List of the core contributors
 =================================
 
 * Current Release Manager : Ghiggi Gionata
@@ -62,7 +62,7 @@ DISDRODB major releases aims to move the community forward, focusing on specific
 
 The `LTE <https://https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of support or maintenance. Recommended versions are supported and maintained by the `LTE <https://https://www.epfl.ch/labs/lte/>`_  and our community – we provide updated guidance and documentation, track issues, and provide bug fixes and critical updates in the form of hotfixes for these versions. Releases that are 2 years or older may be considered as deprecated.
 
-Refer to the list of Recommended Releases to see current releases and more details. 
+Refer to the list of Recommended Releases to see current releases and more details.
 
 
 
@@ -70,10 +70,10 @@ Refer to the list of Recommended Releases to see current releases and more detai
 Documentation pipeline
 ========================
 
-DISDRODB’s documentation is built using Sphinx. All documentation lives in the docs/ directory of the project repository. 
+DISDRODB’s documentation is built using Sphinx. All documentation lives in the docs/ directory of the project repository.
 
 
-Manual documentation creation 
+Manual documentation creation
 -----------------------------
 
 After editing the source files there the documentation can be generated locally:
@@ -91,17 +91,17 @@ The output of the previous command should be checked for warnings and errors. If
 	sphinx-apidoc -f -o source/api .. ../setup.py
 
 
-Automatic (Github) documentation creation 
+Automatic (Github) documentation creation
 ------------------------------------------
 
 
-One webhook is defined in the repository to trigger the publication process to readthedoc.io. 
+One webhook is defined in the repository to trigger the publication process to readthedoc.io.
 
 This webhook is linked to the DISDRODB core developper XXX.
 
 .. image:: /static/documentation_pipepline.png
 
-Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.  
+Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.
 
 
 Package releases pipeline
@@ -115,7 +115,7 @@ The `PyPi <https://pypi.org/>`__ project is shared beween the core contributors.
 
 
 
-Reviewing process 
+Reviewing process
 ============================
 
 
@@ -126,14 +126,9 @@ To do : define test process
 Testing processes
 ============================
 
-Currently, on each Pull Request, GitHub Actions are configured to: 
+Currently, on each Pull Request, GitHub Actions are configured to:
 * Test that the code complies with the black style format.
-* Test that the code complies with the ruff linter rules. 
+* Test that the code complies with the ruff linter rules.
 * Check that the introduced changes does not break the disdrodb software (on multiple OS and environments).
-* Run tools that checks the code quality and the unit tests coverage (using i.e. 
+* Run tools that checks the code quality and the unit tests coverage (using i.e.
 `Coveralls <https://coveralls.io/>`__, `CodeFactor <https://www.codefactor.io/>`, `CodeBeat <https://codebeat.co/>`__, ...)
-
-
-
-
-

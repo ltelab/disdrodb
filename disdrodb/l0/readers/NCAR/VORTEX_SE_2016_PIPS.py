@@ -128,12 +128,8 @@ def reader(
         # --> Latitude in degrees_north
         # --> Longitude in degrees_east
         df_time = pd.to_datetime(df["logger_time"], errors="coerce")
-        df_lat_sign = (
-            df["gps_latitude_hemisphere"].str.replace("N", "1").str.replace("S", "-1")
-        )
-        df_lon_sign = (
-            df["gps_longitude_hemisphere"].str.replace("E", "1").str.replace("W", "-1")
-        )
+        df_lat_sign = df["gps_latitude_hemisphere"].str.replace("N", "1").str.replace("S", "-1")
+        df_lon_sign = df["gps_longitude_hemisphere"].str.replace("E", "1").str.replace("W", "-1")
         df_lat_sign = df_lat_sign.astype(float)
         df_lon_sign = df_lon_sign.astype(float)
         df_lon = df["gps_longitude"].astype(float)

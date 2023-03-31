@@ -135,9 +135,7 @@ def reader(
 
         # - Define datetime "time" column
         df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
-        df["time"] = pd.to_datetime(
-            df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
@@ -154,12 +152,8 @@ def reader(
         # Preprocess the raw spectrum and raw_drop_average_velocity
         # - Add 0 before every ; if ; not preceded by a digit
         # - Example: ';;1;;' --> '0;0;1;0;'
-        df["raw_drop_average_velocity"] = df["raw_drop_average_velocity"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
+        df["raw_drop_average_velocity"] = df["raw_drop_average_velocity"].str.replace(r"(?<!\d);", "0;", regex=True)
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
 
         return df
 

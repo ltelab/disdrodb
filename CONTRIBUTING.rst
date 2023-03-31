@@ -8,7 +8,7 @@ You can contribute in many ways :
 -  Join the
    `discussion <https://github.com/ltelab/disdrodb/discussions>`__
 - Report `issues <#issue-reporting-guidelines>`__
-- Help us developping new readers 
+- Help us developping new readers
 - Any others code improvements are welcome !
 
 
@@ -47,7 +47,7 @@ So all code changes happen through Pull Requests (PRs).
 Contributing environment setup
 -----------------------------------
 
-**First Time Contributors ?** 
+**First Time Contributors ?**
 
 Please follow the following steps to install your developing environment :
 
@@ -75,14 +75,14 @@ The pre-commit hooks are scripts executed automatically in every commit
 to identify simple code quality issues. When an issue is identified
 (the pre-commit script exits with non-zero status), the hook aborts the
 commit and prints the error. Currently, DISDRODB only tests that the
-code to be committed complies with black’s format style. 
+code to be committed complies with black’s format style.
 
 In case that the commit is aborted, you only need to run black agains you code.
 This can be done by running ``black .`` or ``pre-commit run --all-files``. The latter is recommended since it
 indicates if the commit contained any formatting errors (that are automatically corrected).
 
 .. note::
-	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.  
+	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.
 
 
 
@@ -90,7 +90,7 @@ indicates if the commit contained any formatting errors (that are automatically 
 Contributing process
 -----------------------
 
-**How to contribute ?** 
+**How to contribute ?**
 
 
 Here is a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
@@ -221,9 +221,9 @@ Here is an example of a docstring:
        """
 
 
-If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension to automatically create such preformatted docstring. 
+If you are using VS code, you can install the  `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension to automatically create such preformatted docstring.
 
-You should configure VS code as follow : 
+You should configure VS code as follow :
 
 
 .. image:: /static/vs_code_settings.png
@@ -235,7 +235,7 @@ Running test units
 
 Every code change must be tested !
 
-DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. 
+DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package.
 
 
 DISDRODB full testing pipeline can be executed by running:
@@ -263,7 +263,7 @@ Tests located in the `disdrob/test_readers` folder are utilized to test readers.
 
 Tests are in place to ensure that a particular reader functions properly. If a new reader is added, a corresponding test should also be added.
 
-To run the tests : 
+To run the tests :
 
 .. code-block:: bash
 
@@ -285,7 +285,7 @@ To create a new test, simply add a small, single-station dataset and the associa
 |     				            ├── 📁 `<station_name>`.yml
 |     				         ├── 📁 metadata
 |     				            ├── 📁 `<station_name>`.yml
-| ├── 📁 disdrodb/test_ressources_ground_truth 
+| ├── 📁 disdrodb/test_ressources_ground_truth
 |     	├── 📁 DISDRODB
 |     		├── 📁 Processed
 |     			├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
@@ -299,7 +299,7 @@ To create a new test, simply add a small, single-station dataset and the associa
 
 This test will run all readers that data have been put in the above structure. The raw data `test_ressources_raw_data` will be processed and the resulting netCDF files will be compared to the ground truth `test_ressources_ground_truth`.
 
-  
+
 
 Push your changes to your fork repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

@@ -6,9 +6,9 @@
 '06': sensor_time
 
 '07': weather_code_synop_4677_5min
-'08': weather_code_synop_4680_5min 
-'09': weather_code_metar_4678_5min 
-'10': precipitation_rate_5min  
+'08': weather_code_synop_4680_5min
+'09': weather_code_metar_4678_5min
+'10': precipitation_rate_5min
 '11': weather_code_synop_4677
 '12': weather_code_synop_4680
 '13': weather_code_metar_4678
@@ -17,11 +17,11 @@
 '16': snowfall_rate # intensity_solid
 '17': precipitation_accumulated  # accum_precip
 '18': mor_visibility  # maximum_visibility
-'19': reflectivity # radar_reflectivity 
+'19': reflectivity # radar_reflectivity
 '20': quality_index # [0-100]
 '21': max_hail_diameter
- 
-# status 
+
+# status
 '22': laser_status
 '23': static_signal
 
@@ -47,7 +47,7 @@
 '37': reserve_status
 
 # Values
-'38': temperature_interior 
+'38': temperature_interior
 
 '39': laser_temperature
 '40': laser_current_average
@@ -55,16 +55,16 @@
 '41': control_voltage
 '42': optical_control_voltage_output # maybe think a bit more on a nicer name # control_output_laser_voltage
 
-'43': sensor_voltage_supply 
+'43': sensor_voltage_supply
 
-'44': current_heating_pane_transmitter_head 
+'44': current_heating_pane_transmitter_head
 '45': current_heating_pane_receiver_head
 
 '46': temperature_ambient
 
 '47': current_heating_voltage_supply # V # remove current?
 '48': current_heating_house # A
-'49': current_heating_heads # A 
+'49': current_heating_heads # A
 '50': current_heating_carriers # A
 
 '51': number_particles # number_particles_all

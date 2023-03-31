@@ -137,9 +137,7 @@ def _generate_l0a(
 
         ##--------------------------------------------------------------------.
         #### - Write to Parquet
-        fpath = get_L0A_fpath(
-            df=df, processed_dir=processed_dir, station_name=station_name
-        )
+        fpath = get_L0A_fpath(df=df, processed_dir=processed_dir, station_name=station_name)
         write_l0a(df=df, fpath=fpath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
@@ -208,9 +206,7 @@ def _generate_l0b(
     ##------------------------------------------------------------------------.
     try:
         # Read L0A Apache Parquet file
-        df = read_L0A_dataframe(
-            filepath, verbose=verbose, debugging_mode=debugging_mode
-        )
+        df = read_L0A_dataframe(filepath, verbose=verbose, debugging_mode=debugging_mode)
         # -----------------------------------------------------------------.
         # Create xarray Dataset
         ds = create_l0b_from_l0a(df=df, attrs=attrs, verbose=verbose)
@@ -1071,9 +1067,7 @@ def run_disdrodb_l0(
         list_info = [info for info in list_info if info[2] in station_names]
         # If nothing left, raise an error
         if len(list_info) == 0:
-            raise ValueError(
-                "No stations to concatenate given the provided `station_name` argument!"
-            )
+            raise ValueError("No stations to concatenate given the provided `station_name` argument!")
 
     # Print message
     n_stations = len(list_info)
@@ -1081,9 +1075,7 @@ def run_disdrodb_l0(
 
     # Loop over stations
     for data_source, campaign_name, station_name in list_info:
-        print(
-            f"L0 processing of {data_source} {campaign_name} {station_name} station started."
-        )
+        print(f"L0 processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l0_station(
             disdrodb_dir=disdrodb_dir,
@@ -1102,9 +1094,7 @@ def run_disdrodb_l0(
             debugging_mode=debugging_mode,
             parallel=parallel,
         )
-        print(
-            f"L0 processing of {data_source} {campaign_name} {station_name} station ended."
-        )
+        print(f"L0 processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
 def run_disdrodb_l0a(
@@ -1242,9 +1232,7 @@ def click_l0_processing_options(function: object):
         default=False,
         help="Switch to debugging mode",
     )(function)
-    function = click.option(
-        "-v", "--verbose", type=bool, show_default=True, default=True, help="Verbose"
-    )(function)
+    function = click.option("-v", "--verbose", type=bool, show_default=True, default=True, help="Verbose")(function)
     function = click.option(
         "-f",
         "--force",
@@ -1319,7 +1307,5 @@ def click_l0b_concat_options(function: object):
         default=False,
         help="If true, remove all source L0B files once L0B concatenation is terminated.",
     )(function)
-    function = click.option(
-        "-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose"
-    )(function)
+    function = click.option("-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose")(function)
     return function

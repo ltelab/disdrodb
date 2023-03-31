@@ -109,17 +109,13 @@ def reader(
         import pandas as pd
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(
-            df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce")
 
         # Drop rows with None value
         df = df[~df["TO_BE_SPLITTED"].isnull()]
 
         # - Drop rows when  'Error in data reading' in TO_BE_SPLITTED column
-        bad_indices = df[
-            df["TO_BE_SPLITTED"].str.contains("Error in data reading!")
-        ].index
+        bad_indices = df[df["TO_BE_SPLITTED"].str.contains("Error in data reading!")].index
         df = df.drop(bad_indices)
 
         # - Split TO_BE_SPLITTED columns

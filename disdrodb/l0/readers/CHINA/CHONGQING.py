@@ -93,9 +93,7 @@ def reader(
             raise ValueError("Not same amount of timesteps and data.")
 
         # - Replace heterogenous number of spaces with a single space
-        df_data["TO_SPLIT"] = (
-            df_data["TO_SPLIT"].str.replace(r" +", " ", regex=True).str.strip(" ")
-        )
+        df_data["TO_SPLIT"] = df_data["TO_SPLIT"].str.replace(r" +", " ", regex=True).str.strip(" ")
 
         # - Retrieve arrays
         arr = df_data["TO_SPLIT"].str.split(" ", expand=True).to_numpy()

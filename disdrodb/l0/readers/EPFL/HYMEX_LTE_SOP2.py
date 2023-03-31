@@ -88,9 +88,7 @@ def reader(
         import pandas as pd
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(
-            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
         # - Drop rows when "raw_drop_number" is "NA"
         # --> This is used to drop all rows where all values are "NA"
