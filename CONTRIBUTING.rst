@@ -377,7 +377,7 @@ Push your changes to your fork repository
 During this process, pre-commit hooks will be run. Your commit will be
 allowed only if quality requirements are fulfilled.
 
-If you encounter errors, Black ad Ruff can be run using the following command :
+If you encounter errors, Black and Ruff can be run using the following command :
 
 ::
 

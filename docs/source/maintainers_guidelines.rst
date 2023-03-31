@@ -121,7 +121,7 @@ Reviewing process
 
 The main branch is protected and requires at least one review before merging.
 
-The review process is the following :
+The review process is the following:
 
 #. A PR is opened by a contributor
 #. The CI pipeline is triggered and the status of the tests is reported in the PR.
@@ -134,7 +134,7 @@ The review process is the following :
 Continous intergration (CI) testing tools
 ===========================================
 
-Currently, on each Pull Request, GitHub Actions are configured as follow : 
+Currently, on each Pull Request, GitHub Actions are configured as follow: 
 
 
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
@@ -156,7 +156,7 @@ Currently, on each Pull Request, GitHub Actions are configured as follow :
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
 | `CodeBeat      <https://codebeat.co/>`__                                                           | Automated code review and analysis tools                         | `disdrodb <https://codebeat.co/projects/github-com-ltelab-disdrodb-main/security_issues>`__  | all versions according to GitHub workflow |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `CodeScene <https://codescene.com/>`__                                                             | Automated code review and analysis tools                         | -                                                                                            | ?                                         |
+| `CodeScene <https://codescene.com/>`__                                                             | Automated code review and analysis tools                         |                                                                                              | ?                                         |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
 | `CodeFactor <https://www.codefactor.io/>`__                                                        | Automated code review and analysis tools                         | `disdrodb <https://www.codefactor.io/repository/github/ltelab/disdrodb>`__                   | ?                                         |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
