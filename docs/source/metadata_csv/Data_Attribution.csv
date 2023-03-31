@@ -10,5 +10,5 @@ documentation, Further documentation describing the sensor/campaign/network
 website, Website reporting sensor information
 institution, Institution providing funding or operating the sensor
 source_repository, Repository where the original raw file can be retrieved
-license, Data license  
+license, Data license
 doi, Digital Object Identifier of the sensor/campaign/network dataset

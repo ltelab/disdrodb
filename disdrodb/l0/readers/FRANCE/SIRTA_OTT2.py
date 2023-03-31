@@ -99,26 +99,20 @@ def reader(
 
         # Define the time column
         df["time"] = df["date"] + "-" + df["time"]
-        df["time"] = pd.to_datetime(
-            df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce")
         df = df.drop(columns=["date"])
 
         # Preprocess the raw spectrum
         # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
         # --> "" generates an array of zeros in L0B processing
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            "<SPECTRUM>ZERO</SPECTRUM>", ""
-        )
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>ZERO</SPECTRUM>", "")
         # Remove <SPECTRUM> and </SPECTRUM>" acroynms from the raw_drop_number field
         df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
         df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
 
         # Add 0 before every ; if ; not preceded by a digit
         # Example: ';;1;;' --> '0;0;1;0;'
-        df["raw_drop_number"] = df["raw_drop_number"].str.replace(
-            r"(?<!\d);", "0;", regex=True
-        )
+        df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
 
         return df
 

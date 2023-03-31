@@ -49,14 +49,10 @@ def check_bin_consistency(sensor_name: str) -> None:
     np.testing.assert_allclose(expected_diameter_width[1:-1], diameter_bin_width[1:-1])
 
     expected_diameter_center = diameter_bin_lower + diameter_bin_width / 2
-    np.testing.assert_allclose(
-        expected_diameter_center[1:-1], diameter_bin_center[1:-1]
-    )
+    np.testing.assert_allclose(expected_diameter_center[1:-1], diameter_bin_center[1:-1])
 
     expected_diameter_center = diameter_bin_upper - diameter_bin_width / 2
-    np.testing.assert_allclose(
-        expected_diameter_center[1:-1], diameter_bin_center[1:-1]
-    )
+    np.testing.assert_allclose(expected_diameter_center[1:-1], diameter_bin_center[1:-1])
 
     velocity_bin_lower = get_velocity_bin_lower(sensor_name)
     velocity_bin_upper = get_velocity_bin_upper(sensor_name)
@@ -68,15 +64,9 @@ def check_bin_consistency(sensor_name: str) -> None:
     velocity_bin_center = np.array(velocity_bin_center)
     velocity_bin_width = np.array(velocity_bin_width)
 
-    np.testing.assert_allclose(
-        velocity_bin_upper - velocity_bin_lower, velocity_bin_width
-    )
-    np.testing.assert_allclose(
-        velocity_bin_lower + velocity_bin_width / 2, velocity_bin_center
-    )
-    np.testing.assert_allclose(
-        velocity_bin_upper - velocity_bin_width / 2, velocity_bin_center
-    )
+    np.testing.assert_allclose(velocity_bin_upper - velocity_bin_lower, velocity_bin_width)
+    np.testing.assert_allclose(velocity_bin_lower + velocity_bin_width / 2, velocity_bin_center)
+    np.testing.assert_allclose(velocity_bin_upper - velocity_bin_width / 2, velocity_bin_center)
 
 
 def check_variable_keys_consistency(sensor_name: str) -> None:

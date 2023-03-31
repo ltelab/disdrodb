@@ -10,7 +10,10 @@ from trollsift import Parser
 ########################
 #### FNAME PATTERNS ####
 ########################
-DISDRODB_FNAME_PATTERN = "{product_level:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}.{version:s}.{data_format:s}"
+DISDRODB_FNAME_PATTERN = (
+    "{product_level:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    ".{version:s}.{data_format:s}"
+)
 
 ####---------------------------------------------------------------------------.
 ##########################
@@ -75,9 +78,7 @@ def _get_version_from_filepath(filepath, integer=False):
 def get_version_from_filepaths(filepaths, integer=False):
     if isinstance(filepaths, str):
         filepaths = [filepaths]
-    list_version = [
-        _get_version_from_filepath(fpath, integer=integer) for fpath in filepaths
-    ]
+    list_version = [_get_version_from_filepath(fpath, integer=integer) for fpath in filepaths]
     return list_version
 
 

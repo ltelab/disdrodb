@@ -12,7 +12,7 @@ sensor_status:
   n_naturals: null
   data_range: null
   nan_flags: null
-  valid_values: 
+  valid_values:
   - 0
   - 1
 interval:
@@ -24,7 +24,7 @@ interval:
   - 0
   - 9999
   nan_flags: null
-RI:  
+RI:
   n_digits: 7
   n_characters: 8
   n_decimals: 4
@@ -33,7 +33,7 @@ RI:
   - 0
   - 999.9999
   nan_flags: null
-RA:  
+RA:
   n_digits: 5
   n_characters: 6
   n_decimals: 4
@@ -134,7 +134,7 @@ Dmax:
   nan_flags: null
 raw_drop_number:
   n_digits: 0
-  n_characters: null  
+  n_characters: null
   n_decimals: 0
   n_naturals: 0
   data_range: null
@@ -144,7 +144,7 @@ raw_drop_number:
   n_values: 20
 ND:
   n_digits: 0
-  n_characters: null  
+  n_characters: null
   n_decimals: 0
   n_naturals: 0
   data_range: null
@@ -152,4 +152,3 @@ ND:
   dimension_order:
   - diameter_bin_center
   n_values: 20
-

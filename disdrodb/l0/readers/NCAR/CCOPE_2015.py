@@ -78,9 +78,7 @@ def reader(
         # - Retrieve file start time (date hour:minute)
         start_time = df["TO_PARSE"].iloc[0]
         start_time = start_time[0:16]
-        start_time = pd.to_datetime(
-            start_time, format="%m/%d/%Y %H:%M", errors="coerce"
-        )
+        start_time = pd.to_datetime(start_time, format="%m/%d/%Y %H:%M", errors="coerce")
         df = df.iloc[1:]  # remove start_time row
 
         # - Replace heterogenous number of spaces with ;

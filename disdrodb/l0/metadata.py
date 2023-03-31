@@ -216,9 +216,7 @@ def create_campaign_default_metadata(
     Use the function with caution to avoid overwrite existing YAML files.
     """
     data_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "data")
-    metadata_dir = os.path.join(
-        disdrodb_dir, "Raw", data_source, campaign_name, "metadata"
-    )
+    metadata_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "metadata")
     station_names = os.listdir(data_dir)
     for station_name in station_names:
         metadata_fpath = os.path.join(metadata_dir, station_name + ".yml")
@@ -271,9 +269,7 @@ def _check_metadata_values(metadata):
     """
     for key, value in metadata.items():
         if isinstance(value, type(None)):
-            raise ValueError(
-                f"The metadata key {key} has None or null value. Use '' instead."
-            )
+            raise ValueError(f"The metadata key {key} has None or null value. Use '' instead.")
     return None
 
 
@@ -313,9 +309,7 @@ def _check_metadata_station_name(metadata, expected_name):
         raise ValueError("The metadata file does not contain the 'station_name' key.")
     station_name = metadata["station_name"]
     if not isinstance(station_name, str):
-        raise ValueError(
-            "The 'station_name' key in the metadata is not defined as a string!"
-        )
+        raise ValueError("The 'station_name' key in the metadata is not defined as a string!")
     if station_name == "":
         raise ValueError("The 'station_name' key in the metadata is empty.")
     if station_name != expected_name:

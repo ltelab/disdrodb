@@ -23,9 +23,7 @@ import yaml
 from disdrodb.api.io import _get_disdrodb_directory
 
 
-def read_station_metadata(
-    disdrodb_dir, product_level, data_source, campaign_name, station_name
-):
+def read_station_metadata(disdrodb_dir, product_level, data_source, campaign_name, station_name):
     """Open the station metadata YAML file into a dictionary."""
     # Retrieve campaign directory
     campaign_dir = _get_disdrodb_directory(
@@ -40,9 +38,7 @@ def read_station_metadata(
 
     # Check the file exists
     if not os.path.exists(fpath):
-        raise ValueError(
-            f"The metadata file for {station_name} at {fpath} does not exists."
-        )
+        raise ValueError(f"The metadata file for {station_name} at {fpath} does not exists.")
 
     # Read the metadata file
     with open(fpath, "r") as f:

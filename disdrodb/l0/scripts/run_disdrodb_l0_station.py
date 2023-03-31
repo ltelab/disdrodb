@@ -59,7 +59,8 @@ def run_disdrodb_l0_station(
         Base directory of DISDRODB \n
         Format: <...>/DISDRODB \n
     data_source : str \n
-        Institution name (when campaign data spans more than 1 country), or country (when all campaigns (or sensor networks) are inside a given country).\n
+        Institution name (when campaign data spans more than 1 country), or country (when all campaigns (or sensor
+        networks) are inside a given country).\n
         Must be UPPER CASE.\n
     campaign_name : str \n
         Campaign name. Must be UPPER CASE.\n

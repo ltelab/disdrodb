@@ -25,9 +25,7 @@ import logging
 import re
 
 
-def create_l0_logger(
-    processed_dir: str, campaign_name: str, verbose: bool = False
-) -> logger:
+def create_l0_logger(processed_dir: str, campaign_name: str, verbose: bool = False) -> logger:
     """Create L0 logger.
 
     Parameters

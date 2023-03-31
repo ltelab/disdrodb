@@ -10,7 +10,7 @@ Welcome to disdroDB's documentation!
 
 .. toctree::
    :maxdepth: 2
-   
+
    overview
    installation
    data
@@ -20,16 +20,16 @@ Welcome to disdroDB's documentation!
    l0_processing
    contributors_guidelines
    maintainers_guidelines
-   
-   
-   
-   
+
+
+
+
 .. toctree::
    :maxdepth: 1
-      
+
    disdrodb API <api/modules>
 
-  
+
 
 
 
@@ -39,5 +39,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-

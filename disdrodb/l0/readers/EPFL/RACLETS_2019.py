@@ -132,9 +132,7 @@ def reader(
         df = df.drop(columns=columns_to_drop)
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(
-            df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce")
 
         return df
 

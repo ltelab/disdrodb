@@ -64,9 +64,7 @@ def check_metadata_geolocation(metadata) -> None:
         # - If mobile platform
         if platform_type == "mobile":
             if longitude != -9999 or latitude != -9999:
-                raise ValueError(
-                    "For mobile platform_type, specify latitude and longitude -9999"
-                )
+                raise ValueError("For mobile platform_type, specify latitude and longitude -9999")
         # - If fixed platform
         else:
             if longitude == -9999 or latitude == -9999:
@@ -317,7 +315,5 @@ def check_archive_metadata_geolocation(disdrodb_dir):
         try:
             check_metadata_geolocation(metadata)
         except Exception as e:
-            print(
-                f"Missing information for {data_source} {campaign_name} {station_name}."
-            )
+            print(f"Missing information for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")

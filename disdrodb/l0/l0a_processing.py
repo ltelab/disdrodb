@@ -23,7 +23,6 @@
 import os
 import inspect
 import logging
-import tarfile
 import pandas as pd
 import numpy as np
 from typing import Union
@@ -70,9 +69,7 @@ def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     """
     # Check delimiter is specified !
     if "delimiter" not in reader_kwargs:
-        raise ValueError(
-            "The 'delimiter' key must be specified in reader_kwargs dictionary!"
-        )
+        raise ValueError("The 'delimiter' key must be specified in reader_kwargs dictionary!")
 
     # Remove dtype key
     # - The dtype is enforced to be 'object' in the read function !
@@ -138,9 +135,7 @@ def _check_df_sanitizer_fun(df_sanitizer_fun):
     if not callable(df_sanitizer_fun):
         raise ValueError("'df_sanitizer_fun' must be a function.")
     if not np.all(np.isin(inspect.getfullargspec(df_sanitizer_fun).args, ["df"])):
-        raise ValueError(
-            "The `df_sanitizer_fun` must have only `df` as input argument!"
-        )
+        raise ValueError("The `df_sanitizer_fun` must have only `df` as input argument!")
 
 
 def _check_not_empty_dataframe(df, verbose=False):
@@ -216,7 +211,10 @@ def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
         # Drop duplicated timesteps (keeping the first occurence)
         df = df.drop_duplicates(subset="time", keep="first")
         # Report the values of duplicated timesteps
-        msg = f" - The following timesteps occured more than once: {values_duplicates}. Only the first occurence selected."
+        msg = (
+            f" - The following timesteps occured more than once: {values_duplicates}. Only the first occurence"
+            " selected."
+        )
         log_warning(logger=logger, msg=msg, verbose=verbose)
     return df
 
@@ -282,17 +280,13 @@ def remove_issue_timesteps(df, issue_dict, verbose=False):
     # Report number fo dropped rows
     n_rows_dropped = n_initial_rows - len(df)
     if n_rows_dropped > 0:
-        msg = (
-            f"{n_rows_dropped} rows were dropped following the issue YAML file content."
-        )
+        msg = f"{n_rows_dropped} rows were dropped following the issue YAML file content."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     return df
 
 
-def cast_column_dtypes(
-    df: pd.DataFrame, sensor_name: str, verbose: bool = False
-) -> pd.DataFrame:
+def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
     """Convert 'object' dataframe columns into DISDRODB L0A dtype standards.
 
     Parameters
@@ -331,9 +325,7 @@ def cast_column_dtypes(
     return df
 
 
-def coerce_corrupted_values_to_nan(
-    df: pd.DataFrame, sensor_name: str, verbose: bool = False
-) -> pd.DataFrame:
+def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
     """Coerce corrupted values in dataframe numeric columns to np.nan.
 
     Parameters
@@ -354,9 +346,7 @@ def coerce_corrupted_values_to_nan(
     dtype_dict = get_l0a_dtype(sensor_name)
 
     # Get string columns
-    numeric_columns = [
-        k for k, dtype in dtype_dict.items() if "float" in dtype or "int" in dtype
-    ]
+    numeric_columns = [k for k, dtype in dtype_dict.items() if "float" in dtype or "int" in dtype]
 
     # Get dataframe column names
     columns = list(df.columns)
@@ -373,9 +363,7 @@ def coerce_corrupted_values_to_nan(
     return df
 
 
-def strip_string_spaces(
-    df: pd.DataFrame, sensor_name: str, verbose: bool = False
-) -> pd.DataFrame:
+def strip_string_spaces(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
     """Strip leading/trailing spaces from dataframe string columns.
 
     Parameters
@@ -406,9 +394,7 @@ def strip_string_spaces(
             try:
                 df[column] = df[column].str.strip()
             except AttributeError:
-                msg = (
-                    f"AttributeError: The column {column} is not a string/object dtype."
-                )
+                msg = f"AttributeError: The column {column} is not a string/object dtype."
                 log_error(logger=logger, msg=msg, verbose=False)
                 raise AttributeError(msg)
     return df
@@ -469,9 +455,7 @@ def remove_corrupted_rows(df):
         raise ValueError("No remaining rows after data corruption checks.")
     # If only one row available, raise also error
     if len(df) == 1:
-        raise ValueError(
-            "Only 1 rows remains after data corruption checks. Check the file."
-        )
+        raise ValueError("Only 1 rows remains after data corruption checks. Check the file.")
     # Return the dataframe
     return df
 

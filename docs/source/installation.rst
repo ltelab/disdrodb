@@ -56,7 +56,7 @@ According to the `contributors guidelines <contributors_guidelines>`__, you shou
 Install the DISDRODB package dependencies
 ............................................
 
-You can use either pip or conda: 
+You can use either pip or conda:
 
 
 * **Pip**
@@ -64,23 +64,23 @@ You can use either pip or conda:
 	.. code-block:: bash
 
 	   pip install -r requirements.txt
-	
 
 
-	
+
+
 * **Conda**
 
 	Create the `disdrodb-dev` conda environment and install the required dependencies:
 
 	.. code-block:: bash
 
-		conda env update -f environment.yml 
+		conda env update -f environment.yml
 
 
-To install the project in editable mode : 
-	
+To install the project in editable mode :
+
 .. code-block:: bash
-		
+
 	pip install -e .
 
 
@@ -95,9 +95,9 @@ root:
 
 .. code-block:: bash
 
-   pip install pre-commit 
+   pip install pre-commit
    pre-commit install
-   
+
 
 The pre-commit hooks are scripts executed automatically in every commit
 to identify simple code quality issues. When an issue is identified
@@ -107,11 +107,11 @@ code to be committed complies with `black’s  <https://github.com/psf/black>`__
 and the `ruff <https://github.com/charliermarsh/ruff>`__ linter.
 
 In case that the commit is aborted, you only need to run `black`and `ruff` through your code.
-This can be done by running ``black .`` and ``ruff check .`` or alternatively with ``pre-commit run --all-files``. 
+This can be done by running ``black .`` and ``ruff check .`` or alternatively with ``pre-commit run --all-files``.
 The latter is recommended since it indicates if the commit contained any formatting errors (that are automatically corrected).
 
 .. note::
-	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.  
+	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.
 
 
 
@@ -124,7 +124,7 @@ While not mandatory, utilizing a virtual environment when installing DISDRODB is
 
 To set up a virtual environment, follow these steps :
 
-* **With venv :**  
+* **With venv :**
 
 	* Windows: Create a virtual environment with venv:
 
@@ -133,7 +133,7 @@ To set up a virtual environment, follow these steps :
 		   python -m venv disdrodb-dev
 		   cd disdrodb-dev/Scripts
 		   activate
-		   
+
 
 	* Mac/Linux: Create a virtual environment with venv:
 
@@ -160,17 +160,15 @@ To set up a virtual environment, follow these steps :
 
 
 Run DISDRODB on Jupyter Notebooks
-==================================	
+==================================
 
-If you want to run disdrodb on a `Jupyter Notebook <https://jupyter.org/>`__, 
+If you want to run disdrodb on a `Jupyter Notebook <https://jupyter.org/>`__,
 you have to take care to set up the IPython kernel environment where disdrodb is installed.
 
 For example, if your conda/virtual environment is named `disdrodb-dev`, run:
 
-.. code-block:: bash 
+.. code-block:: bash
 
     python -m ipykernel install --user --name=disdrodb-dev
 
 When you will use the Jupyter Notebook, by clicking on `Kernel` and then `Change Kernel`, you will be able to select the `disdrodb-dev` kernel.
-
-

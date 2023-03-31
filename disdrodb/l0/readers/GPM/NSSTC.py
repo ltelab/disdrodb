@@ -79,9 +79,7 @@ def reader(
 
         # Count number of delimiters in the column to be parsed
         # --> Some first rows are corrupted, so count the most frequent occurence
-        possible_delimeters, counts = np.unique(
-            df["TO_BE_SPLITTED"].str.count(","), return_counts=True
-        )
+        possible_delimeters, counts = np.unique(df["TO_BE_SPLITTED"].str.count(","), return_counts=True)
         n_delimiters = possible_delimeters[np.argmax(counts)]
 
         if n_delimiters == 1027:

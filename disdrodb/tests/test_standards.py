@@ -1,8 +1,6 @@
 # The yaml files validity is tested in the test_config_files.py file
 import os
-import yaml
 import pytest
-import pandas as pd
 from disdrodb.l0 import standards
 
 # Set paths

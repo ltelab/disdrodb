@@ -95,9 +95,7 @@ def get_configs_dir(sensor_name: str) -> str:
     if not os.path.exists(config_sensor_dir_path):
         list_sensors = sorted(os.listdir(config_dir_path))
         print(f"Available sensor_name are {list_sensors}")
-        raise ValueError(
-            f"The config directory {config_sensor_dir_path} does not exist."
-        )
+        raise ValueError(f"The config directory {config_sensor_dir_path} does not exist.")
     return config_sensor_dir_path
 
 
@@ -836,9 +834,7 @@ def get_L0B_encodings_dict(sensor_name: str) -> dict:
         # Ensure contiguous=False if chunksizes is not None
         if d[var]["contiguous"] and not isinstance(d[var]["chunksizes"], type(None)):
             d[var]["contiguous"] = False
-            print(
-                f"Set contiguous=False for variable {var} because chunksizes is defined!"
-            )
+            print(f"Set contiguous=False for variable {var} because chunksizes is defined!")
 
     return d
 

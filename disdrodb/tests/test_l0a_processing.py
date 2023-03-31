@@ -155,9 +155,7 @@ def test_drop_timesteps():
     n = 2
     # Create an array of datetime values for the time column
     # - Add also a NaT
-    time = pd.date_range(
-        start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min"
-    ).to_numpy()
+    time = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
     time[0] = np.datetime64("NaT")
     # Create a random array for the dummy column
     dummy = np.random.rand(len(time) - n)
@@ -184,17 +182,13 @@ def test_drop_timesteps():
 
 def test_drop_time_periods():
     # Create an array of datetime values for the time column
-    time = pd.date_range(
-        start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min"
-    ).to_numpy()
+    time = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
 
     # Define inside time_periods
     inside_time_periods = [time[[10, 20]]]
 
     # Define outside time periods
-    outside_time_period = [
-        [np.datetime64("2022-12-01 00:00:00"), np.datetime64("2022-12-20 00:00:00")]
-    ]
+    outside_time_period = [[np.datetime64("2022-12-01 00:00:00"), np.datetime64("2022-12-20 00:00:00")]]
 
     # Define time_period removing all data
     full_time_period = [time[[0, len(time) - 1]]]
@@ -209,11 +203,7 @@ def test_drop_time_periods():
 
     # Test inside time_periods
     df_out = l0a_processing.drop_time_periods(df, time_periods=inside_time_periods)
-    assert not np.any(
-        df_out["time"].between(
-            inside_time_periods[0][0], inside_time_periods[0][1], inclusive="both"
-        )
-    )
+    assert not np.any(df_out["time"].between(inside_time_periods[0][0], inside_time_periods[0][1], inclusive="both"))
 
     # Test raise error if all rows are discarded
     with pytest.raises(ValueError):
@@ -229,9 +219,7 @@ def test_drop_time_periods():
 def test_read_raw_data():
     # this test relies on "\tests\pytest_files\test_l0a_processing\test_read_raw_data\data.csv"
 
-    path_test_data = os.path.join(
-        PATH_TEST_FOLDERS_FILES, "test_l0a_processing", "test_read_raw_data", "data.csv"
-    )
+    path_test_data = os.path.join(PATH_TEST_FOLDERS_FILES, "test_l0a_processing", "test_read_raw_data", "data.csv")
 
     reader_kwargs = {}
     reader_kwargs["delimiter"] = ","

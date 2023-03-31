@@ -43,24 +43,18 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
     # Raise warning if there are columns not respecting DISDRODB standards
     invalid_columns = list(column_names.difference(valid_columns))
     if len(invalid_columns) > 0:
-        print(
-            f"The following columns do no met the DISDRODB standards: {invalid_columns}."
-        )
+        print(f"The following columns do no met the DISDRODB standards: {invalid_columns}.")
         print("Please remove such columns within the df_sanitizer_fun")
     # --------------------------------------------
     # Check time column is present
     if "time" not in column_names:
         print("Please be sure to create the 'time' column within the df_sanitizer_fun.")
-        print(
-            "The 'time' column must be datetime with resolution in seconds (dtype='M8[s]')."
-        )
+        print("The 'time' column must be datetime with resolution in seconds (dtype='M8[s]').")
     # --------------------------------------------
     return None
 
 
-def print_df_first_n_rows(
-    df: pd.DataFrame, n: int = 5, column_names: bool = True
-) -> None:
+def print_df_first_n_rows(df: pd.DataFrame, n: int = 5, column_names: bool = True) -> None:
     """Print the n first n rows dataframe by column.
 
     Parameters
@@ -82,9 +76,7 @@ def print_df_first_n_rows(
     return None
 
 
-def print_df_random_n_rows(
-    df: pd.DataFrame, n: int = 5, with_column_names: bool = True
-) -> None:
+def print_df_random_n_rows(df: pd.DataFrame, n: int = 5, with_column_names: bool = True) -> None:
     """Print the content of the dataframe by column, randomly chosen
 
     Parameters
@@ -158,9 +150,7 @@ def _check_valid_column_index(column_idx, n_columns):
 
 def _check_columns_indices(column_indices, n_columns):
     if not isinstance(column_indices, (int, list, type(None), slice)):
-        raise TypeError(
-            "'column_indices' must be an integer, a list of integers, or None."
-        )
+        raise TypeError("'column_indices' must be an integer, a list of integers, or None.")
     if column_indices is None:
         column_indices = list(range(0, n_columns))
     if isinstance(column_indices, slice):

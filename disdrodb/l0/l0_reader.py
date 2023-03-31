@@ -43,9 +43,7 @@ def _get_readers_data_sources() -> list:
     reader_folder_path = _get_readers_directory()
 
     # List of readers folder
-    list_data_sources = [
-        os.path.basename(f.path) for f in os.scandir(reader_folder_path) if f.is_dir()
-    ]
+    list_data_sources = [os.path.basename(f.path) for f in os.scandir(reader_folder_path) if f.is_dir()]
     # Directory to remove
     bad_dirs = ["__pycache__", ".ipynb_checkpoints"]
     list_data_sources = [name for name in list_data_sources if name not in bad_dirs]
@@ -74,11 +72,7 @@ def _get_readers_paths_by_data_source(data_source):
     if not os.path.isdir(reader_data_source_path):
         raise ValueError(f"No {data_source} directory in disdrodb.l0.readers")
     # Retrieve list of available readers paths
-    list_readers_paths = [
-        f.path
-        for f in os.scandir(reader_data_source_path)
-        if f.is_file() and f.path.endswith(".py")
-    ]
+    list_readers_paths = [f.path for f in os.scandir(reader_data_source_path) if f.is_file() and f.path.endswith(".py")]
     return list_readers_paths
 
 
@@ -89,9 +83,7 @@ def _get_readers_names_by_data_source(data_source):
     """
     # Retrieve reader data source directory
     list_readers_paths = _get_readers_paths_by_data_source(data_source)
-    list_readers_names = [
-        os.path.basename(path).replace(".py", "") for path in list_readers_paths
-    ]
+    list_readers_names = [os.path.basename(path).replace(".py", "") for path in list_readers_paths]
     return list_readers_names
 
 
@@ -204,19 +196,12 @@ def available_readers(data_sources=None, reader_path=False):
         # Check valid data sources
         if isinstance(data_sources, str):
             data_sources = [data_sources]
-        data_sources = [
-            _check_reader_data_source(data_source) for data_source in data_sources
-        ]
+        data_sources = [_check_reader_data_source(data_source) for data_source in data_sources]
         # Create new dictionary
-        dict_readers = {
-            data_source: dict_readers[data_source] for data_source in data_sources
-        }
+        dict_readers = {data_source: dict_readers[data_source] for data_source in data_sources}
     # If reader_path=False, provide {data_source: [list_reader_names]}
     if not reader_path:
-        dict_readers = {
-            data_source: list(dict_readers.keys())
-            for data_source, dict_readers in dict_readers.items()
-        }
+        dict_readers = {data_source: list(dict_readers.keys()) for data_source, dict_readers in dict_readers.items()}
     return dict_readers
 
 
@@ -242,9 +227,7 @@ def get_reader(reader_data_source: str, reader_name: str) -> object:
     """
     # Check data source and reader_name validity
     reader_data_source = _check_reader_data_source(reader_data_source)
-    reader_name = check_reader_exists(
-        reader_data_source=reader_data_source, reader_name=reader_name
-    )
+    reader_name = check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
     # Retrive reader function
     if reader_name:
         full_name = f"disdrodb.l0.readers.{reader_data_source}.{reader_name}.reader"
@@ -280,9 +263,7 @@ def check_reader_arguments(reader):
     reader_arguments = sorted(list(signature.parameters.keys()))
     expected_arguments = sorted(_get_expected_reader_arguments())
     if reader_arguments != expected_arguments:
-        raise ValueError(
-            f"The reader must be defined with the following arguments: {expected_arguments}"
-        )
+        raise ValueError(f"The reader must be defined with the following arguments: {expected_arguments}")
     return None
 
 
@@ -301,15 +282,14 @@ def _check_metadata_reader(metadata):
     # - Check it contains /
     if "/" not in reader_reference:
         raise ValueError(
-            f"The reader '{reader_reference}' reported in the metadata is not valid. Must have '<data_source>/<reader_name>' pattern."
+            f"The reader '{reader_reference}' reported in the metadata is not valid. Must have"
+            " '<data_source>/<reader_name>' pattern."
         )
     # - Get the reader_reference component list
     reader_components = reader_reference.split("/")
     # - Check composed by two elements
     if len(reader_components) != 2:
-        raise ValueError(
-            "Expecting the reader reference to be composed of <data_source>/<reader_name>."
-        )
+        raise ValueError("Expecting the reader reference to be composed of <data_source>/<reader_name>.")
     # - Retrieve reader data source and reader name
     reader_data_source = reader_components[0]
     reader_name = reader_components[1]
@@ -356,7 +336,8 @@ def get_station_reader(disdrodb_dir, data_source, campaign_name, station_name):
     # Check reader key is within the dictionary
     if "reader" not in metadata:
         raise ValueError(
-            f"The `reader` key is not available in the metadata of the {data_source} {campaign_name} {station_name} station."
+            "The `reader` key is not available in the metadata of the"
+            f" {data_source} {campaign_name} {station_name} station."
         )
 
     # ------------------------------------------------------------------------.
@@ -449,14 +430,10 @@ def check_available_readers():
     for reader_data_source, list_reader_name in dict_all_readers.items():
         for reader_name in list_reader_name:
             try:
-                reader = get_reader(
-                    reader_data_source=reader_data_source, reader_name=reader_name
-                )
+                reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
                 check_reader_arguments(reader)
             except Exception as e:
-                raise ValueError(
-                    f"Unvalid reader for {reader_data_source}/{reader_name}.py. The error is {e}"
-                )
+                raise ValueError(f"Unvalid reader for {reader_data_source}/{reader_name}.py. The error is {e}")
     return None
 
 

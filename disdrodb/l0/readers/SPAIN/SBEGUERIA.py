@@ -85,7 +85,7 @@ def reader(
         "rainfall_accumulated_32bit",
         "rain_kinetic_energy",  # unknown ?
         "NP",
-        "ND" "R" "P" "Z" "M" "E" "Pcum" "Ecum" "D10",
+        "NDRPZMEPcumEcumD10",
         "D25",
         "D50",
         "D75",
@@ -130,9 +130,7 @@ def reader(
         import pandas as pd
 
         # - Convert time column to datetime
-        df["time"] = pd.to_datetime(
-            df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce"
-        )
+        df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [
@@ -142,7 +140,7 @@ def reader(
             "disdrometer_type",
             "mast_ID",
             "NP",
-            "ND" "R" "P" "Z" "M" "E" "Pcum" "Ecum" "D10",
+            "NDRPZMEPcumEcumD10",
             "D25",
             "D50",
             "D75",

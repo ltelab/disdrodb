@@ -71,7 +71,7 @@ sample_interval:
   n_characters: 5
   n_decimals: 0
   n_naturals: 5
-  data_range: 
+  data_range:
   - 0
   - 3600
   nan_flags: null
@@ -150,7 +150,7 @@ sensor_status:
   - 0
   - 3
   nan_flags: null
-  valid_values: 
+  valid_values:
   - 0
   - 1
   - 2
@@ -208,7 +208,7 @@ error_code:
   - 0
   - 3
   nan_flags: null
-  valid_values: 
+  valid_values:
   - 0
   - 1
   - 2
