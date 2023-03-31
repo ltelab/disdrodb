@@ -50,10 +50,11 @@ The dictionary has the following structure:
 
 .. code-block::
 
-	`{"<DataSource1>": [<ReaderName1>, <ReaderName2>],
-		...
-	  "<DataSourceN": [<ReaderNameY>, <ReaderNameZ>]
-	}`
+    {
+        "<DataSource1>": [<ReaderName1>, <ReaderName2>],
+        ...
+        "<DataSourceN>": [<ReaderNameY>, <ReaderNameZ>]
+    }
 
 
 Reader structure

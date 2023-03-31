@@ -10,9 +10,9 @@ by typing the command :
 
 .. code-block:: python
 
-     import disdrodb
+    import disdrodb
 
-     disdrodb.available_sensor_name()
+    disdrodb.available_sensor_name()
 
 
 The sensor configurations are stored within the disdrodb software
@@ -43,10 +43,10 @@ Once you added a new sensor configuration, check the validity with the following
 
     .. code-block:: python
 
-         from disdrodb.l0.check_configs import check_sensor_configs
+        from disdrodb.l0.check_configs import check_sensor_configs
 
-         sensor_name = "OTT_Parsivel" # Change with your sensor_name
-         check_sensor_configs(sensor_name)
+        sensor_name = "OTT_Parsivel"  # Change with your sensor_name
+        check_sensor_configs(sensor_name)
 
 Here below we details further information related to each of the configuration
 YAML files
