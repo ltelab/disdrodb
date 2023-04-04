@@ -5,7 +5,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from disdrodb.l0 import io
-import importlib.metadata
 
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
@@ -140,6 +139,7 @@ def test_get_L0A_fpath():
     Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
+    from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
     data_source = "DATA_SOURCE"
@@ -163,16 +163,13 @@ def test_get_L0A_fpath():
     # Create dataframe
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
-    # Set version (based on the version included into the setup.py to create the pypi package)
-    version = importlib.metadata.version("disdrodb").replace(".", "-")
-    if version == "-VERSION-PLACEHOLDER-":
-        version = "dev"
-
     # Test the function
     res = io.get_L0A_fpath(df, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.parquet"
+    expected_name = (
+        f"L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.parquet"
+    )
     expected_path = os.path.join(path_campaign_name, "L0A", station_name, expected_name)
     assert res == expected_path
 
@@ -183,6 +180,7 @@ def test_get_L0B_fpath():
     Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
+    from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
     data_source = "DATA_SOURCE"
@@ -212,16 +210,11 @@ def test_get_L0B_fpath():
         coords={"time": pd.date_range(start=start_date, end=end_date)},
     )
 
-    # Set version (based on the version included into the setup.py to create the pypi package)
-    version = importlib.metadata.version("disdrodb").replace(".", "-")
-    if version == "-VERSION-PLACEHOLDER-":
-        version = "dev"
-
     # Test the function
     res = io.get_L0B_fpath(ds, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.nc"
+    expected_name = f"L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
     expected_path = os.path.join(path_campaign_name, "L0B", station_name, expected_name)
     assert res == expected_path
 
