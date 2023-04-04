@@ -238,30 +238,6 @@ def check_data_sources(disdrodb_dir, product_level, data_sources):
     # Return data_sources list
     data_sources = data_sources.tolist()
     return data_sources
-    """Check DISDRODB data_sources are valid.
-
-    It checks only if the directory exist within the product level.
-    """
-    # If data_sources is None, return None
-    if isinstance(data_sources, type(None)):
-        return data_sources
-    # Ensure is a list
-    if isinstance(data_sources, str):
-        data_sources = [data_sources]
-    # Remove duplicates
-    data_sources = np.unique(np.array(data_sources))
-    # Get product level directory path
-    dir_path = _get_disdrodb_directory(disdrodb_dir=disdrodb_dir, product_level=product_level)
-    # Get data sources directory
-    list_data_sources = os.listdir(dir_path)
-    # Check if there are unvalid data_sources
-    idx_unvalid = np.where(np.isin(data_sources, list_data_sources, invert=True))[0]
-    if len(idx_unvalid) > 0:
-        unvalid_data_sources = data_sources[idx_unvalid].tolist()
-        raise ValueError(f"These data sources are unvalid: {unvalid_data_sources}.")
-    # Return data_sources list
-    data_sources = data_sources.tolist()
-    return data_sources
 
 
 def _check_campaign_names(disdrodb_dir, product_level, campaign_names):
