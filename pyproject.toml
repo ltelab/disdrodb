@@ -42,6 +42,8 @@ dev = [
 	"pytest",
 	"pydantic",
 	"coverage",
+	"tqdm",
+	"pooch"
 ]
 
 [tool.setuptools_scm]
