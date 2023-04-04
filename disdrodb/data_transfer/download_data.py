@@ -27,7 +27,8 @@ def check_path(path: str) -> None:
 
 
 def get_metadata_folders(folder_path: str) -> list:
-    """Return a list containing all metadata folders paths
+    """Return a list containing all metadata folders paths.
+
 
     Parameters
     ----------
@@ -37,14 +38,16 @@ def get_metadata_folders(folder_path: str) -> list:
     Returns
     -------
     list
-        list of metadata folders
+        List of metadata folders.
+
     """
 
     return [os.path.join(root, "metadata") for root, dirs, files in os.walk(folder_path) if "metadata" in dirs]
 
 
 def get_yaml_files(metadata_folders: str) -> list:
-    """Return a list containing all yaml files paths
+    """Return a list containing all YAML files paths.
+
 
     Parameters
     ----------
@@ -72,7 +75,8 @@ def get_list_urls_local_paths(
     campaign_name: str = None,
     station_name: str = None,
 ) -> list:
-    """Parse the folder according to the paramerters (data_source,
+    """Parse the folder according to the parameters (data_source,
+
     campaign_name and station_name) to get all url from the config files.
 
     Returns
@@ -105,7 +109,8 @@ def get_list_urls_local_paths(
         file_content = yaml.safe_load(open(yaml_file_path))
         if "data_url" in file_content.keys():
             data_url = file_content["data_url"]
-            config_station_name = os.path.basename(yaml_file_path).replace(".yml", "")
+            station_name = file_content["station_name"]
+
             # Only if the station name is not specified or if the station name is the same as the config file name
             if not station_name or station_name == config_station_name:
                 folder_path = os.path.dirname(yaml_file_path).replace("metadata", "data")
@@ -148,14 +153,16 @@ def download_file_from_url(url: str, folder_path: str) -> None:
         Local name of the file
     """
 
-    file_name = os.path.basename(url)
+    fname = os.path.basename(url)
+
 
     downloader = pooch.HTTPDownloader(progressbar=True)
     pooch.retrieve(
         url=url,
         known_hash=None,
         path=folder_path,
-        fname=file_name,
+        fname=fname,
+
         downloader=downloader,
         progressbar=tqdm,
     )
@@ -217,7 +224,8 @@ def download_all_files(
     overwrite: bool = False,
     unzip: bool = False,
 ):
-    """Batch function to get all yaml files that coantain
+    """Batch function to get all YAML files that contain
+
     the 'data_url' key and download the data locally.
 
     Parameters
