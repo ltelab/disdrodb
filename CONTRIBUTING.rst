@@ -78,7 +78,7 @@ commit and prints the error. Currently, DISDRODB only tests that the
 code to be committed complies with black's format style and the ruff linter.
 
 In case that the commit is aborted, you only need to run black agains you code.
-This can be done by running   ``black .``  or   ``ruff check .``     
+This can be done by running   ``black .``  or   ``ruff check .``
 
 .. note::
 	To maintain consitency, please use version and configuration defined into `.pre-commit-config.yaml`).
@@ -89,7 +89,7 @@ The can also be done with  ``pre-commit run --all-files``. This is recommended s
 indicates if the commit contained any formatting errors (that are automatically corrected).
 
 
-More info on pre-commit and CI tools in the Code quality ans testing section  `Code quality and testing section <#code-quality-control-and-testing>`__ 
+More info on pre-commit and CI tools in the Code quality ans testing section  `Code quality and testing section <#code-quality-control-and-testing>`__
 
 
 
@@ -254,7 +254,7 @@ To maintain a high code quality, we use `pre-commit <https://pre-commit.com/>`__
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
 | `Ruff  <https://github.com/charliermarsh/ruff>`__                                             | Python linter                                                    | 👍         | 👍    | (Ruff version 0.0.2570)                   |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
-| `pre-commit.ci   <https://pre-commit.ci/>`__                                                  | Run pre-commit                                                   |            |       |                                           |
+| `pre-commit.ci   <https://pre-commit.ci/>`__                                                  | Run pre-commit                                                   |            |  👍   |                                           |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
 | Coverage                                                                                      | Measure the code coverage of the project's unit tests            | -          | 👍    | all versions according to GitHub workflow |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
@@ -274,7 +274,7 @@ In the table above, some CI tool are mentioned for your information, but does no
 
 **Pytest**
 
-DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. 
+DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package.
 
 DISDRODB full testing pipeline can be executed by running:
 
@@ -344,7 +344,7 @@ Black should be used that way :
 
 
 .. note::
-	To maintain consitency, make sure to stick to version defined in the `.pre-commit-config.yaml` file. This version will be used in the CI. 
+	To maintain consitency, make sure to stick to version defined in the `.pre-commit-config.yaml` file. This version will be used in the CI.
 
 
 
@@ -361,8 +361,8 @@ Ruff should be used that way :
 
 
 .. note::
-	To maintain consitency, make sure to stick to version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is used in the CI. 
-   
+	To maintain consitency, make sure to stick to version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is used in the CI.
+
 
 
 
