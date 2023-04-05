@@ -83,7 +83,7 @@ def get_sation_name_and_url_from_metadata(yaml_file_path: str) -> dict:
     Returns
     -------
     dict
-        dictionnary containing the station name and the url.
+        Dictionnary containing the station name and the url.
     """
 
     result_dict = {}
@@ -102,7 +102,6 @@ def _get_remote_and_local_data_directories(
     station_name: str = None,
 ) -> list:
     """Parse the folder according to the parameters (data_source,
-
     campaign_name and station_name) to get all url from the config files.
 
     Returns
@@ -190,7 +189,7 @@ def download_file_from_url(url: str, dir_path: str) -> None:
 
 
 def download_single_archive(url_local_path: tuple, overwrite: bool = False) -> None:
-    """Download the files based on a tuple (local path , url).
+    """Download the files based on a tuple (local path, url).
 
     Parameters
     ----------
@@ -223,7 +222,6 @@ def download_disdrodb_archives(
     overwrite: bool = False,
 ):
     """Batch function to get all YAML files that contain
-
     the 'data_url' key and download the data locally.
 
     Parameters
