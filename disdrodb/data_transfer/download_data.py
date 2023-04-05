@@ -1,9 +1,12 @@
 import os
 import re
-import pooch
 import yaml
 
-import tqdm
+try:
+    import pooch
+    import tqdm
+except ImportError:
+    raise ImportError('Please install disdrodb with "dev" dependencies to use this module.')
 
 from disdrodb.api import io
 
