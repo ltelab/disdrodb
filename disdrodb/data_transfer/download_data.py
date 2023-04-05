@@ -68,7 +68,7 @@ def get_yaml_files(metadata_dirs: str) -> list:
         for metadata_dir in metadata_dirs
         for root, dirs, files in os.walk(metadata_dir)
         for file in files
-        if file.endswith(".yml")
+        if file.endswith(".yml") or file.endswith(".yaml")
     ]
 
 
