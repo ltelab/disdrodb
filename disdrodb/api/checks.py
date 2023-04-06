@@ -38,3 +38,9 @@ def check_url(url: str) -> bool:
         return True
     else:
         return False
+
+
+def check_disdrodb_dir(disdrodb_dir: str):
+    """Raise an error if the path does not end with "DISDRODB"."""
+    if not disdrodb_dir.endswith("DISDRODB"):
+        raise ValueError(f"The path {disdrodb_dir} does not end with DISDRODB. Please check the path.")

@@ -19,8 +19,6 @@
 ####################################################################
 import click
 
-from disdrodb.data_transfer import download_data
-
 
 @click.command()
 @click.option(
@@ -41,11 +39,13 @@ from disdrodb.data_transfer import download_data
     help="Station name. If not provided (None), all stations will be downloaded.",
 )
 @click.option("--overwrite", type=bool, help="Overwite existing file ?")
-def wraper_download_disdrodb_archive(
+def download_disdrodb_archive(
     disdrodb_dir=None,
     data_source=None,
     campaign_name=None,
     station_name=None,
     overwrite=False,
 ):
-    download_data.download_disdrodb_archives(disdrodb_dir, data_source, campaign_name, station_name, overwrite)
+    from disdrodb.data_transfer.download_data import download_disdrodb_archives
+
+    download_disdrodb_archives(disdrodb_dir, data_source, campaign_name, station_name, overwrite)

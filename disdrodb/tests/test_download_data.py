@@ -1,6 +1,7 @@
 import os
 import yaml
 
+from disdrodb.api import metadata
 from disdrodb.data_transfer import download_data
 
 
@@ -29,7 +30,7 @@ def test_get_metadata_folders(tmp_path):
     station_name = "station_name"
     create_fake_config_file(tmp_path, data_source, campaign_name, station_name)
     testing_path = os.path.join(tmp_path, "DISDRODB", "Raw", data_source, campaign_name)
-    result = download_data.get_metadata_dirs(testing_path)
+    result = metadata.get_metadata_dirs(testing_path)
     expected_result.append(os.path.join(testing_path, "metadata"))
 
     assert result == expected_result
@@ -41,7 +42,7 @@ def test_get_metadata_folders(tmp_path):
     station_name = "station_name"
     create_fake_config_file(tmp_path, data_source, campaign_name, station_name)
     testing_path = os.path.join(tmp_path, "DISDRODB", "Raw")
-    result = download_data.get_metadata_dirs(testing_path)
+    result = metadata.get_metadata_dirs(testing_path)
     expected_result.append(os.path.join(testing_path, data_source, campaign_name, "metadata"))
     assert sorted(result) == sorted(expected_result)
 
@@ -55,7 +56,7 @@ def test_get_list_urls_local_paths(tmp_path):
     campaign_name = "campaign_name"
     station_name = "station_name"
     create_fake_config_file(tmp_path, data_source, campaign_name, station_name)
-    result = download_data._get_remote_and_local_data_directories(
+    result = download_data._get_local_and_remote_data_directories(
         str(os.path.join(tmp_path, "DISDRODB")),
         data_source,
         campaign_name,
@@ -73,7 +74,7 @@ def test_get_list_urls_local_paths(tmp_path):
     campaign_name = "campaign_name"
     station_name = "station_name"
     create_fake_config_file(tmp_path, data_source, campaign_name, station_name, with_url=False)
-    result = download_data._get_remote_and_local_data_directories(str(os.path.join(tmp_path, "DISDRODB")))
+    result = download_data._get_local_and_remote_data_directories(str(os.path.join(tmp_path, "DISDRODB")))
     testing_path = os.path.join(tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "data", station_name)
     assert expected_result == result
 
@@ -84,7 +85,7 @@ def test_get_list_urls_local_paths(tmp_path):
     campaign_name = "campaign_name"
     station_name = "station_name"
     create_fake_config_file(tmp_path, data_source, campaign_name, station_name, with_url=True)
-    result = download_data._get_remote_and_local_data_directories(str(os.path.join(tmp_path, "DISDRODB")))
+    result = download_data._get_local_and_remote_data_directories(str(os.path.join(tmp_path, "DISDRODB")))
     testing_path = os.path.join(tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "data", station_name)
     expected_result.append((testing_path, "https://www.example.com"))
     assert len(expected_result) == len(result)

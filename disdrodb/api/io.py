@@ -24,6 +24,9 @@ import yaml
 import numpy as np
 
 
+from disdrodb.api import checks
+
+
 def _get_disdrodb_directory(
     disdrodb_dir,
     product_level,
@@ -32,6 +35,9 @@ def _get_disdrodb_directory(
     check_exist=True,
 ):
     from disdrodb.l0.io import _check_directory_exist
+
+    # Check if disdrodb_dir has a valid name
+    checks.check_disdrodb_dir(disdrodb_dir)
 
     # Get directory
     if product_level.upper() == "RAW":
