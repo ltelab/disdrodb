@@ -1,5 +1,4 @@
 import os
-import re
 import yaml
 
 try:
@@ -9,24 +8,7 @@ except ImportError:
     raise ImportError('Please install disdrodb with "dev" dependencies to use this module.')
 
 from disdrodb.api import io
-
-
-# function to check if a path exists
-def check_path(path: str) -> None:
-    """Check if a path exists.
-
-    Parameters
-    ----------
-    path : str
-        Path to check.
-
-    Raises
-    ------
-    FileNotFoundError
-        If the path does not exist.
-    """
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"The path {path} does not exist. Please check the path.")
+from disdrodb.api import checks
 
 
 def get_metadata_dirs(dir_path: str) -> list:
@@ -142,27 +124,6 @@ def _get_remote_and_local_data_directories(
     return list_of_path_url
 
 
-def check_url(url: str) -> bool:
-    """Check url.
-
-    Parameters
-    ----------
-    url : str
-        URL to check.
-
-    Returns
-    -------
-    bool
-        True if url well formated, False if not well formated.
-    """
-    regex = r"^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$"  # noqa: E501
-
-    if re.match(regex, url):
-        return True
-    else:
-        return False
-
-
 def download_file_from_url(url: str, dir_path: str) -> None:
     """Download file.
 
@@ -201,7 +162,7 @@ def download_single_archive(url_local_path: tuple, overwrite: bool = False) -> N
     """
 
     local_path, url = url_local_path
-    if check_url(url):
+    if checks.check_url(url):
         # create station folder if not existing
         if not os.path.exists(local_path):
             os.makedirs(local_path)

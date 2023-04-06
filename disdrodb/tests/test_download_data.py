@@ -1,32 +1,7 @@
 import os
-import pytest
 import yaml
 
 from disdrodb.data_transfer import download_data
-
-
-def test_check_path():
-    # Test a valid path
-    path = os.path.abspath(__file__)
-    assert download_data.check_path(path) is None
-
-    # Test an invalid path
-    path = "/path/that/does/not/exist"
-    with pytest.raises(FileNotFoundError):
-        download_data.check_path(path)
-
-
-def test_check_url():
-    # Test with valid URLs
-    assert download_data.check_url("https://www.example.com") is True
-    assert download_data.check_url("http://example.com/path/to/file.html?param=value") is True
-    assert download_data.check_url("www.example.com") is True
-    assert download_data.check_url("example.com") is True
-
-    # Test with invalid URLs
-    assert download_data.check_url("ftp://example.com") is False
-    assert download_data.check_url("htp://example.com") is False
-    assert download_data.check_url("http://example.com/path with spaces") is False
 
 
 def create_fake_config_file(temp_path, data_source, campaign_name, station_name, with_url: bool = True):
