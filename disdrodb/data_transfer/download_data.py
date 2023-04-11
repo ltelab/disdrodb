@@ -27,20 +27,27 @@ def get_station_local_remote_locations(yaml_file_path: str) -> tuple:
 
     metadata_dict = _read_yaml_file(yaml_file_path)
 
-    # Check name
-    expected_name = os.path.basename(yaml_file_path).replace(".yml", "")
-    name = metadata_dict.get("station_name")
-    if name and name != expected_name:
+    # Check station name
+
+    expected_station_name = os.path.basename(yaml_file_path).replace(".yml", "")
+
+    station_name = metadata_dict.get("station_name")
+
+    if station_name and station_name != expected_station_name:
+
         return None, None
 
     # Get data url
-    url = metadata_dict.get("data_url")
+    station_remote_url = metadata_dict.get("data_url")
+
 
     # Get the local path
     data_dir_path = os.path.dirname(yaml_file_path).replace("metadata", "data")
-    station_dir_path = os.path.join(data_dir_path, name)
+    station_dir_path = os.path.join(data_dir_path, station_name)
 
-    return station_dir_path, url
+
+    return station_dir_path, station_remote_url
+
 
 
 def _get_local_and_remote_data_directories(
@@ -115,8 +122,7 @@ def download_single_archive(url_local_path: tuple, overwrite: bool = False) -> N
     local_path, url = url_local_path
     if check_url(url):
         # create station folder if not existing
-        if not os.path.exists(local_path):
-            os.makedirs(local_path)
+    os.makedirs(local_path, exist_ok=True)
         # download the file
         download_file_from_url(url, local_path)
         print(f"Download {url} into {local_path}")
