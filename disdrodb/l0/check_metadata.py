@@ -120,9 +120,26 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
     return None
 
 
-def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True):
-    """Return the values of a metadata key for all the archive."""
-    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
+def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bool = True):
+    """Return the values of a metadata key for all the archive.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+    key : str
+        Metadata key.
+    return_tuple : bool, optional
+        if true, returns a tuple of values with station, campaign and data source name (default is True)
+        if false, returns a list of values without station, campaign and data source name
+
+    Returns
+    -------
+    list or tuple
+        List or tuple of values of the metadata key.
+    """
+
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
     list_info = []
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
@@ -146,8 +163,16 @@ def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True):
 
 #### --------------------------------------------------------------------------.
 #### Metadata Archive Checks
-def check_archive_metadata_keys(disdrodb_dir):
-    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
+def check_archive_metadata_keys(disdrodb_dir: str):
+    """Check that all metadata files have  valid keys
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+    """
+
+    list_metadata_paths = get_metadata_list(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)

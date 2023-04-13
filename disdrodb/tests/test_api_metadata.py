@@ -1,5 +1,48 @@
 import os
 import yaml
+from disdrodb.api import metadata
+
+
+def create_fake_metadata_file(
+    tmp_path, yaml_file_name, yaml_dict, data_source="data_source", campaign_name="campaign_name"
+):
+    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+    file_path = os.path.join(subfolder_path, yaml_file_name)
+    # create a fake yaml file in temp folder
+    with open(file_path, "w") as f:
+        yaml.dump(yaml_dict, f)
+
+    assert os.path.exists(file_path)
+
+    return file_path
+
+
+def test_get_metadata_list(tmp_path):
+    excepted_result = list()
+
+    # Test 1 : one metadata file
+    yaml_file_name = "station_1.yml"
+    key_name = "key1"
+    yaml_dict = {key_name: "value1"}
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    fake_metadata_file_path = create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    excepted_result.append(fake_metadata_file_path)
+    result = metadata.get_metadata_list(os.path.join(tmp_path, "DISDRODB"))
+
+    assert excepted_result == result
+
+    # Test 2 : two metadata files
+    yaml_file_name = "station_2.yml"
+    fake_metadata_file_path = create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    excepted_result.append(fake_metadata_file_path)
+    result = metadata.get_metadata_list(os.path.join(tmp_path, "DISDRODB"))
+
+    assert excepted_result == excepted_result
+import os
+import yaml
 
 from disdrodb.api.metadata import get_list_metadata
 
