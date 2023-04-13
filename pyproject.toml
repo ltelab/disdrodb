@@ -29,6 +29,8 @@ dependencies = [
 	"setuptools",
 	"xarray",
 	"dask",
+	"tqdm",
+	"pooch"
 ]
 dynamic = ["version"]
 
@@ -41,9 +43,7 @@ dev = [
 	"pre-commit",
 	"pytest",
 	"pydantic",
-	"coverage",
-	"tqdm",
-	"pooch"
+	"coverage"
 ]
 
 [tool.setuptools_scm]
