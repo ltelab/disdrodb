@@ -68,15 +68,15 @@ def get_metadata_list(disdrodb_dir, data_sources=None, campaign_names=None, stat
     disdrodb_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB
-    data_sources : list
+    data_sources : str or list of str
         Name of data source(s) of interest.
         The name(s) must be UPPER CASE.
         The default is None
-    campaign_names : list
+    campaign_names : str or list of str
         Name of the campaign(s) of interest.
         The name(s) must be UPPER CASE.
         The default is None
-    station_names : list
+    station_names : str or list of str
         Station names of interest.
         The default is None
 
