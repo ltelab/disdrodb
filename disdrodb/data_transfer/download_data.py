@@ -45,7 +45,7 @@ def get_station_local_remote_locations(yaml_file_path: str) -> tuple:
 
 
 def _get_local_and_remote_data_directories(
-    disdrodb_dir: Union[str, list[str]],
+    disdrodb_dir: str,
     data_sources: Union[str, list[str]] = None,
     campaign_names: Union[str, list[str]] = None,
     station_names: Union[str, list[str]] = None,
@@ -55,7 +55,7 @@ def _get_local_and_remote_data_directories(
 
     Parameters
     ----------
-    disdrodb_dir : str or list of str, optional
+    disdrodb_dir : str , optional
         DisdroDB data folder path.
         Must end with DISDRODB.
     data_sources : str or list of str, optional
@@ -171,7 +171,7 @@ def _download_station_data(url_local_path: tuple, force: bool = False) -> None:
 
 
 def download_disdrodb_archives(
-    disdrodb_dir: Union[str, list[str]] = None,
+    disdrodb_dir: str = None,
     data_sources: Union[str, list[str]] = None,
     campaign_names: Union[str, list[str]] = None,
     station_names: Union[str, list[str]] = None,
@@ -182,7 +182,7 @@ def download_disdrodb_archives(
 
     Parameters
     ----------
-    disdrodb_dir : str or list of str, optional
+    disdrodb_dir : str, optional
         DisdroDB data folder path.
         Must end with DISDRODB.
     data_sources : str or list of str, optional
