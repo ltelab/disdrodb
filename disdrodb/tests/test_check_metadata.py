@@ -1,6 +1,7 @@
 import os
 import pytest
 import yaml
+import random
 
 
 from disdrodb.l0 import check_metadata, metadata
@@ -138,21 +139,17 @@ def test_get_archive_metadata_key_value(tmp_path):
     assert result == expected_result
 
 
-def test_check_archive_metadata_keys(tmp_path, capsys):
-    metadata.get_valid_metadata_keys()
-
-    # # Test 1 : create a correct metadata file
-    # yaml_file_name = "station_1.yml"
-    # yaml_dict = dict()
-    # for i in list_of_valid_metadata_keys :
-    #     yaml_dict[i] = "value1"
-
-    # data_source = 'data_source'
-    # campaign_name = 'campaign_name'
-    # fake_metadata_file_path = create_fake_metadata_file(tmp_path,yaml_file_name,yaml_dict,data_source,campaign_name)
-    # result = check_metadata.check_archive_metadata_keys(os.path.join(tmp_path,'DISDRODB'))
-
-    # assert result is True
+def test_check_archive_metadata_keys(tmp_path):
+    # Test 1 : create a correct metadata file
+    # Get the list of valid metadata keys
+    list_of_valid_metadata_keys = metadata.get_valid_metadata_keys()
+    yaml_file_name = "station_1.yml"
+    yaml_dict = {i: "value1" for i in list_of_valid_metadata_keys}
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_keys(os.path.join(tmp_path, "DISDRODB"))
+    assert result is True
 
     # Test 2 : add a wrong metadata key file
     yaml_file_name = "station_2.yml"
@@ -161,25 +158,138 @@ def test_check_archive_metadata_keys(tmp_path, capsys):
     data_source = "data_source"
     campaign_name = "campaign_name"
     yaml_dict = {expected_key: expected_value}
-    fake_metadata_file_path = create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    print(fake_metadata_file_path)
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_keys(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
 
-    # captured = capsys.readouterr()
-    check_metadata.check_archive_metadata_keys(os.path.join(tmp_path, "DISDRODB"))
-    # assert 'Error' in str(captured.out)
 
-    assert False
+def test_check_archive_metadata_campaign_name(tmp_path):
+    # Test 1 : create a correct metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"campaign_name": campaign_name}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_campaign_name(os.path.join(tmp_path, "DISDRODB"))
+    assert result is True
 
-    # print(result)
-    # assert result is None
+    # Test 2 : create a wrong metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"campaign_name": ""}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_campaign_name(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
 
-    # with pytest.raises(Exception):
-    #     result = check_metadata.check_archive_metadata_keys(os.path.join(tmp_path,'DISDRODB'))
 
-    # with pytest.raises() as e:
-    #     check_metadata.check_archive_metadata_keys(os.path.join(tmp_path,'DISDRODB')) # function should raise error
-    # # # assert "Provided section id does not seem to be incremeting an existing one" in str(e.value) # this message
-    # # assert e.type == ValueError
+def test_check_archive_metadata_data_source(tmp_path):
+    # Test 1 : create a correct metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"data_source": data_source}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_data_source(os.path.join(tmp_path, "DISDRODB"))
+    assert result is True
+
+    # Test 2 : create a wrong metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"data_source": ""}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_data_source(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
+
+
+def test_check_archive_metadata_sensor_name(tmp_path):
+    from disdrodb.l0.standards import available_sensor_name
+
+    available_sensor_name = available_sensor_name()
+
+    # Test 1 : create a correct metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"sensor_name": random.choice(available_sensor_name)}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_sensor_name(os.path.join(tmp_path, "DISDRODB"))
+    assert result is True
+
+    # Test 2 : create a wrong metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"sensor_name": ""}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_sensor_name(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
+
+
+def test_check_archive_metadata_station_name(tmp_path):
+    # Test 1 : create a correct metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"station_name": os.path.splitext(yaml_file_name)[0]}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_station_name(os.path.join(tmp_path, "DISDRODB"))
+    assert result is True
+
+    # Test 2 : create a wrong metadata file
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"station_name": ""}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_station_name(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
+
+
+def test_check_archive_metadata_reader(tmp_path):
+    # Test 1 : create a correct metadata file
+    from disdrodb.l0.l0_reader import available_readers
+
+    list_readers = available_readers()
+    yaml_file_name = "station_1.yml"
+    campaign_name = "campaign_name"
+    data_source = random.choice(list(list_readers.keys()))
+    reader_name = random.choice(list_readers[data_source])
+    yaml_dict = {"reader": f"{data_source}/{reader_name}"}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_reader(os.path.join(tmp_path, "DISDRODB"))
+    assert result is True
+
+    # Test 2 : create a wrong metadata file
+    yaml_file_name = "station_1.yml"
+    campaign_name = "campaign_name"
+    yaml_dict = {"reader": ""}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_reader(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
+
+
+def test_check_archive_metadata_compliance(tmp_path):
+    # We check only the failure, the success are tested in the above tests.
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"reader": ""}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_compliance(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
+
+
+def test_check_archive_metadata_geolocation(tmp_path):
+    # We check only the failure, the success are tested in the above test.
+    yaml_file_name = "station_1.yml"
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    yaml_dict = {"reader": ""}
+    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
+    result = check_metadata.check_archive_metadata_geolocation(os.path.join(tmp_path, "DISDRODB"))
+    assert result is False
 
 
 def test_read_yaml():
