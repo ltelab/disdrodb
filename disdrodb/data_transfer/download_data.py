@@ -3,6 +3,8 @@ import pooch
 import tqdm
 import glob
 
+from typing import Union
+
 from disdrodb.api.checks import check_url
 from disdrodb.api.metadata import _read_yaml_file
 
@@ -43,13 +45,31 @@ def get_station_local_remote_locations(yaml_file_path: str) -> tuple:
 
 
 def _get_local_and_remote_data_directories(
-    disdrodb_dir: str,
-    data_sources: str = "",
-    campaign_names: str = "",
-    station_names: str = "",
+    disdrodb_dir: Union[str, list[str]],
+    data_sources: Union[str, list[str]] = None,
+    campaign_names: Union[str, list[str]] = None,
+    station_names: Union[str, list[str]] = None,
 ) -> list:
     """Parse the folder according to the parameters (data_source,
     campaign_name and station_name) to get all url from the config files.
+
+    Parameters
+    ----------
+    disdrodb_dir : str or list of str, optional
+        DisdroDB data folder path.
+        Must end with DISDRODB.
+    data_sources : str or list of str, optional
+        Data source folder name (eg : EPFL).
+        If not provided (None), all data sources will be downloaded.
+        The default is data_source=None.
+    campaign_names : str or list of str, optional
+        Campaign name (eg :  EPFL_ROOF_2012).
+        If not provided (None), all campaigns will be downloaded.
+        The default is campaign_name=None.
+    station_names : str or list of str, optional
+        Station name.
+        If not provided (None), all stations will be downloaded.
+        The default is station_name=None.
 
     Returns
     -------
@@ -59,27 +79,20 @@ def _get_local_and_remote_data_directories(
 
     # Get all config files from the metadata folders
     list_of_base_path = []
-    if isinstance(data_sources, str):
-        data_sources = [data_sources]
-    if isinstance(campaign_names, str):
-        campaign_names = [campaign_names]
-
     if data_sources:
-        for data_source in data_sources:
-            if campaign_names:
-                for campaign_name in campaign_names:
-                    base_path = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name)
-                    list_of_base_path.append(base_path)
-            else:
-                base_path = os.path.join(disdrodb_dir, "Raw", data_source)
-                list_of_base_path.append(base_path)
+        if isinstance(data_sources, str):
+            data_sources = [data_sources]
     else:
-        if campaign_names:
-            for campaign_name in campaign_names:
-                base_path = os.path.join(disdrodb_dir, "Raw", "**", campaign_name)
-                list_of_base_path.append(base_path)
-        else:
-            base_path = os.path.join(disdrodb_dir, "Raw")
+        data_sources = ["**"]
+    if campaign_names:
+        if isinstance(campaign_names, str):
+            campaign_names = [campaign_names]
+    else:
+        campaign_names = ["**"]
+
+    for data_source in data_sources:
+        for campaign_name in campaign_names:
+            base_path = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name)
             list_of_base_path.append(base_path)
 
     metadata_folder_name = "metadata"
@@ -158,10 +171,10 @@ def _download_station_data(url_local_path: tuple, force: bool = False) -> None:
 
 
 def download_disdrodb_archives(
-    disdrodb_dir: str = None,
-    data_sources: str = None,
-    campaign_names: str = None,
-    station_names: str = None,
+    disdrodb_dir: Union[str, list[str]] = None,
+    data_sources: Union[str, list[str]] = None,
+    campaign_names: Union[str, list[str]] = None,
+    station_names: Union[str, list[str]] = None,
     force: bool = False,
 ):
     """Batch function to get all YAML files that contain
@@ -169,18 +182,18 @@ def download_disdrodb_archives(
 
     Parameters
     ----------
-    disdrodb_dir : str, optional
+    disdrodb_dir : str or list of str, optional
         DisdroDB data folder path.
         Must end with DISDRODB.
-    data_sources : str or list, optional
+    data_sources : str or list of str, optional
         Data source folder name (eg : EPFL).
         If not provided (None), all data sources will be downloaded.
         The default is data_source=None.
-    campaign_names : str or list, optional
+    campaign_names : str or list of str, optional
         Campaign name (eg :  EPFL_ROOF_2012).
         If not provided (None), all campaigns will be downloaded.
         The default is campaign_name=None.
-    station_names : str or list, optional
+    station_names : str or list of str, optional
         Station name.
         If not provided (None), all stations will be downloaded.
         The default is station_name=None.
@@ -188,7 +201,6 @@ def download_disdrodb_archives(
         If True, overwrite the already existing raw data file.
         The default is False.
     """
-
     list_urls_data_dir = _get_local_and_remote_data_directories(
         disdrodb_dir, data_sources, campaign_names, station_names
     )
