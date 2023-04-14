@@ -59,4 +59,14 @@ def download_disdrodb_archive(
 ):
     from disdrodb.data_transfer.download_data import download_disdrodb_archives
 
+    # if empty tuples, set to None
+    if not data_sources:
+        data_sources = None
+
+    if not campaign_names:
+        campaign_names = None
+
+    if not station_names:
+        station_names = None
+
     download_disdrodb_archives(disdrodb_dir, data_sources, campaign_names, station_names, force)
