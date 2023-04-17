@@ -3,7 +3,7 @@ import pooch
 import tqdm
 import glob
 
-from typing import Union
+from typing import Union, Optional, List
 
 from disdrodb.api.checks import check_url
 from disdrodb.api.metadata import _read_yaml_file
@@ -46,9 +46,9 @@ def get_station_local_remote_locations(yaml_file_path: str) -> tuple:
 
 def _get_local_and_remote_data_directories(
     disdrodb_dir: str,
-    data_sources: Union[str, list[str]] = None,
-    campaign_names: Union[str, list[str]] = None,
-    station_names: Union[str, list[str]] = None,
+    data_sources: Optional[Union[str, List[str]]] = None,
+    campaign_names: Optional[Union[str, List[str]]] = None,
+    station_names: Optional[Union[str, List[str]]] = None,
 ) -> list:
     """Parse the folder according to the parameters (data_source,
     campaign_name and station_name) to get all url from the config files.
@@ -171,10 +171,10 @@ def _download_station_data(url_local_path: tuple, force: bool = False) -> None:
 
 
 def download_disdrodb_archives(
-    disdrodb_dir: str = None,
-    data_sources: Union[str, list[str]] = None,
-    campaign_names: Union[str, list[str]] = None,
-    station_names: Union[str, list[str]] = None,
+    disdrodb_dir: str,
+    data_sources: Optional[Union[str, List[str]]] = None,
+    campaign_names: Optional[Union[str, List[str]]] = None,
+    station_names: Optional[Union[str, List[str]]] = None,
     force: bool = False,
 ):
     """Batch function to get all YAML files that contain
