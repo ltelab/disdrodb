@@ -111,7 +111,7 @@ def _get_local_and_remote_data_directories(
             list_metadata_folders += glob.glob(metadata_path, recursive=True)
 
     list_of_path_url = list()
-    for yaml_file_path in list_metadata_folders:
+    for yaml_file_path in set(list_metadata_folders):
         station_dir_path, data_url = get_station_local_remote_locations(yaml_file_path)
         if data_url is None:
             continue
