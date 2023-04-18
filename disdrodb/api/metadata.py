@@ -83,7 +83,7 @@ def get_list_metadata_file(
         Station names of interest.
         The default is None
     with_stations_data : bool
-        If True, only return metadata filepaths that have corresponding data in the DISDRODB raw archive.
+        If True, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
         The default is True
 
     Returns

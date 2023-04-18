@@ -58,11 +58,12 @@ def _download_file_from_url(url: str, dir_path: str, force: bool = False) -> str
     fname = os.path.basename(url)
     file_path = os.path.join(dir_path, fname)
 
-    if not force and os.path.isfile(file_path):
-        print(f"{file_path} already exists, skipping download.")
-        return file_path
-    elif force and os.path.isfile(file_path):
-        os.remove(file_path)
+    if os.path.isfile(file_path):
+        if force:
+            os.remove(file_path)
+        else:
+            print(f"{file_path} already exists, skipping download.")
+            return file_path
 
     downloader = pooch.HTTPDownloader(progressbar=True)
     pooch.retrieve(url=url, known_hash=None, path=dir_path, fname=fname, downloader=downloader, progressbar=tqdm)
@@ -70,8 +71,8 @@ def _download_file_from_url(url: str, dir_path: str, force: bool = False) -> str
     return file_path
 
 
-def _download_station_data(metadata_fpaths: str, force: bool = False) -> None:
-    """Download the station data.
+def _download_unzip_station_data(metadata_fpath: str, force: bool = False) -> None:
+    """Download and unizip the station data .
 
     Parameters
     ----------
@@ -81,23 +82,16 @@ def _download_station_data(metadata_fpaths: str, force: bool = False) -> None:
         force download, by default False
 
     """
+    location_info = get_station_local_remote_locations(metadata_fpath)
 
-    for metadata_fpath in metadata_fpaths:
-        print("metadata_fpath", metadata_fpath)
-        location_info = get_station_local_remote_locations(metadata_fpath)
-
-        if None not in location_info:
-            data_dir_path, station_name, data_url = location_info
-            url_file_name, url_file_extension = os.path.splitext(os.path.basename(data_url))
-            os.path.join(data_dir_path, url_file_name)
-            temp_zip_path = _download_file_from_url(data_url, data_dir_path, force)
-
-            if temp_zip_path and url_file_extension.endswith(".zip"):
-                _unzip_file(temp_zip_path, os.path.join(data_dir_path, str(station_name)))
-                if os.path.exists(temp_zip_path):
-                    os.remove(temp_zip_path)
-            else:
-                print(f"File extension {url_file_extension} is not supported. Should be a zip file.")
+    if None not in location_info:
+        data_dir_path, station_name, data_url = location_info
+        url_file_name, url_file_extension = os.path.splitext(os.path.basename(data_url))
+        os.path.join(data_dir_path, url_file_name)
+        temp_zip_path = _download_file_from_url(data_url, data_dir_path, force)
+        _unzip_file(temp_zip_path, os.path.join(data_dir_path, str(station_name)))
+        if os.path.exists(temp_zip_path):
+            os.remove(temp_zip_path)
 
 
 def download_disdrodb_archives(
@@ -132,6 +126,13 @@ def download_disdrodb_archives(
         The default is False.
     """
 
-    metadata_fpath = get_list_metadata_file(disdrodb_dir, data_sources, campaign_names, station_names, False)
+    metadata_fpaths = get_list_metadata_file(
+        disdrodb_dir=disdrodb_dir,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station_names=station_names,
+        with_stations_data=False,
+    )
 
-    _download_station_data(metadata_fpath, force)
+    for metadata_fpath in metadata_fpaths:
+        _download_unzip_station_data(metadata_fpath, force)
