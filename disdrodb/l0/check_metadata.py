@@ -9,7 +9,7 @@ from disdrodb.l0.io import (
     get_data_source,
     get_campaign_name,
 )
-from disdrodb.api.metadata import get_metadata_list, read_station_metadata
+from disdrodb.api.metadata import _get_list_metadata_with_data, read_station_metadata
 from disdrodb.l0.l0_reader import _check_metadata_reader
 from disdrodb.l0.metadata import (
     _check_metadata_keys,
@@ -122,7 +122,7 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
 
 def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True):
     """Return the values of a metadata key for all the archive."""
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     list_info = []
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
@@ -147,7 +147,7 @@ def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True):
 #### --------------------------------------------------------------------------.
 #### Metadata Archive Checks
 def check_archive_metadata_keys(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -169,7 +169,7 @@ def check_archive_metadata_keys(disdrodb_dir):
 
 
 def check_archive_metadata_campaign_name(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -191,7 +191,7 @@ def check_archive_metadata_campaign_name(disdrodb_dir):
 
 
 def check_archive_metadata_data_source(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -213,7 +213,7 @@ def check_archive_metadata_data_source(disdrodb_dir):
 
 
 def check_archive_metadata_sensor_name(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -235,7 +235,7 @@ def check_archive_metadata_sensor_name(disdrodb_dir):
 
 
 def check_archive_metadata_station_name(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -257,7 +257,7 @@ def check_archive_metadata_station_name(disdrodb_dir):
 
 
 def check_archive_metadata_reader(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -279,7 +279,7 @@ def check_archive_metadata_reader(disdrodb_dir):
 
 
 def check_archive_metadata_compliance(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -298,7 +298,7 @@ def check_archive_metadata_compliance(disdrodb_dir):
 
 
 def check_archive_metadata_geolocation(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    list_metadata_paths = _get_list_metadata_with_data(disdrodb_dir)
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)

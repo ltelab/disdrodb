@@ -19,8 +19,8 @@
 # -----------------------------------------------------------------------------.
 
 import os
-import yaml
 import numpy as np
+from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
 from disdrodb.l0.io import get_campaign_name, get_data_source
 
 
@@ -110,20 +110,6 @@ def sort_metadata_dictionary(metadata):
     list_metadata_keys = get_valid_metadata_keys()
     metadata = {k: metadata[k] for k in list_metadata_keys}
     return metadata
-
-
-def _read_yaml_file(fpath):
-    """Read a YAML file into dictionary."""
-    with open(fpath, "r") as f:
-        dictionary = yaml.safe_load(f)
-    return dictionary
-
-
-def _write_yaml_file(dictionary, fpath, sort_keys=False):
-    """Write dictionary to YAML file."""
-    with open(fpath, "w") as f:
-        yaml.dump(dictionary, f, sort_keys=sort_keys)
-    return None
 
 
 def read_metadata(campaign_dir: str, station_name: str) -> dict:

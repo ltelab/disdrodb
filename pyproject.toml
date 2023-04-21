@@ -29,6 +29,8 @@ dependencies = [
 	"setuptools",
 	"xarray",
 	"dask",
+	"tqdm",
+	"pooch"
 ]
 dynamic = ["version"]
 
@@ -41,7 +43,7 @@ dev = [
 	"pre-commit",
 	"pytest",
 	"pydantic",
-	"coverage",
+	"coverage"
 ]
 
 [tool.setuptools_scm]
@@ -63,6 +65,8 @@ run_disdrodb_l0b_concat="disdrodb.l0.scripts.run_disdrodb_l0b_concat:run_disdrod
 # L0
 run_disdrodb_l0b="disdrodb.l0.scripts.run_disdrodb_l0b:run_disdrodb_l0b"
 run_disdrodb_l0="disdrodb.l0.scripts.run_disdrodb_l0:run_disdrodb_l0"
+# Data transfer
+download_disdrodb_archive="disdrodb.data_transfer.scripts.download_disdrodb_archive:download_disdrodb_archive"
 
 [tool.ruff]
 ignore = ["E722"]
