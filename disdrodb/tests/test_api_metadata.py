@@ -1,7 +1,7 @@
 import os
 import yaml
 
-from disdrodb.api.metadata import get_list_metadata_file
+from disdrodb.api.metadata import get_list_metadata
 
 
 def create_fake_metadata_file(temp_path, data_source, campaign_name, station_name, with_url: bool = True):
@@ -28,9 +28,7 @@ def test_get_list_metadata_file(tmp_path):
     campaign_name = "campaign_name"
     station_name = "station_name"
     create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name)
-    result = get_list_metadata_file(
-        str(os.path.join(tmp_path, "DISDRODB")), data_source, campaign_name, station_name, False
-    )
+    result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), data_source, campaign_name, station_name, False)
     testing_path = os.path.join(
         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
     )
@@ -39,7 +37,7 @@ def test_get_list_metadata_file(tmp_path):
 
     # test 2 :
     # - downalod_data fucntion without paremeter
-    result = get_list_metadata_file(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
+    result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
     assert expected_result == result
 
     # test 3 :
@@ -49,7 +47,7 @@ def test_get_list_metadata_file(tmp_path):
     campaign_name = "campaign_name"
     station_name = "station_name"
     create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name, with_url=False)
-    result = get_list_metadata_file(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
+    result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
     testing_path = os.path.join(
         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
     )

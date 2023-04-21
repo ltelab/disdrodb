@@ -1,11 +1,60 @@
 import os
 import pooch
 import tqdm
+import click
 
 from typing import Union, Optional, List
 
-from disdrodb.api.metadata import _read_yaml_file, get_list_metadata_file
+from disdrodb.api.metadata import _read_yaml_file, get_list_metadata
 from disdrodb.utils.zip import _unzip_file
+
+
+def click_download_option(function: object):
+    """Click command line options for DISDRODB archive download transfer.
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.option(
+        "--data_sources",
+        type=str,
+        show_default=True,
+        default="",
+        help="""Data source folder name (eg : EPFL). If not provided (None),
+    all data sources will be downloaded.
+    Multiple data sources can be specified by separating them with spaces.
+    """,
+    )(function)
+    function = click.option(
+        "--campaign_names",
+        type=str,
+        show_default=True,
+        default="",
+        help="""Name of the campaign (eg :  EPFL_ROOF_2012).
+    If not provided (None), all campaigns will be downloaded.
+    Multiple campaign names can be specified by separating them with spaces.
+    """,
+    )(function)
+    function = click.option(
+        "--station_names",
+        type=str,
+        show_default=True,
+        default="",
+        help="""Station name. If not provided (None), all stations will be downloaded.
+    Multiple station names  can be specified by separating them with spaces.
+
+    """,
+    )(function)
+    function = click.option(
+        "-f",
+        "--force",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Force overwriting",
+    )(function)
+    return function
 
 
 def get_station_local_remote_locations(yaml_file_path: str) -> tuple:
@@ -71,8 +120,8 @@ def _download_file_from_url(url: str, dir_path: str, force: bool = False) -> str
     return file_path
 
 
-def _download_unzip_station_data(metadata_fpath: str, force: bool = False) -> None:
-    """Download and unizip the station data .
+def _download_station_data(metadata_fpath: str, force: bool = False) -> None:
+    """Download and unzip the station data .
 
     Parameters
     ----------
@@ -126,7 +175,7 @@ def download_disdrodb_archives(
         The default is False.
     """
 
-    metadata_fpaths = get_list_metadata_file(
+    metadata_fpaths = get_list_metadata(
         disdrodb_dir=disdrodb_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
@@ -135,4 +184,4 @@ def download_disdrodb_archives(
     )
 
     for metadata_fpath in metadata_fpaths:
-        _download_unzip_station_data(metadata_fpath, force)
+        _download_station_data(metadata_fpath, force)

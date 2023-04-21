@@ -60,7 +60,7 @@ def read_station_metadata(disdrodb_dir, product_level, data_source, campaign_nam
     return dictionary
 
 
-def get_list_metadata_file(
+def get_list_metadata(
     disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=True
 ):
     """
@@ -93,45 +93,78 @@ def get_list_metadata_file(
 
     """
     if with_stations_data:
-        return get_list_metadata_with_data(disdrodb_dir, data_sources, campaign_names, station_names)
+        return _get_list_metadata_with_data(disdrodb_dir, data_sources, campaign_names, station_names)
     else:
-        # Get all config files from the metadata folders
-        list_of_base_path = []
-        if data_sources:
-            if isinstance(data_sources, str):
-                data_sources = [data_sources]
-        else:
-            data_sources = ["**"]
-        if campaign_names:
-            if isinstance(campaign_names, str):
-                campaign_names = [campaign_names]
-        else:
-            campaign_names = ["**"]
+        return _get_list_all_metadata(disdrodb_dir, data_sources, campaign_names, station_names)
 
-        for data_source in data_sources:
-            for campaign_name in campaign_names:
-                base_path = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name)
-                list_of_base_path.append(base_path)
 
-        metadata_folder_name = "metadata"
+def _get_list_all_metadata(disdrodb_dir, data_sources=None, campaign_names=None, station_names=None):
+    """
+    Get the list of metadata filepaths in the DISDRODB raw archive.
 
-        metadata_fpaths = []
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Base directory of DISDRODB
+        Format: <...>/DISDRODB
+    data_sources : str or list of str
+        Name of data source(s) of interest.
+        The name(s) must be UPPER CASE.
+        The default is None
+    campaign_names : str or list of str
+        Name of the campaign(s) of interest.
+        The name(s) must be UPPER CASE.
+        The default is None
+    station_names : str or list of str
+        Station names of interest.
+        The default is None
+    with_stations_data : bool
+        If True, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
+        The default is True
 
-        for base_path in list_of_base_path:
-            if station_names:
-                if isinstance(station_names, str):
-                    station_names = [station_names]
-                for station_name in station_names:
-                    metadata_path = os.path.join(base_path, "**", metadata_folder_name, f"{station_name}.yml")
-                    metadata_fpaths += glob.glob(metadata_path, recursive=True)
-            else:
-                metadata_path = os.path.join(base_path, "**", metadata_folder_name, "*.yml")
+    Returns
+    -------
+    metadata_fpaths: list
+        List of metadata YAML file paths
+
+    """
+    # Get all config files from the metadata folders
+    list_of_base_path = []
+    if data_sources:
+        if isinstance(data_sources, str):
+            data_sources = [data_sources]
+    else:
+        data_sources = ["**"]
+    if campaign_names:
+        if isinstance(campaign_names, str):
+            campaign_names = [campaign_names]
+    else:
+        campaign_names = ["**"]
+
+    for data_source in data_sources:
+        for campaign_name in campaign_names:
+            base_path = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name)
+            list_of_base_path.append(base_path)
+
+    metadata_folder_name = "metadata"
+
+    metadata_fpaths = []
+
+    for base_path in list_of_base_path:
+        if station_names:
+            if isinstance(station_names, str):
+                station_names = [station_names]
+            for station_name in station_names:
+                metadata_path = os.path.join(base_path, "**", metadata_folder_name, f"{station_name}.yml")
                 metadata_fpaths += glob.glob(metadata_path, recursive=True)
+        else:
+            metadata_path = os.path.join(base_path, "**", metadata_folder_name, "*.yml")
+            metadata_fpaths += glob.glob(metadata_path, recursive=True)
 
-        return list(set(metadata_fpaths))
+    return list(set(metadata_fpaths))
 
 
-def get_list_metadata_with_data(disdrodb_dir, data_sources=None, campaign_names=None, station_names=None):
+def _get_list_metadata_with_data(disdrodb_dir, data_sources=None, campaign_names=None, station_names=None):
     """
     Get the list of metadata filepaths that have corresponding data in the DISDRODB raw archive.
 
