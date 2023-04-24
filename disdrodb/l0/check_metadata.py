@@ -125,7 +125,7 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
 #### --------------------------------------------------------------------------.
 #### Metadata Archive Checks
 def check_archive_metadata_keys(disdrodb_dir: str) -> bool:
-    """Check that all metadata files have  valid keys
+    """Check that all metadata files have valid keys
 
     Parameters
     ----------
@@ -138,7 +138,9 @@ def check_archive_metadata_keys(disdrodb_dir: str) -> bool:
     """
     is_valid = True
 
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -174,7 +176,9 @@ def check_archive_metadata_campaign_name(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -209,7 +213,9 @@ def check_archive_metadata_data_source(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -244,7 +250,9 @@ def check_archive_metadata_sensor_name(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -279,7 +287,9 @@ def check_archive_metadata_station_name(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -317,7 +327,9 @@ def check_archive_metadata_reader(disdrodb_dir: str) -> bool:
     """
 
     is_valid = True
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -342,7 +354,9 @@ def check_archive_metadata_reader(disdrodb_dir: str) -> bool:
 
 def check_archive_metadata_compliance(disdrodb_dir):
     is_valid = True
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -376,7 +390,9 @@ def check_archive_metadata_geolocation(disdrodb_dir):
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
-    list_metadata_paths = get_list_metadata(disdrodb_dir)
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
