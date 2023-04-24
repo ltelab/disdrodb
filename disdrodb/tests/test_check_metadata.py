@@ -72,7 +72,7 @@ def create_fake_metadata_file(
     return file_path
 
 
-def test_identify_empty_metadata_keys(tmp_path, capsys):
+def test_identify_missing_metadata_keys(tmp_path, capsys):
     yaml_file_name = "test.yml"
     yaml_dict = {"key1": "value1"}
 

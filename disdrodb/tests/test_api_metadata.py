@@ -61,7 +61,7 @@ def test__get_list_all_metadata(tmp_path):
 
     assert excepted_result == result
 
-    # # Test 2 : two metadata files
+    # Test 2 : two metadata files
     yaml_file_name = "station_2.yml"
     fake_metadata_file_path = create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
     excepted_result.append(fake_metadata_file_path)
