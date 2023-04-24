@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 import xarray as xr
+import platform
 from disdrodb.l0 import io
 
 
@@ -270,16 +271,20 @@ folder_name = "folder_creation_deletion_test"
 path_file_temp = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", folder_name)
 
 
-def test__create_directory():
-    io._create_directory(path_file_temp)
-    if os.path.exists(path_file_temp):
+def test__create_directory(tmp_path):
+    temp_folder = os.path.join(tmp_path, "temp_folder")
+    io._create_directory(temp_folder)
+    if os.path.exists(temp_folder):
         res = True
     else:
         res = False
     assert res
 
 
-def test__remove_directory():
+@pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
+def test__remove_directory(tmp_path):
+    path_file_temp = os.path.join(tmp_path, "temp_folder")
+
     # Create empty folder if not exists
     if not os.path.exists(path_file_temp):
         io._create_directory(path_file_temp)
