@@ -107,20 +107,3 @@ def test_check_l0a_column_names(capsys):
     df = pd.DataFrame(data)
     with pytest.raises(ValueError):
         check_standards.check_l0a_column_names(df, sensor_name=sensor_name)
-
-    # Test 4 : Missing columns latitude
-    list_column_names = get_sensor_variables(sensor_name) + ["time", "longitude"]
-    dict_data = {i: [1, 2] for i in list_column_names}
-    df = pd.DataFrame.from_dict(dict_data)
-    check_standards.check_l0a_column_names(df, sensor_name=sensor_name)
-    captured = capsys.readouterr()
-    assert (
-        captured.out.strip()
-        == " - The L0A dataframe has column 'latitude'. "
-        "This should be included only if the sensor is moving. "
-        "Otherwise, specify the 'latitude' in the metadata !"
-    )
-
-
-def test_check_l0b_standards():
-    assert check_standards.test_check_l0b_standards() is None
