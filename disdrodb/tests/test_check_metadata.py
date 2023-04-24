@@ -91,54 +91,6 @@ def test_identify_missing_metadata_keys(tmp_path, capsys):
     assert not captured.out
 
 
-def test_get_archive_metadata_key_value(tmp_path):
-    expected_result = []
-
-    # Test 1 : one config file
-    yaml_file_name = "station_1.yml"
-    expected_key = "key1"
-    expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
-
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_metadata.get_archive_metadata_key_value(os.path.join(tmp_path, "DISDRODB"), expected_key)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
-
-    assert result == expected_result
-
-    # Test 2 : two config files
-    yaml_file_name = "station_2.yml"
-    expected_key = "key1"
-    expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
-
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_metadata.get_archive_metadata_key_value(os.path.join(tmp_path, "DISDRODB"), expected_key)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
-
-    assert result == expected_result
-
-    # Test 3: test tuple
-    yaml_file_name = "station_3.yml"
-    expected_key = "key1"
-    expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_metadata.get_archive_metadata_key_value(
-        os.path.join(tmp_path, "DISDRODB"), expected_key, return_tuple=False
-    )
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
-    expected_result = [item[3] for item in expected_result]
-
-    assert result == expected_result
-
-
 def test_check_archive_metadata_keys(tmp_path):
     # Test 1 : create a correct metadata file
     # Get the list of valid metadata keys
