@@ -257,7 +257,7 @@ def test_write_issue(tmpdir):
         "timesteps": timesteps,
     }
 
-    issue._write_issue(fpath, timesteps=np.array(timesteps, dtype="datetime64[s]"), time_periods=None)
+    issue._write_issue(fpath, timesteps=np.array(timesteps), time_periods=None)
 
     result = issue.read_issue_file(fpath)
 
