@@ -59,6 +59,7 @@ def read_config_yml(sensor_name: str, filename: str) -> dict:
 
     # Get config path
     config_sensor_dir_path = get_configs_dir(sensor_name)
+    print("config_sensor_dir_path :", config_sensor_dir_path)
     fpath = os.path.join(config_sensor_dir_path, filename)
     # Check yaml file exists
     if not os.path.exists(fpath):
@@ -91,6 +92,7 @@ def get_configs_dir(sensor_name: str) -> str:
     """
 
     dir_path = os.path.dirname(__file__)
+    print("dir_path :", dir_path)
     config_dir_path = os.path.join(dir_path, "configs")
     config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
     if not os.path.exists(config_sensor_dir_path):
