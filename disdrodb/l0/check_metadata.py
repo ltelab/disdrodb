@@ -166,10 +166,12 @@ def check_archive_metadata_keys(disdrodb_dir: str) -> bool:
 
 def check_archive_metadata_campaign_name(disdrodb_dir) -> bool:
     """Check metadata campaign_name.
+    
     Parameters
     ----------
     disdrodb_dir : str
         Path to the disdrodb directory.
+    
     Returns
     -------
     bool
@@ -203,10 +205,12 @@ def check_archive_metadata_campaign_name(disdrodb_dir) -> bool:
 
 def check_archive_metadata_data_source(disdrodb_dir) -> bool:
     """Check metadata data_source.
+   
     Parameters
     ----------
     disdrodb_dir : str
         Path to the disdrodb directory.
+    
     Returns
     -------
     bool
@@ -240,10 +244,12 @@ def check_archive_metadata_data_source(disdrodb_dir) -> bool:
 
 def check_archive_metadata_sensor_name(disdrodb_dir) -> bool:
     """Check metadata sensor name.
+    
     Parameters
     ----------
     disdrodb_dir : str
         Path to the disdrodb directory.
+    
     Returns
     -------
     bool
@@ -277,10 +283,12 @@ def check_archive_metadata_sensor_name(disdrodb_dir) -> bool:
 
 def check_archive_metadata_station_name(disdrodb_dir) -> bool:
     """Check metadata station name.
+    
     Parameters
     ----------
     disdrodb_dir : str
         Path to the disdrodb directory.
+    
     Returns
     -------
     bool

@@ -41,7 +41,7 @@ CONFIG_FILES_LIST = [
 
 
 def check_yaml_files_exists(sensor_name: str) -> None:
-    """Check if all yaml files exist.
+    """Check if all config YAML files exist.
 
     Parameters
     ----------
@@ -53,12 +53,14 @@ def check_yaml_files_exists(sensor_name: str) -> None:
     list_of_file_names = [os.path.split(i)[-1] for i in glob.glob(f"{config_dir}/*.yml")]
 
     if not list_of_file_names == CONFIG_FILES_LIST:
-        raise FileNotFoundError(f"Missing yaml files in {config_dir} for sensor {sensor_name}.")
+        raise FileNotFoundError(f"Missing YAML files in {config_dir} for sensor {sensor_name}.")
 
 
 def check_variable_consistency(sensor_name: str) -> None:
-    """Check variable consistency from config file.
-    The values inside variables.yml must be consistent with the other files.
+    """
+    Check variable consistency across config files.
+    
+    The variables specified within l0b_encoding.yml must be defined also in the other config files.
 
     Parameters
     ----------
@@ -94,7 +96,7 @@ class SchemaValidationException(Exception):
 
 
 def schema_error(schema_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
-    """function that validate the schema of a given object with a given schema.
+    """Function that validate the schema of a given object with a given schema.
 
     Parameters
     ----------
@@ -129,21 +131,21 @@ class L0B_encodings_2n_level(BaseModel):
     @validator("chunksizes")
     def check_chunksizes(cls, v, values):
         if not values.get("contiguous") and not v:
-            raise ValueError("chunksizes must be defined if contiguous is False")
+            raise ValueError("'chunksizes' must be defined if 'contiguous' is False")
         return v
 
     # if contiguous = True, then zlib must be set to False
     @validator("zlib")
     def check_zlib(cls, v, values):
         if values.get("contiguous") and v:
-            raise ValueError("zlib must be set to False if contiguous is True")
+            raise ValueError("'zlib' must be set to False if 'contiguous' is True")
         return v
 
     # if contiguous = True, then fletcher32 must be set to False
     @validator("fletcher32")
     def check_fletcher32(cls, v, values):
         if values.get("contiguous") and v:
-            raise ValueError("fletcher32 must be set to False if contiguous is True")
+            raise ValueError("'fletcher32' must be set to False if 'contiguous' is True")
         return v
 
 
@@ -230,7 +232,7 @@ def check_raw_data_format(sensor_name: str) -> None:
 
 
 def check_cf_attributes(sensor_name: str) -> None:
-    """check that variable_description, variable_long_name, variable_units dict values are strings.
+    """Check that variable_description, variable_long_name, variable_units dict values are strings.
 
     Parameters
     ----------
@@ -302,7 +304,7 @@ def get_chunksizes(sensor_name: str, file_name: str) -> list:
     Returns
     -------
     list
-        list of chunksizes (center, bounds, width)
+        List of chunksizes (center, bounds, width)
     """
     data = read_config_yml(sensor_name, file_name)
     center_len = len(data.get("center"))
@@ -323,7 +325,7 @@ def check_raw_array(sensor_name: str) -> None:
     Raises
     ------
     ValueError
-        Error if the chuncksizes are not consistent.
+        Error if the chunksizes are not consistent.
     """
     raw_data_format = read_config_yml(sensor_name, "raw_data_format.yml")
 
@@ -338,7 +340,7 @@ def check_raw_array(sensor_name: str) -> None:
     # Iterate over raw_data_format keys with "dimension_order" value
     for key, list_velocity_or_diameter in dict_keys_with_dimension_order.items():
         for i, velocity_or_diameter in enumerate(list_velocity_or_diameter):
-            # get the definiation of the chunksizes
+            # Get the definition of the chunksizes
             chunksize_definition = L0B_encodings.get(key).get("chunksizes")[i + 1]
 
             # define config file name
@@ -351,7 +353,7 @@ def check_raw_array(sensor_name: str) -> None:
             if not all(x == chunksize_definition for x in chunksize):
                 raise ValueError(f"Wrong value for {key} in {file_name} for sensor {sensor_name}.")
 
-    # Get chunksizes in chunksizes in l0b_encoding and check that if len > 1, has dimension_order key in raw_data_format
+    # Get chunksizes in l0b_encoding.yml and check that if len > 1, has dimension_order key in raw_data_format
     list_attributes_L0B_encodings = [
         i
         for i in L0B_encodings.keys()
