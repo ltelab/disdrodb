@@ -56,7 +56,14 @@ def check_yaml_files_exists(sensor_name: str) -> None:
 
     if missing_elements:
         missing_elements_text = ",".join(missing_elements)
-        raise FileNotFoundError(f"Missing YAML files {missing_elements_text} in {config_dir} for sensor {sensor_name}.")
+        ll = os.path.dirname(__file__)
+        import sys
+
+        dd = os.path.abspath(os.path.dirname(sys.argv[0]))
+
+        raise FileNotFoundError(
+            f"Missing YAML files {missing_elements_text} in {ll}  {dd}  {config_dir} for sensor {sensor_name}."
+        )
 
 
 def check_variable_consistency(sensor_name: str) -> None:
