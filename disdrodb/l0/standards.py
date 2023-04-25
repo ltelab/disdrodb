@@ -63,7 +63,8 @@ def read_config_yml(sensor_name: str, filename: str) -> dict:
     fpath = os.path.join(config_sensor_dir_path, filename)
     # Check yaml file exists
     if not os.path.exists(fpath):
-        msg = f"{filename} not available in {config_sensor_dir_path}"
+        ll = os.path.dirname(__file__)
+        msg = f"{filename} not available in {config_sensor_dir_path} - {ll}"
         logger.exception(msg)
         raise ValueError(msg)
     # Open dictionary
