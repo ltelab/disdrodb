@@ -23,15 +23,15 @@ from disdrodb.l0.standards import (
 
 # ------------------------------------------------------------
 # TODO:
-# - function that check variables in L0A_dtypes match L0B_encodings.yml keys
+# - function that check variables in L0A_dtypes match l0b_encodings.yml keys
 # - check start diameter with OTT_Parsivel and OTT_Parsivel2
 # ------------------------------------------------------------
 
 CONFIG_FILES_LIST = [
     "bins_diameter.yml",
     "bins_velocity.yml",
-    "L0A_encodings.yml",
-    "L0B_encodings.yml",
+    "l0a_encodings.yml",
+    "l0b_encodings.yml",
     "raw_data_format.yml",
     "variables.yml",
     "variable_description.yml",
@@ -52,14 +52,17 @@ def check_yaml_files_exists(sensor_name: str) -> None:
 
     list_of_file_names = [os.path.split(i)[-1] for i in glob.glob(f"{config_dir}/*.yml")]
 
-    if not list_of_file_names == CONFIG_FILES_LIST:
-        raise FileNotFoundError(f"Missing YAML files in {config_dir} for sensor {sensor_name}.")
+    missing_elements = set(CONFIG_FILES_LIST).difference(set(list_of_file_names))
+
+    if missing_elements:
+        missing_elements_text = ",".join(missing_elements)
+        raise FileNotFoundError(f"Missing YAML files {missing_elements_text} in {config_dir} for sensor {sensor_name}.")
 
 
 def check_variable_consistency(sensor_name: str) -> None:
     """
     Check variable consistency across config files.
-    
+
     The variables specified within l0b_encoding.yml must be defined also in the other config files.
 
     Parameters
@@ -72,11 +75,10 @@ def check_variable_consistency(sensor_name: str) -> None:
     ValueError
         If the keys are not consistent.
     """
-    list_variables = read_config_yml(sensor_name, "variables.yml").values()
+    list_variables = read_config_yml(sensor_name, "l0b_encodings.yml").keys()
 
     list_to_check = [
-        "L0A_encodings.yml",
-        "L0B_encodings.yml",
+        "l0a_encodings.yml",
         "raw_data_format.yml",
         "variable_description.yml",
         "variable_long_name.yml",
@@ -85,8 +87,15 @@ def check_variable_consistency(sensor_name: str) -> None:
 
     for file_name in list_to_check:
         keys_to_check = read_config_yml(sensor_name, file_name).keys()
-        if not sorted(list(list_variables)) == sorted(list(keys_to_check)):
-            raise ValueError(f"Variable keys are not consistent in {file_name} for sensor {sensor_name}.")
+        missing_elements = set(list_variables).difference(set(keys_to_check))
+        missing_elements_text = ",".join(missing_elements)
+        extra_elements = set(keys_to_check).difference(set(list_variables))
+        extra_elements_text = ",".join(extra_elements)
+        if missing_elements:
+            raise ValueError(
+                f"Variable keys {missing_elements_text} (missing) and {extra_elements_text} (extra) are not consistent"
+                f" in {file_name} for sensor {sensor_name}."
+            )
 
 
 class SchemaValidationException(Exception):
@@ -95,12 +104,12 @@ class SchemaValidationException(Exception):
     pass
 
 
-def schema_error(schema_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
+def schema_error(object_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
     """Function that validate the schema of a given object with a given schema.
 
     Parameters
     ----------
-    schema_to_validate : Union[str,list]
+    object_to_validate : Union[str,list]
         Object to validate
     schema : BaseModel
         Base model
@@ -108,16 +117,14 @@ def schema_error(schema_to_validate: Union[str, list], schema: BaseModel, messag
     """
 
     try:
-        schema(**schema_to_validate)
+        schema(**object_to_validate)
 
     except ValidationError as e:
-        e.errors()[0]["loc"][0]
-
         for i in e.errors():
             raise SchemaValidationException(f"Schema validation failed. {message} {e}")
 
 
-class L0B_encodings_2n_level(BaseModel):
+class NetcdfEncodingSchema(BaseModel):
     contiguous: bool
     dtype: str
     zlib: bool
@@ -150,7 +157,7 @@ class L0B_encodings_2n_level(BaseModel):
 
 
 def check_l0b_encoding(sensor_name: str) -> None:
-    """Check L0B_encodings.yml file based on the schema defined in the class L0B_encodings_2n_level.
+    """Check l0b_encodings.yml file based on the schema defined in the class NetcdfEncodingSchema.
 
     Parameters
     ----------
@@ -158,19 +165,19 @@ def check_l0b_encoding(sensor_name: str) -> None:
         Name of the sensor.
     """
 
-    data = read_config_yml(sensor_name, "L0B_encodings.yml")
+    data = read_config_yml(sensor_name, "l0b_encodings.yml")
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
         schema_error(
-            schema_to_validate=value,
-            schema=L0B_encodings_2n_level,
+            object_to_validate=value,
+            schema=NetcdfEncodingSchema,
             message=f"Sensore name : {sensor_name}. Key : {key}.",
         )
 
 
 def check_l0a_encoding(sensor_name: str) -> None:
-    """Check L0A_encodings.yml file.
+    """Check l0a_encodings.yml file.
 
     Parameters
     ----------
@@ -182,22 +189,22 @@ def check_l0a_encoding(sensor_name: str) -> None:
     ValueError
         Error raised if the value of a key is not in the list of accepted values.
     """
-    data = read_config_yml(sensor_name, "L0A_encodings.yml")
+    data = read_config_yml(sensor_name, "l0a_encodings.yml")
 
-    numeric_field = ["float32", "uint32", "uint16", "uint8"]
+    numeric_field = ["float32", "uint32", "uint16", "uint8", "float64", "uint64", "int8", "int16", "int32", "int64"]
 
     text_field = ["str"]
 
     for key, value in data.items():
         if value not in text_field + numeric_field:
-            raise ValueError(f"Wrong value for {key} in L0A_encodings.yml for sensor {sensor_name}.")
+            raise ValueError(f"Wrong value for {key} in l0a_encodings.yml for sensor {sensor_name}.")
 
 
-class raw_data_format_2n_level(BaseModel):
-    n_digits: int
-    n_characters: int
-    n_decimals: int
-    n_naturals: int
+class RawDataFormatSchema(BaseModel):
+    n_digits: Optional[int]
+    n_characters: Optional[int]
+    n_decimals: Optional[int]
+    n_naturals: Optional[int]
     data_range: Optional[List[float]]
     nan_flags: Optional[str]
     valid_values: Optional[List[float]]
@@ -208,12 +215,12 @@ class raw_data_format_2n_level(BaseModel):
     def check_list_length(cls, value):
         if value:
             if len(value) != 2:
-                raise ValueError("my_list must have exactly 2 elements")
+                raise ValueError(f"data_range must have exactly 2 elements, {len(value)} element have been provided.")
             return value
 
 
 def check_raw_data_format(sensor_name: str) -> None:
-    """check raw_data_format.yml file based on the schema defined in the class raw_data_format_2n_level.
+    """check raw_data_format.yml file based on the schema defined in the class RawDataFormatSchema.
 
     Parameters
     ----------
@@ -225,8 +232,8 @@ def check_raw_data_format(sensor_name: str) -> None:
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
         schema_error(
-            schema_to_validate=value,
-            schema=raw_data_format_2n_level,
+            object_to_validate=value,
+            schema=RawDataFormatSchema,
             message=f"Sensore name : {sensor_name}. Key : {key}.",
         )
 
@@ -258,14 +265,10 @@ def check_bin_consistency(sensor_name: str) -> None:
         Name of the sensor.
     """
 
-    diameter_bin_lower = get_diameter_bin_lower(sensor_name)
-    diameter_bin_upper = get_diameter_bin_upper(sensor_name)
-    diameter_bin_center = get_diameter_bin_center(sensor_name)
-    diameter_bin_width = get_diameter_bin_width(sensor_name)
-    diameter_bin_lower = np.array(diameter_bin_lower)
-    diameter_bin_upper = np.array(diameter_bin_upper)
-    diameter_bin_center = np.array(diameter_bin_center)
-    diameter_bin_width = np.array(diameter_bin_width)
+    diameter_bin_lower = np.array(get_diameter_bin_lower(sensor_name))
+    diameter_bin_upper = np.array(get_diameter_bin_upper(sensor_name))
+    diameter_bin_center = np.array(get_diameter_bin_center(sensor_name))
+    diameter_bin_width = np.array(get_diameter_bin_width(sensor_name))
 
     expected_diameter_width = diameter_bin_upper - diameter_bin_lower
     np.testing.assert_allclose(expected_diameter_width[1:-1], diameter_bin_width[1:-1])
@@ -276,23 +279,18 @@ def check_bin_consistency(sensor_name: str) -> None:
     expected_diameter_center = diameter_bin_upper - diameter_bin_width / 2
     np.testing.assert_allclose(expected_diameter_center[1:-1], diameter_bin_center[1:-1])
 
-    velocity_bin_lower = get_velocity_bin_lower(sensor_name)
-    velocity_bin_upper = get_velocity_bin_upper(sensor_name)
-    velocity_bin_center = get_velocity_bin_center(sensor_name)
-    velocity_bin_width = get_velocity_bin_width(sensor_name)
-
-    velocity_bin_lower = np.array(velocity_bin_lower)
-    velocity_bin_upper = np.array(velocity_bin_upper)
-    velocity_bin_center = np.array(velocity_bin_center)
-    velocity_bin_width = np.array(velocity_bin_width)
+    velocity_bin_lower = np.array(get_velocity_bin_lower(sensor_name))
+    velocity_bin_upper = np.array(get_velocity_bin_upper(sensor_name))
+    velocity_bin_center = np.array(get_velocity_bin_center(sensor_name))
+    velocity_bin_width = np.array(get_velocity_bin_width(sensor_name))
 
     np.testing.assert_allclose(velocity_bin_upper - velocity_bin_lower, velocity_bin_width)
     np.testing.assert_allclose(velocity_bin_lower + velocity_bin_width / 2, velocity_bin_center)
     np.testing.assert_allclose(velocity_bin_upper - velocity_bin_width / 2, velocity_bin_center)
 
 
-def get_chunksizes(sensor_name: str, file_name: str) -> list:
-    """get chunksizes from config file.
+def get_bins_measurement(sensor_name: str, file_name: str) -> list:
+    """get bins measurement from config file.
 
     Parameters
     ----------
@@ -334,34 +332,23 @@ def check_raw_array(sensor_name: str) -> None:
         key: value.get("dimension_order") for key, value in raw_data_format.items() if "dimension_order" in value.keys()
     }
 
-    # Get chunksizes
-    L0B_encodings = read_config_yml(sensor_name, "L0B_encodings.yml")
+    l0b_encodings = read_config_yml(sensor_name, "l0b_encodings.yml")
 
-    # Iterate over raw_data_format keys with "dimension_order" value
     for key, list_velocity_or_diameter in dict_keys_with_dimension_order.items():
-        for i, velocity_or_diameter in enumerate(list_velocity_or_diameter):
-            # Get the definition of the chunksizes
-            chunksize_definition = L0B_encodings.get(key).get("chunksizes")[i + 1]
-
-            # define config file name
-            file_name = "bins_velocity.yml" if "velocity" in velocity_or_diameter else "bins_diameter.yml"
-
-            # get the chunksizes from config file
-            chunksize = get_chunksizes(sensor_name=sensor_name, file_name=file_name)
-
-            # raise a exception if all chunksize are not equal to the definition
-            if not all(x == chunksize_definition for x in chunksize):
-                raise ValueError(f"Wrong value for {key} in {file_name} for sensor {sensor_name}.")
+        expected_lenght = len(list_velocity_or_diameter) + 1
+        current_length = len(l0b_encodings.get(key).get("chunksizes"))
+        if expected_lenght != current_length:
+            raise ValueError(f"Wrong chunksizes for {key} in l0b_encodings.yml for sensor {sensor_name}.")
 
     # Get chunksizes in l0b_encoding.yml and check that if len > 1, has dimension_order key in raw_data_format
     list_attributes_L0B_encodings = [
         i
-        for i in L0B_encodings.keys()
-        if isinstance(L0B_encodings.get(i).get("chunksizes"), list) and len(L0B_encodings.get(i).get("chunksizes")) > 1
+        for i in l0b_encodings.keys()
+        if isinstance(l0b_encodings.get(i).get("chunksizes"), list) and len(l0b_encodings.get(i).get("chunksizes")) > 1
     ]
-    list_attribites_from_raw_data_format = [
+    list_attributes_from_raw_data_format = [
         i for i in raw_data_format.keys() if raw_data_format.get(i).get("dimension_order") is not None
     ]
 
-    if not sorted(list_attributes_L0B_encodings) == sorted(list_attribites_from_raw_data_format):
-        raise ValueError(f"Chunksizes in L0B_encodings and raw_data_format for sensor {sensor_name} does not match.")
+    if not sorted(list_attributes_L0B_encodings) == sorted(list_attributes_from_raw_data_format):
+        raise ValueError(f"Chunksizes in l0b_encodings and raw_data_format for sensor {sensor_name} does not match.")

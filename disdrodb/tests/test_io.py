@@ -271,7 +271,7 @@ folder_name = "folder_creation_deletion_test"
 path_file_temp = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", folder_name)
 
 
-def test__create_directory(tmp_path):
+def test_create_directory(tmp_path):
     temp_folder = os.path.join(tmp_path, "temp_folder")
     io._create_directory(temp_folder)
     if os.path.exists(temp_folder):
