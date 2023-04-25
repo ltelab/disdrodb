@@ -351,49 +351,15 @@ def check_raw_array(sensor_name: str) -> None:
             if not all(x == chunksize_definition for x in chunksize):
                 raise ValueError(f"Wrong value for {key} in {file_name} for sensor {sensor_name}.")
 
+    # Get chunksizes in chunksizes in l0b_encoding and check that if len > 1, has dimension_order key in raw_data_format
+    list_attributes_L0B_encodings = [
+        i
+        for i in L0B_encodings.keys()
+        if isinstance(L0B_encodings.get(i).get("chunksizes"), list) and len(L0B_encodings.get(i).get("chunksizes")) > 1
+    ]
+    list_attribites_from_raw_data_format = [
+        i for i in raw_data_format.keys() if raw_data_format.get(i).get("dimension_order") is not None
+    ]
 
-# def check_variable_keys_consistency(sensor_name: str) -> None:
-#     """Check attributes consistency from config file.
-
-#     Parameters
-#     ----------
-#     sensor_name : str
-#         Name of the sensor.
-#     """
-#     description_dict = get_description_dict(sensor_name)
-#     units_dict = get_units_dict(sensor_name)
-#     long_name_dict = get_long_name_dict(sensor_name)
-#     data_format_dict = get_data_format_dict(sensor_name)
-#     encoding_dict = get_L0B_encodings_dict(sensor_name)
-#     encoding_vars = set(encoding_dict.keys())
-#     data_format_vars = set(data_format_dict.keys())
-#     long_name_vars = set(long_name_dict.keys())
-#     units_vars = set(units_dict.keys())
-#     description_vars = set(description_dict.keys())
-
-#     encoding_vars.difference(data_format_vars)
-#     encoding_vars.difference(units_vars)
-#     encoding_vars.difference(description_vars)
-#     encoding_vars.difference(long_name_vars)
-
-#     data_format_vars.difference(encoding_vars)
-#     units_vars.difference(encoding_vars)
-#     description_vars.difference(encoding_vars)
-#     long_name_vars.difference(encoding_vars)
-
-
-# def check_sensor_configs(sensor_name: str) -> None:
-#     """Check the validity of the sensor configurations.
-
-#     Parameters
-#     ----------
-#     sensor_name : str
-#         Name of the sensor.
-#     """
-#     check_bin_consistency(sensor_name=sensor_name)
-
-#     check_variable_keys_consistency(sensor_name=sensor_name)
-#     # TODO: Add checks added to test_config_files
-
-#     print(f"The configuration for sensor {sensor_name} is valid !")
-#     return None
+    if not sorted(list_attributes_L0B_encodings) == sorted(list_attribites_from_raw_data_format):
+        raise ValueError(f"Chunksizes in L0B_encodings and raw_data_format for sensor {sensor_name} does not match.")
