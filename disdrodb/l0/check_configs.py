@@ -59,14 +59,17 @@ def check_yaml_files_exists(sensor_name: str) -> None:
         ll = os.path.dirname(__file__)
         import sys
 
+        dir_path = os.path.join(ll, "configs")
+
         # get file list
         file_list = os.listdir(ll)
+        file_list2 = os.listdir(dir_path)
 
         dd = os.path.abspath(os.path.dirname(sys.argv[0]))
 
         raise FileNotFoundError(
-            f"Missing YAML files {missing_elements_text} in {ll}  {dd}  {config_dir} {file_list} for sensor"
-            f" {sensor_name}."
+            f"Missing YAML files {missing_elements_text} in {ll}  {dd}  {config_dir} {file_list} {file_list2} for"
+            f" sensor {sensor_name}."
         )
 
 
