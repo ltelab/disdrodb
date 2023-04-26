@@ -751,7 +751,7 @@ def run_disdrodb_l0a_station(
     debugging_mode: bool = False,
     parallel: bool = True,
 ):
-    """Run the L0B processing of a station calling run_disdrodb_l0a_station in the terminal."""
+    """Run the L0A processing of a station calling run_disdrodb_l0a_station in the terminal."""
     # Define command
     cmd = " ".join(
         [
