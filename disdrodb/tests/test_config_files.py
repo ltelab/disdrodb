@@ -273,7 +273,7 @@ def test_bins_format(yaml_file_path: str) -> None:
 
 # Test format and content for basic YAML files
 list_of_files = [
-    "L0A_encodings.yml",
+    "l0a_encodings.yml",
     "variable_description.yml",
     "variable_long_name.yml",
     "variable_units.yml",
@@ -309,7 +309,7 @@ def test_yaml_format_basic_config_files(yaml_file_path: str) -> None:
 
 
 # Test the fotmat and content of the L0B_encodings.yml file
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "L0B_encodings.yml")
+list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml")
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
