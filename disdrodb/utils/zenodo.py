@@ -3,14 +3,14 @@ import requests
 from typing import Tuple
 
 
-def _get_zenodo_access_token() -> str:
+def _get_zenodo_access_token(sandbox: bool = False) -> str:
     """Get Zenodo access token from environment variable or from user input."""
 
     access_token = os.environ.get("ZENODO_ACCESS_TOKEN")
 
     if not access_token:
         print("Enter your Zenodo access token.")
-        print("If you don't have one, create one on https://zenodo.org/account/settings/applications/tokens/new/")
+        print("If you don't have one, create one on https://{host}/account/settings/applications/tokens/new/")
         access_token = input("")
         os.environ["ZENODO_ACCESS_TOKEN"] = access_token
 
@@ -38,11 +38,11 @@ def _check_http_response(
         raise ValueError(error_message)
 
 
-def _create_zenodo_deposition() -> Tuple[int, str]:
+def _create_zenodo_deposition(sandbox=False) -> Tuple[int, str]:
     """Create a new Zenodo deposition and get the deposition infos."""
 
-    access_token = _get_zenodo_access_token()
-    deposition_url = "https://zenodo.org/api/deposit/depositions"
+    access_token = _get_zenodo_access_token(sandbox)
+    deposition_url = "https://{host}/api/deposit/depositions"
 
     # Create a new deposition
     url = f"{deposition_url}?access_token={access_token}"

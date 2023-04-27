@@ -77,22 +77,24 @@ def _filter_already_uploaded(metadata_fpaths: List[str]) -> List[str]:
     return filtered
 
 
-def _upload_data_to_zenodo(metadata_fpaths: List[str]) -> None:
+def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) -> None:
     """Upload data to Zenodo.
 
     Parameters
     ----------
     metadata_fpaths: list of str
         List of metadata file paths.
+    sandbox: bool
+        If True, upload to Zenodo sandbox for testing purposes.
     """
 
-    deposition_id, bucket_url = _create_zenodo_deposition()
+    deposition_id, bucket_url = _create_zenodo_deposition(sandbox)
     print("Zenodo deposition created: {deposition_url}.")
 
     for metadata_fpath in metadata_fpaths:
         remote_path = _generate_data_remote_path(metadata_fpath)
         _upload_station_data_to_zenodo(metadata_fpath, bucket_url, remote_path)
-        _update_metadata_with_zenodo_url(metadata_fpath, deposition_id, remote_path)
+        _update_metadata_with_zenodo_url(metadata_fpath, deposition_id, remote_path, sandbox)
 
     print("Data uploaded. Please review your deposition an publish it when ready.")
 
@@ -145,7 +147,9 @@ def _upload_station_data_to_zenodo(metadata_fpath: str, bucket_url: str, remote_
     os.remove(temp_zip_path)
 
 
-def _update_metadata_with_zenodo_url(metadata_fpath: str, deposition_id: int, remote_path: str) -> None:
+def _update_metadata_with_zenodo_url(
+    metadata_fpath: str, deposition_id: int, remote_path: str, sandbox: bool = False
+) -> None:
     """Update metadata with Zenodo zip file url.
 
     Parameters
@@ -156,9 +160,12 @@ def _update_metadata_with_zenodo_url(metadata_fpath: str, deposition_id: int, re
         Zenodo deposition id.
     remote_path: str
         Remote path of the zip file.
+    sandbox: bool
+        If True, set reference to Zenodo sandbox for testing purposes.
     """
+    zenodo_host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
     metadata_dict = _read_yaml_file(metadata_fpath)
-    metadata_dict["data_url"] = f"https://zenodo.org/record/{deposition_id}/files/{remote_path}.zip"
+    metadata_dict["data_url"] = f"https://{zenodo_host}/record/{deposition_id}/files/{remote_path}.zip"
     _write_yaml_file(metadata_fpath, metadata_dict)
 
 
@@ -215,3 +222,6 @@ def upload_disdrodb_archives(
 
     if platform == "zenodo":
         _upload_data_to_zenodo(metadata_fpaths)
+
+    elif platform == "sandbox.zenodo":
+        _upload_data_to_zenodo(metadata_fpaths, sandbox=True)
