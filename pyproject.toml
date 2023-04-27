@@ -43,7 +43,8 @@ dev = [
 	"pre-commit",
 	"pytest",
 	"pydantic",
-	"coverage"
+	"pytest-cov"
+
 ]
 
 [tool.setuptools_scm]
