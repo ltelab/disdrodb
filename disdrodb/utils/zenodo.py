@@ -25,18 +25,20 @@ def _check_http_response(
 ) -> None:
     """Check HTTP response status code and raise an error if not the expected one."""
 
-    if response.status_code != expected_status_code:
-        error_message = f"Error {task_description}: {response.status_code}"
-        data = response.json()
+    if response.status_code == expected_status_code:
+        return
 
-        if "message" in data:
-            error_message += f" {data['message']}"
+    error_message = f"Error {task_description}: {response.status_code}"
+    data = response.json()
 
-        if "errors" in data:
-            for sub_data in data["errors"]:
-                error_message += f"\n- {sub_data['field']}: {sub_data['message']}"
+    if "message" in data:
+        error_message += f" {data['message']}"
 
-        raise ValueError(error_message)
+    if "errors" in data:
+        for sub_data in data["errors"]:
+            error_message += f"\n- {sub_data['field']}: {sub_data['message']}"
+
+    raise ValueError(error_message)
 
 
 def _create_zenodo_deposition(sandbox=False) -> Tuple[int, str]:
