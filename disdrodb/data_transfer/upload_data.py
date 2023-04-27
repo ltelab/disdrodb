@@ -89,7 +89,9 @@ def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) ->
     """
 
     deposition_id, bucket_url = _create_zenodo_deposition(sandbox)
-    print("Zenodo deposition created: {deposition_url}.")
+    zenodo_host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
+    deposition_url = f"https://{zenodo_host}/deposit/{deposition_id}"
+    print(f"Zenodo deposition created: {deposition_url}.")
 
     for metadata_fpath in metadata_fpaths:
         remote_path = _generate_data_remote_path(metadata_fpath)
@@ -166,7 +168,7 @@ def _update_metadata_with_zenodo_url(
     zenodo_host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
     metadata_dict = _read_yaml_file(metadata_fpath)
     metadata_dict["data_url"] = f"https://{zenodo_host}/record/{deposition_id}/files/{remote_path}.zip"
-    _write_yaml_file(metadata_fpath, metadata_dict)
+    _write_yaml_file(metadata_dict, metadata_fpath)
 
 
 def upload_disdrodb_archives(
@@ -223,5 +225,5 @@ def upload_disdrodb_archives(
     if platform == "zenodo":
         _upload_data_to_zenodo(metadata_fpaths)
 
-    elif platform == "sandbox.zenodo":
+    elif platform == "sandbox.zenodo":  # Only for testing purposes, not available through CLI
         _upload_data_to_zenodo(metadata_fpaths, sandbox=True)

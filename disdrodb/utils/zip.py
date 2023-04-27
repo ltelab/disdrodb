@@ -25,5 +25,5 @@ def _zip_dir(dir_path: str) -> str:
         Path of the directory to zip
     """
     output_path = dir_path + ".zip"
-    shutil.make_archive(output_path, "zip", dir_path)
+    shutil.make_archive(dir_path, "zip", dir_path)
     return output_path

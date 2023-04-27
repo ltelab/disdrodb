@@ -9,8 +9,9 @@ def _get_zenodo_access_token(sandbox: bool = False) -> str:
     access_token = os.environ.get("ZENODO_ACCESS_TOKEN")
 
     if not access_token:
+        host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
         print("Enter your Zenodo access token.")
-        print("If you don't have one, create one on https://{host}/account/settings/applications/tokens/new/")
+        print(f"If you don't have one, create one on https://{host}/account/settings/applications/tokens/new/")
         access_token = input("")
         os.environ["ZENODO_ACCESS_TOKEN"] = access_token
 
@@ -42,7 +43,8 @@ def _create_zenodo_deposition(sandbox=False) -> Tuple[int, str]:
     """Create a new Zenodo deposition and get the deposition infos."""
 
     access_token = _get_zenodo_access_token(sandbox)
-    deposition_url = "https://{host}/api/deposit/depositions"
+    host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
+    deposition_url = f"https://{host}/api/deposit/depositions"
 
     # Create a new deposition
     url = f"{deposition_url}?access_token={access_token}"
