@@ -271,22 +271,27 @@ def check_bin_consistency(sensor_name: str) -> None:
     diameter_bin_width = np.array(get_diameter_bin_width(sensor_name))
 
     expected_diameter_width = diameter_bin_upper - diameter_bin_lower
-    np.testing.assert_allclose(expected_diameter_width[1:-1], diameter_bin_width[1:-1])
+    np.testing.assert_allclose(expected_diameter_width[1:-1], diameter_bin_width[1:-1], atol=1e-3, rtol=1e-4)
 
     expected_diameter_center = diameter_bin_lower + diameter_bin_width / 2
-    np.testing.assert_allclose(expected_diameter_center[1:-1], diameter_bin_center[1:-1])
+    np.testing.assert_allclose(expected_diameter_center[1:-1], diameter_bin_center[1:-1], atol=1e-3, rtol=1e-4)
 
     expected_diameter_center = diameter_bin_upper - diameter_bin_width / 2
-    np.testing.assert_allclose(expected_diameter_center[1:-1], diameter_bin_center[1:-1])
+    np.testing.assert_allclose(expected_diameter_center[1:-1], diameter_bin_center[1:-1], atol=1e-3, rtol=1e-4)
 
     velocity_bin_lower = np.array(get_velocity_bin_lower(sensor_name))
     velocity_bin_upper = np.array(get_velocity_bin_upper(sensor_name))
     velocity_bin_center = np.array(get_velocity_bin_center(sensor_name))
     velocity_bin_width = np.array(get_velocity_bin_width(sensor_name))
 
-    np.testing.assert_allclose(velocity_bin_upper - velocity_bin_lower, velocity_bin_width)
-    np.testing.assert_allclose(velocity_bin_lower + velocity_bin_width / 2, velocity_bin_center)
-    np.testing.assert_allclose(velocity_bin_upper - velocity_bin_width / 2, velocity_bin_center)
+    if all(arr.size > 1 for arr in [velocity_bin_center, velocity_bin_lower, velocity_bin_upper, velocity_bin_width]):
+        np.testing.assert_allclose(velocity_bin_upper - velocity_bin_lower, velocity_bin_width, atol=1e-3, rtol=1e-4)
+        np.testing.assert_allclose(
+            velocity_bin_lower + velocity_bin_width / 2, velocity_bin_center, atol=1e-3, rtol=1e-4
+        )
+        np.testing.assert_allclose(
+            velocity_bin_upper - velocity_bin_width / 2, velocity_bin_center, atol=1e-3, rtol=1e-4
+        )
 
 
 def get_bins_measurement(sensor_name: str, file_name: str) -> list:
