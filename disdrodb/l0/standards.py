@@ -776,8 +776,8 @@ def get_l0a_dtype(sensor_name: str) -> dict:
         L0A dtype
     """
 
-    # Note: This function could extract the info from get_L0A_encodings_dict in future.
-    d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
+    # Note: This function could extract the info from l0a_encodings in future.
+    d = read_config_yml(sensor_name=sensor_name, filename="l0a_encodings.yml")
     return d
 
 
@@ -796,7 +796,7 @@ def get_L0A_encodings_dict(sensor_name: str) -> dict:
     """
 
     # - L0A_encodings currently specify only the dtype. This could be expanded in the future.
-    d = read_config_yml(sensor_name=sensor_name, filename="L0A_encodings.yml")
+    d = read_config_yml(sensor_name=sensor_name, filename="l0a_encodings.yml")
     return d
 
 
@@ -814,7 +814,7 @@ def get_L0B_encodings_dict(sensor_name: str) -> dict:
         Encoding to write L0B netCDFs
     """
 
-    d = read_config_yml(sensor_name=sensor_name, filename="L0B_encodings.yml")
+    d = read_config_yml(sensor_name=sensor_name, filename="l0b_encodings.yml")
 
     # Ensure chunksize is a list
     for var in d.keys():
