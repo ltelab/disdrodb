@@ -10,6 +10,7 @@ from disdrodb.utils.zip import _zip_dir
 
 def click_upload_option(function: object):
     """Click command line options for DISDRODB archive upload transfer.
+    
     Parameters
     ----------
     function: object
