@@ -455,7 +455,7 @@ def remove_corrupted_rows(df):
         raise ValueError("No remaining rows after data corruption checks.")
     # If only one row available, raise also error
     if len(df) == 1:
-        raise ValueError("Only 1 rows remains after data corruption checks. Check the file.")
+        raise ValueError("Only 1 row remains after data corruption checks. Check the file.")
     # Return the dataframe
     return df
 
