@@ -43,8 +43,8 @@ jobs:
         shell: bash
 
       - name: Test with pytest
+        env: ZENODO_ACCESS_TOKEN: ${{ZENODO_ACCESS_TOKEN}}
         run: |
-          export ZENODO_ACCESS_TOKEN=${{secrets.ZENODO_ACCESS_TOKEN}}
           coverage run -m pytest
 
       - name: CodeCov
