@@ -6,6 +6,8 @@ import os
 from typing import List, Union, Optional
 from pydantic import BaseModel, ValidationError, validator
 
+from disdrodb.l0.standards import available_sensor_name
+
 
 import numpy as np
 from disdrodb.l0.standards import (
@@ -21,11 +23,6 @@ from disdrodb.l0.standards import (
     read_config_yml,
 )
 
-# ------------------------------------------------------------
-# TODO:
-# - function that check variables in L0A_dtypes match l0b_encodings.yml keys
-# - check start diameter with OTT_Parsivel and OTT_Parsivel2
-# ------------------------------------------------------------
 
 CONFIG_FILES_LIST = [
     "bins_diameter.yml",
@@ -357,3 +354,27 @@ def check_raw_array(sensor_name: str) -> None:
 
     if not sorted(list_attributes_L0B_encodings) == sorted(list_attributes_from_raw_data_format):
         raise ValueError(f"Chunksizes in l0b_encodings and raw_data_format for sensor {sensor_name} does not match.")
+
+
+def check_sensor_configs(sensor_name: str) -> None:
+    """check sensor configs.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+    """
+    check_yaml_files_exists(sensor_name)
+    check_variable_consistency(sensor_name)
+    check_l0b_encoding(sensor_name=sensor_name)
+    check_l0a_encoding(sensor_name=sensor_name)
+    check_raw_data_format(sensor_name=sensor_name)
+    check_cf_attributes(sensor_name=sensor_name)
+    check_bin_consistency(sensor_name=sensor_name)
+    check_raw_array(sensor_name=sensor_name)
+
+
+def check_all_sensors_configs() -> None:
+    """Check all sensors configs."""
+    for sensor_name in available_sensor_name():
+        check_sensor_configs(sensor_name=sensor_name)
