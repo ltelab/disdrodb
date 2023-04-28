@@ -44,6 +44,7 @@ jobs:
 
       - name: Test with pytest
         run: |
+          export ZENODO_ACCESS_TOKEN=${{secrets.ZENODO_ACCESS_TOKEN}}
           coverage run -m pytest
 
       - name: CodeCov
