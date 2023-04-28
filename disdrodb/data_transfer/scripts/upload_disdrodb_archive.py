@@ -21,4 +21,11 @@ def upload_disdrodb_archive(
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
-    upload_disdrodb_archives(disdrodb_dir, data_sources, campaign_names, station_names, platform, force)
+    upload_disdrodb_archives(
+        platform,
+        force,
+        disdrodb_dir=disdrodb_dir,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station_names=station_names,
+    )

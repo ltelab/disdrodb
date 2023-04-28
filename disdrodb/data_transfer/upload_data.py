@@ -1,7 +1,7 @@
 import os
 import click
 
-from typing import Union, Optional, List
+from typing import Optional, List
 
 from disdrodb.api.metadata import _read_yaml_file, get_list_metadata, _write_yaml_file
 from disdrodb.utils.zenodo import _create_zenodo_deposition, _upload_file_to_zenodo
@@ -10,7 +10,7 @@ from disdrodb.utils.zip import _zip_dir
 
 def click_upload_option(function: object):
     """Click command line options for DISDRODB archive upload transfer.
-    
+
     Parameters
     ----------
     function: object
@@ -173,17 +173,24 @@ def _update_metadata_with_zenodo_url(
 
 
 def upload_disdrodb_archives(
-    disdrodb_dir: str,
-    data_sources: Optional[Union[str, List[str]]] = None,
-    campaign_names: Optional[Union[str, List[str]]] = None,
-    station_names: Optional[Union[str, List[str]]] = None,
     platform: Optional[str] = None,
     force: bool = False,
+    **kwargs,
 ) -> None:
     """Find all stations containing local data and upload them to a remote repository.
 
     Parameters
     ----------
+    platform: str, optional
+        Name of remote platform.
+        If not provided (None), the default platform is Zenodo.
+        The default is platform=None.
+    force: bool, optional
+        If True, upload even if data already exists on another remote location.
+        The default is False.
+
+    Other Parameters
+    ----------------
     disdrodb_dir: str, optional
         DisdroDB data folder path.
         Must end with DISDRODB.
@@ -199,20 +206,10 @@ def upload_disdrodb_archives(
         Station name.
         If not provided (None), all stations will be uploaded.
         The default is station_name=None.
-    platform: str, optional
-        Name of remote platform.
-        If not provided (None), the default platform is Zenodo.
-        The default is platform=None.
-    force: bool, optional
-        If True, upload even if data already exists on another remote location.
-        The default is False.
     """
 
     metadata_fpaths = get_list_metadata(
-        disdrodb_dir=disdrodb_dir,
-        data_sources=data_sources,
-        campaign_names=campaign_names,
-        station_names=station_names,
+        **kwargs,
         with_stations_data=True,
     )
 
