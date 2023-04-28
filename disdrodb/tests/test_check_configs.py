@@ -10,6 +10,7 @@ from disdrodb.l0.check_configs import (
     check_yaml_files_exists,
     check_variable_consistency,
     check_raw_array,
+    check_all_sensors_configs,
 )
 from disdrodb.l0.standards import available_sensor_name
 
@@ -56,6 +57,11 @@ def test_check_bin_consistency(sensor_name):
 
 # Test that all instruments config files are valid regarding the bin consistency
 @pytest.mark.parametrize("sensor_name", available_sensor_name())
-def test_ccheck_raw_array(sensor_name):
+def test_check_raw_array(sensor_name):
     # Test that no error is raised
     assert check_raw_array(sensor_name) is None
+
+
+def test_check_all_sensors_configs():
+    # Test that no error is raised
+    assert check_all_sensors_configs() is None
