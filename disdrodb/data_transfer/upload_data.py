@@ -103,7 +103,7 @@ def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) ->
 
 
 def _generate_data_remote_path(metadata_fpath: str) -> str:
-    """Generate data remote path from metadata path.
+    """Generate data remote path from a metadata path.
 
     metadata_fpath has the form "disdrodb_dir/Raw/data_source/campaign_name/metadata/station_name.yml".
     The remote path has the form "data_source/campaign_name/station_name".
