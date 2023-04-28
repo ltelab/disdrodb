@@ -141,7 +141,7 @@ def _upload_station_data_to_zenodo(metadata_fpath: str, bucket_url: str, remote_
     """
 
     data_path = metadata_fpath.replace("metadata", "data")
-    data_path = os.path.splitext(data_path)[0]
+    data_path = os.path.splitext(data_path)[0]  # remove trailing ".yml"
     temp_zip_path = _zip_dir(data_path)
 
     remote_url = f"{bucket_url}/{remote_path}.zip"
