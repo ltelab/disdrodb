@@ -53,6 +53,16 @@ def click_upload_option(function: object):
         help="Name of remote platform. If not provided (None), the default platform is Zenodo.",
     )(function)
     function = click.option(
+        "--files_compression",
+        type=click.Choice(["zip, gzip, bzip2"], case_sensitive=False),
+        show_default=True,
+        default="",
+        help=(
+            "Compression method for individual files inside station data. If not provided (None), files are not"
+            " compressed before archiving."
+        ),
+    )(function)
+    function = click.option(
         "-f",
         "--force",
         type=bool,
@@ -78,7 +88,9 @@ def _filter_already_uploaded(metadata_fpaths: List[str]) -> List[str]:
     return filtered
 
 
-def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) -> None:
+def _upload_data_to_zenodo(
+    metadata_fpaths: List[str], files_compression: Optional[str] = None, sandbox: bool = False
+) -> None:
     """Upload data to Zenodo.
 
     Parameters
@@ -95,8 +107,7 @@ def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) ->
     print(f"Zenodo deposition created: {deposition_url}.")
 
     for metadata_fpath in metadata_fpaths:
-        remote_path = _generate_data_remote_path(metadata_fpath)
-        _upload_station_data_to_zenodo(metadata_fpath, bucket_url, remote_path)
+        remote_path = _upload_station_data_to_zenodo(metadata_fpath, bucket_url, files_compression)
         _update_metadata_with_zenodo_url(metadata_fpath, deposition_id, remote_path, sandbox)
 
     print("Data uploaded. Please review your deposition an publish it when ready.")
@@ -125,7 +136,7 @@ def _generate_data_remote_path(metadata_fpath: str) -> str:
     return remote_path
 
 
-def _upload_station_data_to_zenodo(metadata_fpath: str, bucket_url: str, remote_path: str) -> None:
+def _upload_station_data_to_zenodo(metadata_fpath: str, bucket_url: str, files_compression: Optional[str]) -> str:
     """Zip and upload station data to Zenodo.
 
     Update the metadata file with the remote url, and zip the data directory before uploading.
@@ -136,18 +147,37 @@ def _upload_station_data_to_zenodo(metadata_fpath: str, bucket_url: str, remote_
         Metadata file path.
     bucket_url: str
         Zenodo bucket url.
-    remote_path: str
-        Remote path of the zip file.
+    files_compression: str
+        Compression method for individual files inside station data.
+    """
+
+    remote_path = _generate_data_remote_path(metadata_fpath)
+    remote_url = f"{bucket_url}/{remote_path}.zip"
+    temp_zip_path = _archive_station_data(metadata_fpath, files_compression)
+
+    _upload_file_to_zenodo(temp_zip_path, remote_url)
+
+    os.remove(temp_zip_path)
+
+    return remote_path
+
+
+def _archive_station_data(metadata_fpath: str, files_compression: Optional[str] = None) -> str:
+    """Archive station data.
+
+    Parameters
+    ----------
+    metadata_fpath: str
+        Metadata file path.
+    files_compression: str
+        Compression method for individual files inside station data.
     """
 
     data_path = metadata_fpath.replace("metadata", "data")
     data_path = os.path.splitext(data_path)[0]  # remove trailing ".yml"
-    temp_zip_path = _zip_dir(data_path)
+    temp_zip_path = _zip_dir(data_path, files_compression)
 
-    remote_url = f"{bucket_url}/{remote_path}.zip"
-    _upload_file_to_zenodo(temp_zip_path, remote_url)
-
-    os.remove(temp_zip_path)
+    return temp_zip_path
 
 
 def _update_metadata_with_zenodo_url(
@@ -174,6 +204,7 @@ def _update_metadata_with_zenodo_url(
 
 def upload_disdrodb_archives(
     platform: Optional[str] = None,
+    files_compression: Optional[str] = None,
     force: bool = False,
     **kwargs,
 ) -> None:
@@ -185,9 +216,12 @@ def upload_disdrodb_archives(
         Name of the remote platform.
         If not provided (None), the default platform is Zenodo.
         The default is platform=None.
+    files_compression: str, optional
+        Compression method for individual files inside station data.
+        The default is files_compression=None.
     force: bool, optional
         If True, upload even if data already exists on another remote location.
-        The default is False.
+        The default is force=False.
 
     Other Parameters
     ----------------
@@ -221,7 +255,7 @@ def upload_disdrodb_archives(
         return
 
     if platform == "zenodo":
-        _upload_data_to_zenodo(metadata_fpaths)
+        _upload_data_to_zenodo(metadata_fpaths, files_compression)
 
     elif platform == "sandbox.zenodo":  # Only for testing purposes, not available through CLI
-        _upload_data_to_zenodo(metadata_fpaths, sandbox=True)
+        _upload_data_to_zenodo(metadata_fpaths, files_compression, sandbox=True)

@@ -44,7 +44,7 @@ def test_upload_to_zenodo(tmp_path):
     create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name2)
 
     # Must set ZENODO_ACCESS_TOKEN environment variable in GitHub
-    upload_disdrodb_archives(platform="sandbox.zenodo", disdrodb_dir=str(disdrodb_dir))
+    upload_disdrodb_archives(platform="sandbox.zenodo", files_compression="gzip", disdrodb_dir=str(disdrodb_dir))
 
     # Check metadata files (1st one should not have changed)
     metadata_dict1 = get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name1)
