@@ -182,7 +182,7 @@ def upload_disdrodb_archives(
     Parameters
     ----------
     platform: str, optional
-        Name of remote platform.
+        Name of the remote platform.
         If not provided (None), the default platform is Zenodo.
         The default is platform=None.
     force: bool, optional
