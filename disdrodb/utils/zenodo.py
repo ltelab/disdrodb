@@ -23,7 +23,7 @@ def _check_http_response(
     expected_status_code: int,
     task_description: str,
 ) -> None:
-    """Check HTTP response status code and raise an error if not the expected one."""
+    """Check the HTTP response status code and raise an error if not the expected one."""
 
     if response.status_code == expected_status_code:
         return
