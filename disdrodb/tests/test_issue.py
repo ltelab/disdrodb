@@ -1,5 +1,9 @@
 import os
 import numpy as np
+import pytest
+import yaml
+
+
 from io import StringIO
 from disdrodb.l0 import issue
 
@@ -68,48 +72,200 @@ def test_write_issue_docs():
     assert written_data == expected_output
 
 
-# def test_write_issue():
-#     # Create a mock file path
-#     mock_file_path = os.path.join(
-#         PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "mock_file_path.yml"
-#     )
+def test_is_numpy_array_datetime():
+    arr = np.array(["2022-01-01", "2022-01-02"], dtype="datetime64")
+    assert issue.is_numpy_array_datetime(arr) is True
 
-#     # Create a mock timestamp
-#     mock_timesteps = np.array(["2018-12-07 14:15:00"])
-
-#     # Create a mock time period
-#     mock_time_periods = [np.array(["2018-08-01 12:00:00", "2018-08-01 14:00:00"])]
-
-#     # Call the function under test with the mock input
-#     issue._write_issue(fpath=mock_file_path,
-#                        timesteps=mock_timesteps,
-#                        time_periods=mock_time_periods)
-
-#     # Read the created YAML file and check that it contains the expected data
-#     issue_dict = issue.load_yaml_without_date_parsing(mock_file_path)
-
-#     # Check that the data in the YAML file matches the expected output
-#     assert issue_dict["timesteps"] == mock_timesteps.tolist()
-#     assert issue_dict["time_periods"] == mock_time_periods.tolist()
-
-#     # Delete the mock file
-#     os.remove(mock_file_path)
+    arr = np.array([1, 2, 3])
+    assert issue.is_numpy_array_datetime(arr) is False
 
 
-####---------------------------------------------------------------------------.
-#### Reader
-# def test_read_issue():
-#     # Create a mock file path
-#     raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
-#     station_name = "123"
-#     issue_dir = os.path.join(raw_dir, "issue")
+def test__check_timestep_datetime_accuracy():
+    timesteps = np.array(["2022-01-01T01:00:00", "2022-01-01T02:00:00"], dtype="datetime64[s]")
+    assert np.array_equal(issue._check_timestep_datetime_accuracy(timesteps, unit="s"), timesteps)
 
-#     if not os.path.exists(issue_dir):
-#         os.makedirs(issue_dir)
+    with pytest.raises(ValueError):
+        timesteps = np.array(["2022-01-01", "2022-01-02"], dtype="datetime64[D]")
+        issue._check_timestep_datetime_accuracy(timesteps, unit="s")
 
-#     issue_fpath = os.path.join(issue_dir, station_name + ".yml")
-#     with open(issue_fpath, "w") as f:
-#         yaml.safe_dump({"key": "value"}, f)
 
-#     # Ensure the read_issue function returns the correct output
-#     assert issue.read_issue(raw_dir, station_name) == {"key": "value"}
+def test__check_timesteps_string():
+    timesteps = ["2022-01-01 01:00:00", "2022-01-01 02:00:00"]
+    expected_output = np.array(["2022-01-01T01:00:00", "2022-01-01T02:00:00"], dtype="datetime64[s]")
+    assert np.array_equal(issue._check_timesteps_string(timesteps), expected_output)
+
+    with pytest.raises(ValueError):
+        timesteps = ["2022-01-01 01:00", "2022-01-01 02:00:00"]
+        issue._check_timesteps_string(timesteps)
+
+
+def test_check_timesteps():
+    # Test None input
+    assert issue.check_timesteps(None) is None
+
+    # Test string input
+    timesteps_string = "2022-01-01 01:00:00"
+    expected_output_string = np.array(["2022-01-01T01:00:00"], dtype="datetime64[s]")
+    assert np.array_equal(issue.check_timesteps(timesteps_string), expected_output_string)
+
+    # Test list of string inputs
+    timesteps_string_list = ["2022-01-01 01:00:00", "2022-01-01 02:00:00"]
+    expected_output_string_list = np.array(["2022-01-01T01:00:00", "2022-01-01T02:00:00"], dtype="datetime64[s]")
+    assert np.array_equal(issue.check_timesteps(timesteps_string_list), expected_output_string_list)
+
+    # Test datetime input
+    timesteps_datetime = np.array(["2022-01-01T01:00:00", "2022-01-01T02:00:00"], dtype="datetime64[s]")
+    expected_output_datetime = np.array(["2022-01-01T01:00:00", "2022-01-01T02:00:00"], dtype="datetime64[s]")
+    assert np.array_equal(issue.check_timesteps(timesteps_datetime), expected_output_datetime)
+
+    # Test invalid input
+    with pytest.raises(TypeError):
+        issue.check_timesteps(123)
+
+
+def test_check_time_period_nested_list_format():
+    # Test valid input
+    time_periods_valid = [
+        ["2022-01-01 01:00:00", "2022-01-01 02:00:00"],
+        ["2022-01-02 01:00:00", "2022-01-02 02:00:00"],
+    ]
+    assert issue._check_time_period_nested_list_format(time_periods_valid) is None
+
+    # Test invalid input type
+    time_periods_invalid_type = "not a list"
+    with pytest.raises(TypeError):
+        issue._check_time_period_nested_list_format(time_periods_invalid_type)
+
+    # Test invalid input length
+    time_periods_invalid_length = [["2022-01-01 01:00:00", "2022-01-01 02:00:00"], ["2022-01-02 01:00:00"]]
+    with pytest.raises(ValueError):
+        issue._check_time_period_nested_list_format(time_periods_invalid_length)
+
+    # Test invalid input element type
+    time_periods_invalid_element_type = [["2022-01-01 01:00:00", 123], ["2022-01-02 01:00:00", "2022-01-02 02:00:00"]]
+    assert issue._check_time_period_nested_list_format(time_periods_invalid_element_type) is None
+
+
+def test_check_time_periods():
+    # Valid input
+    time_periods = [
+        ["2022-01-01 01:00:00", "2022-01-01 02:00:00"],
+        ["2022-01-02 01:00:00", "2022-01-02 02:00:00"],
+    ]
+
+    expected_result = [np.array(time_period, dtype="datetime64[s]") for time_period in time_periods]
+    assert np.array_equal(issue.check_time_periods(time_periods), expected_result)
+
+    # None input
+    assert issue.check_time_periods(None) is None
+
+    # Invalid input: unvalid time period
+    time_periods = [
+        ["2022-01-01 01:00:00", "2022-01-01 02:00:00"],
+        ["2022-01-02 01:00:00", "2021-01-02 02:00:00"],
+    ]
+    with pytest.raises(ValueError):
+        issue.check_time_periods(time_periods)
+
+    # Invalid input: invalid format
+    time_periods = [
+        ["2022-01-01 01:00:00", "2022-01-01 02:00:00"],
+        ["2022-01-02 01:00:00"],
+    ]
+    with pytest.raises(ValueError):
+        issue.check_time_periods(time_periods)
+
+
+def test_get_issue_timesteps():
+    # Test case 1: Valid timesteps
+    time_periods = ["2022-01-01 01:00:00", "2022-01-01 02:00:00"]
+    issue_dict = {"timesteps": time_periods}
+    expected_result = [np.array(time_period, dtype="datetime64[s]") for time_period in time_periods]
+    assert np.array_equal(issue._get_issue_timesteps(issue_dict), expected_result)
+
+
+def test__get_issue_time_periods():
+    # Test case 1: Valid time periods
+    time_periods = [["2022-01-01 01:00:00", "2022-01-01 02:00:00"], ["2022-01-02 01:00:00", "2022-01-02 02:00:00"]]
+    issue_dict = {"time_periods": time_periods}
+    expected_result = [np.array(time_period, dtype="datetime64[s]") for time_period in time_periods]
+    assert np.array_equal(issue._get_issue_time_periods(issue_dict), expected_result)
+
+    # Test case 2: No time periods
+    issue_dict = {}
+    assert issue._get_issue_time_periods(issue_dict) is None
+
+
+def test_check_issue_dict():
+    # Test empty dictionary
+    assert issue.check_issue_dict({}) == {}
+
+    # Test dictionary with invalid keys
+    # with pytest.raises(ValueError):
+    #     issue.check_issue_dict({"foo": "bar"})
+
+    # Test dictionary with valid keys and timesteps
+    timesteps = ["2022-01-01 01:00:00", "2022-01-01 02:00:00"]
+
+    issue_dict = {
+        "timesteps": timesteps,
+    }
+
+    timesteps_datetime = np.array(timesteps, dtype="datetime64[s]")
+    result = issue.check_issue_dict(issue_dict)
+    expected_result = {
+        "timesteps": timesteps_datetime,
+        "time_periods": None,
+    }
+
+    assert set(result.keys()) == set(expected_result.keys())
+
+    # Test timesteps kees
+    assert np.array_equal(result["timesteps"], expected_result["timesteps"])
+
+    # Test unvalid keys
+    issue_dict = {"timesteps": timesteps, "unvalid_key": "unvalid_value"}
+    with pytest.raises(ValueError):
+        issue.check_issue_dict(issue_dict)
+
+
+def test_write_issue(tmpdir):
+    """Test the _write_issue function."""
+    # Define test inputs
+    fpath = os.path.join(tmpdir, "test_issue.yml")
+    timesteps = np.array([0, 1, 2])
+    time_periods = np.array([[0, 1], [2, 3]])
+
+    # Call function
+    issue._write_issue(fpath, timesteps=timesteps, time_periods=time_periods)
+
+    # Load YAML file
+    with open(fpath, "r") as f:
+        issue_dict = yaml.load(f, Loader=yaml.FullLoader)
+
+    # Check the issue dictionary
+    assert isinstance(issue_dict, dict)
+    assert len(issue_dict) == 2
+    assert issue_dict.keys() == {"timesteps", "time_periods"}
+    assert np.array_equal(issue_dict["timesteps"], timesteps.astype(str).tolist())
+    assert np.array_equal(issue_dict["time_periods"], time_periods.astype(str).tolist())
+
+    # Test dictionary with valid keys and timesteps
+    timesteps = ["2022-01-01 01:00:00", "2022-01-01 02:00:00"]
+
+    issue_dict = {
+        "timesteps": timesteps,
+    }
+
+    issue._write_issue(fpath, timesteps=np.array(timesteps), time_periods=None)
+
+    result = issue.read_issue_file(fpath)
+
+    timesteps_datetime = np.array(timesteps, dtype="datetime64[s]")
+    expected_result = {
+        "timesteps": timesteps_datetime,
+        "time_periods": None,
+    }
+    # assert np.array_equal(result,expected_result)
+    assert set(result.keys()) == set(expected_result.keys())
+    assert np.array_equal(result["timesteps"], expected_result["timesteps"])

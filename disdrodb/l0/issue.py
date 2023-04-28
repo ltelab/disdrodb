@@ -117,6 +117,7 @@ def check_timesteps(timesteps):
 
 def _check_time_period_nested_list_format(time_periods):
     """Check that the time_periods is a list of list of length 2."""
+
     if not isinstance(time_periods, list):
         msg = "'time_periods' must be a list'"
         log_error(logger, msg=msg, verbose=False)

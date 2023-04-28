@@ -10,8 +10,22 @@ def test_get_default_metadata():
     assert isinstance(metadata.get_default_metadata_dict(), dict)
 
 
-def test_write_default_metadata():
-    fpath = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", "metadata.yml")
+def create_fake_metadata_folder(tmp_path, data_source="data_source", campaign_name="campaign_name"):
+    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+
+    assert os.path.exists(subfolder_path)
+
+    return subfolder_path
+
+
+def test_write_default_metadata(tmp_path):
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    station_name = "station_name"
+
+    fpath = os.path.join(create_fake_metadata_folder(tmp_path, data_source, campaign_name), f"{station_name}.yml")
 
     # create metadata file
     metadata.write_default_metadata(str(fpath))
@@ -25,6 +39,9 @@ def test_write_default_metadata():
 
     # check is the expected dictionary
     expected_dict = metadata.get_default_metadata_dict()
+    expected_dict["data_source"] = data_source
+    expected_dict["campaign_name"] = campaign_name
+    expected_dict["station_name"] = station_name
     assert expected_dict == dictionary
 
     # remove dictionary

@@ -5,10 +5,33 @@ import pandas as pd
 from disdrodb.l0 import l0a_processing
 from disdrodb.l0 import io
 
+
+from disdrodb.l0.l0a_processing import (
+    _check_df_sanitizer_fun,
+    _check_not_empty_dataframe,
+    _check_matching_column_number,
+    remove_issue_timesteps,
+    cast_column_dtypes,
+)
+
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "pytest_files",
 )
+
+
+def test_remove_issue_timesteps():
+    # Create dummy dataframe
+    df = pd.DataFrame({"time": [1, 2, 3, 4, 5], "col1": [0, 1, 2, 3, 4]})
+
+    # Create dummy issue dictionary with timesteps to remove
+    issue_dict = {"timesteps": [2, 4]}
+
+    # Call function to remove problematic timesteps
+    df_cleaned = remove_issue_timesteps(df, issue_dict)
+
+    # Check that problematic timesteps were removed
+    assert set(df_cleaned["time"]) == {1, 3, 5}
 
 
 def test_preprocess_reader_kwargs():
@@ -97,9 +120,20 @@ def test_is_not_corrupted():
 
 
 def test_cast_column_dtypes():
-    # not tested yet because relies on config files that can be modified
-
-    assert 1 == 1
+    # Create a test dataframe with object columns
+    df = pd.DataFrame(
+        {
+            "time": ["2022-01-01 00:00:00", "2022-01-01 00:05:00", "2022-01-01 00:10:00"],
+            "station_number": "station_number",
+            "altitude": "8849",
+        }
+    )
+    # Call the function
+    df_out = cast_column_dtypes(df, "OTT_Parsivel", verbose=False)
+    # Check that the output dataframe has the correct column types
+    assert df_out["time"].dtype == "datetime64[s]"
+    assert df_out["station_number"].dtype == "object"
+    assert df_out["altitude"].dtype == "float64"
 
 
 def test_coerce_corrupted_values_to_nan():
@@ -133,6 +167,28 @@ def test_remove_rows_with_missing_time():
     # Test it raise an error if no valid timesteps left
     with pytest.raises(ValueError):
         l0a_processing.remove_rows_with_missing_time(df=df)
+
+
+def test_check_not_empty_dataframe():
+    # Test with empty dataframe
+    with pytest.raises(ValueError) as excinfo:
+        _check_not_empty_dataframe(pd.DataFrame())
+    assert "The file is empty and has been skipped." in str(excinfo.value)
+
+    # Test with non-empty dataframe
+    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    assert _check_not_empty_dataframe(df) is None
+
+
+def test_check_matching_column_number():
+    # Test with a matching number of columns
+    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    assert _check_matching_column_number(df, ["A", "B"]) is None
+
+    # Test with a non-matching number of columns
+    with pytest.raises(ValueError) as excinfo:
+        _check_matching_column_number(df, ["A"])
+    assert "The dataframe has 2 columns, while 1 are expected !" in str(excinfo.value)
 
 
 def test_remove_duplicated_timesteps():
@@ -216,10 +272,16 @@ def test_drop_time_periods():
         l0a_processing.drop_time_periods(df, time_periods=time_periods)
 
 
-def test_read_raw_data():
-    # this test relies on "\tests\pytest_files\test_l0a_processing\test_read_raw_data\data.csv"
+def create_fake_csv(filename, data):
+    df = pd.DataFrame(data)
+    df.to_csv(filename, index=False)
 
-    path_test_data = os.path.join(PATH_TEST_FOLDERS_FILES, "test_l0a_processing", "test_read_raw_data", "data.csv")
+
+def test_read_raw_data(tmp_path):
+    # Create a valid test file
+    path_test_data = os.path.join(tmp_path, "test.csv")
+    data = {"att_1": ["11", "21"], "att_2": ["12", "22"]}
+    create_fake_csv(path_test_data, data)
 
     reader_kwargs = {}
     reader_kwargs["delimiter"] = ","
@@ -231,8 +293,67 @@ def test_read_raw_data():
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
     )
+    expected_output = pd.DataFrame(data)
+    assert r.equals(expected_output)
 
-    assert r.to_dict() == {"att_1": {0: "11", 1: "21"}, "att_2": {0: "12", 1: "22"}}
+    # Test with an empty file without column
+    path_test_data = os.path.join(tmp_path, "test_empty.csv")
+    print(path_test_data)
+    data = {}
+    create_fake_csv(path_test_data, data)
+
+    # Call the function and catch the exception
+    with pytest.raises(UnboundLocalError):
+        r = l0a_processing.read_raw_data(
+            filepath=path_test_data,
+            column_names=[],
+            reader_kwargs=reader_kwargs,
+        )
+
+    # Test with an empty file with column
+    path_test_data = os.path.join(tmp_path, "test_empty2.csv")
+    print(path_test_data)
+    data = {"att_1": [], "att_2": []}
+    create_fake_csv(path_test_data, data)
+
+    # Call the function and catch the exception
+    r = l0a_processing.read_raw_data(
+        filepath=path_test_data,
+        column_names=["att_1", "att_2"],
+        reader_kwargs=reader_kwargs,
+    )
+
+    # Check that an empty dataframe is returned
+    assert r.empty is True
+
+
+def test_check_df_sanitizer_fun():
+    # Test with valid df_sanitizer_fun
+    def df_sanitizer_fun(df):
+        return df
+
+    assert _check_df_sanitizer_fun(df_sanitizer_fun) is None
+
+    # Test with None argument
+    assert _check_df_sanitizer_fun(None) is None
+
+    # Test with non-callable argument
+    with pytest.raises(ValueError, match="'df_sanitizer_fun' must be a function."):
+        _check_df_sanitizer_fun(123)
+
+    # Test with argument that has more than one parameter
+    def bad_fun(x, y):
+        pass
+
+    with pytest.raises(ValueError, match="The `df_sanitizer_fun` must have only `df` as input argument!"):
+        _check_df_sanitizer_fun(bad_fun)
+
+    # Test with argument that has wrong parameter name
+    def bad_fun2(d):
+        pass
+
+    with pytest.raises(ValueError, match="The `df_sanitizer_fun` must have only `df` as input argument!"):
+        _check_df_sanitizer_fun(bad_fun2)
 
 
 def test_read_raw_file_list():
