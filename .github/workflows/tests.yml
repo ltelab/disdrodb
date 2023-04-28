@@ -1,5 +1,5 @@
 name: Tests
-on: [push, pull_request, workflow_dispatch]
+on: [push, pull_request_target, workflow_dispatch]
 
 jobs:
   tests:
@@ -44,7 +44,7 @@ jobs:
 
       - name: Test with pytest
         env:
-          ZENODO_ACCESS_TOKEN: ${{ vars.ZENODO_ACCESS_TOKEN }}
+          ZENODO_ACCESS_TOKEN: ${{ secrets.ZENODO_ACCESS_TOKEN }}
         run: |
           coverage run -m pytest
 
