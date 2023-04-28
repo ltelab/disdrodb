@@ -43,7 +43,8 @@ jobs:
         shell: bash
 
       - name: Test with pytest
-        env: ZENODO_ACCESS_TOKEN: ${{ZENODO_ACCESS_TOKEN}}
+        env:
+          ZENODO_ACCESS_TOKEN: ${{ZENODO_ACCESS_TOKEN}}
         run: |
           coverage run -m pytest
 
