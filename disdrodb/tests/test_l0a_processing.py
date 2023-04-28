@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from disdrodb.l0 import l0a_processing
 from disdrodb.l0 import io
+import shutil
 
 
 from disdrodb.l0.l0a_processing import (
@@ -17,6 +18,9 @@ from disdrodb.l0.l0a_processing import (
     strip_delimiter_from_raw_arrays,
     remove_corrupted_rows,
     replace_nan_flags,
+    set_nan_outside_data_range,
+    set_nan_unvalid_values,
+    read_raw_file_list,
 )
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
@@ -44,10 +48,56 @@ def create_dummy_config_file(request):
 
     yield
     os.remove(test_file_path)
-    try:
-        os.remove(test_folder)
-    except:
-        pass
+    shutil.rmtree(test_folder)
+
+
+content = """key_1:
+  valid_values:
+  - 1
+  - 2
+  - 3
+"""
+file_name = "raw_data_format.yml"
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
+def test_set_nan_unvalid_values(create_dummy_config_file):
+    # Test withput modification
+    df = pd.DataFrame({"key_1": [1, 2, 1, 2, 1]})
+    output = set_nan_unvalid_values(df, "test", verbose=False)
+    assert df.equals(output)
+
+    # Test with modification
+    df = pd.DataFrame({"key_1": [1, 2, 1, 2, 4]})
+    output = set_nan_unvalid_values(df, "test", verbose=False)
+    print(output)
+    assert np.isnan(output["key_1"][4])
+
+    #  expected_output = pd.DataFrame({'sensor_1': [1, 2, 3, np.nan, np.nan],
+
+
+content = """key_1:
+  data_range:
+  - 0
+  - 4
+key_2:
+  data_range:
+  - 0
+  - 89
+"""
+file_name = "raw_data_format.yml"
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
+def test_set_nan_outside_data_range(create_dummy_config_file):
+    # Test case 1: Check if the function sets values outside the data range to NaN
+    data = {"key_1": [1, 2, 3, 4, 5], "key_2": [0.1, 0.3, 0.5, 0.7, 0.2]}
+
+    df = pd.DataFrame(data)
+
+    result_df = set_nan_outside_data_range(df, "test", verbose=False)
+
+    assert np.isnan(result_df["key_1"][4])
 
 
 content = """key_1:
@@ -487,12 +537,6 @@ def test_check_df_sanitizer_fun():
         _check_df_sanitizer_fun(bad_fun2)
 
 
-def test_read_raw_file_list():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0a_processing.read_raw_file_list()
-    assert 1 == 1
-
-
 def test_write_l0a():
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
@@ -514,3 +558,48 @@ def test_write_l0a():
     is_equal = df.equals(df_written)
 
     assert is_equal
+
+
+def test_read_raw_file_list():
+    # Set up the inputs
+    file_list = ["test_file1.csv", "test_file2.csv"]
+    column_names = ["time", "value"]
+    reader_kwargs = {"delimiter": ","}
+    sensor_name = "my_sensor"
+    verbose = False
+
+    # Create a test dataframe
+    df1 = pd.DataFrame(
+        {"time": pd.date_range(start="2022-01-01", end="2022-01-02", freq="H"), "value": np.random.rand(25)}
+    )
+    df2 = pd.DataFrame(
+        {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="H"), "value": np.random.rand(25)}
+    )
+    df_list = [df1, df2]
+
+    # Mock the process_raw_file function
+    # The code block is defining a mock function called mock_process_raw_file
+    # which will be used in unit testing to replace the original process_raw_file function.
+    def mock_process_raw_file(filepath, column_names, reader_kwargs, df_sanitizer_fun, sensor_name, verbose):
+        if filepath == "test_file1.csv":
+            return df1
+        elif filepath == "test_file2.csv":
+            return df2
+
+    # Monkey patch the function
+    from disdrodb.l0 import l0a_processing
+
+    l0a_processing.process_raw_file = mock_process_raw_file
+
+    # Call the function
+    result = read_raw_file_list(
+        file_list=file_list,
+        column_names=column_names,
+        reader_kwargs=reader_kwargs,
+        sensor_name=sensor_name,
+        verbose=verbose,
+    )
+
+    # Check the result
+    expected_result = pd.concat(df_list).reset_index(drop=True)
+    assert result.equals(expected_result)
