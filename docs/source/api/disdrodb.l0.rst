@@ -12,47 +12,6 @@ Subpackages
 Submodules
 ----------
 
-disdrodb.l0.l0a\_processing module
-----------------------------------
-
-.. automodule:: disdrodb.l0.l0a_processing
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-disdrodb.l0.l0b\_processing module
-----------------------------------
-
-.. automodule:: disdrodb.l0.l0b_processing
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-disdrodb.l0.l0b\_concat module
-----------------------------------
-
-.. automodule:: disdrodb.l0.l0b_concat
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-disdrodb.l0.l0\_processing module
----------------------------------
-
-.. automodule:: disdrodb.l0.l0_processing
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-disdrodb.l0.l0\_reader module
---------------------------------------------
-
-.. automodule:: disdrodb.l0.l0_reader
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-
 disdrodb.l0.check\_configs module
 ---------------------------------
 
@@ -93,6 +52,46 @@ disdrodb.l0.issue module
    :undoc-members:
    :show-inheritance:
 
+disdrodb.l0.l0\_processing module
+---------------------------------
+
+.. automodule:: disdrodb.l0.l0_processing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+disdrodb.l0.l0\_reader module
+-----------------------------
+
+.. automodule:: disdrodb.l0.l0_reader
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+disdrodb.l0.l0a\_processing module
+----------------------------------
+
+.. automodule:: disdrodb.l0.l0a_processing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+disdrodb.l0.l0b\_concat module
+------------------------------
+
+.. automodule:: disdrodb.l0.l0b_concat
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+disdrodb.l0.l0b\_processing module
+----------------------------------
+
+.. automodule:: disdrodb.l0.l0b_processing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 disdrodb.l0.metadata module
 ---------------------------
 
@@ -110,7 +109,7 @@ disdrodb.l0.standards module
    :show-inheritance:
 
 disdrodb.l0.summary module
-----------------------------
+--------------------------
 
 .. automodule:: disdrodb.l0.summary
    :members:
@@ -125,6 +124,13 @@ disdrodb.l0.template\_tools module
    :undoc-members:
    :show-inheritance:
 
+disdrodb.l0.utils\_nc module
+----------------------------
+
+.. automodule:: disdrodb.l0.utils_nc
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------
