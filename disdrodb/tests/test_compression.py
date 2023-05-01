@@ -1,5 +1,6 @@
+import os
 import pytest
-from disdrodb.utils.compression import compress_station_files
+from disdrodb.utils.compression import compress_station_files, _zip_dir, _unzip_file
 
 
 def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name):
@@ -48,3 +49,17 @@ def test_files_compression(tmp_path):
     create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
     with pytest.raises(ValueError):
         compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, "unknown_compression_method")
+
+
+def test_zip_unzip_directory(tmp_path):
+    dir_path = tmp_path / "test_dir"
+    dir_path.mkdir()
+    file_path = dir_path / "test_file.txt"
+    file_path.touch()
+
+    zip_path = _zip_dir(dir_path)
+    assert os.path.isfile(zip_path)
+
+    unzip_path = tmp_path / "test_dir_unzipped"
+    _unzip_file(zip_path, unzip_path)
+    assert os.path.isdir(unzip_path)
