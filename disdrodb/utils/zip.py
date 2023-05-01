@@ -59,14 +59,14 @@ def _zip_dir(dir_path: str, files_compression: Optional[str] = None) -> str:
     return output_path
 
 
-def _compress_file(file_path: str, file_compression: Optional[str] = None) -> str:
+def _compress_file(file_path: str, method: Optional[str] = None) -> str:
     """Compress a file into a temporary file.
 
     Parameters
     ----------
     file_path : str
         Path of the file to compress
-    file_compression : str
+    method : str
         Compression method. None, "zip", "gzip" or "bzip2"
 
     Returns
@@ -75,7 +75,7 @@ def _compress_file(file_path: str, file_compression: Optional[str] = None) -> st
         Path of the compressed file. Same as input if no compression.
     """
 
-    if file_compression is None:
+    if method is None:
         return file_path
 
     try:
@@ -83,26 +83,66 @@ def _compress_file(file_path: str, file_compression: Optional[str] = None) -> st
             "zip": ".zip",
             "gzip": ".gz",
             "bzip2": ".bz2",
-        }[file_compression]
+        }[method]
 
     except KeyError:
-        raise ValueError(f'Unknown compression method "{file_compression}"')
+        raise ValueError(f'Unknown compression method "{method}"')
 
     archive_name = os.path.basename(file_path) + extension
     compressed_file_path = os.path.join(tempfile.gettempdir(), archive_name)
+    compress_file_function = {
+        "zip": _compress_file_zip,
+        "gzip": _compress_file_gzip,
+        "bzip2": _compress_file_bzip2,
+    }[method]
 
-    if file_compression == "zip":
-        with zipfile.ZipFile(compressed_file_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
-            zipf.write(file_path, os.path.basename(file_path))
-
-    if file_compression == "gzip":
-        with open(file_path, "rb") as f_in:
-            with gzip.open(compressed_file_path, "wb") as f_out:
-                f_out.writelines(f_in)
-
-    elif file_compression == "bzip2":
-        with open(file_path, "rb") as f_in:
-            with bz2.open(compressed_file_path, "wb") as f_out:
-                f_out.writelines(f_in)
+    compress_file_function(file_path, compressed_file_path)
 
     return compressed_file_path
+
+
+def _compress_file_zip(file_path: str, compressed_file_path: str) -> None:
+    """Compress a single file into a zip archive.
+
+    Parameters
+    ----------
+    file_path : str
+        Path of the file to compress
+    compressed_file_path : str
+        Path of the compressed file
+    """
+
+    with zipfile.ZipFile(compressed_file_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
+        zipf.write(file_path, os.path.basename(file_path))
+
+
+def _compress_file_gzip(file_path: str, compressed_file_path: str) -> None:
+    """Compress a single file into a gzip archive.
+
+    Parameters
+    ----------
+    file_path : str
+        Path of the file to compress
+    compressed_file_path : str
+        Path of the compressed file
+    """
+
+    with open(file_path, "rb") as f_in:
+        with gzip.open(compressed_file_path, "wb") as f_out:
+            f_out.writelines(f_in)
+
+
+def _compress_file_bzip2(file_path: str, compressed_file_path: str) -> None:
+    """Compress a single file into a bzip2 archive.
+
+    Parameters
+    ----------
+    file_path : str
+        Path of the file to compress
+    compressed_file_path : str
+        Path of the compressed file
+    """
+
+    with open(file_path, "rb") as f_in:
+        with bz2.open(compressed_file_path, "wb") as f_out:
+            f_out.writelines(f_in)
