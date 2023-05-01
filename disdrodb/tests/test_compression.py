@@ -31,11 +31,18 @@ def test_files_compression(tmp_path):
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
 
+    # Directory that does not exist yet
+    compress_station_files(disdrodb_dir, data_source, campaign_name, "station1", "zip")
+
     methods = ["zip", "gzip", "bzip2"]
     for i in range(len(methods)):
         station_name = f"test_station_name_{i}"
         create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
         compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, method=methods[i])
+
+    # Directory with already compressed files
+    station_name = "test_station_name_0"
+    compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, "zip")
 
     station_name = "test_station_name"
     create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)

@@ -1,9 +1,11 @@
 import re
 import os
+import pytest
 import uuid
 
 from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
 from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
+from disdrodb.utils.zenodo import _create_zenodo_deposition
 
 
 def create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_name, data_url=""):
@@ -81,3 +83,14 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
     metadata_dict2 = get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name2)
     new_station_url2 = metadata_dict2["data_url"]
     assert new_station_url2.endswith(f"/files/{data_source}/{campaign_name}/{station_name2}.zip")
+
+    # Test upload of already uploaded data
+    upload_disdrodb_archives(platform="sandbox.zenodo", disdrodb_dir=str(disdrodb_dir))
+
+
+def test_wrong_http_response(requests_mock):
+    """Test wrong response from Zenodo API."""
+
+    requests_mock.post("https://sandbox.zenodo.org/api/deposit/depositions", json={}, status_code=404)
+    with pytest.raises(ValueError):
+        _create_zenodo_deposition(sandbox=True)

@@ -111,7 +111,7 @@ def _compress_file(file_path: str, method: str) -> str:
 
     extension = valid_extensions[method]
     archive_name = os.path.basename(file_path) + extension
-    compressed_file_path = os.path.join(tempfile.gettempdir(), archive_name)
+    compressed_file_path = os.path.join(os.path.dirname(file_path), archive_name)
     compress_file_function = {
         "zip": _compress_file_zip,
         "gzip": _compress_file_gzip,
