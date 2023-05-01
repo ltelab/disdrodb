@@ -18,3 +18,5 @@ tqdm==4.65.0
 pooch==1.7.0
 pytest-cov==4.0.0
 pytest-mock==3.10.0
+requests==2.28.2
+requests-mock==1.10.0
