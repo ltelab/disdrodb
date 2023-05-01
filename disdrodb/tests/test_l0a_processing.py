@@ -30,7 +30,15 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 
 
 @pytest.fixture
-def create_dummy_config_file(request):
+def create_dummy_config_file(request: list) -> None:
+    """This fuction creates a dummy config file for testing purposes.
+    This file is deleted after the test is finished (even if the test fails).
+
+    Parameters
+    ----------
+    request : list
+        List of tuples containing the content and the name of the file to be created.
+    """
     content = request.param[0]
     file_name = request.param[1]
     root_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -62,6 +70,13 @@ file_name = "raw_data_format.yml"
 
 @pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
 def test_set_nan_unvalid_values(create_dummy_config_file):
+    """Create a dummy config file and test the function set_nan_unvalid_values.
+
+    Parameters
+    ----------
+    create_dummy_config_file : function
+        Function that creates and removes the dummy config file.
+    """
     # Test withput modification
     df = pd.DataFrame({"key_1": [1, 2, 1, 2, 1]})
     output = set_nan_unvalid_values(df, "test", verbose=False)
@@ -70,10 +85,7 @@ def test_set_nan_unvalid_values(create_dummy_config_file):
     # Test with modification
     df = pd.DataFrame({"key_1": [1, 2, 1, 2, 4]})
     output = set_nan_unvalid_values(df, "test", verbose=False)
-    print(output)
     assert np.isnan(output["key_1"][4])
-
-    #  expected_output = pd.DataFrame({'sensor_1': [1, 2, 3, np.nan, np.nan],
 
 
 content = """key_1:
