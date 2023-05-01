@@ -1,3 +1,7 @@
+import re
+import os
+import uuid
+
 import pytest
 from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
 from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
@@ -30,7 +34,25 @@ def get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name):
     return _read_yaml_file(metadata_fpath)
 
 
-def test_upload_to_zenodo(tmp_path):
+def mock_zenodo_api(requests_mock):
+    """Mock Zenodo API."""
+
+    # Deposition creation
+    deposition_id = 123456
+    bucked_id = str(uuid.uuid4())
+    bucket_url = f"https://sandbox.zenodo.org/api/files/{bucked_id}"
+    response = {
+        "id": deposition_id,
+        "links": {"bucket": bucket_url},
+    }
+    requests_mock.post("https://sandbox.zenodo.org/api/deposit/depositions", json=response, status_code=201)
+
+    # File upload (match any remote file path)
+    file_upload_url = re.compile(f"{bucket_url}/.*")
+    requests_mock.put(file_upload_url, status_code=200)
+
+
+def test_upload_to_zenodo(tmp_path, requests_mock):
     """Create two stations. One already has a remote url. Upload to Zenodo sandbox."""
 
     disdrodb_dir = tmp_path / "DISDRODB"
@@ -45,7 +67,10 @@ def test_upload_to_zenodo(tmp_path):
     create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name1)
     create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name2)
 
-    # Must set ZENODO_ACCESS_TOKEN environment variable in GitHub
+    # Set ZENODO_ACCESS_TOKEN environment variable to prevent asking input from user
+    os.environ["ZENODO_ACCESS_TOKEN"] = "test_access_token"
+
+    mock_zenodo_api(requests_mock)
     upload_disdrodb_archives(platform="sandbox.zenodo", files_compression="gzip", disdrodb_dir=str(disdrodb_dir))
 
     # Check metadata files (1st one should not have changed)

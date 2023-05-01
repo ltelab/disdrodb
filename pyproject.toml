@@ -44,8 +44,8 @@ dev = [
 	"pre-commit",
 	"pytest",
 	"pydantic",
-	"pytest-cov"
-
+	"pytest-cov",
+	"requests-mock"
 ]
 
 [tool.setuptools_scm]
