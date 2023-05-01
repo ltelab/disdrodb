@@ -45,6 +45,7 @@ dev = [
 	"pytest",
 	"pydantic",
 	"pytest-cov",
+	"pytest-mock",
 	"requests-mock"
 ]
 
