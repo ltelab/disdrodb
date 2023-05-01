@@ -26,6 +26,8 @@ def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
     data_fpath = data_dir / "test_data.txt"
     data_fpath.touch()
 
+    return data_dir
+
 
 def get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name):
     metadata_fpath = disdrodb_dir / "Raw" / data_source / campaign_name / "metadata" / f"{station_name}.yml"

@@ -1,10 +1,13 @@
 import bz2
+import glob
 import gzip
 import os
 import shutil
 import tempfile
 import zipfile
 from typing import Optional
+
+from ..api.checks import check_disdrodb_dir
 
 
 def _unzip_file(file_path: str, dest_path: str) -> None:
@@ -41,8 +44,44 @@ def _zip_dir(dir_path: str) -> str:
     return output_path
 
 
-def _compress_file(file_path: str, method: Optional[str] = None) -> str:
-    """Compress a file into a temporary file.
+def compress_station_files(
+    disdrodb_dir: str, data_source: str, campaign_name: str, station_name: str, method: str
+) -> None:
+    """Compress all files of a station.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Base directory of DISDRODB
+    data_source : str
+        Name of data source of interest.
+    campaign_name : str
+        Name of the campaign of interest.
+    station_name : str
+        Station name of interest.
+    method : str
+        Compression method. "zip", "gzip" or "bzip2"
+    """
+
+    check_disdrodb_dir(str(disdrodb_dir))
+    data_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "data", station_name)
+
+    if not os.path.isdir(data_dir):
+        print(f"Station data directory {data_dir} does not exist. Skipping.")
+        return
+
+    # use glob to get list of files recursively
+    files = glob.glob(os.path.join(data_dir, "**"), recursive=True)
+
+    for file_path in files:
+        if os.path.isfile(file_path):
+            _compress_file(file_path, method)
+
+
+def _compress_file(file_path: str, method: str) -> str:
+    """Compress a file and delete the original.
+
+    If the file is already compressed, it is not compressed again.
 
     Parameters
     ----------
@@ -57,19 +96,20 @@ def _compress_file(file_path: str, method: Optional[str] = None) -> str:
         Path of the compressed file. Same as input if no compression.
     """
 
-    if method is None:
+    if _check_file_compression(file_path) is not None:
+        print(f"File {file_path} is already compressed. Skipping.")
         return file_path
 
-    try:
-        extension = {
-            "zip": ".zip",
-            "gzip": ".gz",
-            "bzip2": ".bz2",
-        }[method]
+    valid_extensions = {
+        "zip": ".zip",
+        "gzip": ".gz",
+        "bzip2": ".bz2",
+    }
 
-    except KeyError:
-        raise ValueError(f'Unknown compression method "{method}"')
+    if method not in valid_extensions:
+        raise ValueError(f"Invalid compression method {method}. Valid methods are {list(valid_extensions.keys())}")
 
+    extension = valid_extensions[method]
     archive_name = os.path.basename(file_path) + extension
     compressed_file_path = os.path.join(tempfile.gettempdir(), archive_name)
     compress_file_function = {
@@ -79,8 +119,40 @@ def _compress_file(file_path: str, method: Optional[str] = None) -> str:
     }[method]
 
     compress_file_function(file_path, compressed_file_path)
+    os.remove(file_path)
 
     return compressed_file_path
+
+
+def _check_file_compression(file_path: str) -> Optional[str]:
+    """Check the method used to compress a file.
+
+    From https://stackoverflow.com/questions/13044562/python-mechanism-to-identify-compressed-file-type-and-uncompress
+
+    Parameters
+    ----------
+    file_path : str
+        Path of the file to check
+
+    Returns
+    -------
+    Optional[str]
+        Compression method. None, "zip", "gzip" or "bzip2"
+    """
+
+    magic_dict = {
+        b"\x1f\x8b\x08": "gzip",
+        b"\x42\x5a\x68": "bzip2",
+        b"\x50\x4b\x03\x04": "zip",
+    }
+
+    with open(file_path, "rb") as f:
+        file_start = f.read(4)
+        for magic, filetype in magic_dict.items():
+            if file_start.startswith(magic):
+                return filetype
+
+    return None
 
 
 def _compress_file_zip(file_path: str, compressed_file_path: str) -> None:
