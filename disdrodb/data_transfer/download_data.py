@@ -6,7 +6,7 @@ import click
 from typing import Union, Optional, List
 
 from disdrodb.api.metadata import _read_yaml_file, get_list_metadata
-from disdrodb.utils.zip import _unzip_file
+from disdrodb.utils.compression import _unzip_file
 
 
 def click_download_option(function: object):

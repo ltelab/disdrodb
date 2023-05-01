@@ -5,7 +5,7 @@ import uuid
 import pytest
 from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
 from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
-from disdrodb.utils.zip import _zip_dir
+from disdrodb.utils.compression import _zip_dir
 
 
 def create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_name, data_url=""):
