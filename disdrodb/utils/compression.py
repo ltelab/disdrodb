@@ -12,7 +12,9 @@ from ..api.checks import check_disdrodb_dir
 
 def _unzip_file(file_path: str, dest_path: str) -> None:
     """Unzip a file into a folder
+
     Parameters
+
     ----------
     file_path : str
         Path of the file to unzip
@@ -60,7 +62,8 @@ def compress_station_files(
     station_name : str
         Station name of interest.
     method : str
-        Compression method. "zip", "gzip" or "bzip2"
+        Compression method. "zip", "gzip" or "bzip2".
+
     """
 
     check_disdrodb_dir(str(disdrodb_dir))
@@ -86,9 +89,11 @@ def _compress_file(file_path: str, method: str) -> str:
     Parameters
     ----------
     file_path : str
-        Path of the file to compress
+        Path of the file to compress.
+
     method : str
-        Compression method. None, "zip", "gzip" or "bzip2"
+        Compression method. None, "zip", "gzip" or "bzip2".
+
 
     Returns
     -------
@@ -132,12 +137,14 @@ def _check_file_compression(file_path: str) -> Optional[str]:
     Parameters
     ----------
     file_path : str
-        Path of the file to check
+        Path of the file to check.
+
 
     Returns
     -------
     Optional[str]
-        Compression method. None, "zip", "gzip" or "bzip2"
+        Compression method. None, "zip", "gzip" or "bzip2".
+
     """
 
     magic_dict = {
@@ -161,9 +168,11 @@ def _compress_file_zip(file_path: str, compressed_file_path: str) -> None:
     Parameters
     ----------
     file_path : str
-        Path of the file to compress
+        Path of the file to compress.
+
     compressed_file_path : str
-        Path of the compressed file
+        Path of the compressed file.
+
     """
 
     with zipfile.ZipFile(compressed_file_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
@@ -176,9 +185,11 @@ def _compress_file_gzip(file_path: str, compressed_file_path: str) -> None:
     Parameters
     ----------
     file_path : str
-        Path of the file to compress
+        Path of the file to compress.
+
     compressed_file_path : str
-        Path of the compressed file
+        Path of the compressed file.
+
     """
 
     with open(file_path, "rb") as f_in:
@@ -192,9 +203,11 @@ def _compress_file_bzip2(file_path: str, compressed_file_path: str) -> None:
     Parameters
     ----------
     file_path : str
-        Path of the file to compress
+        Path of the file to compress.
+
     compressed_file_path : str
-        Path of the compressed file
+        Path of the compressed file.
+
     """
 
     with open(file_path, "rb") as f_in:
