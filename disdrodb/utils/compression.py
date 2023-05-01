@@ -1,6 +1,7 @@
 import bz2
 import gzip
 import os
+import shutil
 import tempfile
 import zipfile
 from typing import Optional
@@ -20,42 +21,23 @@ def _unzip_file(file_path: str, dest_path: str) -> None:
         zip_ref.extractall(dest_path)
 
 
-def _zip_dir(dir_path: str, files_compression: Optional[str] = None) -> str:
+def _zip_dir(dir_path: str) -> str:
     """Zip a directory into a file located in the same directory.
 
     Parameters
     ----------
     dir_path : str
         Path of the directory to zip
-    files_compression : str
-        Compression method for individual files inside directory
 
     Returns
     -------
     str
         Path of the zip archive
     """
-    output_path = os.path.join(tempfile.gettempdir(), os.path.basename(dir_path) + ".zip")
 
-    with zipfile.ZipFile(output_path, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(dir_path):
-            for file in files:
-                file_path = os.path.join(root, file)
-                file_path_in_archive = os.path.relpath(file_path, dir_path)
-                compressed_file_path = _compress_file(file_path, files_compression)
-
-                if compressed_file_path != file_path:
-                    # Change file_path_in_archive to have compression extension
-                    file_path_in_archive += os.path.splitext(compressed_file_path)[1]
-
-                zipf.write(
-                    compressed_file_path,
-                    file_path_in_archive,
-                )
-
-                if compressed_file_path != file_path:
-                    os.remove(compressed_file_path)
-
+    output_path_without_extension = os.path.join(tempfile.gettempdir(), os.path.basename(dir_path))
+    output_path = output_path_without_extension + ".zip"
+    shutil.make_archive(output_path_without_extension, "zip", dir_path)
     return output_path
 
 

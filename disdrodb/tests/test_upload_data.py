@@ -2,10 +2,8 @@ import re
 import os
 import uuid
 
-import pytest
 from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
 from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
-from disdrodb.utils.compression import _zip_dir
 
 
 def create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_name, data_url=""):
@@ -71,7 +69,7 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
     os.environ["ZENODO_ACCESS_TOKEN"] = "test_access_token"
 
     mock_zenodo_api(requests_mock)
-    upload_disdrodb_archives(platform="sandbox.zenodo", files_compression="gzip", disdrodb_dir=str(disdrodb_dir))
+    upload_disdrodb_archives(platform="sandbox.zenodo", disdrodb_dir=str(disdrodb_dir))
 
     # Check metadata files (1st one should not have changed)
     metadata_dict1 = get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name1)
@@ -81,31 +79,3 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
     metadata_dict2 = get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name2)
     new_station_url2 = metadata_dict2["data_url"]
     assert new_station_url2.endswith(f"/files/{data_source}/{campaign_name}/{station_name2}.zip")
-
-
-def test_files_compression(tmp_path):
-    """Create a directory structure and archive it with different compression formats.
-
-    tmp_path
-    |-- dir1
-        |-- file1.txt
-        |-- dir1
-            |-- file2.txt
-    """
-
-    dir1 = tmp_path / "dir1"
-    dir1.mkdir()
-    file1_txt = dir1 / "file1.txt"
-    file1_txt.touch()
-    dir2 = dir1 / "dir2"
-    dir2.mkdir()
-    file2_txt = dir2 / "file2.txt"
-    file2_txt.touch()
-
-    _zip_dir(dir1)
-    _zip_dir(dir1, files_compression="zip")
-    _zip_dir(dir1, files_compression="gzip")
-    _zip_dir(dir1, files_compression="bzip2")
-
-    with pytest.raises(ValueError):
-        _zip_dir(dir1, files_compression="unknown")
