@@ -24,7 +24,6 @@ import glob
 import numpy as np
 import pandas as pd
 import xarray as xr
-import importlib.metadata
 from typing import Union
 from disdrodb.utils.logger import log_info, log_warning
 from pathlib import Path
@@ -261,15 +260,15 @@ def get_L0A_fname(df, processed_dir, station_name: str) -> str:
     str
         L0A file name.
     """
+    from disdrodb.l0.standards import PRODUCT_VERSION
+
     starting_time, ending_time = get_dataframe_min_max_time(df)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
     # metadata_dict = read_metadata(processed_dir, station_name)
     # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
-    version = importlib.metadata.version("disdrodb").replace(".", "-")
-    if version == "-VERSION-PLACEHOLDER-":
-        version = "dev"
+    version = PRODUCT_VERSION
     fname = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return fname
 
@@ -291,15 +290,15 @@ def get_L0B_fname(ds, processed_dir, station_name: str) -> str:
     str
         L0B file name.
     """
+    from disdrodb.l0.standards import PRODUCT_VERSION
+
     starting_time, ending_time = get_dataset_min_max_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = get_campaign_name(processed_dir).replace(".", "-")
     # metadata_dict = read_metadata(processed_dir, station_name)
     # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
-    version = importlib.metadata.version("disdrodb").replace(".", "-")
-    if version == "-VERSION-PLACEHOLDER-":
-        version = "dev"
+    version = PRODUCT_VERSION
     fname = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname
 

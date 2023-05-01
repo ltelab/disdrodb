@@ -4,8 +4,8 @@ import pytest
 import numpy as np
 import pandas as pd
 import xarray as xr
+import platform
 from disdrodb.l0 import io
-import importlib.metadata
 
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
@@ -140,6 +140,7 @@ def test_get_L0A_fpath():
     Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
+    from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
     data_source = "DATA_SOURCE"
@@ -163,16 +164,13 @@ def test_get_L0A_fpath():
     # Create dataframe
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
-    # Set version (based on the version included into the setup.py to create the pypi package)
-    version = importlib.metadata.version("disdrodb").replace(".", "-")
-    if version == "-VERSION-PLACEHOLDER-":
-        version = "dev"
-
     # Test the function
     res = io.get_L0A_fpath(df, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.parquet"
+    expected_name = (
+        f"L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.parquet"
+    )
     expected_path = os.path.join(path_campaign_name, "L0A", station_name, expected_name)
     assert res == expected_path
 
@@ -183,6 +181,7 @@ def test_get_L0B_fpath():
     Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
+    from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
     data_source = "DATA_SOURCE"
@@ -212,16 +211,11 @@ def test_get_L0B_fpath():
         coords={"time": pd.date_range(start=start_date, end=end_date)},
     )
 
-    # Set version (based on the version included into the setup.py to create the pypi package)
-    version = importlib.metadata.version("disdrodb").replace(".", "-")
-    if version == "-VERSION-PLACEHOLDER-":
-        version = "dev"
-
     # Test the function
     res = io.get_L0B_fpath(ds, path_campaign_name, station_name)
 
     # Define expected results
-    expected_name = f"L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{version}.nc"
+    expected_name = f"L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
     expected_path = os.path.join(path_campaign_name, "L0B", station_name, expected_name)
     assert res == expected_path
 
@@ -277,16 +271,20 @@ folder_name = "folder_creation_deletion_test"
 path_file_temp = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", folder_name)
 
 
-def test__create_directory():
-    io._create_directory(path_file_temp)
-    if os.path.exists(path_file_temp):
+def test_create_directory(tmp_path):
+    temp_folder = os.path.join(tmp_path, "temp_folder")
+    io._create_directory(temp_folder)
+    if os.path.exists(temp_folder):
         res = True
     else:
         res = False
     assert res
 
 
-def test__remove_directory():
+@pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
+def test__remove_directory(tmp_path):
+    path_file_temp = os.path.join(tmp_path, "temp_folder")
+
     # Create empty folder if not exists
     if not os.path.exists(path_file_temp):
         io._create_directory(path_file_temp)

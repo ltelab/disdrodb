@@ -9,7 +9,7 @@ from disdrodb.l0.io import (
     get_data_source,
     get_campaign_name,
 )
-from disdrodb.api.metadata import get_metadata_list, read_station_metadata
+from disdrodb.api.metadata import read_station_metadata
 from disdrodb.l0.l0_reader import _check_metadata_reader
 from disdrodb.l0.metadata import (
     _check_metadata_keys,
@@ -19,6 +19,8 @@ from disdrodb.l0.metadata import (
     _check_metadata_sensor_name,
     check_metadata_compliance,
 )
+
+from disdrodb.api.metadata import get_list_metadata
 
 #### --------------------------------------------------------------------------.
 
@@ -120,9 +122,26 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
     return None
 
 
-def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True):
-    """Return the values of a metadata key for all the archive."""
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bool = True):
+    """Return the values of a metadata key for all the archive.
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+    key : str
+        Metadata key.
+    return_tuple : bool, optional
+        if True, returns a tuple of values with station, campaign and data source name (default is True)
+        if False, returns a list of values without station, campaign and data source name
+    Returns
+    -------
+    list or tuple
+        List or tuple of values of the metadata key.
+    """
+
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     list_info = []
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
@@ -146,8 +165,23 @@ def get_archive_metadata_key_value(disdrodb_dir, key, return_tuple=True):
 
 #### --------------------------------------------------------------------------.
 #### Metadata Archive Checks
-def check_archive_metadata_keys(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+def check_archive_metadata_keys(disdrodb_dir: str) -> bool:
+    """Check that all metadata files have valid keys
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
+    is_valid = True
+
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -166,10 +200,28 @@ def check_archive_metadata_keys(disdrodb_dir):
         except Exception as e:
             print(f"Error for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+            is_valid = False
+
+    return is_valid
 
 
-def check_archive_metadata_campaign_name(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+def check_archive_metadata_campaign_name(disdrodb_dir) -> bool:
+    """Check metadata campaign_name.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
+    is_valid = True
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -186,12 +238,29 @@ def check_archive_metadata_campaign_name(disdrodb_dir):
         try:
             _check_metadata_campaign_name(metadata, expected_name=campaign_name)
         except Exception as e:
+            is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+    return is_valid
 
 
-def check_archive_metadata_data_source(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+def check_archive_metadata_data_source(disdrodb_dir) -> bool:
+    """Check metadata data_source.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
+    is_valid = True
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -208,12 +277,29 @@ def check_archive_metadata_data_source(disdrodb_dir):
         try:
             _check_metadata_data_source(metadata, expected_name=data_source)
         except Exception as e:
+            is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+    return is_valid
 
 
-def check_archive_metadata_sensor_name(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+def check_archive_metadata_sensor_name(disdrodb_dir) -> bool:
+    """Check metadata sensor name.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
+    is_valid = True
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -230,12 +316,29 @@ def check_archive_metadata_sensor_name(disdrodb_dir):
         try:
             _check_metadata_sensor_name(metadata)
         except Exception as e:
+            is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+    return is_valid
 
 
-def check_archive_metadata_station_name(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+def check_archive_metadata_station_name(disdrodb_dir) -> bool:
+    """Check metadata station name.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
+    is_valid = True
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -252,12 +355,30 @@ def check_archive_metadata_station_name(disdrodb_dir):
         try:
             _check_metadata_station_name(metadata, expected_name=station_name)
         except Exception as e:
+            is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+    return is_valid
 
 
-def check_archive_metadata_reader(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+def check_archive_metadata_reader(disdrodb_dir: str) -> bool:
+    """Check if the reader key is available and there is the associated reader.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
+
+    is_valid = True
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -274,12 +395,17 @@ def check_archive_metadata_reader(disdrodb_dir):
         try:
             _check_metadata_reader(metadata)
         except Exception as e:
+            is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+    return is_valid
 
 
 def check_archive_metadata_compliance(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    is_valid = True
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -293,12 +419,29 @@ def check_archive_metadata_compliance(disdrodb_dir):
                 station_name=station_name,
             )
         except Exception as e:
+            is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+    return is_valid
 
 
 def check_archive_metadata_geolocation(disdrodb_dir):
-    list_metadata_paths = get_metadata_list(disdrodb_dir)
+    """Check the metadata files have missing or wrong geolocation..
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        Path to the disdrodb directory.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
+    is_valid = True
+    list_metadata_paths = get_list_metadata(
+        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+    )
     for fpath in list_metadata_paths:
         disdrodb_dir = get_disdrodb_dir(fpath)
         data_source = get_data_source(fpath)
@@ -315,5 +458,7 @@ def check_archive_metadata_geolocation(disdrodb_dir):
         try:
             check_metadata_geolocation(metadata)
         except Exception as e:
+            is_valid = False
             print(f"Missing information for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
+    return is_valid
