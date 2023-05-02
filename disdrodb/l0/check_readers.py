@@ -9,8 +9,8 @@ from disdrodb.api.io import _get_disdrodb_directory
 
 
 # current file path
-DISDRODB_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW_DIR = os.path.join(DISDRODB_DIR, "tests", "pytest_files", "check_readers", "DISDRODB")
+PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+RAW_DIR = os.path.join(PACKAGE_DIR, "tests", "pytest_files", "check_readers", "DISDRODB")
 
 
 def get_list_test_data_sources() -> list:
@@ -168,7 +168,3 @@ def check_all_readers() -> None:
             shutil.rmtree(os.path.join(RAW_DIR, "Processed"))
         except:
             pass
-
-
-if __name__ == "__main__":
-    check_all_readers()

@@ -141,53 +141,54 @@ def define_summary_log(list_logs):
     It write the summary log in the parent directory.
     """
     if not os.environ.get("PYTEST_CURRENT_TEST"):
-        list_logs = sorted(list_logs)
-        logs_dir = os.path.dirname(list_logs[0])
-        station_name = logs_dir.split(os.path.sep)[-1]
-        summary_logs_dir = os.path.dirname(logs_dir)
-        ####-----------------------------------------------------------------------.
-        #### Define summary and problem logs
-        # Define summary logs file name
-        summary_fpath = os.path.join(summary_logs_dir, f"logs_summary_{station_name}.log")
-        # Define logs keywords to select lines to copy into the summary log file
-        # -- > "has started" and "has ended" is used to copy the line with the filename being processsed
-        list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
-        re_keyword = re.compile("|".join(list_keywords))
-        # Filter and concat all logs files
-        with open(summary_fpath, "w") as output_file:
-            for log_fpath in list_logs:
-                with open(log_fpath) as input_file:
-                    for line in input_file:
-                        if re_keyword.search(line):
-                            # Write line to output file
-                            output_file.write(line)
-        ####-----------------------------------------------------------------------.
-        #### Define problem logs
-        # Define problem logs file name
-        problem_fpath = os.path.join(summary_logs_dir, f"logs_problem_{station_name}.log")
-        # - Copy the log of files with warnings and error
-        list_keywords = ["ERROR"]  # "WARNING"
-        re_keyword = re.compile("|".join(list_keywords))
-        any_problem = False
-        with open(problem_fpath, "w") as output_file:
-            for log_fpath in list_logs:
-                log_with_problem = False
-                # Check if a warning or error is reported
-                with open(log_fpath) as input_file:
-                    for line in input_file:
-                        if re_keyword.search(line):
-                            log_with_problem = True
-                            any_problem = True
-                            break
-                # If it is reported, copy the log file in the logs_problem file
-                if log_with_problem:
-                    with open(log_fpath) as input_file:
-                        output_file.write(input_file.read())
-
-        # If no problems occured, remove the logs_problem_<station_name>.log file
-        if not any_problem:
-            os.remove(problem_fpath)
         return None
+    list_logs = sorted(list_logs)
+    logs_dir = os.path.dirname(list_logs[0])
+    station_name = logs_dir.split(os.path.sep)[-1]
+    summary_logs_dir = os.path.dirname(logs_dir)
+    ####-----------------------------------------------------------------------.
+    #### Define summary and problem logs
+    # Define summary logs file name
+    summary_fpath = os.path.join(summary_logs_dir, f"logs_summary_{station_name}.log")
+    # Define logs keywords to select lines to copy into the summary log file
+    # -- > "has started" and "has ended" is used to copy the line with the filename being processsed
+    list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
+    re_keyword = re.compile("|".join(list_keywords))
+    # Filter and concat all logs files
+    with open(summary_fpath, "w") as output_file:
+        for log_fpath in list_logs:
+            with open(log_fpath) as input_file:
+                for line in input_file:
+                    if re_keyword.search(line):
+                        # Write line to output file
+                        output_file.write(line)
+    ####-----------------------------------------------------------------------.
+    #### Define problem logs
+    # Define problem logs file name
+    problem_fpath = os.path.join(summary_logs_dir, f"logs_problem_{station_name}.log")
+    # - Copy the log of files with warnings and error
+    list_keywords = ["ERROR"]  # "WARNING"
+    re_keyword = re.compile("|".join(list_keywords))
+    any_problem = False
+    with open(problem_fpath, "w") as output_file:
+        for log_fpath in list_logs:
+            log_with_problem = False
+            # Check if a warning or error is reported
+            with open(log_fpath) as input_file:
+                for line in input_file:
+                    if re_keyword.search(line):
+                        log_with_problem = True
+                        any_problem = True
+                        break
+            # If it is reported, copy the log file in the logs_problem file
+            if log_with_problem:
+                with open(log_fpath) as input_file:
+                    output_file.write(input_file.read())
+
+    # If no problems occured, remove the logs_problem_<station_name>.log file
+    if not any_problem:
+        os.remove(problem_fpath)
+    return None
 
 
 ####---------------------------------------------------------------------------.
