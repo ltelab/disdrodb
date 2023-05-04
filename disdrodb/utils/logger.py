@@ -140,7 +140,8 @@ def define_summary_log(list_logs):
     It select only logged lines with root, WARNING and ERROR keywords.
     It write the summary log in the parent directory.
     """
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
+
+    if os.environ.get("PYTEST_CURRENT_TEST"):
         return None
     list_logs = sorted(list_logs)
     logs_dir = os.path.dirname(list_logs[0])

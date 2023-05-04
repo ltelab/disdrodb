@@ -139,7 +139,7 @@ def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
 
 def check_all_readers() -> None:
     """Test all readers that have data samples and ground truth.
-    
+
     Raises
 
     ------
