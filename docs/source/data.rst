@@ -18,7 +18,7 @@ Two types of data must be distinguished:
 
 -  Station Metadata and Issues:
 
-   -  Stores a standard set of metadata and measurement issues of each disdrometer 
+   -  Stores a standard set of metadata and measurement issues of each disdrometer
    -  This dataset should be light.
    -  Central storage is provided in the ``disdro-data`` Git repository.
    -  The metadata folder contains a YAML metadata file called
@@ -56,7 +56,7 @@ follow these steps:
    disdrodb-data structure.
 
 4. Add your metadata YAML file for each station (following the name format convention ``<station_name>.yml``) in
-   a metadata directory in the campaign directory. We recommend you
+   the ``metadata`` directory of the campaign directory. We recommend you to
    copy-paste an existing metadata YAML file to get the correct
    structure.
 
@@ -65,25 +65,25 @@ follow these steps:
    directory. We recommend you to copy-paste an existing issue YAML file
    to get the correct structure.
 
-6. Test that the integration of your new dataset functions by deleting
+6. Commit your changes and push your branch to GitHub.
+
+7. Test that the integration of your new dataset functions by deleting
    your data locally and re-fetching it through the process detailed
    above.
-
-7. Commit your changes and push your branch to GitHub.
 
 8. `Create a pull
    request <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__,
    and wait for a maintainer to accept it!
 
-9. If you struggle with this process, don’t hesitate to raise an
+9.  If you struggle with this process, don’t hesitate to raise an
    `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__
    so we can help!
 
 How to download raw data locally ?
 --------------------------------------
 
-Prerequisite: You have already set up the folder hierarchy as described
-above.
+Prerequisite: First clone the disdrodb-data repository as described
+above to get the folder structure, metadatas and issues.
 
 Objective: You would like to download the raw data referenced in some metadata
 ``<station_name>.yml`` file.
@@ -103,11 +103,15 @@ data source, campaign, or station.
 
 Parameters:
 
--  ``data_sources`` (optional): the source of the data
--  ``campaign_names`` (optional): the name of the campaign.
--  ``station_names`` (optional): the name of the station.
+-  ``data_sources`` (optional): Station data source.
+-  ``campaign_names`` (optional): Station campaign name.
+-  ``station_names`` (optional): Name of the stations.
 -  ``force`` (optional, default = ``False``): a boolean value indicating
    whether existing files should be overwritten.
+
+To download data from multiple data sources or campaigns, please provide a space-separated string of
+the data sources or campaigns you require. For example, "EPFL NASA".
+
 
 How to upload raw data to Zenodo?
 ---------------------------------
@@ -134,6 +138,10 @@ Parameters:
    whether files already uploaded somewhere else should still be
    included.
 
+To upload data from multiple data sources or campaigns, please provide a space-separated string of
+the data sources or campaigns you require. For example, "EPFL NASA".
+
+
 Currently, only Zenodo is supported.
 
 After running this command, the user will be prompted to insert a Zenodo
@@ -142,6 +150,9 @@ must use to go to the Zenodo web interface and manually publish the
 data.
 
 To get a Zenodo token, go to
-https://zenodo.org/account/settings/applications/tokens/new/
+`https://zenodo.org/account/settings/applications/tokens/new/ <https://zenodo.org/account/settings/applications/tokens/new/>`_
+
+
+
 
 .. image:: /static/zenodo.png
