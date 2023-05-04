@@ -3,7 +3,7 @@ Data
 =========================
 
 
-Users can make their own data accessible to the community. Disdrodb
+Users can make their own data accessible to the community. DISDRODB
 provides a central storage for code (readers), issues and metadata.
 However, the raw data itself must be stored by the data provider due to
 size limitations.
@@ -18,12 +18,12 @@ Two types of data must be distinguished:
 
 -  Station Metadata and Issues:
 
-   -  Stores metadata on disdrometer measurements or measurement issues.
+   -  Stores a standard set of metadata and measurement issues of each disdrometer 
    -  This dataset should be light.
    -  Central storage is provided in the ``disdro-data`` Git repository.
    -  The metadata folder contains a YAML metadata file called
-      ``metadata.yml``. It has a ``data_url`` key that references the
-      raw data. Only one zip file per station is allowed.
+      ``metadata.yml``. It has a ``data_url`` key that references to the remote/online repository where
+      station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
 
 How to download metadatas and issues ?
 --------------------------------------

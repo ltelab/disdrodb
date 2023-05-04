@@ -81,7 +81,7 @@ In case that the commit is aborted, you only need to run black agains you code.
 This can be done by running   ``black .``  or   ``ruff check .``
 
 .. note::
-	To maintain consitency, please use version and configuration defined into `.pre-commit-config.yaml`).
+	To maintain consistency, please use version and configuration defined into `.pre-commit-config.yaml`.
 
 
 
@@ -89,7 +89,7 @@ The can also be done with  ``pre-commit run --all-files``. This is recommended s
 indicates if the commit contained any formatting errors (that are automatically corrected).
 
 
-More info on pre-commit and CI tools in the Code quality ans testing section  `Code quality and testing section <#code-quality-control-and-testing>`__
+More info on pre-commit and CI tools are provided in the Code quality and testing section  `Code quality and testing section <#code-quality-control-and-testing>`__
 
 
 
@@ -283,7 +283,7 @@ DISDRODB full testing pipeline can be executed by running:
 	pytest disdrodb
 
 
-The tests located in the `disdrob/tests` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
+The tests located in the `disdrodb/tests` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
 
 .. code-block:: bash
 
@@ -291,7 +291,7 @@ The tests located in the `disdrob/tests` folder are used to test various functio
 
 
 
-Tests located in the `disdrob/test_readers` folder are utilized to test readers. They are **not** run automatically when you push your changes to the main repository via a GitHub Pull Request.
+Tests located in the `disdrodb/test_readers` folder are utilized to test readers. They are **not** run automatically when you push your changes to the main repository via a GitHub Pull Request.
 
 Tests are in place to ensure that a particular reader functions properly. If a new reader is added, a corresponding test should also be added.
 
@@ -344,7 +344,7 @@ Black should be used that way :
 
 
 .. note::
-	To maintain consitency, make sure to stick to version defined in the `.pre-commit-config.yaml` file. This version will be used in the CI.
+	To maintain consistency, make sure to stick to the version defined in the `.pre-commit-config.yaml` file. This version will be used in the CI.
 
 
 
@@ -361,7 +361,7 @@ Ruff should be used that way :
 
 
 .. note::
-	To maintain consitency, make sure to stick to version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is used in the CI.
+	To maintain consistency, make sure to stick to the version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is used in the CI.
 
 
 
@@ -377,7 +377,7 @@ Push your changes to your fork repository
 During this process, pre-commit hooks will be run. Your commit will be
 allowed only if quality requirements are fulfilled.
 
-If you encounter errors, Black and Ruff can be run using the following command :
+If you encounter errors, Black and Ruff can be run using the following command:
 
 ::
 
