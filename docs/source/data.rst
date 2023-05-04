@@ -53,16 +53,16 @@ follow these steps:
       git checkout -b "reader-<data_source>-<campaign_name>"
 
 3. Add your data source and campaign name directory to the current
-   folder structure.
+   disdrodb-data structure.
 
-4. Add your metadata YAML file for each station ``station_name.yml``, in
+4. Add your metadata YAML file for each station (following the name format convention ``<station_name>.yml``) in
    a metadata directory in the campaign directory. We recommend you
    copy-paste an existing metadata YAML file to get the correct
    structure.
 
 5. (Optional) Add your issues YAML files, for each station
-   ``station_name.yml``, in an issue directory located in the campaign
-   directory. We recommend you copy-paste an existing metadata YAML file
+   ``station_name.yml``, in an ``issues`` directory located in the campaign
+   directory. We recommend you to copy-paste an existing issue YAML file
    to get the correct structure.
 
 6. Test that the integration of your new dataset functions by deleting
@@ -85,19 +85,19 @@ How to download raw data locally ?
 Prerequisite: You have already set up the folder hierarchy as described
 above.
 
-Objective: You would like to download the raw data referenced in the
-``metadata.yml`` file.
+Objective: You would like to download the raw data referenced in some metadata
+``<station_name>.yml`` file.
 
-In order to download data, you should be in the virtual environment.
+In order to download the data, you should be in a virtual environment with the disdrodb package installed !
 
 To download all data, just run:
 
 .. code:: bash
 
-   download_disdrodb_archive  <the_root_folder> --data_sources <data_souzrce> --campaign_names <capaign_name> --station_names <station_name> --force true
+   download_disdrodb_archive  <the_root_folder> --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --force true
 
 The ``disdrodb_dir`` parameter is compulsory and must include the path
-of the root folder, ending with ``DISDROD``. The other parameters are
+of the root folder, ending with ``DISDRODB``. The other parameters are
 optional and are meant to restrict the download processing to a specific
 data source, campaign, or station.
 
@@ -120,7 +120,7 @@ Zenodo.
    upload_disdrodb_archive <the_root_folder> --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --platform <name_of_the_platform> --force true
 
 The ``disdrodb_dir`` parameter is compulsory and must include the path
-of the root folder, ending with ``DISDROD``. The other parameters are
+of the root folder, ending with ``DISDRODB``. The other parameters are
 optional and are meant to restrict the upload processing to a specific
 data source, campaign, or station.
 
