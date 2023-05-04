@@ -25,10 +25,10 @@ Two types of data must be distinguished:
       ``metadata.yml``. It has a ``data_url`` key that references to the remote/online repository where
       station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
 
-How to download metadatas and issues ?
+How to download the DISDRODB metadata and issues archive ?
 --------------------------------------
 
-You can clone the disdrodb-data repository with
+You can clone the disdrodb-data repository with:
 
 .. code:: bash
 
@@ -38,7 +38,7 @@ However, if you plan to add new data or metadata to the archive, first
 fork the repository on your GitHub account and then clone the forked
 repository.
 
-How to upload metadatas and issues?
+How to upload new station metadata?
 ------------------------------------
 
 Do you want to contribute to the project with your own data? Great! Just
@@ -46,13 +46,13 @@ follow these steps:
 
 1. Fork the ``disdro-data`` Git repository.
 
-2. Create a new branch.
+2. Create a new branch:
 
    .. code:: bash
 
       git checkout -b "reader-<data_source>-<campaign_name>"
 
-3. Add your data source, campaign names, and station name to the current
+3. Add your data source and campaign name directory to the current
    folder structure.
 
 4. Add your metadata YAML file for each station ``station_name.yml``, in
