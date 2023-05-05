@@ -112,7 +112,7 @@ The ``null`` value should be added for character variables or when the value can
 
 During the DISDRODB L0 processing:
 
-* the ``data_range``, if specified, will be used to set unvalid values to NaN
+* the ``data_range``, if specified, will be used to set invalid values to NaN
 * the ``nan_flags`` values, if specified, will be converted to NaN
 
 The ``n_digits``, ``n_characters``, ``n_decimals`` and ``n_naturals`` information

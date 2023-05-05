@@ -254,11 +254,12 @@ To maintain a high code quality, Black and Ruff are defined in the .pre-commit-c
 
 
 **pre-commit**
+
 To run pre-commit (black + Ruff) locally :
 
 .. code-block:: bash
 
-   `pre-commit run --all-files``.
+   pre-commit run --all-files
 
 
 This is recommended since it
@@ -269,7 +270,7 @@ indicates if the commit contained any formatting errors (that are automatically 
 
 **Black**
 
-To run black locally :
+To run Black locally :
 
 .. code-block:: bash
 

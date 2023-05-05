@@ -25,8 +25,13 @@ Two types of data must be distinguished:
       ``metadata.yml``. It has a ``data_url`` key that references to the remote/online repository where
       station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
 
-How to download the DISDRODB metadata and issues archive ?
---------------------------------------
+
+Data transfer upload and download schema :
+
+.. image:: /static/transfer.png
+
+DISDRODB metadata and issues archive download
+-------------------------------------------------
 
 You can clone the disdrodb-data repository with:
 
@@ -38,8 +43,8 @@ However, if you plan to add new data or metadata to the archive, first
 fork the repository on your GitHub account and then clone the forked
 repository.
 
-How to upload new station metadata?
-------------------------------------
+DISDRODB metadata and issues archive upload
+----------------------------------------------
 
 Do you want to contribute to the project with your own data? Great! Just
 follow these steps:
@@ -79,7 +84,7 @@ follow these steps:
    `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__
    so we can help!
 
-How to download raw data locally ?
+DISDRODB raw data download
 --------------------------------------
 
 Prerequisite: First clone the disdrodb-data repository as described
@@ -113,8 +118,8 @@ To download data from multiple data sources or campaigns, please provide a space
 the data sources or campaigns you require. For example, "EPFL NASA".
 
 
-How to upload raw data to Zenodo?
----------------------------------
+DISDRODB raw data upload to Zenodo
+-------------------------------------
 
 We provide users with a code to upload their station’s raw data to
 Zenodo.
