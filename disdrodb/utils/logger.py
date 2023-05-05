@@ -93,17 +93,20 @@ def close_logger(logger: logger) -> None:
     logger : logger
         Logger object.
     """
-    handlers = logger.handlers[:]
-    for handler in handlers:
-        handler.flush()
-        handler.close()
-        logger.removeHandler(handler)
-    return
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        handlers = logger.handlers[:]
+        for handler in handlers:
+            handler.flush()
+            handler.close()
+            logger.removeHandler(handler)
+        return
 
 
 def create_file_logger(processed_dir, product_level, station_name, filename, parallel):
     ##------------------------------------------------------------------------.
     # Create logs directory
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return None
     logs_dir = os.path.join(processed_dir, "logs", product_level, station_name)
     os.makedirs(logs_dir, exist_ok=True)
 
@@ -136,6 +139,9 @@ def define_summary_log(list_logs):
     It select only logged lines with root, WARNING and ERROR keywords.
     It write the summary log in the parent directory.
     """
+
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        return None
     list_logs = sorted(list_logs)
     logs_dir = os.path.dirname(list_logs[0])
     station_name = logs_dir.split(os.path.sep)[-1]
@@ -219,9 +225,10 @@ def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    logger.info(msg)
-    if verbose:
-        print(" - " + msg)
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        logger.info(msg)
+        if verbose:
+            print(" - " + msg)
 
 
 def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
