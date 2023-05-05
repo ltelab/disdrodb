@@ -3,7 +3,7 @@
 [![DOI](https://zenodo.org/badge/429018433.svg)](https://zenodo.org/badge/latestdoi/429018433)
 [![PyPI version](https://badge.fury.io/py/disdrodb.svg)](https://badge.fury.io/py/disdrodb)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/disdrodb.svg)](https://anaconda.org/conda-forge/disdrodb)
-[![Build Status](https://github.com/ltelab/disdrodb/workflows/release_to_pypi.yml/badge.svg?branch=main)](https://github.com/ltelab/disdrodb/actions)
+[![Build Status](https://github.com/ltelab/disdrodb/actions/workflows/release_to_pypi.yml/badge.svg?branch=main)](https://github.com/ltelab/disdrodb/actions)
 [![Coverage Status](https://coveralls.io/repos/github/ltelab/disdrodb/badge.svg?branch=main)](https://coveralls.io/github/ltelab/disdrodb?branch=main)
 [![Documentation Status](https://readthedocs.org/projects/disdrodb/badge/?version=latest)](https://disdrodb.readthedocs.io/en/latest/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/ambv/black)
