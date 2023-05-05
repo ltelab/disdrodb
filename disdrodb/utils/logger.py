@@ -105,30 +105,29 @@ def close_logger(logger: logger) -> None:
 def create_file_logger(processed_dir, product_level, station_name, filename, parallel):
     ##------------------------------------------------------------------------.
     # Create logs directory
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logs_dir = os.path.join(processed_dir, "logs", product_level, station_name)
-        os.makedirs(logs_dir, exist_ok=True)
-
-        # logger_fname = f'logs_{fname}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
-        logger_fname = f"logs_{filename}.log"
-        logger_fpath = os.path.join(logs_dir, logger_fname)
-
-        # -------------------------------------------------------------------------.
-        # Set logger (TODO: messy with multiprocess)
-        if parallel:
-            logger = logging.getLogger(filename)  # does not log submodules logs
-        else:
-            logger = logging.getLogger()  # root logger (messy with multiprocess)
-
-        handler = logging.FileHandler(logger_fpath, mode="w")
-        # handler.setLevel(logging.DEBUG)
-        format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        handler.setFormatter(logging.Formatter(format_type))
-        logger.addHandler(handler)
-        logger.setLevel(logging.DEBUG)
-        return logger
-    else:
+    if os.environ.get("PYTEST_CURRENT_TEST"):
         return None
+    logs_dir = os.path.join(processed_dir, "logs", product_level, station_name)
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # logger_fname = f'logs_{fname}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
+    logger_fname = f"logs_{filename}.log"
+    logger_fpath = os.path.join(logs_dir, logger_fname)
+
+    # -------------------------------------------------------------------------.
+    # Set logger (TODO: messy with multiprocess)
+    if parallel:
+        logger = logging.getLogger(filename)  # does not log submodules logs
+    else:
+        logger = logging.getLogger()  # root logger (messy with multiprocess)
+
+    handler = logging.FileHandler(logger_fpath, mode="w")
+    # handler.setLevel(logging.DEBUG)
+    format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    handler.setFormatter(logging.Formatter(format_type))
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    return logger
 
 
 ####---------------------------------------------------------------------------.
