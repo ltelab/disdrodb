@@ -74,7 +74,7 @@ def test_create_initial_directory_structure(tmp_path, mocker):
         raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name, force=force
     )
 
-    l0a_folder_path = os.path.join(processed_dir, "L0B")
+    l0a_folder_path = os.path.join(processed_dir, "L0A")
     assert os.path.exists(l0a_folder_path)
 
 
