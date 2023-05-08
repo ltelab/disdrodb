@@ -110,7 +110,7 @@ A reader is a function defined by the following input arguments:
 
         * It processes just 3 raw data files.
 
-* ``parallel`` : bool [true\| **false** ] - Whether to process multiple files simultanously.
+* ``parallel`` : bool [true\| **false** ] - Whether to process multiple files simultaneously.
 
         * If parallel=False, the raw files are processed sequentially.
         * If parallel=True, each file is processed in a separate core.
@@ -141,10 +141,10 @@ It's important to note that the internal L0A processing already takes care of:
 * removing rows with undefined timestep
 * removing rows with corrupted values
 * sanitize string column with trailing spaces
-* dropping rows with duplicated timesteps (keeping only the first occurence)
+* dropping rows with duplicated timesteps (keeping only the first occurrence)
 
 In the DISDRODB L0A format, the raw precipitation spectrum, named ``raw_drop_number`` ,
-it is expected to be defined as a string with a series of values seperated by a delimiter like ``,`` or ``;``.
+it is expected to be defined as a string with a series of values separated by a delimiter like ``,`` or ``;``.
 Therefore, the ``raw_drop_number`` field value is expected to look like ``"000,001,002, ..., 001"``
 For example, if the ``raw_drop_number`` looks like the following three cases, you need to preprocess it accordingly
 into the ``df_sanitizer_fun``:
@@ -441,11 +441,11 @@ documentation.
 
 * The ``column_names`` list defines the column names of the readed raw text file.
 
-* The ``df_sanitizer_fun()`` function that defines the processing to apply on the readed dataframe in order for the dataframe to match the DISDRODB   standards.
+* The ``df_sanitizer_fun()`` function that defines the processing to apply on the read dataframe in order for the dataframe to match the DISDRODB   standards.
 
-The dataframe which is returned by the ``df_sanitizer_fun`` must have only columns compliants with the DISDRODB standards !
+The dataframe which is returned by the ``df_sanitizer_fun`` must have only columns compliant with the DISDRODB standards !
 
-When this 4 components are correctly defined, they can be transcripted into the reader you defined in `Step 2 <#step-2-define-the-reader-name>`_.
+When this 4 components are correctly defined, they can be transcribed into the reader you defined in `Step 2 <#step-2-define-the-reader-name>`_.
 
 
 Now you are ready to test the reader works properly and enable to process all stations data.

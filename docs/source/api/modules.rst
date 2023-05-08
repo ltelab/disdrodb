@@ -1,5 +1,5 @@
-disdrodb-fork
-=============
+LTE-disdrodb
+============
 
 .. toctree::
    :maxdepth: 4

@@ -75,15 +75,21 @@ The pre-commit hooks are scripts executed automatically in every commit
 to identify simple code quality issues. When an issue is identified
 (the pre-commit script exits with non-zero status), the hook aborts the
 commit and prints the error. Currently, DISDRODB only tests that the
-code to be committed complies with black’s format style.
+code to be committed complies with black's format style and the ruff linter.
 
 In case that the commit is aborted, you only need to run black agains you code.
-This can be done by running ``black .`` or ``pre-commit run --all-files``. The latter is recommended since it
-indicates if the commit contained any formatting errors (that are automatically corrected).
+This can be done by running   ``black .``  or   ``ruff check .``
 
 .. note::
-	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.
+	To maintain consistency, please use version and configuration defined into `.pre-commit-config.yaml`.
 
+
+
+The can also be done with  ``pre-commit run --all-files``. This is recommended since it
+indicates if the commit contained any formatting errors (that are automatically corrected).
+
+
+More info on pre-commit and CI tools are provided in the Code quality and testing section  `Code quality and testing section <#code-quality-control-and-testing>`__
 
 
 
@@ -230,25 +236,111 @@ You should configure VS code as follow :
 
 
 
-Running test units
-~~~~~~~~~~~~~~~~~~~~~~
+Code quality control
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+To maintain a high code quality, Black and Ruff are defined in the .pre-commit-config.yaml file. These tools are run for every Pull Request on Github and can also be run locally.
+
+
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+|  Tool                                                                                         | Aim                                                              | pre-commit | CI/CD | Version                                   |
++===============================================================================================+==================================================================+============+=======+===========================================+
+| `Black <https://black.readthedocs.io/en/stable/>`__                                           | Python code formatter                                            | 👍         | 👍    | 22.8.0                                    |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `Ruff  <https://github.com/charliermarsh/ruff>`__                                             | Python linter                                                    | 👍         | 👍    | 0.0.2570                                  |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+
+
+
+**pre-commit**
+
+To run pre-commit (black + Ruff) locally :
+
+.. code-block:: bash
+
+   pre-commit run --all-files
+
+
+This is recommended since it
+indicates if the commit contained any formatting errors (that are automatically corrected).
+
+
+
+
+**Black**
+
+To run Black locally :
+
+.. code-block:: bash
+
+	black .
+
+
+
+.. note::
+	To maintain consistency, make sure to stick to the version defined in the `.pre-commit-config.yaml` file. This version will be used in the CI.
+
+
+
+
+
+**Ruff**
+
+To run Ruff locally :
+
+.. code-block:: bash
+
+	ruff check .
+
+
+.. note::
+	To maintain consistency, make sure to stick to the version and the rule configuration defined in the `.pre-commit-config.yaml` file. This information is used in the CI.
+
+
+
+
+
+
+
+
+In the table below, some CI tool are mentioned for your information, but does not need to be installed on your computer. They are automatically run when you push your changes to the main repository via a GitHub Pull Request.
+
+
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+|  Tool                                                                                         | Aim                                                              | pre-commit | CI/CD | Python version                            |
++===============================================================================================+==================================================================+============+=======+===========================================+
+| `pre-commit.ci   <https://pre-commit.ci/>`__                                                  | Run pre-commit (as defined in `.pre-commit-config.yaml` )        |            |  👍   |                                           |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeBeat      <https://codebeat.co/>`__                                                      | Automated code review and analysis tools                         | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeScene <https://codescene.com/>`__                                                        | Automated code review and analysis tools                         | -          | 👍    | ?                                         |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeFactor <https://www.codefactor.io/>`__                                                   | Automated code review and analysis tools                         | -          | 👍    | ?                                         |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+
+
+
+
+
+
+
+Code testing
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 
 Every code change must be tested !
+
+
+
+
+**Pytest**
 
 DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package.
 
 
-DISDRODB full testing pipeline can be executed by running:
 
-.. code-block:: bash
-
-	pytest disdrodb
-
-
-
-**Unit tests**
-
-The tests located in the `disdrob/tests` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
+The tests located in the `disdrodb/tests` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
 
 .. code-block:: bash
 
@@ -257,24 +349,12 @@ The tests located in the `disdrob/tests` folder are used to test various functio
 
 
 
-**Integration tests**
+To create a new reader test, simply add a small, single-station dataset and the associated files (issue, metadata), and expected data, in the following manner:
 
-Tests located in the `disdrob/test_readers` folder are utilized to test readers. They are **not** run automatically when you push your changes to the main repository via a GitHub Pull Request.
-
-Tests are in place to ensure that a particular reader functions properly. If a new reader is added, a corresponding test should also be added.
-
-To run the tests :
-
-.. code-block:: bash
-
-	pytest disdrodb/test_readers
-
-To create a new test, simply add a small, single-station dataset and the associated files (issue, metadata), and expected data, in the following manner:
-
-| 📁 disdrodb/test_readers/
-| ├── 📁 test_ressources_raw_data
-|     	├── 📁 L0
-|     		├── 📁 readers
+| 📁 disdrodb
+| ├── 📁 tests
+|     	├── 📁 pytest_files
+|           ├── 📁 check_readers
 |     	      ├── 📁 DISDRODB
 |     		      ├── 📁 Raw
 |     			      ├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
@@ -285,19 +365,36 @@ To create a new test, simply add a small, single-station dataset and the associa
 |     				            ├── 📁 `<station_name>`.yml
 |     				         ├── 📁 metadata
 |     				            ├── 📁 `<station_name>`.yml
-| ├── 📁 disdrodb/test_ressources_ground_truth
-|     	├── 📁 DISDRODB
-|     		├── 📁 Processed
-|     			├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
-|     				├── 📁 `<campaign_name>` : e.g. PARSIVEL_2007
-|     				   ├── 📁 L0B
-|     				      ├── 📁 `<station_name>`
-|     				         ├── 📜 \*.nc  : NetCDF files containing the L0B products
+|     				         ├── 📁 ground_truth
+|     				            ├── 📁 `<station_name>`.\*
 
 
 
 
-This test will run all readers that data have been put in the above structure. The raw data `test_ressources_raw_data` will be processed and the resulting netCDF files will be compared to the ground truth `test_ressources_ground_truth`.
+A single test will run all readers with data that has been placed in the above-mentioned structure. The raw data will be processed, and the resulting Apache Parquet files (l0a) will be compared to the ground truth.
+
+The reader test succeeds if both files (ground truth and transformation of the raw file) are similar.
+
+
+The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage. The following tools are used:
+
+
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+|  Tool                                                                                         | Aim                                                              | pre-commit | CI/CD | Version                                   |
++===============================================================================================+==================================================================+============+=======+===========================================+
+| `Pytest  <https://docs.pytest.org>`__                                                         | Execute unit tests and functional tests                          | -          | 👍    |                                           |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| Coverage                                                                                      | Measure the code coverage of the project's unit tests            | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `CodeCov    <https://about.codecov.io/>`__                                                    | Uses the "coverage" package to generate a code coverage report.  | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+| `Coveralls    <https://coveralls.io/>`__                                                      | Uses the "coverage" to track the quality of your code over time. | -          | 👍    | all versions according to GitHub workflow |
++-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
+
+
+
+
+
 
 
 
@@ -307,11 +404,11 @@ Push your changes to your fork repository
 During this process, pre-commit hooks will be run. Your commit will be
 allowed only if quality requirements are fulfilled.
 
-If you encounter errors, Black can be run using the following command :
+If you encounter errors, Black and Ruff can be run using the following command:
 
 ::
 
-   pre-commit run --all-file
+   pre-commit run --all-files
 
 We follow a `commit message convention <https://www.conventionalcommits.org/en/v1.0.0/>`__, to have consistent git messages.
 The goal is to increase readability and ease of contribution. We use `commit-lint <https://github.com/conventional-changelog/commitlint>`__
