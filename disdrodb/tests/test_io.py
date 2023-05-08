@@ -6,9 +6,139 @@ import pandas as pd
 import xarray as xr
 import platform
 from disdrodb.l0 import io
+import yaml
 
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
+
+
+def create_fake_metadata_file(
+    tmp_path, yaml_file_name, yaml_dict, data_source="data_source", campaign_name="campaign_name"
+):
+    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+    file_path = os.path.join(subfolder_path, yaml_file_name)
+    # create a fake yaml file in temp folder
+    with open(file_path, "w") as f:
+        yaml.dump(yaml_dict, f)
+
+    assert os.path.exists(file_path)
+
+    return file_path
+
+
+def test_check_is_processed_dir(tmp_path):
+    subfolder_path = tmp_path / "DISDRODB" / "Processed" / "data_source" / "campaign_name"
+    subfolder_path.mkdir(parents=True)
+
+    assert io._check_is_processed_dir(str(subfolder_path)) == str(subfolder_path)
+
+
+def test_check_processed_dir(tmp_path):
+    subfolder_path = tmp_path / "DISDRODB" / "Processed" / "data_source" / "campaign_name"
+    subfolder_path.mkdir(parents=True)
+
+    assert io.check_processed_dir(str(subfolder_path)) == str(subfolder_path)
+
+
+def test_create_initial_directory_structure(tmp_path, mocker):
+    station_name = "station_1"
+    yaml_dict = {}
+    data_source = "data_source"
+    campaign_name = "CAMPAIGN_NAME"
+
+    create_fake_metadata_file(
+        tmp_path=tmp_path,
+        yaml_file_name=f"{station_name}.yml",
+        yaml_dict=yaml_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+
+    raw_dir = os.path.join(tmp_path, "DISDRODB", "Raw", "data_source", campaign_name)
+    force = False
+    subfolder_path = tmp_path / "DISDRODB" / "Raw" / "data_source" / campaign_name / "data" / station_name
+    subfolder_path.mkdir(parents=True)
+
+    fake_csv_file_path = os.path.join(subfolder_path, f"{station_name}.csv")
+    with open(fake_csv_file_path, "w") as f:
+        f.write("fake csv file")
+
+    processed_dir = os.path.join(tmp_path, "DISDRODB", "Processed", campaign_name)
+    subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name
+    subfolder_path.mkdir(parents=True)
+    mocker.patch("disdrodb.l0.metadata.check_metadata_compliance", return_value=None)
+
+    io.create_initial_directory_structure(
+        raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name, force=force
+    )
+
+    l0a_folder_path = os.path.join(processed_dir, "L0A")
+    assert os.path.exists(l0a_folder_path)
+
+
+def test_create_directory_structure(tmp_path, mocker):
+    station_name = "station_1"
+    yaml_dict = {}
+    data_source = "data_source"
+    campaign_name = "CAMPAIGN_NAME"
+
+    create_fake_metadata_file(
+        tmp_path=tmp_path,
+        yaml_file_name=f"{station_name}.yml",
+        yaml_dict=yaml_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+
+    os.path.join(tmp_path, "DISDRODB", "Raw", "data_source", campaign_name)
+    force = False
+    subfolder_path = tmp_path / "DISDRODB" / "Raw" / "data_source" / campaign_name / "data" / station_name
+    subfolder_path.mkdir(parents=True)
+
+    fake_csv_file_path = os.path.join(subfolder_path, f"{station_name}.csv")
+    with open(fake_csv_file_path, "w") as f:
+        f.write("fake csv file")
+
+    processed_dir = os.path.join(tmp_path, "DISDRODB", "Processed", campaign_name)
+    subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name / "L0B"
+    subfolder_path.mkdir(parents=True)
+
+    product_level = "L0B"
+    station_name = "station_1"
+    force = False
+
+    mocker.patch("disdrodb.api.io._get_list_stations_with_data", return_value=[station_name])
+    mocker.patch("disdrodb.l0.io._check_pre_existing_station_data", return_value=None)
+
+    io.create_directory_structure(
+        processed_dir=processed_dir, product_level=product_level, station_name=station_name, force=force, verbose=False
+    )
+
+    l0a_folder_path = os.path.join(processed_dir, "L0B")
+    assert os.path.exists(l0a_folder_path)
+
+
+def test_check_raw_dir_input(tmp_path):
+    station_name = "station_1"
+    yaml_dict = {}
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+
+    create_fake_metadata_file(
+        tmp_path=tmp_path,
+        yaml_file_name=f"{station_name}.yml",
+        yaml_dict=yaml_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+
+    io._check_raw_dir_input(os.path.join(tmp_path, "DISDRODB"))
+
+
+def test_check_directory_exist():
+    assert io._check_directory_exist(PATH_TEST_FOLDERS_FILES) is None
 
 
 def get_disdrodb_path():
