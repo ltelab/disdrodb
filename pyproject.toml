@@ -28,7 +28,7 @@ dependencies = [
 	"PyYAML",
 	"setuptools",
 	"xarray",
-	"dask",
+	"dask[distributed]",
 	"tqdm",
 	"pooch",
 	"requests"
