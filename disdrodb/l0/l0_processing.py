@@ -91,6 +91,8 @@ def _generate_l0a(
     parallel,
     issue_dict={},
 ):
+    """Generate L0A file from raw file."""
+
     from disdrodb.l0.io import get_L0A_fpath
     from disdrodb.l0.l0a_processing import (
         process_raw_file,

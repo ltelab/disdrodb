@@ -946,7 +946,18 @@ def _check_pre_existing_station_data(campaign_dir, product_level, station_name, 
 
 
 def check_processed_dir(processed_dir):
-    # Check input, format and validity of the directory path
+    """Check input, format and validity of the directory path
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+
+    Returns
+    -------
+    str
+        Path of the processed directory
+    """
     processed_dir = _check_is_processed_dir(processed_dir)
     return processed_dir
 

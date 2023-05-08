@@ -33,17 +33,53 @@ logger = logging.getLogger(__name__)
 
 
 def is_numpy_array_string(arr):
-    """Check if the numpy array contains strings."""
+    """Check if the numpy array contains strings
+
+    Parameters
+    ----------
+    arr : numpy array
+        Numpy array to check.
+    """
+
     dtype = arr.dtype.type
     return dtype == np.str_ or dtype == np.unicode_
 
 
 def is_numpy_array_datetime(arr):
+    """Check if the numpy array contains datetime64
+
+    Parameters
+    ----------
+    arr : numpy array
+        Numpy array to check.
+
+    Returns
+    -------
+    numpy array
+        Numpy array checked.
+    """
     return arr.dtype.type == np.datetime64
 
 
 def _check_timestep_datetime_accuracy(timesteps, unit="s"):
-    """Check the accuracy of the numpy datetime array."""
+    """Check the accuracy of the numpy datetime array.
+
+    Parameters
+    ----------
+    timesteps : numpy array
+        Numpy array to check.
+    unit : str, optional
+        Unit, by default "s"
+
+    Returns
+    -------
+    numpy array
+        Numpy array checked.
+
+    Raises
+    ------
+    ValueError
+    """
     if not timesteps.dtype == f"<M8[{unit}]":
         msg = f"The timesteps does not have datetime64 {unit} accuracy."
         log_error(logger, msg=msg, verbose=False)
