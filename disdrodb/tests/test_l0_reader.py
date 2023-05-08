@@ -78,7 +78,7 @@ def test_get_station_reader(tmp_path):
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    assert callable(result) is True
+    assert callable(result)
 
 
 def test_get_reader_from_metadata(tmp_path):
@@ -96,7 +96,7 @@ def test_get_reader_from_metadata(tmp_path):
         campaign_name=campaign_name,
     )
     result = get_reader_from_metadata_reader_key(reader_data_source_name=reader_data_source_name)
-    assert callable(result) is True
+    assert callable(result)
 
 
 def test_get_readers_paths_by_data_source():
@@ -111,7 +111,7 @@ def test_check_available_readers():
 def test_get_reader_from_metadata_reader_key():
     reader_data_source_name = f"{DATA_SOURCE}/{CAMPAIGN_NAME}"
     result = get_reader_from_metadata_reader_key(reader_data_source_name=reader_data_source_name)
-    assert callable(result) is True
+    assert callable(result)
 
 
 def test__get_readers_data_sources_path():
