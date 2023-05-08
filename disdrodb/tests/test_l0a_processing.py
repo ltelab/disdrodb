@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from disdrodb.l0 import l0a_processing
 from disdrodb.l0 import io
+import shutil
 
 
 from disdrodb.l0.l0a_processing import (
@@ -12,12 +13,216 @@ from disdrodb.l0.l0a_processing import (
     _check_matching_column_number,
     remove_issue_timesteps,
     cast_column_dtypes,
+    coerce_corrupted_values_to_nan,
+    strip_string_spaces,
+    strip_delimiter_from_raw_arrays,
+    remove_corrupted_rows,
+    replace_nan_flags,
+    set_nan_outside_data_range,
+    set_nan_unvalid_values,
+    read_raw_file_list,
 )
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "pytest_files",
 )
+
+
+@pytest.fixture
+def create_dummy_config_file(request: list) -> None:
+    """This fuction creates a dummy config file for testing purposes.
+    This file is deleted after the test is finished (even if the test fails).
+
+    Parameters
+    ----------
+    request : list
+        List of tuples containing the content and the name of the file to be created.
+    """
+    content = request.param[0]
+    file_name = request.param[1]
+    root_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+    config_folder = os.path.join(root_folder, "l0", "configs")
+
+    test_folder = os.path.join(config_folder, "test")
+    if not os.path.exists(test_folder):
+        os.makedirs(test_folder)
+
+    test_file_path = os.path.join(test_folder, file_name)
+
+    with open(test_file_path, "w") as f:
+        print(test_file_path)
+        f.write(content)
+
+    yield
+    os.remove(test_file_path)
+    shutil.rmtree(test_folder)
+
+
+content = """key_1:
+  valid_values:
+  - 1
+  - 2
+  - 3
+"""
+file_name = "raw_data_format.yml"
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
+def test_set_nan_unvalid_values(create_dummy_config_file):
+    """Create a dummy config file and test the function set_nan_unvalid_values.
+
+    Parameters
+    ----------
+    create_dummy_config_file : function
+        Function that creates and removes the dummy config file.
+    """
+    # Test withput modification
+    df = pd.DataFrame({"key_1": [1, 2, 1, 2, 1]})
+    output = set_nan_unvalid_values(df, "test", verbose=False)
+    assert df.equals(output)
+
+    # Test with modification
+    df = pd.DataFrame({"key_1": [1, 2, 1, 2, 4]})
+    output = set_nan_unvalid_values(df, "test", verbose=False)
+    assert np.isnan(output["key_1"][4])
+
+
+content = """key_1:
+  data_range:
+  - 0
+  - 4
+key_2:
+  data_range:
+  - 0
+  - 89
+"""
+file_name = "raw_data_format.yml"
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
+def test_set_nan_outside_data_range(create_dummy_config_file):
+    # Test case 1: Check if the function sets values outside the data range to NaN
+    data = {"key_1": [1, 2, 3, 4, 5], "key_2": [0.1, 0.3, 0.5, 0.7, 0.2]}
+
+    df = pd.DataFrame(data)
+
+    result_df = set_nan_outside_data_range(df, "test", verbose=False)
+
+    assert np.isnan(result_df["key_1"][4])
+
+
+content = """key_1:
+  nan_flags: null
+key_2:
+  nan_flags: -9999
+"""
+file_name = "raw_data_format.yml"
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
+def test_replace_nan_flags(create_dummy_config_file):
+    # Create a sample dataframe with nan flags
+    data = {
+        "key_1": [6, 7, 1, 9, -9999],
+        "key_2": [6, 7, 1, 9, -9999],
+    }
+    df = pd.DataFrame(data)
+
+    # Call the function with the sample dataframe
+    sensor_name = "test"
+    verbose = True
+    df = replace_nan_flags(df, sensor_name, verbose)
+
+    expected_data = {
+        "key_1": [6, 7, 1, 9, -9999],
+        "key_2": [6, 7, 1, 9, np.nan],
+    }
+    assert df.equals(pd.DataFrame(expected_data))
+
+
+def test_remove_corrupted_rows():
+    data = {
+        "raw_drop_number": ["1", "2", "3", "a", "5"],
+        "raw_drop_concentration": ["0.1", "0.3", "0.5", "b", "0.2"],
+        "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
+    }
+
+    data = pd.DataFrame(data)
+    output = remove_corrupted_rows(data)
+    assert output.shape[1] == 3
+
+    # Test case 1: Check if the function removes corrupted rows
+    data = {
+        "raw_drop_number": ["1", "2", "3", "a", "5"],
+        "other": ["0.1", "0.3", "0.5", "b", "0.2"],
+        "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
+    }
+
+    data = pd.DataFrame(data)
+    output = remove_corrupted_rows(data)
+    assert output.shape[1] == 3
+
+    # Test case 2: Check if the function raises ValueError when there are no remaining rows
+    with pytest.raises(ValueError, match=r"No remaining rows after data corruption checks."):
+        remove_corrupted_rows(pd.DataFrame())
+
+    # Test case 3: Check if the function raises ValueError when only one row remains
+    with pytest.raises(ValueError, match=r"Only 1 row remains after data corruption checks. Check the file."):
+        remove_corrupted_rows(pd.DataFrame({"raw_drop_number": ["1"]}))
+
+
+def test_strip_delimiter_from_raw_arrays():
+    data = {"raw_drop_number": ["  value1", "value2 ", "value3  "], "key_3": [" value4", "value5", "value6"]}
+    df = pd.DataFrame(data)
+    result = strip_delimiter_from_raw_arrays(df)
+    expected_data = {"raw_drop_number": ["value1", "value2", "value3"], "key_3": [" value4", "value5", "value6"]}
+    expected = pd.DataFrame(expected_data)
+
+    # Check if result matches expected result
+    assert result.equals(expected)
+
+
+content = "key_1: 'str' \nkey_2: 'int'\nkey_3: 'str'"
+file_name = "l0a_encodings.yml"
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
+def test_strip_string_spaces(create_dummy_config_file):
+    data = {"key_1": ["  value1", "value2 ", "value3  "], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
+    df = pd.DataFrame(data)
+
+    # Call function
+    result = strip_string_spaces(df, "test")
+
+    # Define expected result
+    expected_data = {
+        "key_1": ["value1", "value2", "value3"],
+        "key_2": [1, 2, 3],
+        "key_3": ["value4", "value5", "value6"],
+    }
+    expected = pd.DataFrame(expected_data)
+
+    # Check if result matches expected result
+    assert result.equals(expected)
+
+
+content = "key_1: 'int64' \nkey_2: 'int64'"
+file_name = "l0a_encodings.yml"
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
+def test_coerce_corrupted_values_to_nan(create_dummy_config_file):
+    # Test with a valid dataframe
+    df = pd.DataFrame({"key_1": ["1"]})
+    df_out = coerce_corrupted_values_to_nan(df, "test", verbose=False)
+
+    assert df.equals(df_out)
+
+    # Test with a wrong dataframe
+    df = pd.DataFrame({"key_2": ["text"]})
+    df_out = coerce_corrupted_values_to_nan(df, "test", verbose=False)
+    assert pd.isnull(df_out["key_2"][0])
 
 
 def test_remove_issue_timesteps():
@@ -134,18 +339,6 @@ def test_cast_column_dtypes():
     assert df_out["time"].dtype == "datetime64[s]"
     assert df_out["station_number"].dtype == "object"
     assert df_out["altitude"].dtype == "float64"
-
-
-def test_coerce_corrupted_values_to_nan():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0a_processing.coerce_corrupted_values_to_nan()
-    assert 1 == 1
-
-
-def test_strip_string_spaces():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0a_processing.strip_string_spaces()
-    assert 1 == 1
 
 
 def test_remove_rows_with_missing_time():
@@ -356,12 +549,6 @@ def test_check_df_sanitizer_fun():
         _check_df_sanitizer_fun(bad_fun2)
 
 
-def test_read_raw_file_list():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0a_processing.read_raw_file_list()
-    assert 1 == 1
-
-
 def test_write_l0a():
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
@@ -383,3 +570,48 @@ def test_write_l0a():
     is_equal = df.equals(df_written)
 
     assert is_equal
+
+
+def test_read_raw_file_list():
+    # Set up the inputs
+    file_list = ["test_file1.csv", "test_file2.csv"]
+    column_names = ["time", "value"]
+    reader_kwargs = {"delimiter": ","}
+    sensor_name = "my_sensor"
+    verbose = False
+
+    # Create a test dataframe
+    df1 = pd.DataFrame(
+        {"time": pd.date_range(start="2022-01-01", end="2022-01-02", freq="H"), "value": np.random.rand(25)}
+    )
+    df2 = pd.DataFrame(
+        {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="H"), "value": np.random.rand(25)}
+    )
+    df_list = [df1, df2]
+
+    # Mock the process_raw_file function
+    # The code block is defining a mock function called mock_process_raw_file
+    # which will be used in unit testing to replace the original process_raw_file function.
+    def mock_process_raw_file(filepath, column_names, reader_kwargs, df_sanitizer_fun, sensor_name, verbose):
+        if filepath == "test_file1.csv":
+            return df1
+        elif filepath == "test_file2.csv":
+            return df2
+
+    # Monkey patch the function
+    from disdrodb.l0 import l0a_processing
+
+    l0a_processing.process_raw_file = mock_process_raw_file
+
+    # Call the function
+    result = read_raw_file_list(
+        file_list=file_list,
+        column_names=column_names,
+        reader_kwargs=reader_kwargs,
+        sensor_name=sensor_name,
+        verbose=verbose,
+    )
+
+    # Check the result
+    expected_result = pd.concat(df_list).reset_index(drop=True)
+    assert result.equals(expected_result)

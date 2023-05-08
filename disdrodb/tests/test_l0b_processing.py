@@ -2,13 +2,375 @@ import os
 import pytest
 import pandas as pd
 import numpy as np
+import shutil
 import xarray as xr
 from disdrodb.l0 import l0b_processing
+from disdrodb.l0.l0b_processing import (
+    get_bin_coords,
+    set_variable_attributes,
+    _set_attrs_dict,
+    set_coordinate_attributes,
+    add_dataset_crs_coords,
+    create_l0b_from_l0a,
+)
+
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "pytest_files",
 )
+
+
+@pytest.fixture
+def create_dummy_config_file(request):
+    list_content = request.param[0]
+    list_file_name = request.param[1]
+
+    for i, content in enumerate(list_content):
+        file_name = list_file_name[i]
+        root_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        config_folder = os.path.join(root_folder, "l0", "configs")
+
+        test_folder = os.path.join(config_folder, "test")
+        if not os.path.exists(test_folder):
+            os.makedirs(test_folder)
+
+        test_file_path = os.path.join(test_folder, file_name)
+
+        with open(test_file_path, "w") as f:
+            f.write(content)
+
+    yield
+    os.remove(test_file_path)
+    shutil.rmtree(test_folder)
+
+
+list_files_name = []
+list_content = []
+
+
+raw_data_format = """rainfall_rate_32bit:
+  n_digits: 7
+  n_characters: 8
+  n_decimals: 3
+  n_naturals: 4
+  data_range:
+  - 0
+  - 9999.999
+  nan_flags: null
+"""
+list_content.append(raw_data_format)
+list_files_name.append("raw_data_format.yml")
+
+bins_velocity = """center:
+  0: 0.05
+  1: 0.15
+  2: 0.25
+  3: 0.35
+  4: 0.45
+bounds:
+  0:
+  - 0.0
+  - 0.1
+  1:
+  - 0.1
+  - 0.2
+  2:
+  - 0.2
+  - 0.3
+  3:
+  - 0.3
+  - 0.4
+  4:
+  - 0.4
+  - 0.5
+width:
+  0: 0.1
+  1: 0.1
+  2: 0.1
+  3: 0.1
+  4: 0.1
+"""
+list_content.append(bins_velocity)
+list_files_name.append("bins_velocity.yml")
+
+
+bins_diameter = """center:
+  0: 0.062
+  1: 0.187
+  2: 0.312
+  3: 0.437
+  4: 0.562
+bounds:
+  0:
+  - 0.0
+  - 0.1245
+  1:
+  - 0.1245
+  - 0.2495
+  2:
+  - 0.2495
+  - 0.3745
+  3:
+  - 0.3745
+  - 0.4995
+  4:
+  - 0.4995
+  - 0.6245
+width:
+  0: 0.125
+  1: 0.125
+  2: 0.125
+  3: 0.125
+  4: 0.125
+"""
+list_content.append(bins_diameter)
+list_files_name.append("bins_diameter.yml")
+
+variable_description = """raw_drop_concentration: 'Particle number concentrations per diameter class'
+raw_drop_average_velocity: 'Average particle velocities for each diameter class'
+raw_drop_number: 'Drop counts per diameter and velocity class'
+"""
+list_content.append(variable_description)
+list_files_name.append("variable_description.yml")
+
+variable_units = """raw_drop_concentration: '1/(m3*mm)'
+raw_drop_average_velocity: 'm/s'
+raw_drop_number: ''
+"""
+list_content.append(variable_units)
+list_files_name.append("variable_units.yml")
+
+variable_long_name = """raw_drop_concentration: 'Raw drop concentration'
+raw_drop_average_velocity: 'Raw drop average velocity'
+raw_drop_number: 'Raw drop number'
+"""
+list_content.append(variable_long_name)
+list_files_name.append("variable_long_name.yml")
+
+
+@pytest.mark.parametrize("create_dummy_config_file", [(list_content, list_files_name)], indirect=True)
+def test_create_l0b_from_l0a(create_dummy_config_file):
+    # create a sample DataFrame
+
+    df = pd.DataFrame(
+        {
+            "time": pd.date_range("2022-01-01", periods=10, freq="H"),
+            "raw_drop_concentration": np.random.rand(10),
+            "raw_drop_average_velocity": np.random.rand(10),
+            "raw_drop_number": np.random.rand(10),
+            "latitude": np.random.rand(10),
+            "longitude": np.random.rand(10),
+            "altitude": np.random.rand(10),
+        }
+    )
+
+    # create a sample attrs dictionary
+    attrs = {
+        "sensor_name": "test",
+        "latitude": 46.52130,
+        "longitude": 6.56786,
+        "altitude": 400,
+        "platform_type": "fixed",
+    }
+
+    # call the function
+    ds = create_l0b_from_l0a(df, attrs)
+
+    expected_variables = [
+        "diameter_bin_lower",
+        "latitude",
+        "velocity_bin_upper",
+        "velocity_bin_width",
+        "velocity_bin_center",
+        "velocity_bin_lower",
+        "time",
+        "crs",
+        "altitude",
+        "longitude",
+        "diameter_bin_upper",
+        "diameter_bin_width",
+        "diameter_bin_center",
+    ]
+
+    # check the output dataset has the correct variables and dimensions
+    assert set(ds.variables) == set(expected_variables)
+    assert set(ds.dims) == set(["diameter_bin_center", "time", "velocity_bin_center", "crs"])
+
+    # check that the geolocation coordinates have been properly set
+    assert np.allclose(ds.latitude.values, df.latitude.values)
+    assert np.allclose(ds.longitude.values, df.longitude.values)
+    assert np.allclose(ds.altitude.values, df.altitude.values)
+
+    # check that the dataset has a CRS coordinate
+    assert "crs" in ds.coords
+
+
+def test_add_dataset_crs_coords():
+    # Create example dataset
+    ds = xr.Dataset(
+        {
+            "var1": xr.DataArray([1, 2, 3], dims="time"),
+            "lat": xr.DataArray([0, 1, 2], dims="time"),
+            "lon": xr.DataArray([0, 1, 2], dims="time"),
+        }
+    )
+
+    # Call the function and check the output
+    ds_out = add_dataset_crs_coords(ds)
+    assert "crs" in ds_out.coords
+    assert ds_out.crs.values == "WGS84"
+
+
+def test_set_attrs_dict():
+    ds = xr.Dataset({"var1": xr.DataArray([1, 2, 3], dims="time")})
+    attrs_dict = {"var1": {"attr1": "value1"}}
+    _set_attrs_dict(ds, attrs_dict)
+    assert ds.var1.attrs["attr1"] == "value1"
+
+    attrs_dict = {"var2": {"attr1": "value1"}}
+    _set_attrs_dict(ds, attrs_dict)
+    assert "var2" not in ds
+
+    attrs_dict = {"var1": {"attr1": "value1"}, "var2": {"attr2": "value2"}}
+    _set_attrs_dict(ds, attrs_dict)
+    assert ds.var1.attrs["attr1"] == "value1"
+    assert "var2" not in ds
+
+
+def test_set_coordinate_attributes():
+    # Create example dataset
+    ds = xr.Dataset(
+        {
+            "var1": xr.DataArray([1, 2, 3], dims="time"),
+            "lat": xr.DataArray([0, 1, 2], dims="time"),
+            "lon": xr.DataArray([0, 1, 2], dims="time"),
+        }
+    )
+    ds.lat.attrs["units"] = "degrees_north"
+    ds.lon.attrs["units"] = "degrees_east"
+
+    # Call the function and check the output
+    ds_out = set_coordinate_attributes(ds)
+    assert "units" in ds_out.lat.attrs
+    assert ds_out.lat.attrs["units"] == "degrees_north"
+    assert "units" in ds_out.lon.attrs
+    assert ds_out.lon.attrs["units"] == "degrees_east"
+    assert "units" not in ds_out.var1.attrs
+
+
+def test_set_variable_attributes(mocker):
+    # Create a sample dataset
+    data = np.random.rand(10, 10)
+    ds = xr.Dataset({"var_1": (("lat", "lon"), data)})
+    sensor_name = "my_sensor"
+
+    # Create mock functions for attribute dictionaries
+    mocker.patch(
+        "disdrodb.l0.standards.get_description_dict",
+        return_value={"var_1": "descrition_1", "var_2": "descrition_2"},
+    )
+    mocker.patch(
+        "disdrodb.l0.standards.get_units_dict",
+        return_value={"var_1": "unit_1", "var_2": "unit_2"},
+    )
+    mocker.patch(
+        "disdrodb.l0.standards.get_long_name_dict",
+        return_value={"var_1": "long_1", "var_2": "long_2"},
+    )
+    mocker.patch(
+        "disdrodb.l0.standards.get_data_range_dict",
+        return_value={"var_1": [0, 1], "var_2": [0, 1]},
+    )
+
+    # Call the function to set variable attributes
+    ds = set_variable_attributes(ds, sensor_name)
+    assert ds["var_1"].attrs["description"] == "descrition_1"
+    assert ds["var_1"].attrs["units"] == "unit_1"
+    assert ds["var_1"].attrs["long_name"] == "long_1"
+    assert ds["var_1"].attrs["valid_min"] == 0
+    assert ds["var_1"].attrs["valid_max"] == 1
+
+
+content_1 = """center:
+  0: 0.05
+  1: 0.15
+  2: 0.25
+  3: 0.35
+  4: 0.45
+bounds:
+  0:
+  - 0.0
+  - 0.1
+  1:
+  - 0.1
+  - 0.2
+  2:
+  - 0.2
+  - 0.3
+  3:
+  - 0.3
+  - 0.4
+  4:
+  - 0.4
+  - 0.5
+width:
+  0: 0.1
+  1: 0.1
+  2: 0.1
+  3: 0.1
+  4: 0.1
+"""
+content_2 = """center:
+  0: 0.062
+  1: 0.187
+  2: 0.312
+  3: 0.437
+  4: 0.562
+bounds:
+  0:
+  - 0.0
+  - 0.1245
+  1:
+  - 0.1245
+  - 0.2495
+  2:
+  - 0.2495
+  - 0.3745
+  3:
+  - 0.3745
+  - 0.4995
+  4:
+  - 0.4995
+  - 0.6245
+width:
+  0: 0.125
+  1: 0.125
+  2: 0.125
+  3: 0.125
+  4: 0.125
+"""
+file_name_1 = "bins_velocity.yml"
+file_name_2 = "bins_diameter.yml"
+
+
+@pytest.mark.parametrize(
+    "create_dummy_config_file", [([content_1, content_2], [file_name_1, file_name_2])], indirect=True
+)
+def test_get_bin_coords(create_dummy_config_file):
+    result = get_bin_coords("test")
+    expected_result = {
+        "diameter_bin_center": [0.062, 0.187, 0.312, 0.437, 0.562],
+        "diameter_bin_lower": (["diameter_bin_center"], [0.0, 0.1245, 0.2495, 0.3745, 0.4995]),
+        "diameter_bin_upper": (["diameter_bin_center"], [0.1245, 0.2495, 0.3745, 0.4995, 0.6245]),
+        "diameter_bin_width": (["diameter_bin_center"], [0.125, 0.125, 0.125, 0.125, 0.125]),
+        "velocity_bin_center": (["velocity_bin_center"], [0.05, 0.15, 0.25, 0.35, 0.45]),
+        "velocity_bin_lower": (["velocity_bin_center"], [0.0, 0.1, 0.2, 0.3, 0.4]),
+        "velocity_bin_upper": (["velocity_bin_center"], [0.1, 0.2, 0.3, 0.4, 0.5]),
+        "velocity_bin_width": (["velocity_bin_center"], [0.1, 0.1, 0.1, 0.1, 0.1]),
+    }
+
+    assert result == expected_result
 
 
 def test_infer_split_str():
@@ -187,12 +549,6 @@ def test_retrieve_l0b_arrays():
         xr.testing.assert_equal(da, da_expected_spectrum)
 
 
-def test_get_bin_coords():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0b_processing.get_bin_coords()
-    assert 1 == 1
-
-
 def test_convert_object_variables_to_string():
     # Create test dataset
     df = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
@@ -219,18 +575,6 @@ def test_convert_object_variables_to_string():
 
     # Check that variable 'b' is of type 'float'
     assert ds["b"].dtype == "float"
-
-
-def test_create_l0b_from_l0a():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0b_processing.create_l0b_from_l0a()
-    assert 1 == 1
-
-
-def test_set_variable_attributes():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0b_processing.set_variable_attributes()
-    assert 1 == 1
 
 
 @pytest.fixture
