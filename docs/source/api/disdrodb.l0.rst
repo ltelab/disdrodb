@@ -28,6 +28,14 @@ disdrodb.l0.check\_metadata module
    :undoc-members:
    :show-inheritance:
 
+disdrodb.l0.check\_readers module
+---------------------------------
+
+.. automodule:: disdrodb.l0.check_readers
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 disdrodb.l0.check\_standards module
 -----------------------------------
 

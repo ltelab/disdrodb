@@ -80,18 +80,18 @@ A reader is a function defined by the following input arguments:
 
 * ``raw_dir`` : str - The directory path where all the raw data of a specific campaign/network are stored.
 
-        * The path must have the following structure: `<...>/DISDRODB/Raw/<data_source>/<campaign_name>`.
+        * The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name``.
         * Inside the raw_dir directory, the software expects to find the following structure:
 
-            * `<raw_dir>/data/<station_name>/<raw_files>`
-            * `<raw_dir>/metadata/<station_name>.yml`
+            * ``<raw_dir>/data/<station_name>/<raw_files>``
+            * ``<raw_dir>/metadata/<station_name>.yml``
 
 
 * ``processed_dir`` : str - The desired directory path where to save the DISDRODB L0A and L0B products.
 
-        * The path should have the following structure: `<...>/DISDRODB/Processed/<data_source>/<campaign_name>`
+        * The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
         * The <campaign_name> must match with the one specified in the raw_dir path.
-        * For reader testing purposes, you can define i.e. `/tmp/DISDRODB/Processed/<data_source>/<campaign_name>`
+        * For reader testing purposes, you can define i.e. ``/tmp/DISDRODB/Processed/<data_source>/<campaign_name>``
 
 
 * ``station_name`` : str - Name of the station to be processed.

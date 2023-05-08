@@ -27,6 +27,21 @@ There are 7 metadata keys for which is mandatory to specify the value :
     to process the data, you specify the reader name ``GPM/IFLOODS``.
 
 
+
+
+To check the validity of the metadata YAML files, run the following code:
+
+.. code-block:: python
+
+    from disdrodb.l0 import check_archive_metadata_compliance, check_archive_metadata_geolocation
+
+    disdrodb_dir = "<...>/DISDRODB"
+    check_archive_metadata_compliance(disdrodb_dir)
+    check_archive_metadata_geolocation(disdrodb_dir)
+
+
+
+
 The list of the standard metadata keys and their description is provided here below:
 
 
@@ -70,17 +85,3 @@ The list of the standard metadata keys and their description is provided here be
    :file: ./metadata_csv/Data_Attribution.csv
    :widths: auto
    :header-rows: 1
-
-
-
-
-
-To check the validity of the metadata YAML files, run the following code:
-
-.. code-block:: python
-
-    from disdrodb.l0 import check_archive_metadata_compliance, check_archive_metadata_geolocation
-
-    disdrodb_dir = "<...>/DISDRODB"
-    check_archive_metadata_compliance(disdrodb_dir)
-    check_archive_metadata_geolocation(disdrodb_dir)
