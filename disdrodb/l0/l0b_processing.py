@@ -175,17 +175,15 @@ def reshape_raw_spectrum(
 
         Examples:
         - OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
-          --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
+        --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
         - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
-          --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
+        --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
     dims_size_dict : dict
         Dictionary with the number of bins for each dimension.
         For OTT_Parsivel:
-            {"diameter_bin_center": 32,
-             "velocity_bin_center": 32}
+        {"diameter_bin_center": 32, "velocity_bin_center": 32}
         For This_LPM
-            {"diameter_bin_center": 22,
-             "velocity_bin_center": 20}
+        {"diameter_bin_center": 22, "velocity_bin_center": 20}
     n_timesteps : int
         Number of timesteps.
 
