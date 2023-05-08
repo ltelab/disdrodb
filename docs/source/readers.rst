@@ -379,7 +379,7 @@ There are 7 metadata keys for which is mandatory to specify the value :
 * the ``station_name`` must be the same as the name of the metadata YAML file without the .yml extension
 * the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_name()``.
   If the sensor which produced your data is not within the available sensors, you first need to add the sensor
-  configurations. For this task, read the section `Add new sensor configs` TODO ADD LINK.
+  configurations. For this task, read the section `Add new sensor configs <https://disdrodb.readthedocs.io/en/latest/sensor_configs.html>`_
 * the ``raw_data_format`` must be either 'txt' or 'netcdf'. 'txt' if the source data are text/ASCII files. 'netcdf' if source data are netCDFs.
 * the ``platform_type`` must be either 'fixed' or 'mobile'. If 'mobile', the DISDRODB L0 processing accepts latitude/longitude/altitude coordinates to vary with time.
 * the ``reader`` name is essential to enable to select the correct reader when processing the station.
@@ -422,7 +422,7 @@ Step 4 : Analyse the data and define the reader components
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once the DISDRODB directory structure, reader and metadata are set up, you can start analyzing the content of your data.
-To facilitate the task, we provide you with the `reader_preparation.ipynb Jupyter Notebook <https://github.com/ltelab/disdrodb/tree/main/tutorial>`.
+To facilitate the task, we provide you with the `reader_preparation.ipynb Jupyter Notebook <https://disdrodb.readthedocs.io/en/latest/reader_preparation.html>`_.
 We highly suggest to copy the notebook and adapt it to your own data.
 
 However, before starting adapting the Jupyter Notebook to your own data,
@@ -486,7 +486,7 @@ For example, to process all stations of the EPFL_2008 campaign, you would run:
 
 .. note::
 
-    * For more details and options related to DISDRODB L0 processing, read the section `Run DISDRODB L0 Processing` TODO ADD SECTION LINK
+    * For more details and options related to DISDRODB L0 processing, read the section `Run DISDRODB L0 Processing <https://disdrodb.readthedocs.io/en/latest/l0_processing.html>`_.
 
 
 The DISDRODB L0 processing generates the DISDRODB `Processed` directories tree illustrated here below.
@@ -541,13 +541,6 @@ that the reader you implemented will provide the expected results also
 when someone else will add changes to the disdrodb codebase in the future.
 
 
-All readers are tested as follow :
-
-
-.. image:: /static/reader_testing.png
-
-
-
 .. note::
 	The objective is to run every reader sequentially.
 	Therefore, make sure to provide a very small test sample in order to limit the computing time.
@@ -556,34 +549,28 @@ All readers are tested as follow :
 	A typical test file is composed of 2 stations, with two files and a couple of timesteps with measurements.
 
 
-The `GitHub readers testing resources <https://github.com/EPFL-ENAC/LTE-disdrodb-testing>`_ must have the following structure:
+You should place you data and config files under the following directory tree:
+
+| 📁 disdrodb/tests/pytest_files/check_readers/DISDRODB
+| ├── 📁 Raw
+|    ├── 📁 <DATA_SOURCE>
+|       ├── 📁 <CAMPAIGN_NAME>
+|           ├── 📁 issue
+|               ├── 📜 <station_name>.yml
+|           ├── 📁 metadata
+|               ├── 📜 <station_name>.yml
+|           ├── 📁 data
+|               ├── 📁 <station_name>
+|                   ├── 📜 <station_name>.\*
+|           ├── 📁 ground_truth
+|               ├── 📁 <station_name>
+|                   ├── 📜 <station_name>.\*
 
 
-| 📁 disdrodb-testing
-| ├── 📁 disdrodb
-|    ├── 📁 L0
-|       ├── 📁 readers
-|           ├── 📁 <data_source>
-|               ├── 📁 <campaign_name>
-|                  ├── 📜 raw.zip
-|           			├── 📁 data
-|               			├── 📁 <station_name>
-|                  				├── 📜 \*.\*  : raw files
-|           			├── 📁 issue
-|               			├── 📜 <station_name>.yml
-|          				├── 📁 metadata
-|               			├── 📜 <station_name>.yml
-|                  ├── 📜 processed.zip
-|           			├── 📁 info
-|               			├── 📜 <station_name>.yml
-|           			├── 📁 L0A
-|               			├── 📁 `station_name>
-|                  				├── 📜 \*.\parquet
-|           			├── 📁 L0B
-|               			├── 📁 <station_name>
-|               				├── 📜 \*.\nc
-|          				├── 📁 metadata
-|               			├── 📜 <station_name>.yml
+
+The `data` folder must contain your raw data files, while the `ground_truth` folder must contain the corresponding ground truth files.
+
+Once the reader is run with the raw data, the output files is compared to the ground truth files. If the files are identical, the reader is considered valid.
 
 
 
@@ -607,18 +594,8 @@ The `GitHub readers testing resources <https://github.com/EPFL-ENAC/LTE-disdrodb
 	* Example : `LOCARNO2018` or `GID`
 
 
-Process as follow to add a new test file :
-
-1. Clone the `LTE-disdrodb-testing GitHub repository <https://github.com/EPFL-ENAC/LTE-disdrodb-testing>`_
 
 
-	.. code-block:: bash
-
-		git clone https://github.com/EPFL-ENAC/LTE-disdrodb-testing.git
-
-2. Add your file according structure described above
-3. Commit and push your changes
-4. Test your test with pytest (have a look `here <contributors_guidelines.html#running-test>`__)
 
 
 

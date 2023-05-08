@@ -28,9 +28,9 @@ For each sensor, the following list of configuration YAML files are required:
 |     		├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
 |     		├── 📜 bins_diameter.yml : Information related to sensor diameter bins
 |     		├── 📜 bins_velocity.yml : Information related to sensor velocity bins
-|     		├── 📜 L0A_encodings.yml : Variables encodings for the L0A product
-|     		├── 📜 L0B_encodings.yml : Variables encodings for the L0B product
-|     		├── 📜 L0_data_format.yml : Information related to the variables logged by the sensor
+|     		├── 📜 l0a_encodings.yml : Variables encodings for the l0a product
+|     		├── 📜 l0b_encodings.yml : Variables encodings for the l0b product
+|     		├── 📜 raw_data_format.yml : Information related to the variables logged by the sensor
 |     		├── 📜 variables.yml : Variables logged by the sensor
 |     		├── 📜 variable_description.yml : Variables description
 |     		├── 📜 variable_long_name.yml: Variables long_name
@@ -69,25 +69,25 @@ If the sensor (i.e. impact disdrometers) does not measure the drop fall velocity
 the YAML files must be defined empty !
 
 
-L0A_encodings.yml file
+l0a_encodings.yml file
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 This file list the variables that are allow to be saved into the
-DISDRODB L0A Apache Parquet format.
+DISDRODB l0a Apache Parquet format.
 The file also specified the type (i.e. integer/floating precision/string)
 each variable is saved in the Apache Parquet binary format.
 In addition to the specified variables, also the following variables are allowed
-to be saved into the DISDRODB L0A files:
+to be saved into the DISDRODB l0a files:
 
 * the ``time`` column (in UTC format)
 * the ``latitude`` and ``longitude`` columns if the disdrometer station is mobile.
 
 
-L0B_encodings.yml file
+l0b_encodings.yml file
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 This file list the variables that are allow to be saved into the
-DISDRODB L0B netCDF format.
+DISDRODB l0b netCDF format.
 
 For each variable, you need to specify the compression options, the data type,
 the _FillValue to store i.e. NaN values (if integer data type), the chunk size
@@ -153,19 +153,19 @@ variable_description.yml file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This file contains a description for each variable.
-The ``description`` will be attached as a variable attribute to the DISDRODB L0B netCDF
+The ``description`` will be attached as a variable attribute to the DISDRODB l0b netCDF
 
 variable_units.yml file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This file specify the measurement unit for each variable.
-The ``units`` will be attached as a variable attribute to the DISDRODB L0B netCDF
+The ``units`` will be attached as a variable attribute to the DISDRODB l0b netCDF
 
 variable_long_name.yml file
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This file specify the long_name for each variable.
-The ``long_name`` will be attached as a variable attribute to the DISDRODB L0B netCDF.
+The ``long_name`` will be attached as a variable attribute to the DISDRODB l0b netCDF.
 See the `CF Conventions guidelines for long_name
 <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
 for more information.
