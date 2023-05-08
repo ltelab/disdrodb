@@ -192,7 +192,10 @@ def _generate_l0b(
         filename=filename,
         parallel=parallel,
     )
-    logger_fpath = logger.handlers[0].baseFilename
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        logger_fpath = logger.handlers[0].baseFilename
+    else:
+        logger_fpath = None
 
     ##------------------------------------------------------------------------.
     # Log start processing

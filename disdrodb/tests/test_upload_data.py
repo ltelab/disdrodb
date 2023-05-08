@@ -82,7 +82,11 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
 
     metadata_dict2 = get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name2)
     new_station_url2 = metadata_dict2["data_url"]
-    assert new_station_url2.endswith(f"/files/{data_source}/{campaign_name}/{station_name2}.zip")
+    list_new_station_url2 = new_station_url2.split(os.path.sep)
+
+    list_new_station_url2 = re.split(r"[\\/]", new_station_url2)
+
+    assert list_new_station_url2[-4:] == ["files", data_source, campaign_name, f"{station_name2}.zip"]
 
     # Test upload of already uploaded data
     upload_disdrodb_archives(platform="sandbox.zenodo", disdrodb_dir=str(disdrodb_dir))
