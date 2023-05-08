@@ -19,7 +19,6 @@ Two types of data must be distinguished:
 -  Station Metadata and Issues:
 
    -  Stores a standard set of metadata and measurement issues of each disdrometer
-   -  This dataset should be light.
    -  Central storage is provided in the ``disdro-data`` Git repository.
    -  The metadata folder contains a YAML metadata file called
       ``metadata.yml``. It has a ``data_url`` key that references to the remote/online repository where
