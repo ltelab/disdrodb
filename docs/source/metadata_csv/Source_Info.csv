@@ -1,4 +1,4 @@
 Keys, Description
 source, Source information
-source_convention, Raw data file convention (i.e. ARM v1.XXX, NASA v1.XX, …)
+source_convention, "Raw data file convention (i.e. ARM v1.XXX, NASA v1.XX, …)"
 source_processing_date, Date of source raw data file creation

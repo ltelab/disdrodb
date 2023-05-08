@@ -1,6 +1,6 @@
 Keys, Description
 sensor_long_name, Sensor long name
-sensor_manufacturer, Sensor manufacturer. Examples: Thies Clima, OTT Hydromet, Vaisala, Campbell, …
+sensor_manufacturer, "Sensor manufacturer. Examples: Thies Clima, OTT Hydromet, Vaisala, Campbell, …"
 sensor_wavelength, Sensor wavelength
 sensor_serial_number, Sensor serial number
 firmware_iop, TO BE DEFINED  [Available for OTT Parsivels]
