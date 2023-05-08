@@ -1,13 +1,52 @@
 import os
 import yaml
-from disdrodb.l0 import metadata
-
+from disdrodb.l0.metadata import (
+    create_campaign_default_metadata,
+    read_metadata,
+    write_default_metadata,
+    get_default_metadata_dict,
+)
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
 
 
+def create_fake_station_file(
+    disdrodb_dir, data_source="data_source", campaign_name="campaign_name", station_name="station_name"
+):
+    subfolder_path = disdrodb_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "data" / station_name
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+
+    subfolder_path = disdrodb_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+
+    path_file = os.path.join(subfolder_path, f"{station_name}.txt")
+    print(path_file)
+    with open(path_file, "w") as f:
+        f.write("This is some fake text.")
+
+
+def test_create_campaign_default_metadata(tmp_path):
+    campaign_name = "test_campaign"
+    data_source = "test_data_source"
+    station_name = "test_station"
+
+    create_fake_station_file(
+        disdrodb_dir=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+
+    create_campaign_default_metadata(os.path.join(tmp_path, "DISDRODB"), campaign_name, data_source)
+
+    expected_file_path = os.path.join(
+        tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
+    )
+
+    assert os.path.exists(expected_file_path)
+
+
 def test_get_default_metadata():
-    assert isinstance(metadata.get_default_metadata_dict(), dict)
+    assert isinstance(get_default_metadata_dict(), dict)
 
 
 def create_fake_metadata_folder(tmp_path, data_source="data_source", campaign_name="campaign_name"):
@@ -28,7 +67,7 @@ def test_write_default_metadata(tmp_path):
     fpath = os.path.join(create_fake_metadata_folder(tmp_path, data_source, campaign_name), f"{station_name}.yml")
 
     # create metadata file
-    metadata.write_default_metadata(str(fpath))
+    write_default_metadata(str(fpath))
 
     # check file exist
     assert os.path.exists(fpath)
@@ -38,7 +77,7 @@ def test_write_default_metadata(tmp_path):
         dictionary = yaml.safe_load(f)
 
     # check is the expected dictionary
-    expected_dict = metadata.get_default_metadata_dict()
+    expected_dict = get_default_metadata_dict()
     expected_dict["data_source"] = data_source
     expected_dict["campaign_name"] = campaign_name
     expected_dict["station_name"] = station_name
@@ -64,13 +103,13 @@ def test_read_metadata():
         os.remove(metadata_path)
 
     # create data
-    data = metadata.get_default_metadata_dict()
+    data = get_default_metadata_dict()
 
     # create metadata file
-    metadata.write_default_metadata(str(metadata_path))
+    write_default_metadata(str(metadata_path))
 
     # Read the metadata file
-    function_return = metadata.read_metadata(raw_dir, station_name)
+    function_return = read_metadata(raw_dir, station_name)
 
     assert function_return == data
 
