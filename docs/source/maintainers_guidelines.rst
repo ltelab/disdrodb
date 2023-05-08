@@ -119,16 +119,44 @@ Reviewing process
 ============================
 
 
-To do : define test process
+The main branch is protected and requires at least one review before merging.
+
+The review process is the following:
+
+#. A PR is opened by a contributor
+#. The CI pipeline is triggered and the status of the tests is reported in the PR.
+#. A core contributor reviews the PR and request changes if needed.
+#. The contributor updates the PR according to the review.
+#. The core contributor reviews the PR again and merge it if the changes are ok.
 
 
 
-Testing processes
-============================
+Continuous intergration (CI) testing tools
+===========================================
 
-Currently, on each Pull Request, GitHub Actions are configured to:
-* Test that the code complies with the black style format.
-* Test that the code complies with the ruff linter rules.
-* Check that the introduced changes does not break the disdrodb software (on multiple OS and environments).
-* Run tools that checks the code quality and the unit tests coverage (using i.e.
-`Coveralls <https://coveralls.io/>`__, `CodeFactor <https://www.codefactor.io/>`, `CodeBeat <https://codebeat.co/>`__, ...)
+Currently, on each Pull Request, GitHub Actions are configured as follow:
+
+
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+|                                                                                                    | Aim                                                              | Status                                                                                       | Python version                            |
++====================================================================================================+==================================================================+==============================================================================================+===========================================+
+| `Pytest  <https://docs.pytest.org>`__                                                              | Execute unit tests and functional tests                          |                                                                                              |                                           |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `Black <https://black.readthedocs.io/en/stable/>`__                                                | Python code formatter                                            |                                                                                              | No python version (Black version 22.8.0)  |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `Ruff  <https://github.com/charliermarsh/ruff>`__                                                  | Python linter                                                    |                                                                                              | (Ruff version 0.0.2570)                   |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `pre-commit.ci   <https://pre-commit.ci/>`__                                                       | Run pre-commit as defined in pre-commit-config.yaml              |                                                                                              |                                           |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| Coverage                                                                                           | Measure the code coverage of the project's unit tests            |                                                                                              | all versions according to GitHub workflow |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `CodeCov    <https://about.codecov.io/>`__                                                         | Uses the "coverage" package to generate a code coverage report.  | `disdrodb  <https://app.codecov.io/gh/ltelab/disdrodb>`__                                    | all versions according to GitHub workflow |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `Coveralls    <https://coveralls.io/>`__                                                           | Uses the "coverage" to track the quality of your code over time. | `disdrodb  <https://coveralls.io/github/ltelab/disdrodb>`__                                  | all versions according to GitHub workflow |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `CodeBeat      <https://codebeat.co/>`__                                                           | Automated code review and analysis tools                         | `disdrodb <https://codebeat.co/projects/github-com-ltelab-disdrodb-main/security_issues>`__  | all versions according to GitHub workflow |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `CodeScene <https://codescene.com/>`__                                                             | Automated code review and analysis tools                         |                                                                                              | ?                                         |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
+| `CodeFactor <https://www.codefactor.io/>`__                                                        | Automated code review and analysis tools                         | `disdrodb <https://www.codefactor.io/repository/github/ltelab/disdrodb>`__                   | ?                                         |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
