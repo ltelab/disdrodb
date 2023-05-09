@@ -278,7 +278,8 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
 
     - We use country when all campaigns (or sensor networks) are inside a given country.
 
-    - The `<data_source>` must be defined UPPER_CASE and without spaces.
+    * The ``<data_source>`` must be defined UPPER_CASE and without spaces.
+
 
 .. note::
 	Guidelines for the naming of the ``<campaign_name>`` directory:
