@@ -287,7 +287,8 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
 .. note::
 	Guidelines for the naming of the ``<campaign_name>`` directory:
 
-    * We use the name of the campaign_name in UPPER_CASE format
+    * The ``<campaign_name>`` must be defined UPPER_CASE and without spaces.
+
 
     * The ``<campaign_name>`` must be defined UPPER_CASE and without spaces.
 
