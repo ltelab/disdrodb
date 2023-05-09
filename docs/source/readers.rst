@@ -278,7 +278,8 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
     * We use the institution name when campaign data spans more than 1 country.
 
 
-    - We use country when all campaigns (or sensor networks) are inside a given country.
+    * We use country when all campaigns (or sensor networks) are inside a given country.
+
 
     * The ``<data_source>`` must be defined UPPER_CASE and without spaces.
 
