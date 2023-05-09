@@ -4,7 +4,7 @@ disdrodb.data\_transfer package
 Submodules
 ----------
 
-disdrodb.data_transfer.download_data module
+disdrodb.data\_transfer.download\_data module
 ---------------------------------------------
 
 .. automodule:: disdrodb.data_transfer.download_data
@@ -12,7 +12,7 @@ disdrodb.data_transfer.download_data module
    :undoc-members:
    :show-inheritance:
 
-disdrodb.data_transfer.upload_data module
+disdrodb.data\_transfer.upload\_data module
 -------------------------------------------
 
 .. automodule:: disdrodb.data_transfer.upload_data
