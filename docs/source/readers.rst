@@ -290,7 +290,9 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
     * The ``<campaign_name>`` must be defined UPPER_CASE and without spaces.
 
 
-    * The ``<campaign_name>`` must be defined UPPER_CASE and without spaces.
+    * Avoid the usage of dash ( - ) and dots ( . ) to separate words. Use the underscore ( _ ) instead!
+
+    * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. `EPFL_2009`) 
 
 .. note::
     Guidelines for the correct definition of the **metadata YAML files**:
