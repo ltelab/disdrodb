@@ -8,6 +8,7 @@ Subpackages
    :maxdepth: 4
 
    disdrodb.api
+   disdrodb.data_transfer
    disdrodb.l0
    disdrodb.l1
    disdrodb.l2
