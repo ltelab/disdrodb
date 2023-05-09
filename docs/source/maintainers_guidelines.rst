@@ -60,7 +60,7 @@ Ongoing version support
 
 DISDRODB major releases aims to move the community forward, focusing on specifications stabilization and major feature additions, rather than backwards-compatibility. DISDRODB minor releases will be backwards compatible. We strongly recommend adopting the latest release of DISDRODB into production within 6 months for major releases, and 4 months for minor releases.
 
-The `LTE <https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of support or maintenance. Recommended versions are supported and maintained by the `LTE <https://https://www.epfl.ch/labs/lte/>`_  and our community – we provide updated guidance and documentation, track issues, and provide bug fixes and critical updates in the form of hotfixes for these versions. Releases that are 2 years or older may be considered as deprecated.
+The `LTE <https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of support or maintenance. Recommended versions are supported and maintained by the `LTE <https://www.epfl.ch/labs/lte/>`_  and our community – we provide updated guidance and documentation, track issues, and provide bug fixes and critical updates in the form of hotfixes for these versions. Releases that are 2 years or older may be considered as deprecated.
 
 Refer to the list of Recommended Releases to see current releases and more details.
 
