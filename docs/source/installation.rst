@@ -29,7 +29,6 @@ disdrodb is available from the `Python Packaging Index (PyPI) <https://pypi.org/
 
 
 
-
 Installation for contributors
 ================================
 
@@ -39,7 +38,8 @@ The latest disdrodb stable version is available on the GitHub repository `disdro
 Clone the repository from GitHub
 .........................................
 
-According to the `contributors guidelines <contributors_guidelines>`__, you should first create a fork into your personal GitHub account.
+According to the `contributors guidelines <https://disdrodb.readthedocs.io/en/latest/contributors_guidelines.html>`__, you should first create a fork into your personal GitHub account.
+
 
 * Install a local copy of the forked repository:
 
