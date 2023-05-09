@@ -274,7 +274,9 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
 
 .. note::
 	Guidelines for the naming of the ``<data_source>`` directory:
-    - We use the institution name when campaign data spans more than 1 country.
+
+    * We use the institution name when campaign data spans more than 1 country.
+
 
     - We use country when all campaigns (or sensor networks) are inside a given country.
 
