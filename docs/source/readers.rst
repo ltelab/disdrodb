@@ -326,7 +326,8 @@ Here in after we will refer to the reader name with ``<READER_NAME>``.
 
     * The ``<READER_NAME>`` must be defined UPPER CASE, without spaces.
 
-    * However, if a campaign requires different readers (because of different file formats or sensors), the ``<READER_NAME>`` is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed. Example: "RELAMPAGO_OTT" and "RELAMPAGO_RD80"
+    * However, if a campaign requires different readers (because of different file formats or sensors), the ``<READER_NAME>`` is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed. Example: ``"RELAMPAGO_OTT"`` and ``"RELAMPAGO_RD80"``
+
 
     * Have a look at the `pre-implemented DISDRODB readers <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_ to grasp the terminology.
 
