@@ -1,9 +1,9 @@
 import os
+from typing import List, Optional, Union
+
+import click
 import pooch
 import tqdm
-import click
-
-from typing import Union, Optional, List
 
 from disdrodb.api.metadata import _read_yaml_file, get_list_metadata
 from disdrodb.utils.compression import _unzip_file

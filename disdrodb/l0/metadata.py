@@ -19,7 +19,9 @@
 # -----------------------------------------------------------------------------.
 
 import os
+
 import numpy as np
+
 from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
 from disdrodb.l0.io import get_campaign_name, get_data_source
 
@@ -315,8 +317,8 @@ def _check_metadata_sensor_name(metadata):
 
 def check_metadata_compliance(disdrodb_dir, data_source, campaign_name, station_name):
     """Check DISDRODB metadata compliance."""
-    from disdrodb.l0.l0_reader import _check_metadata_reader
     from disdrodb.api.metadata import read_station_metadata
+    from disdrodb.l0.l0_reader import _check_metadata_reader
 
     metadata = read_station_metadata(
         disdrodb_dir=disdrodb_dir,

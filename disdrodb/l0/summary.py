@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 
 import os
-import yaml
+
 import numpy as np
 import pandas as pd
 import xarray as xr
+import yaml
 
 
 def _create_summary(

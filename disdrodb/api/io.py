@@ -18,10 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 
-import os
 import glob
-import yaml
+import os
+
 import numpy as np
+import yaml
 
 
 def _get_disdrodb_directory(
@@ -31,8 +32,8 @@ def _get_disdrodb_directory(
     campaign_name="",
     check_exist=True,
 ):
-    from disdrodb.l0.io import _check_directory_exist
     from disdrodb.api.checks import check_disdrodb_dir
+    from disdrodb.l0.io import _check_directory_exist
 
     # Check if disdrodb_dir has a valid name
     check_disdrodb_dir(disdrodb_dir)

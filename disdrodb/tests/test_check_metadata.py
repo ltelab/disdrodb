@@ -1,28 +1,25 @@
 import os
-import pytest
-import yaml
 import random
 
-
-from disdrodb.l0.check_metadata import (
-    check_archive_metadata_geolocation,
-    check_metadata_geolocation,
-    identify_empty_metadata_keys,
-    get_archive_metadata_key_value,
-    check_archive_metadata_keys,
-    check_archive_metadata_campaign_name,
-    identify_missing_metadata_coords,
-    check_archive_metadata_sensor_name,
-    check_archive_metadata_data_source,
-    check_archive_metadata_station_name,
-    read_yaml,
-    check_archive_metadata_compliance,
-    check_archive_metadata_reader,
-)
-
+import pytest
+import yaml
 
 from disdrodb.l0 import metadata
-
+from disdrodb.l0.check_metadata import (
+    check_archive_metadata_campaign_name,
+    check_archive_metadata_compliance,
+    check_archive_metadata_data_source,
+    check_archive_metadata_geolocation,
+    check_archive_metadata_keys,
+    check_archive_metadata_reader,
+    check_archive_metadata_sensor_name,
+    check_archive_metadata_station_name,
+    check_metadata_geolocation,
+    get_archive_metadata_key_value,
+    identify_empty_metadata_keys,
+    identify_missing_metadata_coords,
+    read_yaml,
+)
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
 

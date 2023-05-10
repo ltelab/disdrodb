@@ -18,7 +18,9 @@
 ## Wrapper to concat L0B files by command lines ##
 ##################################################
 import sys
+
 import click
+
 from disdrodb.l0.l0_processing import (
     click_l0_station_arguments,
     click_l0b_concat_options,
@@ -63,7 +65,6 @@ def run_disdrodb_l0b_concat_station(
         The default is False.
     """
     from disdrodb.api.io import _get_disdrodb_directory
-
     from disdrodb.l0.l0b_concat import _concatenate_netcdf_files
 
     # Retrieve processed_dir

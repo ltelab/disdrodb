@@ -1,10 +1,11 @@
-import re
 import os
-import pytest
+import re
 import uuid
 
-from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
+import pytest
+
 from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
+from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
 from disdrodb.utils.zenodo import _create_zenodo_deposition
 
 

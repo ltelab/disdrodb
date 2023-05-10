@@ -18,11 +18,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 
-from asyncio.log import logger
-import os
-import time
 import logging
+import os
 import re
+import time
+from asyncio.log import logger
 
 
 def create_l0_logger(processed_dir: str, campaign_name: str, verbose: bool = False) -> logger:

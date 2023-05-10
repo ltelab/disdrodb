@@ -1,6 +1,8 @@
 import os
-import yaml
+
 import pytest
+import yaml
+
 from disdrodb.data_transfer import download_data
 
 

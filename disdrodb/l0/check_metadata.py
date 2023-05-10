@@ -2,25 +2,25 @@
 # -*- coding: utf-8 -*-
 
 import os
-import yaml
 from typing import Union
+
+import yaml
+
+from disdrodb.api.metadata import get_list_metadata, read_station_metadata
 from disdrodb.l0.io import (
-    get_disdrodb_dir,
-    get_data_source,
     get_campaign_name,
+    get_data_source,
+    get_disdrodb_dir,
 )
-from disdrodb.api.metadata import read_station_metadata
 from disdrodb.l0.l0_reader import _check_metadata_reader
 from disdrodb.l0.metadata import (
-    _check_metadata_keys,
-    _check_metadata_data_source,
     _check_metadata_campaign_name,
-    _check_metadata_station_name,
+    _check_metadata_data_source,
+    _check_metadata_keys,
     _check_metadata_sensor_name,
+    _check_metadata_station_name,
     check_metadata_compliance,
 )
-
-from disdrodb.api.metadata import get_list_metadata
 
 #### --------------------------------------------------------------------------.
 

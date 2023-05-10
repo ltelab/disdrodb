@@ -17,16 +17,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+import glob
 import logging
 import os
 import shutil
-import glob
+from pathlib import Path
+from typing import Union
+
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import Union
+
 from disdrodb.utils.logger import log_info, log_warning
-from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
@@ -640,8 +642,7 @@ def _check_raw_dir_data_subfolders(raw_dir):
 
 def _check_raw_dir_metadata(raw_dir, verbose=True):
     """Check metadata in the raw_dir directory."""
-    from disdrodb.l0.metadata import write_default_metadata
-    from disdrodb.l0.metadata import check_metadata_compliance
+    from disdrodb.l0.metadata import check_metadata_compliance, write_default_metadata
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")
@@ -707,8 +708,7 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
 
 def _check_raw_dir_issue(raw_dir, verbose=True):
     """Check issue yaml files in the raw_dir directory."""
-    from disdrodb.l0.issue import write_default_issue
-    from disdrodb.l0.issue import check_issue_file
+    from disdrodb.l0.issue import check_issue_file, write_default_issue
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")
@@ -1005,7 +1005,7 @@ def create_initial_directory_structure(raw_dir, processed_dir, station_name, for
 
 def create_directory_structure(processed_dir, product_level, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
-    from disdrodb.api.io import check_product_level, _get_list_stations_with_data
+    from disdrodb.api.io import _get_list_stations_with_data, check_product_level
 
     # Check inputs
     check_product_level(product_level)

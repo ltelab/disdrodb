@@ -21,12 +21,13 @@
 # Retrieve sensor standards and configs
 
 # -----------------------------------------------------------------------------.
-import os
-import yaml
-import logging
 import datetime
-import numpy as np
 import importlib
+import logging
+import os
+
+import numpy as np
+import yaml
 
 logger = logging.getLogger(__name__)
 

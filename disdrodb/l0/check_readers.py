@@ -1,12 +1,11 @@
-import os
 import glob
+import os
 import shutil
+
 import pandas as pd
 
-
-from disdrodb.l0.l0_reader import get_station_reader
 from disdrodb.api.io import _get_disdrodb_directory
-
+from disdrodb.l0.l0_reader import get_station_reader
 
 # current file path
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

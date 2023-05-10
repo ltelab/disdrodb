@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from typing import Union
+
 import numpy as np
 import pandas as pd
-from typing import Union
+
 from disdrodb.l0.standards import (
-    get_l0a_dtype,
     get_field_nchar_dict,
-    get_field_ndigits_dict,
     get_field_ndigits_decimals_dict,
+    get_field_ndigits_dict,
     get_field_ndigits_natural_dict,
+    get_l0a_dtype,
 )
 
 

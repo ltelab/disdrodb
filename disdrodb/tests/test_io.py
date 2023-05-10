@@ -1,13 +1,14 @@
-import os
 import datetime
-import pytest
+import os
+import platform
+
 import numpy as np
 import pandas as pd
+import pytest
 import xarray as xr
-import platform
-from disdrodb.l0 import io
 import yaml
 
+from disdrodb.l0 import io
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
 

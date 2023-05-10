@@ -1,10 +1,12 @@
 import os
+
 import yaml
+
 from disdrodb.l0.metadata import (
     create_campaign_default_metadata,
+    get_default_metadata_dict,
     read_metadata,
     write_default_metadata,
-    get_default_metadata_dict,
 )
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")

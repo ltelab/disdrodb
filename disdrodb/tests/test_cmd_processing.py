@@ -1,9 +1,9 @@
-from click.testing import CliRunner
-import os
-import pytest
-import shutil
 import glob
+import os
+import shutil
 
+import pytest
+from click.testing import CliRunner
 
 # current file path
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

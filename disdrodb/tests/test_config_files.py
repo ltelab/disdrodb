@@ -1,8 +1,9 @@
 import os
-import yaml
-from typing import Dict, List, Union, Optional
-from pydantic import BaseModel, validator
+from typing import Dict, List, Optional, Union
+
 import pytest
+import yaml
+from pydantic import BaseModel, validator
 
 
 # Define the pydantic models for *.bins.yaml config files

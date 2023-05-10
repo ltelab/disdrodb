@@ -18,13 +18,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 
-import os
-import yaml
 import logging
+import os
+
 import numpy as np
 import pandas as pd
-from disdrodb.utils.logger import log_error
+import yaml
 
+from disdrodb.utils.logger import log_error
 
 logger = logging.getLogger(__name__)
 

@@ -1,6 +1,8 @@
 import os
+
 import pytest
-from disdrodb.utils.compression import compress_station_files, _zip_dir, _unzip_file
+
+from disdrodb.utils.compression import _unzip_file, _zip_dir, compress_station_files
 
 
 def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name):

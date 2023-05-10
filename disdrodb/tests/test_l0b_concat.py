@@ -1,10 +1,10 @@
-import os
-import yaml
 import glob
+import os
+
 import netCDF4 as nc
 import numpy as np
 import xarray as xr
-
+import yaml
 
 from disdrodb.l0.l0b_concat import _concatenate_netcdf_files, run_disdrodb_l0b_concat
 

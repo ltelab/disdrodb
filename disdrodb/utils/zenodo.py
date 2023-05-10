@@ -1,6 +1,7 @@
 import os
-import requests
 from typing import Tuple
+
+import requests
 
 
 def _get_zenodo_access_token(sandbox: bool = False) -> str:

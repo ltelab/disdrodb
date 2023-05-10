@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Reader for MEXICO OH_IIUNAM OTT Parsivel2 Mexico City Network."""
 from disdrodb.l0 import run_l0b_from_nc
-from disdrodb.l0.l0_reader import reader_generic_docstring, is_documented_by
+from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 
 
 @is_documented_by(reader_generic_docstring)

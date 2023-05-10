@@ -1,19 +1,20 @@
 import os
-import pytest
-import pandas as pd
-import numpy as np
 import shutil
+
+import numpy as np
+import pandas as pd
+import pytest
 import xarray as xr
+
 from disdrodb.l0 import l0b_processing
 from disdrodb.l0.l0b_processing import (
-    get_bin_coords,
-    set_variable_attributes,
     _set_attrs_dict,
-    set_coordinate_attributes,
     add_dataset_crs_coords,
     create_l0b_from_l0a,
+    get_bin_coords,
+    set_coordinate_attributes,
+    set_variable_attributes,
 )
-
 
 PATH_TEST_FOLDERS_FILES = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
@@ -427,8 +428,8 @@ def test_format_string_array():
 
 def test_reshape_raw_spectrum():
     from disdrodb.l0.standards import (
-        get_raw_array_dims_order,
         get_dims_size_dict,
+        get_raw_array_dims_order,
     )
 
     list_sensor_name = ["Thies_LPM", "OTT_Parsivel"]

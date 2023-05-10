@@ -20,7 +20,7 @@
 
 def _execute_cmd(cmd, raise_error=False):
     """Execute command in the terminal, streaming output in python console."""
-    from subprocess import Popen, PIPE, CalledProcessError
+    from subprocess import PIPE, CalledProcessError, Popen
 
     with Popen(cmd, shell=True, stdout=PIPE, bufsize=1, universal_newlines=True) as p:
         for line in p.stdout:

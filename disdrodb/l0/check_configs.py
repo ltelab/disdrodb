@@ -2,15 +2,14 @@
 # -*- coding: utf-8 -*-
 import glob
 import os
-
-from typing import List, Union, Optional
-from pydantic import BaseModel, ValidationError, validator
-
-from disdrodb.l0.standards import available_sensor_name
-
+from typing import List, Optional, Union
 
 import numpy as np
+from pydantic import BaseModel, ValidationError, validator
+
 from disdrodb.l0.standards import (
+    available_sensor_name,
+    get_configs_dir,
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,
@@ -19,10 +18,8 @@ from disdrodb.l0.standards import (
     get_velocity_bin_lower,
     get_velocity_bin_upper,
     get_velocity_bin_width,
-    get_configs_dir,
     read_config_yml,
 )
-
 
 CONFIG_FILES_LIST = [
     "bins_diameter.yml",

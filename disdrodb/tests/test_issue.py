@@ -1,12 +1,11 @@
 import os
+from io import StringIO
+
 import numpy as np
 import pytest
 import yaml
 
-
-from io import StringIO
 from disdrodb.l0 import issue
-
 
 PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
 

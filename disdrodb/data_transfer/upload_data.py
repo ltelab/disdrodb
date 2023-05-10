@@ -1,11 +1,11 @@
 import os
+from typing import List, Optional
+
 import click
 
-from typing import Optional, List
-
-from disdrodb.api.metadata import _read_yaml_file, get_list_metadata, _write_yaml_file
-from disdrodb.utils.zenodo import _create_zenodo_deposition, _upload_file_to_zenodo
+from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file, get_list_metadata
 from disdrodb.utils.compression import _zip_dir
+from disdrodb.utils.zenodo import _create_zenodo_deposition, _upload_file_to_zenodo
 
 
 def click_upload_option(function: object):

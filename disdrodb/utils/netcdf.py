@@ -19,11 +19,13 @@
 # -----------------------------------------------------------------------------.
 
 import logging
+from typing import Tuple
+
 import numpy as np
 import pandas as pd
 import xarray as xr
-from typing import Tuple
-from disdrodb.utils.logger import log_info, log_warning, log_error
+
+from disdrodb.utils.logger import log_error, log_info, log_warning
 
 logger = logging.getLogger(__name__)
 
