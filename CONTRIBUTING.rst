@@ -57,7 +57,7 @@ Please follow the following steps to install your developing environment :
 Setting up the development environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You will need python to set up the development environment. See `the installation guide <https://disdrodb.readthedocs.io/en/latest/install.html>`__
+You will need python to set up the development environment. See `the installation guide <https://disdrodb.readthedocs.io/en/latest/installation.html>`__
 for further explanations.
 
 Install pre-commit hooks
@@ -89,7 +89,7 @@ The can also be done with  ``pre-commit run --all-files``. This is recommended s
 indicates if the commit contained any formatting errors (that are automatically corrected).
 
 
-More info on pre-commit and CI tools are provided in the Code quality and testing section  `Code quality and testing section <#code-quality-control-and-testing>`__
+More info on pre-commit and CI tools are provided in the Code quality and testing section  `Code quality and testing section <https://disdrodb.readthedocs.io/en/latest/contributors_guidelines.html#code-quality-control>`__
 
 
 
@@ -235,12 +235,14 @@ You should configure VS code as follow :
 .. image:: /static/vs_code_settings.png
 
 
+The convention we adopt for our docstrings is the numpydoc string convention.
+
 
 Code quality control
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-To maintain a high code quality, Black and Ruff are defined in the .pre-commit-config.yaml file. These tools are run for every Pull Request on Github and can also be run locally.
+To maintain a high code quality, Black and Ruff are defined in the ``.pre-commit-config.yaml`` file. These tools are run for every Pull Request on Github and can also be run locally.
 
 
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+-------------------------------------------+
@@ -340,7 +342,7 @@ DISDRODB tests are written using the third-party `pytest <https://docs.pytest.or
 
 
 
-The tests located in the `disdrodb/tests` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
+The tests located in the ``/disdrodb/tests`` folder are used to test various functions of the code and are automatically run when changes are pushed to the main repository through a GitHub Pull Request.
 
 .. code-block:: bash
 
@@ -411,7 +413,7 @@ If you encounter errors, Black and Ruff can be run using the following command:
    pre-commit run --all-files
 
 We follow a `commit message convention <https://www.conventionalcommits.org/en/v1.0.0/>`__, to have consistent git messages.
-The goal is to increase readability and ease of contribution. We use `commit-lint <https://github.com/conventional-changelog/commitlint>`__
+The goal is to increase readability and ease of contribution.
 
 
 

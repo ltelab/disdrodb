@@ -2,11 +2,6 @@
 Software Structure
 ========================
 
-
-Overview of the disdrodb project folders structure
-============================================================
-
-
 The current software structure is described below:
 
 | 📁 data/

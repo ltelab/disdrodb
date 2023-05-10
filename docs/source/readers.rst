@@ -26,8 +26,10 @@ Instead, if the raw data are netCDFs files, the reader will take care of reforma
 the DISDRODB L0B netCDF format.
 
 In the DISDRODB metadata of each station:
+
 * the ``reader`` key specifies the DISDRODB reader required to process the raw data.
-* the ``raw_data_format`` indicates if the source data are `txt` text or `netcdf` files.
+
+* the ``raw_data_format`` variable specifies whether the source data is in the form of txt or netcdf files.
 
 
 Available readers
@@ -35,9 +37,9 @@ Available readers
 
 In the in the disdrodb software, the readers are organized by data source.
 You can have a preliminary look on how the readers looks like by exploring
-the `DISDRODB.L0.readers directory <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers>`_
+the `DISDRODB.l0.readers directory <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_
 
-The function `available_readers` returns a dictionary with all readers currently available within DISDRODB`.
+The function ``available_readers`` returns a dictionary with all readers currently available within DISDRODB.
 By specifying the ``data_sources`` argument, only the readers for the specified data sources are returned.
 
 .. code-block:: python
@@ -90,7 +92,7 @@ A reader is a function defined by the following input arguments:
 * ``processed_dir`` : str - The desired directory path where to save the DISDRODB L0A and L0B products.
 
         * The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
-        * The <campaign_name> must match with the one specified in the raw_dir path.
+        * The ``<campaign_name>`` must match with the one specified in the raw_dir.
         * For reader testing purposes, you can define i.e. ``/tmp/DISDRODB/Processed/<data_source>/<campaign_name>``
 
 
@@ -138,9 +140,13 @@ If the input raw data are text files, the reader must defines the following comp
    In the output dataframe, each row must correspond to a timestep !
 
 It's important to note that the internal L0A processing already takes care of:
+
 * removing rows with undefined timestep
+
 * removing rows with corrupted values
+
 * sanitize string column with trailing spaces
+
 * dropping rows with duplicated timesteps (keeping only the first occurrence)
 
 In the DISDRODB L0A format, the raw precipitation spectrum, named ``raw_drop_number`` ,
@@ -149,9 +155,9 @@ Therefore, the ``raw_drop_number`` field value is expected to look like ``"000,0
 For example, if the ``raw_drop_number`` looks like the following three cases, you need to preprocess it accordingly
 into the ``df_sanitizer_fun``:
 
-* Case 1: ``"000001002 ...001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/NETHERLANDS/DELFT.py>`_
-* Case 2: ``"000 001 002 ... 001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/CHINA/CHONGQING.py>`_
-* Case 3: ``",,,1,2,...,,,"``. Convert to ``"0,0,0,1,2,...,0,0,0"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/FRANCE/SIRTA_OTT2.py>`_
+* Case 1: ``"000001002 ...001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/NETHERLANDS/DELFT.py>`_
+* Case 2: ``"000 001 002 ... 001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/CHINA/CHONGQING.py>`_
+* Case 3: ``",,,1,2,...,,,"``. Convert to ``"0,0,0,1,2,...,0,0,0"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/FRANCE/SIRTA_OTT2.py>`_
 
 Finally, the reader will call the ``run_l0a`` function, by passing to it all the above described arguments.
 
@@ -180,7 +186,7 @@ Reader components for raw netCDF files
 
 On the other hand, if the input raw data are netCDF files, the reader must define the following components:
 
-1. The ``glob_patterns`` to search for the raw netCDF files within the `<raw_dir>/data/<station_name>` directory.
+1. The ``glob_patterns`` to search for the raw netCDF files within the ``<raw_dir>/data/<station_name>`` directory.
 
 2. The ``dict_names`` dictionary mapping the dimension and variables names of the source netCDF to the DISDRODB L0B standards.
    Variables not present the `dict_names` are dropped from the dataset.
@@ -249,10 +255,10 @@ The DISDRODB Raw archive has the following structure:
 
 | 📁 DISDRODB
 | ├── 📁 Raw
-|    ├── 📁 `<data_source>`
-|       ├── 📁 `<campaign_name>`
+|    ├── 📁 <data_source>
+|       ├── 📁 <campaign_name>
 |           ├── 📁 data
-|               ├── 📁 `<station_name>`
+|               ├── 📁 <station_name>
 |                    ├── 📜 \*.\*  : raw files
 |           ├── 📁 issue
 |               ├── 📜 <station_name>.yml
@@ -267,30 +273,44 @@ The documentation on how to fork and clone a GitHub repository is available
 in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contributors_guidelines.html#fork-the-repository>`_ section.
 
 .. note::
-	Guidelines for the naming of the **<data_source>** directory:
-	* We use the institution name when campaign data spans more than 1 country.
-	* We use country when all campaigns (or sensor networks) are inside a given country.
-    * The `<data_source>` must be defined UPPER_CASE and without spaces.
+	Guidelines for the naming of the ``<data_source>`` directory:
+
+    * We use the institution name when campaign data spans more than 1 country.
+
+
+    * We use country when all campaigns (or sensor networks) are inside a given country.
+
+
+    * The ``<data_source>`` must be defined UPPER_CASE and without spaces.
+
 
 .. note::
-	Guidelines for the naming of the **<campaign_name>** directory:
-	* We use the name of the campaign_name in UPPER_CASE format
-	* The `<campaign_name>` must be defined UPPER_CASE and without spaces.
+	Guidelines for the naming of the ``<campaign_name>`` directory:
+
+    * The ``<campaign_name>`` must be defined UPPER_CASE and without spaces.
+
+
+    * Avoid the usage of dash ( - ) and dots ( . ) to separate words. Use the underscore ( _ ) instead!
+
+    * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. `EPFL_2009`) 
 
 .. note::
     Guidelines for the correct definition of the **metadata YAML files**:
-    * For each `<station_name>` in the `/data` directory there must be an equally named `<station_name>.yml` file in the `/metadata` folder.
-    * The metadata YAML file contains **relevant** information of the station
-    (e.g. type of raw data, type of device, geolocation, ...) which is required for the correct
-    processing and integration into the DISDRODB archive.
+
+    * For each ``<station_name>`` in the ``/data`` directory there must be an equally named ``<station_name>.yml`` file in the ``/metadata`` folder.
+
+    * The metadata YAML file contains **relevant** information of the station (e.g. type of raw data, type of device, geolocation, ...) which is required for the correct processing and integration into the DISDRODB archive.
+
     * Read carefully `Step 2 <#step-2-define-the-metadata-of-the-stations>`_ to define the metadata correctly!
 
 .. note::
     Guidelines for the definition of the **issue YAML files**:
-    * The **issue YAML** files are optional (and if missing are initialized to be empty).
-    * The issue YAML file of a station enable to specify the `timesteps` or `time_periods` to discard during the DISDRODB L0 processing of the raw data.
-    * The issue YAML files of the entire DISDRODB archive are shared publicly and
-    can be edited on the `disdrodb-data <https://github.com/ltelab/disdrodb-data>`_ repository.
+
+    * The issue YAML files are optional (and if missing are initialized to be empty).
+
+    * The issue YAML file of a station enable to specify the timesteps or time_periods to discard during the DISDRODB L0 processing of the raw data.
+
+    * The issue YAML files of the entire DISDRODB archive are shared publicly and can be edited on the `disdrodb-data <https://github.com/ltelab/disdrodb-data>`_ repository.
 
 
 
@@ -299,7 +319,7 @@ Step 2 : Define the reader name
 
 
 Since you aim to design a new reader, you can start by copy-pasting
-`the reader_template.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/L0/readers/reader_template.py>`_
+`the reader_template.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/reader_template.py>`_
 python file into the relevant ``disdrodb.l0.reader.<READER_DATA_SOURCE>`` directory.
 If the ``<READER_DATA_SOURCE>`` for your reader does not yet exists, create a new directory.
 Then rename the copied `reader_template.py` file with the name of your reader.
@@ -307,13 +327,16 @@ In order to guarantee consistency between readers, it is very important to follo
 Here in after we will refer to the reader name with ``<READER_NAME>``.
 
 .. note::
-    Guidelines for the definition of **<READER_NAME>**:
-    * The <READER_NAME> should corresponds to the name of the <CAMPAIGN_NAME>.
-    * The <READER_NAME> must be defined UPPER CASE, without spaces.
-    * However, if a campaign requires different readers (because of different file formats or sensors), the <READER_NAME>
-    is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed.
-    Example: "RELAMPAGO_OTT" and RELAMPAGO_RD80
-    * Have a look at the `pre-implemented DISDRODB readers <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers>`_ to grasp the terminology.
+    Guidelines for the definition of ``<READER_NAME>``:
+
+    * The ``<READER_NAME>`` should corresponds to the name of the ``<CAMPAIGN_NAME>``.
+
+    * The ``<READER_NAME>`` must be defined UPPER CASE, without spaces.
+
+    * However, if a campaign requires different readers (because of different file formats or sensors), the ``<READER_NAME>`` is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed. Example: ``"RELAMPAGO_OTT"`` and ``"RELAMPAGO_RD80"``
+
+
+    * Have a look at the `pre-implemented DISDRODB readers <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_ to grasp the terminology.
 
 
 Despite being not yet implemented and working, your reader function can now be retrieved with:
@@ -359,9 +382,9 @@ run the following code to generate a default metadata YAML file for each station
 
 
 .. note::
-    Run  `create_campaign_default_metadata` only if you are adding data for a new campaign.
+    Run  ``create_campaign_default_metadata`` only if you are adding data for a new campaign.
     Otherwise copy-paste and modify existing metadata YAML files or alternatively
-    use the `disdrodb.l0.metadata.write_default_metadata` to write a default metadata
+    use the ``disdrodb.l0.metadata.write_default_metadata`` to write a default metadata
     YAML file to a specific file path.
 
 .. note::
@@ -370,7 +393,7 @@ run the following code to generate a default metadata YAML file for each station
 
 Now it's time to fill in the metadata information.
 The list and description of the metadata is available in the
-`Metadata <https://disdrodb.readthedocs.io/en/latest/metadata>`_  section.
+`Metadata <https://disdrodb.readthedocs.io/en/latest/metadata.html>`_  section.
 
 There are 7 metadata keys for which is mandatory to specify the value :
 
@@ -387,11 +410,14 @@ There are 7 metadata keys for which is mandatory to specify the value :
 
 .. note::
     The **reader** key value must be defined with the following pattern: ``<READER_DATA_SOURCE>/<READER_NAME>``.
-    * <READER_DATA_SOURCE> is the parent directory within the disdrodb software where the reader is defined.
-    Typically it coincides with the <DATA_SOURCE> of the DISDRODB archive.
-    * <READER_NAME> is the name of the python file where the reader is defined.
-    * For example, to use the GPM IFLOODS reader (defined at `disdrodb.l0.reader.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers/GPM/IFLOODS.py>`_)
-      to process the data, you specify the reader name ``GPM/IFLOODS``.
+
+    - ``<READER_DATA_SOURCE>`` is the parent directory within the disdrodb software where the reader is defined. Typically it coincides with the ``<DATA_SOURCE>`` of the DISDRODB archive.
+
+    - ``<READER_NAME>`` is the name of the python file where the reader is defined.
+
+
+    For example, to use the GPM IFLOODS reader (defined at `disdrodb.l0.reader.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/GPM/IFLOODS.py>`_)
+    to process the data, you specify the reader name ``GPM/IFLOODS``.
 
 To check you are specifying the correct reader value in the metadata,
 adapt the following piece of code to your use case:
@@ -493,23 +519,23 @@ The DISDRODB L0 processing generates the DISDRODB `Processed` directories tree i
 
 | 📁 DISDRODB
 | ├── 📁 Processed
-|    ├── 📁 `<data_source>`
-|       ├── 📁 `<campaign_name>`
+|    ├── 📁 <data_source>
+|       ├── 📁 <campaign_name>
 |           ├── 📁 L0A
-|               ├── 📁 `<station_name>`
+|               ├── 📁 <station_name>
 |                   ├── 📜 \*.parquet
 |           ├── 📁 L0B
-|               ├── 📁 `<station_name>`
+|               ├── 📁 <station_name>
 |                    ├── 📜 \*.nc
 |           ├── 📁 info
 |           ├── 📁 logs
 |               ├── 📁 L0A
-|                   ├── 📁 `<station_name>`
+|                   ├── 📁 <station_name>
 |                        ├── 📜 \*.log
 |                   ├── 📜 logs_problem_<station_name>.log
 |                   ├── 📜 logs_summary_<station_name>.log
 |               ├── 📁 L0B
-|                   ├── 📁 `<station_name>`
+|                   ├── 📁 <station_name>
 |                        ├── 📜 \*.log
 |                   ├── 📜 logs_problem_<station_name>.log
 |                   ├── 📜 logs_summary_<station_name>.log
@@ -517,7 +543,7 @@ The DISDRODB L0 processing generates the DISDRODB `Processed` directories tree i
 |               ├── 📜 <station_name>.yml
 
 
-If you inspect the `logs/L0A` and `logs/L0B`, you will see the logging reports of the DISDRODB L0 processing.
+If you inspect the ``logs/L0A`` and ``logs/L0B``, you will see the logging reports of the DISDRODB L0 processing.
 For every raw file, a processing log is generated.
 The ``logs_summary_<station_name>.log`` summarizes all the logs regarding the processing of a station.
 Instead, if the ``logs_problem_<station_name>.log`` file is not present in the logs directory,
@@ -568,7 +594,7 @@ You should place you data and config files under the following directory tree:
 
 
 
-The `data` folder must contain your raw data files, while the `ground_truth` folder must contain the corresponding ground truth files.
+The ``/data`` folder must contain your raw data files, while the ``/ground_truth`` folder must contain the corresponding ground truth files.
 
 Once the reader is run with the raw data, the output files is compared to the ground truth files. If the files are identical, the reader is considered valid.
 
@@ -578,7 +604,7 @@ Once the reader is run with the raw data, the output files is compared to the gr
 
 	Naming convention :
 
-	**<data_source>**  : Name of the data source.
+	``<data_source>``  : Name of the data source.
 
 	* We use the institution name when campaign data spans more than 1 country.
 	* We use country when all campaigns (or sensor networks) are inside a given country.
@@ -587,7 +613,7 @@ Once the reader is run with the raw data, the output files is compared to the gr
 	* Example : `EPFL` or `ITALY`
 
 
-	**<campaign_name>**  : Name of the campaign.
+	``<campaign_name>``  : Name of the campaign.
 
 	* Must be in capital letter.
 	* Must correspond to the name of the reader python file.
@@ -613,10 +639,10 @@ Please visit the following page to access a read-only tutorial notebook:
 If you want to run an interactive notebook, you need to run jupyter notebook in your local machine. Proceed as follow :
 
 1. Make sure you have the latest version of the code in your local folder.
-See the git clone command in the `Installation for developers <https://disdrodb.readthedocs.io/en/latest/install.html#installation-for-developers>`_ section.
+See the git clone command in the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`_ section.
 
 2. Enter your project virtual environment or conda environment.
-Please, refer to the `Installation for developers <https://disdrodb.readthedocs.io/en/latest/install.html#installation-for-developers>`_ section if needed.
+Please, refer to the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`_ section if needed.
 
 3. Navigate to the disdrodb folder
 
@@ -638,7 +664,7 @@ Please, refer to the `Installation for developers <https://disdrodb.readthedocs.
 5. Navigate to ``tutorials`` and double click on the ``reader_preparation.ipynb``.
 
 6. Specify the IPython kernel on which to run the Jupyter Notebook.
-To do so, first click on the top ``Kernel`` tab, then click on en `Change Kernel`, and then select your environment.
+To do so, first click on the top ``Kernel`` tab, then click on en ``Change Kernel``, and then select your environment.
 If the environment is not available, close the Jupyter Notebook, type the following command and relaunch the notebook:
 
 .. code-block:: bash

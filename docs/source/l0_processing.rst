@@ -85,11 +85,11 @@ Launch DISDRODB L0 processing for all stations within a campaign
 
 DISDRODB offers an utility to run the process of multiple stations with a single command.
 
-In the code example belows, if --data_sources, --campaign_names, --station_names
-are not specified, the command will process all stations available within the <disdrodb_dir>.
-Starting from all the available stations, the optional specification of the --data_sources , --campaign_names
-and --station_names will restrict the stations that will be processed.
-For example, if only --campaign_names are specified, DISDRODB will process only the stations of such campaigns.
+In the code example belows, if ``--data_sources``, ``--campaign_names``, ``--station_names``
+are not specified, the command will process all stations available within the ``<disdrodb_dir>``.
+Starting from all the available stations, the optional specification of the ``--data_sources`` , ``--campaign_names``
+and ``--station_names`` will restrict the stations that will be processed.
+For example, if only ``--campaign_names`` are specified, DISDRODB will process only the stations of such campaigns.
 
 
 1. By command line :
