@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -67,7 +66,7 @@ def read_config_yml(sensor_name: str, filename: str) -> dict:
         logger.exception(msg)
         raise ValueError(msg)
     # Open dictionary
-    with open(fpath, "r") as f:
+    with open(fpath) as f:
         d = yaml.safe_load(f)
     return d
 

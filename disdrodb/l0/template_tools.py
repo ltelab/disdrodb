@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 from typing import Union
 
@@ -145,9 +144,9 @@ def print_valid_L0_column_names(sensor_name: str) -> None:
 
 def _check_valid_column_index(column_idx, n_columns):
     if column_idx > (n_columns - 1):
-        raise ValueError("'column_idx' must be between 0 and {}".format(n_columns - 1))
+        raise ValueError(f"'column_idx' must be between 0 and {n_columns - 1}")
     if column_idx < 0:
-        raise ValueError("'column_idx' must be between 0 and {}".format(n_columns - 1))
+        raise ValueError(f"'column_idx' must be between 0 and {n_columns - 1}")
 
 
 def _check_columns_indices(column_indices, n_columns):

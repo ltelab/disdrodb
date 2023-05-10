@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -201,7 +200,7 @@ def _get_metadata_fpath(disdrodb_dir, product_level, data_source, campaign_name,
 def get_metadata_dict(disdrodb_dir, product_level, data_source, campaign_name, station_name):
     """Get metadata of a given station."""
     metadata_fpath = _get_metadata_fpath(disdrodb_dir, product_level, data_source, campaign_name, station_name)
-    with open(metadata_fpath, "r") as f:
+    with open(metadata_fpath) as f:
         metadata_dict = yaml.safe_load(f)
     return metadata_dict
 

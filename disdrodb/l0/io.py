@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -592,11 +591,11 @@ def _parse_fpath(fpath: str) -> str:
     if not isinstance(fpath, str):
         raise TypeError("'_parse_fpath' expects a directory/filepath string.")
     if fpath[-1] == "/":
-        print("{} should not end with /.".format(fpath))
+        print(f"{fpath} should not end with /.")
         fpath = fpath[:-1]
 
     elif fpath[-1] == "\\":
-        print("{} should not end with /.".format(fpath))
+        print(f"{fpath} should not end with /.")
         fpath = fpath[:-1]
 
     return fpath
@@ -610,25 +609,25 @@ def _check_raw_dir_input(raw_dir):
     if not isinstance(raw_dir, str):
         raise TypeError("Provide 'raw_dir' as a string'.")
     if not os.path.exists(raw_dir):
-        raise ValueError("'raw_dir' {} directory does not exist.".format(raw_dir))
+        raise ValueError(f"'raw_dir' {raw_dir} directory does not exist.")
     if not os.path.isdir(raw_dir):
-        raise ValueError("'raw_dir' {} is not a directory.".format(raw_dir))
+        raise ValueError(f"'raw_dir' {raw_dir} is not a directory.")
 
 
 def _check_raw_dir_data_subfolders(raw_dir):
     """Check `data` directory in raw dir."""
     list_subfolders = os.listdir(raw_dir)
     if len(list_subfolders) == 0:
-        raise ValueError("There are not subfolders in {}".format(raw_dir))
+        raise ValueError(f"There are not subfolders in {raw_dir}")
     if "data" not in list_subfolders:
-        raise ValueError("'raw_dir' {} should have the /data subfolder.".format(raw_dir))
+        raise ValueError(f"'raw_dir' {raw_dir} should have the /data subfolder.")
 
     # -------------------------------------------------------------------------.
     #### Check there are subfolders corresponding to station to process
     raw_data_dir = os.path.join(raw_dir, "data")
     list_data_station_name = os.listdir(raw_data_dir)
     if len(list_data_station_name) == 0:
-        raise ValueError("No station directories within {}".format(raw_data_dir))
+        raise ValueError(f"No station directories within {raw_data_dir}")
 
     # -------------------------------------------------------------------------.
     #### Check there are data files in each list_data_station_name
@@ -637,7 +636,7 @@ def _check_raw_dir_data_subfolders(raw_dir):
     idx_0_files = np.where(np.array(list_nfiles_per_station) == 0)[0]
     if len(idx_0_files) > 0:
         empty_station_dir = [list_raw_data_station_dir[idx] for idx in idx_0_files]
-        raise ValueError("The following data directories are empty: {}".format(empty_station_dir))
+        raise ValueError(f"The following data directories are empty: {empty_station_dir}")
 
 
 def _check_raw_dir_metadata(raw_dir, verbose=True):
@@ -660,7 +659,7 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
             os.path.join(metadata_dir, station_name + ".yml") for station_name in list_data_station_name
         ]
         _ = [write_default_metadata(fpath) for fpath in list_metadata_fpath]
-        msg = "'raw_dir' {} should have the /metadata subfolder. ".format(raw_dir)
+        msg = f"'raw_dir' {raw_dir} should have the /metadata subfolder. "
         msg1 = "It has been now created with also empty metadata files to be filled for each station."
         raise ValueError(msg + msg1)
 
@@ -679,14 +678,14 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
             os.path.join(metadata_dir, station_name + ".yml") for station_name in list_missing_station_name
         ]
         _ = [write_default_metadata(fpath) for fpath in list_missing_metadata_fpath]
-        msg = "The metadata files for the following station_name were missing: {}".format(list_missing_station_name)
+        msg = f"The metadata files for the following station_name were missing: {list_missing_station_name}"
         raise ValueError(msg + " Now have been created to be filled.")
 
     # - Check not excess metadata compared to present stations
     idx_excess_metadata_station = np.where(np.isin(list_metadata_station_name, list_data_station_name, invert=True))[0]
     if len(idx_excess_metadata_station) > 0:
         list_excess_station_name = [list_metadata_station_name[idx] for idx in idx_excess_metadata_station]
-        print("There are the following metadata files without corresponding data: {}".format(list_excess_station_name))
+        print(f"There are the following metadata files without corresponding data: {list_excess_station_name}")
 
     # -------------------------------------------------------------------------.
     #### Check metadata compliance
@@ -739,7 +738,7 @@ def _check_raw_dir_issue(raw_dir, verbose=True):
             os.path.join(issue_dir, station_name + ".yml") for station_name in list_missing_station_name
         ]
         _ = [write_default_issue(fpath) for fpath in list_missing_issue_fpath]
-        msg = "The issue files for the following station_name were missing: {}".format(list_missing_station_name)
+        msg = f"The issue files for the following station_name were missing: {list_missing_station_name}"
         log_warning(logger, msg, verbose)
 
     # - Check not excess issue compared to present stations
@@ -808,7 +807,7 @@ def _check_is_processed_dir(processed_dir):
 
     # Check is the processed_dir
     if processed_dir.find("DISDRODB/Processed") == -1 and processed_dir.find("DISDRODB\\Processed") == -1:
-        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*. or *\DISDRODB\Processed\*."
+        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*. or *\\DISDRODB\\Processed\\*."
         logger.error(msg)
         raise ValueError(msg)
 

@@ -75,7 +75,7 @@ def test_write_default_metadata(tmp_path):
     assert os.path.exists(fpath)
 
     # open it
-    with open(str(fpath), "r") as f:
+    with open(str(fpath)) as f:
         dictionary = yaml.safe_load(f)
 
     # check is the expected dictionary

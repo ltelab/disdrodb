@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -27,7 +26,7 @@ from disdrodb.api.io import _get_disdrodb_directory
 
 def _read_yaml_file(fpath):
     """Read a YAML file into dictionary."""
-    with open(fpath, "r") as f:
+    with open(fpath) as f:
         dictionary = yaml.safe_load(f)
     return dictionary
 
@@ -57,7 +56,7 @@ def read_station_metadata(disdrodb_dir, product_level, data_source, campaign_nam
         raise ValueError(f"The metadata file for {station_name} at {fpath} does not exists.")
 
     # Read the metadata file
-    with open(fpath, "r") as f:
+    with open(fpath) as f:
         dictionary = yaml.safe_load(f)
     return dictionary
 

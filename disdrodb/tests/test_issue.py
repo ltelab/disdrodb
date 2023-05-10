@@ -239,7 +239,7 @@ def test_write_issue(tmpdir):
     issue._write_issue(fpath, timesteps=timesteps, time_periods=time_periods)
 
     # Load YAML file
-    with open(fpath, "r") as f:
+    with open(fpath) as f:
         issue_dict = yaml.load(f, Loader=yaml.FullLoader)
 
     # Check the issue dictionary

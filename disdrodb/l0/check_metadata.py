@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import os
 from typing import Union
@@ -38,7 +37,7 @@ def read_yaml(fpath: str) -> dict:
     dict
         Attributes read from the YAML file.
     """
-    with open(fpath, "r") as f:
+    with open(fpath) as f:
         attrs = yaml.safe_load(f)
     return attrs
 

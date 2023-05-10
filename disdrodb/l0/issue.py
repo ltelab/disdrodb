@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2022 DISDRODB developers
@@ -372,7 +371,7 @@ class NoDatesSafeLoader(yaml.SafeLoader):
 def load_yaml_without_date_parsing(filepath):
     "Read a YAML file without converting automatically date string to datetime."
     NoDatesSafeLoader.remove_implicit_resolver("tag:yaml.org,2002:timestamp")
-    with open(filepath, "r") as f:
+    with open(filepath) as f:
         dictionary = yaml.load(f, Loader=NoDatesSafeLoader)
     # Return empty dictionary if nothing to be read in the file
     if isinstance(dictionary, type(None)):

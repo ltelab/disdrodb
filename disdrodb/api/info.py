@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 
 import os
 import re
@@ -72,7 +71,7 @@ def get_key_from_filepaths(fpaths, key):
 def _get_version_from_filepath(filepath, integer=False):
     version = get_key_from_filepath(filepath, key="version")
     if integer:
-        version = int(re.findall("\d+", version)[0])
+        version = int(re.findall("\\d+", version)[0])
     return version
 
 

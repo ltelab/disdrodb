@@ -70,7 +70,7 @@ def read_yaml_file(path_file: str) -> Dict:
     Dict
         Content of the yaml file
     """
-    with open(path_file, "r") as f:
+    with open(path_file) as f:
         try:
             data = yaml.safe_load(f)
         except:
