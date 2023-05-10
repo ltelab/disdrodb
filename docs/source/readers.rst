@@ -5,19 +5,22 @@ Readers
 
 DISDRODB supports reading and loading data from many input file formats.
 The following subsections describe, first, what a reader is and how it can be defined.
-Then, it illustrates multiple methods how a reader can be called (i.e. from terminal or within python)
-to process raw data into DISDRODB L0 products.
+Then, it illustrates multiple methods how a reader can be called (i.e. from terminal or within python) to process raw data into DISDRODB L0 products.
 
 What is a reader
 =================
 
 A DISDRODB reader is a python function encoding all the required information to convert
-raw disdrometer text (or netcdf) data into DISDRODB L0A and/or DISDRODB L0B products.
+raw disdrometer text (or netCDF) data into DISDRODB L0A and/or DISDRODB L0B products.
 
 To be more precise, a reader contains:
-1. a glob string specifying the pattern to select all files to be processed within a station directory
-2. the name of the variables present in the raw files (i.e. the file header/columns)
-3. some special arguments required to open and read the raw files (i.e the delimiter)
+
+1. a glob string specifying the pattern to select all files to be processed within a station directory;
+
+2. the name of the variables present in the raw files (i.e. the file header/columns);
+
+3. some special arguments required to open and read the raw files (i.e the delimiter);
+
 4. an optional ad-hoc function to make the raw data compliant with the DISDRODB standards.
 
 If the raw data are text-based files, the reader will take care of first converting the data
@@ -292,7 +295,7 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
 
     * Avoid the usage of dash ( - ) and dots ( . ) to separate words. Use the underscore ( _ ) instead!
 
-    * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. `EPFL_2009`) 
+    * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. `EPFL_2009`)
 
 .. note::
     Guidelines for the correct definition of the **metadata YAML files**:
@@ -333,7 +336,7 @@ Here in after we will refer to the reader name with ``<READER_NAME>``.
 
     * The ``<READER_NAME>`` must be defined UPPER CASE, without spaces.
 
-    * However, if a campaign requires different readers (because of different file formats or sensors), the ``<READER_NAME>`` is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed. Example: ``"RELAMPAGO_OTT"`` and ``"RELAMPAGO_RD80"``
+    * However, if a campaign requires different readers (because of different file formats or sensors), the ``<READER_NAME>`` is defined by adding a suffix preceded by an underscore indicating the stations or the sensor for which has been designed. Example: ``"RELAMPAGO_OTT"`` and ``"RELAMPAGO_RD80"``.
 
 
     * Have a look at the `pre-implemented DISDRODB readers <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_ to grasp the terminology.
@@ -409,7 +412,7 @@ There are 7 metadata keys for which is mandatory to specify the value :
 
 
 .. note::
-    The **reader** key value must be defined with the following pattern: ``<READER_DATA_SOURCE>/<READER_NAME>``.
+    The **reader** key value must be defined with the pattern ``<READER_DATA_SOURCE>/<READER_NAME>``:
 
     - ``<READER_DATA_SOURCE>`` is the parent directory within the disdrodb software where the reader is defined. Typically it coincides with the ``<DATA_SOURCE>`` of the DISDRODB archive.
 
@@ -610,14 +613,14 @@ Once the reader is run with the raw data, the output files is compared to the gr
 	* We use country when all campaigns (or sensor networks) are inside a given country.
 	* Must be in capital letter.
 	* Must correspond to the name of the folder where the reader python file has been saved.
-	* Example : `EPFL` or `ITALY`
+	* Example : `EPFL` or `ITALY` .
 
 
 	``<campaign_name>``  : Name of the campaign.
 
 	* Must be in capital letter.
 	* Must correspond to the name of the reader python file.
-	* Example : `LOCARNO2018` or `GID`
+	* Example : `LOCARNO2018` or `GID` .
 
 
 
@@ -644,9 +647,9 @@ See the git clone command in the `Installation for contributors <https://disdrod
 2. Enter your project virtual environment or conda environment.
 Please, refer to the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`_ section if needed.
 
-3. Navigate to the disdrodb folder
+3. Navigate to the disdrodb folder.
 
-4. Start the Jupyter Notebook with
+4. Start the Jupyter Notebook with:
 
 	.. code-block:: bash
 

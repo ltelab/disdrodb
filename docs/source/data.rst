@@ -16,16 +16,15 @@ Two types of data must be distinguished:
    -  This dataset can be very heavy.
    -  No central storage is provided.
 
--  Station Metadata and Issues:
+-  Station Metadata and Issues YAML files:
 
-   -  Stores a standard set of metadata and measurement issues of each disdrometer
+   -  Stores a standard set of metadata and measurement issues of each disdrometer.
    -  Central storage is provided in the ``disdro-data`` Git repository.
-   -  The metadata folder contains a YAML metadata file called
-      ``metadata.yml``. It has a ``data_url`` key that references to the remote/online repository where
-      station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
+   -  The ``/metadata`` folder contains a YAML metadata file called
+      ``<station_name>.yml``. It has a ``data_url`` key that references to the remote/online repository where station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
 
 
-Data transfer upload and download schema :
+Data transfer upload and download schema:
 
 .. image:: /static/transfer.png
 
@@ -59,10 +58,7 @@ follow these steps:
 3. Add your data source and campaign name directory to the current
    disdrodb-data structure.
 
-4. Add your metadata YAML file for each station (following the name format convention ``<station_name>.yml``) in
-   the ``metadata`` directory of the campaign directory. We recommend you to
-   copy-paste an existing metadata YAML file to get the correct
-   structure.
+4. Add your metadata YAML file for each station (following the name format convention ``<station_name>.yml``) in the ``metadata`` directory of the campaign directory. We recommend you to copy-paste an existing metadata YAML file to get the correct structure.
 
 5. (Optional) Add your issues YAML files, for each station
    ``station_name.yml``, in an ``issues`` directory located in the campaign
@@ -72,16 +68,13 @@ follow these steps:
 6. Commit your changes and push your branch to GitHub.
 
 7. Test that the integration of your new dataset functions by deleting
-   your data locally and re-fetching it through the process detailed
-   above.
+   your data locally and re-fetching it through the process detailed above.
 
 8. `Create a pull
    request <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__,
    and wait for a maintainer to accept it!
 
-9.  If you struggle with this process, don’t hesitate to raise an
-   `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__
-   so we can help!
+9.  If you struggle with this process, don’t hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__ so we can help!
 
 Download the DISDRODB raw data archive
 --------------------------------------
@@ -92,7 +85,7 @@ above to get the folder structure, metadatas and issues.
 Objective: You would like to download the raw data referenced in some metadata
 ``<station_name>.yml`` file.
 
-In order to download the data, you should be in a virtual environment with the disdrodb package installed !
+In order to download the data, you should be in a virtual environment with the disdrodb package installed!
 
 To download all data, just run:
 
@@ -114,7 +107,7 @@ Parameters:
    whether existing files should be overwritten.
 
 To download data from multiple data sources or campaigns, please provide a space-separated string of
-the data sources or campaigns you require. For example, "EPFL NASA".
+the data sources or campaigns you require. For example, ``"EPFL NASA"``.
 
 
 Add new stations raw data to the DISDRODB archive (using Zenodo)
@@ -143,7 +136,7 @@ Parameters:
    included.
 
 To upload data from multiple data sources or campaigns, please provide a space-separated string of
-the data sources or campaigns you require. For example, "EPFL NASA".
+the data sources or campaigns you require. For example, ``"EPFL NASA"``.
 
 
 Currently, only Zenodo is supported.

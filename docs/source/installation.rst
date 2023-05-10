@@ -3,7 +3,7 @@ Installation
 =========================
 
 
-We define here two types of installation :
+We define here two types of installation:
 
 - `Installation for standard users`_ : for users who want to process data.
 
@@ -15,7 +15,7 @@ We recommend users and contributors to use a `Virtual environment`_ to install D
 Installation for standard users
 ==================================
 
-Pip-based installation
+pip-based installation
 ..............................
 
 disdrodb is available from the `Python Packaging Index (PyPI) <https://pypi.org/>`__ as follow:
@@ -59,7 +59,7 @@ Install the DISDRODB package dependencies
 You can use either pip or conda:
 
 
-* **Pip**
+* **pip**
 
 	.. code-block:: bash
 
@@ -68,7 +68,7 @@ You can use either pip or conda:
 
 
 
-* **Conda**
+* **conda**
 
 	Create the `disdrodb-dev` conda environment and install the required dependencies:
 

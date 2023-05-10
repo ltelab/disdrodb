@@ -19,14 +19,15 @@ There are 7 metadata keys for which is mandatory to specify the value :
 * the ``reader`` name is essential to enable to select the correct reader when processing the station.
 
 .. note::
-    The **reader** key value must be defined with the following pattern: ``<READER_DATA_SOURCE>/<READER_NAME>``.
-    * <READER_DATA_SOURCE> is the parent directory within the disdrodb software where the reader is defined.
-    Typically it coincides with the <DATA_SOURCE> of the DISDRODB archive.
-    * <READER_NAME> is the name of the python file where the reader is defined.
-    * For example, to use the GPM IFLOODS reader (defined at `disdrodb.l0.reader.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers/GPM/IFLOODS.py>`_)
+    The **reader** key value must be defined with the pattern ``<READER_DATA_SOURCE>/<READER_NAME>``:
+
+    - ``<READER_DATA_SOURCE>`` is the parent directory within the disdrodb software where the reader is defined. Typically it coincides with the ``<DATA_SOURCE>`` of the DISDRODB archive.
+
+    - ``<READER_NAME>`` is the name of the python file where the reader is defined.
+
+
+    For example, to use the GPM IFLOODS reader (defined at `disdrodb.l0.reader.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/GPM/IFLOODS.py>`_)
     to process the data, you specify the reader name ``GPM/IFLOODS``.
-
-
 
 
 To check the validity of the metadata YAML files, run the following code:

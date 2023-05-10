@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.abspath("../.."), "disdrodb"))
 
 # -- Project information -----------------------------------------------------
 
-project = "Disdrodb"
+project = "disdrodb"
 copyright = "LTE - Environmental Remote Sensing Lab - EPFL"
 author = "LTE - Environmental Remote Sensing Lab - EPFL"
 
