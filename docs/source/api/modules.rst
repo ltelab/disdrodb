@@ -1,5 +1,5 @@
-LTE-disdrodb
-============
+disdrodb
+========
 
 .. toctree::
    :maxdepth: 4
