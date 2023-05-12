@@ -19,7 +19,6 @@ and read through the following documnents :
 - `Contributing environment setup <#contributing-environment-setup>`__
 - `Contributing process <#contributing-process>`__
 - `Code review checklist <#code-review-checklist>`__
-- `Financial contribution <#financial-contribution>`__
 
 
 
@@ -477,13 +476,10 @@ Code review checklist
 
 .. _section-2:
 
-Financial Contribution
-----------------------
-
-We also welcome financial contributions. Please contact us directly.
 
 Credits
 -------
 
-Thank you to all the people who have already contributed to DISDRODB.
-repository!
+Thank you to all the people who have already contributed to DISDRODB repository!
+
+If you have contributed data and/or code to disdrodb, add your name to the `AUTHORS.md <https://github.com/ltelab/disdrodb/blob/main/AUTHORS.md>`__ file.

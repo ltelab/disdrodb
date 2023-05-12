@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to disdroDB's documentation!
+Welcome to disdrodb's documentation!
 =======================================
 
 DISDRODB: A global database of raindrop size distribution observations
@@ -31,8 +31,8 @@ difficult to share, analyse, compare and re-use.
 
 Additionally, very limited software is currently publicly available for DSD processing.
 
-This software aims to define a standard format to save disdrometer data.
-
+This software aims to define a standard format to save disdrometer data and to create a decentralized archive to promote the exchange of data across the scientific community.
+Currently, disdrodb enables to process data acquired from the OTT Parsivel (``OTT_Parsivel``), OTT Parsivel2 (``OTT_Parsivel2``), Thies Laser Precipitation Monitor (``ThiesLPM``) and RD-80 (``RD_80``) disdrometers.
 
 
 Documentation
@@ -50,7 +50,7 @@ Documentation
    l0_processing
    contributors_guidelines
    maintainers_guidelines
-
+   authors
 
 
 

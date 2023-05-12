@@ -5,8 +5,10 @@ Add new sensor configs
 DISDRODB tailor the processing of the disdrometer measurements according
 to the instrument type and characteristics.
 
-Several sensor configurations are already implemented and can be seen
-by typing the command:
+Currently, disdrodb enables to process data acquired from the OTT Parsivel (``OTT_Parsivel``), OTT Parsivel2 (``OTT_Parsivel2``), Thies Laser Precipitation Monitor (``ThiesLPM``) and RD-80 (``RD_80``) disdrometers.
+
+
+The sensor configurations already implemented can be listed by typing the command:
 
 .. code-block:: python
 
