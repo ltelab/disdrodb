@@ -381,21 +381,24 @@ def reader_generic_docstring():
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        The path must have the following structure <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
         Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_name>/<raw_files>
-        - /metadata/<station_name>.yaml
+
+            - /data/<station_name>/<raw_files>
+            - /metadata/<station_name>.yaml
+
         Important points:
-        - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
+
+            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
+            - The campaign_name are expected to be UPPER CASE.
+            - The <campaign_name> must semantically match between:
+
+                - the raw_dir and processed_dir directory paths;
+                - with the key 'campaign_name' within the metadata YAML files.
+
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure:
-            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        The path should have the following structure <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
         For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     station_name : str

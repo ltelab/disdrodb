@@ -44,7 +44,8 @@ def run_disdrodb_l0b(
     parallel: bool = True,
     debugging_mode: bool = False,
 ):
-    """Run the L0B processing of DISDRODB stations.
+    """
+    Run the L0B processing of DISDRODB stations.
 
     This function enable to launch the processing of many DISDRODB stations with a single command.
     From the list of all available DISDRODB stations, it runs the processing of the
@@ -52,6 +53,7 @@ def run_disdrodb_l0b(
 
     Parameters
     ----------
+
     disdrodb_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB

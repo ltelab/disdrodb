@@ -123,6 +123,7 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
 
 def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bool = True):
     """Return the values of a metadata key for all the archive.
+
     Parameters
     ----------
     disdrodb_dir : str
@@ -130,14 +131,15 @@ def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bo
     key : str
         Metadata key.
     return_tuple : bool, optional
-        if True, returns a tuple of values with station, campaign and data source name (default is True)
-        if False, returns a list of values without station, campaign and data source name
+       If True, returns a tuple of values with station, campaign and data source name.
+       If False, returns a list of values without station, campaign and data source name.
+       The default is True.
+
     Returns
     -------
     list or tuple
         List or tuple of values of the metadata key.
     """
-
     list_metadata_paths = get_list_metadata(
         disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )

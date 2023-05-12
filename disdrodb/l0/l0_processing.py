@@ -351,31 +351,33 @@ def run_l0a(
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
         Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_name>/<raw_files>
-        - /metadata/<station_name>.yaml
+
+            - /data/<station_name>/<raw_files>
+            - /metadata/<station_name>.yaml
+
         Important points:
-        - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
+            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
+            - The campaign_name are expected to be UPPER CASE.
+            - The <campaign_name> must semantically match between:
+
+                - the raw_dir and processed_dir directory paths;
+                - with the key 'campaign_name' within the metadata YAML files.
+
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure:
-            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
         For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     station_name : str
         Station name
     glob_patterns: str
-        Glob pattern to search data files in <raw_dir>/data/<station_name>
+        Glob pattern to search data files in ``<raw_dir>/data/<station_name>``
     column_names : list
         Columns names of the raw text file.
     reader_kwargs : dict
-         Pandas `read_csv` arguments to open the text file.
+        Pandas `read_csv` arguments to open the text file.
     df_sanitizer_fun : object, optional
         Sanitizer function to format the datafame into DISDRODB L0A standard.
     parallel : bool
@@ -484,21 +486,23 @@ def run_l0b(
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
         Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_name>/<raw_files>
-        - /metadata/<station_name>.yaml
+
+            - /data/<station_name>/<raw_files>
+            - /metadata/<station_name>.yaml
+
         Important points:
-        - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
+
+            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
+            - The campaign_name are expected to be UPPER CASE.
+            - The <campaign_name> must semantically match between:
+                - the raw_dir and processed_dir directory paths;
+                - with the key 'campaign_name' within the metadata YAML files.
+
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure:
-            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``.
         For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     station_name : str
@@ -618,29 +622,32 @@ def run_l0b_from_nc(
 
     Parameters
     ----------
+
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure:
-            <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
+        The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
         Inside the raw_dir directory, it is required to adopt the following structure:
-        - /data/<station_name>/<raw_files>
-        - /metadata/<station_name>.yaml
+
+            - /data/<station_name>/<raw_files>
+            - /metadata/<station_name>.yaml
+
         Important points:
-        - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-        - The <campaign_name> must semantically match between:
-           - the raw_dir and processed_dir directory paths;
-           - with the key 'campaign_name' within the metadata YAML files.
-        - The campaign_name are expected to be UPPER CASE.
+            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
+            - The campaign_name are expected to be UPPER CASE.
+            - The <campaign_name> must semantically match between:
+
+                - the raw_dir and processed_dir directory paths;
+                - with the key 'campaign_name' within the metadata YAML files.
+
     processed_dir : str
         The desired directory path for the processed DISDRODB L0B products.
-        The path should have the following structure:
-            <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
         For testing purpose, this function exceptionally accept also a directory path simply ending
         with <campaign_name> (i.e. /tmp/<campaign_name>).
     station_name : str
         Station name
     glob_patterns: str
-        Glob pattern to search data files in <raw_dir>/data/<station_name>.
+        Glob pattern to search data files in ``<raw_dir>/data/<station_name>``.
         Example: glob_patterns = "*.nc"
     dict_names : dict
         Dictionary mapping raw netCDF variables/coordinates/dimension names
@@ -863,11 +870,11 @@ def run_disdrodb_l0_station(
     station_name : str
         Station name
     l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
+        Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+        The default is True.
     l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
+        Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+        The default is True.
     l0b_concat : bool
         Whether to concatenate all raw files into a single L0B netCDF file.
         If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
@@ -877,8 +884,8 @@ def run_disdrodb_l0_station(
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     remove_l0b : bool
-         Whether to remove the L0B files after having concatenated all L0B netCDF files.
-         It takes places only if l0b_concat=True
+        Whether to remove the L0B files after having concatenated all L0B netCDF files.
+        It takes places only if l0b_concat=True
         The default is False.
     force : bool
         If True, overwrite existing data into destination directories.
@@ -1016,11 +1023,11 @@ def run_disdrodb_l0(
         Station names to process.
         The default is None
     l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
+        Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+        The default is True.
     l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
+        Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+        The default is True.
     l0b_concat : bool
         Whether to concatenate all raw files into a single L0B netCDF file.
         If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
@@ -1030,8 +1037,8 @@ def run_disdrodb_l0(
         Whether to keep the L0A files after having generated the L0B netCDF products.
         The default is False.
     remove_l0b : bool
-         Whether to remove the L0B files after having concatenated all L0B netCDF files.
-         It takes places only if l0b_concat = True
+        Whether to remove the L0B files after having concatenated all L0B netCDF files.
+        It takes places only if l0b_concat = True
         The default is False.
     force : bool
         If True, overwrite existing data into destination directories.

@@ -140,7 +140,6 @@ def check_all_readers() -> None:
     """Test all readers that have data samples and ground truth.
 
     Raises
-
     ------
     Exception
         If the reader validation has failed.

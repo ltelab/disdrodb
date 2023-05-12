@@ -1,6 +1,6 @@
-=========================
+=====
 Data
-=========================
+=====
 
 
 Users can make their own data accessible to the community. DISDRODB
@@ -29,7 +29,7 @@ Data transfer upload and download schema:
 .. image:: /static/transfer.png
 
 Download the DISDRODB metadata archive
--------------------------------------------------
+-----------------------------------------
 
 You can clone the disdrodb-data repository with:
 
@@ -42,7 +42,7 @@ fork the repository on your GitHub account and then clone the forked
 repository.
 
 Update the DISDRODB metadata archive
-----------------------------------------------
+----------------------------------------
 
 Do you want to contribute to the project with your own data? Great! Just
 follow these steps:
@@ -77,7 +77,7 @@ follow these steps:
 9.  If you struggle with this process, don’t hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__ so we can help!
 
 Download the DISDRODB raw data archive
---------------------------------------
+---------------------------------------
 
 Prerequisite: First clone the disdrodb-data repository as described
 above to get the folder structure, metadatas and issues.
@@ -111,7 +111,7 @@ the data sources or campaigns you require. For example, ``"EPFL NASA"``.
 
 
 Add new stations raw data to the DISDRODB archive (using Zenodo)
--------------------------------------
+-----------------------------------------------------------------
 
 We provide users with a code to upload their station’s raw data to
 Zenodo.

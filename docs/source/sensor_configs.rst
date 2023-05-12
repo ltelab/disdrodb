@@ -5,7 +5,7 @@ Add new sensor configs
 DISDRODB tailor the processing of the disdrometer measurements according
 to the instrument type and characteristics.
 
-Currently, disdrodb enables to process data acquired from the OTT Parsivel (``OTT_Parsivel``), OTT Parsivel2 (``OTT_Parsivel2``), Thies Laser Precipitation Monitor (``ThiesLPM``) and RD-80 (``RD_80``) disdrometers.
+Currently, disdrodb enables to process data acquired from the OTT Parsivel (``OTT_Parsivel``), OTT Parsivel2 (``OTT_Parsivel2``), Thies Laser Precipitation Monitor (``Thies_LPM``) and RD-80 (``RD_80``) disdrometers.
 
 
 The sensor configurations already implemented can be listed by typing the command:
@@ -120,7 +120,7 @@ During the DISDRODB L0 processing:
 The ``n_digits``, ``n_characters``, ``n_decimals`` and ``n_naturals`` information
 is used to infer the raw files header when this is unknown.
 See usage of the ``infer_column_names`` function in the
-`reader_preparation.ipynb<https://github.com/ltelab/disdrodb/tree/main/tutorial>`_ Jupyter Notebook.
+`reader_preparation.ipynb <https://github.com/ltelab/disdrodb/tree/main/tutorial>`_ Jupyter Notebook.
 
 For the variables which values do not depend only from the time dimension, it is necessary
 to specify 2 additional keys: ``n_values`` and ``dimension_order``
@@ -168,6 +168,5 @@ variable_long_name.yml file
 
 This file specify the long_name for each variable.
 The ``long_name`` will be attached as a variable attribute to the DISDRODB L0B netCDF.
-See the `CF Conventions guidelines for long_name
-<https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
+See the `CF Conventions guidelines for long_name <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
 for more information.

@@ -1,3 +1,4 @@
-.. _list_authors:
+List of contributors
+=====================
 
 .. mdinclude:: ../../AUTHORS.md

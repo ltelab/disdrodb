@@ -69,12 +69,11 @@ def run_disdrodb_l0_station(
     station_name : str \n
         Station name \n
     l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.\n
+        Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+        The default is True.\n
     l0b_processing : bool \n
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.\n
-      The default is True.\n
-
+        Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.\n
+        he default is True.\n
     l0b_concat : bool \n
         Whether to concatenate all raw files into a single L0B netCDF file.\n
         If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.\n

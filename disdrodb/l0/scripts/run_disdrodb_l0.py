@@ -51,7 +51,8 @@ def run_disdrodb_l0(
     parallel: bool = True,
     debugging_mode: bool = False,
 ):
-    """Run the L0 processing of DISDRODB stations.
+    """
+    Run the L0 processing of DISDRODB stations.
 
     This function enable to launch the processing of many DISDRODB stations with a single command.
     From the list of all available DISDRODB stations, it runs the processing of the
@@ -59,6 +60,7 @@ def run_disdrodb_l0(
 
     Parameters
     ----------
+
     disdrodb_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB
@@ -75,11 +77,11 @@ def run_disdrodb_l0(
         Station names.
         To specify multiple stations, write i.e.: --station_names 'station1 station2'
     l0a_processing : bool
-      Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-      The default is True.
+        Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
+        The default is True.
     l0b_processing : bool
-      Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-      The default is True.
+        Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
+        The default is True.
     l0b_concat : bool
         Whether to concatenate all raw files into a single L0B netCDF file.
         If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.
