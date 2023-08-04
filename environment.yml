@@ -11,7 +11,7 @@ dependencies:
   - setuptools=65.2.0
   - xarray=2022.6.0
   - sphinx=5.1.1
-  - sphinx_rtd_theme=1.0.0
+  - sphinx_book_theme=1.0.1
   - jupyter=1.0.0
   - nbsphinx=0.8.9
   - dask[distributed]=2022.9.1
