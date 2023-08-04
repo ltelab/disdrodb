@@ -38,7 +38,7 @@ dynamic = ["version"]
 [project.optional-dependencies]
 dev = [
 	"sphinx",
-	"sphinx_rtd_theme",
+	"sphinx_book_theme",
 	"nbsphinx",
 	"jupyter",
 	"pre-commit",
