@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Union
 
 import pytest
 import yaml
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 # Define the pydantic models for *.bins.yaml config files
@@ -13,7 +13,7 @@ class raw_data_format_2n_level(BaseModel):
     n_decimals: Optional[int]
     data_range: Optional[list]
 
-    @validator("data_range", pre=True)
+    @field_validator("data_range")
     def check_list_length(cls, value):
         if value:
             if len(value) != 2:
