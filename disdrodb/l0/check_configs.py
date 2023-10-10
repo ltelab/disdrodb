@@ -4,7 +4,7 @@ import os
 from typing import List, Optional, Union
 
 import numpy as np
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError, field_validator
 
 from disdrodb.l0.standards import (
     available_sensor_name,
@@ -128,21 +128,21 @@ class NetcdfEncodingSchema(BaseModel):
     chunksizes: Optional[Union[int, List[int]]]
 
     # if contiguous=False, chunksizes specified, otherwise should be not !
-    @validator("chunksizes")
+    @field_validator("chunksizes")
     def check_chunksizes(cls, v, values):
         if not values.get("contiguous") and not v:
             raise ValueError("'chunksizes' must be defined if 'contiguous' is False")
         return v
 
     # if contiguous = True, then zlib must be set to False
-    @validator("zlib")
+    @field_validator("zlib")
     def check_zlib(cls, v, values):
         if values.get("contiguous") and v:
             raise ValueError("'zlib' must be set to False if 'contiguous' is True")
         return v
 
     # if contiguous = True, then fletcher32 must be set to False
-    @validator("fletcher32")
+    @field_validator("fletcher32")
     def check_fletcher32(cls, v, values):
         if values.get("contiguous") and v:
             raise ValueError("'fletcher32' must be set to False if 'contiguous' is True")
@@ -204,7 +204,7 @@ class RawDataFormatSchema(BaseModel):
     dimension_order: Optional[List[str]]
     n_values: Optional[int]
 
-    @validator("data_range", pre=True)
+    @field_validator("data_range", pre=True)
     def check_list_length(cls, value):
         if value:
             if len(value) != 2:
@@ -224,6 +224,7 @@ def check_raw_data_format(sensor_name: str) -> None:
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
+        print(key, value)
         schema_error(
             object_to_validate=value,
             schema=RawDataFormatSchema,
