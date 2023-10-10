@@ -4,7 +4,7 @@ import os
 from typing import List, Optional, Union
 
 import numpy as np
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
 from disdrodb.l0.standards import (
     available_sensor_name,
@@ -128,25 +128,31 @@ class NetcdfEncodingSchema(BaseModel):
     chunksizes: Optional[Union[int, List[int]]]
 
     # if contiguous=False, chunksizes specified, otherwise should be not !
-    @validator("chunksizes")
-    def check_chunksizes(cls, v, values):
-        if not values.get("contiguous") and not v:
+    @model_validator(mode="before")
+    def check_chunksizes_and_zlib(cls, values):
+        contiguous = values.get("contiguous")
+        chunksizes = values.get("chunksizes")
+        if not contiguous and not chunksizes:
             raise ValueError("'chunksizes' must be defined if 'contiguous' is False")
-        return v
+        return values
 
     # if contiguous = True, then zlib must be set to False
-    @validator("zlib")
-    def check_zlib(cls, v, values):
-        if values.get("contiguous") and v:
+    @model_validator(mode="before")
+    def check_contiguous_and_zlib(cls, values):
+        contiguous = values.get("contiguous")
+        zlib = values.get("zlib")
+        if contiguous and zlib:
             raise ValueError("'zlib' must be set to False if 'contiguous' is True")
-        return v
+        return values
 
     # if contiguous = True, then fletcher32 must be set to False
-    @validator("fletcher32")
-    def check_fletcher32(cls, v, values):
-        if values.get("contiguous") and v:
+    @model_validator(mode="before")
+    def check_contiguous_and_fletcher32(cls, values):
+        contiguous = values.get("contiguous")
+        fletcher32 = values.get("fletcher32")
+        if contiguous and fletcher32:
             raise ValueError("'fletcher32' must be set to False if 'contiguous' is True")
-        return v
+        return values
 
 
 def check_l0b_encoding(sensor_name: str) -> None:
@@ -199,12 +205,12 @@ class RawDataFormatSchema(BaseModel):
     n_decimals: Optional[int]
     n_naturals: Optional[int]
     data_range: Optional[List[float]]
-    nan_flags: Optional[str]
-    valid_values: Optional[List[float]]
-    dimension_order: Optional[List[str]]
-    n_values: Optional[int]
+    nan_flags: Optional[Union[int, str]] = None
+    valid_values: Optional[List[float]] = None
+    dimension_order: Optional[List[str]] = None
+    n_values: Optional[int] = None
 
-    @validator("data_range", pre=True)
+    @field_validator("data_range")
     def check_list_length(cls, value):
         if value:
             if len(value) != 2:
