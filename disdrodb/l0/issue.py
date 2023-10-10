@@ -250,7 +250,8 @@ def check_issue_file(fpath: str) -> None:
 
 def _write_issue_docs(f):
     """Provide template for issue.yml"""
-    f.write("""# This file is used to store timesteps/time periods with wrong/corrupted observation.
+    f.write(
+        """# This file is used to store timesteps/time periods with wrong/corrupted observation.
 # The specified timesteps are dropped during the L0 processing.
 # The time format used is the isoformat : YYYY-mm-dd HH:MM:SS.
 # The 'timesteps' key enable to specify the list of timesteps to be discarded.
@@ -266,7 +267,8 @@ def _write_issue_docs(f):
 # - ['2018-08-01 12:00:00', '2018-08-01 14:00:00']
 # - ['2018-08-01 15:44:30', '2018-08-01 15:59:31']
 # - ['2018-08-02 12:44:30', '2018-08-02 12:59:31'] \n
-""")
+"""
+    )
     return None
 
 
