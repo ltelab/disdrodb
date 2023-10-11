@@ -333,11 +333,12 @@ def test_cast_column_dtypes():
         }
     )
     # Call the function
-    df_out = cast_column_dtypes(df, "OTT_Parsivel", verbose=False)
+    sensor_name = "OTT_Parsivel"
+    df_out = cast_column_dtypes(df, sensor_name, verbose=False)
     # Check that the output dataframe has the correct column types
-    assert df_out["time"].dtype == "datetime64[s]"
-    assert df_out["station_number"].dtype == "object"
-    assert df_out["altitude"].dtype == "float64"
+    assert str(df_out["time"].dtype) == "datetime64[s]"
+    assert str(df_out["station_number"].dtype) == "object"
+    assert str(df_out["altitude"].dtype) == "float64"
 
 
 def test_remove_rows_with_missing_time():

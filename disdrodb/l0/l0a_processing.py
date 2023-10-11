@@ -316,6 +316,7 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False
     # Get dataframe column names
     columns = list(df.columns)
     # Cast dataframe columns
+    df = df.copy(deep=True)  # avoid modify also dtype of input df
     for column in columns:
         try:
             df[column] = df[column].astype(dtype_dict[column])
