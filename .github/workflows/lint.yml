@@ -18,12 +18,6 @@ jobs:
         with:
           extra_args: ruff --all-files
 
-      - name: Ruff
-        if: success() || failure()
-        uses: pre-commit/action@v3.0.0
-        with:
-          extra_args: ruff --all-files
-
       - name: Black
         if: success() || failure()
         uses: pre-commit/action@v3.0.0
