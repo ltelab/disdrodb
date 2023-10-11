@@ -22,6 +22,10 @@ dependencies:
   # Testing
   - setuptools
   - pre_commit
+  - coverage
   - pytest
+  - pytest-cov
+  - pytest-mock
+  - requests-mock
   - pydantic
   - pip

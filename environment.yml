@@ -1,4 +1,4 @@
-name: disdrodb
+name: disdrodb-dev
 channels:
   - conda-forge
 dependencies:
@@ -23,5 +23,8 @@ dependencies:
   - setuptools
   - pre_commit
   - pytest
+  - pytest-cov
+  - pytest-mock
+  - requests-mock
   - pydantic
   - pip
