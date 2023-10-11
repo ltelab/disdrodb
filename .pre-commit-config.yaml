@@ -21,3 +21,4 @@ repos:
     rev: v0.3.8
     hooks:
     - id: blackdoc
+      additional_dependencies: ["black[jupyter]"]

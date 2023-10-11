@@ -3,10 +3,14 @@ on: [push, pull_request, workflow_dispatch]
 
 jobs:
   tests:
-    name: ${{ matrix.os }}, Python ${{ matrix.python-version }}${{ matrix.experimental && ', experimental' || '' }}
+    name: Test on ${{ matrix.os }}, Python ${{ matrix.python-version }}${{ matrix.experimental && ' with latest dependencies' || '' }}
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash -el {0}
 
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.8", "3.9", "3.10", "3.11"]
@@ -21,43 +25,43 @@ jobs:
             experimental: false
             coverage: true
 
+          - os: "windows-latest"
+            python-version: "3.11"
+            experimental: false
+
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python-version }}
-
-        uses: actions/setup-python@v4
+      - name: Set up micromamba
+        uses: mamba-org/setup-micromamba@v1
         with:
-          python-version: ${{ matrix.python-version }}
+          environment-file: ${{ matrix.experimental && 'ci/environment_latest.yml' || 'ci/environment.yml' }}
+          create-args: >-
+            python=${{ matrix.python-version }}
+          init-shell: >-
+            bash
 
-      - name: Install dependencies
+      - name: Install the package
         run: |
-          python -m pip install --upgrade pip
-          if echo ${{ matrix.experimental }} | grep -c "true"
-          then
-            pip install -e .[dev]
-          else
-            pip install -r requirements.txt
-            pip install -e .
-          fi
-        shell: bash
-
+          pip install -e .
+    
       - name: Test with pytest
         run: |
           coverage run -m pytest
 
-      - name: CodeCov
-
+      - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         if: matrix.coverage
-
-      - name: Generate coverage report
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      
+      - name: Generate coverage report in LCOV format
         if: matrix.coverage
         run: |
           coverage lcov -o coverage/lcov.info
 
       - name: Coveralls Parallel
-        uses: coverallsapp/github-action@v1
+        uses: coverallsapp/github-action@v2
         if: matrix.coverage
         with:
           parallel: true
@@ -68,6 +72,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Coveralls Finished
-      uses: coverallsapp/github-action@v1
+      uses: coverallsapp/github-action@v2
       with:
         parallel-finished: true

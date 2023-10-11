@@ -21,17 +21,18 @@ classifiers = [
 requires-python = ">=3.8"
 dependencies = [
 	"click",
-	"h5py",
-	"netCDF4",
-	"trollsift",
-	"pyarrow",
-	"PyYAML",
-	"setuptools",
-	"xarray",
-	"dask[distributed]",
 	"tqdm",
 	"pooch",
-	"requests"
+	"requests",
+	"PyYAML",
+	"trollsift",
+	"h5py",
+	"netCDF4",
+	"pyarrow",
+	"pandas",
+	"dask[distributed]",
+	"xarray",
+	"setuptools",
 ]
 dynamic = ["version"]
 
