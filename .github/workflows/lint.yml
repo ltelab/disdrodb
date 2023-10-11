@@ -28,9 +28,7 @@ jobs:
         if: success() || failure()
         uses: pre-commit/action@v3.0.0
         with:
-          options: "--check --verbose"
-          extra_args: black --all-files
-          version: "22.8.0"
+            extra_args: black --all-files --check --verbose
 
       - name: Blackdoc
         if: success() || failure()

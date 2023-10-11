@@ -32,7 +32,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up micromamba
+      - name: Set up micromamba and install package dependencies
         uses: mamba-org/setup-micromamba@v1
         with:
           environment-file: ${{ matrix.experimental && 'ci/environment_latest.yml' || 'ci/environment.yml' }}
@@ -44,7 +44,7 @@ jobs:
       - name: Install the package
         run: |
           pip install -e .
-    
+
       - name: Test with pytest
         run: |
           coverage run -m pytest
@@ -54,7 +54,7 @@ jobs:
         if: matrix.coverage
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-      
+
       - name: Generate coverage report in LCOV format
         if: matrix.coverage
         run: |
