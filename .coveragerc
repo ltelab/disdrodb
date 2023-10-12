@@ -1,0 +1,16 @@
+[run]
+source =
+	disdrodb
+omit =
+	*ci*
+	*data*
+	*docs*
+	*tutorials*
+	disdrodb/l0/readers/*
+	disdrodb/tests/*
+
+[report]
+exclude_lines =
+	pragma: no cover
+	def __repr__
+	def __str__
