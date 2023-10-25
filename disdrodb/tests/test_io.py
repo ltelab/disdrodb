@@ -160,9 +160,9 @@ def get_disdrodb_path():
     with pytest.raises(ValueError):
         io.get_disdrodb_path(path)
 
-    # Assert it takes the right most DISDRODB occurence
+    # Assert it takes the right most DISDRODB occurrence
     disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join("whatever_occurence", "DISDRODB", "DISDRODB", "directory", disdrodb_path)
+    path = os.path.join("whatever_occurrence", "DISDRODB", "DISDRODB", "directory", disdrodb_path)
     assert io.get_disdrodb_path(path) == disdrodb_path
 
     # Assert behaviour when path == disdrodb_dir
@@ -668,6 +668,6 @@ def test_read_L0A_dataframe():
     df_written_list = df_written.values.tolist()
 
     # Compare lists
-    comparaison = df_written_list == df_concatenate_list
+    comparison = df_written_list == df_concatenate_list
 
-    assert comparaison
+    assert comparison

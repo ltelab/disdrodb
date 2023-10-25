@@ -16,8 +16,8 @@ from disdrodb.l0.l0a_processing import (
     remove_corrupted_rows,
     remove_issue_timesteps,
     replace_nan_flags,
+    set_nan_invalid_values,
     set_nan_outside_data_range,
-    set_nan_unvalid_values,
     strip_delimiter_from_raw_arrays,
     strip_string_spaces,
 )
@@ -30,7 +30,7 @@ PATH_TEST_FOLDERS_FILES = os.path.join(
 
 @pytest.fixture
 def create_dummy_config_file(request: list) -> None:
-    """This fuction creates a dummy config file for testing purposes.
+    """This function  creates a dummy config file for testing purposes.
     This file is deleted after the test is finished (even if the test fails).
 
     Parameters
@@ -68,22 +68,22 @@ file_name = "raw_data_format.yml"
 
 
 @pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
-def test_set_nan_unvalid_values(create_dummy_config_file):
-    """Create a dummy config file and test the function set_nan_unvalid_values.
+def test_set_nan_invalid_values(create_dummy_config_file):
+    """Create a dummy config file and test the function set_nan_invalid_values.
 
     Parameters
     ----------
     create_dummy_config_file : function
         Function that creates and removes the dummy config file.
     """
-    # Test withput modification
+    # Test without modification
     df = pd.DataFrame({"key_1": [1, 2, 1, 2, 1]})
-    output = set_nan_unvalid_values(df, "test", verbose=False)
+    output = set_nan_invalid_values(df, "test", verbose=False)
     assert df.equals(output)
 
     # Test with modification
     df = pd.DataFrame({"key_1": [1, 2, 1, 2, 4]})
-    output = set_nan_unvalid_values(df, "test", verbose=False)
+    output = set_nan_invalid_values(df, "test", verbose=False)
     assert np.isnan(output["key_1"][4])
 
 
@@ -309,10 +309,10 @@ def test_is_not_corrupted():
     # Test empty string
     s = ""
     assert l0a_processing._is_not_corrupted(s)
-    # Test valid string (convertable to numeric, after split by ,)
+    # Test valid string (convertible to numeric, after split by ,)
     s = "000,001,000"
     assert l0a_processing._is_not_corrupted(s)
-    # Test corrupted string (not convertable to numeric, after split by ,)
+    # Test corrupted string (not convertible to numeric, after split by ,)
     s = "000,xa,000"
     assert not l0a_processing._is_not_corrupted(s)
     # Test None is considered corrupted
@@ -349,7 +349,7 @@ def test_remove_rows_with_missing_time():
 
     # Add Nat value to a single rows of the time column
     df.at[0, "time"] = np.datetime64("NaT")
-    # Test it remove the unvalid timestep
+    # Test it remove the invalid timestep
     valid_df = l0a_processing.remove_rows_with_missing_time(df)
     assert len(valid_df) == n_rows - 1
     assert not np.any(valid_df["time"].isna())

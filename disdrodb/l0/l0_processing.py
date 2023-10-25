@@ -381,7 +381,7 @@ def run_l0a(
     df_sanitizer_fun : object, optional
         Sanitizer function to format the datafame into DISDRODB L0A standard.
     parallel : bool
-        If True, the files are processed simultanously in multiple processes.
+        If True, the files are processed simultaneously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
@@ -515,7 +515,7 @@ def run_l0b(
         Whether to print detailed processing information into terminal.
         The default is True.
     parallel : bool
-        If True, the files are processed simultanously in multiple processes.
+        If True, the files are processed simultaneously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
         Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
@@ -662,7 +662,7 @@ def run_l0b_from_nc(
         Whether to print detailed processing information into terminal.
         The default is False.
     parallel : bool
-        If True, the files are processed simultanously in multiple processes.
+        If True, the files are processed simultaneously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
@@ -895,7 +895,7 @@ def run_disdrodb_l0_station(
         Whether to print detailed processing information into terminal.
         The default is True.
     parallel : bool
-        If True, the files are processed simultanously in multiple processes.
+        If True, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
         By default, the number of process is defined with os.cpu_count().
         If False, the files are processed sequentially in a single process.
@@ -1048,7 +1048,7 @@ def run_disdrodb_l0(
         Whether to print detailed processing information into terminal.
         The default is True.
     parallel : bool
-        If True, the files are processed simultanously in multiple processes.
+        If True, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
         By default, the number of process is defined with os.cpu_count().
         If False, the files are processed sequentially in a single process.

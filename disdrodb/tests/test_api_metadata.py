@@ -166,7 +166,7 @@ def test_get_list_metadata_file(tmp_path):
     assert expected_result == result
 
     # test 2 :
-    # - downalod_data fucntion without paremeter
+    # - downalod_data function without parameter
     result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
     assert expected_result == result
 

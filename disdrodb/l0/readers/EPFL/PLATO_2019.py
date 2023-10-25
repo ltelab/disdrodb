@@ -54,7 +54,7 @@ def reader(
     ##------------------------------------------------------------------------.
     #### - Define reader options
     reader_kwargs = {}
-    # - Define enconding
+    # - Define encoding
     reader_kwargs["encoding"] = "latin-1"
     # - Skip first row (header)
     reader_kwargs["header"] = None

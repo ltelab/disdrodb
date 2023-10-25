@@ -71,9 +71,9 @@ def check_metadata_geolocation(metadata) -> None:
             if longitude == -9999 or latitude == -9999:
                 raise ValueError("Missing lat lon coordinates (-9999).")
             elif longitude > 180 or longitude < -180:
-                raise ValueError("Unvalid longitude (outside [-180, 180])")
+                raise ValueError("Invalid longitude (outside [-180, 180])")
             elif latitude > 90 or latitude < -90:
-                raise ValueError("Unvalid latitude (outside [-90, 90])")
+                raise ValueError("Invalid latitude (outside [-90, 90])")
             else:
                 pass
     return None

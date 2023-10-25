@@ -87,7 +87,7 @@ def reader(
     #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
     reader_kwargs["na_values"] = ["na", "", "error"]
 
-    # Different enconding for this campaign
+    # Different encoding for this campaign
     reader_kwargs["encoding"] = "latin-1"
 
     ##------------------------------------------------------------------------.

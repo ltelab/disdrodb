@@ -424,7 +424,7 @@ optical_control_voltage_output:
   n_naturals: 0
   data_range:
   - 0    # 1000
-  - 9999 # 6500 in the doc, 6660 occurence found
+  - 9999 # 6500 in the doc, 6660 occurrence found
   nan_flags: null
 
 sensor_voltage_supply:

@@ -80,7 +80,7 @@ def read_yaml_file(path_file: str) -> Dict:
 
 
 def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseModel) -> bool:
-    """function that validate the schema of a given file path with pytest and raise exception if faile to validate
+    """function that validate the schema of a given file path with pytest and raise exception if failed to validate
 
     Parameters
     ----------
@@ -103,7 +103,7 @@ def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseMod
 
 
 def is_dict(obj) -> bool:
-    """Fuction to check that a object is a dictionary.
+    """Function to check that a object is a dictionary.
 
     Parameters
     ----------
@@ -237,7 +237,7 @@ def test_bins_format(yaml_file_path: str) -> None:
         # check that the data is a dictionary
         assert is_dict(data)
 
-        # ckeck that the keys are strings
+        # check that the keys are strings
         list_of_fisrt_level_keys = list(data.keys())
         assert is_string_list(list_of_fisrt_level_keys)
 
@@ -261,7 +261,7 @@ def test_bins_format(yaml_file_path: str) -> None:
                 for second_level_key, second_level_value in first_level_value.items():
                     assert is_numeric_list(second_level_value)
 
-        # check bound and width equls lenght
+        # check bound and width equals length
         assert len(data.get("bounds")) == len(data.get("width"))
 
         # check that the bounds distance is equal to the width (but not for the first key)
@@ -327,7 +327,7 @@ def test_L0B_encodings_format(yaml_file_path: str) -> None:
     # check that the data is a dictionary
     assert is_dict(data)
 
-    # ckeck that the keys are strings
+    # check that the keys are strings
     list_of_fisrt_level_keys = list(data.keys())
     assert is_string_list(list_of_fisrt_level_keys)
 

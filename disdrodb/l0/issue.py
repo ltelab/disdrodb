@@ -147,7 +147,7 @@ def check_timesteps(timesteps):
     elif is_numpy_array_datetime(timesteps):
         timesteps = _check_timestep_datetime_accuracy(timesteps, unit="s")
     else:
-        raise TypeError("Unvalid timesteps input.")
+        raise TypeError("Invalid timesteps input.")
     return timesteps
 
 
@@ -182,7 +182,7 @@ def check_time_periods(time_periods):
     # Check time period start occur before end
     for time_period in new_time_periods:
         if time_period[0] > time_period[1]:
-            msg = f"The {time_period} time_period is unvalid. Start time occurs after end time."
+            msg = f"The {time_period} time_period is invalid. Start time occurs after end time."
             log_error(logger, msg=msg, verbose=False)
             raise ValueError(msg)
     return new_time_periods
@@ -213,9 +213,9 @@ def check_issue_dict(issue_dict):
     # Check there are only timesteps and time_periods keys
     valid_keys = ["timesteps", "time_periods"]
     keys = list(issue_dict.keys())
-    unvalid_keys = [k for k in keys if k not in valid_keys]
-    if len(unvalid_keys) > 0:
-        msg = f"Unvalid {unvalid_keys} keys. The issue YAML file accept only {valid_keys}"
+    invalid_keys = [k for k in keys if k not in valid_keys]
+    if len(invalid_keys) > 0:
+        msg = f"Invalid {invalid_keys} keys. The issue YAML file accept only {valid_keys}"
         log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
 

@@ -62,7 +62,7 @@ def reader(
     reader_kwargs = {}
     # - Define delimiter
     reader_kwargs["delimiter"] = ","
-    # - Define enconding
+    # - Define encoding
     reader_kwargs["encoding"] = "latin-1"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False

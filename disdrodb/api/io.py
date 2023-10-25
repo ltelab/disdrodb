@@ -234,11 +234,11 @@ def check_data_sources(disdrodb_dir, product_level, data_sources):
     dir_path = _get_disdrodb_directory(disdrodb_dir=disdrodb_dir, product_level=product_level)
     # Get data sources directory
     list_dir = os.listdir(dir_path)
-    # Check if there are unvalid data_sources
-    idx_unvalid = np.where(np.isin(data_sources, list_dir, invert=True))[0]
-    if len(idx_unvalid) > 0:
-        unvalid_data_sources = data_sources[idx_unvalid].tolist()
-        raise ValueError(f"These data sources are unvalid: {unvalid_data_sources}.")
+    # Check if there are invalid data_sources
+    idx_invalid = np.where(np.isin(data_sources, list_dir, invert=True))[0]
+    if len(idx_invalid) > 0:
+        invalid_data_sources = data_sources[idx_invalid].tolist()
+        raise ValueError(f"These data sources are invalid: {invalid_data_sources}.")
     # Return data_sources list
     data_sources = data_sources.tolist()
     return data_sources
@@ -265,11 +265,11 @@ def _check_campaign_names(disdrodb_dir, product_level, campaign_names):
     list_campaign_names = [os.path.basename(path) for path in list_campaigns_path]
     # Remove duplicates
     list_campaign_names = np.unique(list_campaign_names)
-    # Check if there are unvalid campaign_names
-    idx_unvalid = np.where(np.isin(campaign_names, list_campaign_names, invert=True))[0]
-    if len(idx_unvalid) > 0:
-        unvalid_campaign_names = campaign_names[idx_unvalid].tolist()
-        raise ValueError(f"These campaign names are unvalid: {unvalid_campaign_names}.")
+    # Check if there are invalid campaign_names
+    idx_invalid = np.where(np.isin(campaign_names, list_campaign_names, invert=True))[0]
+    if len(idx_invalid) > 0:
+        invalid_campaign_names = campaign_names[idx_invalid].tolist()
+        raise ValueError(f"These campaign names are invalid: {invalid_campaign_names}.")
     # Return campaign_names list
     campaign_names = campaign_names.tolist()
     return campaign_names

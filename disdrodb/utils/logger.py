@@ -150,7 +150,7 @@ def define_summary_log(list_logs):
     # Define summary logs file name
     summary_fpath = os.path.join(summary_logs_dir, f"logs_summary_{station_name}.log")
     # Define logs keywords to select lines to copy into the summary log file
-    # -- > "has started" and "has ended" is used to copy the line with the filename being processsed
+    # -- > "has started" and "has ended" is used to copy the line with the filename being processed
     list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
     re_keyword = re.compile("|".join(list_keywords))
     # Filter and concat all logs files
@@ -184,7 +184,7 @@ def define_summary_log(list_logs):
                 with open(log_fpath) as input_file:
                     output_file.write(input_file.read())
 
-    # If no problems occured, remove the logs_problem_<station_name>.log file
+    # If no problems occurred, remove the logs_problem_<station_name>.log file
     if not any_problem:
         os.remove(problem_fpath)
     return None

@@ -79,7 +79,7 @@ def _get_non_monotonic_indices_to_remove(dim_values: np.ndarray) -> np.ndarray:
 
 
 def _get_duplicated_indices(x, keep="first"):
-    """Return the indices to remove for duplicated values in x such that there is only one value occurence.
+    """Return the indices to remove for duplicated values in x such that there is only one value occurrence.
 
     Parameters
     ----------
@@ -180,7 +180,7 @@ def _remove_dataset_bad_values(list_ds, fpaths, dict_ds_bad_idx, dim):
         # If resulting in a empty dataset, drop index from list_index_valid
         if len(bad_idx) == len(list_ds[list_index_bad][dim]):
             list_index_valid.remove(list_index_bad)
-        # Remove unvalid indices
+        # Remove invalid indices
         list_ds[list_index_bad] = ds.drop_isel({dim: bad_idx})
 
     # Keep non-empty datasets
@@ -228,7 +228,7 @@ def ensure_unique_dimension_values(list_ds: list, fpaths: str, dim: str = "time"
             ds_index=ds_index,
         )
 
-        # Report for each dataset, the duplicates values occuring
+        # Report for each dataset, the duplicates values occurring
         for list_index_bad, bad_values in dict_ds_bad_values.items():
             # Retrieve dataset filepath
             fpath = fpaths[list_index_bad]
@@ -295,7 +295,7 @@ def ensure_monotonic_dimension(list_ds: list, fpaths: str, dim: str = "time", ve
         for list_index_bad, bad_values in dict_ds_bad_values.items():
             # Retrieve dataset filepath
             fpath = fpaths[list_index_bad]
-            # If all values inside the file shoudl be dropped, report it
+            # If all values inside the file should be dropped, report it
             if len(bad_values) == len(list_ds[list_index_bad][dim]):
                 msg = (
                     f"{fpath} is excluded from concatenation. All {dim} values cause the dimension to be non-monotonic."

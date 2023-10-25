@@ -68,7 +68,7 @@ def reader(
         import numpy as np
         import pandas as pd
 
-        # - Drop unvalid rows
+        # - Drop invalid rows
         # --> C*32 that is nan
         df = df.dropna()
 
@@ -91,7 +91,7 @@ def reader(
         if len(df_data) != n_expected_data_rows:
             raise ValueError("Not same amount of timesteps and data.")
 
-        # - Replace heterogenous number of spaces with a single space
+        # - Replace heterogeneous number of spaces with a single space
         df_data["TO_SPLIT"] = df_data["TO_SPLIT"].str.replace(r" +", " ", regex=True).str.strip(" ")
 
         # - Retrieve arrays

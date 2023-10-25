@@ -15,7 +15,7 @@ from disdrodb.l0.standards import (
 
 
 def check_column_names(column_names: list, sensor_name: str) -> None:
-    """Checks that the columnn names respects DISDRODB standards.
+    """Checks that the column names respects DISDRODB standards.
 
     Parameters
     ----------
@@ -321,7 +321,7 @@ def arr_has_constant_nchar(arr: np.array) -> bool:
 
     Returns
     -------
-    booleen
+    boolean
         True if the number of character is constant
 
     """
@@ -413,7 +413,7 @@ def str_has_decimal_digits(string: str) -> bool:
     Returns
     -------
     bool
-        True if sting has digits.
+        True if string has digits.
     """
     if len(string.split(".")) == 2:
         return True
@@ -484,7 +484,7 @@ def get_ndigits(string: str) -> int:
 
 
 def get_nchar(string: str) -> int:
-    """Get the number of charactar.
+    """Get the number of character.
 
     Parameters
     ----------
@@ -494,7 +494,7 @@ def get_nchar(string: str) -> int:
     Returns
     -------
     int
-        Number of charactar
+        Number of character
     """
     return len(string)
 
@@ -505,7 +505,7 @@ def get_possible_keys(dict_options: dict, desired_value: str) -> set:
     Parameters
     ----------
     dict_options : dict
-        Input dictionnary
+        Input dictionary
     desired_value : str
         Input value
 

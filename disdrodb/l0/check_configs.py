@@ -339,9 +339,9 @@ def check_raw_array(sensor_name: str) -> None:
     l0b_encodings = read_config_yml(sensor_name, "l0b_encodings.yml")
 
     for key, list_velocity_or_diameter in dict_keys_with_dimension_order.items():
-        expected_lenght = len(list_velocity_or_diameter) + 1
+        expected_length = len(list_velocity_or_diameter) + 1
         current_length = len(l0b_encodings.get(key).get("chunksizes"))
-        if expected_lenght != current_length:
+        if expected_length != current_length:
             raise ValueError(f"Wrong chunksizes for {key} in l0b_encodings.yml for sensor {sensor_name}.")
 
     # Get chunksizes in l0b_encoding.yml and check that if len > 1, has dimension_order key in raw_data_format

@@ -169,9 +169,9 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     df_columns = set(df_columns)
     # --------------------------------------------
     # Check there aren't valid columns
-    unvalid_columns = list(df_columns.difference(valid_columns))
-    if len(unvalid_columns) > 0:
-        msg = f"The following columns do no met the DISDRODB standards: {unvalid_columns}"
+    invalid_columns = list(df_columns.difference(valid_columns))
+    if len(invalid_columns) > 0:
+        msg = f"The following columns do no met the DISDRODB standards: {invalid_columns}"
         logger.error(msg)
         raise ValueError(msg)
     # --------------------------------------------
@@ -194,7 +194,7 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
     sensor_name : str
         Name of the sensor.
     verbose : bool, optional
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
         The default is True.
 
     Raises

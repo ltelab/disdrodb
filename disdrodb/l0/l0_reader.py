@@ -227,7 +227,7 @@ def get_reader(reader_data_source: str, reader_name: str) -> object:
     # Check data source and reader_name validity
     reader_data_source = _check_reader_data_source(reader_data_source)
     reader_name = check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
-    # Retrive reader function
+    # Retrieve reader function
     if reader_name:
         full_name = f"disdrodb.l0.readers.{reader_data_source}.{reader_name}.reader"
         module_name, unit_name = full_name.rsplit(".", 1)
@@ -411,7 +411,7 @@ def reader_generic_docstring():
         Whether to print detailed processing information into terminal.
         The default is True.
     parallel : bool
-        If True, the files are processed simultanously in multiple processes.
+        If True, the files are processed simultaneously in multiple processes.
         The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
@@ -435,7 +435,7 @@ def check_available_readers():
                 reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
                 check_reader_arguments(reader)
             except Exception as e:
-                raise ValueError(f"Unvalid reader for {reader_data_source}/{reader_name}.py. The error is {e}")
+                raise ValueError(f"Invalid reader for {reader_data_source}/{reader_name}.py. The error is {e}")
     return None
 
 

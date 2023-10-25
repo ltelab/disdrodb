@@ -72,7 +72,7 @@ logger = logging.getLogger(__name__)
 
 
 def infer_split_str(string: str) -> str:
-    """Infer the delimeter inside a string.
+    """Infer the delimiter inside a string.
 
     Parameters
     ----------
@@ -469,7 +469,7 @@ def create_l0b_from_l0a(
     attrs : dict
         Station metadata.
     verbose : bool, optional
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
         The default is False.
 
     Returns
@@ -689,12 +689,12 @@ def _check_dict_names_validity(dict_names, sensor_name):
     valid_names = get_valid_names(sensor_name)
     keys = np.array(list(dict_names.keys()))
     values = np.array(list(dict_names.values()))
-    # Get unvalid keys
-    unvalid_keys = keys[np.isin(values, valid_names, invert=True)]
-    if len(unvalid_keys) > 0:
-        # Report unvalid keys and raise error
-        unvalid_dict = {k: dict_names[k] for k in unvalid_keys}
-        msg = f"The following dict_names values are not valid: {unvalid_dict}"
+    # Get invalid keys
+    invalid_keys = keys[np.isin(values, valid_names, invert=True)]
+    if len(invalid_keys) > 0:
+        # Report invalid keys and raise error
+        invalid_dict = {k: dict_names[k] for k in invalid_keys}
+        msg = f"The following dict_names values are not valid: {invalid_dict}"
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return None
@@ -852,7 +852,7 @@ def process_raw_nc(
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
 
     Returns
@@ -890,8 +890,8 @@ def process_raw_nc(
     # - Set values outside the data range to np.nan
     ds = set_nan_outside_data_range(ds, sensor_name=sensor_name, verbose=verbose)
 
-    # - Replace unvalid values with np.nan
-    ds = set_nan_unvalid_values(ds, sensor_name=sensor_name, verbose=verbose)
+    # - Replace invalid values with np.nan
+    ds = set_nan_invalid_values(ds, sensor_name=sensor_name, verbose=verbose)
 
     # Ensure variables with dtype object are converted to string
     ds = convert_object_variables_to_string(ds)
@@ -928,7 +928,7 @@ def replace_custom_nan_flags(ds, dict_nan_flags):
     for var, nan_flags in dict_nan_flags.items():
         # If the variable is in the dataframe
         if var in ds:
-            # Get occurence of nan_flags
+            # Get occurrence of nan_flags
             is_a_nan_flag = ds[var].isin(nan_flags)
             # Replace with np.nan
             ds[var] = ds[var].where(~is_a_nan_flag)
@@ -947,7 +947,7 @@ def replace_nan_flags(ds, sensor_name, verbose):
     dict_nan_flags : dict
         Dictionary with nan flags value to set as np.nan
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -961,7 +961,7 @@ def replace_nan_flags(ds, sensor_name, verbose):
     for var, nan_flags in dict_nan_flags.items():
         # If the variable is in the dataframe
         if var in ds:
-            # Get occurence of nan_flags
+            # Get occurrence of nan_flags
             is_a_nan_flag = ds[var].isin(nan_flags)
             n_nan_flags_values = np.sum(is_a_nan_flag.data)
             if n_nan_flags_values > 0:
@@ -984,7 +984,7 @@ def set_nan_outside_data_range(ds, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -1003,17 +1003,17 @@ def set_nan_outside_data_range(ds, sensor_name, verbose):
             # Check within data range or already np.nan
             is_valid = (ds[var] >= min_val) & (ds[var] <= max_val) | np.isnan(ds[var])
             # If there are values outside the data range, set to np.nan
-            n_unvalid = np.sum(~is_valid.data)
-            if n_unvalid > 0:
-                msg = f"{n_unvalid} {var} values were outside the data range and were set to np.nan."
+            n_invalid = np.sum(~is_valid.data)
+            if n_invalid > 0:
+                msg = f"{n_invalid} {var} values were outside the data range and were set to np.nan."
                 log_info(logger=logger, msg=msg, verbose=verbose)
                 ds[var] = ds[var].where(is_valid)  # set not valid to np.nan
     # Return dataset
     return ds
 
 
-def set_nan_unvalid_values(ds, sensor_name, verbose):
-    """Set unvalid (class) values to np.nan.
+def set_nan_invalid_values(ds, sensor_name, verbose):
+    """Set invalid (class) values to np.nan.
 
     Parameters
     ----------
@@ -1022,12 +1022,12 @@ def set_nan_unvalid_values(ds, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
     xr.Dataset
-        Dataset without unvalid values.
+        Dataset without invalid values.
     """
     # Get dictionary of valid values
     dict_valid_values = get_valid_values_dict(sensor_name)
@@ -1035,12 +1035,12 @@ def set_nan_unvalid_values(ds, sensor_name, verbose):
     for var, valid_values in dict_valid_values.items():
         # If the variable is in the dataframe
         if var in ds:
-            # Get array with occurence of correct values (or already np.nan)
+            # Get array with occurrence of correct values (or already np.nan)
             is_valid_values = ds[var].isin(valid_values) | np.isnan(ds[var])
-            # If unvalid values are present, replace with np.nan
-            n_unvalid_values = np.sum(~is_valid_values.data)
-            if n_unvalid_values > 0:
-                msg = f"{n_unvalid_values} {var} values were unvalid and were replaced to np.nan."
+            # If invalid values are present, replace with np.nan
+            n_invalid_values = np.sum(~is_valid_values.data)
+            if n_invalid_values > 0:
+                msg = f"{n_invalid_values} {var} values were invalid and were replaced to np.nan."
                 log_info(logger=logger, msg=msg, verbose=verbose)
                 ds[var] = ds[var].where(is_valid_values)  # set not valid to np.nan
 

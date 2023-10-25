@@ -163,7 +163,7 @@ def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
     df : pd.DataFrame
         Input dataframe.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -179,10 +179,10 @@ def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
         msg = " - There are not valid timestep."
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
-    # Otherwise, report the number of unvalid timesteps
-    n_unvalid_timesteps = n_rows - len(df)
-    if n_unvalid_timesteps > 0:
-        msg = f" - {n_unvalid_timesteps} rows had unvalid timesteps and were discarded."
+    # Otherwise, report the number of invalid timesteps
+    n_invalid_timesteps = n_rows - len(df)
+    if n_invalid_timesteps > 0:
+        msg = f" - {n_invalid_timesteps} rows had invalid timesteps and were discarded."
         log_warning(logger=logger, msg=msg, verbose=verbose)
     return df
 
@@ -190,14 +190,14 @@ def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
 def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
     """Remove duplicated timesteps.
 
-    It keep only the first timestep occurence !
+    It keep only the first timestep occurrence !
 
     Parameters
     ----------
     df : pd.DataFrame
         Input dataframe.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -209,11 +209,11 @@ def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
     values_duplicates = values[idx_duplicates].astype("M8[s]")
     # If there are duplicated timesteps
     if len(values_duplicates) > 0:
-        # Drop duplicated timesteps (keeping the first occurence)
+        # Drop duplicated timesteps (keeping the first occurrence)
         df = df.drop_duplicates(subset="time", keep="first")
         # Report the values of duplicated timesteps
         msg = (
-            f" - The following timesteps occured more than once: {values_duplicates}. Only the first occurence"
+            f" - The following timesteps occurred more than once: {values_duplicates}. Only the first occurrence"
             " selected."
         )
         log_warning(logger=logger, msg=msg, verbose=verbose)
@@ -278,7 +278,7 @@ def remove_issue_timesteps(df, issue_dict, verbose=False):
     if time_periods:
         df = drop_time_periods(df, time_periods=time_periods)
 
-    # Report number fo dropped rows
+    # Report number of dropped rows
     n_rows_dropped = n_initial_rows - len(df)
     if n_rows_dropped > 0:
         msg = f"{n_rows_dropped} rows were dropped following the issue YAML file content."
@@ -297,7 +297,7 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -337,7 +337,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: 
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -375,7 +375,7 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str, verbose: bool = Fals
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -411,7 +411,7 @@ def _strip_delimiter(string):
 
 
 def strip_delimiter_from_raw_arrays(df):
-    """Remove the first and last delimiter occurence from the raw array fields."""
+    """Remove the first and last delimiter occurrence from the raw array fields."""
     # Possible fields
     possible_fields = [
         "raw_drop_number",
@@ -472,7 +472,7 @@ def replace_nan_flags(df, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -485,7 +485,7 @@ def replace_nan_flags(df, sensor_name, verbose):
     for var, nan_flags in dict_nan_flags.items():
         # If the variable is in the dataframe
         if var in df:
-            # Get array with occurence of nan_flags
+            # Get array with occurrence of nan_flags
             is_a_nan_flag = df[var].isin(nan_flags)
             # If nan_flags values are present, replace with np.nan
             n_nan_flags_values = np.sum(is_a_nan_flag)
@@ -507,7 +507,7 @@ def set_nan_outside_data_range(df, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
@@ -526,9 +526,9 @@ def set_nan_outside_data_range(df, sensor_name, verbose):
             # Check within data range or already np.nan
             is_valid = (df[var] >= min_val) & (df[var] <= max_val) | df[var].isna()
             # If there are values outside the data range, set to np.nan
-            n_unvalid = np.sum(~is_valid)
-            if n_unvalid > 0:
-                msg = f"{n_unvalid} {var} values were outside the data range and were set to np.nan."
+            n_invalid = np.sum(~is_valid)
+            if n_invalid > 0:
+                msg = f"{n_invalid} {var} values were outside the data range and were set to np.nan."
                 log_info(logger=logger, msg=msg, verbose=verbose)
                 df[var] = df[var].where(is_valid)  # set not valid to np.nan
 
@@ -536,8 +536,8 @@ def set_nan_outside_data_range(df, sensor_name, verbose):
     return df
 
 
-def set_nan_unvalid_values(df, sensor_name, verbose):
-    """Set unvalid (class) values to np.nan.
+def set_nan_invalid_values(df, sensor_name, verbose):
+    """Set invalid (class) values to np.nan.
 
     Parameters
     ----------
@@ -546,12 +546,12 @@ def set_nan_unvalid_values(df, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
 
     Returns
     -------
     pd.DataFrame
-        Dataframe without unvalid values.
+        Dataframe without invalid values.
     """
     # Get dictionary of valid values
     dict_valid_values = get_valid_values_dict(sensor_name)
@@ -559,12 +559,12 @@ def set_nan_unvalid_values(df, sensor_name, verbose):
     for var, valid_values in dict_valid_values.items():
         # If the variable is in the dataframe
         if var in df:
-            # Get array with occurence of correct values (or already np.nan)
+            # Get array with occurrence of correct values (or already np.nan)
             is_valid_values = df[var].isin(valid_values) | df[var].isna()
-            # If unvalid values are present, replace with np.nan
-            n_unvalid_values = np.sum(~is_valid_values)
-            if n_unvalid_values > 0:
-                msg = f"{n_unvalid_values} {var} values were unvalid and were replaced to np.nan."
+            # If invalid values are present, replace with np.nan
+            n_invalid_values = np.sum(~is_valid_values)
+            if n_invalid_values > 0:
+                msg = f"{n_invalid_values} {var} values were invalid and were replaced to np.nan."
                 log_info(logger=logger, msg=msg, verbose=verbose)
                 df[var] = df[var].where(is_valid_values)  # set not valid to np.nan
 
@@ -596,7 +596,7 @@ def process_raw_file(
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
         The default is True
     issue_dict : dict
         Issue dictionary providing information on timesteps to remove.
@@ -660,8 +660,8 @@ def process_raw_file(
     # - Set values outside the data range to np.nan
     df = set_nan_outside_data_range(df, sensor_name=sensor_name, verbose=verbose)
 
-    # - Replace unvalid values with np.nan
-    df = set_nan_unvalid_values(df, sensor_name=sensor_name, verbose=verbose)
+    # - Replace invalid values with np.nan
+    df = set_nan_invalid_values(df, sensor_name=sensor_name, verbose=verbose)
 
     # ------------------------------------------------------.
     # - Check column names agrees to DISDRODB standards
@@ -698,7 +698,7 @@ def write_l0a(
         If True, overwrite existing data into destination directories.
         If False, raise an error if there are already data into destination directories. This is the default.
     verbose : bool, optional
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
         The default is False.
 
     Raises
@@ -822,7 +822,7 @@ def read_raw_file_list(
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
     df_sanitizer_fun : object, optional
         Sanitizer function to format the datafame.
 

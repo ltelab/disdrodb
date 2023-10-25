@@ -158,7 +158,7 @@ def test_check_time_periods():
     # None input
     assert issue.check_time_periods(None) is None
 
-    # Invalid input: unvalid time period
+    # Invalid input: invalid time period
     time_periods = [
         ["2022-01-01 01:00:00", "2022-01-01 02:00:00"],
         ["2022-01-02 01:00:00", "2021-01-02 02:00:00"],
@@ -222,8 +222,8 @@ def test_check_issue_dict():
     # Test timesteps kees
     assert np.array_equal(result["timesteps"], expected_result["timesteps"])
 
-    # Test unvalid keys
-    issue_dict = {"timesteps": timesteps, "unvalid_key": "unvalid_value"}
+    # Test invalid keys
+    issue_dict = {"timesteps": timesteps, "invalid_key": "invalid_value"}
     with pytest.raises(ValueError):
         issue.check_issue_dict(issue_dict)
 

@@ -80,7 +80,7 @@ def reader(
         start_time = pd.to_datetime(start_time, format="%m/%d/%Y %H:%M", errors="coerce")
         df = df.iloc[1:]  # remove start_time row
 
-        # - Replace heterogenous number of spaces with ;
+        # - Replace heterogeneous number of spaces with ;
         df["TO_PARSE"] = df["TO_PARSE"].str.replace(r" +", ";", regex=True)
 
         # - Split into columns and assign name

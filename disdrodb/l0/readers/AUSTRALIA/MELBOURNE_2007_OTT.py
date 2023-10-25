@@ -76,14 +76,14 @@ def reader(
         import numpy as np
         import pandas as pd
 
-        # Remove rows with unvalid length
+        # Remove rows with invalid length
         # - time: 20
         # - data: 4638
         df = df[df["TO_BE_PARSED"].str.len().isin([20, 4638])]
         df = df.reset_index(drop=True)
 
         # Remove rows with consecutive timesteps
-        # - Keep last timestep occurence
+        # - Keep last timestep occurrence
         idx_timesteps = np.where(df["TO_BE_PARSED"].str.len() == 20)[0]
         idx_without_data = np.where(np.diff(idx_timesteps) == 1)[0].flatten().astype(int)
         idx_timesteps_without_data = idx_timesteps[idx_without_data]

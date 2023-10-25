@@ -375,7 +375,7 @@ def test_get_bin_coords(create_dummy_config_file):
 
 
 def test_infer_split_str():
-    # Test type eror if string=None
+    # Test type error if string=None
     with pytest.raises(TypeError):
         l0b_processing.infer_split_str(None)
 
@@ -483,7 +483,7 @@ def test_reshape_raw_spectrum():
         # Check value correctness
         xr.testing.assert_equal(da, da_expected_spectrum)
 
-    # Test unvalid inputs
+    # Test invalid inputs
     dims_size_dict["diameter_bin_center"] = 20
     with pytest.raises(ValueError):
         l0b_processing.reshape_raw_spectrum(

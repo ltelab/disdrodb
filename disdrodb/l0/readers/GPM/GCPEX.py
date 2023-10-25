@@ -93,7 +93,7 @@ def reader(
         # - Drop columns not agreeing with DISDRODB L0 standards
         df = df.drop(columns=["station_name"])
 
-        # - Drop rows with unvalid values
+        # - Drop rows with invalid values
         # --> Ensure that weather_code_synop_4677 has length 2
         # --> If a previous column is missing it will have 000
         df = df[df["weather_code_synop_4677"].str.len() == 2]

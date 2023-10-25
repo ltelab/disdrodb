@@ -126,7 +126,7 @@ def read_metadata(campaign_dir: str, station_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionnary of the metadata.
+        Dictionary  of the metadata.
     """
 
     metadata_fpath = os.path.join(campaign_dir, "metadata", station_name + ".yml")
@@ -153,7 +153,7 @@ def get_default_metadata_dict() -> dict:
     Returns
     -------
     dict
-        Dictionary of attibutes standard
+        Dictionary of attributes standard
     """
     # Get valid metadata keys
     list_attrs = get_valid_metadata_keys()
@@ -226,22 +226,22 @@ def get_metadata_missing_keys(metadata):
     return missing_keys
 
 
-def get_metadata_unvalid_keys(metadata):
+def get_metadata_invalid_keys(metadata):
     """Return the DISDRODB metadata keys which are not valid."""
     keys = list(metadata.keys())
     valid_keys = get_valid_metadata_keys()
-    # Identify unvalid keys
-    idx_unvalid_keys = np.where(np.isin(keys, valid_keys, invert=True))[0]
-    unvalid_keys = np.array(keys)[idx_unvalid_keys].tolist()
-    return unvalid_keys
+    # Identify invalid keys
+    idx_invalid_keys = np.where(np.isin(keys, valid_keys, invert=True))[0]
+    invalid_keys = np.array(keys)[idx_invalid_keys].tolist()
+    return invalid_keys
 
 
 def _check_metadata_keys(metadata):
     """Check validity of metadata keys."""
     # Check all keys are valid
-    unvalid_keys = get_metadata_unvalid_keys(metadata)
-    if len(unvalid_keys) > 0:
-        raise ValueError(f"Unvalid metadata keys: {unvalid_keys}")
+    invalid_keys = get_metadata_invalid_keys(metadata)
+    if len(invalid_keys) > 0:
+        raise ValueError(f"Invalid metadata keys: {invalid_keys}")
     # Check no keys are missing
     missing_keys = get_metadata_missing_keys(metadata)
     if len(missing_keys) > 0:
@@ -338,10 +338,10 @@ def check_metadata_compliance(disdrodb_dir, data_source, campaign_name, station_
 
 ####--------------------------------------------------------------------------.
 #### Metadata manipulation tools
-def remove_unvalid_metadata_keys(metadata):
-    """Remove unvalid keys from the metadata dictionary."""
-    unvalid_keys = get_metadata_unvalid_keys(metadata)
-    for k in unvalid_keys:
+def remove_invalid_metadata_keys(metadata):
+    """Remove invalid keys from the metadata dictionary."""
+    invalid_keys = get_metadata_invalid_keys(metadata)
+    for k in invalid_keys:
         _ = metadata.pop(k)
     return metadata
 

@@ -94,6 +94,9 @@ unfixable = []
 line-length = 120
 preview = true
 
+[tool.codespell]
+    ignore-words-list = "nd,mis,thi"
+
 [tool.coverage.run]
 omit = [
   "disdrodb/l0/readers/*"

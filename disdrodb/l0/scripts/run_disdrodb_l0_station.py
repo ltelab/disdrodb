@@ -94,7 +94,7 @@ def run_disdrodb_l0_station(
         Whether to print detailed processing information into terminal.\n
         The default is True.\n
     parallel : bool \n
-        If True, the files are processed simultanously in multiple processes.\n
+        If True, the files are processed simultaneously in multiple processes.\n
         Each process will use a single thread to avoid issues with the HDF/netCDF library.\n
         By default, the number of process is defined with os.cpu_count().\n
         However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_station\n

@@ -54,19 +54,19 @@ def get_disdrodb_dir(path: str) -> str:
     p = Path(path)
     list_path_elements = [str(part) for part in p.parts]
     # Retrieve where "DISDRODB" directory occurs
-    idx_occurence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    idx_occurrence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
     # If DISDRODB directory not present, raise error
-    if len(idx_occurence) == 0:
+    if len(idx_occurrence) == 0:
         raise ValueError(f"The DISDRODB directory is not present in {path}")
-    # Find the rightermost occurence
-    right_most_occurence = max(idx_occurence)
+    # Find the rightermost occurrence
+    right_most_occurrence = max(idx_occurrence)
     # Define the disdrodb_dir path
-    disdrodb_dir = os.path.join(*list_path_elements[: right_most_occurence + 1])
+    disdrodb_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
     return disdrodb_dir
 
 
 def get_disdrodb_path(path: str) -> str:
-    """Return the path fron the disdrodb_dir directory.
+    """Return the path from the disdrodb_dir directory.
 
     Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
@@ -85,14 +85,14 @@ def get_disdrodb_path(path: str) -> str:
     p = Path(path)
     list_path_elements = [str(part) for part in p.parts]
     # Retrieve where "DISDRODB" directory occurs
-    idx_occurence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    idx_occurrence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
     # If DISDRODB directory not present, raise error
-    if len(idx_occurence) == 0:
+    if len(idx_occurrence) == 0:
         raise ValueError(f"The DISDRODB directory is not present in {path}")
-    # Find the rightermost occurence
-    right_most_occurence = max(idx_occurence)
+    # Find the rightermost occurrence
+    right_most_occurrence = max(idx_occurrence)
     # Define the disdrodb path
-    disdrodb_fpath = os.path.join(*list_path_elements[right_most_occurence:])
+    disdrodb_fpath = os.path.join(*list_path_elements[right_most_occurrence:])
     return disdrodb_fpath
 
 
@@ -425,7 +425,7 @@ def get_raw_file_list(raw_dir, station_name, glob_patterns, verbose=False, debug
     station_name : str
         ID of the station
     verbose : bool, optional
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
         The default is False.
     debugging_mode : bool, optional
         If True, it select maximum 3 files for debugging purposes.
@@ -523,7 +523,7 @@ def _check_directory_exist(dir_path):
 def _create_directory(path: str, exist_ok=True) -> None:
     """Create a directory."""
     if not isinstance(path, str):
-        raise TypeError("'path' must be a strig.")
+        raise TypeError("'path' must be a string.")
     try:
         os.makedirs(path, exist_ok=exist_ok)
         logger.debug(f"Created directory {path}.")
@@ -768,7 +768,7 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     raw_dir : str
         Input raw directory
     verbose : bool, optional
-        Wheter to verbose the processing.
+        Whether to verbose the processing.
         The default is False.
 
     """
