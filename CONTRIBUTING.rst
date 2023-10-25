@@ -8,7 +8,7 @@ You can contribute in many ways :
 -  Join the
    `discussion <https://github.com/ltelab/disdrodb/discussions>`__
 - Report `issues <#issue-reporting-guidelines>`__
-- Help us developping new readers
+- Help us developing new readers
 - Any others code improvements are welcome !
 
 
@@ -76,7 +76,7 @@ to identify simple code quality issues. When an issue is identified
 commit and prints the error. Currently, DISDRODB only tests that the
 code to be committed complies with black's format style and the ruff linter.
 
-In case that the commit is aborted, you only need to run black agains you code.
+In case that the commit is aborted, you only need to run the precommit hook again.
 This can be done by running   ``black .``  or   ``ruff check .``
 
 .. note::
@@ -215,9 +215,9 @@ Here is an example of a docstring:
        Parameters
        ----------
        gamma_1 : float
-         Lag-1 temporal autocorrelation coeffient.
+         Lag-1 temporal autocorrelation coefficient.
        gamma_2 : float
-         Lag-2 temporal autocorrelation coeffient.
+         Lag-2 temporal autocorrelation coefficient.
 
        Returns
        -------

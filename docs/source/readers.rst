@@ -468,7 +468,7 @@ These notebooks will guide you through the definition of the 4 relevant DISDRODB
 For more information on the possible key-value arguments, read the `pandas <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
 documentation.
 
-* The ``column_names`` list defines the column names of the readed raw text file.
+* The ``column_names`` list defines the column names of the read raw text file.
 
 * The ``df_sanitizer_fun()`` function that defines the processing to apply on the read dataframe in order for the dataframe to match the DISDRODB   standards.
 

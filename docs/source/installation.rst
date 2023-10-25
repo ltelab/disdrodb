@@ -111,7 +111,7 @@ This can be done by running ``black .`` and ``ruff check .`` or alternatively wi
 The latter is recommended since it indicates if the commit contained any formatting errors (that are automatically corrected).
 
 .. note::
-	To maintain consitency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.
+	To maintain consistency, we use Black version `22.8.0` (as defined into `.pre-commit-config.yaml`). Make sure to stick to version.
 
 
 

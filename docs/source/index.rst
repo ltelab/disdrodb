@@ -27,7 +27,7 @@ national agencies (e.g. the NASA Precipitation Measurement Mission - PMM - Scien
 and university research groups.
 However, only a small fraction of those data is easily accessible.
 Data are stored in disparate formats with poor documentation, making them
-difficult to share, analyse, compare and re-use.
+difficult to share, analyse, compare and reuse.
 
 Additionally, very limited software is currently publicly available for DSD processing.
 

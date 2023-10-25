@@ -108,7 +108,7 @@ One  `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is defined to
 
 .. image:: /static/package_pipepline.png
 
-The `PyPi <https://pypi.org/>`__ project is shared beween the core contributors.
+The `PyPi <https://pypi.org/>`__ project is shared between the core contributors.
 
 
 
@@ -128,7 +128,7 @@ The review process is the following:
 
 
 
-Continuous intergration (CI) testing tools
+Continuous integration (CI) testing tools
 ===========================================
 
 Currently, on each Pull Request, GitHub Actions are configured as follow:
