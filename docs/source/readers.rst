@@ -95,7 +95,7 @@ A reader is a function defined by the following input arguments:
 * ``processed_dir`` : str - The desired directory path where to save the DISDRODB L0A and L0B products.
 
         * The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
-        * The ``<campaign_name>`` must match with the one specified in the raw_dir.
+        * The ``<campaign_name>`` must match with the one specified in the ``raw_dir``.
         * For reader testing purposes, you can define i.e. ``/tmp/DISDRODB/Processed/<data_source>/<campaign_name>``
 
 
@@ -104,21 +104,21 @@ A reader is a function defined by the following input arguments:
 
 * ``force`` : bool [true\| **false** ] - Whether to overwrite existing data.
 
-        *  If True, overwrite existing data into destination directories.
-        *  If False, raise an error if there are already data into destination directories.
+        *  If ``True``, overwrite existing data into destination directories.
+        *  If ``False``, raise an error if there are already data into destination directories.
 
 
 * ``verbose`` : bool [true\| **false** ] - Whether to print detailed processing information into terminal.
 
 
-* ``debugging_mode`` : bool [true\| **false** ] -  If True, it reduces the amount of data to process.
+* ``debugging_mode`` : bool [true\| **false** ] -  If ``True``, it reduces the amount of data to process.
 
         * It processes just 3 raw data files.
 
 * ``parallel`` : bool [true\| **false** ] - Whether to process multiple files simultaneously.
 
-        * If parallel=False, the raw files are processed sequentially.
-        * If parallel=True, each file is processed in a separate core.
+        * If ``parallel=False``, the raw files are processed sequentially.
+        * If ``parallel=True``, each file is processed in a separate core.
 
 
 Inside the reader function, a few components must be customized.
@@ -129,7 +129,7 @@ Reader components for raw text files
 
 If the input raw data are text files, the reader must defines the following components:
 
-1. The ``glob_patterns`` to search for the raw data files within the `<raw_dir>/data/<station_name> directory`.
+1. The ``glob_patterns`` to search for the raw data files within the ``<raw_dir>/data/<station_name>`` directory.
 
 2. The ``column_names`` list defines the header of the raw text file.
 
@@ -192,8 +192,8 @@ On the other hand, if the input raw data are netCDF files, the reader must defin
 1. The ``glob_patterns`` to search for the raw netCDF files within the ``<raw_dir>/data/<station_name>`` directory.
 
 2. The ``dict_names`` dictionary mapping the dimension and variables names of the source netCDF to the DISDRODB L0B standards.
-   Variables not present the `dict_names` are dropped from the dataset.
-   Variables specified in `dict_names` but missing in the dataset, are added as NaN arrays.
+   Variables not present the ``dict_names`` are dropped from the dataset.
+   Variables specified in ``dict_names`` but missing in the dataset, are added as NaN arrays.
    Here is an example of dict_names:
 
    .. code-block:: python
@@ -470,7 +470,7 @@ documentation.
 
 * The ``column_names`` list defines the column names of the read raw text file.
 
-* The ``df_sanitizer_fun()`` function that defines the processing to apply on the read dataframe in order for the dataframe to match the DISDRODB   standards.
+* The ``df_sanitizer_fun()`` function that defines the processing to apply on the read dataframe in order for the dataframe to match the DISDRODB standards.
 
 The dataframe which is returned by the ``df_sanitizer_fun`` must have only columns compliant with the DISDRODB standards !
 
@@ -563,7 +563,7 @@ Step 6 : Add reader testing files
 
 If you arrived at this final step, it means that your reader is now almost ready to be shared with the community.
 
-To ensure long-term maintainability of the disdrodb project, we require to provide
+To ensure long-term maintainability of the DISDRODB project, we require to provide
 a very small testing data sample composed of two raw files.
 This enable our Continuous Integration (CI) testing routine to continuously check
 that the reader you implemented will provide the expected results also

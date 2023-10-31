@@ -17,7 +17,7 @@ List of the core contributors
 Versions guidelines
 ========================
 
-DISDRODB uses  `Semantic <https://semver.org/>`_ Versioning. Each release is associated with a git tag of the form X.Y.Z.
+DISDRODB uses `Semantic <https://semver.org/>`_ Versioning. Each release is associated with a git tag of the form X.Y.Z.
 
 Given a version number in the MAJOR.MINOR.PATCH (eg., X.Y.Z) format, here are the differences in these terms:
 
@@ -29,9 +29,9 @@ Given a version number in the MAJOR.MINOR.PATCH (eg., X.Y.Z) format, here are th
 Breaking vs. non-breaking changes
 -----------------------------------
 
-Since disdrodb is used by a broad ecosystem of both API consumers and implementers, it needs a strict definition of what changes are “non-breaking” and are therefore allowed in MINOR and PATCH releases.
+Since DISRODB is used by a broad ecosystem of both API consumers and implementers, it needs a strict definition of what changes are “non-breaking” and are therefore allowed in MINOR and PATCH releases.
 
-In the DISDRODB spec, a breaking change is any change that requires either consumers or implementers to modify their code for it to continue to function correctly.
+In the DISDRODB specifications, a breaking change is any change that requires either consumers or implementers to modify their code for it to continue to function correctly.
 
 Examples of breaking changes include:
 
@@ -88,7 +88,7 @@ After editing the source files, the documentation can be generated locally:
 The output of the previous command should be checked for warnings and errors. If the code is changed (new functions or classes), then the DISDRODB documentation files located in ``docs/source/api`` are automatically regenerated when building the documentation using the command above.
 
 
-Automatic (Github) documentation creation
+Automatic (GitHub) documentation creation
 ------------------------------------------
 
 
@@ -134,26 +134,28 @@ Continuous integration (CI) testing tools
 Currently, on each Pull Request, GitHub Actions are configured as follow:
 
 
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-|  Tools                                                                                             | Aim                                                              | Project page                                                                                 | Python version                            |
-+====================================================================================================+==================================================================+==============================================================================================+===========================================+
-| `Pytest  <https://docs.pytest.org>`__                                                              | Execute unit tests and functional tests                          |                                                                                              |                                           |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `Black <https://black.readthedocs.io/en/stable/>`__                                                | Python code formatter                                            |                                                                                              | No python version (Black version 22.8.0)  |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `Ruff  <https://github.com/charliermarsh/ruff>`__                                                  | Python linter                                                    |                                                                                              | (Ruff version 0.0.2570)                   |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `pre-commit.ci   <https://pre-commit.ci/>`__                                                       | Run pre-commit as defined in pre-commit-config.yaml              |                                                                                              |                                           |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| Coverage                                                                                           | Measure the code coverage of the project's unit tests            |                                                                                              | all versions according to GitHub workflow |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `CodeCov    <https://about.codecov.io/>`__                                                         | Uses the "coverage" package to generate a code coverage report.  | `disdrodb  <https://app.codecov.io/gh/ltelab/disdrodb>`__                                    | all versions according to GitHub workflow |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `Coveralls    <https://coveralls.io/>`__                                                           | Uses the "coverage" to track the quality of your code over time. | `disdrodb  <https://coveralls.io/github/ltelab/disdrodb>`__                                  | all versions according to GitHub workflow |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `CodeBeat      <https://codebeat.co/>`__                                                           | Automated code review and analysis tools                         | `disdrodb <https://codebeat.co/projects/github-com-ltelab-disdrodb-main/security_issues>`__  | all versions according to GitHub workflow |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `CodeScene <https://codescene.com/>`__                                                             | Automated code review and analysis tools                         |                                                                                              | ?                                         |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
-| `CodeFactor <https://www.codefactor.io/>`__                                                        | Automated code review and analysis tools                         | `disdrodb <https://www.codefactor.io/repository/github/ltelab/disdrodb>`__                   | ?                                         |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+-------------------------------------------+
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+|  Tools                                                                                             | Aim                                                              | Project page                                                                                 |
++====================================================================================================+==================================================================+==============================================================================================+
+| `Pytest  <https://docs.pytest.org>`__                                                              | Execute unit tests and functional tests                          |                                                                                              |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `Black <https://black.readthedocs.io/en/stable/>`__                                                | Python code formatter                                            |                                                                                              |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `Ruff  <https://github.com/charliermarsh/ruff>`__                                                  | Python linter                                                    |                                                                                              |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `pre-commit.ci   <https://pre-commit.ci/>`__                                                       | Run pre-commit as defined in `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_            |                                                                                              |                                           |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| Coverage   <https://coverage.readthedocs.io/>`__                                                   | Measure the code coverage of the project's unit tests            |                                                                                              |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `CodeCov    <https://about.codecov.io/>`__                                                         | Uses the "coverage" package to generate a code coverage report.  | `disdrodb  <https://app.codecov.io/gh/ltelab/disdrodb>`__                                    |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `Coveralls    <https://coveralls.io/>`__                                                           | Uses the "coverage" to track the quality of your code over time. | `disdrodb  <https://coveralls.io/github/ltelab/disdrodb>`__                                  |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `CodeBeat      <https://codebeat.co/>`__                                                           | Automated code review and analysis tools                         | `disdrodb <https://codebeat.co/projects/github-com-ltelab-disdrodb-main/security_issues>`__  |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `CodeScene <https://codescene.com/>`__                                                             | Automated code review and analysis tools                         | `disdrodb <https://codescene.io/projects/36773`__                                                                            |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `CodeFactor <https://www.codefactor.io/>`__                                                        | Automated code review and analysis tools                         | `disdrodb <https://www.codefactor.io/repository/github/ltelab/disdrodb>`__                   |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `Snyk Code <https://snyk.io/product/snyk-code/>`__                                                 | Automated code security checks                                   | `disdrodb <https://app.snyk.io/org/ghiggi/project/57219345-56bd-4fbb-b6eb-2a8d955f9924 `__   |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+

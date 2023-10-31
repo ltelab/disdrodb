@@ -28,10 +28,12 @@ Data transfer upload and download schema:
 
 .. image:: /static/transfer.png
 
+
 Download the DISDRODB metadata archive
 -----------------------------------------
 
-You can clone the disdrodb-data repository with:
+First travel to the directory where you want to store the data.
+Then clone the disdrodb-data repository with:
 
 .. code:: bash
 
@@ -79,11 +81,8 @@ follow these steps:
 Download the DISDRODB raw data archive
 ---------------------------------------
 
-Prerequisite: First clone the disdrodb-data repository as described
-above to get the folder structure, metadatas and issues.
-
-Objective: You would like to download the raw data referenced in some metadata
-``<station_name>.yml`` file.
+Prerequisite: First clone the disdrodb-data repository as described above to get the DISDRODB directory structure.
+Objective: You would like to download the raw data referenced in some metadata ``<station_name>.yml`` file.
 
 In order to download the data, you should be in a virtual environment with the disdrodb package installed!
 
@@ -113,8 +112,7 @@ the data sources or campaigns you require. For example, ``"EPFL NASA"``.
 Add new stations raw data to the DISDRODB archive (using Zenodo)
 -----------------------------------------------------------------
 
-We provide users with a code to upload their station’s raw data to
-Zenodo.
+We provide users with a code to upload their station’s raw data to `Zenodo <https://zenodo.org/>`_.
 
 .. code:: bash
 

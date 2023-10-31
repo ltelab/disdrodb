@@ -1,5 +1,5 @@
 =========================
-Add new sensor configs
+Sensor configurations
 =========================
 
 DISDRODB tailor the processing of the disdrometer measurements according
@@ -54,53 +54,27 @@ Here below we details further information related to each of the configuration
 YAML files.
 
 
-bins_diameter.yml file
-~~~~~~~~~~~~~~~~~~~~~~~
+Sensor diameter bins
+---------------------
 
-This file contains the information related to the drop diameter bins.
+The ``bins_diameter.yml`` file contains the information related to the drop diameter bins.
 Within the YAML file, the bins ``center``, ``width`` and lower and upper ``bounds``
 must be specified.
 
-bins_velocity.yml file
-~~~~~~~~~~~~~~~~~~~~~~~
+Sensor velocity bins
+---------------------
 
-This file contains the information related to the drop fall velocity bins.
+The ``bins_velocity.yml`` file contains the information related to the drop fall velocity bins.
 Within the YAML file, the bins ``center``, ``width`` and lower and upper ``bounds``
 must be specified.
 If the sensor (i.e. impact disdrometers) does not measure the drop fall velocity,
 the YAML files must be defined empty!
 
 
-l0a_encodings.yml file
-~~~~~~~~~~~~~~~~~~~~~~~
+Sensor logged variables
+-------------------------
 
-This file list the variables that are allow to be saved into the
-DISDRODB L0A Apache Parquet format.
-The file also specified the type (i.e. integer/floating precision/string)
-each variable is saved in the Apache Parquet binary format.
-In addition to the specified variables, also the following variables are allowed
-to be saved into the DISDRODB L0A files:
-
-* the ``time`` column (in UTC format)
-* the ``latitude`` and ``longitude`` columns if the disdrometer station is mobile.
-
-
-l0b_encodings.yml file
-~~~~~~~~~~~~~~~~~~~~~~~
-
-This file list the variables that are allow to be saved into the
-DISDRODB L0B netCDF format.
-
-For each variable, you need to specify the compression options, the data type,
-the _FillValue to store i.e. NaN values (if integer data type), the chunk size
-across the time (and diameter and/or velocity) dimensions.
-The specified key values are used to define, for each variable, the specific
-netCDF encodings.
-
-raw_data_format.yml file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This file contains the "numeric" information related to the variables logged by the sensor.
+The ``raw_data_format.yml`` file contains the "numeric" information related to the variables logged by the sensor.
 The following keys should be specified for each numeric variable:
 
     * ``n_digits``: the number of digits logged by the sensor (excluding the comma)
@@ -108,14 +82,14 @@ The following keys should be specified for each numeric variable:
     * ``n_decimals``: the number of decimals digits (right side of the comma)
     * ``n_naturals``: the number of natural digits (left side of the comma)
     * ``data_range``: the data range of the values logged by the sensor
-    * ``nan_flags``: the value or list of values that flag NaN values
+    * ``nan_flags``: the value or list of values that flag ``NaN`` values
 
 The ``null`` value should be added for character variables or when the value can not be specified.
 
 During the DISDRODB L0 processing:
 
-* the ``data_range``, if specified, will be used to set invalid values to NaN
-* the ``nan_flags`` values, if specified, will be converted to NaN
+* the ``data_range``, if specified, will be used to set invalid values to ``NaN``
+* the ``nan_flags`` values, if specified, will be converted to ``NaN``
 
 The ``n_digits``, ``n_characters``, ``n_decimals`` and ``n_naturals`` information
 is used to infer the raw files header when this is unknown.
@@ -134,39 +108,50 @@ sensor has to be reshaped into a 2D matrix.
 
 For example, the OTT Parsivel logs the precipitation spectrum by first providing
 the drop count in each bin diameters for the velocity bin 1, then for velocity bin 2 and so on.
-The flattened array looks like [v1d1 ... v1d32, v2d1, ..., v2d32, ...] and therefore
+The flattened array looks like ``[v1d1 ... v1d32, v2d1, ..., v2d32, ...]`` and therefore
 ``dimension_order = ["velocity_bin_center", "diameter_bin_center"]``
 
 The Thies LPM logs the precipitation spectrum by first providing
 the drop count in each velocity bin for the diameter bin 1, then for diameter bin 2 and so on.
-The flattened array looks like [v1d1 ... v20d1, v1d2, ..., v20d2, ...]
+The flattened array looks like ``[v1d1 ... v20d1, v1d2, ..., v20d2, ...]``
 and therefore ``dimension_order = ["diameter_bin_center", "velocity_bin_center"]``
 
 
+DISDRODB L0 variables attributes
+---------------------------------
 
-variables.yml file
-~~~~~~~~~~~~~~~~~~~~~~~
-
-This file list define the standard name of the variables logged by the sensor.
-Only these standard names are used in the other YAML config files.
-
-
-variable_description.yml file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This file contains a description for each variable.
-The ``description`` will be attached as a variable attribute to the DISDRODB L0B netCDF.
-
-variable_units.yml file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This file specify the measurement unit for each variable.
-The ``units`` will be attached as a variable attribute to the DISDRODB L0B netCDF.
-
-variable_long_name.yml file
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-This file specify the long_name for each variable.
-The ``long_name`` will be attached as a variable attribute to the DISDRODB L0B netCDF.
-See the `CF Conventions guidelines for long_name <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
+The ``l0_variables.yml`` file defines the DISDRODB L0B netCDF variable attribute.
+The variables defined in this file must be a subset of the variables listed in the ``raw_data_format.yml`` file.
+Only the variables defined in the ``l0_variables.yml`` file are used in the other ``l0_*.yml`` files.
+The expected keys for each variable are: ``long_name``, ``units`` and ``description``.
+Please read the Climate and Forecast Conventions guidelines for
+`long_name <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
+and `units <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#units>`_
 for more information.
+
+
+DISDRODB L0A encodings
+-----------------------
+
+The ``l0a_encodings.yml`` file lists the variables that are allow to be saved into the
+DISDRODB L0A Apache Parquet format.
+The file also specified the type (i.e. integer/floating precision/string)
+each variable is saved in the Apache Parquet binary format.
+In addition to the specified variables, also the following variables are allowed
+to be saved into the DISDRODB L0A files:
+
+* the ``time`` column (in UTC format)
+* the ``latitude`` and ``longitude`` columns if the disdrometer station is mobile.
+
+
+DISDRODB L0B encodings
+-----------------------
+
+The ``l0b_encodings.yml`` file lists the variables that are allow to be saved into the
+DISDRODB L0B netCDF format.
+
+For each variable, you need to specify the compression options, the data type,
+the ``_FillValue`` to store i.e. ``NaN`` values (if integer data type), the chunk size
+across the time (and diameter and/or velocity) dimensions.
+The specified key values are used to define, for each variable, the specific
+netCDF encodings.

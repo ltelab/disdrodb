@@ -14,8 +14,8 @@ There are 7 metadata keys for which is mandatory to specify the value :
 * the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_name()``.
   If the sensor which produced your data is not within the available sensors, you first need to add the sensor
   configurations. For this task, read the section `Add new sensor configs <https://disdrodb.readthedocs.io/en/latest/sensor_configs.html>`__.
-* the ``raw_data_format`` must be either 'txt' or 'netcdf'. 'txt' if the source data are text/ASCII files. 'netcdf' if source data are netCDFs.
-* the ``platform_type`` must be either 'fixed' or 'mobile'. If 'mobile', the DISDRODB L0 processing accepts latitude/longitude/altitude coordinates to vary with time.
+* the ``raw_data_format`` must be either ``'txt'`` or ``'netcdf'``. ``'txt'`` if the source data are text/ASCII files. ``'netcdf'`` if source data are netCDFs.
+* the ``platform_type`` must be either ``'fixed'`` or ``'mobile'``. If ``'mobile'``, the DISDRODB L0 processing accepts latitude/longitude/altitude coordinates to vary with time.
 * the ``reader`` name is essential to enable to select the correct reader when processing the station.
 
 .. note::
