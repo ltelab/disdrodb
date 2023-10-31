@@ -1,5 +1,6 @@
 # DISDRODB - A package to standardize, process and analyze global disdrometer data.
 
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/91528a85586e428081f466cfb21ce60d)](https://app.codacy.com/gh/ltelab/disdrodb?utm_source=github.com&utm_medium=referral&utm_content=ltelab/disdrodb&utm_campaign=Badge_Grade)
 [![DOI](https://zenodo.org/badge/429018433.svg)](https://zenodo.org/badge/latestdoi/429018433)
 [![PyPI version](https://badge.fury.io/py/disdrodb.svg)](https://badge.fury.io/py/disdrodb)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/disdrodb.svg)](https://anaconda.org/conda-forge/disdrodb)
