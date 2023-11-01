@@ -976,6 +976,32 @@ def run_disdrodb_l0_station(
 #### Wrappers to run archive L0 processing
 
 
+def _check_available_stations(list_info):
+    # If no stations available, raise an error
+    if len(list_info) == 0:
+        raise ValueError("No stations are available !")
+
+
+def _filter_list_info(list_info, station_names):
+    # Filter by provided stations
+    if station_names is not None:
+        list_info = [info for info in list_info if info[2] in station_names]
+        # If nothing left, raise an error
+        if len(list_info) == 0:
+            raise ValueError("No stations to concatenate given the provided `station_name` argument!")
+    return list_info
+
+
+def _get_starting_product_level(l0a_processing, l0b_processing):
+    if l0a_processing:
+        product_level = "RAW"
+    elif l0b_processing:
+        product_level = "L0A"
+    else:
+        raise ValueError("At least l0a_processing or l0b_processing must be True.")
+    return product_level
+
+
 def run_disdrodb_l0(
     disdrodb_dir,
     data_sources=None,
@@ -1055,31 +1081,16 @@ def run_disdrodb_l0(
     """
     from disdrodb.api.io import available_stations
 
-    if l0a_processing:
-        product_level = "RAW"
-    elif l0b_processing:
-        product_level = "L0A"
-    else:
-        raise ValueError("At least l0a_processing or l0b_processing must be True.")
-
     # Get list of available stations
+    product_level = _get_starting_product_level(l0a_processing=l0a_processing, l0b_processing=l0b_processing)
     list_info = available_stations(
         disdrodb_dir,
         product_level=product_level,
         data_sources=data_sources,
         campaign_names=campaign_names,
     )
-
-    # If no stations available, raise an error
-    if len(list_info) == 0:
-        raise ValueError("No stations are available !")
-
-    # Filter by provided stations
-    if station_names is not None:
-        list_info = [info for info in list_info if info[2] in station_names]
-        # If nothing left, raise an error
-        if len(list_info) == 0:
-            raise ValueError("No stations to concatenate given the provided `station_name` argument!")
+    _check_available_stations(list_info)
+    list_info = _filter_list_info(list_info, station_names)
 
     # Print message
     n_stations = len(list_info)

@@ -451,6 +451,76 @@ def add_dataset_crs_coords(ds):
 #### L0B Raw DataFrame Preprocessing
 
 
+def _finalize_dataset(ds, sensor_name):
+    # Add dataset CRS coordinate
+    ds = add_dataset_crs_coords(ds)
+
+    # Ensure variables with dtype object are converted to string
+    ds = convert_object_variables_to_string(ds)
+
+    # Set netCDF dimension order
+    ds = ds.transpose("time", "diameter_bin_center", ...)
+
+    # Add netCDF variable and coordinate attributes
+    ds = set_dataset_attrs(ds, sensor_name)
+
+    # Check L0B standards
+    check_l0b_standards(ds)
+
+    return ds
+
+
+def _define_dataset_variables(df, sensor_name, verbose):
+    # Preprocess raw_spectrum, diameter and velocity arrays if available
+    if np.any(
+        np.isin(
+            ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"],
+            df.columns,
+        )
+    ):
+        # Retrieve dictionary of raw data matrices for xarray Dataset
+        data_vars = retrieve_l0b_arrays(df, sensor_name, verbose=verbose)
+    else:
+        data_vars = {}
+
+    # Define other disdrometer 'auxiliary' variables varying over time dimension
+    valid_core_fields = [
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
+        "time",
+        # longitude and latitude too for moving sensors
+    ]
+    aux_columns = df.columns[np.isin(df.columns, valid_core_fields, invert=True)]
+    aux_data_vars = {column: (["time"], df[column].values) for column in aux_columns}
+    data_vars.update(aux_data_vars)
+
+    # Add key "time"
+    # - Is dropped in _define_coordinates !
+    data_vars["time"] = df["time"].values
+
+    return data_vars
+
+
+def _define_coordinates(data_vars, attrs, sensor_name):
+    # Note: attrs and data_vars are modified in place !
+
+    # - Diameter and velocity
+    coords = get_bin_coords(sensor_name=sensor_name)
+
+    # - Geolocation + Time
+    geolocation_vars = ["time", "latitude", "longitude", "altitude"]
+    for var in geolocation_vars:
+        if var in data_vars:
+            coords[var] = data_vars[var]
+            _ = data_vars.pop(var)
+            _ = attrs.pop(var, None)
+        else:
+            coords[var] = attrs[var]
+            _ = attrs.pop(var)
+    return coords
+
+
 def create_l0b_from_l0a(
     df: pd.DataFrame,
     attrs: dict,
@@ -482,46 +552,13 @@ def create_l0b_from_l0a(
     attrs = attrs.copy()
     sensor_name = attrs["sensor_name"]
     # -----------------------------------------------------------.
-    # Preprocess raw_spectrum, diameter and velocity arrays if available
-    if np.any(
-        np.isin(
-            ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"],
-            df.columns,
-        )
-    ):
-        # Retrieve dictionary of raw data matrices for xarray Dataset
-        data_vars = retrieve_l0b_arrays(df, sensor_name, verbose=verbose)
-    else:
-        data_vars = {}
-    # -----------------------------------------------------------.
-    # Define other disdrometer 'auxiliary' variables varying over time dimension
-    valid_core_fields = [
-        "raw_drop_concentration",
-        "raw_drop_average_velocity",
-        "raw_drop_number",
-        "time",
-        # longitude and latitude too for moving sensors
-    ]
-    aux_columns = df.columns[np.isin(df.columns, valid_core_fields, invert=True)]
-    aux_data_vars = {column: (["time"], df[column].values) for column in aux_columns}
-    data_vars.update(aux_data_vars)
+    # Define Dataset variables and coordinates
+    data_vars = _define_dataset_variables(df, sensor_name=sensor_name, verbose=verbose)
 
     # -----------------------------------------------------------.
     # Define coordinates for xarray Dataset
-    # - Diameter and velocity
-    coords = get_bin_coords(sensor_name=sensor_name)
-    # - Time
-    coords["time"] = df["time"].values
-
-    # - Geolocation
-    geolocation_vars = ["latitude", "longitude", "altitude"]
-    for var in geolocation_vars:
-        if var in data_vars:
-            coords[var] = data_vars[var]
-            _ = data_vars.pop(var)
-        else:
-            coords[var] = attrs[var]
-            _ = attrs.pop(var)
+    # - attrs and data_vars are modified in place !
+    coords = _define_coordinates(data_vars, attrs=attrs, sensor_name=sensor_name)
 
     # -----------------------------------------------------------
     # Create xarray Dataset
@@ -536,20 +573,7 @@ def create_l0b_from_l0a(
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
-    # Add dataset CRS coordinate
-    ds = add_dataset_crs_coords(ds)
-
-    # Ensure variables with dtype object are converted to string
-    ds = convert_object_variables_to_string(ds)
-
-    # Set netCDF dimension order
-    ds = ds.transpose("time", "diameter_bin_center", ...)
-
-    # Add netCDF variable and coordinate attributes
-    ds = set_dataset_attrs(ds, sensor_name)
-
-    # Check L0B standards
-    check_l0b_standards(ds)
+    ds = _finalize_dataset(ds, sensor_name=sensor_name)
 
     # -----------------------------------------------------------
     return ds
