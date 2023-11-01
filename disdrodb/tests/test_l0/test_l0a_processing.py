@@ -561,7 +561,7 @@ def test_write_l0a():
     l0a_processing.write_l0a(df, path_parquet_file, True, False)
 
     # Read parquet file
-    df_written = io.read_L0A_dataframe([path_parquet_file], False)
+    df_written = io.read_l0a_dataframe([path_parquet_file], False)
 
     # Check if parquet file are similar
     is_equal = df.equals(df_written)

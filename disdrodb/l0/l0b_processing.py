@@ -148,7 +148,7 @@ def format_string_array(string: str, n_values: int) -> np.array:
         # Replace "-9.999" with 0
         values = np.char.replace(values, "-9.999", "0")
         # Cast values to float type
-        # --> Note: the disk encoding is specified in the L0B_encodings.yml
+        # --> Note: the disk encoding is specified in the l0b_encodings.yml
         values = values.astype(float)
     return values
 

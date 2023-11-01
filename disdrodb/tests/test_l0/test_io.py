@@ -245,9 +245,9 @@ def test_get_dataset_min_max_time():
 
 
 @pytest.mark.parametrize("path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX])
-def test_get_L0A_dir(path_process_dir):
+def test_get_l0a_dir(path_process_dir):
     res = (
-        io.get_L0A_dir(path_process_dir, "STATION_NAME")
+        io.get_l0a_dir(path_process_dir, "STATION_NAME")
         .replace(path_process_dir, "")
         .replace("\\", "")
         .replace("/", "")
@@ -256,9 +256,9 @@ def test_get_L0A_dir(path_process_dir):
 
 
 @pytest.mark.parametrize("path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX])
-def test_get_L0B_dir(path_process_dir):
+def test_get_l0b_dir(path_process_dir):
     res = (
-        io.get_L0B_dir(path_process_dir, "STATION_NAME")
+        io.get_l0b_dir(path_process_dir, "STATION_NAME")
         .replace(path_process_dir, "")
         .replace("\\", "")
         .replace("/", "")
@@ -266,7 +266,7 @@ def test_get_L0B_dir(path_process_dir):
     assert res == "L0BSTATION_NAME"
 
 
-def test_get_L0A_fpath():
+def test_get_l0a_fpath():
     """
     Test the naming and the path of the L0A file
     Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
@@ -297,7 +297,7 @@ def test_get_L0A_fpath():
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
     # Test the function
-    res = io.get_L0A_fpath(df, path_campaign_name, station_name)
+    res = io.get_l0a_fpath(df, path_campaign_name, station_name)
 
     # Define expected results
     expected_name = (
@@ -307,7 +307,7 @@ def test_get_L0A_fpath():
     assert res == expected_path
 
 
-def test_get_L0B_fpath():
+def test_get_l0b_fpath():
     """
     Test the naming and the path of the L0B file
     Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
@@ -344,7 +344,7 @@ def test_get_L0B_fpath():
     )
 
     # Test the function
-    res = io.get_L0B_fpath(ds, path_campaign_name, station_name)
+    res = io.get_l0b_fpath(ds, path_campaign_name, station_name)
 
     # Define expected results
     expected_name = f"L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
@@ -610,7 +610,7 @@ def test_copy_station_metadata():
 ####--------------------------------------------------------------------------.
 
 
-def test__read_L0A():
+def test__read_l0a():
     # create dummy dataframe
     data = [{"a": "1", "b": "2"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data)
@@ -624,12 +624,12 @@ def test__read_L0A():
     df.to_parquet(path_parquet_file, compression="gzip")
 
     # read written parquet file
-    df_written = io._read_L0A(path_parquet_file, False)
+    df_written = io._read_l0a(path_parquet_file, False)
 
     assert df.equals(df_written)
 
 
-def test_read_L0A_dataframe():
+def test_read_l0a_dataframe():
     list_of_parquet_file_paths = list()
 
     for i in [0, 1]:
@@ -659,7 +659,7 @@ def test_read_L0A_dataframe():
     df_concatenate = df_concatenate.sort_values(by="time")
 
     # read written parquet files
-    df_written = io.read_L0A_dataframe(list_of_parquet_file_paths, False)
+    df_written = io.read_l0a_dataframe(list_of_parquet_file_paths, False)
 
     # Create lists
     df_concatenate_list = df_concatenate.values.tolist()

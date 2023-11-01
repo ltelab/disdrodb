@@ -95,7 +95,7 @@ def _generate_l0a(
 ):
     """Generate L0A file from raw file."""
 
-    from disdrodb.l0.io import get_L0A_fpath
+    from disdrodb.l0.io import get_l0a_fpath
     from disdrodb.l0.l0a_processing import (
         process_raw_file,
         write_l0a,
@@ -145,7 +145,7 @@ def _generate_l0a(
 
         ##--------------------------------------------------------------------.
         #### - Write to Parquet
-        fpath = get_L0A_fpath(df=df, processed_dir=processed_dir, station_name=station_name)
+        fpath = get_l0a_fpath(df=df, processed_dir=processed_dir, station_name=station_name)
         write_l0a(df=df, fpath=fpath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
@@ -178,7 +178,7 @@ def _generate_l0b(
     debugging_mode,
     parallel,
 ):
-    from disdrodb.l0.io import get_L0B_fpath, read_L0A_dataframe
+    from disdrodb.l0.io import get_l0b_fpath, read_l0a_dataframe
     from disdrodb.l0.l0b_processing import (
         create_l0b_from_l0a,
         write_l0b,
@@ -215,14 +215,14 @@ def _generate_l0b(
     ##------------------------------------------------------------------------.
     try:
         # Read L0A Apache Parquet file
-        df = read_L0A_dataframe(filepath, verbose=verbose, debugging_mode=debugging_mode)
+        df = read_l0a_dataframe(filepath, verbose=verbose, debugging_mode=debugging_mode)
         # -----------------------------------------------------------------.
         # Create xarray Dataset
         ds = create_l0b_from_l0a(df=df, attrs=attrs, verbose=verbose)
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        fpath = get_L0B_fpath(ds, processed_dir, station_name)
+        fpath = get_l0b_fpath(ds, processed_dir, station_name)
         write_l0b(ds, fpath=fpath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -256,7 +256,7 @@ def _generate_l0b_from_nc(
     verbose,
     parallel,
 ):
-    from disdrodb.l0.io import get_L0B_fpath
+    from disdrodb.l0.io import get_l0b_fpath
     from disdrodb.l0.l0b_nc_processing import process_raw_nc
     from disdrodb.l0.l0b_processing import write_l0b
 
@@ -298,7 +298,7 @@ def _generate_l0b_from_nc(
         )
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        fpath = get_L0B_fpath(ds, processed_dir, station_name)
+        fpath = get_l0b_fpath(ds, processed_dir, station_name)
         write_l0b(ds, fpath=fpath, force=force)
 
         ##--------------------------------------------------------------------.

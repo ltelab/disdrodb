@@ -19,7 +19,7 @@ import glob
 import logging
 import os
 
-from disdrodb.l0.io import get_L0B_dir, get_L0B_fpath
+from disdrodb.l0.io import get_l0b_dir, get_l0b_fpath
 from disdrodb.utils.logger import (
     close_logger,
     create_file_logger,
@@ -53,19 +53,19 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
 
     # -------------------------------------------------------------------------.
     # Retrieve L0B files
-    L0B_dir_path = get_L0B_dir(processed_dir, station_name)
-    file_list = sorted(glob.glob(os.path.join(L0B_dir_path, "*.nc")))
+    l0b_dir_path = get_l0b_dir(processed_dir, station_name)
+    file_list = sorted(glob.glob(os.path.join(l0b_dir_path, "*.nc")))
 
     # -------------------------------------------------------------------------.
     # Check there are at least two files
     n_files = len(file_list)
     if n_files == 0:
-        msg = f"No L0B file is available for concatenation in {L0B_dir_path}."
+        msg = f"No L0B file is available for concatenation in {l0b_dir_path}."
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     if n_files == 1:
-        msg = f"Only a single file is available for concatenation in {L0B_dir_path}."
+        msg = f"Only a single file is available for concatenation in {l0b_dir_path}."
         log_warning(logger=logger, msg=msg, verbose=verbose)
         raise ValueError(msg)
 
@@ -75,7 +75,7 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
 
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
-    single_nc_fpath = get_L0B_fpath(ds, processed_dir, station_name, l0b_concat=True)
+    single_nc_fpath = get_l0b_fpath(ds, processed_dir, station_name, l0b_concat=True)
     force = True  # TODO add as argument
     write_l0b(ds, fpath=single_nc_fpath, force=force)
 

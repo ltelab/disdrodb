@@ -25,7 +25,7 @@ class raw_data_format_2n_level(BaseModel):
             return value
 
 
-class L0B_encodings_2n_level(BaseModel):
+class l0b_encodings_2n_level(BaseModel):
     dtype: str
     zlib: bool
     complevel: int
@@ -306,13 +306,13 @@ def test_yaml_format_basic_config_files(yaml_file_path: str) -> None:
     assert is_string_list(list_of_fisrt_level_values)
 
 
-# Test the fotmat and content of the L0B_encodings.yml file
+# Test the fotmat and content of the l0b_encodings.yml file
 list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml")
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_L0B_encodings_format(yaml_file_path: str) -> None:
-    """test the L0B_encodings.yml file format
+def test_l0b_encodings_format(yaml_file_path: str) -> None:
+    """test the l0b_encodings.yml file format
 
     Parameters
     ----------
@@ -330,4 +330,4 @@ def test_L0B_encodings_format(yaml_file_path: str) -> None:
 
     # check that the second level of the dictionary match the schema
     for value in data.values():
-        assert validate_schema_pytest(value, L0B_encodings_2n_level)
+        assert validate_schema_pytest(value, l0b_encodings_2n_level)

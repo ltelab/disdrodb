@@ -798,7 +798,7 @@ def get_l0a_encodings_dict(sensor_name: str) -> dict:
         L0A encodings
     """
 
-    # - L0A_encodings currently specify only the dtype. This could be expanded in the future.
+    # - l0a_encodings.yml currently specify only the dtype. This could be expanded in the future.
     d = read_config_yml(sensor_name=sensor_name, filename="l0a_encodings.yml")
     return d
 

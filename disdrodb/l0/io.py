@@ -206,7 +206,7 @@ def get_dataframe_min_max_time(df: pd.DataFrame):
     return (starting_time, ending_time)
 
 
-def get_L0A_dir(processed_dir: str, station_name: str) -> str:
+def get_l0a_dir(processed_dir: str, station_name: str) -> str:
     """Define L0A directory.
 
     Parameters
@@ -225,7 +225,7 @@ def get_L0A_dir(processed_dir: str, station_name: str) -> str:
     return dir_path
 
 
-def get_L0B_dir(processed_dir: str, station_name: str) -> str:
+def get_l0b_dir(processed_dir: str, station_name: str) -> str:
     """Define L0B directory.
 
     Parameters
@@ -244,7 +244,7 @@ def get_L0B_dir(processed_dir: str, station_name: str) -> str:
     return dir_path
 
 
-def get_L0A_fname(df, processed_dir, station_name: str) -> str:
+def get_l0a_fname(df, processed_dir, station_name: str) -> str:
     """Define L0A file name.
 
     Parameters
@@ -274,7 +274,7 @@ def get_L0A_fname(df, processed_dir, station_name: str) -> str:
     return fname
 
 
-def get_L0B_fname(ds, processed_dir, station_name: str) -> str:
+def get_l0b_fname(ds, processed_dir, station_name: str) -> str:
     """Define L0B file name.
 
     Parameters
@@ -304,7 +304,7 @@ def get_L0B_fname(ds, processed_dir, station_name: str) -> str:
     return fname
 
 
-def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> str:
+def get_l0a_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> str:
     """Define L0A file path.
 
     Parameters
@@ -321,13 +321,13 @@ def get_L0A_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> st
     str
         L0A file path.
     """
-    fname = get_L0A_fname(df=df, processed_dir=processed_dir, station_name=station_name)
-    dir_path = get_L0A_dir(processed_dir=processed_dir, station_name=station_name)
+    fname = get_l0a_fname(df=df, processed_dir=processed_dir, station_name=station_name)
+    dir_path = get_l0a_dir(processed_dir=processed_dir, station_name=station_name)
     fpath = os.path.join(dir_path, fname)
     return fpath
 
 
-def get_L0B_fpath(ds: xr.Dataset, processed_dir: str, station_name: str, l0b_concat=False) -> str:
+def get_l0b_fpath(ds: xr.Dataset, processed_dir: str, station_name: str, l0b_concat=False) -> str:
     """Define L0B file path.
 
     Parameters
@@ -347,10 +347,10 @@ def get_L0B_fpath(ds: xr.Dataset, processed_dir: str, station_name: str, l0b_con
     str
         L0B file path.
     """
-    dir_path = get_L0B_dir(processed_dir, station_name)
+    dir_path = get_l0b_dir(processed_dir, station_name)
     if l0b_concat:
         dir_path = os.path.dirname(dir_path)
-    fname = get_L0B_fname(ds, processed_dir, station_name)
+    fname = get_l0b_fname(ds, processed_dir, station_name)
     fpath = os.path.join(dir_path, fname)
     return fpath
 
@@ -489,8 +489,8 @@ def get_l0a_file_list(processed_dir, station_name, debugging_mode):
         List of L0A file paths.
 
     """
-    L0A_dir_path = get_L0A_dir(processed_dir, station_name)
-    filepaths = glob.glob(os.path.join(L0A_dir_path, "*.parquet"))
+    l0a_dir_path = get_l0a_dir(processed_dir, station_name)
+    filepaths = glob.glob(os.path.join(l0a_dir_path, "*.parquet"))
 
     n_files = len(filepaths)
 
@@ -501,7 +501,7 @@ def get_l0a_file_list(processed_dir, station_name, debugging_mode):
 
     # If no file available, raise error
     if n_files == 0:
-        msg = f"No L0A Apache Parquet file is available in {L0A_dir_path}. Run L0A processing first."
+        msg = f"No L0A Apache Parquet file is available in {l0a_dir_path}. Run L0A processing first."
         raise ValueError(msg)
 
     return filepaths
@@ -1036,7 +1036,7 @@ def create_directory_structure(processed_dir, product_level, station_name, force
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers
-def _read_L0A(fpath: str, verbose: bool = False, debugging_mode: bool = False) -> pd.DataFrame:
+def _read_l0a(fpath: str, verbose: bool = False, debugging_mode: bool = False) -> pd.DataFrame:
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} started."
     log_info(logger, msg, verbose)
@@ -1050,7 +1050,7 @@ def _read_L0A(fpath: str, verbose: bool = False, debugging_mode: bool = False) -
     return df
 
 
-def read_L0A_dataframe(
+def read_l0a_dataframe(
     fpaths: Union[str, list],
     verbose: bool = False,
     debugging_mode: bool = False,
@@ -1093,7 +1093,7 @@ def read_L0A_dataframe(
         fpaths = fpaths[0:3]  # select first 3 fpaths
 
     # - Define the list of dataframe
-    list_df = [_read_L0A(fpath, verbose=verbose, debugging_mode=debugging_mode) for fpath in fpaths]
+    list_df = [_read_l0a(fpath, verbose=verbose, debugging_mode=debugging_mode) for fpath in fpaths]
     # - Concatenate dataframe
     df = concatenate_dataframe(list_df, verbose=verbose)
     # ---------------------------------------------------

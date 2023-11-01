@@ -342,7 +342,7 @@ def check_raw_array(sensor_name: str) -> None:
             raise ValueError(f"Wrong chunksizes for {key} in l0b_encodings.yml for sensor {sensor_name}.")
 
     # Get chunksizes in l0b_encoding.yml and check that if len > 1, has dimension_order key in raw_data_format
-    list_attributes_L0B_encodings = [
+    list_attributes_l0b_encodings = [
         i
         for i in l0b_encodings.keys()
         if isinstance(l0b_encodings.get(i).get("chunksizes"), list) and len(l0b_encodings.get(i).get("chunksizes")) > 1
@@ -351,7 +351,7 @@ def check_raw_array(sensor_name: str) -> None:
         i for i in raw_data_format.keys() if raw_data_format.get(i).get("dimension_order") is not None
     ]
 
-    if not sorted(list_attributes_L0B_encodings) == sorted(list_attributes_from_raw_data_format):
+    if not sorted(list_attributes_l0b_encodings) == sorted(list_attributes_from_raw_data_format):
         raise ValueError(f"Chunksizes in l0b_encodings and raw_data_format for sensor {sensor_name} does not match.")
 
 
