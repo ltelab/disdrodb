@@ -2,6 +2,7 @@ import os
 
 import yaml
 
+from disdrodb import __root_path__
 from disdrodb.l0.metadata import (
     create_campaign_default_metadata,
     get_default_metadata_dict,
@@ -9,7 +10,7 @@ from disdrodb.l0.metadata import (
     write_default_metadata,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 
 def create_fake_station_file(

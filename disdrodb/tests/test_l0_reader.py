@@ -23,9 +23,9 @@ CAMPAIGN_NAME = "EPFL_2009"
 def create_fake_metadata_file(
     tmp_path, yaml_file_name, yaml_dict, data_source="data_source", campaign_name="campaign_name"
 ):
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    subfolder_path = os.path.join(tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata")
     if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
+        os.makedirs(subfolder_path, exist_ok=True)
     file_path = os.path.join(subfolder_path, yaml_file_name)
     # create a fake yaml file in temp folder
     with open(file_path, "w") as f:

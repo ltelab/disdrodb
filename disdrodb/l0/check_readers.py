@@ -166,5 +166,5 @@ def check_all_readers() -> None:
     if os.path.exists(os.path.join(RAW_DIR, "Processed")):
         try:
             shutil.rmtree(os.path.join(RAW_DIR, "Processed"))
-        except:
+        except Exception:
             pass

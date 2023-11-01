@@ -119,7 +119,6 @@ def read_raw_data(
     except pd.errors.EmptyDataError:
         msg = f" - Is empty, skip file: {filepath}"
         log_warning(logger=logger, msg=msg, verbose=False)
-        pass
 
     # Return dataframe
     return df

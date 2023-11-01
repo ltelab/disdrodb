@@ -161,7 +161,7 @@ def _check_columns_indices(column_indices, n_columns):
         step = 1 if step is None else step
         column_indices = list(range(start, stop, step))
     if isinstance(column_indices, list):
-        [_check_valid_column_index(idx, n_columns) for idx in column_indices]
+        _ = [_check_valid_column_index(idx, n_columns) for idx in column_indices]
     if isinstance(column_indices, int):
         _check_valid_column_index(column_indices, n_columns)
         column_indices = [column_indices]
@@ -569,7 +569,7 @@ def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
         Dictionary with the keys being the column id and the values being the guessed column names
     """
     dict_possible_columns = {}
-    for i, column in enumerate(df.columns):
+    for i, _ in enumerate(df.columns):
         # Get string array
         arr = df.iloc[:, i]
         arr = np.asarray(arr).astype(str)

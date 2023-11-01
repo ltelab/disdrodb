@@ -50,7 +50,6 @@ def reader(
 
     # Define dataset sanitizer
     def ds_sanitizer_fun(ds):
-        pass
         # from disdrodb.l0.l0b_processing import replace_custom_nan_flags
 
         # # Replace nan flags with np.nan

@@ -161,7 +161,6 @@ def _generate_l0a(
         error_type = str(type(e).__name__)
         msg = f"{error_type}: {e}"
         log_error(logger=logger, msg=msg, verbose=False)
-        pass
 
     # Close the file logger
     close_logger(logger)
@@ -184,7 +183,6 @@ def _generate_l0b(
         create_l0b_from_l0a,
         write_l0b,
     )
-    from disdrodb.utils.logger import create_file_logger
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -261,7 +259,6 @@ def _generate_l0b_from_nc(
 ):
     from disdrodb.l0.io import get_L0B_fpath
     from disdrodb.l0.l0b_processing import process_raw_nc, write_l0b
-    from disdrodb.utils.logger import create_file_logger
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -968,7 +965,6 @@ def run_disdrodb_l0_station(
             remove_l0b=remove_l0b,
             verbose=verbose,
         )
-    return None
 
     # -------------------------------------------------------------------------.
     # End of L0 processing for all stations

@@ -78,7 +78,7 @@ def reader(
 
         # - Reshape the dataframe
         group_dfs = []
-        for name, group in groups:
+        for _, group in groups:
             group_df = group.set_index("ID").T
             group_dfs.append(group_df)
 

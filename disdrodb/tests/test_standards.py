@@ -3,6 +3,7 @@ import os
 
 import pytest
 
+from disdrodb import __root_path__
 from disdrodb.l0.standards import (
     get_data_range_dict,
     get_field_nchar_dict,
@@ -18,11 +19,7 @@ from disdrodb.l0.standards import (
     get_variables_dimension,
 )
 
-# Set paths
-ROOT_DISDRODB_FOLDER = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
-)
-CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "l0", "configs")
+CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
 
 @pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))

@@ -102,7 +102,6 @@ def reader(
         # - Special parsing if 'Error in data reading' in rainfall_rate_32bit column
         if np.any(df["rainfall_rate_32bit"].str.startswith("Error in data reading!", na=False)):
             df["rainfall_rate_32bit"] = df["rainfall_rate_32bit"].str.replace("Error in data reading!", "")
-            df["rainfall_amount_absolute_32bit"].str[7:]
             df["raw_drop_number"] = df["raw_drop_average_velocity"]
             df["raw_drop_average_velocity"] = df["raw_drop_concentration"]
             df["raw_drop_concentration"] = df["error_code"]

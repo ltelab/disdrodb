@@ -37,16 +37,19 @@ from disdrodb.l0.standards import (
     # get_valid_coordinates_names,
     get_coords_attrs_dict,
     get_data_range_dict,
+    get_description_dict,
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,
     get_diameter_bin_width,
     get_dims_size_dict,
     get_L0B_encodings_dict,
+    get_long_name_dict,
     get_nan_flags_dict,
     get_raw_array_dims_order,
     get_raw_array_nvalues,
     get_time_encoding,
+    get_units_dict,
     get_valid_dimension_names,
     get_valid_names,
     get_valid_values_dict,
@@ -385,13 +388,6 @@ def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     ds
         xr.Dataset.
     """
-    from disdrodb.l0.standards import (
-        get_data_range_dict,
-        get_description_dict,
-        get_long_name_dict,
-        get_units_dict,
-    )
-
     # Retrieve attributes dictionaries
     description_dict = get_description_dict(sensor_name)
     units_dict = get_units_dict(sensor_name)

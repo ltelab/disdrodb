@@ -12,7 +12,7 @@ def upload_disdrodb_archive(
     campaign_names=None,
     station_names=None,
     platform=None,
-    files_compresion=None,
+    files_compression=None,
     force=False,
 ):
     from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
@@ -23,9 +23,9 @@ def upload_disdrodb_archive(
     station_names = parse_arg_to_list(station_names)
 
     upload_disdrodb_archives(
-        platform,
-        files_compresion,
-        force,
+        platform=platform,
+        files_compression=files_compression,
+        force=force,
         disdrodb_dir=disdrodb_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,

@@ -4,6 +4,7 @@ import random
 import pytest
 import yaml
 
+from disdrodb import __root_path__
 from disdrodb.l0 import metadata
 from disdrodb.l0.check_metadata import (
     check_archive_metadata_campaign_name,
@@ -21,7 +22,7 @@ from disdrodb.l0.check_metadata import (
     read_yaml,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 
 def test_check_metadata_geolocation():

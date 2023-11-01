@@ -221,15 +221,19 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
     # Check if latitude and longitude are columns of the dataframe
     # - They should be only provided if the instrument is moving !!!!
     if "latitude" in df.columns:
-        msg = " - The L0A dataframe has column 'latitude'. "
-        "This should be included only if the sensor is moving. "
-        "Otherwise, specify the 'latitude' in the metadata !"
+        msg = (
+            " - The L0A dataframe has column 'latitude'. "
+            + "This should be included only if the sensor is moving. "
+            + "Otherwise, specify the 'latitude' in the metadata !"
+        )
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     if "longitude" in df.columns:
-        msg = " - The L0A dataframe has column 'longitude'. "
-        "This should be included only if the sensor is moving. "
-        "Otherwise, specify the 'longitude' in the metadata !"
+        msg = (
+            " - The L0A dataframe has column 'longitude'. "
+            + "This should be included only if the sensor is moving. "
+            + "Otherwise, specify the 'longitude' in the metadata !"
+        )
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     # -------------------------------------

@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
+from disdrodb import __root_path__
 from disdrodb.l0 import l0b_processing
 from disdrodb.l0.l0b_processing import (
     _set_attrs_dict,
@@ -16,10 +17,7 @@ from disdrodb.l0.l0b_processing import (
     set_variable_attributes,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    "pytest_files",
-)
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 
 @pytest.fixture
@@ -268,19 +266,19 @@ def test_set_variable_attributes(mocker):
 
     # Create mock functions for attribute dictionaries
     mocker.patch(
-        "disdrodb.l0.standards.get_description_dict",
+        "disdrodb.l0.l0b_processing.get_description_dict",
         return_value={"var_1": "descrition_1", "var_2": "descrition_2"},
     )
     mocker.patch(
-        "disdrodb.l0.standards.get_units_dict",
+        "disdrodb.l0.l0b_processing.get_units_dict",
         return_value={"var_1": "unit_1", "var_2": "unit_2"},
     )
     mocker.patch(
-        "disdrodb.l0.standards.get_long_name_dict",
+        "disdrodb.l0.l0b_processing.get_long_name_dict",
         return_value={"var_1": "long_1", "var_2": "long_2"},
     )
     mocker.patch(
-        "disdrodb.l0.standards.get_data_range_dict",
+        "disdrodb.l0.l0b_processing.get_data_range_dict",
         return_value={"var_1": [0, 1], "var_2": [0, 1]},
     )
 

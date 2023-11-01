@@ -1,3 +1,4 @@
+import os
 from importlib.metadata import PackageNotFoundError, version
 
 from disdrodb.api.io import (
@@ -8,7 +9,10 @@ from disdrodb.api.io import (
 from disdrodb.api.metadata import read_station_metadata
 from disdrodb.l0.standards import available_sensor_name
 
+__root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+
 __all__ = [
+    "__root_path__",
     "available_stations",
     "available_campaigns",
     "available_data_sources",

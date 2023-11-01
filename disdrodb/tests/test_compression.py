@@ -38,10 +38,10 @@ def test_files_compression(tmp_path):
     compress_station_files(disdrodb_dir, data_source, campaign_name, "station1", "zip")
 
     methods = ["zip", "gzip", "bzip2"]
-    for i in range(len(methods)):
+    for i, method in enumerate(methods):
         station_name = f"test_station_name_{i}"
         create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
-        compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, method=methods[i])
+        compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, method=method)
 
     # Directory with already compressed files
     station_name = "test_station_name_0"

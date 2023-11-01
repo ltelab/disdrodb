@@ -56,8 +56,6 @@ def reader(
 
     # Define dataset sanitizer
     def ds_sanitizer_fun(ds):
-        pass
-
         # Return dataset
         return ds
 

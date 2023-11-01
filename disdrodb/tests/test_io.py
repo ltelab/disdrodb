@@ -8,9 +8,10 @@ import pytest
 import xarray as xr
 import yaml
 
+from disdrodb import __root_path__
 from disdrodb.l0 import io
 
-PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 
 def create_fake_metadata_file(
@@ -167,15 +168,15 @@ def get_disdrodb_path():
 
     # Assert behaviour when path == disdrodb_dir
     disdrodb_dir = os.path.join("home", "DISDRODB")
-    io.get_disdrodb_path(disdrodb_dir) == "DISDRODB"
+    assert io.get_disdrodb_path(disdrodb_dir) == "DISDRODB"
 
 
-def get_disdrodb_dir():
+def test_get_disdrodb_dir():
     # Assert retrieve correct disdrodb path
     disdrodb_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
     disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join(disdrodb_dir, disdrodb_path)
-    assert get_disdrodb_dir(path) == disdrodb_dir
+    assert io.get_disdrodb_dir(path) == disdrodb_dir
 
     # Assert raise error if not disdrodb path
     disdrodb_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
@@ -186,15 +187,15 @@ def get_disdrodb_dir():
 
     # Assert behaviour when path == disdrodb_dir
     disdrodb_dir = os.path.join("home", "DISDRODB")
-    io.get_disdrodb_dir(disdrodb_dir) == disdrodb_dir
+    assert io.get_disdrodb_dir(disdrodb_dir) == disdrodb_dir
 
 
-def _get_disdrodb_path_components():
+def test_get_disdrodb_path_components():
     # Assert retrieve correct disdrodb path
     path_components = ["DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"]
     disdrodb_path = os.path.join(*path_components)
     path = os.path.join("whatever_path", disdrodb_path)
-    assert _get_disdrodb_path_components(path) == path_components
+    assert io._get_disdrodb_path_components(path) == path_components
 
 
 def test_get_data_source():
@@ -355,9 +356,6 @@ def test_get_L0B_fpath():
 
 
 def test_check_glob_pattern():
-    function_return = io.check_glob_pattern("1")
-    assert function_return is None
-
     with pytest.raises(TypeError, match="Expect pattern as a string."):
         io.check_glob_pattern(1)
 

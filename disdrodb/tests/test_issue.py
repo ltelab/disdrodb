@@ -5,9 +5,10 @@ import numpy as np
 import pytest
 import yaml
 
+from disdrodb import __root_path__
 from disdrodb.l0 import issue
 
-PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 ####--------------------------------------------------------------------------.
 #### Checks

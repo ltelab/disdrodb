@@ -312,7 +312,7 @@ def ensure_monotonic_dimension(list_ds: list, fpaths: str, dim: str = "time", ve
             list_ds=list_ds, fpaths=fpaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
         )
         # Iterative check
-        list_ds, fpathsa = ensure_monotonic_dimension(list_ds=list_ds, fpaths=fpaths, dim=dim)
+        list_ds, fpaths = ensure_monotonic_dimension(list_ds=list_ds, fpaths=fpaths, dim=dim)
 
     return list_ds, fpaths
 
@@ -339,8 +339,6 @@ def get_list_ds(fpaths: str) -> list:
     list
         List of xarray datasets.
     """
-    import xarray as xr
-
     list_ds = []
     for fpath in fpaths:
         # This context manager is required to avoid random HDF locking
@@ -371,7 +369,7 @@ def get_list_ds(fpaths: str) -> list:
 #         import os
 
 #         os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-#         import xarray as xr
+#
 
 #         # This context manager is required to avoid random HDF locking
 #         # - cache=True: store data in memory to avoid reading back from disk

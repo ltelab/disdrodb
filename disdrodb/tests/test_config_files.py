@@ -5,6 +5,10 @@ import pytest
 import yaml
 from pydantic import BaseModel, field_validator
 
+from disdrodb import __root_path__
+
+CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
+
 
 # Define the pydantic models for *.bins.yaml config files
 class raw_data_format_2n_level(BaseModel):
@@ -30,13 +34,6 @@ class L0B_encodings_2n_level(BaseModel):
     contiguous: bool
     _FillValue: Optional[Union[int, float]]
     chunksizes: Union[int, List[int]]
-
-
-# Set paths
-ROOT_DISDRODB_FOLDER = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
-)
-CONFIG_FOLDER = os.path.join(ROOT_DISDRODB_FOLDER, "l0", "configs")
 
 
 def list_files(path: str, file_name: str) -> List[str]:
@@ -73,7 +70,7 @@ def read_yaml_file(path_file: str) -> Dict:
     with open(path_file) as f:
         try:
             data = yaml.safe_load(f)
-        except:
+        except Exception:
             data = {}
 
     return data
@@ -98,7 +95,7 @@ def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseMod
     try:
         schema(**schema_to_validate)
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -210,7 +207,7 @@ def test_raw_data_format(yaml_file_path: str):
     assert is_dict(data)
 
     # check that the second level of the dictionary match the schema
-    for key, value in data.items():
+    for value in data.values():
         assert validate_schema_pytest(value, raw_data_format_2n_level)
 
 
@@ -258,16 +255,16 @@ def test_bins_format(yaml_file_path: str) -> None:
                 assert is_numeric_list(list_of_second_level_values)
 
             if first_level_key in ["bounds"]:
-                for second_level_key, second_level_value in first_level_value.items():
+                for _, second_level_value in first_level_value.items():
                     assert is_numeric_list(second_level_value)
 
         # check bound and width equals length
         assert len(data.get("bounds")) == len(data.get("width"))
 
         # check that the bounds distance is equal to the width (but not for the first key)
-        for id in list(data.get("bounds").keys())[1:-1]:
-            [bound_min, bound_max] = data.get("bounds")[id]
-            width = data.get("width")[id]
+        for idx in list(data.get("bounds").keys())[1:-1]:
+            [bound_min, bound_max] = data.get("bounds")[idx]
+            width = data.get("width")[idx]
             distance = round(bound_max - bound_min, 3)
             assert distance == width
 
@@ -332,5 +329,5 @@ def test_L0B_encodings_format(yaml_file_path: str) -> None:
     assert is_string_list(list_of_fisrt_level_keys)
 
     # check that the second level of the dictionary match the schema
-    for key, value in data.items():
+    for value in data.values():
         assert validate_schema_pytest(value, L0B_encodings_2n_level)

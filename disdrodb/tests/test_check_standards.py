@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from disdrodb import __root_path__
 from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
     _check_valid_range,
@@ -14,8 +15,7 @@ from disdrodb.l0.check_standards import (
     check_sensor_name,
 )
 
-PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW_DIR = os.path.join(PACKAGE_DIR, "tests", "pytest_files", "check_readers", "DISDRODB")
+RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files", "check_readers", "DISDRODB")
 
 
 def test_check_l0a_standards():
@@ -123,14 +123,14 @@ def test_check_l0a_column_names(capsys):
     list_column_names = get_sensor_variables(sensor_name) + ["time", "latitude", "longitude"]
     dict_data = {i: [1, 2] for i in list_column_names}
     df = pd.DataFrame.from_dict(dict_data)
-    # assert check_l0a_column_names(df, sensor_name=sensor_name) is None
+    assert check_l0a_column_names(df, sensor_name=sensor_name) is None
 
     # Test 2 : Missing columns time
     list_column_names = get_sensor_variables(sensor_name) + ["latitude", "longitude"]
     dict_data = {i: [1, 2] for i in list_column_names}
     df = pd.DataFrame.from_dict(dict_data)
     with pytest.raises(ValueError):
-        check_l0a_column_names(df, sensor_name=sensor_name) is None
+        check_l0a_column_names(df, sensor_name=sensor_name)
 
     # Test 3 : fake panda dataframe
     data = {"wrong_column_name": ["John", "Jane", "Bob", "Sara"]}

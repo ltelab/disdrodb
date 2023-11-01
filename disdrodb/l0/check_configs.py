@@ -94,8 +94,6 @@ def check_variable_consistency(sensor_name: str) -> None:
 class SchemaValidationException(Exception):
     """Exception raised when schema validation fails"""
 
-    pass
-
 
 def schema_error(object_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
     """Function that validate the schema of a given object with a given schema.
@@ -113,8 +111,7 @@ def schema_error(object_to_validate: Union[str, list], schema: BaseModel, messag
         schema(**object_to_validate)
 
     except ValidationError as e:
-        for i in e.errors():
-            raise SchemaValidationException(f"Schema validation failed. {message} {e}")
+        raise SchemaValidationException(f"Schema validation failed. {message} {e}")
 
 
 class NetcdfEncodingSchema(BaseModel):

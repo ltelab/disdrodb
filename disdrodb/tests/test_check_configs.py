@@ -2,6 +2,7 @@ import os
 
 import pytest
 
+from disdrodb import __root_path__
 from disdrodb.l0.check_configs import (
     check_all_sensors_configs,
     check_bin_consistency,
@@ -14,7 +15,7 @@ from disdrodb.l0.check_configs import (
 )
 from disdrodb.l0.standards import available_sensor_name
 
-PATH_TEST_FOLDERS_FILES = os.path.join(os.path.dirname(os.path.realpath(__file__)), "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 
 @pytest.mark.parametrize("sensor_name", available_sensor_name())

@@ -135,7 +135,7 @@ def _download_station_data(metadata_fpath: str, force: bool = False) -> None:
 
     if None not in location_info:
         data_dir_path, station_name, data_url = location_info
-        url_file_name, url_file_extension = os.path.splitext(os.path.basename(data_url))
+        url_file_name, _ = os.path.splitext(os.path.basename(data_url))
         os.path.join(data_dir_path, url_file_name)
         temp_zip_path = _download_file_from_url(data_url, data_dir_path, force)
         _unzip_file(temp_zip_path, os.path.join(data_dir_path, str(station_name)))

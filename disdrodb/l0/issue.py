@@ -290,7 +290,7 @@ def _write_issue(fpath: str, timesteps: list = None, time_periods: list = None) 
 
     if time_periods is not None:
         new_periods = []
-        for i, time_period in enumerate(time_periods):
+        for time_period in time_periods:
             new_periods.append(time_period.astype(str).tolist())
         time_periods = new_periods
 

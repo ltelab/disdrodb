@@ -5,9 +5,9 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-# current file path
-PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW_DIR = os.path.join(PACKAGE_DIR, "tests", "pytest_files", "check_readers", "DISDRODB")
+from disdrodb import __root_path__
+
+RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files", "check_readers", "DISDRODB")
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "PARSIVEL_2007"
 STATION_NAME = "10"

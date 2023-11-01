@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from disdrodb import __root_path__
 from disdrodb.l0 import io, l0a_processing
 from disdrodb.l0.l0a_processing import (
     _check_df_sanitizer_fun,
@@ -22,10 +23,7 @@ from disdrodb.l0.l0a_processing import (
     strip_string_spaces,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)),
-    "pytest_files",
-)
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 
 @pytest.fixture

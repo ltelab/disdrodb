@@ -147,42 +147,40 @@ def test_get_list_metadata_with_data(tmp_path):
     assert sorted(result) == sorted(expected_result)
 
 
-"""
+#
+# def test_get_list_metadata_file(tmp_path):
+#     expected_result = []
 
-def test_get_list_metadata_file(tmp_path):
-    expected_result = []
+#     # test 1 :
+#     # - one config file with url
+#     data_source = "data_source"
+#     campaign_name = "campaign_name"
+#     station_name = "station_name"
+#     create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name)
+#     disdrodb_dir = str(os.path.join(tmp_path, "DISDRODB"))
+#     result = get_list_metadata(disdrodb_dir, data_source,
+#                                campaign_name, station_name, False)
+#     testing_path = os.path.join(
+#         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
+#     )
+#     expected_result.append(testing_path)
+#     assert expected_result == result
 
-    # test 1 :
-    # - one config file with url
-    data_source = "data_source"
-    campaign_name = "campaign_name"
-    station_name = "station_name"
-    create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name)
-    result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), data_source, campaign_name, station_name, False)
-    testing_path = os.path.join(
-        tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
-    )
-    expected_result.append(testing_path)
-    assert expected_result == result
+#     # test 2 :
+#     # - downalod_data function without parameter
+#     result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
+#     assert expected_result == result
 
-    # test 2 :
-    # - downalod_data function without parameter
-    result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
-    assert expected_result == result
-
-    # test 3 :
-    # - one config file with url
-    # - one config file without url
-    data_source = "data_source2"
-    campaign_name = "campaign_name"
-    station_name = "station_name"
-    create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name, with_url=False)
-    result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
-    testing_path = os.path.join(
-        tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
-    )
-    expected_result.append(testing_path)
-    assert sorted(expected_result) == sorted(result)
-
-
-"""
+#     # test 3 :
+#     # - one config file with url
+#     # - one config file without url
+#     data_source = "data_source2"
+#     campaign_name = "campaign_name"
+#     station_name = "station_name"
+#     create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name, with_url=False)
+#     result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
+#     testing_path = os.path.join(
+#         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
+#     )
+#     expected_result.append(testing_path)
+#     assert sorted(expected_result) == sorted(result)

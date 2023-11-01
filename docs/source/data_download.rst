@@ -7,7 +7,7 @@ First, is however necessary to download on your local machine the DISDRODB Metad
 to the remote data repositiores where the DISDRODB stations are stored.
 
 .. note:: The DISDRODB Metadata Archive is often updated with new stations or metadata.
-          Therefore, we recommend to update your local DISDRODB Metadata Archive regularly (see below).
+          Therefore, we recommend to regularly update your local DISDRODB Metadata Archive (see below).
 
 Download the official DISDRODB Metadata Archive
 -----------------------------------------------
