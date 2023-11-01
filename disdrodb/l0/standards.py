@@ -194,11 +194,16 @@ def get_data_range_dict(sensor_name: str) -> dict:
     data_format_dict = get_data_format_dict(sensor_name)
     dict_data_range = {}
     for k in data_format_dict.keys():
-        if "data_range" in data_format_dict[k]:
-            data_range = data_format_dict[k]["data_range"]
-            if data_range is not None:
-                dict_data_range[k] = data_range
+        data_range = data_format_dict[k].get("data_range", None)
+        if data_range is not None:
+            dict_data_range[k] = data_range
     return dict_data_range
+
+
+def _ensure_list_value(value):
+    if not isinstance(value, list):
+        value = [value]
+    return value
 
 
 def get_nan_flags_dict(sensor_name: str) -> dict:
@@ -219,12 +224,9 @@ def get_nan_flags_dict(sensor_name: str) -> dict:
     data_format_dict = get_data_format_dict(sensor_name)
     dict_nan_flags = {}
     for k in data_format_dict.keys():
-        if "nan_flags" in data_format_dict[k]:
-            nan_flags = data_format_dict[k]["nan_flags"]
-            if nan_flags is not None:
-                if not isinstance(nan_flags, list):
-                    nan_flags = [nan_flags]
-                dict_nan_flags[k] = nan_flags
+        nan_flags = data_format_dict[k].get("nan_flags", None)
+        if nan_flags is not None:
+            dict_nan_flags[k] = _ensure_list_value(nan_flags)
     return dict_nan_flags
 
 
@@ -245,12 +247,9 @@ def get_valid_values_dict(sensor_name: str) -> dict:
     data_format_dict = get_data_format_dict(sensor_name)
     dict_valid_values = {}
     for k in data_format_dict.keys():
-        if "valid_values" in data_format_dict[k]:
-            valid_values = data_format_dict[k]["valid_values"]
-            if valid_values is not None:
-                if not isinstance(valid_values, list):
-                    valid_values = [valid_values]
-                dict_valid_values[k] = valid_values
+        valid_values = data_format_dict[k].get("valid_values", None)
+        if valid_values is not None:
+            dict_valid_values[k] = _ensure_list_value(valid_values)
     return dict_valid_values
 
 
@@ -785,7 +784,7 @@ def get_l0a_dtype(sensor_name: str) -> dict:
     return d
 
 
-def get_L0A_encodings_dict(sensor_name: str) -> dict:
+def get_l0a_encodings_dict(sensor_name: str) -> dict:
     """Get a dictionary containing the L0A encodings
 
     Parameters
@@ -804,7 +803,32 @@ def get_L0A_encodings_dict(sensor_name: str) -> dict:
     return d
 
 
-def get_L0B_encodings_dict(sensor_name: str) -> dict:
+def _ensure_valid_params_contiguous_arrays(encoding_dict):
+    """Ensure contiguous=True if chunksizes is None."""
+    for var in encoding_dict.keys():
+        if isinstance(encoding_dict[var]["chunksizes"], type(None)):
+            if encoding_dict[var].get("contiguous", False):
+                encoding_dict[var]["contiguous"] = True
+                print(f"Set contiguous=True for variable {var} because chunksizes=None")
+        if encoding_dict[var]["contiguous"]:
+            encoding_dict[var]["fletcher32"] = False
+            encoding_dict[var]["zlib"] = False
+            print(f"Set fletcher32=False for variable {var} because contiguous=True")
+            print(f"Set zlib=False for variable {var} because contiguous=True")
+    return encoding_dict
+
+
+def _ensure_valid_params_for_chunked_arrays(encoding_dict):
+    for var in encoding_dict.keys():
+        if not isinstance(encoding_dict[var].get("chunksizes", None), type(None)):
+            encoding_dict[var]["chunksizes"] = _ensure_list_value(encoding_dict[var]["chunksizes"])
+            encoding_dict[var]["contiguous"] = False
+        else:
+            encoding_dict[var]["chunksizes"] = []
+    return encoding_dict
+
+
+def get_l0b_encodings_dict(sensor_name: str) -> dict:
     """Get a dictionary containing the encoding to write L0B netCDFs.
 
     Parameters
@@ -817,31 +841,12 @@ def get_L0B_encodings_dict(sensor_name: str) -> dict:
     dict
         Encoding to write L0B netCDFs
     """
-
-    d = read_config_yml(sensor_name=sensor_name, filename="l0b_encodings.yml")
-
+    encoding_dict = read_config_yml(sensor_name=sensor_name, filename="l0b_encodings.yml")
+    # Ensure valid arguments for contiguous (unchunked) arrays
+    encoding_dict = _ensure_valid_params_contiguous_arrays(encoding_dict)
     # Ensure chunksize is a list
-    for var in d.keys():
-        if not isinstance(d[var]["chunksizes"], (list, type(None))):
-            d[var]["chunksizes"] = [d[var]["chunksizes"]]
-
-    # Sanitize encodings
-    for var in d.keys():
-        # Ensure contiguous=True if chunksizes is None
-        if isinstance(d[var]["chunksizes"], type(None)) and not d[var]["contiguous"]:
-            # These changes are required to enable netCDF writing
-            d[var]["contiguous"] = True
-            d[var]["fletcher32"] = False
-            d[var]["zlib"] = False
-            print(f"Set contiguous=True for variable {var} because chunksizes=None")
-            print(f"Set fletcher32=False for variable {var} because contiguous=True")
-            print(f"Set zlib=False for variable {var} because contiguous=True")
-        # Ensure contiguous=False if chunksizes is not None
-        if d[var]["contiguous"] and not isinstance(d[var]["chunksizes"], type(None)):
-            d[var]["contiguous"] = False
-            print(f"Set contiguous=False for variable {var} because chunksizes is defined!")
-
-    return d
+    encoding_dict = _ensure_valid_params_for_chunked_arrays(encoding_dict)
+    return encoding_dict
 
 
 def get_time_encoding() -> dict:
@@ -944,7 +949,7 @@ def get_raw_array_nvalues(sensor_name: str) -> dict:
 
 def get_variables_dimension(sensor_name: str):
     """Returns a dictionary with the variable dimensions of a L0B product."""
-    encoding_dict = get_L0B_encodings_dict(sensor_name)
+    encoding_dict = get_l0b_encodings_dict(sensor_name)
     variables = list(encoding_dict.keys())
     raw_field_dims = get_raw_array_dims_order(sensor_name)
     var_dim_dict = {}
@@ -963,7 +968,7 @@ def get_variables_dimension(sensor_name: str):
 
 def get_valid_variable_names(sensor_name):
     """Get list of valid variables."""
-    variables = list(get_L0B_encodings_dict(sensor_name).keys())
+    variables = list(get_l0b_encodings_dict(sensor_name).keys())
     return variables
 
 

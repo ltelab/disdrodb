@@ -46,12 +46,7 @@ def read_yaml(fpath: str) -> dict:
 #### Metadata Archive Missing Information
 
 
-def check_metadata_geolocation(metadata) -> None:
-    """Identify metadata with missing or wrong geolocation."""
-    # Get longitude, latitude and platform type
-    longitude = metadata.get("longitude")
-    latitude = metadata.get("latitude")
-    platform_type = metadata.get("platform_type")
+def _check_lonlat_type(longitude, latitude):
     # Check type validity
     if isinstance(longitude, str):
         raise TypeError("longitude is not defined as numeric.")
@@ -60,22 +55,35 @@ def check_metadata_geolocation(metadata) -> None:
     # Check is not none
     if isinstance(longitude, type(None)) or isinstance(latitude, type(None)):
         raise ValueError("Unspecified longitude and latitude coordinates.")
+
+
+def _check_lonlat_validity(longitude, latitude):
+    if longitude == -9999 or latitude == -9999:
+        raise ValueError("Missing lat lon coordinates (-9999).")
+    elif longitude > 180 or longitude < -180:
+        raise ValueError("Invalid longitude (outside [-180, 180])")
+    elif latitude > 90 or latitude < -90:
+        raise ValueError("Invalid latitude (outside [-90, 90])")
     else:
-        # Check value validity
-        # - If mobile platform
-        if platform_type == "mobile":
-            if longitude != -9999 or latitude != -9999:
-                raise ValueError("For mobile platform_type, specify latitude and longitude -9999")
-        # - If fixed platform
-        else:
-            if longitude == -9999 or latitude == -9999:
-                raise ValueError("Missing lat lon coordinates (-9999).")
-            elif longitude > 180 or longitude < -180:
-                raise ValueError("Invalid longitude (outside [-180, 180])")
-            elif latitude > 90 or latitude < -90:
-                raise ValueError("Invalid latitude (outside [-90, 90])")
-            else:
-                pass
+        pass
+
+
+def check_metadata_geolocation(metadata) -> None:
+    """Identify metadata with missing or wrong geolocation."""
+    # Get longitude, latitude and platform type
+    longitude = metadata.get("longitude")
+    latitude = metadata.get("latitude")
+    platform_type = metadata.get("platform_type")
+    # Check type validity
+    _check_lonlat_type(longitude=longitude, latitude=latitude)
+    # Check value validity
+    # - If mobile platform
+    if platform_type == "mobile":
+        if longitude != -9999 or latitude != -9999:
+            raise ValueError("For mobile platform_type, specify latitude and longitude -9999")
+    # - If fixed platform
+    else:
+        _check_lonlat_validity(longitude=longitude, latitude=latitude)
     return None
 
 
@@ -166,6 +174,8 @@ def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bo
 
 #### --------------------------------------------------------------------------.
 #### Metadata Archive Checks
+
+
 def check_archive_metadata_keys(disdrodb_dir: str) -> bool:
     """Check that all metadata files have valid keys
 

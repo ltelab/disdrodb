@@ -237,6 +237,23 @@ def get_df_columns_unique_values_dict(
     return d
 
 
+def _print_df_summary(df, indices, columns, column_names):
+    # Compute summary stats
+    summary_stats = ["mean", "min", "25%", "50%", "75%", "max"]
+    df_summary = df.describe()
+    df_summary = df_summary.loc[summary_stats]
+    # Print summary stats
+    for i, column in zip(indices, columns):
+        # Printing
+        if column_names:
+            print(" - Column", i, "(", column, "):")
+        else:
+            print(" - Column", i, ":")
+        tmp_df = df_summary[[column]]
+        tmp_df.columns = [""]
+        print("     ", tmp_df)
+
+
 def print_df_summary_stats(
     df: pd.DataFrame,
     column_indices: Union[int, slice, list] = None,
@@ -277,21 +294,8 @@ def print_df_summary_stats(
         raise ValueError("No numeric columns at the specified column_indices.")
     columns = columns[idx_of_interest]
     indices = indices[idx_of_interest]
-    # Compute summary stats
-    summary_stats = ["mean", "min", "25%", "50%", "75%", "max"]
-    df_summary = df.describe()
-    df_summary = df_summary.loc[summary_stats]
     # Print summary stats
-    for i, column in zip(indices, columns):
-        # Printing
-
-        if column_names:
-            print(" - Column", i, "(", column, "):")
-        else:
-            print(" - Column", i, ":")
-        tmp_df = df_summary[[column]]
-        tmp_df.columns = [""]
-        print("     ", tmp_df)
+    _print_df_summary(df=df, indices=indices, columns=columns, column_names=column_names)
     return None
 
 

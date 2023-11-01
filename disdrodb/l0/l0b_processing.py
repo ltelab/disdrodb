@@ -43,7 +43,7 @@ from disdrodb.l0.standards import (
     get_diameter_bin_upper,
     get_diameter_bin_width,
     get_dims_size_dict,
-    get_L0B_encodings_dict,
+    get_l0b_encodings_dict,
     get_long_name_dict,
     get_nan_flags_dict,
     get_raw_array_dims_order,
@@ -276,7 +276,7 @@ def retrieve_l0b_arrays(
         # For key='raw_drop_number', if 2D spectrum, reshape to 2D matrix
         # Example:
         # - This applies i.e for OTT_Parsivel* and Thies_LPM
-        # - This does not apply to RD80
+        # - This does not apply to RD_80
         if key == "raw_drop_number" and len(dims_order) == 2:
             arr, dims = reshape_raw_spectrum(
                 arr=arr,
@@ -622,7 +622,7 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
         Output xarray dataset.
     """
     # Get encoding dictionary
-    encoding_dict = get_L0B_encodings_dict(sensor_name)
+    encoding_dict = get_l0b_encodings_dict(sensor_name)
     encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
 
     # Ensure chunksize smaller than the array shape
