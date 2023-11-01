@@ -31,7 +31,7 @@ The software currently enable to:
 - process more than 400 disdrometer stations into a standard NetCDF format (DISDRODB L0 product)
 
 Currently, the DISDRODB Working Group is discussing the development of various scientific products.
-If you have ideas, algorithms, data or expertise to share, or you want to contribute to the future DISDRODB products, do not hesitate to  **GET IN TOUCH** !!!
+If you have ideas, algorithms, data or expertise to share, or you want to contribute to the future DISDRODB products, do not hesitate to get in touch !!!
 
 Join the [**DISDRODB Slack Workspace**](http://slack.disdrodb.org) to meet the DISDRODB Community !
 
@@ -42,7 +42,7 @@ You're about to create your very own DISDRODB Local Data Archive. All it takes i
 
 #### 📚 Set up the DISDRODB Metadata And Local Data Archive
 
-Let's start by travel to the directory where you want to store the DISDRODB Data Archive with `cd <your_desired_root_folder>`.
+Let's start by travel to the directory where you want to store the DISDRODB Data Archive.
 
 Then clone the DISDRODB Metadata Archive repository with:
 
@@ -59,14 +59,14 @@ You can specify once forever the default DISDRODB Local Archive directory by run
 
 ```python
    import disdrodb
-   disdrodb_dir = "<the_root_folder>/disdrodb-data/DISDRODB>"
+   disdrodb_dir = "<the_path_to>/disdrodb-data/DISDRODB>"
    disdrodb.define_configs(disdrodb_dir=disdrodb_dir)
 ```
 
 or set up the (temporary) environment variable `DISDRODB_DIR` in your terminal with:
 
 ```bash
-   export DISDRODB_DIR="<the_root_folder>/disdrodb-data/DISDRODB>"
+   export DISDRODB_DIR="<the_path_to>/disdrodb-data/DISDRODB>"
 ```
 
 #### 📥 Download the DISDRODB raw data
