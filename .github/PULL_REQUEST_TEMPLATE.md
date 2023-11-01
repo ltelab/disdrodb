@@ -49,7 +49,7 @@ If adding a **new feature**, the PR's description includes:
 
 **Other information:**
 
-# Related GitHub issues and pull requests
+# Related GitHub issues and Pull Requests
 
 - Ref: #
 

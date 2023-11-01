@@ -1,4 +1,4 @@
-Contributing guide
+Contributors Guidelines
 ===========================
 
 Hi! Thanks for taking the time to contribute to DISDRODB.

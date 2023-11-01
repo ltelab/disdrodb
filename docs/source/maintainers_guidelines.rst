@@ -1,5 +1,5 @@
 ========================
-Maintainers guidelines
+Maintainers Guidelines
 ========================
 
 

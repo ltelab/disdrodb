@@ -42,22 +42,23 @@ Documentation
    :maxdepth: 2
 
    installation
-   overview
-   data
+   data_download
+   l0_processing
+   metadata_archive
+   contribute_data
    metadata
    readers
    sensor_configs
-   l0_processing
    contributors_guidelines
    maintainers_guidelines
    authors
-
+   software_structure
 
 
 .. toctree::
    :maxdepth: 1
 
-   disdrodb API <api/modules>
+   DISDRODB API <api/modules>
 
 
 

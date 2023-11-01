@@ -1,4 +1,4 @@
-# Project contributors
+# Project Contributors
 
 The following people have made contributions to this project:
 
