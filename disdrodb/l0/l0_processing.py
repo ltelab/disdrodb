@@ -238,7 +238,6 @@ def _generate_l0b(
         error_type = str(type(e).__name__)
         msg = f"{error_type}: {e}"
         log_error(logger, msg, verbose=verbose)
-        pass
 
     # Close the file logger
     close_logger(logger)
@@ -314,7 +313,6 @@ def _generate_l0b_from_nc(
         error_type = str(type(e).__name__)
         msg = f"{error_type}: {e}"
         log_error(logger, msg, verbose=verbose)
-        pass
 
     # Close the file logger
     close_logger(logger)

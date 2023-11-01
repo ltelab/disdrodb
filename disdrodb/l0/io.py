@@ -562,7 +562,7 @@ def _remove_if_exists(fpath: str, force: bool = False) -> None:
                         msg = f"Can not delete file {f}, error: {e.strerror}"
                         logger.exception(msg)
                 os.rmdir(fpath)
-            except:
+            except Exception:
                 msg = f"Something wrong with: {fpath}"
                 logger.error(msg)
                 raise ValueError(msg)

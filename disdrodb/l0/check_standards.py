@@ -131,13 +131,13 @@ def check_sensor_name(sensor_name: str) -> None:
     ValueError
         Error if the input sensor name has not been found in the list of available sensors.
     """
-    from disdrodb.l0.standards import available_sensor_name
+    from disdrodb.l0.standards import available_sensor_names
 
-    available_sensor_name = available_sensor_name()
+    available_sensor_names = available_sensor_names()
     if not isinstance(sensor_name, str):
         raise TypeError("'sensor_name' must be a string.")
-    if sensor_name not in available_sensor_name:
-        msg = f"{sensor_name} not valid {sensor_name}. Valid values are {available_sensor_name}."
+    if sensor_name not in available_sensor_names:
+        msg = f"{sensor_name} not valid {sensor_name}. Valid values are {available_sensor_names}."
         logger.error(msg)
         raise ValueError(msg)
 

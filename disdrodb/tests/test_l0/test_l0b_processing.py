@@ -27,8 +27,7 @@ def create_dummy_config_file(request):
 
     for i, content in enumerate(list_content):
         file_name = list_file_name[i]
-        root_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        config_folder = os.path.join(root_folder, "l0", "configs")
+        config_folder = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
         test_folder = os.path.join(config_folder, "test")
         if not os.path.exists(test_folder):

@@ -1,5 +1,4 @@
 import os
-import random
 
 import numpy as np
 import pandas as pd
@@ -14,6 +13,7 @@ from disdrodb.l0.check_standards import (
     check_l0a_standards,
     check_sensor_name,
 )
+from disdrodb.l0.standards import available_sensor_names, get_raw_array_nvalues
 
 RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files", "check_readers", "DISDRODB")
 
@@ -89,16 +89,13 @@ def test_check_raw_fields_available():
         _check_raw_fields_available(df, sensor_name)
 
     # Test case 2: All required columns present
-    from disdrodb.l0.standards import available_sensor_name, get_raw_array_nvalues
-
-    available_sensor_name = available_sensor_name()
-    sensor_name = random.choice(available_sensor_name)
-    n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
-    raw_vars = np.array(list(n_bins_dict.keys()))
-    dict_data = {i: [1, 2] for i in raw_vars}
-    df = pd.DataFrame.from_dict(dict_data)
-
-    assert _check_raw_fields_available(df, sensor_name) is None
+    sensor_names = available_sensor_names()
+    for sensor_name in sensor_names:
+        n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
+        raw_vars = np.array(list(n_bins_dict.keys()))
+        dict_data = {i: [1, 2] for i in raw_vars}
+        df = pd.DataFrame.from_dict(dict_data)
+        assert _check_raw_fields_available(df, sensor_name) is None
 
 
 def test_check_sensor_name():
@@ -114,10 +111,10 @@ def test_check_sensor_name():
 
 
 def test_check_l0a_column_names(capsys):
-    from disdrodb.l0.standards import available_sensor_name, get_sensor_variables
+    from disdrodb.l0.standards import available_sensor_names, get_sensor_variables
 
-    available_sensor_name = available_sensor_name()
-    sensor_name = random.choice(available_sensor_name)
+    sensor_names = available_sensor_names()
+    sensor_name = sensor_names[0]
 
     # Test 1 : All columns are present
     list_column_names = get_sensor_variables(sensor_name) + ["time", "latitude", "longitude"]

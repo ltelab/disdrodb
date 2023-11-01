@@ -14,7 +14,7 @@ The sensor configurations already implemented can be listed by typing the comman
 
     import disdrodb
 
-    disdrodb.available_sensor_name()
+    disdrodb.available_sensor_names()
 
 
 The sensor configurations are stored within the disdrodb software

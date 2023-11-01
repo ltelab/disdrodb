@@ -4,12 +4,13 @@ import shutil
 
 import pandas as pd
 
+from disdrodb import __root_path__
 from disdrodb.api.io import _get_disdrodb_directory
 from disdrodb.l0.l0_reader import get_station_reader
 
 # current file path
 PACKAGE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-RAW_DIR = os.path.join(PACKAGE_DIR, "tests", "pytest_files", "check_readers", "DISDRODB")
+RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files", "check_readers", "DISDRODB")
 
 
 def get_list_test_data_sources() -> list:

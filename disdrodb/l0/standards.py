@@ -58,7 +58,7 @@ def read_config_yml(sensor_name: str, filename: str) -> dict:
     """
 
     # Get config path
-    config_sensor_dir_path = get_configs_dir(sensor_name)
+    config_sensor_dir_path = get_sensor_configs_dir(sensor_name)
     fpath = os.path.join(config_sensor_dir_path, filename)
     # Check yaml file exists
     if not os.path.exists(fpath):
@@ -71,7 +71,14 @@ def read_config_yml(sensor_name: str, filename: str) -> dict:
     return d
 
 
-def get_configs_dir(sensor_name: str) -> str:
+def _get_config_dir():
+    from disdrodb import __root_path__
+
+    config_dir_path = os.path.join(__root_path__, "disdrodb", "l0", "configs")
+    return config_dir_path
+
+
+def get_sensor_configs_dir(sensor_name: str) -> str:
     """Retrieve configs directory.
 
     Parameters
@@ -89,9 +96,7 @@ def get_configs_dir(sensor_name: str) -> str:
     ValueError
         Error if the config directory does not exist.
     """
-
-    dir_path = os.path.dirname(__file__)
-    config_dir_path = os.path.join(dir_path, "configs")
+    config_dir_path = _get_config_dir()
     config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
     if not os.path.exists(config_sensor_dir_path):
         list_sensors = sorted(os.listdir(config_dir_path))
@@ -103,7 +108,7 @@ def get_configs_dir(sensor_name: str) -> str:
 ####--------------------------------------------------------------------------.
 
 
-def available_sensor_name() -> sorted:
+def available_sensor_names() -> sorted:
     """Get available names of sensors.
 
     Returns
@@ -112,8 +117,7 @@ def available_sensor_name() -> sorted:
         Sorted list of the available sensors
     """
 
-    dir_path = os.path.dirname(__file__)
-    config_dir_path = os.path.join(dir_path, "configs")
+    config_dir_path = _get_config_dir()
     return sorted(os.listdir(config_dir_path))
 
 

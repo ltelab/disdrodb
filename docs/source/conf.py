@@ -17,7 +17,7 @@ import sys
 # sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../.."))
 sys.path.insert(0, os.path.join(os.path.abspath("../.."), "disdrodb"))
-# sys.path.append(os.path.abspath(os.path.dirname(__file__)))
+
 
 # -- Project information -----------------------------------------------------
 

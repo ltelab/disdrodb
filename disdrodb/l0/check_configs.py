@@ -7,12 +7,12 @@ import numpy as np
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
 from disdrodb.l0.standards import (
-    available_sensor_name,
-    get_configs_dir,
+    available_sensor_names,
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,
     get_diameter_bin_width,
+    get_sensor_configs_dir,
     get_velocity_bin_center,
     get_velocity_bin_lower,
     get_velocity_bin_upper,
@@ -41,7 +41,7 @@ def check_yaml_files_exists(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    config_dir = get_configs_dir(sensor_name)
+    config_dir = get_sensor_configs_dir(sensor_name)
 
     list_of_file_names = [os.path.split(i)[-1] for i in glob.glob(f"{config_dir}/*.yml")]
 
@@ -375,5 +375,5 @@ def check_sensor_configs(sensor_name: str) -> None:
 
 def check_all_sensors_configs() -> None:
     """Check all sensors configs."""
-    for sensor_name in available_sensor_name():
+    for sensor_name in available_sensor_names():
         check_sensor_configs(sensor_name=sensor_name)

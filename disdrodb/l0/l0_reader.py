@@ -28,11 +28,9 @@ logger = logging.getLogger(__name__)
 
 def _get_readers_directory() -> str:
     """Returns the path to the disdrodb.l0.readers directory within the disdrodb package."""
-    # Current file path
-    l0_folder_path = os.path.dirname(__file__)
+    from disdrodb import __root_path__
 
-    # Readers folder path
-    reader_folder_path = os.path.join(l0_folder_path, "readers")
+    reader_folder_path = os.path.join(__root_path__, "disdrodb", "l0", "readers")
     return reader_folder_path
 
 

@@ -1,5 +1,4 @@
 import os
-import random
 
 import pytest
 import yaml
@@ -21,6 +20,8 @@ from disdrodb.l0.check_metadata import (
     identify_missing_metadata_coords,
     read_yaml,
 )
+from disdrodb.l0.l0_reader import available_readers
+from disdrodb.l0.standards import available_sensor_names
 
 PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
@@ -217,15 +218,14 @@ def test_check_archive_metadata_data_source(tmp_path):
 
 
 def test_check_archive_metadata_sensor_name(tmp_path):
-    from disdrodb.l0.standards import available_sensor_name
-
-    available_sensor_name = available_sensor_name()
+    sensor_names = available_sensor_names()
 
     # Test 1 : create a correct metadata file
     yaml_file_name = "station_1.yml"
     data_source = "data_source"
     campaign_name = "campaign_name"
-    yaml_dict = {"sensor_name": random.choice(available_sensor_name)}
+    sensor_name = sensor_names[0]
+    yaml_dict = {"sensor_name": sensor_name}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
     result = check_archive_metadata_sensor_name(os.path.join(tmp_path, "DISDRODB"))
     assert result is True
@@ -262,13 +262,12 @@ def test_check_archive_metadata_station_name(tmp_path):
 
 def test_check_archive_metadata_reader(tmp_path):
     # Test 1 : create a correct metadata file
-    from disdrodb.l0.l0_reader import available_readers
-
     list_readers = available_readers()
     yaml_file_name = "station_1.yml"
     campaign_name = "campaign_name"
-    data_source = random.choice(list(list_readers.keys()))
-    reader_name = random.choice(list_readers[data_source])
+    data_source = list(list_readers.keys())[0]
+    reader_names = list_readers[data_source]
+    reader_name = reader_names[0]
     yaml_dict = {"reader": f"{data_source}/{reader_name}"}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
     result = check_archive_metadata_reader(os.path.join(tmp_path, "DISDRODB"))

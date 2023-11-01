@@ -63,8 +63,6 @@ def reader(
 
     # Define dataset sanitizer
     def ds_sanitizer_fun(ds):
-        # Drop coordinates not DISDRODB-compliants
-        pass
         # Return dataset
         return ds
 

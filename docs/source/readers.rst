@@ -403,7 +403,7 @@ There are 7 metadata keys for which is mandatory to specify the value :
 * the ``data_source`` must be the same as the data_source where the metadata are located
 * the ``campaign_name`` must be the same as the campaign_name where the metadata are located
 * the ``station_name`` must be the same as the name of the metadata YAML file without the .yml extension
-* the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_name()``.
+* the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_names()``.
   If the sensor which produced your data is not within the available sensors, you first need to add the sensor
   configurations. For this task, read the section `Add new sensor configs <https://disdrodb.readthedocs.io/en/latest/sensor_configs.html>`_
 * the ``raw_data_format`` must be either 'txt' or 'netcdf'. 'txt' if the source data are text/ASCII files. 'netcdf' if source data are netCDFs.

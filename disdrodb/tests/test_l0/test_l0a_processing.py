@@ -38,8 +38,7 @@ def create_dummy_config_file(request: list) -> None:
     """
     content = request.param[0]
     file_name = request.param[1]
-    root_folder = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-    config_folder = os.path.join(root_folder, "l0", "configs")
+    config_folder = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
     test_folder = os.path.join(config_folder, "test")
     if not os.path.exists(test_folder):
@@ -597,8 +596,6 @@ def test_read_raw_file_list():
             return df2
 
     # Monkey patch the function
-    from disdrodb.l0 import l0a_processing
-
     l0a_processing.process_raw_file = mock_process_raw_file
 
     # Call the function
