@@ -257,7 +257,8 @@ def _generate_l0b_from_nc(
     parallel,
 ):
     from disdrodb.l0.io import get_L0B_fpath
-    from disdrodb.l0.l0b_processing import process_raw_nc, write_l0b
+    from disdrodb.l0.l0b_nc_processing import process_raw_nc
+    from disdrodb.l0.l0b_processing import write_l0b
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -902,7 +903,7 @@ def run_disdrodb_l0_station(
         The default is False.
     """
     from disdrodb.api.io import _get_disdrodb_directory
-    from disdrodb.l0.l0b_concat import run_disdrodb_l0b_concat_station
+    from disdrodb.l0.l0b_nc_concat import run_disdrodb_l0b_concat_station
 
     # ---------------------------------------------------------------------.
     t_i = time.time()

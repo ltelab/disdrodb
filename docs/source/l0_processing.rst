@@ -143,7 +143,6 @@ For example, if only ``--campaign_names`` are specified, DISDRODB will process o
 			verbose=True
 			debugging_mode=True
 			parallel=False
-			l0b_concat=True
 
 			run_disdrodb_l0(
 				disdrodb_dir=disdrodb_dir,

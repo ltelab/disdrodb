@@ -65,7 +65,7 @@ def run_disdrodb_l0b_concat_station(
         The default is False.
     """
     from disdrodb.api.io import _get_disdrodb_directory
-    from disdrodb.l0.l0b_concat import _concatenate_netcdf_files
+    from disdrodb.l0.l0b_nc_concat import _concatenate_netcdf_files
 
     # Retrieve processed_dir
     processed_dir = _get_disdrodb_directory(

@@ -72,7 +72,7 @@ def run_disdrodb_l0b_concat(
         Whether to print detailed processing information into terminal.
         The default is False.
     """
-    from disdrodb.l0.L0B_concat import run_disdrodb_l0b_concat
+    from disdrodb.l0.l0b_nc_concat import run_disdrodb_l0b_concat
 
     # Parse data_sources, campaign_names and station arguments
     data_sources = parse_arg_to_list(data_sources)

@@ -86,7 +86,7 @@ def reader(
 
     # Define dataset sanitizer
     def ds_sanitizer_fun(ds):
-        from disdrodb.l0.l0b_processing import replace_custom_nan_flags
+        from disdrodb.l0.l0b_nc_processing import replace_custom_nan_flags
 
         # Replace nan flags with np.nan
         # - ARM use the -9999 flags

@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 import yaml
 
-from disdrodb.l0.l0b_concat import _concatenate_netcdf_files, run_disdrodb_l0b_concat
+from disdrodb.l0.l0b_nc_concat import _concatenate_netcdf_files, run_disdrodb_l0b_concat
 
 
 def create_dummy_netcdf_file(filename: str, data: tuple):
