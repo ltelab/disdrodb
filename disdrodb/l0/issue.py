@@ -383,7 +383,7 @@ def read_issue(raw_dir: str, station_name: str) -> dict:
     Parameters
     ----------
     raw_dir : str
-        Path of the campaign raw directory.
+        RAW Directory path of the campaign.
     station_name : int
         Station name.
 

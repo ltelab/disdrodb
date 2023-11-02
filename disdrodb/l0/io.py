@@ -269,8 +269,6 @@ def get_l0a_fname(df, processed_dir, station_name: str) -> str:
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
-    # metadata_dict = read_metadata(processed_dir, station_name)
-    # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = PRODUCT_VERSION
     fname = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return fname
@@ -299,8 +297,6 @@ def get_l0b_fname(ds, processed_dir, station_name: str) -> str:
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
-    # metadata_dict = read_metadata(processed_dir, station_name)
-    # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = PRODUCT_VERSION
     fname = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname

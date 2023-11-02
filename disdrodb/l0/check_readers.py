@@ -126,7 +126,7 @@ def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
             station_name=station_name,
         )
 
-        # Define raw_dir and process_dir
+        # Define campaign_name raw_dir and process_dir
         raw_dir = get_disdrodb_path(
             base_dir=TEST_BASE_DIR,
             product_level="RAW",
@@ -141,7 +141,7 @@ def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
             campaign_name=campaign_name,
             check_exist=False,
         )
-
+        # Call the reader
         reader(
             raw_dir=raw_dir,
             processed_dir=processed_dir,
