@@ -121,23 +121,6 @@ def available_sensor_names() -> sorted:
     return sorted(os.listdir(config_dir_path))
 
 
-def get_variables_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the variable name of the sensor field numbers.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Variables names
-    """
-
-    return read_config_yml(sensor_name=sensor_name, filename="variables.yml")
-
-
 def get_data_format_dict(sensor_name: str) -> dict:
     """Get a dictionary containing the data format of each sensor variable.
 
@@ -149,14 +132,14 @@ def get_data_format_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Data format of each sensor variable
+        Data format of each sensor variable.
     """
 
     return read_config_yml(sensor_name=sensor_name, filename="raw_data_format.yml")
 
 
-def get_sensor_variables(sensor_name: str) -> list:
-    """Get sensor variable names list.
+def get_sensor_logged_variables(sensor_name: str) -> list:
+    """Get the sensor logged variables list.
 
     Parameters
     ----------
@@ -166,10 +149,10 @@ def get_sensor_variables(sensor_name: str) -> list:
     Returns
     -------
     list
-        List of the variables values
+        List of the variables logged by the sensor.
     """
 
-    return list(get_variables_dict(sensor_name).values())
+    return list(get_data_format_dict(sensor_name).keys())
 
 
 ####--------------------------------------------------------------------------.
@@ -340,28 +323,11 @@ def get_field_nchar_dict(sensor_name: str) -> dict:
 
 
 ####-------------------------------------------------------------------------.
-#### Variable attributes
+#### Variable CF Attributes
 
 
-def get_description_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the description of each sensor variable.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Description of each sensor variable.
-    """
-
-    return read_config_yml(sensor_name=sensor_name, filename="variable_description.yml")
-
-
-def get_long_name_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the long name of each sensor variable.
+def get_l0b_cf_attrs_dict(sensor_name: str) -> dict:
+    """Get a dictionary containing the CF attributes of each sensor variable.
 
     Parameters
     ----------
@@ -371,27 +337,10 @@ def get_long_name_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Long name of each sensor variable.
+        CF attributes of each sensor variable.
+        For each variable, the 'units', 'description', and 'long_name' attributes are specified.
     """
-
-    return read_config_yml(sensor_name=sensor_name, filename="variable_long_name.yml")
-
-
-def get_units_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the unit of each sensor variable.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Unit of each sensor variable
-    """
-
-    return read_config_yml(sensor_name=sensor_name, filename="variable_units.yml")
+    return read_config_yml(sensor_name=sensor_name, filename="l0b_variables_attrs.yml")
 
 
 ####-------------------------------------------------------------------------.
@@ -555,7 +504,6 @@ def get_diameter_bins_dict(sensor_name: str) -> dict:
     dict
         sensor_name diameter bins information
     """
-
     d = read_config_yml(sensor_name=sensor_name, filename="bins_diameter.yml")
     return d
 
@@ -573,7 +521,6 @@ def get_diameter_bin_center(sensor_name: str) -> list:
     list
         Diameter bin center
     """
-
     diameter_dict = get_diameter_bins_dict(sensor_name)
     diameter_bin_center = list(diameter_dict["center"].values())
     return diameter_bin_center
@@ -592,7 +539,6 @@ def get_diameter_bin_lower(sensor_name: str) -> list:
     list
         Diameter bin lower bound
     """
-
     diameter_dict = get_diameter_bins_dict(sensor_name)
     lower_bounds = [v[0] for v in diameter_dict["bounds"].values()]
     return lower_bounds
@@ -611,7 +557,6 @@ def get_diameter_bin_upper(sensor_name: str) -> list:
     list
         Diameter bin upper bound
     """
-
     diameter_dict = get_diameter_bins_dict(sensor_name)
     upper_bounds = [v[1] for v in diameter_dict["bounds"].values()]
     return upper_bounds
@@ -630,7 +575,6 @@ def get_diameter_bin_width(sensor_name: str) -> list:
     list
         Diameter bin width
     """
-
     diameter_dict = get_diameter_bins_dict(sensor_name)
     diameter_bin_width = list(diameter_dict["width"].values())
     return diameter_bin_width
@@ -649,7 +593,6 @@ def get_velocity_bins_dict(sensor_name: str) -> dict:
     dict
         Sensor_name diameter bins information
     """
-
     d = read_config_yml(sensor_name=sensor_name, filename="bins_velocity.yml")
     return d
 
@@ -667,7 +610,6 @@ def get_velocity_bin_center(sensor_name: str) -> list:
     list
         Velocity bin center
     """
-
     velocity_dict = get_velocity_bins_dict(sensor_name)
     if velocity_dict is not None:
         velocity_bin_center = list(velocity_dict["center"].values())
@@ -689,7 +631,6 @@ def get_velocity_bin_lower(sensor_name: str) -> list:
     list
         Velocity bin lower bound.
     """
-
     velocity_dict = get_velocity_bins_dict(sensor_name)
     if velocity_dict is not None:
         lower_bounds = [v[0] for v in velocity_dict["bounds"].values()]

@@ -10,34 +10,8 @@ from disdrodb import __root_path__
 CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
 
-# Define the pydantic models for *.bins.yaml config files
-class raw_data_format_2n_level(BaseModel):
-    n_digits: Optional[int]
-    n_characters: Optional[int]
-    n_decimals: Optional[int]
-    data_range: Optional[list]
-
-    @field_validator("data_range")
-    def check_list_length(cls, value):
-        if value:
-            if len(value) != 2:
-                raise ValueError("my_list must have exactly 2 elements")
-            return value
-
-
-class l0b_encodings_2n_level(BaseModel):
-    dtype: str
-    zlib: bool
-    complevel: int
-    shuffle: bool
-    fletcher32: bool
-    contiguous: bool
-    _FillValue: Optional[Union[int, float]]
-    chunksizes: Union[int, List[int]]
-
-
 def list_files(path: str, file_name: str) -> List[str]:
-    """function that return the list of path files within a directory and subdirectories for file with a given name
+    """Return the list filepaths of files named <file_name> within the path subdirectories.
 
     Parameters
     ----------
@@ -49,91 +23,66 @@ def list_files(path: str, file_name: str) -> List[str]:
     Returns
     -------
     List[str]
-        list of path files within a directory and subdirectories for file with a given name
+        List of filepaths of files named <file_name> within the path subdirectories.
     """
     return [os.path.join(root, name) for root, dirs, files in os.walk(path) for name in files if name == file_name]
 
 
 def read_yaml_file(path_file: str) -> Dict:
-    """Read a yaml file and return a dictionary.
+    """Read a YAML file and return a dictionary.
 
     Parameters
     ----------
     path_file : str
-        path of the yaml file
+        Path of the YAML file
 
     Returns
     -------
-    Dict
-        Content of the yaml file
+    dictionary: dict
+        Content of the YAML file
     """
     with open(path_file) as f:
         try:
             data = yaml.safe_load(f)
         except Exception:
             data = {}
-
     return data
 
 
-def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseModel) -> bool:
-    """function that validate the schema of a given file path with pytest and raise exception if failed to validate
-
-    Parameters
-    ----------
-    schema_to_validate : Union[str,list]
-        Object to validate
-    schema : BaseModel
-        Base model
-
-    Returns
-    -------
-    bool
-        True is schema correct, False is wrong.
-    """
-
-    try:
-        schema(**schema_to_validate)
-        return True
-    except Exception:
-        return False
-
-
 def is_dict(obj) -> bool:
-    """Function to check that a object is a dictionary.
+    """Check that a object is a dictionary.
 
     Parameters
     ----------
     obj : _type_
-        Object to check
+        Object to check.
 
     Returns
     -------
-    bool
-        true if object is a dictionary, false if not
+    result: bool
+        True if object is a dictionary, False if not.
     """
 
     return isinstance(obj, dict)
 
 
-# Function to check that a object is a list.
 def is_list(obj: list) -> bool:
     """Function to check that a object is a list."""
     return isinstance(obj, list)
 
 
 def is_sorted_int_keys(obj: list) -> bool:
-    """Function to check that a list contains only sorted integers keys
+    """Check that a list contains only sorted integers keys.
 
     Parameters
     ----------
     obj : list
-        List to check
+        List to check.
 
     Returns
     -------
-    bool
-        True if list contains only sorted integers keys, False if not
+    result: bool
+        True if list contains only sorted integers keys, False if not.
     """
 
     if isinstance(obj, list):
@@ -146,7 +95,7 @@ def is_sorted_int_keys(obj: list) -> bool:
 
 
 def is_numeric_list(obj: list) -> bool:
-    """Function to check that a list contains only numeric values
+    """Check that a list contains only numeric values.
 
     Parameters
     ----------
@@ -155,8 +104,8 @@ def is_numeric_list(obj: list) -> bool:
 
     Returns
     -------
-    bool
-        True if list contains only numeric values, False if not
+    result: bool
+        True if list contains only numeric values, False if not.
     """
     if isinstance(obj, list):
         if len(obj) == 0:
@@ -168,17 +117,17 @@ def is_numeric_list(obj: list) -> bool:
 
 
 def is_string_list(obj: list) -> bool:
-    """Function to check that a list contains only string values
+    """Check that a list contains only string values.
 
     Parameters
     ----------
     obj : list
-        List to check
+        List to check.
 
     Returns
     -------
-    bool
-        True if list contains only string values, False if not
+    result: bool
+        True if list contains only string values, False if not.
     """
     if isinstance(obj, list):
         if len(obj) == 0:
@@ -189,145 +138,193 @@ def is_string_list(obj: list) -> bool:
         return False
 
 
+def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseModel) -> bool:
+    """Validate the schema of a given file path with pytest.
+
+    It raise an Exception if failed to validate.
+
+    Parameters
+    ----------
+    schema_to_validate : Union[str,list]
+        Object to validate
+    schema : BaseModel
+        Base model
+
+    Returns
+    -------
+    result: bool
+        True is schema correct, False is wrong.
+    """
+
+    try:
+        schema(**schema_to_validate)
+        return True
+    except Exception:
+        return False
+
+
+class RawDataFormatSchema(BaseModel):
+    """Define the expected keys and values of the each variable in the raw_data_format.yml file."""
+
+    n_digits: Optional[int]
+    n_characters: Optional[int]
+    n_decimals: Optional[int]
+    data_range: Optional[list]
+
+    @field_validator("data_range")
+    def check_list_length(cls, value):
+        if value:
+            if len(value) != 2:
+                raise ValueError("data_range must have exactly 2 elements")
+            return value
+
+
+# Test the format and content of the raw_data_format.yml files
 list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "raw_data_format.yml")
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
 def test_raw_data_format(yaml_file_path: str):
-    """Test the format and the content of the raw_data_format.yml file.
+    """Test the raw_data_format.yml file format.
 
     Parameters
     ----------
     yaml_file_path : str
-        Path of the yaml file to test
+        Path of the raw_data_format.yml file to test.
     """
     data = read_yaml_file(yaml_file_path)
-
-    # check that the data is a dictionary
     assert is_dict(data)
-
-    # check that the second level of the dictionary match the schema
+    assert is_string_list(list(data.keys()))
+    # Check the second level of the dictionary match the schema
     for value in data.values():
-        assert validate_schema_pytest(value, raw_data_format_2n_level)
+        assert validate_schema_pytest(value, RawDataFormatSchema)
 
 
-# Test *_bins.yaml formatting and content
-list_of_files = ["bins_diameter.yml", "bins_velocity.yml"]
-list_of_yaml_file_paths = []
-
-for i in list_of_files:
-    list_of_yaml_file_paths.extend(list_files(CONFIG_FOLDER, i))
+# Test format and content of l0a_encodings.yml
+list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0a_encodings.yml")
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_bins_format(yaml_file_path: str) -> None:
-    """Test the format and the content of bins_*.yml files
+def test_l0a_encodings_format(yaml_file_path: str) -> None:
+    """Test the l0a_encoding.yml format.
+
+    It should be a dictionary with string keys and string values.
 
     Parameters
     ----------
     yaml_file_path : str
-        Path of the yaml file to test
+        Path of the yaml file to test.
     """
     data = read_yaml_file(yaml_file_path)
-
-    if data:
-        # check that the data is a dictionary
-        assert is_dict(data)
-
-        # check that the keys are strings
-        list_of_fisrt_level_keys = list(data.keys())
-        assert is_string_list(list_of_fisrt_level_keys)
-
-        # check that the values are lists
-        list_of_fisrt_level_values = list(data.values())
-        assert is_list(list_of_fisrt_level_values)
-
-        # check the second level
-        for first_level_key, first_level_value in data.items():
-            list_of_second_level_keys = list(first_level_value.keys())
-            list_of_second_level_values = list(first_level_value.values())
-
-            # check that the keys are sorted integers
-            assert is_sorted_int_keys(list_of_second_level_keys)
-
-            # check that the values are numeric
-            if first_level_key in ["center", "width"]:
-                assert is_numeric_list(list_of_second_level_values)
-
-            if first_level_key in ["bounds"]:
-                for _, second_level_value in first_level_value.items():
-                    assert is_numeric_list(second_level_value)
-
-        # check bound and width equals length
-        assert len(data.get("bounds")) == len(data.get("width"))
-
-        # check that the bounds distance is equal to the width (but not for the first key)
-        for idx in list(data.get("bounds").keys())[1:-1]:
-            [bound_min, bound_max] = data.get("bounds")[idx]
-            width = data.get("width")[idx]
-            distance = round(bound_max - bound_min, 3)
-            assert distance == width
-
-
-# Test format and content for basic YAML files
-list_of_files = [
-    "l0a_encodings.yml",
-    "variable_description.yml",
-    "variable_long_name.yml",
-    "variable_units.yml",
-    "variables.yml",
-]
-list_of_yaml_file_paths = []
-
-for i in list_of_files:
-    list_of_yaml_file_paths.extend(list_files(CONFIG_FOLDER, i))
-
-
-@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_yaml_format_basic_config_files(yaml_file_path: str) -> None:
-    """Test basic YAML file format. It should be a dictionary with string keys and string values.
-
-    Parameters
-    ----------
-    yaml_file_path : str
-        Path of the yaml file to test
-    """
-    data = read_yaml_file(yaml_file_path)
-
-    # check that the data is a dictionary
     assert is_dict(data)
-
-    # check that the keys are strings
-    list_of_fisrt_level_keys = list(data.keys())
-    assert is_string_list(list_of_fisrt_level_keys)
-
-    # check the values are strings
-    list_of_fisrt_level_values = list(data.values())
-    assert is_string_list(list_of_fisrt_level_values)
+    assert is_string_list(list(data.keys()))
+    assert is_string_list(list(data.values()))
 
 
-# Test the fotmat and content of the l0b_encodings.yml file
+class L0BEncodingSchema(BaseModel):
+    """Define the expected keys and values of the each variable in the l0b_encoding.yml file."""
+
+    dtype: str
+    zlib: bool
+    complevel: int
+    shuffle: bool
+    fletcher32: bool
+    contiguous: bool
+    _FillValue: Optional[Union[int, float]]
+    chunksizes: Union[int, List[int]]
+
+
+# Test the format and content of the l0b_encodings.yml files
 list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml")
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
 def test_l0b_encodings_format(yaml_file_path: str) -> None:
-    """test the l0b_encodings.yml file format
+    """Test the l0b_encodings.yml file format.
 
     Parameters
     ----------
     yaml_file_path : str
-        Path of the yaml file to test
+        Path of the l0b_encodings.yml file to test.
     """
     data = read_yaml_file(yaml_file_path)
-
-    # check that the data is a dictionary
     assert is_dict(data)
-
-    # check that the keys are strings
-    list_of_fisrt_level_keys = list(data.keys())
-    assert is_string_list(list_of_fisrt_level_keys)
-
-    # check that the second level of the dictionary match the schema
+    assert is_string_list(list(data.keys()))
+    # Check the second level of the dictionary match the schema
     for value in data.values():
-        assert validate_schema_pytest(value, l0b_encodings_2n_level)
+        assert validate_schema_pytest(value, L0BEncodingSchema)
+
+
+class L0BVariableAttributesSchema(BaseModel):
+    """Define the expected keys and values of the each variable in the l0b_variables_attrs file."""
+
+    description: str
+    units: str
+    long_name: str
+
+
+# Test the format and content of the l0b_variables_attrs.yml files
+list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_variables_attrs.yml")
+
+
+@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
+def test_l0b_variables_attrs_format(yaml_file_path: str) -> None:
+    """Test the l0b_variables_attrs.yml file format.
+
+    Parameters
+    ----------
+    yaml_file_path : str
+        Path of the l0b_variables_attrs.yml file to test.
+    """
+    data = read_yaml_file(yaml_file_path)
+    assert is_dict(data)
+    assert is_string_list(list(data.keys()))
+    # Check the second level of the dictionary match the schema
+    for value in data.values():
+        assert validate_schema_pytest(value, L0BVariableAttributesSchema)
+
+
+# Test the format and content of the *_bins.yml files
+filenames = ["bins_diameter.yml", "bins_velocity.yml"]
+list_of_yaml_file_paths = []
+for filename in filenames:
+    list_of_yaml_file_paths.extend(list_files(CONFIG_FOLDER, filename))
+
+
+@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
+def test_bins_format(yaml_file_path: str) -> None:
+    """Test the bins_*.yml file format.
+
+    Parameters
+    ----------
+    yaml_file_path : str
+        Path of the YAML file to test.
+    """
+    data = read_yaml_file(yaml_file_path)
+    if data:  # deal with empty bins_velocity.yml (impact disdrometers)
+        assert is_dict(data)
+        assert is_string_list(list(data.keys()))
+        assert is_list(list(data.values()))
+        # Check the second level of the dictionary
+        for first_level_key, first_level_value in data.items():
+            list_of_second_level_keys = list(first_level_value.keys())
+            list_of_second_level_values = list(first_level_value.values())
+            # Check that the keys are sorted integers
+            assert is_sorted_int_keys(list_of_second_level_keys)
+            # Check that the values are numeric
+            if first_level_key in ["center", "width"]:
+                assert is_numeric_list(list_of_second_level_values)
+            # Check that 'bounds' is a list
+            if first_level_key in ["bounds"]:
+                for _, second_level_value in first_level_value.items():
+                    assert is_numeric_list(second_level_value)
+
+        # Check bound and width equals length
+        assert len(data.get("bounds")) == len(data.get("width"))
+
+        # Check that the bounds distance is equal to the width (but not for the first key)
+        for idx in list(data.get("bounds").keys())[1:-1]:
+            [bound_min, bound_max] = data.get("bounds")[idx]
+            width = data.get("width")[idx]
+            distance = round(bound_max - bound_min, 3)
+            assert distance == width

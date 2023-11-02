@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import numpy as np
 import pandas as pd
@@ -20,137 +19,68 @@ from disdrodb.l0.l0b_processing import (
 PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
 
-@pytest.fixture
-def create_dummy_config_file(request):
-    list_content = request.param[0]
-    list_file_name = request.param[1]
-
-    for i, content in enumerate(list_content):
-        file_name = list_file_name[i]
-        config_folder = os.path.join(__root_path__, "disdrodb", "l0", "configs")
-
-        test_folder = os.path.join(config_folder, "test")
-        if not os.path.exists(test_folder):
-            os.makedirs(test_folder)
-
-        test_file_path = os.path.join(test_folder, file_name)
-
-        with open(test_file_path, "w") as f:
-            f.write(content)
-
-    yield
-    os.remove(test_file_path)
-    shutil.rmtree(test_folder)
+# NOTE:
+# The following fixtures are not defined in this file, but are used and injected by Pytest:
+# - create_test_config_files  # defined in tests/conftest.py
 
 
-list_files_name = []
-list_content = []
+def define_test_dummy_configs():
+    """Define a dictionary with dummy configuration files."""
+    raw_data_format_dict = {
+        "rainfall_rate_32bit": {
+            "n_digits": 7,
+            "n_characters": 8,
+            "n_decimals": 3,
+            "n_naturals": 4,
+            "data_range": [0, 9999.999],
+            "nan_flags": None,
+        }
+    }
+    bins_velocity_dict = {
+        "center": {0: 0.05, 1: 0.15, 2: 0.25, 3: 0.35, 4: 0.45},
+        "bounds": {0: [0.0, 0.1], 1: [0.1, 0.2], 2: [0.2, 0.3], 3: [0.3, 0.4], 4: [0.4, 0.5]},
+        "width": {0: 0.1, 1: 0.1, 2: 0.1, 3: 0.1, 4: 0.1},
+    }
+    bins_diameter_dict = {
+        "center": {0: 0.062, 1: 0.187, 2: 0.312, 3: 0.437, 4: 0.562},
+        "bounds": {
+            0: [0.0, 0.1245],
+            1: [0.1245, 0.2495],
+            2: [0.2495, 0.3745],
+            3: [0.3745, 0.4995],
+            4: [0.4995, 0.6245],
+        },
+        "width": {0: 0.125, 1: 0.125, 2: 0.125, 3: 0.125, 4: 0.125},
+    }
+    cf_attrs = {
+        "raw_drop_concentration": {
+            "units": "1/(m3*mm)",
+            "description": "Particle number concentrations per diameter class",
+            "long_name": "Raw drop concentration",
+        },
+        "raw_drop_average_velocity": {
+            "units": "m/s",
+            "description": "Average particle velocities for each diameter class",
+            "long_name": "Raw drop average velocity",
+        },
+        "raw_drop_number": {
+            "units": "",
+            "description": "Drop counts per diameter and velocity class",
+            "long_name": "Raw drop number",
+        },
+    }
+    dummy_configs_dict = {
+        "raw_data_format.yml": raw_data_format_dict,
+        "bins_velocity.yml": bins_velocity_dict,
+        "bins_diameter.yml": bins_diameter_dict,
+        "l0b_variables_attrs.yml": cf_attrs,
+    }
+    return dummy_configs_dict
 
 
-raw_data_format = """rainfall_rate_32bit:
-  n_digits: 7
-  n_characters: 8
-  n_decimals: 3
-  n_naturals: 4
-  data_range:
-  - 0
-  - 9999.999
-  nan_flags: null
-"""
-list_content.append(raw_data_format)
-list_files_name.append("raw_data_format.yml")
-
-bins_velocity = """center:
-  0: 0.05
-  1: 0.15
-  2: 0.25
-  3: 0.35
-  4: 0.45
-bounds:
-  0:
-  - 0.0
-  - 0.1
-  1:
-  - 0.1
-  - 0.2
-  2:
-  - 0.2
-  - 0.3
-  3:
-  - 0.3
-  - 0.4
-  4:
-  - 0.4
-  - 0.5
-width:
-  0: 0.1
-  1: 0.1
-  2: 0.1
-  3: 0.1
-  4: 0.1
-"""
-list_content.append(bins_velocity)
-list_files_name.append("bins_velocity.yml")
-
-
-bins_diameter = """center:
-  0: 0.062
-  1: 0.187
-  2: 0.312
-  3: 0.437
-  4: 0.562
-bounds:
-  0:
-  - 0.0
-  - 0.1245
-  1:
-  - 0.1245
-  - 0.2495
-  2:
-  - 0.2495
-  - 0.3745
-  3:
-  - 0.3745
-  - 0.4995
-  4:
-  - 0.4995
-  - 0.6245
-width:
-  0: 0.125
-  1: 0.125
-  2: 0.125
-  3: 0.125
-  4: 0.125
-"""
-list_content.append(bins_diameter)
-list_files_name.append("bins_diameter.yml")
-
-variable_description = """raw_drop_concentration: 'Particle number concentrations per diameter class'
-raw_drop_average_velocity: 'Average particle velocities for each diameter class'
-raw_drop_number: 'Drop counts per diameter and velocity class'
-"""
-list_content.append(variable_description)
-list_files_name.append("variable_description.yml")
-
-variable_units = """raw_drop_concentration: '1/(m3*mm)'
-raw_drop_average_velocity: 'm/s'
-raw_drop_number: ''
-"""
-list_content.append(variable_units)
-list_files_name.append("variable_units.yml")
-
-variable_long_name = """raw_drop_concentration: 'Raw drop concentration'
-raw_drop_average_velocity: 'Raw drop average velocity'
-raw_drop_number: 'Raw drop number'
-"""
-list_content.append(variable_long_name)
-list_files_name.append("variable_long_name.yml")
-
-
-@pytest.mark.parametrize("create_dummy_config_file", [(list_content, list_files_name)], indirect=True)
-def test_create_l0b_from_l0a(create_dummy_config_file):
-    # create a sample DataFrame
-
+@pytest.mark.parametrize("create_test_config_files", [define_test_dummy_configs()], indirect=True)
+def test_create_l0b_from_l0a(create_test_config_files):
+    # Create a sample DataFrame
     df = pd.DataFrame(
         {
             "time": pd.date_range("2022-01-01", periods=10, freq="H"),
@@ -162,8 +92,7 @@ def test_create_l0b_from_l0a(create_dummy_config_file):
             "altitude": np.random.rand(10),
         }
     )
-
-    # create a sample attrs dictionary
+    # Create a sample attrs dictionary
     attrs = {
         "sensor_name": "test",
         "latitude": 46.52130,
@@ -172,9 +101,10 @@ def test_create_l0b_from_l0a(create_dummy_config_file):
         "platform_type": "fixed",
     }
 
-    # call the function
+    # Call the function
     ds = create_l0b_from_l0a(df, attrs)
 
+    # Check the output dataset has the correct variables and dimensions
     expected_variables = [
         "diameter_bin_lower",
         "latitude",
@@ -190,17 +120,15 @@ def test_create_l0b_from_l0a(create_dummy_config_file):
         "diameter_bin_width",
         "diameter_bin_center",
     ]
-
-    # check the output dataset has the correct variables and dimensions
     assert set(ds.variables) == set(expected_variables)
     assert set(ds.dims) == set(["diameter_bin_center", "time", "velocity_bin_center", "crs"])
 
-    # check that the geolocation coordinates have been properly set
+    # Check that the geolocation coordinates have been properly set
     assert np.allclose(ds.latitude.values, df.latitude.values)
     assert np.allclose(ds.longitude.values, df.longitude.values)
     assert np.allclose(ds.altitude.values, df.altitude.values)
 
-    # check that the dataset has a CRS coordinate
+    # Check that the dataset has a CRS coordinate
     assert "crs" in ds.coords
 
 
@@ -223,15 +151,15 @@ def test_add_dataset_crs_coords():
 def test_set_attrs_dict():
     ds = xr.Dataset({"var1": xr.DataArray([1, 2, 3], dims="time")})
     attrs_dict = {"var1": {"attr1": "value1"}}
-    _set_attrs_dict(ds, attrs_dict)
+    ds = _set_attrs_dict(ds, attrs_dict)
     assert ds.var1.attrs["attr1"] == "value1"
 
     attrs_dict = {"var2": {"attr1": "value1"}}
-    _set_attrs_dict(ds, attrs_dict)
+    ds = _set_attrs_dict(ds, attrs_dict)
     assert "var2" not in ds
 
     attrs_dict = {"var1": {"attr1": "value1"}, "var2": {"attr2": "value2"}}
-    _set_attrs_dict(ds, attrs_dict)
+    ds = _set_attrs_dict(ds, attrs_dict)
     assert ds.var1.attrs["attr1"] == "value1"
     assert "var2" not in ds
 
@@ -264,17 +192,21 @@ def test_set_variable_attributes(mocker):
     sensor_name = "my_sensor"
 
     # Create mock functions for attribute dictionaries
+    mocked_cf_dict = {
+        "var_1": {
+            "description": "descrition_1",
+            "units": "unit_1",
+            "long_name": "long_1",
+        },
+        "var_2": {
+            "description": "descrition_2",
+            "units": "unit_2",
+            "long_name": "long_2",
+        },
+    }
     mocker.patch(
-        "disdrodb.l0.l0b_processing.get_description_dict",
-        return_value={"var_1": "descrition_1", "var_2": "descrition_2"},
-    )
-    mocker.patch(
-        "disdrodb.l0.l0b_processing.get_units_dict",
-        return_value={"var_1": "unit_1", "var_2": "unit_2"},
-    )
-    mocker.patch(
-        "disdrodb.l0.l0b_processing.get_long_name_dict",
-        return_value={"var_1": "long_1", "var_2": "long_2"},
+        "disdrodb.l0.l0b_processing.get_l0b_cf_attrs_dict",
+        return_value=mocked_cf_dict,
     )
     mocker.patch(
         "disdrodb.l0.l0b_processing.get_data_range_dict",
@@ -290,72 +222,13 @@ def test_set_variable_attributes(mocker):
     assert ds["var_1"].attrs["valid_max"] == 1
 
 
-content_1 = """center:
-  0: 0.05
-  1: 0.15
-  2: 0.25
-  3: 0.35
-  4: 0.45
-bounds:
-  0:
-  - 0.0
-  - 0.1
-  1:
-  - 0.1
-  - 0.2
-  2:
-  - 0.2
-  - 0.3
-  3:
-  - 0.3
-  - 0.4
-  4:
-  - 0.4
-  - 0.5
-width:
-  0: 0.1
-  1: 0.1
-  2: 0.1
-  3: 0.1
-  4: 0.1
-"""
-content_2 = """center:
-  0: 0.062
-  1: 0.187
-  2: 0.312
-  3: 0.437
-  4: 0.562
-bounds:
-  0:
-  - 0.0
-  - 0.1245
-  1:
-  - 0.1245
-  - 0.2495
-  2:
-  - 0.2495
-  - 0.3745
-  3:
-  - 0.3745
-  - 0.4995
-  4:
-  - 0.4995
-  - 0.6245
-width:
-  0: 0.125
-  1: 0.125
-  2: 0.125
-  3: 0.125
-  4: 0.125
-"""
-file_name_1 = "bins_velocity.yml"
-file_name_2 = "bins_diameter.yml"
+dummy_configs_dict = define_test_dummy_configs()
+config_names = ["bins_diameter.yml", "bins_velocity.yml"]
+bins_configs_dicts = {key: dummy_configs_dict[key].copy() for key in config_names}
 
 
-@pytest.mark.parametrize(
-    "create_dummy_config_file", [([content_1, content_2], [file_name_1, file_name_2])], indirect=True
-)
-def test_get_bin_coords(create_dummy_config_file):
+@pytest.mark.parametrize("create_test_config_files", [bins_configs_dicts], indirect=True)
+def test_get_bin_coords(create_test_config_files):
     result = get_bin_coords("test")
     expected_result = {
         "diameter_bin_center": [0.062, 0.187, 0.312, 0.437, 0.562],

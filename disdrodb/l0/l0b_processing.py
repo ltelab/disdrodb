@@ -35,18 +35,16 @@ from disdrodb.l0.standards import (
     # get_valid_coordinates_names,
     get_coords_attrs_dict,
     get_data_range_dict,
-    get_description_dict,
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,
     get_diameter_bin_width,
     get_dims_size_dict,
+    get_l0b_cf_attrs_dict,
     get_l0b_encodings_dict,
-    get_long_name_dict,
     get_raw_array_dims_order,
     get_raw_array_nvalues,
     get_time_encoding,
-    get_units_dict,
     get_velocity_bin_center,
     get_velocity_bin_lower,
     get_velocity_bin_upper,
@@ -382,17 +380,12 @@ def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
         xr.Dataset.
     """
     # Retrieve attributes dictionaries
-    description_dict = get_description_dict(sensor_name)
-    units_dict = get_units_dict(sensor_name)
-    long_name_dict = get_long_name_dict(sensor_name)
+    cf_attrs_dict = get_l0b_cf_attrs_dict(sensor_name)
     data_range_dict = get_data_range_dict(sensor_name)
 
     # Assign attributes to each variable
     for var in ds.data_vars:
-        ds[var].attrs = {}
-        ds[var].attrs["description"] = description_dict[var]
-        ds[var].attrs["units"] = units_dict[var]
-        ds[var].attrs["long_name"] = long_name_dict[var]
+        ds[var].attrs = cf_attrs_dict[var]
         if var in data_range_dict:
             ds[var].attrs["valid_min"] = data_range_dict[var][0]
             ds[var].attrs["valid_max"] = data_range_dict[var][1]
@@ -403,13 +396,14 @@ def _set_attrs_dict(ds, attrs_dict):
     for var in attrs_dict.keys():
         if var in ds:
             ds[var].attrs.update(attrs_dict[var])
+    return ds
 
 
 def set_coordinate_attributes(ds):
     # Get attributes dictionary
     attrs_dict = get_coords_attrs_dict(ds)
     # Set attributes
-    _set_attrs_dict(ds, attrs_dict)
+    ds = _set_attrs_dict(ds, attrs_dict)
     return ds
 
 
@@ -418,10 +412,8 @@ def set_dataset_attrs(ds, sensor_name):
     # - Add netCDF variable attributes
     # --> Attributes: long_name, units, descriptions, valid_min, valid_max
     ds = set_variable_attributes(ds=ds, sensor_name=sensor_name)
-
     # - Add netCDF coordinate attributes
     ds = set_coordinate_attributes(ds=ds)
-
     #  - Set DISDRODB global attributes
     ds = set_disdrodb_attrs(ds=ds, product_level="L0B")
     return ds

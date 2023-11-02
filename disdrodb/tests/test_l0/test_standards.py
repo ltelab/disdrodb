@@ -58,10 +58,6 @@ def test_get_nan_flags_dict(sensor_name):
     assert isinstance(function_return, dict)
 
 
-def test_get_time_encoding():
-    assert isinstance(get_time_encoding(), dict)
-
-
 @pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
 def test_get_variables_dimension(sensor_name):
     assert isinstance(get_variables_dimension(sensor_name), dict)
@@ -85,3 +81,7 @@ def test_get_valid_coordinates_names(sensor_name):
 @pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
 def test_get_valid_names(sensor_name):
     assert isinstance(get_valid_names(sensor_name), list)
+
+
+def test_get_time_encoding():
+    assert isinstance(get_time_encoding(), dict)

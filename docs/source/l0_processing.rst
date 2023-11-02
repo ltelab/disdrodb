@@ -1,5 +1,5 @@
 ============================
-Run DISDRODB L0 processing
+DISDRODB L0 processing
 ============================
 
 Launch DISDRODB L0 processing for a specific station

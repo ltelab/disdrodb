@@ -1,5 +1,4 @@
 import os
-import shutil
 
 import numpy as np
 import pandas as pd
@@ -25,52 +24,33 @@ from disdrodb.l0.l0a_processing import (
 
 PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
 
-
-@pytest.fixture
-def create_dummy_config_file(request: list) -> None:
-    """This function  creates a dummy config file for testing purposes.
-    This file is deleted after the test is finished (even if the test fails).
-
-    Parameters
-    ----------
-    request : list
-        List of tuples containing the content and the name of the file to be created.
-    """
-    content = request.param[0]
-    file_name = request.param[1]
-    config_folder = os.path.join(__root_path__, "disdrodb", "l0", "configs")
-
-    test_folder = os.path.join(config_folder, "test")
-    if not os.path.exists(test_folder):
-        os.makedirs(test_folder)
-
-    test_file_path = os.path.join(test_folder, file_name)
-
-    with open(test_file_path, "w") as f:
-        print(test_file_path)
-        f.write(content)
-
-    yield
-    os.remove(test_file_path)
-    shutil.rmtree(test_folder)
+# NOTE:
+# The following fixtures are not defined in this file, but are used and injected by Pytest:
+# - create_test_config_files  # defined in tests/conftest.py
 
 
-content = """key_1:
-  valid_values:
-  - 1
-  - 2
-  - 3
-"""
-file_name = "raw_data_format.yml"
+raw_data_format_dict = {
+    "key_1": {
+        "valid_values": [1, 2, 3],
+        "data_range": [0, 4],
+        "nan_flags": None,
+    },
+    "key_2": {
+        "valid_values": [1, 2, 3],
+        "data_range": [0, 89],
+        "nan_flags": -9999,
+    },
+}
+config_dict = {"raw_data_format.yml": raw_data_format_dict}
 
 
-@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
-def test_set_nan_invalid_values(create_dummy_config_file):
+@pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+def test_set_nan_invalid_values(create_test_config_files):
     """Create a dummy config file and test the function set_nan_invalid_values.
 
     Parameters
     ----------
-    create_dummy_config_file : function
+    create_test_config_files : function
         Function that creates and removes the dummy config file.
     """
     # Test without modification
@@ -84,20 +64,8 @@ def test_set_nan_invalid_values(create_dummy_config_file):
     assert np.isnan(output["key_1"][4])
 
 
-content = """key_1:
-  data_range:
-  - 0
-  - 4
-key_2:
-  data_range:
-  - 0
-  - 89
-"""
-file_name = "raw_data_format.yml"
-
-
-@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
-def test_set_nan_outside_data_range(create_dummy_config_file):
+@pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+def test_set_nan_outside_data_range(create_test_config_files):
     # Test case 1: Check if the function sets values outside the data range to NaN
     data = {"key_1": [1, 2, 3, 4, 5], "key_2": [0.1, 0.3, 0.5, 0.7, 0.2]}
 
@@ -108,16 +76,8 @@ def test_set_nan_outside_data_range(create_dummy_config_file):
     assert np.isnan(result_df["key_1"][4])
 
 
-content = """key_1:
-  nan_flags: null
-key_2:
-  nan_flags: -9999
-"""
-file_name = "raw_data_format.yml"
-
-
-@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
-def test_replace_nan_flags(create_dummy_config_file):
+@pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+def test_replace_nan_flags(create_test_config_files):
     # Create a sample dataframe with nan flags
     data = {
         "key_1": [6, 7, 1, 9, -9999],
@@ -179,12 +139,17 @@ def test_strip_delimiter_from_raw_arrays():
     assert result.equals(expected)
 
 
-content = "key_1: 'str' \nkey_2: 'int'\nkey_3: 'str'"
-file_name = "l0a_encodings.yml"
+l0a_encoding_dict = {
+    "key_1": "str",
+    "key_2": "int",
+    "key_3": "str",
+    "key_4": "int64",
+}
+config_dict = {"l0a_encodings.yml": l0a_encoding_dict}
 
 
-@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
-def test_strip_string_spaces(create_dummy_config_file):
+@pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+def test_strip_string_spaces(create_test_config_files):
     data = {"key_1": ["  value1", "value2 ", "value3  "], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
     df = pd.DataFrame(data)
 
@@ -203,22 +168,18 @@ def test_strip_string_spaces(create_dummy_config_file):
     assert result.equals(expected)
 
 
-content = "key_1: 'int64' \nkey_2: 'int64'"
-file_name = "l0a_encodings.yml"
-
-
-@pytest.mark.parametrize("create_dummy_config_file", [(content, file_name)], indirect=True)
-def test_coerce_corrupted_values_to_nan(create_dummy_config_file):
+@pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+def test_coerce_corrupted_values_to_nan(create_test_config_files):
     # Test with a valid dataframe
-    df = pd.DataFrame({"key_1": ["1"]})
+    df = pd.DataFrame({"key_4": ["1"]})
     df_out = coerce_corrupted_values_to_nan(df, "test", verbose=False)
 
     assert df.equals(df_out)
 
     # Test with a wrong dataframe
-    df = pd.DataFrame({"key_2": ["text"]})
+    df = pd.DataFrame({"key_4": ["text"]})
     df_out = coerce_corrupted_values_to_nan(df, "test", verbose=False)
-    assert pd.isnull(df_out["key_2"][0])
+    assert pd.isnull(df_out["key_4"][0])
 
 
 def test_remove_issue_timesteps():

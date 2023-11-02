@@ -30,13 +30,11 @@ For each sensor, the following list of configuration YAML files are required:
 |     		├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
 |     		├── 📜 bins_diameter.yml : Information related to sensor diameter bins
 |     		├── 📜 bins_velocity.yml : Information related to sensor velocity bins
+|     		├── 📜 raw_data_format.yml : Information related to the variables logged by the sensor
 |     		├── 📜 l0a_encodings.yml : Variables encodings for the L0A product
 |     		├── 📜 l0b_encodings.yml : Variables encodings for the L0B product
-|     		├── 📜 raw_data_format.yml : Information related to the variables logged by the sensor
-|     		├── 📜 variables.yml : Variables logged by the sensor
-|     		├── 📜 variable_description.yml : Variables description
-|     		├── 📜 variable_long_name.yml: Variables long_name
-|     		├── 📜 variable_units.yml: Variables unit
+|     		├── 📜 l0b_variables_attrs.yml : Variables CF attributes for the L0B product
+
 
 If you want to add a new sensor configuration, you will need to copy the YAML files
 of one of the implemented sensors, and adapt the specifications.
@@ -117,12 +115,12 @@ The flattened array looks like ``[v1d1 ... v20d1, v1d2, ..., v20d2, ...]``
 and therefore ``dimension_order = ["diameter_bin_center", "velocity_bin_center"]``
 
 
-DISDRODB L0 variables attributes
+DISDRODB L0B variables attributes
 ---------------------------------
 
-The ``l0_variables.yml`` file defines the DISDRODB L0B netCDF variable attribute.
+The ``l0b_variables_attrs.yml`` file defines the DISDRODB L0B netCDF variable CF attributes.
 The variables defined in this file must be a subset of the variables listed in the ``raw_data_format.yml`` file.
-Only the variables defined in the ``l0_variables.yml`` file are used in the other ``l0_*.yml`` files.
+Only the variables defined in the ``l0b_variables_attrs.yml`` file are used in the other ``l0*.yml`` files.
 The expected keys for each variable are: ``long_name``, ``units`` and ``description``.
 Please read the Climate and Forecast Conventions guidelines for
 `long_name <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_
@@ -148,10 +146,9 @@ DISDRODB L0B encodings
 -----------------------
 
 The ``l0b_encodings.yml`` file lists the variables that are allow to be saved into the
-DISDRODB L0B netCDF format.
+DISDRODB L0B netCDF4 format.
 
 For each variable, you need to specify the compression options, the data type,
-the ``_FillValue`` to store i.e. ``NaN`` values (if integer data type), the chunk size
+the ``_FillValue`` (to convert the ``NaN`` values when saving arrays to an integer data type) and the chunk size
 across the time (and diameter and/or velocity) dimensions.
-The specified key values are used to define, for each variable, the specific
-netCDF encodings.
+The specified key values are used to define, for each variable, the specific netCDF4 encodings.

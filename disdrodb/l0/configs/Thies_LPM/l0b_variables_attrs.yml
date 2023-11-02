@@ -1,0 +1,307 @@
+device_address:
+  description: "Device address (factory setting \u201E00\") (NN)"
+  long_name: Device address
+  units: ''
+weather_code_synop_4677_5min:
+  description: 5M SYNOP Tab.4677 (5 minutes mean value) (NN)
+  long_name: 5 min SYNOP Tab.4677
+  units: ''
+weather_code_synop_4680_5min:
+  description: 5M SYNOP Tab.4680 (5 minutes mean value) (NN)
+  long_name: 5 min SYNOP Tab.4680
+  units: ''
+weather_code_metar_4678_5min:
+  description: 5M METAR Tab.4678 (5 minutes mean value) (AAAAA)
+  long_name: 5 min METAR Tab.4678
+  units: ''
+precipitation_rate_5min:
+  description: "5M Intensit\xE4t [mm/h] (5 minutes mean value) (NNN.NNN)"
+  long_name: 5 min precipitation rate
+  units: mm/h
+weather_code_synop_4677:
+  description: 1M SYNOP Tab.4677 (1 minute value) (NN)
+  long_name: SYNOP Tab.4677
+  units: ''
+weather_code_synop_4680:
+  description: 1M SYNOP Tab.4680 (1 minute value) (NN)
+  long_name: SYNOP Tab.4680
+  units: ''
+weather_code_metar_4678:
+  description: 1M METAR Tab.4678 (1 minute value) (AAAAA)
+  long_name: METAR Tab.4678
+  units: ''
+precipitation_rate:
+  description: 1M Intensity [mm/h] total precipitation (1 minute value) (NNN.NNN)
+  long_name: Total precipitation intensity
+  units: mm/h
+rainfall_rate:
+  description: 1M Intensity [mm/h] liquid precipitation (1 minute value) (NNN.NNN)
+  long_name: Liquid precipitation intensity
+  units: mm/h
+snowfall_rate:
+  description: 1M Intensity [mm/h] solid precipitation (1 minute value) (NNN.NNN)
+  long_name: Solid precipitation intensity
+  units: mm/h
+precipitation_accumulated:
+  description: "Precipitation amount [mm] (Reset with command \u201ERA\") (NNNN.NN)"
+  long_name: Precipitation amount
+  units: mm
+mor_visibility:
+  description: 1M Visibility in precipitation [0...99999m] (1 minute value) (NNNNN)
+  long_name: Visibility in precipitation
+  units: ''
+reflectivity:
+  description: 1M Radar reflectivity [-9.9...99.9dBZ] (1 minute value) (NN.N)
+  long_name: Radar reflectivity
+  units: dbZ
+quality_index:
+  description: 1M Measuring quality [0...100%] (1 minute value) (NNN)
+  long_name: Quility index
+  units: '%'
+max_hail_diameter:
+  description: 1M Maximum diameter hail [mm] (1 minute value) (N.N)
+  long_name: Maximum diameter hail
+  units: mm
+laser_status:
+  description: Status Laser (OK/on:0, off:1)
+  long_name: Status laser
+  units: ''
+static_signal:
+  description: Static signal (OK:0, Error:1)
+  long_name: Static signal
+  units: ''
+laser_temperature_analog_status:
+  description: Status Laser temperature (analogue) (OK:0, Error:1)
+  long_name: Status analogue laser temperature
+  units: ''
+laser_temperature_digital_status:
+  description: Status Laser temperature (digital) (OK:0, Error:1)
+  long_name: Status digital laser temperature
+  units: ''
+laser_current_analog_status:
+  description: Status Laser current (analogue) (OK:0, Error:1)
+  long_name: Status analogue laser current
+  units: ''
+laser_current_digital_status:
+  description: Status Laser current (digital) (OK:0, Error:1)
+  long_name: Status digital laser current
+  units: ''
+sensor_voltage_supply_status:
+  description: Status Sensor supply (OK:0, Error:1)
+  long_name: Status sensor supply
+  units: ''
+current_heating_pane_transmitter_head_status:
+  description: Status Current pane heating laser head (OK:0, warning:1)
+  long_name: Status current pane heating laser head
+  units: ''
+current_heating_pane_receiver_head_status:
+  description: Status Current pane heating receiver head (OK:0, warning:1)
+  long_name: Status current pane heating reciver head
+  units: ''
+temperature_sensor_status:
+  description: Status Temperature sensor (OK:0, warning:1)
+  long_name: Status temperature sensor
+  units: ''
+current_heating_voltage_supply_status:
+  description: Status Heating supply (OK:0, warning:1)
+  long_name: Status heating supply
+  units: ''
+current_heating_house_status:
+  description: Status Current heating housing (OK:0, warning:1)
+  long_name: Status current heating housing
+  units: ''
+current_heating_heads_status:
+  description: Status Current heating heads (OK:0, warning:1)
+  long_name: Status current heating heads
+  units: ''
+current_heating_carriers_status:
+  description: Status Current heating carriers (OK:0, warning:1)
+  long_name: Status current heating carriers
+  units: ''
+control_output_laser_power_status:
+  description: Status Control output laser power (OK:0, warning:1)
+  long_name: Status control output laser
+  units: ''
+reserve_status:
+  description: Reserve Status (0)
+  long_name: Reserve status
+  units: ''
+temperature_interior:
+  description: "Interior temperature [\xB0C] (NNN)"
+  long_name: Interior temperature
+  units: "\xB0C"
+laser_temperature:
+  description: "Temperature of laser driver 0-80\xB0C (NN)"
+  long_name: Temperature of laser driver
+  units: "\xB0C"
+laser_current_average:
+  description: Mean value laser current [1/100 mA] (NNNN)
+  long_name: Mean value laser current
+  units: mA
+control_voltage:
+  description: "Control voltage [mV] (reference value: 4010\xB15) (NNNN)"
+  long_name: Control voltage
+  units: mV
+optical_control_voltage_output:
+  description: "Optical control output [mV] (2300 \u2026 6500) (NNNN)"
+  long_name: Optical control output
+  units: mV
+sensor_voltage_supply:
+  description: Voltage sensor supply [1/10V] (NNN)
+  long_name: Voltage sensor supply
+  units: V
+current_heating_pane_transmitter_head:
+  description: Current pane heating laser head [mA] (NNN)
+  long_name: Current pane heating laser head
+  units: mA
+current_heating_pane_receiver_head:
+  description: Current pane heating receiver head [mA] (NNN)
+  long_name: Current pane heating receiver head
+  units: mA
+temperature_ambient:
+  description: "Ambient temperature [\xB0C] (NNN.N)"
+  long_name: Ambient temperature
+  units: "\xB0C"
+current_heating_voltage_supply:
+  description: Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise "999")
+    (NNN)
+  long_name: Voltage heating supply
+  units: V
+current_heating_house:
+  description: Current heating housing [mA] (only 5.4110.x1.xxx, otherwise "9999")
+    (NNNN)
+  long_name: Current heating housing
+  units: mA
+current_heating_heads:
+  description: Current heating heads [mA] (only 5.4110.x1.xxx, otherwise "9999") (NNNN)
+  long_name: Current heating head
+  units: mA
+current_heating_carriers:
+  description: Current heating carriers [mA] (only 5.4110.x1.xxx, otherwise "9999")
+    (NNNN)
+  long_name: Current heating carriers
+  units: mA
+number_particles:
+  description: Number of all measured particles (NNNNN)
+  long_name: Number of all measured particles
+  units: ''
+number_particles_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of all measured particles internal data
+  units: ''
+number_particles_min_speed:
+  description: Number of particles < minimal speed (0.15m/s) (NNNNN)
+  long_name: Number of particles < minimal speed (0.15m/s)
+  units: ''
+number_particles_min_speed_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of particles < minimal speed (0.15m/s) internal data
+  units: ''
+number_particles_max_speed:
+  description: Number of particles > maximal speed (20m/s) (NNNNN)
+  long_name: Number of particles > maximal speed (20m/s)
+  units: ''
+number_particles_max_speed_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of particles > maximal speed (20m/s) internal data
+  units: ''
+number_particles_min_diameter:
+  description: Number of particles < minimal diameter (0.15mm) (NNNNN)
+  long_name: Number of particles < minimal diameter (0.15mm)
+  units: ''
+number_particles_min_diameter_internal_data:
+  description: "\u201E00000.000\" (internal data)"
+  long_name: Number of particles < minimal diameter (0.15mm) internal data
+  units: ''
+number_particles_no_hydrometeor:
+  description: Number of particles no hydrometeor
+  long_name: Number of particles no hydrometeor
+  units: ''
+number_particles_no_hydrometeor_internal_data:
+  description: Total volume (gross) of this class
+  long_name: Total volume of this class
+  units: ''
+number_particles_unknown_classification:
+  description: Number of particles with unknown classification
+  long_name: Number of particles with unknown classification
+  units: ''
+number_particles_unknown_classification_internal_data:
+  description: Total volume (gross) of this class
+  long_name: Number of particles with unknown classification internal data
+  units: ''
+number_particles_class_1:
+  description: Number of particles class 1
+  long_name: Number of particles class 1
+  units: ''
+number_particles_class_1_internal_data:
+  description: Total volume (gross) of class 1
+  long_name: Total volume of class 1
+  units: ''
+number_particles_class_2:
+  description: Number of particles class 2
+  long_name: Number of particles class 2
+  units: ''
+number_particles_class_2_internal_data:
+  description: Total volume (gross) of class 2
+  long_name: Total volume of class 2
+  units: ''
+number_particles_class_3:
+  description: Number of particles class 3
+  long_name: Number of particles class 3
+  units: ''
+number_particles_class_3_internal_data:
+  description: Total volume (gross) of class 3
+  long_name: Total volume of class 3
+  units: ''
+number_particles_class_4:
+  description: Number of particles class 4
+  long_name: Number of particles class 4
+  units: ''
+number_particles_class_4_internal_data:
+  description: Total volume (gross) of class 4
+  long_name: Total volume of class 4
+  units: ''
+number_particles_class_5:
+  description: Number of particles class 5
+  long_name: Number of particles class 5
+  units: ''
+number_particles_class_5_internal_data:
+  description: Total volume (gross) of class 5
+  long_name: Total volume of class 5
+  units: ''
+number_particles_class_6:
+  description: Number of particles class 6
+  long_name: Number of particles class 6
+  units: ''
+number_particles_class_6_internal_data:
+  description: Total volume (gross) of class 6
+  long_name: Total volume of class 6
+  units: ''
+number_particles_class_7:
+  description: Number of particles class 7
+  long_name: Number of particles class 7
+  units: ''
+number_particles_class_7_internal_data:
+  description: Total volume (gross) of class 7
+  long_name: Total volume of class 7
+  units: ''
+number_particles_class_8:
+  description: Number of particles class 8
+  long_name: Number of particles class 8
+  units: ''
+number_particles_class_8_internal_data:
+  description: Total volume (gross) of class 8
+  long_name: Total volume of class 8
+  units: ''
+number_particles_class_9:
+  description: Number of particles class 9
+  long_name: Number of particles class 9
+  units: ''
+number_particles_class_9_internal_data:
+  description: Total volume (gross) of class 9
+  long_name: Total volume of class 9
+  units: ''
+raw_drop_number:
+  description: Precipitation spectrum
+  long_name: Precipitation spectrum
+  units: ''

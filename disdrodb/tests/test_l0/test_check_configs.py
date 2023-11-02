@@ -26,7 +26,6 @@ def test_check_yaml_files_exists(sensor_name):
 @pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test_check_variable_consistency(sensor_name):
     check_variable_consistency(sensor_name)
-    assert True
 
 
 @pytest.mark.parametrize("sensor_name", available_sensor_names())

@@ -1,3 +1,17 @@
+time:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+date:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
 sensor_status:
   n_digits: null
   n_characters: null

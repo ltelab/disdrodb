@@ -111,19 +111,19 @@ def test_check_sensor_name():
 
 
 def test_check_l0a_column_names(capsys):
-    from disdrodb.l0.standards import available_sensor_names, get_sensor_variables
+    from disdrodb.l0.standards import available_sensor_names, get_sensor_logged_variables
 
     sensor_names = available_sensor_names()
     sensor_name = sensor_names[0]
 
     # Test 1 : All columns are present
-    list_column_names = get_sensor_variables(sensor_name) + ["time", "latitude", "longitude"]
+    list_column_names = get_sensor_logged_variables(sensor_name) + ["time", "latitude", "longitude"]
     dict_data = {i: [1, 2] for i in list_column_names}
     df = pd.DataFrame.from_dict(dict_data)
     assert check_l0a_column_names(df, sensor_name=sensor_name) is None
 
     # Test 2 : Missing columns time
-    list_column_names = get_sensor_variables(sensor_name) + ["latitude", "longitude"]
+    list_column_names = get_sensor_logged_variables(sensor_name) + ["latitude", "longitude"]
     dict_data = {i: [1, 2] for i in list_column_names}
     df = pd.DataFrame.from_dict(dict_data)
     with pytest.raises(ValueError):

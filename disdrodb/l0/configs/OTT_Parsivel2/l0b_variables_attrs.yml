@@ -1,0 +1,158 @@
+rainfall_rate_32bit:
+  description: Rainfall rate
+  long_name: Rainfall rate 32 bit
+  units: mm/h
+rainfall_accumulated_32bit:
+  description: Accumulated rain amount over the measurement interval
+  long_name: Rainfall accumulated 32 bit
+  units: mm
+weather_code_synop_4680:
+  description: SYNOP weather code according to table 4680 of Parsivel documentation
+  long_name: Weather code SYNOP 4680
+  units: ''
+weather_code_synop_4677:
+  description: SYNOP weather code according to table 4677 of Parsivel documentation
+  long_name: Weather code SYNOP 4677
+  units: ''
+weather_code_metar_4678:
+  description: METAR/SPECI weather code according to table 4678 of Parsivel documentation
+  long_name: Weather code METAR 4678
+  units: ''
+weather_code_nws:
+  description: NWS weather code according to Parsivel documentation
+  long_name: Weather code NWS
+  units: ''
+reflectivity_32bit:
+  description: Radar reflectivity
+  long_name: Reflectivity 32 bit
+  units: dBz
+mor_visibility:
+  description: Meteorological Optical Range in precipitation
+  long_name: MOR visibility
+  units: m
+sample_interval:
+  description: Sample interval
+  long_name: Sample interval
+  units: s
+laser_amplitude:
+  description: Signal amplitude of the laser strip. A way to monitor if windows are
+    dirty or not.
+  long_name: Laser amplitude
+  units: ''
+number_particles:
+  description: Number of particles detected and validated
+  long_name: Number of detected particles
+  units: ''
+sensor_temperature:
+  description: Temperature in sensor housing
+  long_name: Temperature of the sensor
+  units: "\xB0C"
+sensor_serial_number:
+  description: Sensor serial number
+  long_name: Serial number of the sensor
+  units: ''
+firmware_iop:
+  description: Version IOP firmware
+  long_name: Version IOP firmware
+  units: ''
+firmware_dsp:
+  description: Version DSP firmware
+  long_name: Version DSP firmware
+  units: ''
+sensor_heating_current:
+  description: 'Sensor head heating current. Optimum heating output of the sensor
+    head heating system can be guaranteed with a power supply voltage > 20 V '
+  long_name: Sensor heating current
+  units: A
+sensor_battery_voltage:
+  description: Power supply voltage
+  long_name: Sensor battery voltage
+  units: V
+sensor_status:
+  description: Sensor status
+  long_name: Sensor status
+  units: ''
+start_time:
+  description: Meausurement start time
+  long_name: Start time
+  units: ''
+sensor_time:
+  description: Time of the sensor
+  long_name: Sensor time
+  units: ''
+sensor_date:
+  description: Date of the sensor
+  long_name: Sensor date
+  units: ''
+station_name:
+  description: Name of the station
+  long_name: Station name
+  units: ''
+station_number:
+  description: Number of the station
+  long_name: Station number
+  units: ''
+rainfall_amount_absolute_32bit:
+  description: Accumulated rain amount over the measurement interval
+  long_name: Rainfall amount absolute 32 bit
+  units: mm
+error_code:
+  description: Error code
+  long_name: Error code
+  units: ''
+sensor_temperature_pcb:
+  description: Temperature in printed circuit board
+  long_name: Sensor PCB temperature
+  units: "\xB0C"
+sensor_temperature_receiver:
+  description: Temperature in right sensor head
+  long_name: Sensor receiver temperature
+  units: "\xB0C"
+sensor_temperature_trasmitter:
+  description: Temperature in left sensor head
+  long_name: Sensor trasmitter temperature
+  units: "\xB0C"
+rainfall_rate_16_bit_30:
+  description: Rainfall rate
+  long_name: Rainfall rate max 30 mm/h 16 bit
+  units: mm/h
+rainfall_rate_16_bit_1200:
+  description: Rainfall rate
+  long_name: Rainfall rate max 1200 mm/h 16 bit
+  units: mm/h
+rainfall_accumulated_16bit:
+  description: Accumulated rain amount over the measurement interval
+  long_name: Rainfall accumulated 16 bit
+  units: mm
+reflectivity_16bit:
+  description: Radar reflectivity
+  long_name: Radar reflectivity 16 bit
+  units: dBz
+rain_kinetic_energy:
+  description: Rainfall kinetic energy
+  long_name: Rain kinetic energy
+  units: J/(m**2*h)
+snowfall_rate:
+  description: Snowfall rate
+  long_name: Snowfall rate
+  units: mm/h
+number_particles_all:
+  description: Number of all particles detected (also not validated)
+  long_name: Number of all measured particles
+  units: ''
+list_particles:
+  description: List of all particles detected. Including size and velocity.
+  long_name: List particles detected
+  units: ''
+raw_drop_concentration:
+  description: Particle number concentrations per diameter class
+  long_name: Raw drop concentration
+  units: log10 1/(m3*mm)
+raw_drop_average_velocity:
+  description: Average particle velocities for each diameter class
+  long_name: Raw drop average velocity
+  units: m/s
+raw_drop_number:
+  description: Drop counts per diameter and velocity class
+  long_name: Raw drop number
+  units: ''

@@ -1,0 +1,64 @@
+sensor_status:
+  description: Sensor status
+  long_name: Sensor status
+  units: ''
+interval:
+  description: Time interval between measurement
+  long_name: Time interval between measurement
+  units: s
+RI:
+  description: Rain intensity (mm/h)
+  long_name: Rain intensity (mm/h)
+  units: mm/h
+RA:
+  description: Rain amount (mm)
+  long_name: Rain amount (mm)
+  units: mm
+RAT:
+  description: Total rain amount since start of measurement (mm)
+  long_name: Total rain amount since start of measurement (mm)
+  units: mm
+W:
+  description: Liquid Water Content
+  long_name: Liquid Water Content
+  units: mm3/m3
+Wg:
+  description: Liquid Water Content
+  long_name: Liquid Water Content
+  units: g/m3
+Z:
+  description: Radar Reflectivity Factor
+  long_name: Radar Reflectivity Factor
+  units: mm6/m3
+ZdB:
+  description: Radar Reflectivity Factor
+  long_name: Radar Reflectivity Factor
+  units: dB
+EK:
+  description: Kinetic Energy
+  long_name: Kinetic Energy
+  units: J/m2
+EF:
+  description: Energy Flux
+  long_name: Energy Flux
+  units: J/m2/h
+N0:
+  description: Number concentration
+  long_name: Number concentration
+  units: 1/m3/mm
+slope:
+  description: Slope
+  long_name: Slope
+  units: 1/mm
+Dmax:
+  description: Max Drop diameter
+  long_name: Max Drop diameter
+  units: mm
+ND:
+  description: Number drop density
+  long_name: Number drop density
+  units: 1/m3/mm
+raw_drop_number:
+  description: Drop counts per diameter
+  long_name: Drop counts per diameter
+  units: ''

@@ -1,5 +1,5 @@
 ==============================
-Contribute Data to DISDRODB
+How to Contribute New Data
 ==============================
 
 Users can make their own data accessible to the community. DISDRODB
