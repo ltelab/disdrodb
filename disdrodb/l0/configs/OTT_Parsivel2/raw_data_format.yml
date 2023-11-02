@@ -7,6 +7,7 @@ rainfall_rate_32bit:
   - 0
   - 9999.999
   nan_flags: null
+  field_number: '01'
 rainfall_accumulated_32bit:
   n_digits: 6
   n_characters: 7
@@ -16,6 +17,7 @@ rainfall_accumulated_32bit:
   - 0
   - 300.0
   nan_flags: null
+  field_number: '02'
 weather_code_synop_4680:
   n_digits: 2
   n_characters: 2
@@ -25,6 +27,7 @@ weather_code_synop_4680:
   - 0
   - 89
   nan_flags: null
+  field_number: '03'
 weather_code_synop_4677:
   n_digits: 2
   n_characters: 2
@@ -34,6 +37,7 @@ weather_code_synop_4677:
   - 0
   - 90
   nan_flags: null
+  field_number: '04'
 weather_code_metar_4678:
   n_digits: null
   n_characters: null
@@ -41,6 +45,7 @@ weather_code_metar_4678:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '05'
 weather_code_nws:
   n_digits: null
   n_characters: null
@@ -48,6 +53,7 @@ weather_code_nws:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '06'
 reflectivity_32bit:
   n_digits: 5
   n_characters: 6
@@ -57,6 +63,7 @@ reflectivity_32bit:
   - -9.999
   - 99.999
   nan_flags: null
+  field_number: '07'
 mor_visibility:
   n_digits: 4
   n_characters: 4
@@ -66,6 +73,7 @@ mor_visibility:
   - 0
   - 20000
   nan_flags: null
+  field_number: 08
 sample_interval:
   n_digits: 5
   n_characters: 5
@@ -75,6 +83,7 @@ sample_interval:
   - 0
   - 3600
   nan_flags: null
+  field_number: 09
 laser_amplitude:
   n_digits: 5
   n_characters: 5
@@ -84,6 +93,7 @@ laser_amplitude:
   - 0
   - 99999
   nan_flags: null
+  field_number: '10'
 number_particles:
   n_digits: 5
   n_characters: 5
@@ -93,6 +103,7 @@ number_particles:
   - 0
   - 99999
   nan_flags: null
+  field_number: '11'
 sensor_temperature:
   n_digits: 3
   n_characters: 3
@@ -102,6 +113,7 @@ sensor_temperature:
   - -99
   - 100
   nan_flags: null
+  field_number: '12'
 sensor_serial_number:
   n_digits: null
   n_characters: null
@@ -109,6 +121,7 @@ sensor_serial_number:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '13'
 firmware_iop:
   n_digits: null
   n_characters: null
@@ -116,6 +129,7 @@ firmware_iop:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '14'
 firmware_dsp:
   n_digits: null
   n_characters: null
@@ -123,6 +137,7 @@ firmware_dsp:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '15'
 sensor_heating_current:
   n_digits: 3
   n_characters: 4
@@ -132,6 +147,7 @@ sensor_heating_current:
   - 0
   - 4.0
   nan_flags: null
+  field_number: '16'
 sensor_battery_voltage:
   n_digits: 3
   n_characters: 4
@@ -141,6 +157,7 @@ sensor_battery_voltage:
   - 0
   - 30.0
   nan_flags: null
+  field_number: '17'
 sensor_status:
   n_digits: 1
   n_characters: 1
@@ -155,6 +172,7 @@ sensor_status:
   - 1
   - 2
   - 3
+  field_number: '18'
 start_time:
   n_digits: null
   n_characters: null
@@ -162,6 +180,7 @@ start_time:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '19'
 sensor_time:
   n_digits: null
   n_characters: null
@@ -169,6 +188,7 @@ sensor_time:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '20'
 sensor_date:
   n_digits: null
   n_characters: null
@@ -176,6 +196,7 @@ sensor_date:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '21'
 station_name:
   n_digits: null
   n_characters: null
@@ -183,6 +204,7 @@ station_name:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '22'
 station_number:
   n_digits: null
   n_characters: null
@@ -190,6 +212,7 @@ station_number:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '23'
 rainfall_amount_absolute_32bit:
   n_digits: 6
   n_characters: 7
@@ -199,6 +222,7 @@ rainfall_amount_absolute_32bit:
   - 0
   - 999.999
   nan_flags: null
+  field_number: '24'
 error_code:
   n_digits: 3
   n_characters: 3
@@ -212,6 +236,7 @@ error_code:
   - 0
   - 1
   - 2
+  field_number: '25'
 sensor_temperature_pcb:
   n_digits: 3
   n_characters: 3
@@ -221,6 +246,7 @@ sensor_temperature_pcb:
   - -99
   - 100
   nan_flags: null
+  field_number: '26'
 sensor_temperature_receiver:
   n_digits: 3
   n_characters: 3
@@ -230,6 +256,7 @@ sensor_temperature_receiver:
   - -99
   - 100
   nan_flags: null
+  field_number: '27'
 sensor_temperature_trasmitter:
   n_digits: 3
   n_characters: 3
@@ -239,6 +266,7 @@ sensor_temperature_trasmitter:
   - -99
   - 100
   nan_flags: null
+  field_number: '28'
 rainfall_rate_16_bit_30:
   n_digits: 5
   n_characters: 6
@@ -248,6 +276,7 @@ rainfall_rate_16_bit_30:
   - 0
   - 30
   nan_flags: null
+  field_number: '30'
 rainfall_rate_16_bit_1200:
   n_digits: 5
   n_characters: 6
@@ -257,6 +286,7 @@ rainfall_rate_16_bit_1200:
   - 0
   - 1200
   nan_flags: null
+  field_number: '31'
 rainfall_accumulated_16bit:
   n_digits: 6
   n_characters: 7
@@ -266,6 +296,7 @@ rainfall_accumulated_16bit:
   - 0
   - 300.0
   nan_flags: null
+  field_number: '32'
 reflectivity_16bit:
   n_digits: 4
   n_characters: 5
@@ -275,6 +306,7 @@ reflectivity_16bit:
   - -9.99
   - 99.99
   nan_flags: null
+  field_number: '33'
 rain_kinetic_energy:
   n_digits: 6
   n_characters: 7
@@ -284,6 +316,7 @@ rain_kinetic_energy:
   - 0
   - 999.999
   nan_flags: null
+  field_number: '34'
 snowfall_rate:
   n_digits: 6
   n_characters: 7
@@ -293,6 +326,7 @@ snowfall_rate:
   - 0
   - 999.999
   nan_flags: null
+  field_number: '35'
 number_particles_all:
   n_digits: 8
   n_characters: 8
@@ -302,6 +336,7 @@ number_particles_all:
   - 0
   - 8192
   nan_flags: null
+  field_number: '60'
 list_particles:
   n_digits: null
   n_characters: null
@@ -309,6 +344,7 @@ list_particles:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '61'
 raw_drop_concentration:
   n_digits: 0
   n_characters: 224
@@ -319,6 +355,7 @@ raw_drop_concentration:
   dimension_order:
   - diameter_bin_center
   n_values: 32
+  field_number: '90'
 raw_drop_average_velocity:
   n_digits: 0
   n_characters: 224
@@ -329,6 +366,7 @@ raw_drop_average_velocity:
   dimension_order:
   - velocity_bin_center
   n_values: 32
+  field_number: '91'
 raw_drop_number:
   n_digits: 0
   n_characters: 4096
@@ -340,3 +378,4 @@ raw_drop_number:
   - velocity_bin_center
   - diameter_bin_center
   n_values: 1024
+  field_number: '93'

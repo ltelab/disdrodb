@@ -186,6 +186,8 @@ def check_l0a_encoding(sensor_name: str) -> None:
     for key, value in data.items():
         if value not in text_field + numeric_field:
             raise ValueError(f"Wrong value for {key} in l0a_encodings.yml for sensor {sensor_name}.")
+        if not isinstance(key, str):
+            raise TypeError(f"Expecting a string for {key} in l0a_encodings.yml for sensor {sensor_name}.")
 
 
 class RawDataFormatSchema(BaseModel):
@@ -198,6 +200,7 @@ class RawDataFormatSchema(BaseModel):
     valid_values: Optional[List[float]] = None
     dimension_order: Optional[List[str]] = None
     n_values: Optional[int] = None
+    field_number: Optional[str] = None
 
     @field_validator("data_range")
     def check_list_length(cls, value):

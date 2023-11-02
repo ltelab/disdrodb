@@ -1,9 +1,9 @@
 import os
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
 import pytest
 import yaml
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel
 
 from disdrodb import __root_path__
 
@@ -163,98 +163,6 @@ def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseMod
         return False
 
 
-class RawDataFormatSchema(BaseModel):
-    """Define the expected keys and values of the each variable in the raw_data_format.yml file."""
-
-    n_digits: Optional[int]
-    n_characters: Optional[int]
-    n_decimals: Optional[int]
-    data_range: Optional[list]
-
-    @field_validator("data_range")
-    def check_list_length(cls, value):
-        if value:
-            if len(value) != 2:
-                raise ValueError("data_range must have exactly 2 elements")
-            return value
-
-
-# Test the format and content of the raw_data_format.yml files
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "raw_data_format.yml")
-
-
-@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_raw_data_format(yaml_file_path: str):
-    """Test the raw_data_format.yml file format.
-
-    Parameters
-    ----------
-    yaml_file_path : str
-        Path of the raw_data_format.yml file to test.
-    """
-    data = read_yaml_file(yaml_file_path)
-    assert is_dict(data)
-    assert is_string_list(list(data.keys()))
-    # Check the second level of the dictionary match the schema
-    for value in data.values():
-        assert validate_schema_pytest(value, RawDataFormatSchema)
-
-
-# Test format and content of l0a_encodings.yml
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0a_encodings.yml")
-
-
-@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_l0a_encodings_format(yaml_file_path: str) -> None:
-    """Test the l0a_encoding.yml format.
-
-    It should be a dictionary with string keys and string values.
-
-    Parameters
-    ----------
-    yaml_file_path : str
-        Path of the yaml file to test.
-    """
-    data = read_yaml_file(yaml_file_path)
-    assert is_dict(data)
-    assert is_string_list(list(data.keys()))
-    assert is_string_list(list(data.values()))
-
-
-class L0BEncodingSchema(BaseModel):
-    """Define the expected keys and values of the each variable in the l0b_encoding.yml file."""
-
-    dtype: str
-    zlib: bool
-    complevel: int
-    shuffle: bool
-    fletcher32: bool
-    contiguous: bool
-    _FillValue: Optional[Union[int, float]]
-    chunksizes: Union[int, List[int]]
-
-
-# Test the format and content of the l0b_encodings.yml files
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml")
-
-
-@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_l0b_encodings_format(yaml_file_path: str) -> None:
-    """Test the l0b_encodings.yml file format.
-
-    Parameters
-    ----------
-    yaml_file_path : str
-        Path of the l0b_encodings.yml file to test.
-    """
-    data = read_yaml_file(yaml_file_path)
-    assert is_dict(data)
-    assert is_string_list(list(data.keys()))
-    # Check the second level of the dictionary match the schema
-    for value in data.values():
-        assert validate_schema_pytest(value, L0BEncodingSchema)
-
-
 class L0BVariableAttributesSchema(BaseModel):
     """Define the expected keys and values of the each variable in the l0b_variables_attrs file."""
 
@@ -328,3 +236,100 @@ def test_bins_format(yaml_file_path: str) -> None:
             width = data.get("width")[idx]
             distance = round(bound_max - bound_min, 3)
             assert distance == width
+
+
+####---------------------------------------------------------------------------.
+#### Deprecated
+# - Has been moved to check.configs and test_check_configs
+
+
+# class RawDataFormatSchema(BaseModel):
+#     """Define the expected keys and values of the each variable in the raw_data_format.yml file."""
+
+#     n_digits: Optional[int]
+#     n_characters: Optional[int]
+#     n_decimals: Optional[int]
+#     data_range: Optional[list]
+
+#     @field_validator("data_range")
+#     def check_list_length(cls, value):
+#         if value:
+#             if len(value) != 2:
+#                 raise ValueError("data_range must have exactly 2 elements")
+#             return value
+
+
+# # Test the format and content of the raw_data_format.yml files
+# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "raw_data_format.yml")
+
+
+# @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
+# def test_raw_data_format(yaml_file_path: str):
+#     """Test the raw_data_format.yml file format.
+
+#     Parameters
+#     ----------
+#     yaml_file_path : str
+#         Path of the raw_data_format.yml file to test.
+#     """
+#     data = read_yaml_file(yaml_file_path)
+#     assert is_dict(data)
+#     assert is_string_list(list(data.keys()))
+#     # Check the second level of the dictionary match the schema
+#     for value in data.values():
+#         assert validate_schema_pytest(value, RawDataFormatSchema)
+
+
+# # Test format and content of l0a_encodings.yml
+# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0a_encodings.yml")
+
+
+# @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
+# def test_l0a_encodings_format(yaml_file_path: str) -> None:
+#     """Test the l0a_encoding.yml format.
+
+#     It should be a dictionary with string keys and string values.
+
+#     Parameters
+#     ----------
+#     yaml_file_path : str
+#         Path of the yaml file to test.
+#     """
+#     data = read_yaml_file(yaml_file_path)
+#     assert is_dict(data)
+#     assert is_string_list(list(data.keys()))
+#     assert is_string_list(list(data.values()))
+
+
+# class L0BEncodingSchema(BaseModel):
+#     """Define the expected keys and values of the each variable in the l0b_encoding.yml file."""
+
+#     dtype: str
+#     zlib: bool
+#     complevel: int
+#     shuffle: bool
+#     fletcher32: bool
+#     contiguous: bool
+#     _FillValue: Optional[Union[int, float]]
+#     chunksizes: Union[int, List[int]]
+
+
+# # Test the format and content of the l0b_encodings.yml files
+# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml")
+
+
+# @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
+# def test_l0b_encodings_format(yaml_file_path: str) -> None:
+#     """Test the l0b_encodings.yml file format.
+
+#     Parameters
+#     ----------
+#     yaml_file_path : str
+#         Path of the l0b_encodings.yml file to test.
+#     """
+#     data = read_yaml_file(yaml_file_path)
+#     assert is_dict(data)
+#     assert is_string_list(list(data.keys()))
+#     # Check the second level of the dictionary match the schema
+#     for value in data.values():
+#         assert validate_schema_pytest(value, L0BEncodingSchema)

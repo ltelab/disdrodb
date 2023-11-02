@@ -81,6 +81,7 @@ The following keys should be specified for each numeric variable:
     * ``n_naturals``: the number of natural digits (left side of the comma)
     * ``data_range``: the data range of the values logged by the sensor
     * ``nan_flags``: the value or list of values that flag ``NaN`` values
+    * ``field_number``: the field number reported in the documentation
 
 The ``null`` value should be added for character variables or when the value can not be specified.
 

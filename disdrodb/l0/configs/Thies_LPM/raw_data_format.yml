@@ -7,6 +7,7 @@ start_identifier:
   - 0
   - 9
   nan_flags: null
+  field_number: '01'
 device_address:
   n_digits: 2
   n_characters: 2
@@ -16,6 +17,7 @@ device_address:
   - 0
   - 99
   nan_flags: null
+  field_number: '02'
 sensor_serial_number:
   n_digits: 4
   n_characters: 4
@@ -25,6 +27,7 @@ sensor_serial_number:
   - 0
   - 9999
   nan_flags: null
+  field_number: '03'
 software_version:
   n_digits: 3
   n_characters: 4
@@ -34,6 +37,7 @@ software_version:
   - 0
   - 9.99
   nan_flags: null
+  field_number: '04'
 sensor_date:
   n_digits: 6
   n_characters: 8
@@ -41,6 +45,7 @@ sensor_date:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  field_number: '05'
 sensor_time:
   n_digits: 6
   n_characters: 8
@@ -48,8 +53,7 @@ sensor_time:
   n_naturals: 0
   data_range: null
   nan_flags: null
-
-###
+  field_number: '06'
 weather_code_synop_4677_5min:
   n_digits: 2
   n_characters: 2
@@ -58,7 +62,8 @@ weather_code_synop_4677_5min:
   data_range:
   - -4
   - 90
-  nan_flags: -1  # -1 sensor error
+  nan_flags: -1
+  field_number: '07'
 weather_code_synop_4680_5min:
   n_digits: 2
   n_characters: 2
@@ -67,23 +72,26 @@ weather_code_synop_4680_5min:
   data_range:
   - -1
   - 89
-  nan_flags: -1 # -1 sensor error
+  nan_flags: -1
+  field_number: 08
 weather_code_metar_4678_5min:
   n_digits: 0
   n_characters: 5
   n_decimals: 0
   n_naturals: 0
   data_range: null
-  nan_flags: null  # ????? sensor_error
+  nan_flags: null
+  field_number: 09
 precipitation_rate_5min:
   n_digits: 6
   n_characters: 7
   n_decimals: 3
   n_naturals: 3
   data_range:
-  - 000.000
+  - 0.0
   - 999.999
   nan_flags: null
+  field_number: '10'
 weather_code_synop_4677:
   n_digits: 0
   n_characters: 5
@@ -92,7 +100,8 @@ weather_code_synop_4677:
   data_range:
   - -4
   - 90
-  nan_flags: -1 # -1 sensor error
+  nan_flags: -1
+  field_number: '11'
 weather_code_synop_4680:
   n_digits: 0
   n_characters: 5
@@ -101,60 +110,67 @@ weather_code_synop_4680:
   data_range:
   - -1
   - 89
-  nan_flags: -1 # -1 sensor error
+  nan_flags: -1
+  field_number: '12'
 weather_code_metar_4678:
   n_digits: 0
   n_characters: 5
   n_decimals: 0
   n_naturals: 0
   data_range: null
-  nan_flags: null   # ????? sensor_error
-precipitation_rate: # intensity_total
+  nan_flags: null
+  field_number: '13'
+precipitation_rate:
   n_digits: 6
   n_characters: 7
   n_decimals: 3
   n_naturals: 3
   data_range:
-  - 000.000
-  - 999.999
-  nan_flags: null # By the documentation: "Exception: when „not identified precipitation“ is reported (15+16 are then 0)", it mean it's 0 the nan value?
-rainfall_rate: # intensity_liquid
-  n_digits: 6
-  n_characters: 7
-  n_decimals: 3
-  n_naturals: 3
-  data_range:
-  - 000.000
+  - 0.0
   - 999.999
   nan_flags: null
-snowfall_rate: # intensity_solid
+  field_number: '14'
+rainfall_rate:
   n_digits: 6
   n_characters: 7
   n_decimals: 3
   n_naturals: 3
   data_range:
-  - 000.000
+  - 0.0
   - 999.999
   nan_flags: null
-precipitation_accumulated: # accum_precip
+  field_number: '15'
+snowfall_rate:
+  n_digits: 6
+  n_characters: 7
+  n_decimals: 3
+  n_naturals: 3
+  data_range:
+  - 0.0
+  - 999.999
+  nan_flags: null
+  field_number: '16'
+precipitation_accumulated:
   n_digits: 6
   n_characters: 7
   n_decimals: 4
   n_naturals: 2
   data_range:
-  - 00.0000
+  - 0.0
   - 9999.99
   nan_flags: null
-mor_visibility: # maximum_visibility
+  field_number: '17'
+mor_visibility:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
   n_naturals: 0
   data_range:
-  - 00000
+  - 0
   - 99999
   nan_flags: null
-reflectivity: # radar_reflectivity
+  field_number: '18'
+reflectivity:
   n_digits: 3
   n_characters: 4
   n_decimals: 2
@@ -163,6 +179,7 @@ reflectivity: # radar_reflectivity
   - -9.9
   - 99.9
   nan_flags: null
+  field_number: '19'
 quality_index:
   n_digits: 3
   n_characters: 3
@@ -172,6 +189,7 @@ quality_index:
   - 0
   - 100
   nan_flags: 999
+  field_number: '20'
 max_hail_diameter:
   n_digits: 2
   n_characters: 3
@@ -181,9 +199,7 @@ max_hail_diameter:
   - 0.0
   - 9.9
   nan_flags: null
-
-### Status
-
+  field_number: '21'
 laser_status:
   n_digits: 1
   n_characters: 1
@@ -192,10 +208,11 @@ laser_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK/on:0, off:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '22'
 static_signal:
   n_digits: 1
   n_characters: 1
@@ -204,9 +221,8 @@ static_signal:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, Error:1)
-
-
+  nan_flags: null
+  field_number: '23'
 laser_temperature_analog_status:
   n_digits: 1
   n_characters: 1
@@ -215,10 +231,11 @@ laser_temperature_analog_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, Error:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '24'
 laser_temperature_digital_status:
   n_digits: 1
   n_characters: 1
@@ -227,10 +244,11 @@ laser_temperature_digital_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, Error:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '25'
 laser_current_analog_status:
   n_digits: 1
   n_characters: 1
@@ -239,10 +257,11 @@ laser_current_analog_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, Error:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '26'
 laser_current_digital_status:
   n_digits: 1
   n_characters: 1
@@ -251,13 +270,11 @@ laser_current_digital_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, Error:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
-
-### Heating: glass(panes), housing, heads, carriers
-
+  field_number: '27'
 sensor_voltage_supply_status:
   n_digits: 1
   n_characters: 1
@@ -266,11 +283,11 @@ sensor_voltage_supply_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, Error:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
-
+  field_number: '28'
 current_heating_pane_transmitter_head_status:
   n_digits: 1
   n_characters: 1
@@ -279,7 +296,8 @@ current_heating_pane_transmitter_head_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
+  field_number: '29'
 current_heating_pane_receiver_head_status:
   n_digits: 1
   n_characters: 1
@@ -288,11 +306,11 @@ current_heating_pane_receiver_head_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
-
+  field_number: '30'
 temperature_sensor_status:
   n_digits: 1
   n_characters: 1
@@ -301,11 +319,11 @@ temperature_sensor_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
-
+  field_number: '31'
 current_heating_voltage_supply_status:
   n_digits: 1
   n_characters: 1
@@ -314,10 +332,11 @@ current_heating_voltage_supply_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '32'
 current_heating_house_status:
   n_digits: 1
   n_characters: 1
@@ -326,10 +345,11 @@ current_heating_house_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '33'
 current_heating_heads_status:
   n_digits: 1
   n_characters: 1
@@ -338,10 +358,11 @@ current_heating_heads_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '34'
 current_heating_carriers_status:
   n_digits: 1
   n_characters: 1
@@ -350,10 +371,11 @@ current_heating_carriers_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '35'
 control_output_laser_power_status:
   n_digits: 1
   n_characters: 1
@@ -362,10 +384,11 @@ control_output_laser_power_status:
   data_range:
   - 0
   - 1
-  nan_flags: null # (OK:0, warning:1)
+  nan_flags: null
   valid_values:
   - 0
   - 1
+  field_number: '36'
 reserve_status:
   n_digits: 1
   n_characters: 1
@@ -378,19 +401,17 @@ reserve_status:
   valid_values:
   - 0
   - 1
-
-### Values
-
+  field_number: '37'
 temperature_interior:
   n_digits: 3
   n_characters: 3
   n_decimals: 3
   n_naturals: 0
   data_range:
-  - -30 # or 0 ?
+  - -30
   - 999
   nan_flags: null
-
+  field_number: '38'
 laser_temperature:
   n_digits: 2
   n_characters: 2
@@ -400,6 +421,7 @@ laser_temperature:
   - 0
   - 80
   nan_flags: null
+  field_number: '39'
 laser_current_average:
   n_digits: 4
   n_characters: 4
@@ -409,7 +431,7 @@ laser_current_average:
   - 0
   - 9999
   nan_flags: null
-
+  field_number: '40'
 control_voltage:
   n_digits: 4
   n_characters: 4
@@ -417,16 +439,17 @@ control_voltage:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  field_number: '41'
 optical_control_voltage_output:
   n_digits: 4
   n_characters: 4
   n_decimals: 4
   n_naturals: 0
   data_range:
-  - 0    # 1000
-  - 9999 # 6500 in the doc, 6660 occurrence found
+  - 0
+  - 9999
   nan_flags: null
-
+  field_number: '42'
 sensor_voltage_supply:
   n_digits: 3
   n_characters: 3
@@ -434,7 +457,7 @@ sensor_voltage_supply:
   n_naturals: 0
   data_range: null
   nan_flags: null
-
+  field_number: '43'
 current_heating_pane_transmitter_head:
   n_digits: 3
   n_characters: 3
@@ -442,6 +465,7 @@ current_heating_pane_transmitter_head:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  field_number: '44'
 current_heating_pane_receiver_head:
   n_digits: 3
   n_characters: 3
@@ -449,7 +473,7 @@ current_heating_pane_receiver_head:
   n_naturals: 0
   data_range: null
   nan_flags: null
-
+  field_number: '45'
 temperature_ambient:
   n_digits: 4
   n_characters: 5
@@ -459,7 +483,7 @@ temperature_ambient:
   - -999.9
   - 99999.0
   nan_flags: null
-
+  field_number: '46'
 current_heating_voltage_supply:
   n_digits: 3
   n_characters: 3
@@ -467,6 +491,7 @@ current_heating_voltage_supply:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  field_number: '47'
 current_heating_house:
   n_digits: 4
   n_characters: 4
@@ -474,6 +499,7 @@ current_heating_house:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  field_number: '48'
 current_heating_heads:
   n_digits: 4
   n_characters: 4
@@ -481,6 +507,7 @@ current_heating_heads:
   n_naturals: 0
   data_range: null
   nan_flags: null
+  field_number: '49'
 current_heating_carriers:
   n_digits: 4
   n_characters: 4
@@ -488,8 +515,8 @@ current_heating_carriers:
   n_naturals: 0
   data_range: null
   nan_flags: null
-
-number_particles: # number_particles_all
+  field_number: '50'
+number_particles:
   n_digits: 5
   n_characters: 5
   n_decimals: 5
@@ -498,15 +525,17 @@ number_particles: # number_particles_all
   - 0
   - 99999
   nan_flags: null
-number_particles_internal_data: # By documentation: „00000.000“ (internal data)
+  field_number: '51'
+number_particles_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '52'
 number_particles_min_speed:
   n_digits: 5
   n_characters: 5
@@ -516,15 +545,17 @@ number_particles_min_speed:
   - 0
   - 99999
   nan_flags: null
-number_particles_min_speed_internal_data: # By documentation: „00000.000“ (internal data)
+  field_number: '53'
+number_particles_min_speed_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '54'
 number_particles_max_speed:
   n_digits: 5
   n_characters: 5
@@ -534,15 +565,17 @@ number_particles_max_speed:
   - 0
   - 99999
   nan_flags: null
-number_particles_max_speed_internal_data: # By documentation: „00000.000“ (internal data)
+  field_number: '55'
+number_particles_max_speed_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '56'
 number_particles_min_diameter:
   n_digits: 5
   n_characters: 5
@@ -552,15 +585,17 @@ number_particles_min_diameter:
   - 0
   - 99999
   nan_flags: null
-number_particles_min_diameter_internal_data: # By documentation: „00000.000“ (internal data)
+  field_number: '57'
+number_particles_min_diameter_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '58'
 number_particles_no_hydrometeor:
   n_digits: 5
   n_characters: 5
@@ -570,15 +605,17 @@ number_particles_no_hydrometeor:
   - 0
   - 99999
   nan_flags: null
+  field_number: '59'
 number_particles_no_hydrometeor_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '60'
 number_particles_unknown_classification:
   n_digits: 5
   n_characters: 5
@@ -588,16 +625,17 @@ number_particles_unknown_classification:
   - 0
   - 99999
   nan_flags: null
+  field_number: '61'
 number_particles_unknown_classification_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
-
+  field_number: '62'
 number_particles_class_1:
   n_digits: 5
   n_characters: 5
@@ -607,15 +645,17 @@ number_particles_class_1:
   - 0
   - 99999
   nan_flags: null
+  field_number: '63'
 number_particles_class_1_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '64'
 number_particles_class_2:
   n_digits: 5
   n_characters: 5
@@ -625,15 +665,17 @@ number_particles_class_2:
   - 0
   - 99999
   nan_flags: null
+  field_number: '65'
 number_particles_class_2_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '66'
 number_particles_class_3:
   n_digits: 5
   n_characters: 5
@@ -643,15 +685,17 @@ number_particles_class_3:
   - 0
   - 99999
   nan_flags: null
+  field_number: '67'
 number_particles_class_3_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '68'
 number_particles_class_4:
   n_digits: 5
   n_characters: 5
@@ -661,15 +705,17 @@ number_particles_class_4:
   - 0
   - 99999
   nan_flags: null
+  field_number: '69'
 number_particles_class_4_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '70'
 number_particles_class_5:
   n_digits: 5
   n_characters: 5
@@ -679,15 +725,17 @@ number_particles_class_5:
   - 0
   - 99999
   nan_flags: null
+  field_number: '71'
 number_particles_class_5_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '72'
 number_particles_class_6:
   n_digits: 5
   n_characters: 5
@@ -697,15 +745,17 @@ number_particles_class_6:
   - 0
   - 99999
   nan_flags: null
+  field_number: '73'
 number_particles_class_6_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '74'
 number_particles_class_7:
   n_digits: 5
   n_characters: 5
@@ -715,15 +765,17 @@ number_particles_class_7:
   - 0
   - 99999
   nan_flags: null
+  field_number: '75'
 number_particles_class_7_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '76'
 number_particles_class_8:
   n_digits: 5
   n_characters: 5
@@ -733,15 +785,17 @@ number_particles_class_8:
   - 0
   - 99999
   nan_flags: null
+  field_number: '77'
 number_particles_class_8_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '78'
 number_particles_class_9:
   n_digits: 5
   n_characters: 5
@@ -751,15 +805,17 @@ number_particles_class_9:
   - 0
   - 99999
   nan_flags: null
+  field_number: '79'
 number_particles_class_9_internal_data:
   n_digits: 8
   n_characters: 9
   n_decimals: 5
   n_naturals: 3
   data_range:
-  - 00000.000
+  - 0.0
   - 99999.999
   nan_flags: null
+  field_number: '80'
 raw_drop_number:
   n_digits: 1317
   n_characters: 1756
@@ -771,8 +827,4 @@ raw_drop_number:
   - diameter_bin_center
   - velocity_bin_center
   n_values: 440
-
-# '521': air_temperature
-# '522': relative_humidity
-# '523': wind_speed
-# '524': wind_direction
+  field_number: '81'

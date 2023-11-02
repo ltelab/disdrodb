@@ -5,6 +5,7 @@ time:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '02'
 date:
   n_digits: null
   n_characters: null
@@ -12,6 +13,7 @@ date:
   n_naturals: null
   data_range: null
   nan_flags: null
+  field_number: '01'
 sensor_status:
   n_digits: null
   n_characters: null
@@ -22,6 +24,7 @@ sensor_status:
   valid_values:
   - 0
   - 1
+  field_number: '03'
 interval:
   n_digits: 4
   n_characters: 4
@@ -31,6 +34,7 @@ interval:
   - 0
   - 9999
   nan_flags: null
+  field_number: '04'
 RI:
   n_digits: 7
   n_characters: 8
@@ -40,6 +44,7 @@ RI:
   - 0
   - 999.9999
   nan_flags: null
+  field_number: '25'
 RA:
   n_digits: 5
   n_characters: 6
@@ -49,6 +54,7 @@ RA:
   - 0
   - 9.9999
   nan_flags: null
+  field_number: '26'
 RAT:
   n_digits: 5
   n_characters: 6
@@ -58,6 +64,7 @@ RAT:
   - 0
   - 9.9999
   nan_flags: null
+  field_number: '27'
 W:
   n_digits: 5
   n_characters: 6
@@ -67,6 +74,7 @@ W:
   - 0
   - 9.9999
   nan_flags: null
+  field_number: '28'
 Wg:
   n_digits: 5
   n_characters: 6
@@ -76,6 +84,7 @@ Wg:
   - 0
   - 9.9999
   nan_flags: null
+  field_number: '29'
 Z:
   n_digits: 6
   n_characters: 1
@@ -85,6 +94,7 @@ Z:
   - -99.9999
   - 99.9999
   nan_flags: -Inf
+  field_number: '30'
 ZdB:
   n_digits: 6
   n_characters: 1
@@ -94,6 +104,7 @@ ZdB:
   - -99.9999
   - 99.9999
   nan_flags: -Inf
+  field_number: '31'
 EF:
   n_digits: 7
   n_characters: 8
@@ -103,6 +114,7 @@ EF:
   - 0
   - 9999.999
   nan_flags: null
+  field_number: '33'
 EK:
   n_digits: 7
   n_characters: 8
@@ -112,6 +124,7 @@ EK:
   - 0
   - 9999.999
   nan_flags: null
+  field_number: '32'
 N0:
   n_digits: 8
   n_characters: 9
@@ -121,6 +134,7 @@ N0:
   - 0
   - 9999.9999
   nan_flags: null
+  field_number: '34'
 slope:
   n_digits: 8
   n_characters: 9
@@ -130,6 +144,7 @@ slope:
   - 0
   - 9.9999
   nan_flags: null
+  field_number: '35'
 Dmax:
   n_digits: 8
   n_characters: 9
@@ -139,6 +154,7 @@ Dmax:
   - 0
   - 9.9999
   nan_flags: null
+  field_number: '37'
 raw_drop_number:
   n_digits: 0
   n_characters: null
@@ -149,6 +165,7 @@ raw_drop_number:
   dimension_order:
   - diameter_bin_center
   n_values: 20
+  field_number: null
 ND:
   n_digits: 0
   n_characters: null
@@ -159,3 +176,4 @@ ND:
   dimension_order:
   - diameter_bin_center
   n_values: 20
+  field_number: '36'
