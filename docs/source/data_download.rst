@@ -40,19 +40,19 @@ You can set the default DISDRODB root directory by running in python:
 
     import disdrodb
 
-    disdrodb_dir = "<the_root_folder>/disdrodb-data/DISDRODB>"
-    disdrodb.define_configs(disdrodb_dir=disdrodb_dir)
+    base_dir = "<the_root_folder>/disdrodb-data/DISDRODB>"
+    disdrodb.define_configs(base_dir=base_dir)
 
 By running this command, the disdrodb software will write a ``.config_disdrodb.yml`` file into your home directory (i.e. ``~/.config_disdrodb.yml``)
 that will be used as default configuration file when running the disdrodb software.
 
 
-Alternatively, you can also define the DISDRODB root directory as an environment variable ``DISDRODB_DIR``.
+Alternatively, you can also define the DISDRODB root directory as an environment variable ``DISDRODB_BASE_DIR``.
 In the terminal, you must type the following command:
 .. code:: bash
-   export DISDRODB_DIR="<the_root_folder>/disdrodb-data/DISDRODB"
+   export DISDRODB_BASE_DIR="<the_root_folder>/disdrodb-data/DISDRODB"
 
-.. note:: It's important to remember that the environment variable ``DISDRODB_DIR`` (if defined) will take priority over the default path
+.. note:: It's important to remember that the environment variable ``DISDRODB_BASE_DIR`` (if defined) will take priority over the default path
           defined in the ``.config_disdrodb.yml`` file.
 
 

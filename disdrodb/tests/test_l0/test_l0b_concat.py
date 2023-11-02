@@ -153,7 +153,7 @@ def test_run_disdrodb_l0b_concat(tmp_path):
         with_metadata_file=True,
     )
 
-    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = os.path.join(tmp_path, "DISDRODB")
 
     filename_1 = os.path.join(folder_temp_1, f"{station_name}_1.nc")
     filename_2 = os.path.join(folder_temp_2, f"{station_name}_2.nc")
@@ -162,7 +162,7 @@ def test_run_disdrodb_l0b_concat(tmp_path):
     create_dummy_netcdf_file(filename=filename_2, data=(lat_data, lon_data, time_data_2, data_2))
 
     run_disdrodb_l0b_concat(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
         station_names=[station_name],
@@ -170,4 +170,4 @@ def test_run_disdrodb_l0b_concat(tmp_path):
         verbose=False,
     )
 
-    assert glob.glob(os.path.join(disdrodb_dir, "Processed", data_source, campaign_name, "L0B", "*.nc"))[0]
+    assert glob.glob(os.path.join(base_dir, "Processed", data_source, campaign_name, "L0B", "*.nc"))[0]

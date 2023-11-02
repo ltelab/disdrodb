@@ -30,8 +30,8 @@ from disdrodb.utils.yaml import read_yaml, write_yaml
 from disdrodb.utils.zenodo import _create_zenodo_deposition
 
 
-def create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_name, data_url=""):
-    metadata_dir = disdrodb_dir / "Raw" / data_source / campaign_name / "metadata"
+def create_fake_metadata_file(base_dir, data_source, campaign_name, station_name, data_url=""):
+    metadata_dir = base_dir / "Raw" / data_source / campaign_name / "metadata"
     if not metadata_dir.exists():
         metadata_dir.mkdir(parents=True)
     metadata_fpath = metadata_dir / f"{station_name}.yml"
@@ -43,8 +43,8 @@ def create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_
     write_yaml(metadata_dict, metadata_fpath)
 
 
-def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name):
-    data_dir = disdrodb_dir / "Raw" / data_source / campaign_name / "data" / station_name
+def create_fake_data_dir(base_dir, data_source, campaign_name, station_name):
+    data_dir = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
     if not data_dir.exists():
         data_dir.mkdir(parents=True)
     data_fpath = data_dir / "test_data.txt"
@@ -53,8 +53,8 @@ def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
     return data_dir
 
 
-def get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name):
-    metadata_fpath = disdrodb_dir / "Raw" / data_source / campaign_name / "metadata" / f"{station_name}.yml"
+def get_metadata_dict(base_dir, data_source, campaign_name, station_name):
+    metadata_fpath = base_dir / "Raw" / data_source / campaign_name / "metadata" / f"{station_name}.yml"
     return read_yaml(metadata_fpath)
 
 
@@ -79,30 +79,30 @@ def mock_zenodo_api(requests_mock):
 def test_upload_to_zenodo(tmp_path, requests_mock):
     """Create two stations. One already has a remote url. Upload to Zenodo sandbox."""
 
-    disdrodb_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
     station_name1 = "test_station_name1"
     station_name2 = "test_station_name2"
     station_url1 = "https://www.example.com"
 
-    create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_name1, station_url1)
-    create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_name2)
-    create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name1)
-    create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name2)
+    create_fake_metadata_file(base_dir, data_source, campaign_name, station_name1, station_url1)
+    create_fake_metadata_file(base_dir, data_source, campaign_name, station_name2)
+    create_fake_data_dir(base_dir, data_source, campaign_name, station_name1)
+    create_fake_data_dir(base_dir, data_source, campaign_name, station_name2)
 
     # Set ZENODO_ACCESS_TOKEN environment variable to prevent asking input from user
     os.environ["ZENODO_ACCESS_TOKEN"] = "test_access_token"
 
     mock_zenodo_api(requests_mock)
-    upload_disdrodb_archives(platform="sandbox.zenodo", disdrodb_dir=str(disdrodb_dir))
+    upload_disdrodb_archives(platform="sandbox.zenodo", base_dir=str(base_dir))
 
     # Check metadata files (1st one should not have changed)
-    metadata_dict1 = get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name1)
+    metadata_dict1 = get_metadata_dict(base_dir, data_source, campaign_name, station_name1)
     new_station_url1 = metadata_dict1["data_url"]
     assert new_station_url1 == station_url1
 
-    metadata_dict2 = get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name2)
+    metadata_dict2 = get_metadata_dict(base_dir, data_source, campaign_name, station_name2)
     new_station_url2 = metadata_dict2["data_url"]
     list_new_station_url2 = new_station_url2.split(os.path.sep)
 
@@ -111,7 +111,7 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
     assert list_new_station_url2[-4:] == ["files", data_source, campaign_name, f"{station_name2}.zip"]
 
     # Test upload of already uploaded data
-    upload_disdrodb_archives(platform="sandbox.zenodo", disdrodb_dir=str(disdrodb_dir))
+    upload_disdrodb_archives(platform="sandbox.zenodo", base_dir=str(base_dir))
 
 
 def test_wrong_http_response(requests_mock):

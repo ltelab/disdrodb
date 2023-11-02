@@ -59,14 +59,14 @@ You can specify once forever the default DISDRODB Local Archive directory by run
 
 ```python
    import disdrodb
-   disdrodb_dir = "<the_path_to>/disdrodb-data/DISDRODB>"
-   disdrodb.define_configs(disdrodb_dir=disdrodb_dir)
+   base_dir = "<the_path_to>/disdrodb-data/DISDRODB>"
+   disdrodb.define_configs(base_dir=base_dir)
 ```
 
-or set up the (temporary) environment variable `DISDRODB_DIR` in your terminal with:
+or set up the (temporary) environment variable `DISDRODB_BASE_DIR` in your terminal with:
 
 ```bash
-   export DISDRODB_DIR="<the_path_to>/disdrodb-data/DISDRODB>"
+   export DISDRODB_BASE_DIR="<the_path_to>/disdrodb-data/DISDRODB>"
 ```
 
 #### 📥 Download the DISDRODB raw data

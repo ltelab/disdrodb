@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 #### Info from file or directory
 
 
-def _infer_disdrodb_dir_from_fpath(path: str) -> str:
+def _infer_base_dir_from_fpath(path: str) -> str:
     """Return the disdrodb base directory from a file or directory path.
 
     Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
@@ -62,13 +62,13 @@ def _infer_disdrodb_dir_from_fpath(path: str) -> str:
         raise ValueError(f"The DISDRODB directory is not present in {path}")
     # Find the rightermost occurrence
     right_most_occurrence = max(idx_occurrence)
-    # Define the disdrodb_dir path
-    disdrodb_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
-    return disdrodb_dir
+    # Define the base_dir path
+    base_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
+    return base_dir
 
 
 def _infer_disdrodb_tree_path(path: str) -> str:
-    """Return the directory tree path from the disdrodb_dir directory.
+    """Return the directory tree path from the base_dir directory.
 
     Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
@@ -127,7 +127,7 @@ def _infer_campaign_name_from_path(path: str) -> str:
 
     Parameters
     ----------
-    base_dir : str
+    path : str
        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
@@ -149,7 +149,7 @@ def _infer_data_source_from_path(path: str) -> str:
 
     Parameters
     ----------
-    base_dir : str
+    path : str
        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
 
     Returns
@@ -693,13 +693,13 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
     #### Check metadata compliance
     for fpath in list_metadata_fpath:
         # Get station info
-        disdrodb_dir = _infer_disdrodb_dir_from_fpath(fpath)
+        base_dir = _infer_base_dir_from_fpath(fpath)
         data_source = _infer_data_source_from_path(fpath)
         campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
         # Check compliance
         check_metadata_compliance(
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

@@ -26,17 +26,17 @@ from donfig import Config
 from disdrodb.configs import read_disdrodb_configs
 
 
-def _try_get_default_disdrodb_dir():
+def _try_get_default_base_dir():
     """Retrieve the default DISDRODB directory specified in the .config_disdrodb.yml file."""
     try:
-        disdrodb_dir = read_disdrodb_configs().get("disdrodb_dir", None)
+        base_dir = read_disdrodb_configs().get("base_dir", None)
     except Exception:
-        disdrodb_dir = None
-    return disdrodb_dir
+        base_dir = None
+    return base_dir
 
 
 _CONFIG_DEFAULTS = {
-    "dir": _try_get_default_disdrodb_dir(),  # DISDRODB_DIR
+    "dir": _try_get_default_base_dir(),  # DISDRODB_BASE_DIR
 }
 
 _CONFIG_PATHS = []

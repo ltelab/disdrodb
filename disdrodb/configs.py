@@ -11,14 +11,14 @@ from disdrodb.utils.yaml import read_yaml, write_yaml
 
 
 def define_disdrodb_configs(
-    disdrodb_dir: str,
+    base_dir: str,
 ):
     """
     Defines the DISDRODB configuration file with the given credentials and base directory.
 
     Parameters
     ----------
-    disdrodb_dir : str
+    base_dir : str
         The base directory where DISDRODB Metadata Archive is located.
 
     Notes
@@ -28,7 +28,7 @@ def define_disdrodb_configs(
 
     """
     config_dict = {}
-    config_dict["disdrodb_dir"] = disdrodb_dir
+    config_dict["base_dir"] = base_dir
 
     # Retrieve user home directory
     home_directory = os.path.expanduser("~")
@@ -81,10 +81,10 @@ def _get_config_key(key):
     return value
 
 
-def get_disdrodb_dir(disdrodb_dir=None):
+def get_base_dir(base_dir=None):
     """Return the DISDRODB base directory."""
     import disdrodb
 
-    if disdrodb_dir is None:
-        disdrodb_dir = disdrodb.config["dir"]
-    return disdrodb_dir
+    if base_dir is None:
+        base_dir = disdrodb.config["dir"]
+    return base_dir

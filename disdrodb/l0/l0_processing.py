@@ -767,7 +767,7 @@ def run_disdrodb_l0a_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     """Run the L0A processing of a station calling run_disdrodb_l0a_station in the terminal."""
     # Define command
@@ -787,8 +787,8 @@ def run_disdrodb_l0a_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--disdrodb_dir",
-            str(disdrodb_dir),
+            "--base_dir",
+            str(base_dir),
         ]
     )
     # Execute command
@@ -806,7 +806,7 @@ def run_disdrodb_l0b_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     """Run the L0B processing of a station calling run_disdrodb_l0b_station in the terminal."""
     # Define command
@@ -826,8 +826,8 @@ def run_disdrodb_l0b_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--disdrodb_dir",
-            str(disdrodb_dir),
+            "--base_dir",
+            str(base_dir),
         ]
     )
     # Execute command
@@ -854,7 +854,7 @@ def run_disdrodb_l0_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -904,7 +904,7 @@ def run_disdrodb_l0_station(
         For L0A, it processes just the first 3 raw data files for each station.
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.
         The default is False.
-    disdrodb_dir : str (optional)
+    base_dir : str (optional)
         Base directory of DISDRODB. Format: <...>/DISDRODB
         If None (the default), the disdrodb config variable 'dir' is used.
     """
@@ -921,7 +921,7 @@ def run_disdrodb_l0_station(
     if l0a_processing:
         run_disdrodb_l0a_station(
             # Station arguments
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -936,7 +936,7 @@ def run_disdrodb_l0_station(
     if l0b_processing:
         run_disdrodb_l0b_station(
             # Station arguments
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -951,7 +951,7 @@ def run_disdrodb_l0_station(
     # Remove L0A station directory if remove_l0a = True and l0b_processing = True
     if l0b_processing and remove_l0a:
         campaign_dir = get_disdrodb_path(
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             product_level="L0A",
             data_source=data_source,
             campaign_name=campaign_name,
@@ -963,7 +963,7 @@ def run_disdrodb_l0_station(
     # If l0b_concat=True, concat the netCDF in a single file
     if l0b_concat:
         run_disdrodb_l0b_concat_station(
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -1024,7 +1024,7 @@ def run_disdrodb_l0(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     """Run the L0 processing of DISDRODB stations.
 
@@ -1082,7 +1082,7 @@ def run_disdrodb_l0(
         For L0A, it processes just the first 3 raw data files.
         For L0B, it processes just the first 100 rows of 3 L0A files.
         The default is False.
-    disdrodb_dir : str (optional)
+    base_dir : str (optional)
         Base directory of DISDRODB. Format: <...>/DISDRODB
         If None (the default), the disdrodb config variable 'dir' is used.
     """
@@ -1091,7 +1091,7 @@ def run_disdrodb_l0(
     # Get list of available stations
     product_level = _get_starting_product_level(l0a_processing=l0a_processing, l0b_processing=l0b_processing)
     list_info = available_stations(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         product_level=product_level,
         data_sources=data_sources,
         campaign_names=campaign_names,
@@ -1108,7 +1108,7 @@ def run_disdrodb_l0(
         print(f"L0 processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l0_station(
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -1136,10 +1136,10 @@ def run_disdrodb_l0a(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     run_disdrodb_l0(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
@@ -1166,10 +1166,10 @@ def run_disdrodb_l0b(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     run_disdrodb_l0(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
@@ -1271,7 +1271,7 @@ def click_l0_processing_options(function: object):
         help="Force overwriting",
     )(function)
     function = click.option(
-        "--disdrodb_dir",
+        "--base_dir",
         type=str,
         show_default=True,
         default=None,
@@ -1344,7 +1344,7 @@ def click_l0b_concat_options(function: object):
         help="If true, remove all source L0B files once L0B concatenation is terminated.",
     )(function)
     function = click.option(
-        "--disdrodb_dir",
+        "--base_dir",
         type=str,
         show_default=True,
         default=None,

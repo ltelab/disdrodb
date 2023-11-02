@@ -34,13 +34,13 @@ PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data
 
 
 def create_fake_station_file(
-    disdrodb_dir, data_source="data_source", campaign_name="campaign_name", station_name="station_name"
+    base_dir, data_source="data_source", campaign_name="campaign_name", station_name="station_name"
 ):
-    subfolder_path = disdrodb_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "data" / station_name
+    subfolder_path = base_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "data" / station_name
     if not os.path.exists(subfolder_path):
         subfolder_path.mkdir(parents=True)
 
-    subfolder_path = disdrodb_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    subfolder_path = base_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
     if not os.path.exists(subfolder_path):
         subfolder_path.mkdir(parents=True)
 
@@ -51,16 +51,16 @@ def create_fake_station_file(
 
 
 def test_create_campaign_default_metadata(tmp_path):
-    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = os.path.join(tmp_path, "DISDRODB")
     campaign_name = "test_campaign"
     data_source = "test_data_source"
     station_name = "test_station"
 
     create_fake_station_file(
-        disdrodb_dir=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
-    create_campaign_default_metadata(disdrodb_dir=disdrodb_dir, data_source=data_source, campaign_name=campaign_name)
+    create_campaign_default_metadata(base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
 
     expected_file_path = os.path.join(
         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"

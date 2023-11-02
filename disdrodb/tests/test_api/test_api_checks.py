@@ -50,8 +50,8 @@ def test_check_url():
     assert checks.check_url("http://example.com/path with spaces") is False
 
 
-def test_check_disdrodb_dir():
-    assert checks.check_disdrodb_dir("/path/to/DISDRODB") is None
+def test_check_base_dir():
+    assert checks.check_base_dir("/path/to/DISDRODB") is None
 
     with pytest.raises(ValueError):
-        checks.check_disdrodb_dir("/path/to/DISDRO")
+        checks.check_base_dir("/path/to/DISDRO")

@@ -22,7 +22,7 @@ import os
 
 import numpy as np
 
-from disdrodb.configs import get_disdrodb_dir
+from disdrodb.configs import get_base_dir
 from disdrodb.l0.io import _infer_campaign_name_from_path, _infer_data_source_from_path
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
@@ -198,15 +198,15 @@ def write_default_metadata(fpath: str) -> None:
 def create_campaign_default_metadata(
     campaign_name,
     data_source,
-    disdrodb_dir=None,
+    base_dir=None,
 ):
     """Create default YAML metadata files for all stations within a campaign.
 
     Use the function with caution to avoid overwrite existing YAML files.
     """
-    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
-    data_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "data")
-    metadata_dir = os.path.join(disdrodb_dir, "Raw", data_source, campaign_name, "metadata")
+    base_dir = get_base_dir(base_dir)
+    data_dir = os.path.join(base_dir, "Raw", data_source, campaign_name, "data")
+    metadata_dir = os.path.join(base_dir, "Raw", data_source, campaign_name, "metadata")
     station_names = os.listdir(data_dir)
     for station_name in station_names:
         metadata_fpath = os.path.join(metadata_dir, station_name + ".yml")
@@ -317,13 +317,13 @@ def _check_metadata_sensor_name(metadata):
     return None
 
 
-def check_metadata_compliance(data_source, campaign_name, station_name, disdrodb_dir=None):
+def check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None):
     """Check DISDRODB metadata compliance."""
     from disdrodb.api.metadata import read_station_metadata
     from disdrodb.l0.l0_reader import _check_metadata_reader
 
     metadata = read_station_metadata(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         product_level="RAW",
         data_source=data_source,
         campaign_name=campaign_name,

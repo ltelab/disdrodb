@@ -82,7 +82,7 @@ def click_upload_option(function: object):
         help="Force uploading even if data already exists on another remote location.",
     )(function)
     function = click.option(
-        "--disdrodb_dir",
+        "--base_dir",
         type=str,
         show_default=True,
         default=None,
@@ -132,7 +132,7 @@ def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) ->
 def _generate_data_remote_path(metadata_fpath: str) -> str:
     """Generate data remote path from a metadata path.
 
-    metadata_fpath has the form "disdrodb_dir/Raw/data_source/campaign_name/metadata/station_name.yml".
+    metadata_fpath has the form "base_dir/Raw/data_source/campaign_name/metadata/station_name.yml".
     The remote path has the form "data_source/campaign_name/station_name".
 
     Parameters
@@ -217,7 +217,7 @@ def _update_metadata_with_zenodo_url(
 def upload_disdrodb_archives(
     platform: Optional[str] = None,
     force: bool = False,
-    disdrodb_dir: Optional[str] = None,
+    base_dir: Optional[str] = None,
     **kwargs,
 ) -> None:
     """Find all stations containing local data and upload them to a remote repository.
@@ -231,7 +231,7 @@ def upload_disdrodb_archives(
     force: bool, optional
         If True, upload even if data already exists on another remote location.
         The default is force=False.
-    disdrodb_dir : str (optional)
+    base_dir : str (optional)
         Base directory of DISDRODB. Format: <...>/DISDRODB
         If None (the default), the disdrodb config variable 'dir' is used.
 
@@ -254,7 +254,7 @@ def upload_disdrodb_archives(
 
     metadata_fpaths = get_list_metadata(
         **kwargs,
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         with_stations_data=True,
     )
 

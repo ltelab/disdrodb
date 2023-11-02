@@ -80,7 +80,7 @@ def test_check_metadata_reader():
 
 
 def test_get_station_reader_function(tmp_path):
-    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = os.path.join(tmp_path, "DISDRODB")
     station_name = "station_1"
     yaml_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
     data_source = "data_source"
@@ -95,7 +95,7 @@ def test_get_station_reader_function(tmp_path):
     )
 
     result = get_station_reader_function(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

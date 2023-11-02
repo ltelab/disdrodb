@@ -34,7 +34,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_l0_stations_options
 @click_l0b_concat_options
 def run_disdrodb_l0b_concat(
-    data_sources, campaign_names, station_names, remove_l0b=False, verbose=True, disdrodb_dir: str = None
+    data_sources, campaign_names, station_names, remove_l0b=False, verbose=True, base_dir: str = None
 ):
     """Run the L0B concatenation of available DISDRODB stations.
 
@@ -63,7 +63,7 @@ def run_disdrodb_l0b_concat(
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
-    disdrodb_dir : str \n
+    base_dir : str \n
         Base directory of DISDRODB \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
@@ -77,7 +77,7 @@ def run_disdrodb_l0b_concat(
 
     # Run concatenation
     run_disdrodb_l0b_concat(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

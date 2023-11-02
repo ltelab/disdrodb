@@ -6,7 +6,7 @@ from disdrodb.data_transfer.upload_data import click_upload_option
 @click.command()
 @click_upload_option
 def upload_disdrodb_archive(
-    disdrodb_dir=None,
+    base_dir=None,
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -25,7 +25,7 @@ def upload_disdrodb_archive(
         platform=platform,
         files_compression=files_compression,
         force=force,
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

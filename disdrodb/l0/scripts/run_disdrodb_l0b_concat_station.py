@@ -40,7 +40,7 @@ def run_disdrodb_l0b_concat_station(
     # L0B concat options
     remove_l0b=False,
     verbose=True,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     """Concatenation all L0B files of a specific DISDRODB station into a single netCDF.
 
@@ -61,7 +61,7 @@ def run_disdrodb_l0b_concat_station(
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
-    disdrodb_dir : str \n
+    base_dir : str \n
         Base directory of DISDRODB \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
@@ -71,7 +71,7 @@ def run_disdrodb_l0b_concat_station(
 
     # Retrieve processed_dir
     processed_dir = get_disdrodb_path(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         product_level="L0B",
         data_source=data_source,
         campaign_name=campaign_name,

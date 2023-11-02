@@ -41,7 +41,7 @@ def run_disdrodb_l0a(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     """
     Run the L0A processing of DISDRODB stations.
@@ -83,7 +83,7 @@ def run_disdrodb_l0a(
         If True, it reduces the amount of data to process.
         It processes just the first 3 raw data files for each station.
         The default is False.
-    disdrodb_dir : str \n
+    base_dir : str \n
         Base directory of DISDRODB \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
@@ -101,7 +101,7 @@ def run_disdrodb_l0a(
 
     # Run processing
     run_disdrodb_l0a(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

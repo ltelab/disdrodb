@@ -42,7 +42,7 @@ def run_disdrodb_l0b_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    disdrodb_dir: str = None,
+    base_dir: str = None,
 ):
     """Run the L0B processing of a specific DISDRODB station from the terminal.
 
@@ -75,7 +75,7 @@ def run_disdrodb_l0b_station(
         If True, it reduces the amount of data to process.
         It processes just the first 100 rows of 3 L0A files.
         The default is False.
-    disdrodb_dir : str \n
+    base_dir : str \n
         Base directory of DISDRODB \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
@@ -109,7 +109,7 @@ def run_disdrodb_l0b_station(
     # -------------------------------------------------------------------------.
     # Define processed dir
     processed_dir = get_disdrodb_path(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         product_level="L0B",
         data_source=data_source,
         campaign_name=campaign_name,

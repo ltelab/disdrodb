@@ -74,7 +74,7 @@ We provide users with a code to easily upload their stations raw data to `Zenodo
 
    upload_disdrodb_archive <the_root_folder> --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --platform <name_of_the_platform> --force true
 
-The ``disdrodb_dir`` parameter is compulsory and must include the path
+The ``base_dir`` parameter is compulsory and must include the path
 of the root folder, ending with ``DISDRODB``. The other parameters are
 optional and are meant to restrict the upload processing to a specific
 data source, campaign, or station.
@@ -119,11 +119,11 @@ To do so, first make a copy of the DISDRODB metadata archive you just edited, in
 Then, run the following command to download the data you just uploaded:
 
 .. code:: bash
-   export DISDRODB_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited/DISDRODB"
+   export DISDRODB_BASE_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited/DISDRODB"
    download_disdrodb_archive  --data_sources <your_data_source> --campaign_names <your_new_campaign> --force true
 
 ::note
-   Be sure to specify a ``DISDRODB_DIR`` environment variable that points to a copy of the metadata archive you edited
+   Be sure to specify a ``DISDRODB_BASE_DIR`` environment variable that points to a copy of the metadata archive you edited
    otherwise you risk to overwrite the data you just uploaded!
 
 If the download is successful, and you also already implemented the DISDRODB reader for your data, you can now try to process the data you just downloaded.
@@ -131,7 +131,7 @@ If the download is successful, and you also already implemented the DISDRODB rea
 To do so, run the following command:
 
 .. code:: bash
-   export DISDRODB_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited/DISDRODB"
+   export DISDRODB_BASE_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited/DISDRODB"
    run_disdrodb_l0  --data_sources <your_data_source> --campaign_names <your_new_campaign>
 
    ::note

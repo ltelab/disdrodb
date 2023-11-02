@@ -40,9 +40,9 @@ There are two ways of process a station using DISDRODB.
 	.. code-block:: python
 
 		from disdrodb.l0 import run_disdrodb_l0_station
-		from disdrodb.configs import get_disdrodb_dir
+		from disdrodb.configs import get_base_dir
 
-		disdrodb_dir = get_disdrodb_dir()
+		base_dir = get_base_dir()
 		data_source='EPFL'
 		campaign_name='EPFL_2008'
 		station_name="10"
@@ -62,7 +62,7 @@ There are two ways of process a station using DISDRODB.
 		# Run the processing
 
 		run_disdrodb_l0_station(
-			disdrodb_dir=disdrodb_dir,
+			base_dir=base_dir,
 			data_source=data_source,
 			campaign_name=campaign_name,
 			station_name=station_name,
@@ -129,9 +129,9 @@ For example, if only ``--campaign_names`` are specified, DISDRODB will process o
 		.. code-block:: python
 
 			from disdrodb.l0 import run_disdrodb_l0
-			from disdrodb.configs import get_disdrodb_dir
+			from disdrodb.configs import get_base_dir
 
-			disdrodb_dir = get_disdrodb_dir()
+			base_dir = get_base_dir()
 			data_sources=['EPFL']
 			campaign_names=['EPFL_2008']
 			# L0 processing settings
@@ -147,7 +147,7 @@ For example, if only ``--campaign_names`` are specified, DISDRODB will process o
 			parallel=False
 
 			run_disdrodb_l0(
-				disdrodb_dir=disdrodb_dir,
+				base_dir=base_dir,
 				data_sources=data_sources,
 				campaign_names=campaign_names,
 				# station_names=station_names,

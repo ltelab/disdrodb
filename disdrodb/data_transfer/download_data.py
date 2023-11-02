@@ -26,7 +26,7 @@ import pooch
 import tqdm
 
 from disdrodb.api.metadata import get_list_metadata
-from disdrodb.configs import get_disdrodb_dir
+from disdrodb.configs import get_base_dir
 from disdrodb.utils.compression import _unzip_file
 from disdrodb.utils.yaml import read_yaml
 
@@ -77,7 +77,7 @@ def click_download_option(function: object):
         help="Force overwriting",
     )(function)
     function = click.option(
-        "--disdrodb_dir",
+        "--base_dir",
         type=str,
         show_default=True,
         default=None,
@@ -177,7 +177,7 @@ def download_disdrodb_archives(
     campaign_names: Optional[Union[str, List[str]]] = None,
     station_names: Optional[Union[str, List[str]]] = None,
     force: bool = False,
-    disdrodb_dir: Optional[str] = None,
+    base_dir: Optional[str] = None,
 ):
     """Get all YAML files that contain the 'data_url' key
     and download the data locally.
@@ -199,14 +199,14 @@ def download_disdrodb_archives(
     force : bool, optional
         If True, overwrite the already existing raw data file.
         The default is False.
-    disdrodb_dir : str (optional)
+    base_dir : str (optional)
         Base directory of DISDRODB. Format: <...>/DISDRODB
         If None (the default), the disdrodb config variable 'dir' is used.
 
     """
-    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
+    base_dir = get_base_dir(base_dir)
     metadata_fpaths = get_list_metadata(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

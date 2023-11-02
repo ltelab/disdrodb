@@ -28,7 +28,7 @@ from disdrodb import __root_path__
 from disdrodb.api.io import get_disdrodb_path
 from disdrodb.l0.l0_reader import get_station_reader_function
 
-TEST_DISDRODB_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
 
 def get_list_test_data_sources() -> list:
@@ -40,7 +40,7 @@ def get_list_test_data_sources() -> list:
         List of test data sources.
     """
 
-    list_of_data_sources = os.listdir(os.path.join(TEST_DISDRODB_DIR, "Raw"))
+    list_of_data_sources = os.listdir(os.path.join(TEST_BASE_DIR, "Raw"))
     return list_of_data_sources
 
 
@@ -58,7 +58,7 @@ def get_list_test_campaigns(data_source: str) -> list:
         List of test campaigns.
 
     """
-    list_of_campaigns = os.listdir(os.path.join(TEST_DISDRODB_DIR, "Raw", data_source))
+    list_of_campaigns = os.listdir(os.path.join(TEST_BASE_DIR, "Raw", data_source))
     return list_of_campaigns
 
 
@@ -79,7 +79,7 @@ def get_list_test_stations(data_source: str, campaign_name: str) -> list:
         List of test stations.
 
     """
-    yml_files = glob.glob(os.path.join(TEST_DISDRODB_DIR, "Raw", data_source, campaign_name, "metadata", "*.yml"))
+    yml_files = glob.glob(os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "metadata", "*.yml"))
     list_station_names = [os.path.splitext(os.path.basename(i))[0] for i in yml_files]
 
     return list_station_names
@@ -120,7 +120,7 @@ def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
     station_names = get_list_test_stations(data_source=data_source, campaign_name=campaign_name)
     for station_name in station_names:
         reader = get_station_reader_function(
-            disdrodb_dir=TEST_DISDRODB_DIR,
+            base_dir=TEST_BASE_DIR,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -128,14 +128,14 @@ def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
 
         # Define raw_dir and process_dir
         raw_dir = get_disdrodb_path(
-            disdrodb_dir=TEST_DISDRODB_DIR,
+            base_dir=TEST_BASE_DIR,
             product_level="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
         )
 
         processed_dir = get_disdrodb_path(
-            disdrodb_dir=TEST_DISDRODB_DIR,
+            base_dir=TEST_BASE_DIR,
             product_level="L0A",
             data_source=data_source,
             campaign_name=campaign_name,
@@ -168,7 +168,7 @@ def check_all_readers() -> None:
         for campaign_name in get_list_test_campaigns(data_source):
             process_dir = run_reader_on_test_data(data_source, campaign_name)
             ground_truth = glob.glob(
-                os.path.join(TEST_DISDRODB_DIR, "Raw", data_source, campaign_name, "ground_truth", "*", "*.parquet")
+                os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "ground_truth", "*", "*.parquet")
             )
             processed_file = glob.glob(os.path.join(process_dir, "L0A", "*", "*.parquet"))
             for i, ground_truth_fpath in enumerate(ground_truth):
@@ -182,8 +182,8 @@ def check_all_readers() -> None:
                     )
 
     # Remove Processed directory if exists
-    if os.path.exists(os.path.join(TEST_DISDRODB_DIR, "Processed")):
+    if os.path.exists(os.path.join(TEST_BASE_DIR, "Processed")):
         try:
-            shutil.rmtree(os.path.join(TEST_DISDRODB_DIR, "Processed"))
+            shutil.rmtree(os.path.join(TEST_BASE_DIR, "Processed"))
         except Exception:
             pass

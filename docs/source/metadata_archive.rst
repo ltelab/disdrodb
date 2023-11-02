@@ -52,11 +52,11 @@ To update the DISDRODB Metadata Archive follow these steps:
 
    .. code:: bash
 
-      export DISDRODB_DIR="<path_to_the>/disdrodb-data/DISDRODB"
+      export DISDRODB_BASE_DIR="<path_to_the>/disdrodb-data/DISDRODB"
       disdrodb_check_metadata_compliance
 
    .. note::
-      The ``DISDRODB_DIR`` environment variable has to be specified only if the DISDRODB root directory had not been specified before.
+      The ``DISDRODB_BASE_DIR`` environment variable has to be specified only if the DISDRODB root directory had not been specified before.
 
 5. Commit your changes and push your branch to GitHub:
 

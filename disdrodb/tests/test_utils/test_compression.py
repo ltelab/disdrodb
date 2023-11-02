@@ -26,7 +26,7 @@ import pytest
 from disdrodb.utils.compression import _unzip_file, _zip_dir, compress_station_files
 
 
-def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name):
+def create_fake_data_dir(base_dir, data_source, campaign_name, station_name):
     """Create a station data directory with files inside it.
 
     station_name
@@ -36,7 +36,7 @@ def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
             |-- file2.txt
     """
 
-    data_dir = disdrodb_dir / "Raw" / data_source / campaign_name / "data" / station_name
+    data_dir = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
     dir1 = data_dir / "dir1"
     dir2 = dir1 / "dir2"
     if not dir2.exists():
@@ -51,24 +51,24 @@ def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
 def test_files_compression(tmp_path):
     """Test compression of files in a directory."""
 
-    disdrodb_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
 
     # Directory that does not exist yet
-    compress_station_files(disdrodb_dir, data_source, campaign_name, "station1", "zip")
+    compress_station_files(base_dir, data_source, campaign_name, "station1", "zip")
 
     methods = ["zip", "gzip", "bzip2"]
     for i, method in enumerate(methods):
         station_name = f"test_station_name_{i}"
         create_fake_data_dir(
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
         )
         compress_station_files(
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -78,7 +78,7 @@ def test_files_compression(tmp_path):
     # Directory with already compressed files
     station_name = "test_station_name_0"
     compress_station_files(
-        disdrodb_dir=disdrodb_dir,
+        base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -87,11 +87,11 @@ def test_files_compression(tmp_path):
 
     station_name = "test_station_name"
     create_fake_data_dir(
-        disdrodb_dir=disdrodb_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
     with pytest.raises(ValueError):
         compress_station_files(
-            disdrodb_dir=disdrodb_dir,
+            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

@@ -143,7 +143,7 @@ def test_create_directory_structure(tmp_path, mocker):
 
 
 def test_check_raw_dir_input(tmp_path):
-    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = os.path.join(tmp_path, "DISDRODB")
     station_name = "station_1"
     yaml_dict = {}
     data_source = "data_source"
@@ -157,7 +157,7 @@ def test_check_raw_dir_input(tmp_path):
         campaign_name=campaign_name,
     )
 
-    io._check_raw_dir_input(disdrodb_dir)
+    io._check_raw_dir_input(base_dir)
 
 
 def test_check_directory_exist():
@@ -187,28 +187,28 @@ def _infer_disdrodb_tree_path():
     path = os.path.join("whatever_occurrence", "DISDRODB", "DISDRODB", "directory", disdrodb_path)
     assert io._infer_disdrodb_tree_path(path) == disdrodb_path
 
-    # Assert behaviour when path == disdrodb_dir
-    disdrodb_dir = os.path.join("home", "DISDRODB")
-    assert io._infer_disdrodb_tree_path(disdrodb_dir) == "DISDRODB"
+    # Assert behaviour when path == base_dir
+    base_dir = os.path.join("home", "DISDRODB")
+    assert io._infer_disdrodb_tree_path(base_dir) == "DISDRODB"
 
 
-def test__infer_disdrodb_dir_from_fpath():
+def test__infer_base_dir_from_fpath():
     # Assert retrieve correct disdrodb path
-    disdrodb_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
+    base_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
     disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join(disdrodb_dir, disdrodb_path)
-    assert io._infer_disdrodb_dir_from_fpath(path) == disdrodb_dir
+    path = os.path.join(base_dir, disdrodb_path)
+    assert io._infer_base_dir_from_fpath(path) == base_dir
 
     # Assert raise error if not disdrodb path
-    disdrodb_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
+    base_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
     disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join(disdrodb_dir, disdrodb_path)
+    path = os.path.join(base_dir, disdrodb_path)
     with pytest.raises(ValueError):
-        io._infer_disdrodb_dir_from_fpath(path)
+        io._infer_base_dir_from_fpath(path)
 
-    # Assert behaviour when path == disdrodb_dir
-    disdrodb_dir = os.path.join("home", "DISDRODB")
-    assert io._infer_disdrodb_dir_from_fpath(disdrodb_dir) == disdrodb_dir
+    # Assert behaviour when path == base_dir
+    base_dir = os.path.join("home", "DISDRODB")
+    assert io._infer_base_dir_from_fpath(base_dir) == base_dir
 
 
 def test__infer_disdrodb_tree_path_components():
