@@ -31,7 +31,7 @@ import yaml
 from disdrodb import __root_path__
 from disdrodb.l0 import io
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
+TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def create_fake_metadata_file(
@@ -161,7 +161,7 @@ def test_check_raw_dir_input(tmp_path):
 
 
 def test_check_directory_exist():
-    assert io._check_directory_exist(PATH_TEST_FOLDERS_FILES) is None
+    assert io._check_directory_exist(TEST_DATA_DIR) is None
 
 
 def _infer_disdrodb_tree_path():
@@ -306,7 +306,7 @@ def test_get_l0a_fpath():
 
     # Set paths
     path_campaign_name = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_structure",
         "DISDRODB",
         "Processed",
@@ -347,7 +347,7 @@ def test_get_l0b_fpath():
 
     # Set paths
     path_campaign_name = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_structure",
         "DISDRODB",
         "Processed",
@@ -385,7 +385,7 @@ def test_check_glob_pattern():
 
 
 def test_get_raw_file_list():
-    path_test_directory = os.path.join(PATH_TEST_FOLDERS_FILES, "test_l0a_processing", "files")
+    path_test_directory = os.path.join(TEST_DATA_DIR, "test_l0a_processing", "files")
 
     station_name = "STATION_NAME"
 
@@ -418,7 +418,7 @@ def test_get_raw_file_list():
 ####--------------------------------------------------------------------------.
 
 folder_name = "folder_creation_deletion_test"
-path_file_temp = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation", folder_name)
+path_file_temp = os.path.join(TEST_DATA_DIR, "test_folders_files_creation", folder_name)
 
 
 def test_create_directory(tmp_path):
@@ -467,7 +467,7 @@ def test_check_raw_dir():
 
     # Set paths
     raw_dir = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_structure",
         "DISDRODB",
         "Raw",
@@ -482,7 +482,7 @@ def test_check_campaign_name():
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     path_raw = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_structure",
         "DISDRODB",
         "Raw",
@@ -490,7 +490,7 @@ def test_check_campaign_name():
         campaign_name,
     )
     path_process = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_creation",
         "DISDRODB",
         "Processed",
@@ -506,7 +506,7 @@ def test_copy_station_metadata():
     data_source = "DATA_SOURCE"
     station_name = "STATION_NAME"
     raw_dir = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_structure",
         "DISDRODB",
         "Raw",
@@ -514,7 +514,7 @@ def test_copy_station_metadata():
         campaign_name,
     )
     processed_dir = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_creation",
         "DISDRODB",
         "Processed",
@@ -552,7 +552,7 @@ def test_copy_station_metadata():
 #     verbose=False
 
 #     raw_dir = os.path.join(
-#         PATH_TEST_FOLDERS_FILES,
+#         TEST_DATA_DIR,
 #         "test_folders_files_structure",
 #         "DISDRODB",
 #         "Raw",
@@ -560,7 +560,7 @@ def test_copy_station_metadata():
 #         campaign_name,
 #     )
 #     processed_dir = os.path.join(
-#         PATH_TEST_FOLDERS_FILES,
+#         TEST_DATA_DIR,
 #         "test_folders_files_creation",
 #         "DISDRODB",
 #         "Processed",
@@ -601,7 +601,7 @@ def test_copy_station_metadata():
 #     verbose=False
 
 #     processed_dir = os.path.join(
-#         PATH_TEST_FOLDERS_FILES,
+#         TEST_DATA_DIR,
 #         "test_folders_files_creation",
 #         "DISDRODB",
 #         "Processed",
@@ -638,7 +638,7 @@ def test__read_l0a():
 
     # save dataframe to parquet file
     path_parquet_file = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_creation",
         "fake_data_sample.parquet",
     )
@@ -661,7 +661,7 @@ def test_read_l0a_dataframe():
 
         # save dataframe to parquet file
         path_parquet_file = os.path.join(
-            PATH_TEST_FOLDERS_FILES,
+            TEST_DATA_DIR,
             "test_folders_files_creation",
             f"fake_data_sample_{i}.parquet",
         )

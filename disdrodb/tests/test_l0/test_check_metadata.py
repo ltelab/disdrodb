@@ -43,7 +43,7 @@ from disdrodb.l0.l0_reader import available_readers
 from disdrodb.l0.standards import available_sensor_names
 from disdrodb.utils.yaml import read_yaml
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
+TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def test_check_metadata_geolocation():
@@ -355,27 +355,27 @@ def test_read_yaml():
 
     # Test reading a valid YAML file
     valid_yaml_attrs = {"key1": "value1", "key2": "value2"}
-    yaml_temp_path = os.path.join(PATH_TEST_FOLDERS_FILES, "test_check_metadata", "valid.yaml")
+    yaml_temp_path = os.path.join(TEST_DATA_DIR, "test_check_metadata", "valid.yaml")
     assert read_yaml(yaml_temp_path) == valid_yaml_attrs
 
     # Test reading a non-existent YAML file
-    yaml_temp_path_non_existent = os.path.join(PATH_TEST_FOLDERS_FILES, "test_check_metadata", "non_existent.yaml")
+    yaml_temp_path_non_existent = os.path.join(TEST_DATA_DIR, "test_check_metadata", "non_existent.yaml")
     with pytest.raises(FileNotFoundError):
         read_yaml(yaml_temp_path_non_existent)
 
     # Test reading a YAML file with invalid syntax
-    yaml_temp_path_nvalid = os.path.join(PATH_TEST_FOLDERS_FILES, "test_check_metadata", "invalid.yaml")
+    yaml_temp_path_nvalid = os.path.join(TEST_DATA_DIR, "test_check_metadata", "invalid.yaml")
     with pytest.raises(yaml.YAMLError):
         read_yaml(yaml_temp_path_nvalid)
 
 
 def test_identify_missing_metadata_coords():
-    yaml_temp_path_valid = [os.path.join(PATH_TEST_FOLDERS_FILES, "test_check_metadata", "valid_coords.yaml")]
+    yaml_temp_path_valid = [os.path.join(TEST_DATA_DIR, "test_check_metadata", "valid_coords.yaml")]
 
     function_return = identify_missing_metadata_coords(yaml_temp_path_valid)
     assert function_return is None
 
-    yaml_temp_path_invalid = [os.path.join(PATH_TEST_FOLDERS_FILES, "test_check_metadata", "invalid_coords.yaml")]
+    yaml_temp_path_invalid = [os.path.join(TEST_DATA_DIR, "test_check_metadata", "invalid_coords.yaml")]
 
     with pytest.raises(TypeError):
         identify_missing_metadata_coords(yaml_temp_path_invalid)

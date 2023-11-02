@@ -30,17 +30,17 @@ from disdrodb.l0.metadata import (
     write_default_metadata,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
+TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def create_fake_station_file(
     base_dir, data_source="data_source", campaign_name="campaign_name", station_name="station_name"
 ):
-    subfolder_path = base_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "data" / station_name
+    subfolder_path = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
     if not os.path.exists(subfolder_path):
         subfolder_path.mkdir(parents=True)
 
-    subfolder_path = base_dir / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    subfolder_path = base_dir / "Raw" / data_source / campaign_name / "metadata"
     if not os.path.exists(subfolder_path):
         subfolder_path.mkdir(parents=True)
 
@@ -51,13 +51,13 @@ def create_fake_station_file(
 
 
 def test_create_campaign_default_metadata(tmp_path):
-    base_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = tmp_path / "DISDRODB"
     campaign_name = "test_campaign"
     data_source = "test_data_source"
     station_name = "test_station"
 
     create_fake_station_file(
-        base_dir=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
     create_campaign_default_metadata(base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
@@ -113,7 +113,7 @@ def test_write_default_metadata(tmp_path):
 
 
 def test_read_metadata():
-    raw_dir = os.path.join(PATH_TEST_FOLDERS_FILES, "test_folders_files_creation")
+    raw_dir = os.path.join(TEST_DATA_DIR, "test_folders_files_creation")
     station_name = "123"
 
     metadata_folder_path = os.path.join(raw_dir, "metadata")

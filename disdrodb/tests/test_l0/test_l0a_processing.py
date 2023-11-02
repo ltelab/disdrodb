@@ -42,7 +42,7 @@ from disdrodb.l0.l0a_processing import (
     strip_string_spaces,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
+TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 # NOTE:
 # The following fixtures are not defined in this file, but are used and injected by Pytest:
@@ -535,7 +535,7 @@ def test_write_l0a():
 
     # Write parquet file
     path_parquet_file = os.path.join(
-        PATH_TEST_FOLDERS_FILES,
+        TEST_DATA_DIR,
         "test_folders_files_creation",
         "fake_data_sample.parquet",
     )

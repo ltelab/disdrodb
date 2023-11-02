@@ -28,7 +28,7 @@ import yaml
 from disdrodb import __root_path__
 from disdrodb.l0 import issue
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
+TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 ####--------------------------------------------------------------------------.
 #### Checks
