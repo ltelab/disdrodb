@@ -580,7 +580,7 @@ when someone else will add changes to the disdrodb codebase in the future.
 
 You should place you data and config files under the following directory tree:
 
-| 📁 disdrodb/tests/pytest_files/check_readers/DISDRODB
+| 📁 disdrodb/tests/data/check_readers/DISDRODB
 | ├── 📁 Raw
 |    ├── 📁 <DATA_SOURCE>
 |       ├── 📁 <CAMPAIGN_NAME>

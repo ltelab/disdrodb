@@ -42,7 +42,7 @@ from disdrodb.l0.l0a_processing import (
     strip_string_spaces,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 # NOTE:
 # The following fixtures are not defined in this file, but are used and injected by Pytest:

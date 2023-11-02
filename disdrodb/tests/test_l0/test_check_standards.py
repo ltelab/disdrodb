@@ -35,7 +35,7 @@ from disdrodb.l0.check_standards import (
 )
 from disdrodb.l0.standards import available_sensor_names, get_raw_array_nvalues
 
-RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files", "check_readers", "DISDRODB")
+RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
 
 def test_check_l0a_standards():

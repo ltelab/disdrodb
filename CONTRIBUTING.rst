@@ -361,7 +361,7 @@ To create a new reader test, simply add a small, single-station dataset and the 
 
 | 📁 disdrodb
 | ├── 📁 tests
-|     	├── 📁 pytest_files
+|     	├── 📁 data
 |           ├── 📁 check_readers
 |     	      ├── 📁 DISDRODB
 |     		      ├── 📁 Raw

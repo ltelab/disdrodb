@@ -43,7 +43,7 @@ from disdrodb.l0.check_metadata import (
 from disdrodb.l0.l0_reader import available_readers
 from disdrodb.l0.standards import available_sensor_names
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def test_check_metadata_geolocation():
@@ -325,7 +325,7 @@ def test_check_archive_metadata_geolocation(tmp_path):
 
 
 def test_read_yaml():
-    # test based on files under tests\pytest_files\test_check_metadata
+    # test based on files under tests\data\test_check_metadata
 
     # Test reading a valid YAML file
     valid_yaml_attrs = {"key1": "value1", "key2": "value2"}

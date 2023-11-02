@@ -37,7 +37,7 @@ from disdrodb.l0.l0b_processing import (
     set_variable_attributes,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 # NOTE:

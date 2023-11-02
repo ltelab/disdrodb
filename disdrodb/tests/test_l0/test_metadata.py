@@ -30,7 +30,7 @@ from disdrodb.l0.metadata import (
     write_default_metadata,
 )
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def create_fake_station_file(

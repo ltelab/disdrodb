@@ -31,7 +31,7 @@ import yaml
 from disdrodb import __root_path__
 from disdrodb.l0 import io
 
-PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files")
+PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def create_fake_metadata_file(
@@ -289,7 +289,7 @@ def test_get_l0b_dir(path_process_dir):
 def test_get_l0a_fpath():
     """
     Test the naming and the path of the L0A file
-    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
+    Note that this test needs "/data/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
     from disdrodb.l0.standards import PRODUCT_VERSION
@@ -330,7 +330,7 @@ def test_get_l0a_fpath():
 def test_get_l0b_fpath():
     """
     Test the naming and the path of the L0B file
-    Note that this test needs "/pytest_files/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
+    Note that this test needs "/data/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
     from disdrodb.l0.standards import PRODUCT_VERSION

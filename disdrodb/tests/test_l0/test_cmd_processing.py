@@ -27,7 +27,7 @@ from click.testing import CliRunner
 
 from disdrodb import __root_path__
 
-RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "pytest_files", "check_readers", "DISDRODB")
+RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "PARSIVEL_2007"
 STATION_NAME = "10"
