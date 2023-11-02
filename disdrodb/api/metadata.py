@@ -26,20 +26,6 @@ import yaml
 from disdrodb.api.io import _get_disdrodb_directory
 
 
-def _read_yaml_file(fpath):
-    """Read a YAML file into dictionary."""
-    with open(fpath) as f:
-        dictionary = yaml.safe_load(f)
-    return dictionary
-
-
-def _write_yaml_file(dictionary, fpath, sort_keys=False):
-    """Write dictionary to YAML file."""
-    with open(fpath, "w") as f:
-        yaml.dump(dictionary, f, sort_keys=sort_keys)
-    return None
-
-
 def read_station_metadata(disdrodb_dir, product_level, data_source, campaign_name, station_name):
     """Open the station metadata YAML file into a dictionary."""
     # Retrieve campaign directory

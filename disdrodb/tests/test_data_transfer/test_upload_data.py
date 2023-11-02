@@ -25,8 +25,8 @@ import uuid
 
 import pytest
 
-from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
 from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
+from disdrodb.utils.yaml import read_yaml, write_yaml
 from disdrodb.utils.zenodo import _create_zenodo_deposition
 
 
@@ -40,7 +40,7 @@ def create_fake_metadata_file(disdrodb_dir, data_source, campaign_name, station_
     if data_url:
         metadata_dict["data_url"] = data_url
 
-    _write_yaml_file(metadata_dict, metadata_fpath)
+    write_yaml(metadata_dict, metadata_fpath)
 
 
 def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name):
@@ -55,7 +55,7 @@ def create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
 
 def get_metadata_dict(disdrodb_dir, data_source, campaign_name, station_name):
     metadata_fpath = disdrodb_dir / "Raw" / data_source / campaign_name / "metadata" / f"{station_name}.yml"
-    return _read_yaml_file(metadata_fpath)
+    return read_yaml(metadata_fpath)
 
 
 def mock_zenodo_api(requests_mock):

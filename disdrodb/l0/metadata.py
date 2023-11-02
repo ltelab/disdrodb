@@ -22,8 +22,8 @@ import os
 
 import numpy as np
 
-from disdrodb.api.metadata import _read_yaml_file, _write_yaml_file
 from disdrodb.l0.io import get_campaign_name, get_data_source
+from disdrodb.utils.yaml import read_yaml, write_yaml
 
 
 ####--------------------------------------------------------------------------.
@@ -131,14 +131,14 @@ def read_metadata(campaign_dir: str, station_name: str) -> dict:
     """
 
     metadata_fpath = os.path.join(campaign_dir, "metadata", station_name + ".yml")
-    metadata = _read_yaml_file(metadata_fpath)
+    metadata = read_yaml(metadata_fpath)
     return metadata
 
 
 def write_metadata(metadata, fpath):
     """Write dictionary to YAML file."""
     metadata = sort_metadata_dictionary(metadata)
-    _write_yaml_file(
+    write_yaml(
         dictionary=metadata,
         fpath=fpath,
         sort_keys=False,

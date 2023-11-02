@@ -23,6 +23,7 @@ dependencies = [
 	"click",
 	"tqdm",
 	"pooch",
+	"donfig",
 	"requests",
 	"PyYAML",
 	"trollsift",

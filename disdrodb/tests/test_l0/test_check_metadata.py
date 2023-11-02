@@ -38,10 +38,10 @@ from disdrodb.l0.check_metadata import (
     get_archive_metadata_key_value,
     identify_empty_metadata_keys,
     identify_missing_metadata_coords,
-    read_yaml,
 )
 from disdrodb.l0.l0_reader import available_readers
 from disdrodb.l0.standards import available_sensor_names
+from disdrodb.utils.yaml import read_yaml
 
 PATH_TEST_FOLDERS_FILES = os.path.join(__root_path__, "disdrodb", "tests", "data")
 

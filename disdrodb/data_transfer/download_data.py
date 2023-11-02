@@ -25,8 +25,9 @@ import click
 import pooch
 import tqdm
 
-from disdrodb.api.metadata import _read_yaml_file, get_list_metadata
+from disdrodb.api.metadata import get_list_metadata
 from disdrodb.utils.compression import _unzip_file
+from disdrodb.utils.yaml import read_yaml
 
 
 def click_download_option(function: object):
@@ -91,7 +92,7 @@ def get_station_local_remote_locations(yaml_file_path: str) -> tuple:
         Tuple containing the local path and the url.
     """
 
-    metadata_dict = _read_yaml_file(yaml_file_path)
+    metadata_dict = read_yaml(yaml_file_path)
 
     # Check station name
     expected_station_name = os.path.basename(yaml_file_path).replace(".yml", "")

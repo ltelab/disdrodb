@@ -6,6 +6,7 @@ dependencies:
   - pyyaml
   - tqdm
   - pooch
+  - donfig
   - requests
   - trollsift
   - h5py

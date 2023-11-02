@@ -21,8 +21,6 @@
 import os
 from typing import Union
 
-import yaml
-
 from disdrodb.api.metadata import get_list_metadata, read_station_metadata
 from disdrodb.l0.io import (
     get_campaign_name,
@@ -38,25 +36,7 @@ from disdrodb.l0.metadata import (
     _check_metadata_station_name,
     check_metadata_compliance,
 )
-
-
-def read_yaml(fpath: str) -> dict:
-    """Read YAML file.
-
-    Parameters
-    ----------
-    fpath : str
-        Input YAML file path.
-
-    Returns
-    -------
-    dict
-        Attributes read from the YAML file.
-    """
-    with open(fpath) as f:
-        attrs = yaml.safe_load(f)
-    return attrs
-
+from disdrodb.utils.yaml import read_yaml
 
 #### --------------------------------------------------------------------------.
 #### Metadata Archive Missing Information

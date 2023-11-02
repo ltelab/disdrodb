@@ -23,7 +23,8 @@ import os
 import numpy as np
 import pandas as pd
 import xarray as xr
-import yaml
+
+from disdrodb.utils.yaml import write_yaml
 
 
 def _create_summary(
@@ -103,9 +104,7 @@ def _create_summary(
     ###-----------------------------------------------------------------------.
     # Save to info.yaml
     info_path = os.path.join(processed_dir, "info", station_name + ".yml")
-    with open(info_path, "w") as f:
-        yaml.dump(stats_dict, f, sort_keys=False)
-
+    write_yaml(stats_dict, info_path, sort_keys=False)
     return None
 
 

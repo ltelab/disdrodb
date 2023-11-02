@@ -24,7 +24,8 @@ import logging
 import os
 
 import numpy as np
-import yaml
+
+from disdrodb.utils.yaml import read_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -64,9 +65,8 @@ def read_config_yml(sensor_name: str, filename: str) -> dict:
         logger.exception(msg)
         raise ValueError(msg)
     # Open dictionary
-    with open(fpath) as f:
-        d = yaml.safe_load(f)
-    return d
+    dictionary = read_yaml(fpath)
+    return dictionary
 
 
 def _get_config_dir():
