@@ -143,6 +143,7 @@ def test_create_directory_structure(tmp_path, mocker):
 
 
 def test_check_raw_dir_input(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     station_name = "station_1"
     yaml_dict = {}
     data_source = "data_source"
@@ -156,98 +157,98 @@ def test_check_raw_dir_input(tmp_path):
         campaign_name=campaign_name,
     )
 
-    io._check_raw_dir_input(os.path.join(tmp_path, "DISDRODB"))
+    io._check_raw_dir_input(disdrodb_dir)
 
 
 def test_check_directory_exist():
     assert io._check_directory_exist(PATH_TEST_FOLDERS_FILES) is None
 
 
-def get_disdrodb_path():
+def _infer_disdrodb_tree_path():
     # Assert retrieve correct disdrodb path
     disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
-    assert io.get_disdrodb_path(path) == disdrodb_path
+    assert io._infer_disdrodb_tree_path(path) == disdrodb_path
 
     # Assert raise error if not disdrodb path
     disdrodb_path = os.path.join("no_disdro_dir", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
     with pytest.raises(ValueError):
-        io.get_disdrodb_path(path)
+        io._infer_disdrodb_tree_path(path)
 
     # Assert raise error if not valid DISDRODB directory
     disdrodb_path = os.path.join("DISDRODB_UNVALID", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
     with pytest.raises(ValueError):
-        io.get_disdrodb_path(path)
+        io._infer_disdrodb_tree_path(path)
 
     # Assert it takes the right most DISDRODB occurrence
     disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_occurrence", "DISDRODB", "DISDRODB", "directory", disdrodb_path)
-    assert io.get_disdrodb_path(path) == disdrodb_path
+    assert io._infer_disdrodb_tree_path(path) == disdrodb_path
 
     # Assert behaviour when path == disdrodb_dir
     disdrodb_dir = os.path.join("home", "DISDRODB")
-    assert io.get_disdrodb_path(disdrodb_dir) == "DISDRODB"
+    assert io._infer_disdrodb_tree_path(disdrodb_dir) == "DISDRODB"
 
 
-def test_get_disdrodb_dir():
+def test__infer_disdrodb_dir_from_fpath():
     # Assert retrieve correct disdrodb path
     disdrodb_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
     disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join(disdrodb_dir, disdrodb_path)
-    assert io.get_disdrodb_dir(path) == disdrodb_dir
+    assert io._infer_disdrodb_dir_from_fpath(path) == disdrodb_dir
 
     # Assert raise error if not disdrodb path
     disdrodb_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
     disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join(disdrodb_dir, disdrodb_path)
     with pytest.raises(ValueError):
-        io.get_disdrodb_dir(path)
+        io._infer_disdrodb_dir_from_fpath(path)
 
     # Assert behaviour when path == disdrodb_dir
     disdrodb_dir = os.path.join("home", "DISDRODB")
-    assert io.get_disdrodb_dir(disdrodb_dir) == disdrodb_dir
+    assert io._infer_disdrodb_dir_from_fpath(disdrodb_dir) == disdrodb_dir
 
 
-def test_get_disdrodb_path_components():
+def test__infer_disdrodb_tree_path_components():
     # Assert retrieve correct disdrodb path
     path_components = ["DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"]
     disdrodb_path = os.path.join(*path_components)
     path = os.path.join("whatever_path", disdrodb_path)
-    assert io._get_disdrodb_path_components(path) == path_components
+    assert io.__infer_disdrodb_tree_path_components(path) == path_components
 
 
-def test_get_data_source():
+def test__infer_data_source_from_path():
     # Assert retrieve correct
     path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    assert io.get_data_source(path) == "DATA_SOURCE"
+    assert io._infer_data_source_from_path(path) == "DATA_SOURCE"
 
     # Assert raise error if path stop at Raw or Processed
     path = os.path.join("whatever_path", "DISDRODB", "Raw")
     with pytest.raises(ValueError):
-        io.get_data_source(path)
+        io._infer_data_source_from_path(path)
 
     # Assert raise error if path not within DISDRODB
     path = os.path.join("whatever_path", "is", "not", "valid")
     with pytest.raises(ValueError):
-        io.get_data_source(path)
+        io._infer_data_source_from_path(path)
 
 
-def test_get_campaign_name():
+def test__infer_campaign_name_from_path():
     # Assert retrieve correct
     path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
-    assert io.get_campaign_name(path) == "CAMPAIGN_NAME"
+    assert io._infer_campaign_name_from_path(path) == "CAMPAIGN_NAME"
 
     # Assert raise error if path stop at Raw or Processed
     path = os.path.join("whatever_path", "DISDRODB", "Raw")
     with pytest.raises(ValueError):
-        io.get_campaign_name(path)
+        io._infer_campaign_name_from_path(path)
 
     # Assert raise error if path not within DISDRODB
     path = os.path.join("whatever_path", "is", "not", "valid")
     with pytest.raises(ValueError):
-        io.get_campaign_name(path)
+        io._infer_campaign_name_from_path(path)
 
 
 ####--------------------------------------------------------------------------.

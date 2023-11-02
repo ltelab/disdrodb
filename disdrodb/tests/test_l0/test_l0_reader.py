@@ -32,7 +32,7 @@ from disdrodb.l0.l0_reader import (
     available_readers,
     check_available_readers,
     get_reader_from_metadata_reader_key,
-    get_station_reader,
+    get_station_reader_function,
 )
 
 # Some test are based on the following reader:
@@ -79,7 +79,8 @@ def test_check_metadata_reader():
     assert _check_metadata_reader({"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}) is None
 
 
-def test_get_station_reader(tmp_path):
+def test_get_station_reader_function(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     station_name = "station_1"
     yaml_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
     data_source = "data_source"
@@ -93,8 +94,8 @@ def test_get_station_reader(tmp_path):
         campaign_name=campaign_name,
     )
 
-    result = get_station_reader(
-        disdrodb_dir=os.path.join(tmp_path, "DISDRODB"),
+    result = get_station_reader_function(
+        disdrodb_dir=disdrodb_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

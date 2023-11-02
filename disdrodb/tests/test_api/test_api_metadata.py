@@ -57,7 +57,7 @@ def create_fake_data_file(tmp_path, data_source="data_source", campaign_name="ca
 
 def test__get_list_all_metadata(tmp_path):
     excepted_result = list()
-
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     # Test 1 : one metadata file
     yaml_file_name = "station_1.yml"
     key_name = "key1"
@@ -76,7 +76,7 @@ def test__get_list_all_metadata(tmp_path):
     excepted_result.append(fake_metadata_file_path)
 
     result = _get_list_all_metadata(
-        disdrodb_dir=os.path.join(tmp_path, "DISDRODB"),
+        disdrodb_dir=disdrodb_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -88,7 +88,7 @@ def test__get_list_all_metadata(tmp_path):
     fake_metadata_file_path = create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
     excepted_result.append(fake_metadata_file_path)
     result = _get_list_all_metadata(
-        disdrodb_dir=os.path.join(tmp_path, "DISDRODB"),
+        disdrodb_dir=disdrodb_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -99,6 +99,7 @@ def test__get_list_all_metadata(tmp_path):
 def test_get_list_metadata_with_data(tmp_path):
     expected_result = list()
 
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     # Test 1 : one metadata file + one data file
     station_name = "station_1"
     yaml_file_name = f"{station_name}.yml"
@@ -122,7 +123,7 @@ def test_get_list_metadata_with_data(tmp_path):
     )
 
     result = _get_list_metadata_with_data(
-        disdrodb_dir=os.path.join(tmp_path, "DISDRODB"),
+        disdrodb_dir=disdrodb_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -144,7 +145,7 @@ def test_get_list_metadata_with_data(tmp_path):
     )
 
     result = _get_list_metadata_with_data(
-        disdrodb_dir=os.path.join(tmp_path, "DISDRODB"),
+        disdrodb_dir=disdrodb_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -159,7 +160,7 @@ def test_get_list_metadata_with_data(tmp_path):
     expected_result.append(fake_metadata_file_path)
 
     result = _get_list_metadata_with_data(
-        disdrodb_dir=os.path.join(tmp_path, "DISDRODB"),
+        disdrodb_dir=disdrodb_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
     )

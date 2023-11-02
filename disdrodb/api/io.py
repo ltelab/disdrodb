@@ -24,19 +24,48 @@ import os
 import numpy as np
 import yaml
 
+from disdrodb.configs import get_disdrodb_dir
 
-def _get_disdrodb_directory(
+
+def get_disdrodb_path(
     disdrodb_dir,
     product_level,
     data_source="",
     campaign_name="",
     check_exist=True,
 ):
+    """Return the directory in the DISDRODB infrastructure.
+
+    If data_source and campaign_name are not specified it return the product level directory.
+    If data_source is specified, it returns the data_source directory.
+    If campaign_source is specified, it returns the campaign_name directory.
+
+    Parameters
+    ----------
+    disdrodb_dir : str
+        The disdrodb base directory
+    product_level : str
+        The DISDRODB product level. It can be "RAW", "L0A", or "L0B".
+    data_source : str, optional
+        The data source. Must be specified if campaign_name is specified.
+    campaign_name : str, optional
+        The campaign_name.
+    check_exist : bool, optional
+        Whether to check if the directory exists. By default True.
+
+    Returns
+    -------
+    dir_path : str
+        Directory path
+    """
     from disdrodb.api.checks import check_disdrodb_dir
     from disdrodb.l0.io import _check_directory_exist
 
-    # Check if disdrodb_dir has a valid name
+    # Check disdrodb_dir validity
     check_disdrodb_dir(disdrodb_dir)
+    if len(campaign_name) > 0:
+        if len(data_source) == 0:
+            raise ValueError("If campaign_name is specified, data_source must be specified.")
 
     # Get directory
     if product_level.upper() == "RAW":
@@ -85,7 +114,7 @@ def _get_list_stations_with_metadata(campaign_dir):
 
 def _get_campaign_stations(disdrodb_dir, product_level, data_source, campaign_name):
     # Get campaign directory
-    campaign_dir = _get_disdrodb_directory(
+    campaign_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level=product_level,
         data_source=data_source,
@@ -127,7 +156,7 @@ def _get_data_source_stations(disdrodb_dir, product_level, data_source):
     Returns a tuple (<data_source>, <campaign_name>, <station_name>)
     """
     # Get data source directory
-    data_source_dir = _get_disdrodb_directory(
+    data_source_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level=product_level,
         data_source=data_source,
@@ -167,7 +196,7 @@ def _get_data_sources_stations(disdrodb_dir, product_level, data_sources):
 
 def _get_stations(disdrodb_dir, product_level):
     # Get raw or processed directory
-    level_dir = _get_disdrodb_directory(
+    level_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level=product_level,
         data_source="",
@@ -188,7 +217,7 @@ def _get_stations(disdrodb_dir, product_level):
 
 def _get_metadata_fpath(disdrodb_dir, product_level, data_source, campaign_name, station_name):
     """Get metadata file path a given station."""
-    campaign_dir = _get_disdrodb_directory(
+    campaign_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level=product_level,
         data_source=data_source,
@@ -232,7 +261,7 @@ def check_data_sources(disdrodb_dir, product_level, data_sources):
     # Remove duplicates
     data_sources = np.unique(np.array(data_sources))
     # Get directory
-    dir_path = _get_disdrodb_directory(disdrodb_dir=disdrodb_dir, product_level=product_level)
+    dir_path = get_disdrodb_path(disdrodb_dir=disdrodb_dir, product_level=product_level)
     # Get data sources directory
     list_dir = os.listdir(dir_path)
     # Check if there are invalid data_sources
@@ -259,7 +288,7 @@ def _check_campaign_names(disdrodb_dir, product_level, campaign_names):
     # Remove duplicates
     campaign_names = np.unique(np.array(campaign_names))
     # Get product level directory path
-    dir_path = _get_disdrodb_directory(disdrodb_dir=disdrodb_dir, product_level=product_level)
+    dir_path = get_disdrodb_path(disdrodb_dir=disdrodb_dir, product_level=product_level)
     # Get campaigns directory path
     list_campaigns_path = glob.glob(os.path.join(dir_path, "*", "*"))
     # Get campaigns names
@@ -280,8 +309,9 @@ def _check_campaign_names(disdrodb_dir, product_level, campaign_names):
 #### DISDRODB I/O INTERFACE
 
 
-def available_data_sources(disdrodb_dir, product_level):
+def available_data_sources(product_level, disdrodb_dir=None):
     """Return data sources for which stations data are available."""
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     product_level = check_product_level(product_level)
     # Get available stations
     list_available_stations = _get_stations(disdrodb_dir=disdrodb_dir, product_level=product_level)
@@ -290,9 +320,10 @@ def available_data_sources(disdrodb_dir, product_level):
     return data_sources
 
 
-def available_campaigns(disdrodb_dir, product_level, data_sources=None, return_tuple=True):
+def available_campaigns(product_level, data_sources=None, return_tuple=True, disdrodb_dir=None):
     """Return campaigns for which stations data are available."""
     # Checks
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     product_level = check_product_level(product_level)
     data_sources = check_data_sources(
         disdrodb_dir=disdrodb_dir,
@@ -319,13 +350,14 @@ def available_campaigns(disdrodb_dir, product_level, data_sources=None, return_t
 
 
 def available_stations(
-    disdrodb_dir,
     product_level,
     data_sources=None,
     campaign_names=None,
     return_tuple=True,
+    disdrodb_dir=None,
 ):
     """Return stations for which data are available."""
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     # Checks
     product_level = check_product_level(product_level)
     data_sources = check_data_sources(

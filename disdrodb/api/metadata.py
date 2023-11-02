@@ -23,13 +23,36 @@ import os
 
 import yaml
 
-from disdrodb.api.io import _get_disdrodb_directory
+from disdrodb.api.io import get_disdrodb_path
+from disdrodb.configs import get_disdrodb_dir
 
 
-def read_station_metadata(disdrodb_dir, product_level, data_source, campaign_name, station_name):
-    """Open the station metadata YAML file into a dictionary."""
+def read_station_metadata(product_level, data_source, campaign_name, station_name, disdrodb_dir=None):
+    """Open the station metadata YAML file into a dictionary.
+
+    Parameters
+    ----------
+    data_sources : str or list of str
+        Name of data source of interest.
+        The name must be UPPER CASE.
+    campaign_names : str
+        Name of the campaign of interest.
+        The name must be UPPER CASE.
+    station_name : str
+        Station name of interest.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
+
+    Returns
+    -------
+    metadata: dictionary
+        The station metadata dictionary
+
+    """
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     # Retrieve campaign directory
-    campaign_dir = _get_disdrodb_directory(
+    campaign_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level=product_level,
         data_source=data_source,
@@ -50,16 +73,17 @@ def read_station_metadata(disdrodb_dir, product_level, data_source, campaign_nam
 
 
 def get_list_metadata(
-    disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=True
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    with_stations_data=True,
+    disdrodb_dir=None,
 ):
     """
     Get the list of metadata filepaths in the DISDRODB raw archive.
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Base directory of DISDRODB
-        Format: <...>/DISDRODB
     data_sources : str or list of str
         Name of data source(s) of interest.
         The name(s) must be UPPER CASE.
@@ -74,6 +98,9 @@ def get_list_metadata(
     with_stations_data : bool
         If True, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
         The default is True
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
@@ -81,10 +108,22 @@ def get_list_metadata(
         List of metadata YAML file paths
 
     """
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     if with_stations_data:
-        return _get_list_metadata_with_data(disdrodb_dir, data_sources, campaign_names, station_names)
+        list_metadata = _get_list_metadata_with_data(
+            disdrodb_dir=disdrodb_dir,
+            data_sources=data_sources,
+            campaign_names=campaign_names,
+            station_names=station_names,
+        )
     else:
-        return _get_list_all_metadata(disdrodb_dir, data_sources, campaign_names, station_names)
+        list_metadata = _get_list_all_metadata(
+            disdrodb_dir=disdrodb_dir,
+            data_sources=data_sources,
+            campaign_names=campaign_names,
+            station_names=station_names,
+        )
+    return list_metadata
 
 
 def _get_list_all_metadata(disdrodb_dir, data_sources=None, campaign_names=None, station_names=None):
@@ -192,7 +231,7 @@ def _get_list_metadata_with_data(disdrodb_dir, data_sources=None, campaign_names
     # --> (data_source, campaign_name, station_name)
 
     list_info = available_stations(
-        disdrodb_dir,
+        disdrodb_dir=disdrodb_dir,
         product_level="RAW",
         data_sources=data_sources,
         campaign_names=campaign_names,

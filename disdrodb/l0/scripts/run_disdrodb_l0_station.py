@@ -36,7 +36,6 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_l0_archive_options
 def run_disdrodb_l0_station(
     # Station arguments
-    disdrodb_dir,
     data_source,
     campaign_name,
     station_name,
@@ -51,15 +50,12 @@ def run_disdrodb_l0_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    disdrodb_dir: str = None,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
     Parameters \n
     ---------- \n
-
-    disdrodb_dir : str \n
-        Base directory of DISDRODB \n
-        Format: <...>/DISDRODB \n
     data_source : str \n
         Institution name (when campaign data spans more than 1 country), or country (when all campaigns (or sensor
         networks) are inside a given country).\n
@@ -105,6 +101,10 @@ def run_disdrodb_l0_station(
         For L0A, it processes just the first 3 raw data files for each station.\n
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.\n
         The default is False.\n
+    disdrodb_dir : str \n
+        Base directory of DISDRODB \n
+        Format: <...>/DISDRODB \n
+        If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     from disdrodb.l0.l0_processing import run_disdrodb_l0_station
 

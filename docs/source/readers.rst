@@ -346,14 +346,13 @@ Despite being not yet implemented and working, your reader function can now be r
 
 .. code-block:: python
 
-    from disdrodb.l0.L0_reader import get_station_reader
+    from disdrodb.l0.l0_reader import get_station_reader_function
 
-    disdrodb_dir = "<...>/DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     station_name = "STATION_NAME"
-    reader = get_station_reader(
-        disdrodb_dir=disdrodb_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    reader = get_station_reader_function(
+        data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
 
@@ -374,11 +373,9 @@ run the following code to generate a default metadata YAML file for each station
 
     from disdrodb.l0.metadata import create_campaign_default_metadata
 
-    disdrodb_dir = "<...>/DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     create_campaign_default_metadata(
-        disdrodb_dir=disdrodb_dir,
         campaign_name=campaign_name,
         data_source=data_source,
     )
@@ -428,7 +425,7 @@ adapt the following piece of code to your use case:
 
 .. code-block:: python
 
-    from disdrodb.l0.L0_reader import get_reader_from_metadata_reader_key
+    from disdrodb.l0.l0_reader import get_reader_from_metadata_reader_key
 
     metadata_reader_value = "GPM/IFLOODS"
     reader = get_reader_from_metadata_reader_key(metadata_reader_value)
@@ -442,9 +439,8 @@ Once you defined your metadata YAML files, check their validity by running:
 
     from disdrodb.l0 import check_archive_metadata_compliance, check_archive_metadata_geolocation
 
-    disdrodb_dir = "<...>/DISDRODB"
-    check_archive_metadata_compliance(disdrodb_dir)
-    check_archive_metadata_geolocation(disdrodb_dir)
+    check_archive_metadata_compliance()
+    check_archive_metadata_geolocation()
 
 
 Step 4 : Analyse the data and define the reader components
@@ -490,27 +486,27 @@ To run the processing of a single station, you can run:
 
     .. code-block:: bash
 
-        run_disdrodb_l0_station <disdrodb_dir> <data_source> <campaign_name> <station_name> [parameters]
+        run_disdrodb_l0_station <data_source> <campaign_name> <station_name> [parameters]
 
 
 For example, to process the data of station 10 of the EPFL_2008 campaign, you would run:
 
     .. code-block:: bash
 
-        run_disdrodb_l0_station /ltenas8/disdrodb-data/DISDRODB EPFL  EPFL_2008 10 --force True --verbose True --parallel False
+        run_disdrodb_l0_station EPFL  EPFL_2008 10 --force True --verbose True --parallel False
 
 
 If no problems arise, try to run the processing for all stations within a campaign, with:
 
 	.. code-block:: bash
 
-		run_disdrodb_l0 <disdrodb_dir> --data_sources <data_sources> --campaign_names <campaign_names> [parameters]
+		run_disdrodb_l0 --data_sources <data_sources> --campaign_names <campaign_names> [parameters]
 
 For example, to process all stations of the EPFL_2008 campaign, you would run:
 
 	.. code-block:: bash
 
-		run_disdrodb_l0 /ltenas8/disdrodb-data/DISDRODB --data_sources EPFL --campaign_names EPFL_2008 --force True --verbose True --parallel False
+		run_disdrodb_l0 --data_sources EPFL --campaign_names EPFL_2008 --force True --verbose True --parallel False
 
 
 .. note::

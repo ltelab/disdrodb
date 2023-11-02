@@ -4,7 +4,6 @@ from disdrodb.data_transfer.upload_data import click_upload_option
 
 
 @click.command()
-@click.argument("disdrodb_dir", metavar="<disdrodb_dir>")
 @click_upload_option
 def upload_disdrodb_archive(
     disdrodb_dir=None,

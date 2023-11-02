@@ -36,6 +36,7 @@ def parse_arg_to_list(args):
     """Utility to pass list to command line scripts.
 
     If args = '' --> None
+    If args = 'None' --> None
     If args = 'variable' --> [variable]
     If args = 'variable1 variable2' --> [variable1, variable2]
     """
@@ -43,8 +44,11 @@ def parse_arg_to_list(args):
     args = None if args == "" else args
     # - If multiple arguments, split by space
     if isinstance(args, str):
-        # - Split by space
-        list_args = args.split(" ")
-        # - Remove '' (deal with multi space)
-        args = [args for args in list_args if len(args) > 0]
+        if args == "None":
+            args = None
+        else:
+            # - Split by space
+            list_args = args.split(" ")
+            # - Remove '' (deal with multi space)
+            args = [args for args in list_args if len(args) > 0]
     return args

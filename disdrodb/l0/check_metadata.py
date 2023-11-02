@@ -22,10 +22,10 @@ import os
 from typing import Union
 
 from disdrodb.api.metadata import get_list_metadata, read_station_metadata
+from disdrodb.configs import get_disdrodb_dir
 from disdrodb.l0.io import (
-    get_campaign_name,
-    get_data_source,
-    get_disdrodb_dir,
+    _infer_campaign_name_from_path,
+    _infer_data_source_from_path,
 )
 from disdrodb.l0.l0_reader import _check_metadata_reader
 from disdrodb.l0.metadata import (
@@ -125,7 +125,7 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
     return None
 
 
-def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bool = True):
+def get_archive_metadata_key_value(key: str, return_tuple: bool = True, disdrodb_dir: str = None):
     """Return the values of a metadata key for all the archive.
 
     Parameters
@@ -138,20 +138,23 @@ def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bo
        If True, returns a tuple of values with station, campaign and data source name.
        If False, returns a list of values without station, campaign and data source name.
        The default is True.
+    disdrodb_dir : str (optional)
+       Base directory of DISDRODB. Format: <...>/DISDRODB
+       If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
     list or tuple
         List or tuple of values of the metadata key.
     """
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     list_info = []
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
         metadata = read_station_metadata(
             disdrodb_dir=disdrodb_dir,
@@ -172,27 +175,28 @@ def get_archive_metadata_key_value(disdrodb_dir: str, key: str, return_tuple: bo
 #### Metadata Archive Checks
 
 
-def check_archive_metadata_keys(disdrodb_dir: str) -> bool:
+def check_archive_metadata_keys(disdrodb_dir: str = None) -> bool:
     """Check that all metadata files have valid keys
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Path to the disdrodb directory.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
+
     Returns
     -------
     bool
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
-
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -212,13 +216,14 @@ def check_archive_metadata_keys(disdrodb_dir: str) -> bool:
     return is_valid
 
 
-def check_archive_metadata_campaign_name(disdrodb_dir) -> bool:
+def check_archive_metadata_campaign_name(disdrodb_dir: str = None) -> bool:
     """Check metadata campaign_name.
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Path to the disdrodb directory.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
@@ -226,13 +231,13 @@ def check_archive_metadata_campaign_name(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -251,13 +256,14 @@ def check_archive_metadata_campaign_name(disdrodb_dir) -> bool:
     return is_valid
 
 
-def check_archive_metadata_data_source(disdrodb_dir) -> bool:
+def check_archive_metadata_data_source(disdrodb_dir: str = None) -> bool:
     """Check metadata data_source.
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Path to the disdrodb directory.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
@@ -265,13 +271,13 @@ def check_archive_metadata_data_source(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -290,13 +296,14 @@ def check_archive_metadata_data_source(disdrodb_dir) -> bool:
     return is_valid
 
 
-def check_archive_metadata_sensor_name(disdrodb_dir) -> bool:
+def check_archive_metadata_sensor_name(disdrodb_dir: str = None) -> bool:
     """Check metadata sensor name.
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Path to the disdrodb directory.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
@@ -304,13 +311,13 @@ def check_archive_metadata_sensor_name(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -329,13 +336,14 @@ def check_archive_metadata_sensor_name(disdrodb_dir) -> bool:
     return is_valid
 
 
-def check_archive_metadata_station_name(disdrodb_dir) -> bool:
+def check_archive_metadata_station_name(disdrodb_dir: str = None) -> bool:
     """Check metadata station name.
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Path to the disdrodb directory.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
@@ -343,13 +351,13 @@ def check_archive_metadata_station_name(disdrodb_dir) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -368,13 +376,14 @@ def check_archive_metadata_station_name(disdrodb_dir) -> bool:
     return is_valid
 
 
-def check_archive_metadata_reader(disdrodb_dir: str) -> bool:
+def check_archive_metadata_reader(disdrodb_dir: str = None) -> bool:
     """Check if the reader key is available and there is the associated reader.
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Path to the disdrodb directory.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
@@ -383,13 +392,13 @@ def check_archive_metadata_reader(disdrodb_dir: str) -> bool:
     """
 
     is_valid = True
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -408,15 +417,28 @@ def check_archive_metadata_reader(disdrodb_dir: str) -> bool:
     return is_valid
 
 
-def check_archive_metadata_compliance(disdrodb_dir):
+def check_archive_metadata_compliance(disdrodb_dir: str = None):
+    """Check the archive metadata compliance.
+
+    Parameters
+    ----------
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is True, and if it fails, the result is False.
+    """
     is_valid = True
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
         try:
             check_metadata_compliance(
@@ -432,13 +454,14 @@ def check_archive_metadata_compliance(disdrodb_dir):
     return is_valid
 
 
-def check_archive_metadata_geolocation(disdrodb_dir):
+def check_archive_metadata_geolocation(disdrodb_dir: str = None):
     """Check the metadata files have missing or wrong geolocation..
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Path to the disdrodb directory.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Returns
     -------
@@ -446,13 +469,13 @@ def check_archive_metadata_geolocation(disdrodb_dir):
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     is_valid = True
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     list_metadata_paths = get_list_metadata(
-        disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        disdrodb_dir=disdrodb_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(

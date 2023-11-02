@@ -23,7 +23,6 @@ from disdrodb.data_transfer.download_data import click_download_option
 
 
 @click.command()
-@click.argument("disdrodb_dir", metavar="<disdrodb_dir>")
 @click_download_option
 def download_disdrodb_archive(
     disdrodb_dir=None,
@@ -39,4 +38,10 @@ def download_disdrodb_archive(
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
-    download_disdrodb_archives(disdrodb_dir, data_sources, campaign_names, station_names, force)
+    download_disdrodb_archives(
+        disdrodb_dir=disdrodb_dir,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station_names=station_names,
+        force=force,
+    )

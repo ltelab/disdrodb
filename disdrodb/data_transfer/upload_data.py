@@ -81,6 +81,13 @@ def click_upload_option(function: object):
         default=True,
         help="Force uploading even if data already exists on another remote location.",
     )(function)
+    function = click.option(
+        "--disdrodb_dir",
+        type=str,
+        show_default=True,
+        default=None,
+        help="DISDRODB root directory",
+    )(function)
     return function
 
 
@@ -210,6 +217,7 @@ def _update_metadata_with_zenodo_url(
 def upload_disdrodb_archives(
     platform: Optional[str] = None,
     force: bool = False,
+    disdrodb_dir: Optional[str] = None,
     **kwargs,
 ) -> None:
     """Find all stations containing local data and upload them to a remote repository.
@@ -223,12 +231,13 @@ def upload_disdrodb_archives(
     force: bool, optional
         If True, upload even if data already exists on another remote location.
         The default is force=False.
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
     Other Parameters
     ----------------
-    disdrodb_dir: str, optional
-        DisdroDB data folder path.
-        Must end with DISDRODB.
+
     data_sources: str or list of str, optional
         Data source folder name (eg: EPFL).
         If not provided (None), all data sources will be uploaded.
@@ -245,6 +254,7 @@ def upload_disdrodb_archives(
 
     metadata_fpaths = get_list_metadata(
         **kwargs,
+        disdrodb_dir=disdrodb_dir,
         with_stations_data=True,
     )
 

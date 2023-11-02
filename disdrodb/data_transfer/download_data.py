@@ -26,6 +26,7 @@ import pooch
 import tqdm
 
 from disdrodb.api.metadata import get_list_metadata
+from disdrodb.configs import get_disdrodb_dir
 from disdrodb.utils.compression import _unzip_file
 from disdrodb.utils.yaml import read_yaml
 
@@ -74,6 +75,13 @@ def click_download_option(function: object):
         show_default=True,
         default=True,
         help="Force overwriting",
+    )(function)
+    function = click.option(
+        "--disdrodb_dir",
+        type=str,
+        show_default=True,
+        default=None,
+        help="DISDRODB root directory",
     )(function)
     return function
 
@@ -165,20 +173,17 @@ def _download_station_data(metadata_fpath: str, force: bool = False) -> None:
 
 
 def download_disdrodb_archives(
-    disdrodb_dir: str,
     data_sources: Optional[Union[str, List[str]]] = None,
     campaign_names: Optional[Union[str, List[str]]] = None,
     station_names: Optional[Union[str, List[str]]] = None,
     force: bool = False,
+    disdrodb_dir: Optional[str] = None,
 ):
     """Get all YAML files that contain the 'data_url' key
     and download the data locally.
 
     Parameters
     ----------
-    disdrodb_dir : str, optional
-        DisdroDB data folder path.
-        Must end with DISDRODB.
     data_sources : str or list of str, optional
         Data source folder name (eg : EPFL).
         If not provided (None), all data sources will be downloaded.
@@ -194,8 +199,12 @@ def download_disdrodb_archives(
     force : bool, optional
         If True, overwrite the already existing raw data file.
         The default is False.
-    """
+    disdrodb_dir : str (optional)
+        Base directory of DISDRODB. Format: <...>/DISDRODB
+        If None (the default), the disdrodb config variable 'dir' is used.
 
+    """
+    disdrodb_dir = get_disdrodb_dir(disdrodb_dir)
     metadata_fpaths = get_list_metadata(
         disdrodb_dir=disdrodb_dir,
         data_sources=data_sources,

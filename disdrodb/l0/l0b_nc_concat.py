@@ -107,12 +107,12 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
 
 
 def run_disdrodb_l0b_concat_station(
-    disdrodb_dir,
     data_source,
     campaign_name,
     station_name,
     remove_l0b=False,
     verbose=False,
+    disdrodb_dir=None,
 ):
     """Concatenate the L0B files of a single DISDRODB station.
 
@@ -121,7 +121,6 @@ def run_disdrodb_l0b_concat_station(
     cmd = " ".join(
         [
             "run_disdrodb_l0b_concat_station",
-            disdrodb_dir,
             data_source,
             campaign_name,
             station_name,
@@ -129,18 +128,20 @@ def run_disdrodb_l0b_concat_station(
             str(remove_l0b),
             "--verbose",
             str(verbose),
+            "--disdrodb_dir",
+            str(disdrodb_dir),
         ]
     )
     _execute_cmd(cmd)
 
 
 def run_disdrodb_l0b_concat(
-    disdrodb_dir,
     data_sources=None,
     campaign_names=None,
     station_names=None,
     remove_l0b=False,
     verbose=False,
+    disdrodb_dir=None,
 ):
     """Concatenate the L0B files of the DISDRODB archive.
 
@@ -149,7 +150,7 @@ def run_disdrodb_l0b_concat(
     from disdrodb.api.io import available_stations
 
     list_info = available_stations(
-        disdrodb_dir,
+        disdrodb_dir=disdrodb_dir,
         product_level="L0B",
         data_sources=data_sources,
         campaign_names=campaign_names,

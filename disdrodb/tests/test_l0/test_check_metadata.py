@@ -130,6 +130,7 @@ def test_identify_missing_metadata_keys(tmp_path, capsys):
 def test_get_archive_metadata_key_value(tmp_path):
     expected_result = []
 
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     # Test 1 : one config file
     yaml_file_name = "station_1.yml"
     expected_key = "key1"
@@ -139,7 +140,7 @@ def test_get_archive_metadata_key_value(tmp_path):
 
     yaml_dict = {expected_key: expected_value}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(os.path.join(tmp_path, "DISDRODB"), expected_key)
+    result = get_archive_metadata_key_value(key=expected_key, disdrodb_dir=disdrodb_dir)
     expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
 
     assert sorted(result) == sorted(expected_result)
@@ -153,7 +154,7 @@ def test_get_archive_metadata_key_value(tmp_path):
 
     yaml_dict = {expected_key: expected_value}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(os.path.join(tmp_path, "DISDRODB"), expected_key)
+    result = get_archive_metadata_key_value(key=expected_key, disdrodb_dir=disdrodb_dir)
     expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
 
     assert sorted(result) == sorted(expected_result)
@@ -166,7 +167,7 @@ def test_get_archive_metadata_key_value(tmp_path):
     campaign_name = "campaign_name"
     yaml_dict = {expected_key: expected_value}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(os.path.join(tmp_path, "DISDRODB"), expected_key, return_tuple=False)
+    result = get_archive_metadata_key_value(key=expected_key, disdrodb_dir=disdrodb_dir, return_tuple=False)
     expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
     expected_result = [item[3] for item in expected_result]
 
@@ -174,6 +175,7 @@ def test_get_archive_metadata_key_value(tmp_path):
 
 
 def test_check_archive_metadata_keys(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     # Test 1 : create a correct metadata file
     # Get the list of valid metadata keys
     list_of_valid_metadata_keys = metadata.get_valid_metadata_keys()
@@ -182,7 +184,7 @@ def test_check_archive_metadata_keys(tmp_path):
     data_source = "data_source"
     campaign_name = "campaign_name"
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_keys(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_keys(disdrodb_dir)
     assert result is True
 
     # Test 2 : add a wrong metadata key file
@@ -193,18 +195,26 @@ def test_check_archive_metadata_keys(tmp_path):
     campaign_name = "campaign_name"
     yaml_dict = {expected_key: expected_value}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_keys(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_keys(disdrodb_dir)
     # assert result is False
 
 
 def test_check_archive_metadata_campaign_name(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+
     # Test 1 : create a correct metadata file
     yaml_file_name = "station_1.yml"
     data_source = "data_source"
     campaign_name = "campaign_name"
     yaml_dict = {"campaign_name": campaign_name}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_campaign_name(os.path.join(tmp_path, "DISDRODB"))
+    create_fake_metadata_file(
+        tmp_path=tmp_path,
+        yaml_file_name=yaml_file_name,
+        yaml_dict=yaml_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+    result = check_archive_metadata_campaign_name(disdrodb_dir)
     assert result is True
 
     # Test 2 : create a wrong metadata file
@@ -212,19 +222,27 @@ def test_check_archive_metadata_campaign_name(tmp_path):
     data_source = "data_source"
     campaign_name = "campaign_name"
     yaml_dict = {"campaign_name": ""}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_campaign_name(os.path.join(tmp_path, "DISDRODB"))
+    create_fake_metadata_file(
+        tmp_path=tmp_path,
+        yaml_file_name=yaml_file_name,
+        yaml_dict=yaml_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+    result = check_archive_metadata_campaign_name(disdrodb_dir)
     assert result is False
 
 
 def test_check_archive_metadata_data_source(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+
     # Test 1 : create a correct metadata file
     yaml_file_name = "station_1.yml"
     data_source = "data_source"
     campaign_name = "campaign_name"
     yaml_dict = {"data_source": data_source}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_data_source(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_data_source(disdrodb_dir)
     assert result is True
 
     # Test 2 : create a wrong metadata file
@@ -233,12 +251,13 @@ def test_check_archive_metadata_data_source(tmp_path):
     campaign_name = "campaign_name"
     yaml_dict = {"data_source": ""}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_data_source(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_data_source(disdrodb_dir)
     assert result is False
 
 
 def test_check_archive_metadata_sensor_name(tmp_path):
     sensor_names = available_sensor_names()
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
 
     # Test 1 : create a correct metadata file
     yaml_file_name = "station_1.yml"
@@ -247,7 +266,7 @@ def test_check_archive_metadata_sensor_name(tmp_path):
     sensor_name = sensor_names[0]
     yaml_dict = {"sensor_name": sensor_name}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_sensor_name(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_sensor_name(disdrodb_dir)
     assert result is True
 
     # Test 2 : create a wrong metadata file
@@ -256,18 +275,20 @@ def test_check_archive_metadata_sensor_name(tmp_path):
     campaign_name = "campaign_name"
     yaml_dict = {"sensor_name": ""}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_sensor_name(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_sensor_name(disdrodb_dir)
     assert result is False
 
 
 def test_check_archive_metadata_station_name(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+
     # Test 1 : create a correct metadata file
     yaml_file_name = "station_1.yml"
     data_source = "data_source"
     campaign_name = "campaign_name"
     yaml_dict = {"station_name": os.path.splitext(yaml_file_name)[0]}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_station_name(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_station_name(disdrodb_dir)
     assert result is True
 
     # Test 2 : create a wrong metadata file
@@ -276,11 +297,13 @@ def test_check_archive_metadata_station_name(tmp_path):
     campaign_name = "campaign_name"
     yaml_dict = {"station_name": ""}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_station_name(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_station_name(disdrodb_dir)
     assert result is False
 
 
 def test_check_archive_metadata_reader(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+
     # Test 1 : create a correct metadata file
     list_readers = available_readers()
     yaml_file_name = "station_1.yml"
@@ -290,7 +313,7 @@ def test_check_archive_metadata_reader(tmp_path):
     reader_name = reader_names[0]
     yaml_dict = {"reader": f"{data_source}/{reader_name}"}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_reader(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_reader(disdrodb_dir)
     assert result is True
 
     # Test 2 : create a wrong metadata file
@@ -298,29 +321,32 @@ def test_check_archive_metadata_reader(tmp_path):
     campaign_name = "campaign_name"
     yaml_dict = {"reader": ""}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_reader(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_reader(disdrodb_dir)
     assert result is False
 
 
 def test_check_archive_metadata_compliance(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
+
     # We check only the failure, the success are tested in the above tests.
     yaml_file_name = "station_1.yml"
     data_source = "data_source"
     campaign_name = "campaign_name"
     yaml_dict = {"reader": ""}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_compliance(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_compliance(disdrodb_dir)
     assert result is False
 
 
 def test_check_archive_metadata_geolocation(tmp_path):
     # We check only the failure, the success are tested in the above test.
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     yaml_file_name = "station_1.yml"
     data_source = "data_source"
     campaign_name = "campaign_name"
     yaml_dict = {"reader": ""}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_geolocation(os.path.join(tmp_path, "DISDRODB"))
+    result = check_archive_metadata_geolocation(disdrodb_dir)
     assert result is False
 
 

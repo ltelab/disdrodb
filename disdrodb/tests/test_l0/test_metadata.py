@@ -51,6 +51,7 @@ def create_fake_station_file(
 
 
 def test_create_campaign_default_metadata(tmp_path):
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
     campaign_name = "test_campaign"
     data_source = "test_data_source"
     station_name = "test_station"
@@ -59,7 +60,7 @@ def test_create_campaign_default_metadata(tmp_path):
         disdrodb_dir=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
-    create_campaign_default_metadata(os.path.join(tmp_path, "DISDRODB"), campaign_name, data_source)
+    create_campaign_default_metadata(disdrodb_dir=disdrodb_dir, data_source=data_source, campaign_name=campaign_name)
 
     expected_file_path = os.path.join(
         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"

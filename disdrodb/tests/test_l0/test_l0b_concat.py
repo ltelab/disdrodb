@@ -131,7 +131,6 @@ def test_run_disdrodb_l0b_concat(tmp_path):
 
     data_source = "data_source"
     campaign_name = "campaign_name"
-
     station_name = "test_station"
 
     time_data_1 = np.array([0.0, 1.0, 2.0], dtype=np.float64)
@@ -140,21 +139,21 @@ def test_run_disdrodb_l0b_concat(tmp_path):
     data_2 = np.random.rand(len(time_data_2), len(lat_data), len(lon_data)).astype(np.float32)
 
     folder_temp_1 = create_fake_data_file(
-        tmp_path,
+        tmp_path=tmp_path,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
         with_metadata_file=True,
     )
     folder_temp_2 = create_fake_data_file(
-        tmp_path,
+        tmp_path=tmp_path,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
         with_metadata_file=True,
     )
 
-    root_dir_path = os.path.join(tmp_path, "DISDRODB")
+    disdrodb_dir = os.path.join(tmp_path, "DISDRODB")
 
     filename_1 = os.path.join(folder_temp_1, f"{station_name}_1.nc")
     filename_2 = os.path.join(folder_temp_2, f"{station_name}_2.nc")
@@ -163,7 +162,7 @@ def test_run_disdrodb_l0b_concat(tmp_path):
     create_dummy_netcdf_file(filename=filename_2, data=(lat_data, lon_data, time_data_2, data_2))
 
     run_disdrodb_l0b_concat(
-        disdrodb_dir=root_dir_path,
+        disdrodb_dir=disdrodb_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
         station_names=[station_name],
@@ -171,4 +170,4 @@ def test_run_disdrodb_l0b_concat(tmp_path):
         verbose=False,
     )
 
-    assert glob.glob(os.path.join(root_dir_path, "Processed", data_source, campaign_name, "L0B", "*.nc"))[0]
+    assert glob.glob(os.path.join(disdrodb_dir, "Processed", data_source, campaign_name, "L0B", "*.nc"))[0]

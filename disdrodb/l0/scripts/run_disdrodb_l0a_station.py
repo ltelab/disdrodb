@@ -34,7 +34,6 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_l0_processing_options
 def run_disdrodb_l0a_station(
     # Station arguments
-    disdrodb_dir,
     data_source,
     campaign_name,
     station_name,
@@ -43,6 +42,7 @@ def run_disdrodb_l0a_station(
     verbose: bool = False,
     parallel: bool = True,
     debugging_mode: bool = False,
+    disdrodb_dir: str = None,
 ):
     """Run the L0A processing of a specific DISDRODB station from the terminal.
 
@@ -50,9 +50,6 @@ def run_disdrodb_l0a_station(
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Base directory of DISDRODB
-        Format: <...>/DISDRODB
     data_source : str
         Institution name (when campaign data spans more than 1 country),
         or country (when all campaigns (or sensor networks) are inside a given country).
@@ -79,14 +76,18 @@ def run_disdrodb_l0a_station(
         If True, it reduces the amount of data to process.
         It processes just the first 3 raw data files.
         The default is False.
+    disdrodb_dir : str \n
+        Base directory of DISDRODB \n
+        Format: <...>/DISDRODB \n
+        If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     import os
 
     import dask
     from dask.distributed import Client, LocalCluster
 
-    from disdrodb.api.io import _get_disdrodb_directory
-    from disdrodb.l0.l0_reader import get_station_reader
+    from disdrodb.api.io import get_disdrodb_path
+    from disdrodb.l0.l0_reader import get_station_reader_function
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
@@ -107,20 +108,20 @@ def run_disdrodb_l0a_station(
         Client(cluster)
     # -------------------------------------------------------------------------.
     # Get reader
-    reader = get_station_reader(
+    reader = get_station_reader_function(
         disdrodb_dir=disdrodb_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     # Define raw_dir and process_dir
-    raw_dir = _get_disdrodb_directory(
+    raw_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
     )
-    processed_dir = _get_disdrodb_directory(
+    processed_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level="L0A",
         data_source=data_source,

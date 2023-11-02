@@ -37,10 +37,10 @@ logger = logging.getLogger(__name__)
 #### Info from file or directory
 
 
-def get_disdrodb_dir(path: str) -> str:
+def _infer_disdrodb_dir_from_fpath(path: str) -> str:
     """Return the disdrodb base directory from a file or directory path.
 
-    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
@@ -67,8 +67,8 @@ def get_disdrodb_dir(path: str) -> str:
     return disdrodb_dir
 
 
-def get_disdrodb_path(path: str) -> str:
-    """Return the path from the disdrodb_dir directory.
+def _infer_disdrodb_tree_path(path: str) -> str:
+    """Return the directory tree path from the disdrodb_dir directory.
 
     Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
@@ -98,7 +98,7 @@ def get_disdrodb_path(path: str) -> str:
     return disdrodb_fpath
 
 
-def _get_disdrodb_path_components(path: str) -> list:
+def __infer_disdrodb_tree_path_components(path: str) -> list:
     """Return a list with the component of the disdrodb_path.
 
     Parameters
@@ -113,17 +113,17 @@ def _get_disdrodb_path_components(path: str) -> list:
         Format: ["DISDRODB", <Raw or Processed>, <data_source>, ...]
     """
     # Retrieve disdrodb path
-    disdrodb_fpath = get_disdrodb_path(path)
+    disdrodb_fpath = _infer_disdrodb_tree_path(path)
     # Retrieve path elements (os-specific)
     p = Path(disdrodb_fpath)
     list_path_elements = [str(part) for part in p.parts]
     return list_path_elements
 
 
-def get_campaign_name(path: str) -> str:
+def _infer_campaign_name_from_path(path: str) -> str:
     """Return the campaign name from a file or directory path.
 
-    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
@@ -135,17 +135,17 @@ def get_campaign_name(path: str) -> str:
     str
         Name of the campaign.
     """
-    list_path_elements = _get_disdrodb_path_components(path)
+    list_path_elements = __infer_disdrodb_tree_path_components(path)
     if len(list_path_elements) <= 3:
         raise ValueError(f"Impossible to determine campaign_name from {path}")
     campaign_name = list_path_elements[3]
     return campaign_name
 
 
-def get_data_source(path: str) -> str:
+def _infer_data_source_from_path(path: str) -> str:
     """Return the data_source from a file or directory path.
 
-    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
 
     Parameters
     ----------
@@ -157,7 +157,7 @@ def get_data_source(path: str) -> str:
     str
         Name of the campaign.
     """
-    list_path_elements = _get_disdrodb_path_components(path)
+    list_path_elements = __infer_disdrodb_tree_path_components(path)
     if len(list_path_elements) <= 2:
         raise ValueError(f"Impossible to determine data_source from {path}")
     data_source = list_path_elements[2]
@@ -268,7 +268,7 @@ def get_l0a_fname(df, processed_dir, station_name: str) -> str:
     starting_time, ending_time = get_dataframe_min_max_time(df)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-    campaign_name = get_campaign_name(processed_dir).replace(".", "-")
+    campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
     # metadata_dict = read_metadata(processed_dir, station_name)
     # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = PRODUCT_VERSION
@@ -298,7 +298,7 @@ def get_l0b_fname(ds, processed_dir, station_name: str) -> str:
     starting_time, ending_time = get_dataset_min_max_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-    campaign_name = get_campaign_name(processed_dir).replace(".", "-")
+    campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
     # metadata_dict = read_metadata(processed_dir, station_name)
     # sensor_name = metadata_dict.get("sensor_name").replace("_", "-")
     version = PRODUCT_VERSION
@@ -693,9 +693,9 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
     #### Check metadata compliance
     for fpath in list_metadata_fpath:
         # Get station info
-        disdrodb_dir = get_disdrodb_dir(fpath)
-        data_source = get_data_source(fpath)
-        campaign_name = get_campaign_name(fpath)
+        disdrodb_dir = _infer_disdrodb_dir_from_fpath(fpath)
+        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
         # Check compliance
         check_metadata_compliance(

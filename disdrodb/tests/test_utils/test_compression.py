@@ -61,17 +61,42 @@ def test_files_compression(tmp_path):
     methods = ["zip", "gzip", "bzip2"]
     for i, method in enumerate(methods):
         station_name = f"test_station_name_{i}"
-        create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
-        compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, method=method)
+        create_fake_data_dir(
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        compress_station_files(
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            method=method,
+        )
 
     # Directory with already compressed files
     station_name = "test_station_name_0"
-    compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, "zip")
+    compress_station_files(
+        disdrodb_dir=disdrodb_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        method="zip",
+    )
 
     station_name = "test_station_name"
-    create_fake_data_dir(disdrodb_dir, data_source, campaign_name, station_name)
+    create_fake_data_dir(
+        disdrodb_dir=disdrodb_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
     with pytest.raises(ValueError):
-        compress_station_files(disdrodb_dir, data_source, campaign_name, station_name, "unknown_compression_method")
+        compress_station_files(
+            disdrodb_dir=disdrodb_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            method="unknown_compression_method",
+        )
 
 
 def test_zip_unzip_directory(tmp_path):

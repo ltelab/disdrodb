@@ -13,10 +13,10 @@
 | Code Quality         | [![Codefactor](https://www.codefactor.io/repository/github/ltelab/disdrodb/badge?style=flat)](https://www.codefactor.io/repository/github/ltelab/disdrodb) [![Codebeat](https://codebeat.co/badges/14ff831b-f064-4bdd-a2e2-72ffdf28a35a?style=flat)](https://codebeat.co/projects/github-com-ltelab-disdrodb-main) [![Codacy](https://app.codacy.com/project/badge/Grade/d823c50a7ad14268bd347b5aba384623?style=flat)](https://app.codacy.com/gh/ltelab/disdrodb/dashboard?utm_source=gh&utm_medium=referral&utm_content=&utm_campaign=Badge_grade) [![Codescene](https://codescene.io/projects/36773/status-badges/code-health?style=flat)](https://codescene.io/projects/36773) |
 | Code Review          | [![pyOpenSci](https://tinyurl.com/XXXX)](#) [![OpenSSF Best Practices](https://www.bestpractices.dev/projects/XXXX/badge?style=flat)](#) |
 | License              | [![License](https://img.shields.io/github/license/ltelab/disdrodb?style=flat)](https://github.com/ltelab/disdrodb/blob/main/LICENSE) |
-| Community            | [![Slack](https://img.shields.io/badge/Slack-disdrodb-green.svg?logo=slack&style=flat)](https://disdrodb.slack.com/) [![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-green?logo=github&style=flat)](https://github.com/ltelab/disdrodb/discussions) |
+| Community            | [![Slack](https://img.shields.io/badge/Slack-disdrodb-green.svg?logo=slack&style=flat)](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) [![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-green?logo=github&style=flat)](https://github.com/ltelab/disdrodb/discussions) |
 | Citation             | [![JOSS](http://joss.theoj.org/papers/<DOI>/joss.<DOI>/status.svg?style=flat)](#) [![DOI](https://zenodo.org/badge/429018433.svg?style=flat)](#) |
 
- [**Slack**](http://slack.disdrodb.org) | [**Docs**](https://disdrodb.readthedocs.io/en/latest/)
+ [**Slack**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) | [**Docs**](https://disdrodb.readthedocs.io/en/latest/)
 
 DISDRODB is part of an initial effort to index, collect and homogenize drop size distribution (DSD) data sets across the globe,
 as well as to establish a global standard for disdrometers observations data sharing.
@@ -33,7 +33,7 @@ The software currently enable to:
 Currently, the DISDRODB Working Group is discussing the development of various scientific products.
 If you have ideas, algorithms, data or expertise to share, or you want to contribute to the future DISDRODB products, do not hesitate to get in touch !!!
 
-Join the [**DISDRODB Slack Workspace**](http://slack.disdrodb.org) to meet the DISDRODB Community !
+Join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) to meet the DISDRODB Community !
 
 
 ## 🚀 Quick Start
@@ -110,7 +110,7 @@ DISDRODB can be installed from PyPI with pip:
 ## 💭 Feedback and Contributing Guidelines
 
 If you aim to contribute your data or discuss the future development of DISDRODB,
-we highly suggest to join the [**DISDRODB Slack Workspace**](http://slack.disdrodb.org)
+we highly suggest to join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA)
 
 Feel free to also open a [GitHub Issue](https://github.com/ltelab/disdrodb/issues) or a
 [GitHub Discussion](https://github.com/ltelab/disdrodb/discussions) specific to your questions or ideas.

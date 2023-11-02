@@ -29,11 +29,9 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click.argument("disdrodb_dir", metavar="<disdrodb_dir>")
 @click_l0_stations_options
 @click_l0_processing_options
 def run_disdrodb_l0b(
-    disdrodb_dir,
     # L0 disdrodb stations options
     data_sources=None,
     campaign_names=None,
@@ -43,6 +41,7 @@ def run_disdrodb_l0b(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    disdrodb_dir: str = None,
 ):
     """
     Run the L0B processing of DISDRODB stations.
@@ -54,9 +53,6 @@ def run_disdrodb_l0b(
     Parameters
     ----------
 
-    disdrodb_dir : str
-        Base directory of DISDRODB
-        Format: <...>/DISDRODB
     data_sources : str
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
@@ -87,6 +83,10 @@ def run_disdrodb_l0b(
         If True, it reduces the amount of data to process.
         It processes just the first 100 rows of 3 L0A files for each station.
         The default is False.
+    disdrodb_dir : str \n
+        Base directory of DISDRODB \n
+        Format: <...>/DISDRODB \n
+        If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     from disdrodb.l0.l0_processing import run_disdrodb_l0b
 

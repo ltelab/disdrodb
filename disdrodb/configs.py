@@ -81,9 +81,10 @@ def _get_config_key(key):
     return value
 
 
-def get_disdrodb_dir():
+def get_disdrodb_dir(disdrodb_dir=None):
     """Return the DISDRODB base directory."""
     import disdrodb
 
-    disdrodb_dir = disdrodb.config["dir"]
+    if disdrodb_dir is None:
+        disdrodb_dir = disdrodb.config["dir"]
     return disdrodb_dir

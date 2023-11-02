@@ -50,7 +50,7 @@ def test_run_disdrodb_l0a_station(remove_processed_folder):
     from disdrodb.l0.scripts.run_disdrodb_l0a_station import run_disdrodb_l0a_station
 
     runner = CliRunner()
-    runner.invoke(run_disdrodb_l0a_station, [RAW_DIR, DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME])
+    runner.invoke(run_disdrodb_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--disdrodb_dir", RAW_DIR])
     list_of_l0a = glob.glob(
         os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0A", STATION_NAME, "*.parquet")
     )
@@ -64,7 +64,7 @@ def test_run_disdrodb_l0a(remove_processed_folder):
     from disdrodb.l0.scripts.run_disdrodb_l0a import run_disdrodb_l0a
 
     runner = CliRunner()
-    runner.invoke(run_disdrodb_l0a, [RAW_DIR])
+    runner.invoke(run_disdrodb_l0a, ["--disdrodb_dir", RAW_DIR])
     list_of_l0a = glob.glob(
         os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0A", STATION_NAME, "*.parquet")
     )
@@ -77,11 +77,11 @@ def test_run_disdrodb_l0b_station(remove_processed_folder):
     from disdrodb.l0.scripts.run_disdrodb_l0a_station import run_disdrodb_l0a_station
 
     runner = CliRunner()
-    runner.invoke(run_disdrodb_l0a_station, [RAW_DIR, DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME])
+    runner.invoke(run_disdrodb_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--disdrodb_dir", RAW_DIR])
 
     from disdrodb.l0.scripts.run_disdrodb_l0b_station import run_disdrodb_l0b_station
 
-    runner.invoke(run_disdrodb_l0b_station, [RAW_DIR, DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME])
+    runner.invoke(run_disdrodb_l0b_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--disdrodb_dir", RAW_DIR])
 
     list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
     assert len(list_of_l0b) > 0
@@ -94,7 +94,7 @@ def test_run_disdrodb_l0_station(remove_processed_folder):
     from disdrodb.l0.scripts.run_disdrodb_l0_station import run_disdrodb_l0_station
 
     runner = CliRunner()
-    runner.invoke(run_disdrodb_l0_station, [RAW_DIR, DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME])
+    runner.invoke(run_disdrodb_l0_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--disdrodb_dir", RAW_DIR])
 
     list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
     assert len(list_of_l0b) > 0
@@ -107,11 +107,11 @@ def test_run_disdrodb_l0b(remove_processed_folder):
     from disdrodb.l0.scripts.run_disdrodb_l0a import run_disdrodb_l0a
 
     runner = CliRunner()
-    runner.invoke(run_disdrodb_l0a, [RAW_DIR])
+    runner.invoke(run_disdrodb_l0a, ["--disdrodb_dir", RAW_DIR])
 
     from disdrodb.l0.scripts.run_disdrodb_l0b import run_disdrodb_l0b
 
-    runner.invoke(run_disdrodb_l0b, [RAW_DIR])
+    runner.invoke(run_disdrodb_l0b, ["--disdrodb_dir", RAW_DIR])
     list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
     assert len(list_of_l0b) > 0
 
@@ -123,7 +123,7 @@ def test_full_run_disdrodb_l0(remove_processed_folder):
     from disdrodb.l0.scripts.run_disdrodb_l0 import run_disdrodb_l0
 
     runner = CliRunner()
-    runner.invoke(run_disdrodb_l0, [RAW_DIR])
+    runner.invoke(run_disdrodb_l0, ["--disdrodb_dir", RAW_DIR])
 
     list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
     assert len(list_of_l0b) > 0

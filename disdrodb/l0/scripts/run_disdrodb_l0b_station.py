@@ -34,7 +34,6 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_l0_processing_options
 def run_disdrodb_l0b_station(
     # Station arguments
-    disdrodb_dir,
     data_source,
     campaign_name,
     station_name,
@@ -43,14 +42,13 @@ def run_disdrodb_l0b_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    disdrodb_dir: str = None,
 ):
     """Run the L0B processing of a specific DISDRODB station from the terminal.
 
     Parameters
     ----------
-    disdrodb_dir : str
-        Base directory of DISDRODB
-        Format: <...>/DISDRODB
+
     data_source : str
         Institution name (when campaign data spans more than 1 country),
         or country (when all campaigns (or sensor networks) are inside a given country).
@@ -77,13 +75,17 @@ def run_disdrodb_l0b_station(
         If True, it reduces the amount of data to process.
         It processes just the first 100 rows of 3 L0A files.
         The default is False.
+    disdrodb_dir : str \n
+        Base directory of DISDRODB \n
+        Format: <...>/DISDRODB \n
+        If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     import os
 
     import dask
     from dask.distributed import Client, LocalCluster
 
-    from disdrodb.api.io import _get_disdrodb_directory
+    from disdrodb.api.io import get_disdrodb_path
     from disdrodb.l0.l0_processing import run_l0b
 
     # -------------------------------------------------------------------------.
@@ -106,7 +108,7 @@ def run_disdrodb_l0b_station(
 
     # -------------------------------------------------------------------------.
     # Define processed dir
-    processed_dir = _get_disdrodb_directory(
+    processed_dir = get_disdrodb_path(
         disdrodb_dir=disdrodb_dir,
         product_level="L0B",
         data_source=data_source,
