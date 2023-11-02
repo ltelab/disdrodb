@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # -----------------------------------------------------------------------------.
-# Copyright (c) 2021-2022 DISDRODB developers
+# Copyright (c) 2021-2023 DISDRODB developers
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
