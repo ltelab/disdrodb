@@ -489,7 +489,7 @@ def check_archive_metadata_reader(base_dir: str = None) -> bool:
     return is_valid
 
 
-def check_archive_metadata_compliance(base_dir: str = None):
+def check_archive_metadata_compliance(base_dir: str = None, raise_error=False):
     """Check the archive metadata compliance.
 
     Parameters
@@ -497,6 +497,9 @@ def check_archive_metadata_compliance(base_dir: str = None):
     base_dir : str (optional)
         Base directory of DISDRODB. Format: <...>/DISDRODB
         If None (the default), the disdrodb config variable 'dir' is used.
+    raise_error: bool (optional)
+        Whether to raise an error and interrupt the archive check if a
+        metadata is not compliant. The default is False.
 
     Returns
     -------
@@ -512,6 +515,7 @@ def check_archive_metadata_compliance(base_dir: str = None):
         data_source = _infer_data_source_from_path(fpath)
         campaign_name = _infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
+        # Check compliance
         try:
             check_metadata_compliance(
                 base_dir=base_dir,
@@ -521,8 +525,13 @@ def check_archive_metadata_compliance(base_dir: str = None):
             )
         except Exception as e:
             is_valid = False
-            print(f"Error for {data_source} {campaign_name} {station_name}.")
-            print(f"The error is: {e}.")
+            msg = f"Error for {data_source} {campaign_name} {station_name}."
+            msg = msg + f"The error is: {e}."
+            if raise_error:
+                raise ValueError(msg)
+            else:
+                print(msg)
+
     return is_valid
 
 

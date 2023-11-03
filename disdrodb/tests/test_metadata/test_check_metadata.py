@@ -275,6 +275,9 @@ def test_check_archive_metadata_reader(tmp_path):
 
 
 def test_check_archive_metadata_compliance(tmp_path):
+    # from pathlib import Path
+    # tmp_path = Path("/tmp/")
+
     base_dir = os.path.join(tmp_path, "DISDRODB")
 
     # We check only the failure, the success are tested in the above tests.
@@ -283,8 +286,13 @@ def test_check_archive_metadata_compliance(tmp_path):
     campaign_name = "campaign_name"
     yaml_dict = {"reader": ""}
     create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = check_archive_metadata_compliance(base_dir)
+    # Test does not raise error !
+    result = check_archive_metadata_compliance(base_dir, raise_error=False)
     assert result is False
+
+    # Test it raise error
+    with pytest.raises(ValueError):
+        result = check_archive_metadata_compliance(base_dir, raise_error=True)
 
 
 def test_check_archive_metadata_geolocation(tmp_path):

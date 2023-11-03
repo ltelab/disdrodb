@@ -14,12 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-####################################################################
-## Wrapper to download disdrodb archives by command lines ##
-####################################################################
+"""Wrapper to download stations from the DISDRODB Decentralized Data Archive."""
+
+import sys
+
 import click
 
 from disdrodb.data_transfer.download_data import click_download_option
+
+sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
