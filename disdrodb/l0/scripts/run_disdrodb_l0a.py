@@ -113,7 +113,3 @@ def run_disdrodb_l0a(
     )
 
     return None
-
-
-if __name__ == "__main__":
-    run_disdrodb_l0a()

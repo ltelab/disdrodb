@@ -87,7 +87,3 @@ def run_disdrodb_l0b_concat_station(
     )
 
     return None
-
-
-if __name__ == "__main__":
-    run_disdrodb_l0b_concat_station()

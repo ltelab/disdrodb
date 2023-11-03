@@ -147,7 +147,3 @@ def run_disdrodb_l0a_station(
     if parallel:
         cluster.close()
     return None
-
-
-if __name__ == "__main__":
-    run_disdrodb_l0a_station()
