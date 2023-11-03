@@ -21,10 +21,9 @@
 import glob
 import os
 
-import yaml
-
 from disdrodb.api.io import get_disdrodb_path
 from disdrodb.configs import get_base_dir
+from disdrodb.utils.yaml import read_yaml
 
 
 def read_station_metadata(product_level, data_source, campaign_name, station_name, base_dir=None):
@@ -60,16 +59,14 @@ def read_station_metadata(product_level, data_source, campaign_name, station_nam
         check_exist=True,
     )
     # Define metadata filepath
-    fpath = os.path.join(campaign_dir, "metadata", f"{station_name}.yml")
+    metadata_fpath = os.path.join(campaign_dir, "metadata", f"{station_name}.yml")
 
     # Check the file exists
-    if not os.path.exists(fpath):
-        raise ValueError(f"The metadata file for {station_name} at {fpath} does not exists.")
+    if not os.path.exists(metadata_fpath):
+        raise ValueError(f"The metadata file for {station_name} at {metadata_fpath} does not exists.")
 
-    # Read the metadata file
-    with open(fpath) as f:
-        dictionary = yaml.safe_load(f)
-    return dictionary
+    metadata_dict = read_yaml(metadata_fpath)
+    return metadata_dict
 
 
 def get_list_metadata(

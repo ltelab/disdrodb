@@ -20,99 +20,14 @@
 
 import os
 
-import numpy as np
-
 from disdrodb.configs import get_base_dir
 from disdrodb.l0.io import _infer_campaign_name_from_path, _infer_data_source_from_path
+from disdrodb.metadata.manipulation import sort_metadata_dictionary
+from disdrodb.metadata.standards import get_valid_metadata_keys
 from disdrodb.utils.yaml import read_yaml, write_yaml
-
-
-####--------------------------------------------------------------------------.
-#### Define valid metadata keys
-def get_valid_metadata_keys() -> list:
-    """Get DISDRODB valid metadata list.
-
-    Returns
-    -------
-    list
-        List of valid metadata keys
-    """
-    list_attrs = [
-        ## Mandatory fields
-        "data_source",
-        "campaign_name",
-        "station_name",
-        "sensor_name",
-        "reader",
-        "raw_data_format",  # 'txt', 'netcdf'
-        "platform_type",  # 'fixed', 'mobile'
-        ## Source
-        "source",
-        "source_convention",
-        "source_processing_date",
-        ## Description
-        "title",
-        "description",
-        "project_name",
-        "keywords",
-        "summary",
-        "history",
-        "comment",
-        "station_id",
-        "location",
-        "country",
-        "continent",
-        ## Deployment Info
-        "latitude",  # in degrees North
-        "longitude",  # in degrees East
-        "altitude",  # in meter above sea level
-        "deployment_status",  # 'ended', 'ongoing'
-        "deployment mode",  # 'land', 'ship', 'truck', 'cable'
-        "platform_protection",  # 'shielded', 'unshielded'
-        "platform_orientation",  # [0-360] from N (clockwise)
-        ## Sensor info
-        "sensor_long_name",
-        "sensor_manufacturer",
-        "sensor_wavelength",
-        "sensor_serial_number",
-        "firmware_iop",
-        "firmware_dsp",
-        "firmware_version",
-        "sensor_beam_length",
-        "sensor_beam_width",
-        "sensor_nominal_width",  # ?
-        ## effective_measurement_area ?  # 0.54 m^2
-        "measurement_interval",  # sampling_interval ? [in seconds]
-        "calibration_sensitivity",
-        "calibration_certification_date",
-        "calibration_certification_url",
-        ## Attribution
-        "contributors",
-        "authors",
-        "authors_url",
-        "contact",
-        "contact_information",
-        "acknowledgement",  # acknowledgements?
-        "references",
-        "documentation",
-        "website",
-        "institution",
-        "source_repository",
-        "license",
-        "doi",
-    ]
-    return list_attrs
-
 
 ####--------------------------------------------------------------------------.
 #### Metadata reader & writers
-
-
-def sort_metadata_dictionary(metadata):
-    """Sort the keys of the metadata dictionary by valid_metadata_keys list order."""
-    list_metadata_keys = get_valid_metadata_keys()
-    metadata = {k: metadata[k] for k in list_metadata_keys}
-    return metadata
 
 
 def read_metadata(campaign_dir: str, station_name: str) -> dict:
@@ -149,7 +64,7 @@ def write_metadata(metadata, fpath):
 
 ####--------------------------------------------------------------------------.
 #### Default (empty) metadata
-def get_default_metadata_dict() -> dict:
+def _get_default_metadata_dict() -> dict:
     """Get DISDRODB metadata default values.
 
     Returns
@@ -179,7 +94,7 @@ def write_default_metadata(fpath: str) -> None:
         File path
     """
     # Get default metadata dict
-    metadata = get_default_metadata_dict()
+    metadata = _get_default_metadata_dict()
     # Try infer the data_source, campaign_name and station_name from fpath
     try:
         campaign_name = _infer_campaign_name_from_path(fpath)
@@ -213,145 +128,3 @@ def create_campaign_default_metadata(
         write_default_metadata(fpath=metadata_fpath)
     print(f"The default metadata were created for stations {station_names}.")
     return None
-
-
-####--------------------------------------------------------------------------.
-#### Check metadata file
-
-
-def get_metadata_missing_keys(metadata):
-    """Return the DISDRODB metadata keys which are missing."""
-    keys = list(metadata.keys())
-    valid_keys = get_valid_metadata_keys()
-    # Identify missing keys
-    idx_missing_keys = np.where(np.isin(valid_keys, keys, invert=True))[0]
-    missing_keys = np.array(valid_keys)[idx_missing_keys].tolist()
-    return missing_keys
-
-
-def get_metadata_invalid_keys(metadata):
-    """Return the DISDRODB metadata keys which are not valid."""
-    keys = list(metadata.keys())
-    valid_keys = get_valid_metadata_keys()
-    # Identify invalid keys
-    idx_invalid_keys = np.where(np.isin(keys, valid_keys, invert=True))[0]
-    invalid_keys = np.array(keys)[idx_invalid_keys].tolist()
-    return invalid_keys
-
-
-def _check_metadata_keys(metadata):
-    """Check validity of metadata keys."""
-    # Check all keys are valid
-    invalid_keys = get_metadata_invalid_keys(metadata)
-    if len(invalid_keys) > 0:
-        raise ValueError(f"Invalid metadata keys: {invalid_keys}")
-    # Check no keys are missing
-    missing_keys = get_metadata_missing_keys(metadata)
-    if len(missing_keys) > 0:
-        raise ValueError(f"Missing metadata keys: {missing_keys}")
-    return None
-
-
-def _check_metadata_values(metadata):
-    """Check validity of metadata values
-
-    If null is specified in the YAML files (or None in the dict) raise error.
-    """
-    for key, value in metadata.items():
-        if isinstance(value, type(None)):
-            raise ValueError(f"The metadata key {key} has None or null value. Use '' instead.")
-    return None
-
-
-def _check_metadata_campaign_name(metadata, expected_name):
-    """Check metadata campaign_name."""
-    if "campaign_name" not in metadata:
-        raise ValueError("The metadata file does not contain the 'campaign_name' key.")
-    campaign_name = metadata["campaign_name"]
-    if campaign_name == "":
-        raise ValueError("The 'campaign_name' key in the metadata is empty.")
-    if campaign_name != expected_name:
-        raise ValueError(
-            f"The campaign_name in the metadata is '{campaign_name}' but the campaign directory is '{expected_name}'"
-        )
-    return None
-
-
-def _check_metadata_data_source(metadata, expected_name):
-    """Check metadata data_source."""
-    if "data_source" not in metadata:
-        raise ValueError("The metadata file does not contain the 'data_source' key.")
-    data_source = metadata["data_source"]
-    if data_source == "":
-        raise ValueError("The 'data_source' key in the metadata is empty.")
-    if data_source != expected_name:
-        raise ValueError(
-            f"The data_source in the metadata is '{data_source}' but the data_source directory is '{expected_name}'"
-        )
-    return None
-
-
-def _check_metadata_station_name(metadata, expected_name):
-    """Check metadata station name.
-
-    This function does not check that data are available for the station!"""
-    if "station_name" not in metadata:
-        raise ValueError("The metadata file does not contain the 'station_name' key.")
-    station_name = metadata["station_name"]
-    if not isinstance(station_name, str):
-        raise ValueError("The 'station_name' key in the metadata is not defined as a string!")
-    if station_name == "":
-        raise ValueError("The 'station_name' key in the metadata is empty.")
-    if station_name != expected_name:
-        raise ValueError(
-            f"The station_name in the metadata is '{station_name}' but the metadata file is named '{expected_name}.yml'"
-        )
-    return None
-
-
-def _check_metadata_sensor_name(metadata):
-    from disdrodb.api.checks import check_sensor_name
-
-    sensor_name = metadata["sensor_name"]
-    check_sensor_name(sensor_name=sensor_name)
-    return None
-
-
-def check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None):
-    """Check DISDRODB metadata compliance."""
-    from disdrodb.api.metadata import read_station_metadata
-    from disdrodb.l0.l0_reader import _check_metadata_reader
-
-    metadata = read_station_metadata(
-        base_dir=base_dir,
-        product_level="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    _check_metadata_keys(metadata)
-    _check_metadata_values(metadata)
-    _check_metadata_campaign_name(metadata, expected_name=campaign_name)
-    _check_metadata_data_source(metadata, expected_name=data_source)
-    _check_metadata_station_name(metadata, expected_name=station_name)
-    _check_metadata_sensor_name(metadata)
-    _check_metadata_reader(metadata)
-    return None
-
-
-####--------------------------------------------------------------------------.
-#### Metadata manipulation tools
-def remove_invalid_metadata_keys(metadata):
-    """Remove invalid keys from the metadata dictionary."""
-    invalid_keys = get_metadata_invalid_keys(metadata)
-    for k in invalid_keys:
-        _ = metadata.pop(k)
-    return metadata
-
-
-def add_missing_metadata_keys(metadata):
-    """Add missing keys to the metadata dictionary."""
-    missing_keys = get_metadata_missing_keys(metadata)
-    for k in missing_keys:
-        metadata[k] = ""
-    return metadata

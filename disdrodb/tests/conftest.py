@@ -8,9 +8,9 @@ import os
 import shutil
 
 import pytest
-import yaml
 
 from disdrodb import __root_path__
+from disdrodb.utils.yaml import write_yaml
 
 
 @pytest.fixture
@@ -41,8 +41,7 @@ def create_test_config_files(request):
             os.makedirs(test_folder)
 
         test_file_path = os.path.join(test_folder, file_name)
-        with open(test_file_path, "w") as f:
-            yaml.dump(dictionary, f)
+        write_yaml(dictionary, test_file_path)
 
     yield
     os.remove(test_file_path)

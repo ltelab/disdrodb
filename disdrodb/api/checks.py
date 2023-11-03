@@ -95,14 +95,3 @@ def check_sensor_name(sensor_name: str, product_level: str = "l0") -> None:
         msg = f"{sensor_name} not valid {sensor_name}. Valid values are {sensor_names}."
         logger.error(msg)
         raise ValueError(msg)
-
-
-def check_product_level(product_level):
-    """Check DISDRODB product level validity."""
-    if not isinstance(product_level, str):
-        raise TypeError("'product_level' must be a string.")
-    product_level = product_level.lower()
-    valid_product_levels = ["l0"]
-    if product_level not in valid_product_levels:
-        raise ValueError(f"{product_level} is an invalid 'product_level'. Valid values are: {valid_product_levels}")
-    return product_level

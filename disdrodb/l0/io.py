@@ -639,7 +639,8 @@ def _check_raw_dir_data_subfolders(raw_dir):
 
 def _check_raw_dir_metadata(raw_dir, verbose=True):
     """Check metadata in the raw_dir directory."""
-    from disdrodb.l0.metadata import check_metadata_compliance, write_default_metadata
+    from disdrodb.l0.metadata import write_default_metadata
+    from disdrodb.metadata.check_metadata import check_metadata_compliance
 
     # Get list of stations
     raw_data_dir = os.path.join(raw_dir, "data")

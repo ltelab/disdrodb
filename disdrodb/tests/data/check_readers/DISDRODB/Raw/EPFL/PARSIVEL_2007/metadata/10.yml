@@ -5,6 +5,7 @@ sensor_name: OTT_Parsivel
 reader: EPFL/PARSIVEL_2007
 raw_data_format: txt
 platform_type: fixed
+disdrodb_data_url: ''
 source: ''
 source_convention: ''
 source_processing_date: ''

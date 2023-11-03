@@ -87,4 +87,5 @@ def get_base_dir(base_dir=None):
 
     if base_dir is None:
         base_dir = disdrodb.config["dir"]
+    base_dir = str(base_dir)  # convert Path to str
     return base_dir

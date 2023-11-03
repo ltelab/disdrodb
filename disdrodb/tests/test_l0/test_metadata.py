@@ -20,15 +20,14 @@
 
 import os
 
-import yaml
-
 from disdrodb import __root_path__
 from disdrodb.l0.metadata import (
+    _get_default_metadata_dict,
     create_campaign_default_metadata,
-    get_default_metadata_dict,
     read_metadata,
     write_default_metadata,
 )
+from disdrodb.utils.yaml import read_yaml
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
@@ -70,7 +69,7 @@ def test_create_campaign_default_metadata(tmp_path):
 
 
 def test_get_default_metadata():
-    assert isinstance(get_default_metadata_dict(), dict)
+    assert isinstance(_get_default_metadata_dict(), dict)
 
 
 def create_fake_metadata_folder(tmp_path, data_source="data_source", campaign_name="campaign_name"):
@@ -97,11 +96,10 @@ def test_write_default_metadata(tmp_path):
     assert os.path.exists(fpath)
 
     # open it
-    with open(str(fpath)) as f:
-        dictionary = yaml.safe_load(f)
+    dictionary = read_yaml(str(fpath))
 
     # check is the expected dictionary
-    expected_dict = get_default_metadata_dict()
+    expected_dict = _get_default_metadata_dict()
     expected_dict["data_source"] = data_source
     expected_dict["campaign_name"] = campaign_name
     expected_dict["station_name"] = station_name
@@ -113,7 +111,7 @@ def test_write_default_metadata(tmp_path):
 
 
 def test_read_metadata():
-    raw_dir = os.path.join(TEST_DATA_DIR, "test_folders_files_creation")
+    raw_dir = os.path.join(TEST_DATA_DIR, "test_dir_creation")
     station_name = "123"
 
     metadata_folder_path = os.path.join(raw_dir, "metadata")
@@ -127,7 +125,7 @@ def test_read_metadata():
         os.remove(metadata_path)
 
     # create data
-    data = get_default_metadata_dict()
+    data = _get_default_metadata_dict()
 
     # create metadata file
     write_default_metadata(str(metadata_path))
@@ -136,9 +134,3 @@ def test_read_metadata():
     function_return = read_metadata(raw_dir, station_name)
 
     assert function_return == data
-
-
-def test_check_metadata_compliance():
-    # function_return = metadata.check_metadata_compliance()
-    # function not implemented
-    assert 1 == 1

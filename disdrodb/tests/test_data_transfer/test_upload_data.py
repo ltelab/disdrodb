@@ -26,7 +26,8 @@ import uuid
 import pytest
 
 from disdrodb.data_transfer.upload_data import upload_disdrodb_archives
-from disdrodb.utils.yaml import read_yaml, write_yaml
+from disdrodb.metadata import read_station_metadata
+from disdrodb.utils.yaml import write_yaml
 from disdrodb.utils.zenodo import _create_zenodo_deposition
 
 
@@ -51,11 +52,6 @@ def create_fake_data_dir(base_dir, data_source, campaign_name, station_name):
     data_fpath.touch()
 
     return data_dir
-
-
-def get_metadata_dict(base_dir, data_source, campaign_name, station_name):
-    metadata_fpath = base_dir / "Raw" / data_source / campaign_name / "metadata" / f"{station_name}.yml"
-    return read_yaml(metadata_fpath)
 
 
 def mock_zenodo_api(requests_mock):
@@ -98,11 +94,23 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
     upload_disdrodb_archives(platform="sandbox.zenodo", base_dir=str(base_dir))
 
     # Check metadata files (1st one should not have changed)
-    metadata_dict1 = get_metadata_dict(base_dir, data_source, campaign_name, station_name1)
+    metadata_dict1 = read_station_metadata(
+        base_dir=base_dir,
+        product_level="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name1,
+    )
     new_station_url1 = metadata_dict1["disdrodb_data_url"]
     assert new_station_url1 == station_url1
 
-    metadata_dict2 = get_metadata_dict(base_dir, data_source, campaign_name, station_name2)
+    metadata_dict2 = read_station_metadata(
+        base_dir=base_dir,
+        product_level="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name2,
+    )
     new_station_url2 = metadata_dict2["disdrodb_data_url"]
     list_new_station_url2 = new_station_url2.split(os.path.sep)
 

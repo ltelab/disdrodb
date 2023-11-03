@@ -53,7 +53,7 @@ To update the DISDRODB Metadata Archive follow these steps:
    .. code:: bash
 
       export DISDRODB_BASE_DIR="<path_to_the>/disdrodb-data/DISDRODB"
-      disdrodb_check_metadata_compliance
+      disdrodb_check_metadata_archive_compliance
 
    .. note::
       The ``DISDRODB_BASE_DIR`` environment variable has to be specified only if the DISDRODB root directory had not been specified before.

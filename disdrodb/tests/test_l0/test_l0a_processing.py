@@ -536,7 +536,7 @@ def test_write_l0a():
     # Write parquet file
     path_parquet_file = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_creation",
+        "test_dir_creation",
         "fake_data_sample.parquet",
     )
     l0a_processing.write_l0a(df, path_parquet_file, True, False)

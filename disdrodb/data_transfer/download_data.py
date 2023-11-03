@@ -26,9 +26,9 @@ import click
 import pooch
 import tqdm
 
-from disdrodb.api.metadata import get_list_metadata
 from disdrodb.configs import get_base_dir
 from disdrodb.l0.io import _infer_disdrodb_tree_path
+from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.compression import _unzip_file
 from disdrodb.utils.yaml import read_yaml
 
@@ -159,7 +159,7 @@ def _download_station_data(metadata_fpath: str, force: bool = False) -> None:
 
     """
     disdrodb_data_url, station_dir_path = _get_station_url_and_dir_path(metadata_fpath)
-    if disdrodb_data_url is not None:
+    if isinstance(disdrodb_data_url, str) and disdrodb_data_url != "":
         # Download file
         zip_fpath, to_unzip = _download_file_from_url(disdrodb_data_url, dst_dir_path=station_dir_path, force=force)
         # Extract the stations files from the downloaded station.zip file

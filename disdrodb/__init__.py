@@ -8,9 +8,9 @@ from disdrodb.api.io import (
     available_data_sources,
     available_stations,
 )
-from disdrodb.api.metadata import read_station_metadata
 from disdrodb.configs import define_disdrodb_configs as define_configs
 from disdrodb.docs import open_documentation, open_sensor_documentation
+from disdrodb.metadata import read_station_metadata
 
 __root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 

@@ -21,10 +21,24 @@
 import logging
 import os
 
-from disdrodb.api.checks import check_product_level, check_sensor_name
+from disdrodb.api.checks import check_sensor_name
 from disdrodb.utils.yaml import read_yaml
 
 logger = logging.getLogger(__name__)
+
+
+def _check_product_level(product_level):
+    """Check DISDRODB product level validity."""
+    # Note: in disdrodb.api.io there is another _check_product_level function !
+    if not isinstance(product_level, str):
+        raise TypeError("'product_level' must be a string.")
+    product_level = product_level.lower()
+    valid_product_levels = ["l0", "l0a", "l0b"]
+    if product_level not in valid_product_levels:
+        raise ValueError(f"{product_level} is an invalid 'product_level'. Valid values are: {valid_product_levels}")
+    if product_level in ["l0a", "l0b"]:
+        product_level = "l0"
+    return product_level
 
 
 def _get_config_dir(product_level):
@@ -57,7 +71,7 @@ def get_sensor_configs_dir(sensor_name: str, product_level: str) -> str:
         Error if the config directory does not exist.
     """
     check_sensor_name(sensor_name, product_level=product_level)
-    product_level = check_product_level(product_level)
+    product_level = _check_product_level(product_level)
     config_dir_path = _get_config_dir(product_level=product_level)
     config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
     if not os.path.exists(config_sensor_dir_path):
@@ -88,7 +102,7 @@ def read_config_file(sensor_name: str, product_level: str, filename: str) -> dic
         Error if file does not exist.
     """
     check_sensor_name(sensor_name, product_level=product_level)
-    product_level = check_product_level(product_level)
+    product_level = _check_product_level(product_level)
     config_sensor_dir_path = get_sensor_configs_dir(sensor_name, product_level=product_level)
     config_fpath = os.path.join(config_sensor_dir_path, filename)
     # Check yaml file exists
@@ -112,6 +126,6 @@ def available_sensor_names(product_level: str = "L0") -> sorted:
         DISDRODB product level.
         By default, it returns the sensors available for DISDRODB L0 products.
     """
-    product_level = check_product_level(product_level)
+    product_level = _check_product_level(product_level)
     config_dir_path = _get_config_dir(product_level=product_level)
     return sorted(os.listdir(config_dir_path))

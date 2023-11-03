@@ -26,10 +26,10 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-import yaml
 
 from disdrodb import __root_path__
 from disdrodb.l0 import io
+from disdrodb.utils.yaml import write_yaml
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
@@ -42,9 +42,7 @@ def create_fake_metadata_file(
         subfolder_path.mkdir(parents=True)
     file_path = os.path.join(subfolder_path, yaml_file_name)
     # create a fake yaml file in temp folder
-    with open(file_path, "w") as f:
-        yaml.dump(yaml_dict, f)
-
+    write_yaml(yaml_dict, file_path)
     assert os.path.exists(file_path)
 
     return file_path
@@ -90,7 +88,7 @@ def test_create_initial_directory_structure(tmp_path, mocker):
     processed_dir = os.path.join(tmp_path, "DISDRODB", "Processed", campaign_name)
     subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name
     subfolder_path.mkdir(parents=True)
-    mocker.patch("disdrodb.l0.metadata.check_metadata_compliance", return_value=None)
+    mocker.patch("disdrodb.metadata.check_metadata.check_metadata_compliance", return_value=None)
 
     io.create_initial_directory_structure(
         raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name, force=force
@@ -290,7 +288,7 @@ def test_get_l0b_dir(path_process_dir):
 def test_get_l0a_fpath():
     """
     Test the naming and the path of the L0A file
-    Note that this test needs "/data/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
+    Note that this test needs "/data/test_dir_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
     from disdrodb.l0.standards import PRODUCT_VERSION
@@ -307,7 +305,7 @@ def test_get_l0a_fpath():
     # Set paths
     path_campaign_name = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_structure",
+        "test_dir_structure",
         "DISDRODB",
         "Processed",
         data_source,
@@ -331,7 +329,7 @@ def test_get_l0a_fpath():
 def test_get_l0b_fpath():
     """
     Test the naming and the path of the L0B file
-    Note that this test needs "/data/test_folders_files_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
+    Note that this test needs "/data/test_dir_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
     metadata/STATION_NAME.yml"
     """
     from disdrodb.l0.standards import PRODUCT_VERSION
@@ -348,7 +346,7 @@ def test_get_l0b_fpath():
     # Set paths
     path_campaign_name = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_structure",
+        "test_dir_structure",
         "DISDRODB",
         "Processed",
         data_source,
@@ -418,7 +416,7 @@ def test_get_raw_file_list():
 ####--------------------------------------------------------------------------.
 
 folder_name = "folder_creation_deletion_test"
-path_file_temp = os.path.join(TEST_DATA_DIR, "test_folders_files_creation", folder_name)
+path_file_temp = os.path.join(TEST_DATA_DIR, "test_dir_creation", folder_name)
 
 
 def test_create_directory(tmp_path):
@@ -468,7 +466,7 @@ def test_check_raw_dir():
     # Set paths
     raw_dir = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_structure",
+        "test_dir_structure",
         "DISDRODB",
         "Raw",
         data_source,
@@ -483,7 +481,7 @@ def test_check_campaign_name():
     data_source = "DATA_SOURCE"
     path_raw = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_structure",
+        "test_dir_structure",
         "DISDRODB",
         "Raw",
         data_source,
@@ -491,7 +489,7 @@ def test_check_campaign_name():
     )
     path_process = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_creation",
+        "test_dir_creation",
         "DISDRODB",
         "Processed",
         data_source,
@@ -507,7 +505,7 @@ def test_copy_station_metadata():
     station_name = "STATION_NAME"
     raw_dir = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_structure",
+        "test_dir_structure",
         "DISDRODB",
         "Raw",
         data_source,
@@ -515,7 +513,7 @@ def test_copy_station_metadata():
     )
     processed_dir = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_creation",
+        "test_dir_creation",
         "DISDRODB",
         "Processed",
         data_source,
@@ -553,7 +551,7 @@ def test_copy_station_metadata():
 
 #     raw_dir = os.path.join(
 #         TEST_DATA_DIR,
-#         "test_folders_files_structure",
+#         "test_dir_structure",
 #         "DISDRODB",
 #         "Raw",
 #         data_source,
@@ -561,7 +559,7 @@ def test_copy_station_metadata():
 #     )
 #     processed_dir = os.path.join(
 #         TEST_DATA_DIR,
-#         "test_folders_files_creation",
+#         "test_dir_creation",
 #         "DISDRODB",
 #         "Processed",
 #         data_source,
@@ -602,7 +600,7 @@ def test_copy_station_metadata():
 
 #     processed_dir = os.path.join(
 #         TEST_DATA_DIR,
-#         "test_folders_files_creation",
+#         "test_dir_creation",
 #         "DISDRODB",
 #         "Processed",
 #         data_source,
@@ -639,7 +637,7 @@ def test__read_l0a():
     # save dataframe to parquet file
     path_parquet_file = os.path.join(
         TEST_DATA_DIR,
-        "test_folders_files_creation",
+        "test_dir_creation",
         "fake_data_sample.parquet",
     )
     df.to_parquet(path_parquet_file, compression="gzip")
@@ -662,7 +660,7 @@ def test_read_l0a_dataframe():
         # save dataframe to parquet file
         path_parquet_file = os.path.join(
             TEST_DATA_DIR,
-            "test_folders_files_creation",
+            "test_dir_creation",
             f"fake_data_sample_{i}.parquet",
         )
         df.to_parquet(path_parquet_file, compression="gzip")

@@ -6,6 +6,7 @@ reader: EPFL/LOCARNO_2018
 raw_data_format: raw
 raw_data_type: raw
 platform_type: fixed
+disdrodb_data_url: ''
 crs: WGS84
 proj4_string: +proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs
 EPSG: 4326

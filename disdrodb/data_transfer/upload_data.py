@@ -23,7 +23,7 @@ from typing import List, Optional
 
 import click
 
-from disdrodb.api.metadata import get_list_metadata
+from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.compression import _zip_dir
 from disdrodb.utils.yaml import read_yaml, write_yaml
 from disdrodb.utils.zenodo import _create_zenodo_deposition, _upload_file_to_zenodo
@@ -95,19 +95,17 @@ def _filter_already_uploaded(metadata_fpaths: List[str]) -> List[str]:
     """Filter metadata files that already have a remote url specified."""
 
     filtered = []
-
     for metadata_fpath in metadata_fpaths:
         metadata_dict = read_yaml(metadata_fpath)
         if metadata_dict.get("disdrodb_data_url"):
             print(f"{metadata_fpath} already has a remote url specified. Skipping.")
             continue
         filtered.append(metadata_fpath)
-
     return filtered
 
 
 def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) -> None:
-    """Upload data to Zenodo.
+    """Upload data to Zenodo Sandbox.
 
     Parameters
     ----------

@@ -22,7 +22,6 @@ import glob
 import os
 
 import numpy as np
-import yaml
 
 from disdrodb.configs import get_base_dir
 
@@ -85,6 +84,10 @@ def _get_list_stations_dirs(product_level, campaign_dir):
         data_path = os.path.join(campaign_dir, "data")
     else:
         data_path = os.path.join(campaign_dir, product_level)
+    # Check if the data directory exists
+    # - For a fresh disdrodb-data cloned repo, no "data" directories
+    if not os.path.exists(data_path):
+        return []
     # Get list of directories (stations)
     list_stations = os.listdir(data_path)
     list_stations_dir = [os.path.join(data_path, station_name) for station_name in list_stations]
@@ -213,26 +216,6 @@ def _get_stations(base_dir, product_level):
     )
     # Return all available stations
     return list_available_stations
-
-
-def _get_metadata_fpath(base_dir, product_level, data_source, campaign_name, station_name):
-    """Get metadata file path a given station."""
-    campaign_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product_level=product_level,
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-    metadata_fpath = os.path.join(campaign_dir, "metadata", station_name + ".yml")
-    return metadata_fpath
-
-
-def get_metadata_dict(base_dir, product_level, data_source, campaign_name, station_name):
-    """Get metadata of a given station."""
-    metadata_fpath = _get_metadata_fpath(base_dir, product_level, data_source, campaign_name, station_name)
-    with open(metadata_fpath) as f:
-        metadata_dict = yaml.safe_load(f)
-    return metadata_dict
 
 
 ####---------------------------------------------------------------------------.

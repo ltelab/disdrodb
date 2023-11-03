@@ -24,9 +24,9 @@ import os
 import netCDF4 as nc
 import numpy as np
 import xarray as xr
-import yaml
 
 from disdrodb.l0.l0b_nc_concat import _concatenate_netcdf_files, run_disdrodb_l0b_concat
+from disdrodb.utils.yaml import write_yaml
 
 
 def create_dummy_netcdf_file(filename: str, data: tuple):
@@ -72,8 +72,7 @@ def create_fake_data_file(tmp_path, data_source, campaign_name, station_name="",
         assert os.path.exists(metedata_folder_path)
 
         file_path = os.path.join(metedata_folder_path, f"{station_name}.yml")
-        with open(file_path, "w") as f:
-            yaml.dump({"station_name": station_name}, f)
+        write_yaml({"station_name": station_name}, file_path)
 
     return subfolder_path
 

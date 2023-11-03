@@ -22,7 +22,6 @@ import inspect
 import os
 
 import pytest
-import yaml
 
 from disdrodb.l0 import l0_reader
 from disdrodb.l0.l0_reader import (
@@ -34,6 +33,7 @@ from disdrodb.l0.l0_reader import (
     get_reader_from_metadata_reader_key,
     get_station_reader_function,
 )
+from disdrodb.utils.yaml import write_yaml
 
 # Some test are based on the following reader:
 DATA_SOURCE = "EPFL"
@@ -48,11 +48,8 @@ def create_fake_metadata_file(
         os.makedirs(subfolder_path, exist_ok=True)
     file_path = os.path.join(subfolder_path, yaml_file_name)
     # create a fake yaml file in temp folder
-    with open(file_path, "w") as f:
-        yaml.dump(yaml_dict, f)
-
+    write_yaml(yaml_dict, file_path)
     assert os.path.exists(file_path)
-
     return file_path
 
 

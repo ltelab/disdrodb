@@ -25,8 +25,8 @@ import yaml
 
 from disdrodb import __root_path__
 from disdrodb.api.configs import available_sensor_names
-from disdrodb.l0 import metadata
-from disdrodb.l0.check_metadata import (
+from disdrodb.l0.l0_reader import available_readers
+from disdrodb.metadata.check_metadata import (
     check_archive_metadata_campaign_name,
     check_archive_metadata_compliance,
     check_archive_metadata_data_source,
@@ -36,12 +36,11 @@ from disdrodb.l0.check_metadata import (
     check_archive_metadata_sensor_name,
     check_archive_metadata_station_name,
     check_metadata_geolocation,
-    get_archive_metadata_key_value,
     identify_empty_metadata_keys,
     identify_missing_metadata_coords,
 )
-from disdrodb.l0.l0_reader import available_readers
-from disdrodb.utils.yaml import read_yaml
+from disdrodb.metadata.standards import get_valid_metadata_keys
+from disdrodb.utils.yaml import read_yaml, write_yaml
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
@@ -100,11 +99,8 @@ def create_fake_metadata_file(
         subfolder_path.mkdir(parents=True)
     file_path = os.path.join(subfolder_path, yaml_file_name)
     # create a fake yaml file in temp folder
-    with open(file_path, "w") as f:
-        yaml.dump(yaml_dict, f)
-
+    write_yaml(yaml_dict, file_path)
     assert os.path.exists(file_path)
-
     return file_path
 
 
@@ -127,58 +123,11 @@ def test_identify_missing_metadata_keys(tmp_path, capsys):
     assert not captured.out
 
 
-def test_get_archive_metadata_key_value(tmp_path):
-    expected_result = []
-
-    base_dir = os.path.join(tmp_path, "DISDRODB")
-    # Test 1 : one config file
-    yaml_file_name = "station_1.yml"
-    expected_key = "key1"
-    expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
-
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
-
-    assert sorted(result) == sorted(expected_result)
-
-    # Test 2 : two config files
-    yaml_file_name = "station_2.yml"
-    expected_key = "key1"
-    expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
-
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
-
-    assert sorted(result) == sorted(expected_result)
-
-    # Test 3: test tuple
-    yaml_file_name = "station_3.yml"
-    expected_key = "key1"
-    expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=False)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
-    expected_result = [item[3] for item in expected_result]
-
-    assert sorted(result) == sorted(expected_result)
-
-
 def test_check_archive_metadata_keys(tmp_path):
     base_dir = os.path.join(tmp_path, "DISDRODB")
     # Test 1 : create a correct metadata file
     # Get the list of valid metadata keys
-    list_of_valid_metadata_keys = metadata.get_valid_metadata_keys()
+    list_of_valid_metadata_keys = get_valid_metadata_keys()
     yaml_file_name = "station_1.yml"
     yaml_dict = {i: "value1" for i in list_of_valid_metadata_keys}
     data_source = "data_source"

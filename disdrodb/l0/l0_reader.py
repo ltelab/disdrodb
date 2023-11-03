@@ -320,10 +320,10 @@ def _get_reader_from_metadata(metadata):
 
 def get_station_reader_function(data_source, campaign_name, station_name, base_dir=None):
     """Retrieve the reader function from the station metadata."""
-    from disdrodb.api.io import get_metadata_dict
+    from disdrodb.metadata import read_station_metadata
 
     # Get metadata
-    metadata = get_metadata_dict(
+    metadata = read_station_metadata(
         base_dir=base_dir,
         product_level="RAW",
         data_source=data_source,

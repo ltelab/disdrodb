@@ -20,9 +20,8 @@
 
 import os
 
-import yaml
-
-from disdrodb.api.metadata import _get_list_all_metadata, _get_list_metadata_with_data
+from disdrodb.metadata.io import _get_list_all_metadata, _get_list_metadata_with_data
+from disdrodb.utils.yaml import write_yaml
 
 
 def create_fake_metadata_file(
@@ -33,11 +32,8 @@ def create_fake_metadata_file(
         subfolder_path.mkdir(parents=True)
     file_path = os.path.join(subfolder_path, yaml_file_name)
     # create a fake yaml file in temp folder
-    with open(file_path, "w") as f:
-        yaml.dump(yaml_dict, f)
-
+    write_yaml(yaml_dict, file_path)
     assert os.path.exists(file_path)
-
     return file_path
 
 
