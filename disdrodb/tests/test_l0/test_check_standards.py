@@ -25,15 +25,15 @@ import pandas as pd
 import pytest
 
 from disdrodb import __root_path__
+from disdrodb.api.configs import available_sensor_names
 from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
     _check_valid_range,
     _check_valid_values,
     check_l0a_column_names,
     check_l0a_standards,
-    check_sensor_name,
 )
-from disdrodb.l0.standards import available_sensor_names, get_raw_array_nvalues
+from disdrodb.l0.standards import get_raw_array_nvalues, get_sensor_logged_variables
 
 RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
@@ -109,7 +109,7 @@ def test_check_raw_fields_available():
         _check_raw_fields_available(df, sensor_name)
 
     # Test case 2: All required columns present
-    sensor_names = available_sensor_names()
+    sensor_names = available_sensor_names(product_level="l0")
     for sensor_name in sensor_names:
         n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
         raw_vars = np.array(list(n_bins_dict.keys()))
@@ -118,22 +118,8 @@ def test_check_raw_fields_available():
         assert _check_raw_fields_available(df, sensor_name) is None
 
 
-def test_check_sensor_name():
-    sensor_name = "wrong_sensor_name"
-
-    # Test with an unknown device
-    with pytest.raises(ValueError):
-        check_sensor_name(sensor_name)
-
-    # Test with a woronf type
-    with pytest.raises(TypeError):
-        check_sensor_name(123)
-
-
 def test_check_l0a_column_names(capsys):
-    from disdrodb.l0.standards import available_sensor_names, get_sensor_logged_variables
-
-    sensor_names = available_sensor_names()
+    sensor_names = available_sensor_names(product_level="l0")
     sensor_name = sensor_names[0]
 
     # Test 1 : All columns are present

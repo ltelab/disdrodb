@@ -2,6 +2,7 @@ import os
 from importlib.metadata import PackageNotFoundError, version
 
 from disdrodb._config import config
+from disdrodb.api.configs import available_sensor_names
 from disdrodb.api.io import (
     available_campaigns,
     available_data_sources,
@@ -9,7 +10,7 @@ from disdrodb.api.io import (
 )
 from disdrodb.api.metadata import read_station_metadata
 from disdrodb.configs import define_disdrodb_configs as define_configs
-from disdrodb.l0.standards import available_sensor_names
+from disdrodb.docs import open_documentation, open_sensor_documentation
 
 __root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
@@ -21,6 +22,9 @@ __all__ = [
     "available_campaigns",
     "available_data_sources",
     "available_sensor_names",
+    "open_documentation",
+    "open_sensor_documentation",
+    "open_documentation",
     "read_station_metadata",
 ]
 

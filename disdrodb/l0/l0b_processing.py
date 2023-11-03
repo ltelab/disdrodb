@@ -25,10 +25,10 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from disdrodb.api.checks import check_sensor_name
 from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
     check_l0b_standards,
-    check_sensor_name,
 )
 from disdrodb.l0.io import _create_directory, _remove_if_exists
 from disdrodb.l0.standards import (

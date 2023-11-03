@@ -24,6 +24,7 @@ import pytest
 import yaml
 
 from disdrodb import __root_path__
+from disdrodb.api.configs import available_sensor_names
 from disdrodb.l0 import metadata
 from disdrodb.l0.check_metadata import (
     check_archive_metadata_campaign_name,
@@ -40,7 +41,6 @@ from disdrodb.l0.check_metadata import (
     identify_missing_metadata_coords,
 )
 from disdrodb.l0.l0_reader import available_readers
-from disdrodb.l0.standards import available_sensor_names
 from disdrodb.utils.yaml import read_yaml
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
@@ -256,7 +256,7 @@ def test_check_archive_metadata_data_source(tmp_path):
 
 
 def test_check_archive_metadata_sensor_name(tmp_path):
-    sensor_names = available_sensor_names()
+    sensor_names = available_sensor_names(product_level="l0")
     base_dir = os.path.join(tmp_path, "DISDRODB")
 
     # Test 1 : create a correct metadata file

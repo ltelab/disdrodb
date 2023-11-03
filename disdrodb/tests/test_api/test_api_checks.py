@@ -55,3 +55,15 @@ def test_check_base_dir():
 
     with pytest.raises(ValueError):
         checks.check_base_dir("/path/to/DISDRO")
+
+
+def test_check_sensor_name():
+    sensor_name = "wrong_sensor_name"
+
+    # Test with an unknown device
+    with pytest.raises(ValueError):
+        checks.check_sensor_name(sensor_name)
+
+    # Test with a woronf type
+    with pytest.raises(TypeError):
+        checks.check_sensor_name(123)

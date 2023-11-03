@@ -25,18 +25,16 @@ from typing import List, Optional, Union
 import numpy as np
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
+from disdrodb.api.configs import available_sensor_names, get_sensor_configs_dir, read_config_file
 from disdrodb.l0.standards import (
-    available_sensor_names,
     get_diameter_bin_center,
     get_diameter_bin_lower,
     get_diameter_bin_upper,
     get_diameter_bin_width,
-    get_sensor_configs_dir,
     get_velocity_bin_center,
     get_velocity_bin_lower,
     get_velocity_bin_upper,
     get_velocity_bin_width,
-    read_config_yml,
 )
 
 CONFIG_FILES_LIST = [
@@ -50,14 +48,14 @@ CONFIG_FILES_LIST = [
 
 
 def check_yaml_files_exists(sensor_name: str) -> None:
-    """Check if all config YAML files exist.
+    """Check if all L0 config YAML files exist.
 
     Parameters
     ----------
     sensor_name : str
         Name of the sensor.
     """
-    config_dir = get_sensor_configs_dir(sensor_name)
+    config_dir = get_sensor_configs_dir(sensor_name, product_level="L0")
     glob_pattern = os.path.join(config_dir, "*.yml")
     list_of_file_names = [os.path.split(i)[-1] for i in glob.glob(glob_pattern)]
     missing_keys = set(CONFIG_FILES_LIST).difference(set(list_of_file_names))
@@ -83,14 +81,14 @@ def check_variable_consistency(sensor_name: str) -> None:
     ValueError
         If the keys are not consistent.
     """
-    list_variables = read_config_yml(sensor_name, "l0b_variables_attrs.yml").keys()
+    list_variables = read_config_file(sensor_name, product_level="l0", filename="l0b_variables_attrs.yml").keys()
     file_names = [
         "raw_data_format.yml",
         "l0a_encodings.yml",
         "l0b_encodings.yml",
     ]
     for file_name in file_names:
-        keys_to_check = read_config_yml(sensor_name, file_name).keys()
+        keys_to_check = read_config_file(sensor_name, product_level="l0", filename=file_name).keys()
         missing_keys = set(list_variables).difference(set(keys_to_check))
         extra_keys = set(keys_to_check).difference(set(list_variables))
         if missing_keys:
@@ -175,7 +173,7 @@ def check_l0b_encoding(sensor_name: str) -> None:
         Name of the sensor.
     """
 
-    data = read_config_yml(sensor_name, "l0b_encodings.yml")
+    data = read_config_file(sensor_name, product_level="l0", filename="l0b_encodings.yml")
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
@@ -199,7 +197,7 @@ def check_l0a_encoding(sensor_name: str) -> None:
     ValueError
         Error raised if the value of a key is not in the list of accepted values.
     """
-    data = read_config_yml(sensor_name, "l0a_encodings.yml")
+    data = read_config_file(sensor_name, product_level="l0", filename="l0a_encodings.yml")
     numeric_field = ["uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64"]
     text_field = ["str"]
     for key, value in data.items():
@@ -237,7 +235,7 @@ def check_raw_data_format(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    data = read_config_yml(sensor_name, "raw_data_format.yml")
+    data = read_config_file(sensor_name, product_level="l0", filename="raw_data_format.yml")
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
@@ -256,7 +254,7 @@ def check_cf_attributes(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    cf_dict = read_config_yml(sensor_name, "l0b_variables_attrs.yml")
+    cf_dict = read_config_file(sensor_name, product_level="l0", filename="l0b_variables_attrs.yml")
     for var, attrs_dict in cf_dict.items():
         for key, value in attrs_dict.items():
             if not isinstance(value, str):
@@ -318,7 +316,7 @@ def get_bins_measurement(sensor_name: str, file_name: str) -> list:
     list
         List of chunksizes (center, bounds, width)
     """
-    data = read_config_yml(sensor_name, file_name)
+    data = read_config_file(sensor_name, product_level="l0", filename=file_name)
     center_len = len(data.get("center"))
     bound_len = len(data.get("bounds"))
     width_len = len(data.get("width"))
@@ -339,14 +337,14 @@ def check_raw_array(sensor_name: str) -> None:
     ValueError
         Error if the chunksizes are not consistent.
     """
-    raw_data_format = read_config_yml(sensor_name, "raw_data_format.yml")
+    raw_data_format = read_config_file(sensor_name, product_level="l0", filename="raw_data_format.yml")
 
     # Get keys in raw_data_format where the value is "dimension_order"
     dict_keys_with_dimension_order = {
         key: value.get("dimension_order") for key, value in raw_data_format.items() if "dimension_order" in value.keys()
     }
 
-    l0b_encodings = read_config_yml(sensor_name, "l0b_encodings.yml")
+    l0b_encodings = read_config_file(sensor_name, product_level="l0", filename="l0b_encodings.yml")
 
     for key, list_velocity_or_diameter in dict_keys_with_dimension_order.items():
         expected_length = len(list_velocity_or_diameter) + 1
@@ -388,5 +386,5 @@ def check_sensor_configs(sensor_name: str) -> None:
 
 def check_all_sensors_configs() -> None:
     """Check all sensors configs."""
-    for sensor_name in available_sensor_names():
+    for sensor_name in available_sensor_names(product_level="l0"):
         check_sensor_configs(sensor_name=sensor_name)

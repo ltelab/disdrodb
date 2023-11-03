@@ -310,7 +310,7 @@ def _check_metadata_station_name(metadata, expected_name):
 
 
 def _check_metadata_sensor_name(metadata):
-    from disdrodb.l0.check_standards import check_sensor_name
+    from disdrodb.api.checks import check_sensor_name
 
     sensor_name = metadata["sensor_name"]
     check_sensor_name(sensor_name=sensor_name)

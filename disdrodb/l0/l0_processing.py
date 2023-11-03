@@ -30,7 +30,7 @@ import dask
 import dask.bag as db
 
 # Standards
-from disdrodb.l0.check_standards import check_sensor_name
+from disdrodb.api.checks import check_sensor_name
 
 # Directory
 from disdrodb.l0.io import (

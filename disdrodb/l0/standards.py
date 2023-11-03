@@ -16,16 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Retrieve sensor standards and configs files."""
+"""Retrieve L0 sensor standards."""
 
 import datetime
 import importlib
 import logging
-import os
 
 import numpy as np
 
-from disdrodb.utils.yaml import read_yaml
+from disdrodb.api.configs import read_config_file
 
 logger = logging.getLogger(__name__)
 
@@ -35,88 +34,15 @@ CONVENTIONS = "CF-1.10, ACDD-1.3"
 EPOCH = "seconds since 1970-01-01 00:00:00"
 
 
-def read_config_yml(sensor_name: str, filename: str) -> dict:
-    """Read a config yaml file and return the dictionary.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-    filename : str
-        Name of the file.
-
-    Returns
-    -------
-    dict
-        Content of the config file.
-
-    Raises
-    ------
-    ValueError
-        Error if file does not exist.
-    """
-
-    # Get config path
-    config_sensor_dir_path = get_sensor_configs_dir(sensor_name)
-    fpath = os.path.join(config_sensor_dir_path, filename)
-    # Check yaml file exists
-    if not os.path.exists(fpath):
-        msg = f"{filename} not available in {config_sensor_dir_path}"
-        logger.exception(msg)
-        raise ValueError(msg)
-    # Open dictionary
-    dictionary = read_yaml(fpath)
-    return dictionary
-
-
-def _get_config_dir():
-    from disdrodb import __root_path__
-
-    config_dir_path = os.path.join(__root_path__, "disdrodb", "l0", "configs")
-    return config_dir_path
-
-
-def get_sensor_configs_dir(sensor_name: str) -> str:
-    """Retrieve configs directory.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    str
-        Config directory.
-
-    Raises
-    ------
-    ValueError
-        Error if the config directory does not exist.
-    """
-    config_dir_path = _get_config_dir()
-    config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
-    if not os.path.exists(config_sensor_dir_path):
-        list_sensors = sorted(os.listdir(config_dir_path))
-        print(f"Available sensor_name are {list_sensors}")
-        raise ValueError(f"The config directory {config_sensor_dir_path} does not exist.")
-    return config_sensor_dir_path
-
-
 ####--------------------------------------------------------------------------.
+#### Variables validity dictionary
 
 
-def available_sensor_names() -> sorted:
-    """Get available names of sensors.
-
-    Returns
-    -------
-    sorted
-        Sorted list of the available sensors
-    """
-
-    config_dir_path = _get_config_dir()
-    return sorted(os.listdir(config_dir_path))
+def _ensure_list_value(value):
+    """Ensure the output value is a list."""
+    if not isinstance(value, list):
+        value = [value]
+    return value
 
 
 def get_data_format_dict(sensor_name: str) -> dict:
@@ -133,7 +59,7 @@ def get_data_format_dict(sensor_name: str) -> dict:
         Data format of each sensor variable.
     """
 
-    return read_config_yml(sensor_name=sensor_name, filename="raw_data_format.yml")
+    return read_config_file(sensor_name=sensor_name, product_level="l0", filename="raw_data_format.yml")
 
 
 def get_sensor_logged_variables(sensor_name: str) -> list:
@@ -151,10 +77,6 @@ def get_sensor_logged_variables(sensor_name: str) -> list:
     """
 
     return list(get_data_format_dict(sensor_name).keys())
-
-
-####--------------------------------------------------------------------------.
-#### Variables validity dictionary
 
 
 def get_data_range_dict(sensor_name: str) -> dict:
@@ -179,12 +101,6 @@ def get_data_range_dict(sensor_name: str) -> dict:
         if data_range is not None:
             dict_data_range[k] = data_range
     return dict_data_range
-
-
-def _ensure_list_value(value):
-    if not isinstance(value, list):
-        value = [value]
-    return value
 
 
 def get_nan_flags_dict(sensor_name: str) -> dict:
@@ -338,7 +254,7 @@ def get_l0b_cf_attrs_dict(sensor_name: str) -> dict:
         CF attributes of each sensor variable.
         For each variable, the 'units', 'description', and 'long_name' attributes are specified.
     """
-    return read_config_yml(sensor_name=sensor_name, filename="l0b_variables_attrs.yml")
+    return read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0b_variables_attrs.yml")
 
 
 ####-------------------------------------------------------------------------.
@@ -502,7 +418,7 @@ def get_diameter_bins_dict(sensor_name: str) -> dict:
     dict
         sensor_name diameter bins information
     """
-    d = read_config_yml(sensor_name=sensor_name, filename="bins_diameter.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="bins_diameter.yml")
     return d
 
 
@@ -591,7 +507,7 @@ def get_velocity_bins_dict(sensor_name: str) -> dict:
     dict
         Sensor_name diameter bins information
     """
-    d = read_config_yml(sensor_name=sensor_name, filename="bins_velocity.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="bins_velocity.yml")
     return d
 
 
@@ -719,7 +635,7 @@ def get_l0a_dtype(sensor_name: str) -> dict:
     """
 
     # Note: This function could extract the info from l0a_encodings in future.
-    d = read_config_yml(sensor_name=sensor_name, filename="l0a_encodings.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0a_encodings.yml")
     return d
 
 
@@ -738,7 +654,7 @@ def get_l0a_encodings_dict(sensor_name: str) -> dict:
     """
 
     # - l0a_encodings.yml currently specify only the dtype. This could be expanded in the future.
-    d = read_config_yml(sensor_name=sensor_name, filename="l0a_encodings.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0a_encodings.yml")
     return d
 
 
@@ -780,7 +696,7 @@ def get_l0b_encodings_dict(sensor_name: str) -> dict:
     dict
         Encoding to write L0B netCDFs
     """
-    encoding_dict = read_config_yml(sensor_name=sensor_name, filename="l0b_encodings.yml")
+    encoding_dict = read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0b_encodings.yml")
     # Ensure valid arguments for contiguous (unchunked) arrays
     encoding_dict = _ensure_valid_params_contiguous_arrays(encoding_dict)
     # Ensure chunksize is a list
@@ -902,7 +818,7 @@ def get_variables_dimension(sensor_name: str):
 
 
 ####-------------------------------------------------------------------------.
-#### Valid names
+#### Valid DISDRODB L0B names
 
 
 def get_valid_variable_names(sensor_name):
@@ -912,7 +828,7 @@ def get_valid_variable_names(sensor_name):
 
 
 def get_valid_dimension_names(sensor_name):
-    """Get list of valid dimension names."""
+    """Get list of valid dimension names for DISDRODB L0B."""
     # Retrieve dimension order dictionary
     dims_dict = get_raw_array_dims_order(sensor_name=sensor_name)
     # Retrieve possible dimensions
@@ -924,7 +840,7 @@ def get_valid_dimension_names(sensor_name):
 
 
 def get_valid_coordinates_names(sensor_name):
-    """Get list of valid coordinates."""
+    """Get list of valid coordinates for DISDRODB L0B."""
     # Define diameter and velocity coordinates
     velocity_coordinates = [
         "velocity_bin_center",
@@ -957,6 +873,7 @@ def get_valid_coordinates_names(sensor_name):
 
 
 def get_valid_names(sensor_name):
+    """Return the list of valid variable and coordinates names for DISDRODB L0B."""
     variables = get_valid_variable_names(sensor_name)
     coordinates = get_valid_dimension_names(sensor_name)
     dimensions = get_valid_coordinates_names(sensor_name)

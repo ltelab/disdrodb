@@ -120,32 +120,6 @@ def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, verbose: boo
     return None
 
 
-def check_sensor_name(sensor_name: str) -> None:
-    """Check sensor name.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Raises
-    ------
-    TypeError
-        Error if `sensor_name` is not a string.
-    ValueError
-        Error if the input sensor name has not been found in the list of available sensors.
-    """
-    from disdrodb.l0.standards import available_sensor_names
-
-    available_sensor_names = available_sensor_names()
-    if not isinstance(sensor_name, str):
-        raise TypeError("'sensor_name' must be a string.")
-    if sensor_name not in available_sensor_names:
-        msg = f"{sensor_name} not valid {sensor_name}. Valid values are {available_sensor_names}."
-        logger.error(msg)
-        raise ValueError(msg)
-
-
 def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     """Checks that the dataframe columns respects DISDRODB standards.
 
