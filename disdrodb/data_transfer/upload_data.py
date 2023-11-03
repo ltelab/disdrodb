@@ -98,7 +98,7 @@ def _filter_already_uploaded(metadata_fpaths: List[str]) -> List[str]:
 
     for metadata_fpath in metadata_fpaths:
         metadata_dict = read_yaml(metadata_fpath)
-        if metadata_dict.get("data_url"):
+        if metadata_dict.get("disdrodb_data_url"):
             print(f"{metadata_fpath} already has a remote url specified. Skipping.")
             continue
         filtered.append(metadata_fpath)
@@ -210,7 +210,7 @@ def _update_metadata_with_zenodo_url(
     """
     zenodo_host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
     metadata_dict = read_yaml(metadata_fpath)
-    metadata_dict["data_url"] = f"https://{zenodo_host}/record/{deposition_id}/files/{remote_path}.zip"
+    metadata_dict["disdrodb_data_url"] = f"https://{zenodo_host}/record/{deposition_id}/files/{remote_path}.zip"
     write_yaml(metadata_dict, metadata_fpath)
 
 

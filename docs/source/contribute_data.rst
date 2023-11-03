@@ -20,7 +20,7 @@ Two types of data must be distinguished:
    -  Stores a standard set of metadata and measurement issues of each disdrometer.
    -  Central storage is provided in the ``disdro-data`` Git repository.
    -  The ``/metadata`` folder contains a YAML metadata file called
-      ``<station_name>.yml``. It has a ``data_url`` key that references to the remote/online repository where station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
+      ``<station_name>.yml``. It has a ``disdrodb_data_url`` key that references to the remote/online repository where station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
 
 
 Data transfer upload and download schema:

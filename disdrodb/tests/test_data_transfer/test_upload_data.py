@@ -30,15 +30,15 @@ from disdrodb.utils.yaml import read_yaml, write_yaml
 from disdrodb.utils.zenodo import _create_zenodo_deposition
 
 
-def create_fake_metadata_file(base_dir, data_source, campaign_name, station_name, data_url=""):
+def create_fake_metadata_file(base_dir, data_source, campaign_name, station_name, disdrodb_data_url=""):
     metadata_dir = base_dir / "Raw" / data_source / campaign_name / "metadata"
     if not metadata_dir.exists():
         metadata_dir.mkdir(parents=True)
     metadata_fpath = metadata_dir / f"{station_name}.yml"
 
     metadata_dict = {}
-    if data_url:
-        metadata_dict["data_url"] = data_url
+    if disdrodb_data_url:
+        metadata_dict["disdrodb_data_url"] = disdrodb_data_url
 
     write_yaml(metadata_dict, metadata_fpath)
 
@@ -99,11 +99,11 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
 
     # Check metadata files (1st one should not have changed)
     metadata_dict1 = get_metadata_dict(base_dir, data_source, campaign_name, station_name1)
-    new_station_url1 = metadata_dict1["data_url"]
+    new_station_url1 = metadata_dict1["disdrodb_data_url"]
     assert new_station_url1 == station_url1
 
     metadata_dict2 = get_metadata_dict(base_dir, data_source, campaign_name, station_name2)
-    new_station_url2 = metadata_dict2["data_url"]
+    new_station_url2 = metadata_dict2["disdrodb_data_url"]
     list_new_station_url2 = new_station_url2.split(os.path.sep)
 
     list_new_station_url2 = re.split(r"[\\/]", new_station_url2)

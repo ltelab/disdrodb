@@ -23,25 +23,94 @@ import os
 import pytest
 import yaml
 
-from disdrodb.data_transfer import download_data
+from disdrodb.data_transfer.download_data import (
+    _download_file_from_url,
+    _download_station_data,
+    _is_empty_directory,
+)
 
 
-def create_fake_metadata_file(temp_path, data_source, campaign_name, station_name, with_url: bool = True):
-    subfolder_path = temp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
-    subfolder_path.mkdir(parents=True)
+def test_download_file_from_url(tmp_path):
+    # Test download case when empty directory
+    url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/README.md"
+    _download_file_from_url(url, tmp_path, force=False)
+    filename = os.path.basename(url)  # README.md
+    filepath = os.path.join(tmp_path, filename)
+    assert os.path.isfile(filepath) is True
+
+    # Test download case when directory is not empty and force=False --> avoid download
+    url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
+    _download_file_from_url(url, tmp_path, force=False)
+    filename = os.path.basename(url)  # README.md
+    filepath = os.path.join(tmp_path, filename)
+    assert not os.path.isfile(filepath)
+
+    # Test download case when directory is not empty and force=True --> it download
+    url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
+    _download_file_from_url(url, tmp_path, force=True)
+    filename = os.path.basename(url)  # README.md
+    filepath = os.path.join(tmp_path, filename)
+    assert os.path.isfile(filepath)
+
+
+class TestIsEmptyDirectory:
+    def test_non_existent_directory(self):
+        with pytest.raises(OSError, match=r".* does not exist."):
+            _is_empty_directory("non_existent_directory")
+
+    def test_non_directory_path(self, tmp_path):
+        # Create a temporary file
+        file_path = tmp_path / "test_file.txt"
+        file_path.write_text("This is a test file.")
+        with pytest.raises(OSError, match=r".* is not a directory."):
+            _is_empty_directory(str(file_path))
+
+    def test_empty_directory(self, tmp_path):
+        # `tmp_path` is a pytest fixture that provides a temporary directory unique to the test invocation
+        assert _is_empty_directory(tmp_path) is True
+
+    def test_non_empty_directory(self, tmp_path):
+        # Create a temporary file inside the temporary directory
+        file_path = tmp_path / "test_file.txt"
+        file_path.write_text("This is a test file.")
+        assert _is_empty_directory(tmp_path) is False
+
+
+def create_fake_metadata_file(
+    tmp_path,
+    data_source="data_source",
+    campaign_name="campaign_name",
+    station_name="station_name",
+    with_url: bool = True,
+):
+    metadata_dir_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    metadata_dir_path.mkdir(parents=True)
+    metadata_fpath = os.path.join(metadata_dir_path, f"{station_name}.yml")
     # create a fake yaml file in temp folder
-    with open(os.path.join(subfolder_path, f"{station_name}.yml"), "w") as f:
+    with open(metadata_fpath, "w") as f:
         yaml_dict = {}
+        yaml_dict["station_name"] = station_name
         if with_url:
-            yaml_dict["data_url"] = "https://www.example.com"
-        yaml_dict["station_name"] = "station_name"
+            disdro_repo_path = "https://raw.githubusercontent.com/ltelab/disdrodb/main/"
+            test_data_path = "disdrodb/tests/data/test_data_download/station_files.zip"
+            disdrodb_data_url = disdro_repo_path + test_data_path
+            yaml_dict["disdrodb_data_url"] = disdrodb_data_url
 
         yaml.dump(yaml_dict, f)
+    assert os.path.exists(metadata_fpath)
+    return metadata_fpath
 
-    assert os.path.exists(os.path.join(subfolder_path, f"{station_name}.yml"))
 
-
-@pytest.mark.parametrize("url", ["https://raw.githubusercontent.com/ltelab/disdrodb/main/README.md"])
-def test_download_file_from_url(url, tmp_path):
-    download_data._download_file_from_url(url, tmp_path)
-    assert os.path.isfile(os.path.join(tmp_path, os.path.basename(url))) is True
+def test_download_station_data(tmp_path):
+    station_name = "station_name"
+    metadata_fpath = create_fake_metadata_file(tmp_path, station_name=station_name, with_url=True)
+    station_dir_path = metadata_fpath.replace("metadata", "data").replace(".yml", "")
+    _download_station_data(metadata_fpath=metadata_fpath, force=True)
+    # Assert files in the zip file have been unzipped
+    assert os.path.isfile(os.path.join(station_dir_path, "station_file1.txt"))
+    # Assert inner zipped files are not unzipped !
+    assert os.path.isfile(os.path.join(station_dir_path, "station_file2.zip"))
+    # Assert inner directories are there
+    assert os.path.isdir(os.path.join(station_dir_path, "2020"))
+    # Assert zip file has been removed
+    assert not os.path.exists(os.path.join(station_dir_path, "station_files.zip"))
