@@ -74,7 +74,7 @@ or set up the (temporary) environment variable `DISDRODB_BASE_DIR` in your termi
 To download all data stored into the DISDRODB Decentralized Data Archive, you just have to run the following command:
 
 ```bash
-   download_disdrodb_archive
+   disdrodb_download_archive
 ```
 
 #### 💫 Transform the raw data to standardized netCDF files.
@@ -83,7 +83,7 @@ If you want to convert all stations raw data into standardized netCDF4 files, ru
 
 ```bash
 
-   run_disdrodb_l0
+   disdrodb_run_l0
 
 ```
 

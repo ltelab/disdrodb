@@ -773,7 +773,7 @@ def run_disdrodb_l0a_station(
     # Define command
     cmd = " ".join(
         [
-            "run_disdrodb_l0a_station",
+            "disdrodb_run_l0a_station",
             # Station arguments
             data_source,
             campaign_name,
@@ -812,7 +812,7 @@ def run_disdrodb_l0b_station(
     # Define command
     cmd = " ".join(
         [
-            "run_disdrodb_l0b_station",
+            "disdrodb_run_l0b_station",
             # Station arguments
             data_source,
             campaign_name,

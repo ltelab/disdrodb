@@ -10,7 +10,14 @@ The current software structure is described below:
 |     ├── 📜 checks.py
 |     ├── 📜 info.py
 |     ├── 📜 io.py
-|     ├── 📜 metadata.py
+| ├── 📁 metadata
+|     ├── 📁 scripts
+|         ├── 📜 check_metadata_archive.py
+|     ├── 📜 check_metadata.py
+|     ├── 📜 info.py
+|     ├── 📜 io.py
+|     ├── 📜 manipulation.py
+|     ├── 📜 standards.py
 | ├── 📁 data_transfer
 |     ├── 📜 download_data.py
 |     ├── 📜 upload_data.py
@@ -33,7 +40,6 @@ The current software structure is described below:
 |         ├── 📜 run_disdrodb_l0b_concat.py
 |         ├── 📜 run_disdrodb_l0b_concat_station.py
 |     ├── 📜 check_configs.py
-|     ├── 📜 check_metadata.py
 |     ├── 📜 check_standards.py
 |     ├── 📜 io.py
 |     ├── 📜 issue.py

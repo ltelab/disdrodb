@@ -87,6 +87,7 @@ def run_disdrodb_l0a_station(
     from dask.distributed import Client, LocalCluster
 
     from disdrodb.api.io import get_disdrodb_path
+    from disdrodb.configs import get_base_dir
     from disdrodb.l0.l0_reader import get_station_reader_function
 
     # -------------------------------------------------------------------------.
@@ -108,6 +109,7 @@ def run_disdrodb_l0a_station(
         Client(cluster)
     # -------------------------------------------------------------------------.
     # Get reader
+    base_dir = get_base_dir(base_dir)
     reader = get_station_reader_function(
         base_dir=base_dir,
         data_source=data_source,

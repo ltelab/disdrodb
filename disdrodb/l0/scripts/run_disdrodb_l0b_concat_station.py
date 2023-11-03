@@ -67,9 +67,11 @@ def run_disdrodb_l0b_concat_station(
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     from disdrodb.api.io import get_disdrodb_path
+    from disdrodb.configs import get_base_dir
     from disdrodb.l0.l0b_nc_concat import _concatenate_netcdf_files
 
     # Retrieve processed_dir
+    base_dir = get_base_dir(base_dir)
     processed_dir = get_disdrodb_path(
         base_dir=base_dir,
         product_level="L0B",

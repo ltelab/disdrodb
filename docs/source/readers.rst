@@ -486,27 +486,27 @@ To run the processing of a single station, you can run:
 
     .. code-block:: bash
 
-        run_disdrodb_l0_station <data_source> <campaign_name> <station_name> [parameters]
+        disdrodb_run_l0_station <data_source> <campaign_name> <station_name> [parameters]
 
 
 For example, to process the data of station 10 of the EPFL_2008 campaign, you would run:
 
     .. code-block:: bash
 
-        run_disdrodb_l0_station EPFL  EPFL_2008 10 --force True --verbose True --parallel False
+        disdrodb_run_l0_station EPFL  EPFL_2008 10 --force True --verbose True --parallel False
 
 
 If no problems arise, try to run the processing for all stations within a campaign, with:
 
 	.. code-block:: bash
 
-		run_disdrodb_l0 --data_sources <data_sources> --campaign_names <campaign_names> [parameters]
+		disdrodb_run_l0 --data_sources <data_sources> --campaign_names <campaign_names> [parameters]
 
 For example, to process all stations of the EPFL_2008 campaign, you would run:
 
 	.. code-block:: bash
 
-		run_disdrodb_l0 --data_sources EPFL --campaign_names EPFL_2008 --force True --verbose True --parallel False
+		disdrodb_run_l0 --data_sources EPFL --campaign_names EPFL_2008 --force True --verbose True --parallel False
 
 
 .. note::

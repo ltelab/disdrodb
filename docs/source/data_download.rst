@@ -66,7 +66,7 @@ To download all data stored into the DISDRODB Decentralized Data Archive, you ju
 
 .. code:: bash
 
-   download_disdrodb_archive  --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --force true
+   disdrodb_download_archive  --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --force true
 
 The ``data_sources``, ``campaign_names`` and ``station_names`` parameters are optional and are meant to restrict the download processing to a specific
 data source, campaign, or station.

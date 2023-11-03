@@ -86,6 +86,7 @@ def run_disdrodb_l0b_station(
     from dask.distributed import Client, LocalCluster
 
     from disdrodb.api.io import get_disdrodb_path
+    from disdrodb.configs import get_base_dir
     from disdrodb.l0.l0_processing import run_l0b
 
     # -------------------------------------------------------------------------.
@@ -108,6 +109,7 @@ def run_disdrodb_l0b_station(
 
     # -------------------------------------------------------------------------.
     # Define processed dir
+    base_dir = get_base_dir(base_dir)
     processed_dir = get_disdrodb_path(
         base_dir=base_dir,
         product_level="L0B",

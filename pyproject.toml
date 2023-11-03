@@ -59,22 +59,22 @@ packages = ["disdrodb"]
 
 [project.scripts]
 # L0A
-run_disdrodb_l0a_station="disdrodb.l0.scripts.run_disdrodb_l0a_station:run_disdrodb_l0a_station"
-run_disdrodb_l0a="disdrodb.l0.scripts.run_disdrodb_l0a:run_disdrodb_l0a"
+disdrodb_run_l0a_station="disdrodb.l0.scripts.run_disdrodb_l0a_station:run_disdrodb_l0a_station"
+disdrodb_run_l0a="disdrodb.l0.scripts.run_disdrodb_l0a:run_disdrodb_l0a"
 # L0B
-run_disdrodb_l0b_station="disdrodb.l0.scripts.run_disdrodb_l0b_station:run_disdrodb_l0b_station"
-run_disdrodb_l0_station="disdrodb.l0.scripts.run_disdrodb_l0_station:run_disdrodb_l0_station"
+disdrodb_run_l0b_station="disdrodb.l0.scripts.run_disdrodb_l0b_station:run_disdrodb_l0b_station"
+disdrodb_run_l0_station="disdrodb.l0.scripts.run_disdrodb_l0_station:run_disdrodb_l0_station"
 # L0B concatenation
-run_disdrodb_l0b_concat_station="disdrodb.l0.scripts.run_disdrodb_l0b_concat_station:run_disdrodb_l0b_concat_station"
-run_disdrodb_l0b_concat="disdrodb.l0.scripts.run_disdrodb_l0b_concat:run_disdrodb_l0b_concat"
+disdrodb_run_l0b_concat_station="disdrodb.l0.scripts.run_disdrodb_l0b_concat_station:run_disdrodb_l0b_concat_station"
+disdrodb_run_l0b_concat="disdrodb.l0.scripts.run_disdrodb_l0b_concat:run_disdrodb_l0b_concat"
 # L0
-run_disdrodb_l0b="disdrodb.l0.scripts.run_disdrodb_l0b:run_disdrodb_l0b"
-run_disdrodb_l0="disdrodb.l0.scripts.run_disdrodb_l0:run_disdrodb_l0"
+disdrodb_run_l0b="disdrodb.l0.scripts.run_disdrodb_l0b:run_disdrodb_l0b"
+disdrodb_run_l0="disdrodb.l0.scripts.run_disdrodb_l0:run_disdrodb_l0"
 # Data transfer
-download_disdrodb_archive="disdrodb.data_transfer.scripts.download_disdrodb_archive:download_disdrodb_archive"
-upload_disdrodb_archive="disdrodb.data_transfer.scripts.upload_disdrodb_archive:upload_disdrodb_archive"
+disdrodb_download_archive="disdrodb.data_transfer.scripts.download_disdrodb_archive:download_disdrodb_archive"
+disdrodb_upload_archive="disdrodb.data_transfer.scripts.upload_disdrodb_archive:upload_disdrodb_archive"
 # Metadata archive
-disdrodb_check_metadata_archive="disdrodb.metadata.scripts.disdrodb_check_metadata_archive:disdrodb_check_metadata_archive"
+disdrodb_check_metadata_archive="disdrodb.metadata.scripts.check_metadata_archive:check_metadata_archive"
 
 [tool.ruff]
 select = ["F",

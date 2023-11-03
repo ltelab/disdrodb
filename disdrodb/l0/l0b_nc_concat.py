@@ -120,7 +120,7 @@ def run_disdrodb_l0b_concat_station(
     """
     cmd = " ".join(
         [
-            "run_disdrodb_l0b_concat_station",
+            "disdrodb_run_l0b_concat_station",
             data_source,
             campaign_name,
             station_name,

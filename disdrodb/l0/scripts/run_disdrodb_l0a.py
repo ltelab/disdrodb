@@ -91,9 +91,9 @@ def run_disdrodb_l0a(
     from disdrodb.l0.l0_processing import run_disdrodb_l0a
 
     # Parse data_sources, campaign_names and station arguments
-    print(data_sources)
-    print(campaign_names)
-    print(station_names)
+    # print(data_sources)
+    # print(campaign_names)
+    # print(station_names)
 
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
