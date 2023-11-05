@@ -1,13 +1,8 @@
 # Prework
 
 - [ ] I understand and agree to this repository's [code of conduct](https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md).
-- [ ] I understand and agree to this repository's [contributing guidelines](https://github.com/ltelab/disdrodb/blob/main/CONTRIBUTING.md).
+- [ ] I understand and agree to this repository's [contributing guidelines](https://github.com/ltelab/disdrodb/blob/main/CONTRIBUTING.rst).
 - [ ] I have already submitted an [issue](https://github.com/ltelab/disdrodb/issues) or [discussion thread](https://github.com/ltelab/disdrodb/discussions) to discuss my idea with the maintainers.
-
-<!--
-Please make sure to read the Pull Request Guidelines:
-https://github.com/ltelab/disdrodb/blob/main/CONTRIBUTING.md#pull-request-guidelines
--->
 
 <!-- PULL REQUEST TEMPLATE -->
 
