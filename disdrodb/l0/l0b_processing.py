@@ -415,7 +415,7 @@ def set_dataset_attrs(ds, sensor_name):
     # - Add netCDF coordinate attributes
     ds = set_coordinate_attributes(ds=ds)
     #  - Set DISDRODB global attributes
-    ds = set_disdrodb_attrs(ds=ds, product_level="L0B")
+    ds = set_disdrodb_attrs(ds=ds, product="L0B")
     return ds
 
 

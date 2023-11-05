@@ -21,33 +21,33 @@
 import logging
 import os
 
-from disdrodb.api.checks import check_product_level, check_sensor_name
+from disdrodb.api.checks import check_product, check_sensor_name
 from disdrodb.utils.yaml import read_yaml
 
 logger = logging.getLogger(__name__)
 
 
-def _get_config_dir(product_level):
-    """Define the config directory path of a given DISDRODB product level."""
+def _get_config_dir(product):
+    """Define the config directory path of a given DISDRODB product."""
     from disdrodb import __root_path__
 
-    if product_level.upper() in ["RAW", "L0A", "L0B"]:
+    if product.upper() in ["RAW", "L0A", "L0B"]:
         dir_name = "l0"
     else:
-        raise NotImplementedError(f"Product {product_level} not implemented.")
+        raise NotImplementedError(f"Product {product} not implemented.")
     config_dir_path = os.path.join(__root_path__, "disdrodb", dir_name, "configs")
     return config_dir_path
 
 
-def get_sensor_configs_dir(sensor_name: str, product_level: str) -> str:
+def get_sensor_configs_dir(sensor_name: str, product: str) -> str:
     """Retrieve configs directory.
 
     Parameters
     ----------
     sensor_name : str
         Name of the sensor.
-    product_level: str
-        DISDRODB product level.
+    product: str
+        DISDRODB product.
 
     Returns
     -------
@@ -59,9 +59,9 @@ def get_sensor_configs_dir(sensor_name: str, product_level: str) -> str:
     ValueError
         Error if the config directory does not exist.
     """
-    check_sensor_name(sensor_name, product_level=product_level)
-    product_level = check_product_level(product_level)
-    config_dir_path = _get_config_dir(product_level=product_level)
+    check_sensor_name(sensor_name, product=product)
+    product = check_product(product)
+    config_dir_path = _get_config_dir(product=product)
     config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
     if not os.path.exists(config_sensor_dir_path):
         list_sensors = sorted(os.listdir(config_dir_path))
@@ -70,7 +70,7 @@ def get_sensor_configs_dir(sensor_name: str, product_level: str) -> str:
     return config_sensor_dir_path
 
 
-def read_config_file(sensor_name: str, product_level: str, filename: str) -> dict:
+def read_config_file(sensor_name: str, product: str, filename: str) -> dict:
     """Read a config yaml file and return the dictionary.
 
     Parameters
@@ -90,9 +90,9 @@ def read_config_file(sensor_name: str, product_level: str, filename: str) -> dic
     ValueError
         Error if file does not exist.
     """
-    check_sensor_name(sensor_name, product_level=product_level)
-    product_level = check_product_level(product_level)
-    config_sensor_dir_path = get_sensor_configs_dir(sensor_name, product_level=product_level)
+    check_sensor_name(sensor_name, product=product)
+    product = check_product(product)
+    config_sensor_dir_path = get_sensor_configs_dir(sensor_name, product=product)
     config_fpath = os.path.join(config_sensor_dir_path, filename)
     # Check yaml file exists
     if not os.path.exists(config_fpath):
@@ -104,17 +104,17 @@ def read_config_file(sensor_name: str, product_level: str, filename: str) -> dic
     return dictionary
 
 
-def available_sensor_names(product_level: str = "L0A") -> sorted:
+def available_sensor_names(product: str = "L0A") -> sorted:
     """Get available names of sensors.
 
     Returns
     -------
     sensor_names: list
         Sorted list of the available sensors
-    product_level: str
-        DISDRODB product level.
-        By default, it returns the sensors available for DISDRODB L0 products.
+    product: str
+        DISDRODB product.
+        By default, it returns the sensors available for DISDRODB L0A products.
     """
-    product_level = check_product_level(product_level)
-    config_dir_path = _get_config_dir(product_level=product_level)
+    product = check_product(product)
+    config_dir_path = _get_config_dir(product=product)
     return sorted(os.listdir(config_dir_path))

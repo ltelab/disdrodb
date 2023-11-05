@@ -119,13 +119,13 @@ def run_disdrodb_l0a_station(
     # Define raw_dir and process_dir
     raw_dir = get_disdrodb_path(
         base_dir=base_dir,
-        product_level="RAW",
+        product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
     )
     processed_dir = get_disdrodb_path(
         base_dir=base_dir,
-        product_level="L0A",
+        product="L0A",
         data_source=data_source,
         campaign_name=campaign_name,
         check_exist=False,

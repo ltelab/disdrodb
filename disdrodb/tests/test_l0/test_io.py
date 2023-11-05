@@ -125,7 +125,7 @@ def test_create_directory_structure(tmp_path, mocker):
     subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name / "L0B"
     subfolder_path.mkdir(parents=True)
 
-    product_level = "L0B"
+    product = "L0B"
     station_name = "station_1"
     force = False
 
@@ -133,7 +133,7 @@ def test_create_directory_structure(tmp_path, mocker):
     mocker.patch("disdrodb.l0.io._check_pre_existing_station_data", return_value=None)
 
     io.create_directory_structure(
-        processed_dir=processed_dir, product_level=product_level, station_name=station_name, force=force, verbose=False
+        processed_dir=processed_dir, product=product, station_name=station_name, force=force, verbose=False
     )
 
     l0a_folder_path = os.path.join(processed_dir, "L0B")
@@ -545,7 +545,7 @@ def test_copy_station_metadata():
 #     campaign_name = "CAMPAIGN_NAME"
 #     data_source = "DATA_SOURCE"
 #     station_name = "STATION_NAME"
-#     product_level = "L0A"
+#     product = "L0A"
 #     force = True
 #     verbose=False
 
@@ -566,7 +566,7 @@ def test_copy_station_metadata():
 #         campaign_name,
 #     )
 #     # Define expected directory
-#     expected_product_dir = os.path.join(processed_dir, product_level)
+#     expected_product_dir = os.path.join(processed_dir, product)
 
 #     # TODO:
 #     # - Need to remove file to check function works, but then next test is invalidated
@@ -579,7 +579,7 @@ def test_copy_station_metadata():
 
 #     # Create directories
 #     assert io.create_directory_structure(processed_dir=processed_dir,
-#                                          product_level=product_level,
+#                                          product=product,
 #                                          station_name=station_name,
 #                                          force=force,
 #                                          verbose=verbose,
@@ -594,7 +594,7 @@ def test_copy_station_metadata():
 #     campaign_name = "CAMPAIGN_NAME"
 #     data_source = "DATA_SOURCE"
 #     station_name = "STATION_NAME"
-#     product_level = "L0B"
+#     product = "L0B"
 #     force = True
 #     verbose=False
 
@@ -607,7 +607,7 @@ def test_copy_station_metadata():
 #         campaign_name,
 #     )
 #     # Define expected directory
-#     expected_product_dir = os.path.join(processed_dir, product_level)
+#     expected_product_dir = os.path.join(processed_dir, product)
 
 #     # Remove directory if exists already
 #     if os.path.exists(expected_product_dir):
@@ -616,7 +616,7 @@ def test_copy_station_metadata():
 
 #     # Create directories
 #     assert io.create_directory_structure(processed_dir=processed_dir,
-#                                          product_level=product_level,
+#                                          product=product,
 #                                          station_name=station_name,
 #                                          force=force,
 #                                          verbose=verbose,

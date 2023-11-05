@@ -112,7 +112,7 @@ def run_disdrodb_l0b_station(
     base_dir = get_base_dir(base_dir)
     processed_dir = get_disdrodb_path(
         base_dir=base_dir,
-        product_level="L0B",
+        product="L0B",
         data_source=data_source,
         campaign_name=campaign_name,
         check_exist=False,

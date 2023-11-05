@@ -102,12 +102,12 @@ def close_logger(logger: logger) -> None:
         return
 
 
-def create_file_logger(processed_dir, product_level, station_name, filename, parallel):
+def create_file_logger(processed_dir, product, station_name, filename, parallel):
     ##------------------------------------------------------------------------.
     # Create logs directory
     if os.environ.get("PYTEST_CURRENT_TEST"):
         return None
-    logs_dir = os.path.join(processed_dir, "logs", product_level, station_name)
+    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
     os.makedirs(logs_dir, exist_ok=True)
 
     # logger_fname = f'logs_{fname}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'

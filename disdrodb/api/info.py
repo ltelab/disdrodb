@@ -29,7 +29,7 @@ from trollsift import Parser
 #### FNAME PATTERNS ####
 ########################
 DISDRODB_FNAME_PATTERN = (
-    "{product_level:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
 
@@ -110,8 +110,8 @@ def get_station_name_from_filepaths(filepaths):
     return list_id
 
 
-def get_product_level_from_filepaths(filepaths):
-    list_id = get_key_from_filepaths(filepaths, key="product_level")
+def get_product_from_filepaths(filepaths):
+    list_id = get_key_from_filepaths(filepaths, key="product")
     return list_id
 
 

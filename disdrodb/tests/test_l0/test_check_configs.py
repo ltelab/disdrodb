@@ -38,45 +38,45 @@ from disdrodb.l0.check_configs import (
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_yaml_files_exists(sensor_name):
     check_yaml_files_exists(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_variable_consistency(sensor_name):
     check_variable_consistency(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_l0b_encoding(sensor_name):
     check_l0b_encoding(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_l0a_encoding(sensor_name):
     check_l0b_encoding(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_raw_data_format(sensor_name):
     check_raw_data_format(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_cf_attributes(sensor_name):
     check_cf_attributes(sensor_name)
 
 
 # Test that all instruments config files are valid regarding the bin consistency
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_bin_consistency(sensor_name):
     # Test that no error is raised
     assert check_bin_consistency(sensor_name) is None
 
 
 # Test that all instruments config files are valid regarding the bin consistency
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product_level="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_raw_array(sensor_name):
     # Test that no error is raised
     assert check_raw_array(sensor_name) is None

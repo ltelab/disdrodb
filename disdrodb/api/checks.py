@@ -69,15 +69,15 @@ def check_base_dir(base_dir: str):
         raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
 
 
-def check_sensor_name(sensor_name: str, product_level: str = "L0A") -> None:
+def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
     """Check sensor name.
 
     Parameters
     ----------
     sensor_name : str
         Name of the sensor.
-    product_level : str
-        DISDRODB product level.
+    product : str
+        DISDRODB product.
 
     Raises
     ------
@@ -88,7 +88,7 @@ def check_sensor_name(sensor_name: str, product_level: str = "L0A") -> None:
     """
     from disdrodb.api.configs import available_sensor_names
 
-    sensor_names = available_sensor_names(product_level=product_level)
+    sensor_names = available_sensor_names(product=product)
     if not isinstance(sensor_name, str):
         raise TypeError("'sensor_name' must be a string.")
     if sensor_name not in sensor_names:
@@ -97,11 +97,11 @@ def check_sensor_name(sensor_name: str, product_level: str = "L0A") -> None:
         raise ValueError(msg)
 
 
-def check_product_level(product_level):
-    """Check DISDRODB product level."""
-    if not isinstance(product_level, str):
-        raise TypeError("`product_level` must be a string.")
-    valid_product_levels = ["RAW", "L0A", "L0B"]
-    if product_level.upper() not in valid_product_levels:
-        raise ValueError(f"Valid `product_levels` are {valid_product_levels}.")
-    return product_level
+def check_product(product):
+    """Check DISDRODB product."""
+    if not isinstance(product, str):
+        raise TypeError("`product` must be a string.")
+    valid_products = ["RAW", "L0A", "L0B"]
+    if product.upper() not in valid_products:
+        raise ValueError(f"Valid `products` are {valid_products}.")
+    return product

@@ -110,7 +110,7 @@ def _generate_l0a(
     filename = os.path.basename(filepath)
     logger = create_file_logger(
         processed_dir=processed_dir,
-        product_level="L0A",
+        product="L0A",
         station_name=station_name,
         filename=filename,
         parallel=parallel,
@@ -193,7 +193,7 @@ def _generate_l0b(
     filename = os.path.basename(filepath)
     logger = create_file_logger(
         processed_dir=processed_dir,
-        product_level="L0B",
+        product="L0B",
         station_name=station_name,
         filename=filename,
         parallel=parallel,
@@ -269,7 +269,7 @@ def _generate_l0b_from_nc(
     filename = os.path.basename(filepath)
     logger = create_file_logger(
         processed_dir=processed_dir,
-        product_level="L0B",
+        product="L0B",
         station_name=station_name,
         filename=filename,
         parallel=parallel,
@@ -410,7 +410,7 @@ def run_l0a(
     create_initial_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        product_level="L0A",
+        product="L0A",
         station_name=station_name,
         force=force,
         verbose=verbose,
@@ -545,7 +545,7 @@ def run_l0b(
     # Create directory structure
     create_directory_structure(
         processed_dir=processed_dir,
-        product_level="L0B",
+        product="L0B",
         station_name=station_name,
         force=force,
         verbose=verbose,
@@ -684,7 +684,7 @@ def run_l0b_from_nc(
     create_initial_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        product_level="L0B",
+        product="L0B",
         station_name=station_name,
         force=force,
         verbose=verbose,
@@ -952,7 +952,7 @@ def run_disdrodb_l0_station(
     if l0b_processing and remove_l0a:
         campaign_dir = get_disdrodb_path(
             base_dir=base_dir,
-            product_level="L0A",
+            product="L0A",
             data_source=data_source,
             campaign_name=campaign_name,
         )
@@ -999,14 +999,14 @@ def _filter_list_info(list_info, station_names):
     return list_info
 
 
-def _get_starting_product_level(l0a_processing, l0b_processing):
+def _get_starting_product(l0a_processing, l0b_processing):
     if l0a_processing:
-        product_level = "RAW"
+        product = "RAW"
     elif l0b_processing:
-        product_level = "L0A"
+        product = "L0A"
     else:
         raise ValueError("At least l0a_processing or l0b_processing must be True.")
-    return product_level
+    return product
 
 
 def run_disdrodb_l0(
@@ -1089,10 +1089,10 @@ def run_disdrodb_l0(
     from disdrodb.api.io import available_stations
 
     # Get list of available stations
-    product_level = _get_starting_product_level(l0a_processing=l0a_processing, l0b_processing=l0b_processing)
+    product = _get_starting_product(l0a_processing=l0a_processing, l0b_processing=l0b_processing)
     list_info = available_stations(
         base_dir=base_dir,
-        product_level=product_level,
+        product=product,
         data_sources=data_sources,
         campaign_names=campaign_names,
     )

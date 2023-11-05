@@ -141,7 +141,7 @@ def check_metadata_compliance(data_source, campaign_name, station_name, base_dir
 
     metadata = read_station_metadata(
         base_dir=base_dir,
-        product_level="RAW",
+        product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -273,7 +273,7 @@ def check_archive_metadata_keys(base_dir: str = None) -> bool:
 
         metadata = read_station_metadata(
             base_dir=base_dir,
-            product_level="RAW",
+            product="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -314,7 +314,7 @@ def check_archive_metadata_campaign_name(base_dir: str = None) -> bool:
 
         metadata = read_station_metadata(
             base_dir=base_dir,
-            product_level="RAW",
+            product="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -354,7 +354,7 @@ def check_archive_metadata_data_source(base_dir: str = None) -> bool:
 
         metadata = read_station_metadata(
             base_dir=base_dir,
-            product_level="RAW",
+            product="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -394,7 +394,7 @@ def check_archive_metadata_sensor_name(base_dir: str = None) -> bool:
 
         metadata = read_station_metadata(
             base_dir=base_dir,
-            product_level="RAW",
+            product="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -434,7 +434,7 @@ def check_archive_metadata_station_name(base_dir: str = None) -> bool:
 
         metadata = read_station_metadata(
             base_dir=base_dir,
-            product_level="RAW",
+            product="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -475,7 +475,7 @@ def check_archive_metadata_reader(base_dir: str = None) -> bool:
 
         metadata = read_station_metadata(
             base_dir=base_dir,
-            product_level="RAW",
+            product="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -561,7 +561,7 @@ def check_archive_metadata_geolocation(base_dir: str = None):
 
         metadata = read_station_metadata(
             base_dir=base_dir,
-            product_level="RAW",
+            product="RAW",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

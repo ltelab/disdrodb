@@ -48,7 +48,7 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
     filename = f"concatenatation_{station_name}"
     logger = create_file_logger(
         processed_dir=processed_dir,
-        product_level="L0B",
+        product="L0B",
         station_name="",  # locate outside the station directory
         filename=filename,
         parallel=False,
@@ -151,7 +151,7 @@ def run_disdrodb_l0b_concat(
 
     list_info = available_stations(
         base_dir=base_dir,
-        product_level="L0B",
+        product="L0B",
         data_sources=data_sources,
         campaign_names=campaign_names,
     )

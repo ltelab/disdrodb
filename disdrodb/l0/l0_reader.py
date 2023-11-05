@@ -325,7 +325,7 @@ def get_station_reader_function(data_source, campaign_name, station_name, base_d
     # Get metadata
     metadata = read_station_metadata(
         base_dir=base_dir,
-        product_level="RAW",
+        product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

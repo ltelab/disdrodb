@@ -908,7 +908,7 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) 
     return None
 
 
-def _check_pre_existing_station_data(campaign_dir, product_level, station_name, force=False):
+def _check_pre_existing_station_data(campaign_dir, product, station_name, force=False):
     """Check for pre-existing station data.
 
     - If force=True, remove all data inside the station folder.
@@ -917,12 +917,12 @@ def _check_pre_existing_station_data(campaign_dir, product_level, station_name, 
     from disdrodb.api.io import _get_list_stations_with_data
 
     # Get list of available stations
-    list_stations = _get_list_stations_with_data(product_level=product_level, campaign_dir=campaign_dir)
+    list_stations = _get_list_stations_with_data(product=product, campaign_dir=campaign_dir)
     # Check if station data are already present
     station_already_present = station_name in list_stations
 
     # Define the station directory path
-    station_dir = os.path.join(campaign_dir, product_level, station_name)
+    station_dir = os.path.join(campaign_dir, product, station_name)
 
     # If the station data are already present:
     # - If force=True, remove all data inside the station folder
@@ -961,11 +961,11 @@ def check_processed_dir(processed_dir):
 
 
 # TODO: rename create_initial_directory_structure --> create_initial_directory_structure
-def create_initial_directory_structure(raw_dir, processed_dir, station_name, force, verbose=False, product_level="L0A"):
+def create_initial_directory_structure(raw_dir, processed_dir, station_name, force, verbose=False, product="L0A"):
     """Create directory structure for the first L0 DISDRODB product.
 
-    If the input data are raw text files --> product_level = "L0A"    (run_l0a)
-    If the input data are raw netCDF files --> product_level = "L0B"  (run_l0b_nc)
+    If the input data are raw text files --> product = "L0A"    (run_l0a)
+    If the input data are raw netCDF files --> product = "L0B"  (run_l0b_nc)
     """
     from disdrodb.api.io import _get_list_stations_with_data
 
@@ -979,7 +979,7 @@ def create_initial_directory_structure(raw_dir, processed_dir, station_name, for
     _ = _check_campaign_name(raw_dir=raw_dir, processed_dir=processed_dir)
 
     # Get list of available stations (at raw level)
-    list_stations = _get_list_stations_with_data(product_level="RAW", campaign_dir=raw_dir)
+    list_stations = _get_list_stations_with_data(product="RAW", campaign_dir=raw_dir)
     # Check station is available
     if station_name not in list_stations:
         raise ValueError(f"No data available for station {station_name}. Available stations: {list_stations}.")
@@ -987,48 +987,48 @@ def create_initial_directory_structure(raw_dir, processed_dir, station_name, for
     # Create required directory (if they don't exists)
     _create_processed_dir_folder(processed_dir, dir_name="metadata")
     _create_processed_dir_folder(processed_dir, dir_name="info")
-    _create_processed_dir_folder(processed_dir, dir_name=product_level)
+    _create_processed_dir_folder(processed_dir, dir_name=product)
 
     # Copy the station metadata
     _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
 
-    # Remove <product_level>/<station> directory if force=True
+    # Remove <product>/<station> directory if force=True
     _check_pre_existing_station_data(
         campaign_dir=processed_dir,
-        product_level=product_level,
+        product=product,
         station_name=station_name,
         force=force,
     )
 
 
-def create_directory_structure(processed_dir, product_level, station_name, force, verbose=False):
+def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
-    from disdrodb.api.checks import check_product_level
+    from disdrodb.api.checks import check_product
     from disdrodb.api.io import _get_list_stations_with_data
 
     # Check inputs
-    check_product_level(product_level)
+    check_product(product)
     processed_dir = check_processed_dir(processed_dir=processed_dir)
 
     # Check station is available in the target processed_dir directory
-    if product_level == "L0B":
-        required_level = "L0A"
-        list_stations = _get_list_stations_with_data(product_level=required_level, campaign_dir=processed_dir)
+    if product == "L0B":
+        required_product = "L0A"
+        list_stations = _get_list_stations_with_data(product=required_product, campaign_dir=processed_dir)
     else:
-        raise NotImplementedError("product level {product_level} not yet implemented.")
+        raise NotImplementedError("product {product} not yet implemented.")
 
     if station_name not in list_stations:
         raise ValueError(
-            f"No {required_level} data available for station {station_name}. Available stations: {list_stations}."
+            f"No {required_product} data available for station {station_name}. Available stations: {list_stations}."
         )
 
     # Create required directory (if they don't exists)
-    _create_processed_dir_folder(processed_dir, dir_name=product_level)
+    _create_processed_dir_folder(processed_dir, dir_name=product)
 
-    # Remove <product_level>/<station_name> directory if force=True
+    # Remove <product>/<station_name> directory if force=True
     _check_pre_existing_station_data(
         campaign_dir=processed_dir,
-        product_level=product_level,
+        product=product,
         station_name=station_name,
         force=force,
     )

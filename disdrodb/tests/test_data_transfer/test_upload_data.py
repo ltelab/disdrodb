@@ -96,7 +96,7 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
     # Check metadata files (1st one should not have changed)
     metadata_dict1 = read_station_metadata(
         base_dir=base_dir,
-        product_level="RAW",
+        product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name1,
@@ -106,7 +106,7 @@ def test_upload_to_zenodo(tmp_path, requests_mock):
 
     metadata_dict2 = read_station_metadata(
         base_dir=base_dir,
-        product_level="RAW",
+        product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name2,

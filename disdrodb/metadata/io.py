@@ -26,7 +26,7 @@ from disdrodb.configs import get_base_dir
 from disdrodb.utils.yaml import read_yaml
 
 
-def read_station_metadata(product_level, data_source, campaign_name, station_name, base_dir=None):
+def read_station_metadata(product, data_source, campaign_name, station_name, base_dir=None):
     """Open the station metadata YAML file into a dictionary.
 
     Parameters
@@ -53,7 +53,7 @@ def read_station_metadata(product_level, data_source, campaign_name, station_nam
     # Retrieve campaign directory
     campaign_dir = get_disdrodb_path(
         base_dir=base_dir,
-        product_level=product_level,
+        product=product,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exist=True,
@@ -229,7 +229,7 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
 
     list_info = available_stations(
         base_dir=base_dir,
-        product_level="RAW",
+        product="RAW",
         data_sources=data_sources,
         campaign_names=campaign_names,
     )
