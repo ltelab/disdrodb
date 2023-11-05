@@ -55,7 +55,7 @@ pd.set_option("mode.chained_assignment", None)  # Avoid SettingWithCopyWarning
 #### Raw file readers
 
 
-def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
+def _preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     """Preprocess arguments required to read raw text file into Pandas.
 
     Parameters
@@ -108,7 +108,7 @@ def read_raw_data(
         Pandas dataframe.
     """
     # Preprocess reader_kwargs
-    reader_kwargs = preprocess_reader_kwargs(reader_kwargs)
+    reader_kwargs = _preprocess_reader_kwargs(reader_kwargs)
 
     # Enforce all raw files columns with dtype = 'object'
     dtype = "object"

@@ -30,12 +30,12 @@ from disdrodb import __root_path__
 from disdrodb.l0 import l0b_processing
 from disdrodb.l0.l0b_processing import (
     _set_attrs_dict,
+    _set_coordinate_attributes,
+    _set_variable_attributes,
     add_dataset_crs_coords,
     create_l0b_from_l0a,
-    get_bin_coords,
-    set_coordinate_attributes,
-    set_variable_attributes,
 )
+from disdrodb.l0.standards import get_bin_coords_dict
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
@@ -185,7 +185,7 @@ def test_set_attrs_dict():
     assert "var2" not in ds
 
 
-def test_set_coordinate_attributes():
+def test__set_coordinate_attributes():
     # Create example dataset
     ds = xr.Dataset(
         {
@@ -198,7 +198,7 @@ def test_set_coordinate_attributes():
     ds.lon.attrs["units"] = "degrees_east"
 
     # Call the function and check the output
-    ds_out = set_coordinate_attributes(ds)
+    ds_out = _set_coordinate_attributes(ds)
     assert "units" in ds_out.lat.attrs
     assert ds_out.lat.attrs["units"] == "degrees_north"
     assert "units" in ds_out.lon.attrs
@@ -206,7 +206,7 @@ def test_set_coordinate_attributes():
     assert "units" not in ds_out.var1.attrs
 
 
-def test_set_variable_attributes(mocker):
+def test__set_variable_attributes(mocker):
     # Create a sample dataset
     data = np.random.rand(10, 10)
     ds = xr.Dataset({"var_1": (("lat", "lon"), data)})
@@ -235,7 +235,7 @@ def test_set_variable_attributes(mocker):
     )
 
     # Call the function to set variable attributes
-    ds = set_variable_attributes(ds, sensor_name)
+    ds = _set_variable_attributes(ds, sensor_name)
     assert ds["var_1"].attrs["description"] == "descrition_1"
     assert ds["var_1"].attrs["units"] == "unit_1"
     assert ds["var_1"].attrs["long_name"] == "long_1"
@@ -249,8 +249,8 @@ bins_configs_dicts = {key: dummy_configs_dict[key].copy() for key in config_name
 
 
 @pytest.mark.parametrize("create_test_config_files", [bins_configs_dicts], indirect=True)
-def test_get_bin_coords(create_test_config_files):
-    result = get_bin_coords("test")
+def test_get_bin_coords_dict(create_test_config_files):
+    result = get_bin_coords_dict("test")
     expected_result = {
         "diameter_bin_center": [0.062, 0.187, 0.312, 0.437, 0.562],
         "diameter_bin_lower": (["diameter_bin_center"], [0.0, 0.1245, 0.2495, 0.3745, 0.4995]),
@@ -294,30 +294,30 @@ def test_replace_empty_strings_with_zeros():
     assert output == expected_output
 
 
-def test_format_string_array():
+def test__format_string_array():
     # Tests splitter behaviour with None
     assert "".split(None) == []
 
     # Test empty string
-    assert np.allclose(l0b_processing.format_string_array("", 4), [0, 0, 0, 0])
+    assert np.allclose(l0b_processing._format_string_array("", 4), [0, 0, 0, 0])
 
     # Test strings with semicolon and column delimiter
-    assert np.allclose(l0b_processing.format_string_array("2;44;22;33", 4), [2, 44, 22, 33])
-    assert np.allclose(l0b_processing.format_string_array("2,44,22,33", 4), [2, 44, 22, 33])
-    assert np.allclose(l0b_processing.format_string_array("000;000;000;001", 4), [0, 0, 0, 1])
+    assert np.allclose(l0b_processing._format_string_array("2;44;22;33", 4), [2, 44, 22, 33])
+    assert np.allclose(l0b_processing._format_string_array("2,44,22,33", 4), [2, 44, 22, 33])
+    assert np.allclose(l0b_processing._format_string_array("000;000;000;001", 4), [0, 0, 0, 1])
 
     # Test strip away excess delimiters
-    assert np.allclose(l0b_processing.format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33])
+    assert np.allclose(l0b_processing._format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33])
     # Test strings with incorrect number of values
     arr_nan = [np.nan, np.nan, np.nan, np.nan]
-    assert np.allclose(l0b_processing.format_string_array("2,44,22", 4), arr_nan, equal_nan=True)
+    assert np.allclose(l0b_processing._format_string_array("2,44,22", 4), arr_nan, equal_nan=True)
 
-    assert np.allclose(l0b_processing.format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True)
+    assert np.allclose(l0b_processing._format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True)
     # Test strings with incorrect format
-    assert np.allclose(l0b_processing.format_string_array(",,2,", 4), arr_nan, equal_nan=True)
+    assert np.allclose(l0b_processing._format_string_array(",,2,", 4), arr_nan, equal_nan=True)
 
 
-def test_reshape_raw_spectrum():
+def test__reshape_raw_spectrum():
     from disdrodb.l0.standards import (
         get_dims_size_dict,
         get_raw_array_dims_order,
@@ -360,7 +360,7 @@ def test_reshape_raw_spectrum():
         dims_order_dict = get_raw_array_dims_order(sensor_name=sensor_name)
         dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
         dims_order = dims_order_dict["raw_drop_number"]
-        arr, dims = l0b_processing.reshape_raw_spectrum(
+        arr, dims = l0b_processing._reshape_raw_spectrum(
             arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
         )
         # Create DataArray and enforce same dimension order as da_expected_spectrum
@@ -377,7 +377,7 @@ def test_reshape_raw_spectrum():
     # Test invalid inputs
     dims_size_dict["diameter_bin_center"] = 20
     with pytest.raises(ValueError):
-        l0b_processing.reshape_raw_spectrum(
+        l0b_processing._reshape_raw_spectrum(
             arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
         )
 
@@ -441,7 +441,7 @@ def test_retrieve_l0b_arrays():
         xr.testing.assert_equal(da, da_expected_spectrum)
 
 
-def test_convert_object_variables_to_string():
+def test__convert_object_variables_to_string():
     # Create test dataset
     df = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
     ds = xr.Dataset.from_dataframe(df)
@@ -450,7 +450,7 @@ def test_convert_object_variables_to_string():
     assert pd.api.types.is_object_dtype(ds["b"])
 
     # Convert variables with object dtype to string
-    ds = l0b_processing.convert_object_variables_to_string(ds)
+    ds = l0b_processing._convert_object_variables_to_string(ds)
 
     # Check that variable 'b' is not of type object
     assert not pd.api.types.is_object_dtype(ds["b"])
@@ -463,7 +463,7 @@ def test_convert_object_variables_to_string():
     ds = xr.Dataset.from_dataframe(df)
 
     # Convert variables with object dtype to string
-    ds = l0b_processing.convert_object_variables_to_string(ds)
+    ds = l0b_processing._convert_object_variables_to_string(ds)
 
     # Check that variable 'b' is of type 'float'
     assert ds["b"].dtype == "float"

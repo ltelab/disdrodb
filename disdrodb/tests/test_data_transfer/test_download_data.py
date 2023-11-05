@@ -58,6 +58,7 @@ def test_download_file_from_url(tmp_path):
     # os.makedirs(tmp_path)
 
     # Test download case when empty directory
+    # url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/README.md"
     url = "https://httpbin.org/stream-bytes/1024"
     _download_file_from_url(url, tmp_path, force=False)
     filename = os.path.basename(url)  # README.md
@@ -65,6 +66,7 @@ def test_download_file_from_url(tmp_path):
     assert os.path.isfile(filepath)
 
     # Test download case when directory is not empty and force=False --> avoid download
+    # url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
     url = "https://httpbin.org/stream-bytes/1025"
     _download_file_from_url(url, tmp_path, force=False)
     filename = os.path.basename(url)  # README.md
@@ -72,6 +74,7 @@ def test_download_file_from_url(tmp_path):
     assert not os.path.isfile(filepath)
 
     # Test download case when directory is not empty and force=True --> it download
+    # url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
     url = "https://httpbin.org/stream-bytes/1026"
     _download_file_from_url(url, tmp_path, force=True)
     filename = os.path.basename(url)  # README.md

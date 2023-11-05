@@ -24,6 +24,7 @@ import logging
 
 import numpy as np
 
+from disdrodb.api.checks import check_sensor_name
 from disdrodb.api.configs import read_config_file
 
 logger = logging.getLogger(__name__)
@@ -402,7 +403,7 @@ def set_disdrodb_attrs(ds, product: str):
 
 
 ####-------------------------------------------------------------------------.
-#### Coordinates information
+#### Bin Coordinates Information
 
 
 def get_diameter_bins_dict(sensor_name: str) -> dict:
@@ -595,6 +596,57 @@ def get_velocity_bin_width(sensor_name: str) -> list:
     else:
         return None
     return velocity_bin_width
+
+
+def get_bin_coords_dict(sensor_name: str) -> dict:
+    """Retrieve diameter (and velocity) bin coordinates.
+
+    Parameters
+    ----------
+    sensor_name : str
+        Name of the sensor.
+
+    Returns
+    -------
+    dict
+        Dictionary with coordinate arrays.
+    """
+
+    check_sensor_name(sensor_name=sensor_name)
+    coords = {}
+    # Retrieve diameter coords
+    coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)
+    coords["diameter_bin_lower"] = (
+        ["diameter_bin_center"],
+        get_diameter_bin_lower(sensor_name=sensor_name),
+    )
+    coords["diameter_bin_upper"] = (
+        ["diameter_bin_center"],
+        get_diameter_bin_upper(sensor_name=sensor_name),
+    )
+    coords["diameter_bin_width"] = (
+        ["diameter_bin_center"],
+        get_diameter_bin_width(sensor_name=sensor_name),
+    )
+    # Retrieve velocity coords (if available)
+    if get_velocity_bin_center(sensor_name=sensor_name) is not None:
+        coords["velocity_bin_center"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_center(sensor_name=sensor_name),
+        )
+        coords["velocity_bin_lower"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_lower(sensor_name=sensor_name),
+        )
+        coords["velocity_bin_upper"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_upper(sensor_name=sensor_name),
+        )
+        coords["velocity_bin_width"] = (
+            ["velocity_bin_center"],
+            get_velocity_bin_width(sensor_name=sensor_name),
+        )
+    return coords
 
 
 def get_n_diameter_bins(sensor_name):

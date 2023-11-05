@@ -30,7 +30,7 @@ from disdrodb.l0.l0_reader import (
     _get_readers_paths_by_data_source,
     available_readers,
     check_available_readers,
-    get_reader_from_metadata_reader_key,
+    get_reader_function_from_metadata_key,
     get_station_reader_function,
 )
 from disdrodb.utils.yaml import write_yaml
@@ -114,7 +114,7 @@ def test_get_reader_from_metadata(tmp_path):
         data_source=data_source,
         campaign_name=campaign_name,
     )
-    result = get_reader_from_metadata_reader_key(reader_data_source_name=reader_data_source_name)
+    result = get_reader_function_from_metadata_key(reader_data_source_name=reader_data_source_name)
     assert callable(result)
 
 
@@ -127,9 +127,9 @@ def test_check_available_readers():
     assert check_available_readers() is None
 
 
-def test_get_reader_from_metadata_reader_key():
+def test_get_reader_function_from_metadata_key():
     reader_data_source_name = f"{DATA_SOURCE}/{CAMPAIGN_NAME}"
-    result = get_reader_from_metadata_reader_key(reader_data_source_name=reader_data_source_name)
+    result = get_reader_function_from_metadata_key(reader_data_source_name=reader_data_source_name)
     assert callable(result)
 
 
@@ -138,9 +138,9 @@ def test__get_readers_data_sources_path():
     assert isinstance(result, list)
 
 
-def test_get_available_readers_dict():
+def test__get_available_readers_dict():
     # Check that at least the EPFL institution is included in the list of readers
-    function_return = l0_reader.get_available_readers_dict()
+    function_return = l0_reader._get_available_readers_dict()
     assert "EPFL" in function_return.keys()
 
 
@@ -157,17 +157,17 @@ def test_check_reader_data_source():
         l0_reader._check_reader_data_source("dummy")
 
 
-def test_check_reader_exists():
+def test__check_reader_exists():
     # Check existing reader
-    function_return = l0_reader.check_reader_exists("EPFL", "EPFL_ROOF_2012")
+    function_return = l0_reader._check_reader_exists("EPFL", "EPFL_ROOF_2012")
     assert function_return == "EPFL_ROOF_2012"
 
     # Check unexisting reader
     with pytest.raises(ValueError):
-        l0_reader.check_reader_exists("EPFL", "dummy")
+        l0_reader._check_reader_exists("EPFL", "dummy")
 
 
-def test_get_reader():
+def test_get_reader_function():
     # Check that the object is a function
-    function_return = l0_reader.get_reader("EPFL", "EPFL_ROOF_2012")
+    function_return = l0_reader.get_reader_function("EPFL", "EPFL_ROOF_2012")
     assert inspect.isfunction(function_return)

@@ -51,17 +51,6 @@ def read_metadata(campaign_dir: str, station_name: str) -> dict:
     return metadata
 
 
-def write_metadata(metadata, fpath):
-    """Write dictionary to YAML file."""
-    metadata = sort_metadata_dictionary(metadata)
-    write_yaml(
-        dictionary=metadata,
-        fpath=fpath,
-        sort_keys=False,
-    )
-    return None
-
-
 ####--------------------------------------------------------------------------.
 #### Default (empty) metadata
 def _get_default_metadata_dict() -> dict:
@@ -85,6 +74,17 @@ def _get_default_metadata_dict() -> dict:
     return attrs
 
 
+def _write_metadata(metadata, fpath):
+    """Write dictionary to YAML file."""
+    metadata = sort_metadata_dictionary(metadata)
+    write_yaml(
+        dictionary=metadata,
+        fpath=fpath,
+        sort_keys=False,
+    )
+    return None
+
+
 def write_default_metadata(fpath: str) -> None:
     """Create default YAML metadata file at the specified filepath.
 
@@ -106,7 +106,7 @@ def write_default_metadata(fpath: str) -> None:
     except Exception:
         pass
     # Write the metadata
-    write_metadata(metadata=metadata, fpath=fpath)
+    _write_metadata(metadata=metadata, fpath=fpath)
     return None
 
 

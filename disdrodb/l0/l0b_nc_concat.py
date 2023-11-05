@@ -116,7 +116,7 @@ def run_disdrodb_l0b_concat_station(
 ):
     """Concatenate the L0B files of a single DISDRODB station.
 
-    This function runs the run_disdrodb_l0b_concat_station script in the terminal.
+    This function runs the ``run_disdrodb_l0b_concat_station`` script in the terminal.
     """
     cmd = " ".join(
         [
@@ -145,7 +145,7 @@ def run_disdrodb_l0b_concat(
 ):
     """Concatenate the L0B files of the DISDRODB archive.
 
-    This function is called by the run_disdrodb_l0b_concat script.
+    This function is called by the ``run_disdrodb_l0b_concat`` script.
     """
     from disdrodb.api.io import available_stations
 

@@ -216,10 +216,10 @@ def test_remove_issue_timesteps():
     assert set(df_cleaned["time"]) == {1, 3, 5}
 
 
-def test_preprocess_reader_kwargs():
+def test__preprocess_reader_kwargs():
     # Test that the function removes the 'dtype' key from the reader_kwargs dict
     reader_kwargs = {"dtype": "int64", "other_key": "other_value", "delimiter": ","}
-    preprocessed_kwargs = l0a_processing.preprocess_reader_kwargs(reader_kwargs)
+    preprocessed_kwargs = l0a_processing._preprocess_reader_kwargs(reader_kwargs)
     assert "dtype" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
 
@@ -231,7 +231,7 @@ def test_preprocess_reader_kwargs():
         "other_key": "other_value",
         "delimiter": ",",
     }
-    preprocessed_kwargs = l0a_processing.preprocess_reader_kwargs(
+    preprocessed_kwargs = l0a_processing._preprocess_reader_kwargs(
         reader_kwargs,
     )
     assert "blocksize" not in preprocessed_kwargs
@@ -241,7 +241,7 @@ def test_preprocess_reader_kwargs():
     # Test raise error if delimiter is not specified
     reader_kwargs = {"dtype": "int64", "other_key": "other_value"}
     with pytest.raises(ValueError):
-        l0a_processing.preprocess_reader_kwargs(reader_kwargs)
+        l0a_processing._preprocess_reader_kwargs(reader_kwargs)
 
 
 def test_concatenate_dataframe():

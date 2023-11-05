@@ -91,7 +91,7 @@ def _get_readers_names_by_data_source(data_source):
 def _check_reader_data_source(reader_data_source: str) -> str:
     """Check if the provided data source exists within the available readers.
 
-    Please run get_available_readers_dict() to get the list of all available reader.
+    Please run _get_available_readers_dict() to get the list of all available reader.
 
     Parameters
     ----------
@@ -120,10 +120,10 @@ def _check_reader_data_source(reader_data_source: str) -> str:
     return reader_data_source
 
 
-def check_reader_exists(reader_data_source: str, reader_name: str) -> str:
+def _check_reader_exists(reader_data_source: str, reader_name: str) -> str:
     """Check if the provided data source exists and reader names exists within the available readers.
 
-    Please run get_available_readers_dict() to get the list of all available reader.
+    Please run _get_available_readers_dict() to get the list of all available reader.
 
     Parameters
     ----------
@@ -156,7 +156,7 @@ def check_reader_exists(reader_data_source: str, reader_name: str) -> str:
     return reader_name
 
 
-def get_available_readers_dict() -> dict:
+def _get_available_readers_dict() -> dict:
     """Returns the readers description included into the current release of DISDRODB.
 
     Returns
@@ -188,7 +188,7 @@ def get_available_readers_dict() -> dict:
 def available_readers(data_sources=None, reader_path=False):
     """Retrieve available readers information."""
     # Get available readers dictionary
-    dict_readers = get_available_readers_dict()
+    dict_readers = _get_available_readers_dict()
     # If data sources is not None, subset the dictionary
     if data_sources is not None:
         # Check valid data sources
@@ -206,7 +206,7 @@ def available_readers(data_sources=None, reader_path=False):
 ####--------------------------------------------------------------------------.
 
 
-def get_reader(reader_data_source: str, reader_name: str) -> object:
+def get_reader_function(reader_data_source: str, reader_name: str) -> object:
     """Returns the reader function based on input parameters.
 
     Parameters
@@ -225,7 +225,7 @@ def get_reader(reader_data_source: str, reader_name: str) -> object:
     """
     # Check data source and reader_name validity
     reader_data_source = _check_reader_data_source(reader_data_source)
-    reader_name = check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
+    reader_name = _check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
     # Retrieve reader function
     if reader_name:
         full_name = f"disdrodb.l0.readers.{reader_data_source}.{reader_name}.reader"
@@ -253,7 +253,7 @@ def _get_expected_reader_arguments():
     return expected_arguments
 
 
-def check_reader_arguments(reader):
+def _check_reader_arguments(reader):
     """Check the reader have the expected input arguments."""
     import inspect
 
@@ -293,19 +293,19 @@ def _check_metadata_reader(metadata):
     reader_name = reader_components[1]
 
     # - Check the reader is available
-    check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
+    _check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
 
     return None
 
 
-def get_reader_from_metadata_reader_key(reader_data_source_name):
+def get_reader_function_from_metadata_key(reader_data_source_name):
     """Retrieve the reader from the `reader` metadata value.
 
     The convention for metadata reader key: <data_source/reader_name> in disdrodb.l0.readers
     """
     reader_data_source = reader_data_source_name.split("/")[0]
     reader_name = reader_data_source_name.split("/")[1]
-    reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
+    reader = get_reader_function(reader_data_source=reader_data_source, reader_name=reader_name)
     return reader
 
 
@@ -315,7 +315,7 @@ def _get_reader_from_metadata(metadata):
     The convention for metadata reader key: <data_source/reader_name> in disdrodb.l0.readers
     """
     reader_data_source_name = metadata.get("reader")
-    return get_reader_from_metadata_reader_key(reader_data_source_name)
+    return get_reader_function_from_metadata_key(reader_data_source_name)
 
 
 def get_station_reader_function(data_source, campaign_name, station_name, base_dir=None):
@@ -348,7 +348,7 @@ def get_station_reader_function(data_source, campaign_name, station_name, base_d
 
     # ------------------------------------------------------------------------.
     # Check reader argument
-    check_reader_arguments(reader)
+    _check_reader_arguments(reader)
 
     return reader
 
@@ -380,44 +380,49 @@ def reader_generic_docstring():
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure <...>/DISDRODB/Raw/<data_source>/<campaign_name>'.
-        Inside the raw_dir directory, it is required to adopt the following structure:
+        The path must have the following structure ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
+        Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
-            - /data/<station_name>/<raw_files>
-            - /metadata/<station_name>.yaml
+            - ``/data/<station_name>/<raw_files>``
+            - ``/metadata/<station_name>.yml``
 
-        Important points:
+        **Important points:**
 
-            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-            - The campaign_name are expected to be UPPER CASE.
-            - The <campaign_name> must semantically match between:
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - The ``<campaign_name>`` are expected to be UPPER CASE.
+        - The ``<campaign_name>`` must semantically match between:
 
-                - the raw_dir and processed_dir directory paths;
-                - with the key 'campaign_name' within the metadata YAML files.
+            - the ``raw_dir`` and ``processed_dir`` directory paths;
+            - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure <...>/DISDRODB/Processed/<data_source>/<campaign_name>'
-        For testing purpose, this function exceptionally accept also a directory path simply ending
-        with <campaign_name> (i.e. /tmp/<campaign_name>).
+        The path should have the following structure ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
+        For testing purposes, this function exceptionally accepts also a directory path simply ending
+        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
+
     station_name : str
-        Station name
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is True.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        It processes just the first 3 raw data files.
-        The default is False.
+        The name of the station.
+
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        If ``False``, raise an error if data already exists in destination directories.
+        Default is ``False``.
+
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        Default is ``True``.
+
+    parallel : bool, optional
+        If ``True``, process the files simultaneously in multiple processes.
+        The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
+        If ``False``, process the files sequentially in a single process.
+        Default is ``False``.
+
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data to process.
+        Only the first 3 raw data files will be processed.
+        Default is ``False``.
     """
 
 
@@ -431,8 +436,8 @@ def check_available_readers():
     for reader_data_source, list_reader_name in dict_all_readers.items():
         for reader_name in list_reader_name:
             try:
-                reader = get_reader(reader_data_source=reader_data_source, reader_name=reader_name)
-                check_reader_arguments(reader)
+                reader = get_reader_function(reader_data_source=reader_data_source, reader_name=reader_name)
+                _check_reader_arguments(reader)
             except Exception as e:
                 raise ValueError(f"Invalid reader for {reader_data_source}/{reader_name}.py. The error is {e}")
     return None

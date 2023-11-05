@@ -47,7 +47,7 @@ CONFIG_FILES_LIST = [
 ]
 
 
-def check_yaml_files_exists(sensor_name: str) -> None:
+def _check_yaml_files_exists(sensor_name: str) -> None:
     """Check if all L0 config YAML files exist.
 
     Parameters
@@ -64,7 +64,7 @@ def check_yaml_files_exists(sensor_name: str) -> None:
         raise FileNotFoundError(f"Missing YAML files {missing_keys_text} in {config_dir} for sensor {sensor_name}.")
 
 
-def check_variable_consistency(sensor_name: str) -> None:
+def _check_variable_consistency(sensor_name: str) -> None:
     """
     Check variable consistency across config files.
 
@@ -108,7 +108,7 @@ class SchemaValidationException(Exception):
     """Exception raised when schema validation fails"""
 
 
-def schema_error(object_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
+def _schema_error(object_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
     """Function that validate the schema of a given object with a given schema.
 
     Parameters
@@ -177,7 +177,7 @@ def check_l0b_encoding(sensor_name: str) -> None:
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
-        schema_error(
+        _schema_error(
             object_to_validate=value,
             schema=L0BEncodingSchema,
             message=f"Sensore name : {sensor_name}. Key : {key}.",
@@ -227,7 +227,7 @@ class RawDataFormatSchema(BaseModel):
             return value
 
 
-def check_raw_data_format(sensor_name: str) -> None:
+def _check_raw_data_format(sensor_name: str) -> None:
     """check raw_data_format.yml file based on the schema defined in the class RawDataFormatSchema.
 
     Parameters
@@ -239,14 +239,14 @@ def check_raw_data_format(sensor_name: str) -> None:
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
-        schema_error(
+        _schema_error(
             object_to_validate=value,
             schema=RawDataFormatSchema,
             message=f"Sensore name : {sensor_name}. Key : {key}.",
         )
 
 
-def check_cf_attributes(sensor_name: str) -> None:
+def _check_cf_attributes(sensor_name: str) -> None:
     """Check that the l0b_variables_attrs.yml description, long_name and units values are strings.
 
     Parameters
@@ -261,7 +261,7 @@ def check_cf_attributes(sensor_name: str) -> None:
                 raise ValueError(f"Wrong value for {key} in {var} for sensor {sensor_name}.")
 
 
-def check_bin_consistency(sensor_name: str) -> None:
+def _check_bin_consistency(sensor_name: str) -> None:
     """Check bin consistency from config file.
 
     Do not check the first and last bin !
@@ -301,30 +301,7 @@ def check_bin_consistency(sensor_name: str) -> None:
         )
 
 
-def get_bins_measurement(sensor_name: str, file_name: str) -> list:
-    """get bins measurement from config file.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-    file_name : str
-        File name (bins_velocity.yml or bins_diameter.yml)
-
-    Returns
-    -------
-    list
-        List of chunksizes (center, bounds, width)
-    """
-    data = read_config_file(sensor_name, product="L0A", filename=file_name)
-    center_len = len(data.get("center"))
-    bound_len = len(data.get("bounds"))
-    width_len = len(data.get("width"))
-
-    return [center_len, bound_len, width_len]
-
-
-def check_raw_array(sensor_name: str) -> None:
+def _check_raw_array(sensor_name: str) -> None:
     """Check raw array consistency from config file.
 
     Parameters
@@ -374,14 +351,14 @@ def check_sensor_configs(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    check_yaml_files_exists(sensor_name)
-    check_variable_consistency(sensor_name)
+    _check_yaml_files_exists(sensor_name)
+    _check_variable_consistency(sensor_name)
     check_l0b_encoding(sensor_name=sensor_name)
     check_l0a_encoding(sensor_name=sensor_name)
-    check_raw_data_format(sensor_name=sensor_name)
-    check_cf_attributes(sensor_name=sensor_name)
-    check_bin_consistency(sensor_name=sensor_name)
-    check_raw_array(sensor_name=sensor_name)
+    _check_raw_data_format(sensor_name=sensor_name)
+    _check_cf_attributes(sensor_name=sensor_name)
+    _check_bin_consistency(sensor_name=sensor_name)
+    _check_raw_array(sensor_name=sensor_name)
 
 
 def check_all_sensors_configs() -> None:

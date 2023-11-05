@@ -34,22 +34,22 @@ TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 #### Checks
 
 
-def test_is_numpy_array_string():
+def test__is_numpy_array_string():
     # Test string array
     arr = np.array(["foo", "bar"], dtype=np.str_)
-    assert issue.is_numpy_array_string(arr) is True
+    assert issue._is_numpy_array_string(arr) is True
 
     # Test unicode array
     arr = np.array(["foo", "bar"], dtype=np.unicode_)
-    assert issue.is_numpy_array_string(arr) is True
+    assert issue._is_numpy_array_string(arr) is True
 
     # Test nonstring array
     arr = np.array([1, 2, 3])
-    assert issue.is_numpy_array_string(arr) is False
+    assert issue._is_numpy_array_string(arr) is False
 
     # Test mixed type array
     arr = np.array(["foo", 1, 2.0], dtype=np.object_)
-    assert issue.is_numpy_array_string(arr) is False
+    assert issue._is_numpy_array_string(arr) is False
 
 
 def test_check_issue_file():
@@ -92,12 +92,12 @@ def test_write_issue_docs():
     assert written_data == expected_output
 
 
-def test_is_numpy_array_datetime():
+def test__is_numpy_array_datetime():
     arr = np.array(["2022-01-01", "2022-01-02"], dtype="datetime64")
-    assert issue.is_numpy_array_datetime(arr) is True
+    assert issue._is_numpy_array_datetime(arr) is True
 
     arr = np.array([1, 2, 3])
-    assert issue.is_numpy_array_datetime(arr) is False
+    assert issue._is_numpy_array_datetime(arr) is False
 
 
 def test__check_timestep_datetime_accuracy():
@@ -279,7 +279,7 @@ def test_write_issue(tmpdir):
 
     issue._write_issue(fpath, timesteps=np.array(timesteps), time_periods=None)
 
-    result = issue.read_issue_file(fpath)
+    result = issue._read_issue_file(fpath)
 
     timesteps_datetime = np.array(timesteps, dtype="datetime64[s]")
     expected_result = {

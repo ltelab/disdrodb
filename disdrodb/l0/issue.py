@@ -32,7 +32,7 @@ logger = logging.getLogger(__name__)
 #### Checks
 
 
-def is_numpy_array_string(arr):
+def _is_numpy_array_string(arr):
     """Check if the numpy array contains strings
 
     Parameters
@@ -45,7 +45,7 @@ def is_numpy_array_string(arr):
     return dtype == np.str_ or dtype == np.unicode_
 
 
-def is_numpy_array_datetime(arr):
+def _is_numpy_array_datetime(arr):
     """Check if the numpy array contains datetime64
 
     Parameters
@@ -141,10 +141,10 @@ def check_timesteps(timesteps):
     # Set as numpy array
     timesteps = np.array(timesteps)
     # If strings, check accordingly
-    if is_numpy_array_string(timesteps):
+    if _is_numpy_array_string(timesteps):
         timesteps = _check_timesteps_string(timesteps)
     # If numpy datetime64, check accordingly
-    elif is_numpy_array_datetime(timesteps):
+    elif _is_numpy_array_datetime(timesteps):
         timesteps = _check_timestep_datetime_accuracy(timesteps, unit="s")
     else:
         raise TypeError("Invalid timesteps input.")
@@ -239,7 +239,7 @@ def check_issue_file(fpath: str) -> None:
         Issue YAML file path.
 
     """
-    issue_dict = load_yaml_without_date_parsing(fpath)
+    issue_dict = _load_yaml_without_date_parsing(fpath)
     issue_dict = check_issue_dict(issue_dict)
     return None
 
@@ -366,7 +366,7 @@ class NoDatesSafeLoader(yaml.SafeLoader):
             ]
 
 
-def load_yaml_without_date_parsing(filepath):
+def _load_yaml_without_date_parsing(filepath):
     "Read a YAML file without converting automatically date string to datetime."
     NoDatesSafeLoader.remove_implicit_resolver("tag:yaml.org,2002:timestamp")
     with open(filepath) as f:
@@ -375,6 +375,24 @@ def load_yaml_without_date_parsing(filepath):
     if isinstance(dictionary, type(None)):
         dictionary = {}
     return dictionary
+
+
+def _read_issue_file(fpath: str) -> dict:
+    """Read YAML issue file.
+
+    Parameters
+    ----------
+    fpath : str
+        Filepath of the issue YAML.
+
+    Returns
+    -------
+    dict
+        Issue dictionary.
+    """
+    issue_dict = _load_yaml_without_date_parsing(fpath)
+    issue_dict = check_issue_dict(issue_dict)
+    return issue_dict
 
 
 def read_issue(raw_dir: str, station_name: str) -> dict:
@@ -394,27 +412,4 @@ def read_issue(raw_dir: str, station_name: str) -> dict:
     """
 
     issue_fpath = os.path.join(raw_dir, "issue", station_name + ".yml")
-    issue_dict = load_yaml_without_date_parsing(issue_fpath)
-    issue_dict = check_issue_dict(issue_dict)
-    return issue_dict
-
-
-def read_issue_file(fpath: str) -> dict:
-    """Read YAML issue file.
-
-    Parameters
-    ----------
-    fpath : str
-        Filepath of the issue YAML.
-
-    Returns
-    -------
-    dict
-        Issue dictionary.
-    """
-    issue_dict = load_yaml_without_date_parsing(fpath)
-    issue_dict = check_issue_dict(issue_dict)
-    return issue_dict
-
-
-####--------------------------------------------------------------------------.
+    return _read_issue_file(issue_fpath)

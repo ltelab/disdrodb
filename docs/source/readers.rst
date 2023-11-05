@@ -425,10 +425,9 @@ adapt the following piece of code to your use case:
 
 .. code-block:: python
 
-    from disdrodb.l0.l0_reader import get_reader_from_metadata_reader_key
+    from disdrodb.l0.l0_reader import get_reader_function_from_metadata_key
 
-    metadata_reader_value = "GPM/IFLOODS"
-    reader = get_reader_from_metadata_reader_key(metadata_reader_value)
+    reader = get_reader_function_from_metadata_key("GPM/IFLOODS")
     print(reader)
 
 

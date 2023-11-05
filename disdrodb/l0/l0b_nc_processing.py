@@ -26,7 +26,7 @@ import xarray as xr
 
 from disdrodb.l0.l0b_processing import finalize_dataset
 from disdrodb.l0.standards import (
-    get_bin_coords,
+    get_bin_coords_dict,
     get_data_range_dict,
     get_nan_flags_dict,
     get_valid_dimension_names,
@@ -108,6 +108,7 @@ def rename_dataset(ds, dict_names):
 
 
 def subset_dataset(ds, dict_names, sensor_name):
+    """Subset Dataset with expected variables."""
     # Get valid variable names
     possible_variables = get_valid_variable_names(sensor_name)
     # Get variables availables in the dict_names and dataset
@@ -183,7 +184,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
         ds = add_dataset_missing_variables(ds=ds, missing_vars=missing_vars, sensor_name=sensor_name)
 
     # Update the coordinates for (diameter and velocity)
-    coords = get_bin_coords(sensor_name)
+    coords = get_bin_coords_dict(sensor_name)
     ds = ds.assign_coords(coords)
 
     # Return dataset

@@ -25,7 +25,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from disdrodb.api.checks import check_sensor_name
 from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
     check_l0b_standards,
@@ -33,22 +32,15 @@ from disdrodb.l0.check_standards import (
 from disdrodb.l0.io import _create_directory, _remove_if_exists
 from disdrodb.l0.standards import (
     # get_valid_coordinates_names,
+    get_bin_coords_dict,
     get_coords_attrs_dict,
     get_data_range_dict,
-    get_diameter_bin_center,
-    get_diameter_bin_lower,
-    get_diameter_bin_upper,
-    get_diameter_bin_width,
     get_dims_size_dict,
     get_l0b_cf_attrs_dict,
     get_l0b_encodings_dict,
     get_raw_array_dims_order,
     get_raw_array_nvalues,
     get_time_encoding,
-    get_velocity_bin_center,
-    get_velocity_bin_lower,
-    get_velocity_bin_upper,
-    get_velocity_bin_width,
     set_disdrodb_attrs,
 )
 from disdrodb.utils.logger import (
@@ -100,10 +92,10 @@ def _replace_empty_strings_with_zeros(values):
     return values
 
 
-def format_string_array(string: str, n_values: int) -> np.array:
+def _format_string_array(string: str, n_values: int) -> np.array:
     """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
-        e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
+        e.g. : _format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
 
     If empty string ("") --> Return an arrays of zeros
     If the list length is not n_values -> Return an arrays of np.nan
@@ -151,7 +143,7 @@ def format_string_array(string: str, n_values: int) -> np.array:
     return values
 
 
-def reshape_raw_spectrum(
+def _reshape_raw_spectrum(
     arr: np.array,
     dims_order: list,
     dims_size_dict: dict,
@@ -258,7 +250,7 @@ def retrieve_l0b_arrays(
         df_series = df[key].astype(str)
 
         # Get a numpy array for each row and then stack
-        list_arr = df_series.apply(format_string_array, n_values=n_values)
+        list_arr = df_series.apply(_format_string_array, n_values=n_values)
         arr = np.stack(list_arr, axis=0)
 
         # Retrieve dimensions
@@ -269,7 +261,7 @@ def retrieve_l0b_arrays(
         # - This applies i.e for OTT_Parsivel* and Thies_LPM
         # - This does not apply to RD_80
         if key == "raw_drop_number" and len(dims_order) == 2:
-            arr, dims = reshape_raw_spectrum(
+            arr, dims = _reshape_raw_spectrum(
                 arr=arr,
                 dims_order=dims_order,
                 dims_size_dict=dims_size_dict,
@@ -294,58 +286,7 @@ def retrieve_l0b_arrays(
 #### L0B Coords and attributes
 
 
-def get_bin_coords(sensor_name: str) -> dict:
-    """Retrieve diameter (and velocity) bin coordinates.
-
-    Parameters
-    ----------
-    sensor_name : str
-        Name of the sensor.
-
-    Returns
-    -------
-    dict
-        Dictionary with coordinate arrays.
-    """
-
-    check_sensor_name(sensor_name=sensor_name)
-    coords = {}
-    # Retrieve diameter coords
-    coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)
-    coords["diameter_bin_lower"] = (
-        ["diameter_bin_center"],
-        get_diameter_bin_lower(sensor_name=sensor_name),
-    )
-    coords["diameter_bin_upper"] = (
-        ["diameter_bin_center"],
-        get_diameter_bin_upper(sensor_name=sensor_name),
-    )
-    coords["diameter_bin_width"] = (
-        ["diameter_bin_center"],
-        get_diameter_bin_width(sensor_name=sensor_name),
-    )
-    # Retrieve velocity coords (if available)
-    if get_velocity_bin_center(sensor_name=sensor_name) is not None:
-        coords["velocity_bin_center"] = (
-            ["velocity_bin_center"],
-            get_velocity_bin_center(sensor_name=sensor_name),
-        )
-        coords["velocity_bin_lower"] = (
-            ["velocity_bin_center"],
-            get_velocity_bin_lower(sensor_name=sensor_name),
-        )
-        coords["velocity_bin_upper"] = (
-            ["velocity_bin_center"],
-            get_velocity_bin_upper(sensor_name=sensor_name),
-        )
-        coords["velocity_bin_width"] = (
-            ["velocity_bin_center"],
-            get_velocity_bin_width(sensor_name=sensor_name),
-        )
-    return coords
-
-
-def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
+def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
     """Convert variables with object dtype to string.
 
     Parameters
@@ -364,7 +305,7 @@ def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
+def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     """Set attributes to each xr.Dataset variable.
 
     Parameters
@@ -399,7 +340,7 @@ def _set_attrs_dict(ds, attrs_dict):
     return ds
 
 
-def set_coordinate_attributes(ds):
+def _set_coordinate_attributes(ds):
     # Get attributes dictionary
     attrs_dict = get_coords_attrs_dict(ds)
     # Set attributes
@@ -407,13 +348,13 @@ def set_coordinate_attributes(ds):
     return ds
 
 
-def set_dataset_attrs(ds, sensor_name):
+def _set_dataset_attrs(ds, sensor_name):
     """Set variable and coordinates attributes."""
     # - Add netCDF variable attributes
     # --> Attributes: long_name, units, descriptions, valid_min, valid_max
-    ds = set_variable_attributes(ds=ds, sensor_name=sensor_name)
+    ds = _set_variable_attributes(ds=ds, sensor_name=sensor_name)
     # - Add netCDF coordinate attributes
-    ds = set_coordinate_attributes(ds=ds)
+    ds = _set_coordinate_attributes(ds=ds)
     #  - Set DISDRODB global attributes
     ds = set_disdrodb_attrs(ds=ds, product="L0B")
     return ds
@@ -437,6 +378,7 @@ def add_dataset_crs_coords(ds):
 
 
 def _define_dataset_variables(df, sensor_name, verbose):
+    """Define DISDRODB L0B netCDF variables."""
     # Preprocess raw_spectrum, diameter and velocity arrays if available
     if np.any(
         np.isin(
@@ -469,10 +411,11 @@ def _define_dataset_variables(df, sensor_name, verbose):
 
 
 def _define_coordinates(data_vars, attrs, sensor_name):
+    """Define DISDRODB L0B netCDF coordinates."""
     # Note: attrs and data_vars are modified in place !
 
     # - Diameter and velocity
-    coords = get_bin_coords(sensor_name=sensor_name)
+    coords = get_bin_coords_dict(sensor_name=sensor_name)
 
     # - Geolocation + Time
     geolocation_vars = ["time", "latitude", "longitude", "altitude"]
@@ -558,10 +501,10 @@ def finalize_dataset(ds, sensor_name):
     ds = ds.transpose("time", "diameter_bin_center", ...)
 
     # Add netCDF variable and coordinate attributes
-    ds = set_dataset_attrs(ds, sensor_name)
+    ds = _set_dataset_attrs(ds, sensor_name)
 
     # Ensure variables with dtype object are converted to string
-    ds = convert_object_variables_to_string(ds)
+    ds = _convert_object_variables_to_string(ds)
 
     # Check L0B standards
     check_l0b_standards(ds)

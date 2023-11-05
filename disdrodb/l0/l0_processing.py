@@ -352,52 +352,62 @@ def run_l0a(
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
         The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
-        Inside the raw_dir directory, it is required to adopt the following structure:
+        Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
-            - /data/<station_name>/<raw_files>
-            - /metadata/<station_name>.yaml
+            - ``/data/<station_name>/<raw_files>``
+            - ``/metadata/<station_name>.yml``
 
-        Important points:
-            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-            - The campaign_name are expected to be UPPER CASE.
-            - The <campaign_name> must semantically match between:
+        **Important points:**
 
-                - the raw_dir and processed_dir directory paths;
-                - with the key 'campaign_name' within the metadata YAML files.
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - The ``campaign_name`` are expected to be UPPER CASE.
+        - The ``<campaign_name>`` must semantically match between:
+            - the ``raw_dir`` and ``processed_dir`` directory paths;
+            - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
-        For testing purpose, this function exceptionally accept also a directory path simply ending
-        with <campaign_name> (i.e. /tmp/<campaign_name>).
-    station_name : str
-        Station name
-    glob_patterns: str
-        Glob pattern to search data files in ``<raw_dir>/data/<station_name>``
-    column_names : list
-        Columns names of the raw text file.
-    reader_kwargs : dict
-        Pandas `read_csv` arguments to open the text file.
-    df_sanitizer_fun : object, optional
-        Sanitizer function to format the datafame into DISDRODB L0A standard.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        It processes just the first 100 rows of 3 raw data files.
-        The default is False.
-    """
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``.
+        For testing purposes, this function exceptionally accepts also a directory path simply ending
+        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
 
+    station_name : str
+    The name of the station.
+
+    glob_patterns : str
+        Glob pattern to search for data files in ``<raw_dir>/data/<station_name>``.
+
+    column_names : list
+        Column names of the raw text file.
+
+    reader_kwargs : dict
+        Arguments for Pandas ``read_csv`` function to open the text file.
+
+    df_sanitizer_fun : callable, optional
+        Sanitizer function to format the DataFrame into DISDRODB L0A standard.
+        Default is ``None``.
+
+    parallel : bool, optional
+        If ``True``, process the files simultaneously in multiple processes.
+        The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
+        If ``False``, process the files sequentially in a single process.
+        Default is ``False``.
+
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        Default is ``False``.
+
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        If ``False``, raise an error if data already exists in destination directories.
+        Default is ``False``.
+
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data to process.
+        Processes only the first 100 rows of 3 raw data files.
+        Default is ``False``.
+
+    """
     # ------------------------------------------------------------------------.
     # Start L0A processing
     if verbose:
@@ -480,51 +490,58 @@ def run_l0b(
     verbose,
     debugging_mode,
 ):
-    """Run the L0B processing for a specific DISDRODB station.
+    """
+    Run the L0B processing for a specific DISDRODB station.
 
     Parameters
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
         The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
-        Inside the raw_dir directory, it is required to adopt the following structure:
+        Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
-            - /data/<station_name>/<raw_files>
-            - /metadata/<station_name>.yaml
+            - ``/data/<station_name>/<raw_files>``
+            - ``/metadata/<station_name>.yml``
 
-        Important points:
+        **Important points:**
 
-            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-            - The campaign_name are expected to be UPPER CASE.
-            - The <campaign_name> must semantically match between:
-                - the raw_dir and processed_dir directory paths;
-                - with the key 'campaign_name' within the metadata YAML files.
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - The ``campaign_name`` are expected to be UPPER CASE.
+        - The ``<campaign_name>`` must semantically match between:
+            - the ``raw_dir`` and ``processed_dir`` directory paths;
+            - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
         The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``.
-        For testing purpose, this function exceptionally accept also a directory path simply ending
-        with <campaign_name> (i.e. /tmp/<campaign_name>).
+        For testing purposes, this function exceptionally accepts also a directory path simply ending
+        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
+
     station_name : str
-        Station name
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is True.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        Ensure that the threads_per_worker (number of thread per process) is set to 1 to avoid HDF errors.
-        Also ensure to set the HDF5_USE_FILE_LOCKING environment variable to False.
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        It processes just 3 raw data files.
-        The default is False.
+        The name of the station.
+
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        If ``False``, raise an error if data already exists in destination directories.
+        Default is ``False``.
+
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        Default is ``True``.
+
+    parallel : bool, optional
+        If ``True``, process the files simultaneously in multiple processes.
+        The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
+        Ensure that the ``threads_per_worker`` (number of thread per process) is set to 1 to avoid HDF errors.
+        Also, ensure to set the ``HDF5_USE_FILE_LOCKING`` environment variable to ``False``.
+        If ``False``, process the files sequentially in a single process.
+        Default is ``False``.
+
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data to process.
+        Only the first 3 raw data files will be processed.
+        Default is ``False``.
+
     """
     # -----------------------------------------------------------------.
     # Retrieve metadata
@@ -622,54 +639,65 @@ def run_l0b_from_nc(
 
     Parameters
     ----------
-
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
         The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
-        Inside the raw_dir directory, it is required to adopt the following structure:
+        Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
-            - /data/<station_name>/<raw_files>
-            - /metadata/<station_name>.yaml
+            - ``/data/<station_name>/<raw_files>``
+            - ``/metadata/<station_name>.yml``
 
-        Important points:
-            - For each <station_name> there must be a corresponding YAML file in the metadata subfolder.
-            - The campaign_name are expected to be UPPER CASE.
-            - The <campaign_name> must semantically match between:
+        **Important points:**
 
-                - the raw_dir and processed_dir directory paths;
-                - with the key 'campaign_name' within the metadata YAML files.
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - The ``campaign_name`` are expected to be UPPER CASE.
+        - The ``<campaign_name>`` must semantically match between:
+            - the ``raw_dir`` and ``processed_dir`` directory paths;
+            - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
-        The desired directory path for the processed DISDRODB L0B products.
-        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
-        For testing purpose, this function exceptionally accept also a directory path simply ending
-        with <campaign_name> (i.e. /tmp/<campaign_name>).
+        The desired directory path for the processed DISDRODB L0A and L0B products.
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``.
+        For testing purposes, this function exceptionally accepts also a directory path simply ending
+        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
+
     station_name : str
-        Station name
+        The name of the station.
+
     glob_patterns: str
         Glob pattern to search data files in ``<raw_dir>/data/<station_name>``.
-        Example: glob_patterns = "*.nc"
+        Example:  ``glob_patterns = "*.nc"``
+
     dict_names : dict
         Dictionary mapping raw netCDF variables/coordinates/dimension names
         to DISDRODB standards.
-    ds_sanitizer_fun : object, optional
+
+     ds_sanitizer_fun : object, optional
         Sanitizer function to format the raw netCDF into DISDRODB L0B standard.
-    force : bool
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories.
-        The default is False.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is False.
-    parallel : bool
-        If True, the files are processed simultaneously in multiple processes.
-        The number of simultaneous processes can be customized using the dask.distributed LocalCluster.
-        If False, the files are processed sequentially in a single process.
-        If False, multi-threading is automatically exploited to speed up I/0 tasks.
-    debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        It processes just the first 3 raw netCDF files.
-        The default is False.
+
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        If ``False``, raise an error if data already exists in destination directories.
+        Default is ``False``.
+
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        Default is ``True``.
+
+    parallel : bool, optional
+        If ``True``, process the files simultaneously in multiple processes.
+        The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
+        Ensure that the ``threads_per_worker`` (number of thread per process) is set to 1 to avoid HDF errors.
+        Also, ensure to set the ``HDF5_USE_FILE_LOCKING`` environment variable to ``False``.
+        If ``False``, process the files sequentially in a single process.
+        If ``False``, multi-threading is automatically exploited to speed up I/0 tasks.
+        Default is ``False``.
+
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data to process.
+        Only the first 3 raw netCDF files will be processed.
+        Default is ``False``.
+
     """
 
     # ------------------------------------------------------------------------.

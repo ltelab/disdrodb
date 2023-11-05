@@ -31,7 +31,7 @@ from disdrodb.l0.l0_reader import get_station_reader_function
 TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
 
-def get_list_test_data_sources() -> list:
+def _get_list_test_data_sources() -> list:
     """Get list of test data sources.
 
     Returns
@@ -44,7 +44,7 @@ def get_list_test_data_sources() -> list:
     return list_of_data_sources
 
 
-def get_list_test_campaigns(data_source: str) -> list:
+def _get_list_test_campaigns(data_source: str) -> list:
     """Get list of test campaigns for a given data source.
 
     Parameters
@@ -62,7 +62,7 @@ def get_list_test_campaigns(data_source: str) -> list:
     return list_of_campaigns
 
 
-def get_list_test_stations(data_source: str, campaign_name: str) -> list:
+def _get_list_test_stations(data_source: str, campaign_name: str) -> list:
     """Get list of test stations for a given data source and campaign.
 
     Parameters
@@ -85,7 +85,7 @@ def get_list_test_stations(data_source: str, campaign_name: str) -> list:
     return list_station_names
 
 
-def is_parquet_files_identical(file1: str, file2: str) -> bool:
+def _is_parquet_files_identical(file1: str, file2: str) -> bool:
     """Check if two parquet files are identical.
 
     Parameters
@@ -107,8 +107,8 @@ def is_parquet_files_identical(file1: str, file2: str) -> bool:
     return df1.equals(df2)
 
 
-def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
-    """Run reader over the data sample.
+def _run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
+    """Run reader over the test data sample.
 
     Parameters
     ----------
@@ -117,7 +117,7 @@ def run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
     campaign_name : str
         Campaign name.
     """
-    station_names = get_list_test_stations(data_source=data_source, campaign_name=campaign_name)
+    station_names = _get_list_test_stations(data_source=data_source, campaign_name=campaign_name)
     for station_name in station_names:
         reader = get_station_reader_function(
             base_dir=TEST_BASE_DIR,
@@ -164,9 +164,9 @@ def check_all_readers() -> None:
         If the reader validation has failed.
     """
 
-    for data_source in get_list_test_data_sources():
-        for campaign_name in get_list_test_campaigns(data_source):
-            process_dir = run_reader_on_test_data(data_source, campaign_name)
+    for data_source in _get_list_test_data_sources():
+        for campaign_name in _get_list_test_campaigns(data_source):
+            process_dir = _run_reader_on_test_data(data_source, campaign_name)
             ground_truth = glob.glob(
                 os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "ground_truth", "*", "*.parquet")
             )
@@ -174,7 +174,7 @@ def check_all_readers() -> None:
             for i, ground_truth_fpath in enumerate(ground_truth):
                 station_name = os.path.basename(os.path.dirname(ground_truth[i]))
                 processed_file_fpath = processed_file[i]
-                is_correct = is_parquet_files_identical(ground_truth_fpath, processed_file_fpath)
+                is_correct = _is_parquet_files_identical(ground_truth_fpath, processed_file_fpath)
                 if not is_correct:
                     raise Exception(
                         f"Reader validation has failed for data_source '{data_source}', campaign_name '{campaign_name}'"
