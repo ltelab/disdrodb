@@ -1003,7 +1003,8 @@ def create_initial_directory_structure(raw_dir, processed_dir, station_name, for
 
 def create_directory_structure(processed_dir, product_level, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
-    from disdrodb.api.io import _get_list_stations_with_data, check_product_level
+    from disdrodb.api.checks import check_product_level
+    from disdrodb.api.io import _get_list_stations_with_data
 
     # Check inputs
     check_product_level(product_level)

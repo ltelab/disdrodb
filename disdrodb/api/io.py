@@ -23,6 +23,7 @@ import os
 
 import numpy as np
 
+from disdrodb.api.checks import check_product_level
 from disdrodb.configs import get_base_dir
 
 
@@ -220,14 +221,6 @@ def _get_stations(base_dir, product_level):
 
 ####---------------------------------------------------------------------------.
 #### I/O CHECKS
-def check_product_level(product_level):
-    """Check DISDRODB product level."""
-    if not isinstance(product_level, str):
-        raise TypeError("`product_level` must be a string.")
-    valid_product_levels = ["RAW", "L0A", "L0B"]
-    if product_level.upper() not in valid_product_levels:
-        raise ValueError(f"Valid `product_levels` are {valid_product_levels}.")
-    return product_level
 
 
 def check_data_sources(base_dir, product_level, data_sources):

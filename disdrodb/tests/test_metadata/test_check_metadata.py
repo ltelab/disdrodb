@@ -205,7 +205,7 @@ def test_check_archive_metadata_data_source(tmp_path):
 
 
 def test_check_archive_metadata_sensor_name(tmp_path):
-    sensor_names = available_sensor_names(product_level="l0")
+    sensor_names = available_sensor_names(product_level="L0A")
     base_dir = os.path.join(tmp_path, "DISDRODB")
 
     # Test 1 : create a correct metadata file

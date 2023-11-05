@@ -59,7 +59,7 @@ def get_data_format_dict(sensor_name: str) -> dict:
         Data format of each sensor variable.
     """
 
-    return read_config_file(sensor_name=sensor_name, product_level="l0", filename="raw_data_format.yml")
+    return read_config_file(sensor_name=sensor_name, product_level="L0A", filename="raw_data_format.yml")
 
 
 def get_sensor_logged_variables(sensor_name: str) -> list:
@@ -254,7 +254,7 @@ def get_l0b_cf_attrs_dict(sensor_name: str) -> dict:
         CF attributes of each sensor variable.
         For each variable, the 'units', 'description', and 'long_name' attributes are specified.
     """
-    return read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0b_variables_attrs.yml")
+    return read_config_file(sensor_name=sensor_name, product_level="L0A", filename="l0b_variables_attrs.yml")
 
 
 ####-------------------------------------------------------------------------.
@@ -418,7 +418,7 @@ def get_diameter_bins_dict(sensor_name: str) -> dict:
     dict
         sensor_name diameter bins information
     """
-    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="bins_diameter.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="L0A", filename="bins_diameter.yml")
     return d
 
 
@@ -507,7 +507,7 @@ def get_velocity_bins_dict(sensor_name: str) -> dict:
     dict
         Sensor_name diameter bins information
     """
-    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="bins_velocity.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="L0A", filename="bins_velocity.yml")
     return d
 
 
@@ -635,7 +635,7 @@ def get_l0a_dtype(sensor_name: str) -> dict:
     """
 
     # Note: This function could extract the info from l0a_encodings in future.
-    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0a_encodings.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="L0A", filename="l0a_encodings.yml")
     return d
 
 
@@ -654,7 +654,7 @@ def get_l0a_encodings_dict(sensor_name: str) -> dict:
     """
 
     # - l0a_encodings.yml currently specify only the dtype. This could be expanded in the future.
-    d = read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0a_encodings.yml")
+    d = read_config_file(sensor_name=sensor_name, product_level="L0A", filename="l0a_encodings.yml")
     return d
 
 
@@ -696,7 +696,7 @@ def get_l0b_encodings_dict(sensor_name: str) -> dict:
     dict
         Encoding to write L0B netCDFs
     """
-    encoding_dict = read_config_file(sensor_name=sensor_name, product_level="l0", filename="l0b_encodings.yml")
+    encoding_dict = read_config_file(sensor_name=sensor_name, product_level="L0A", filename="l0b_encodings.yml")
     # Ensure valid arguments for contiguous (unchunked) arrays
     encoding_dict = _ensure_valid_params_contiguous_arrays(encoding_dict)
     # Ensure chunksize is a list
