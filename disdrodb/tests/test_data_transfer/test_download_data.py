@@ -26,7 +26,9 @@ from disdrodb.data_transfer.download_data import (
     _download_file_from_url,
     _is_empty_directory,
 )
-from disdrodb.utils.yaml import write_yaml
+
+# from disdrodb.data_transfer.download_data import _download_station_data
+# from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 class TestIsEmptyDirectory:
@@ -82,39 +84,23 @@ def test_download_file_from_url(tmp_path):
     assert os.path.isfile(filepath)
 
 
-def create_fake_metadata_file(
-    tmp_path,
-    data_source="data_source",
-    campaign_name="campaign_name",
-    station_name="station_name",
-    with_url: bool = True,
-):
-    metadata_dir_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
-    metadata_dir_path.mkdir(parents=True)
-    metadata_fpath = os.path.join(metadata_dir_path, f"{station_name}.yml")
-    # Define fake metadata dictionary
-    yaml_dict = {}
-    yaml_dict["station_name"] = station_name
-    if with_url:
-        raw_github_path = "https://raw.githubusercontent.com"
-        disdro_repo_path = f"{raw_github_path}/ltelab/disdrodb/main"
-        test_data_path = "disdrodb/tests/data/test_data_download/station_files.zip"
-        disdrodb_data_url = f"{disdro_repo_path}/{test_data_path}"
-        yaml_dict["disdrodb_data_url"] = disdrodb_data_url
-    # Write fake yaml file in temp folder
-    write_yaml(yaml_dict, metadata_fpath)
-    assert os.path.exists(metadata_fpath)
-    return metadata_fpath
-
-
 # def test_download_station_data(tmp_path):
 #     # DUBUG
 #     # from pathlib import Path
 #     # tmp_path = Path("/tmp/empty_3")
 #     # os.makedirs(tmp_path)
 
-#     station_name = "station_name"
-#     metadata_fpath = create_fake_metadata_file(tmp_path, station_name=station_name, with_url=True)
+#     # Define metadata
+#     metadata_dict = {}
+#     raw_github_path = "https://raw.githubusercontent.com"
+#     disdro_repo_path = f"{raw_github_path}/ltelab/disdrodb/main"
+#     test_data_path = "disdrodb/tests/data/test_data_download/station_files.zip"
+#     disdrodb_data_url = f"{disdro_repo_path}/{test_data_path}"
+#     metadata_dict["disdrodb_data_url"] = disdrodb_data_url
+#     # Create metadata file
+#     base_dir = tmp_path / "DISDRODB"
+#     metadata_fpath = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict)
+#     # Download data
 #     station_dir_path = metadata_fpath.replace("metadata", "data").replace(".yml", "")
 #     _download_station_data(metadata_fpath=metadata_fpath, force=True)
 #     # Assert files in the zip file have been unzipped

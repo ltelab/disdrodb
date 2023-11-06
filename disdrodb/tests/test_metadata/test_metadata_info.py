@@ -18,67 +18,74 @@
 # -----------------------------------------------------------------------------.
 """Test Metadata Info Extraction."""
 
-import os
 
 from disdrodb.metadata.info import get_archive_metadata_key_value
-from disdrodb.utils.yaml import write_yaml
-
-
-def create_fake_metadata_file(
-    tmp_path, yaml_file_name, yaml_dict, data_source="data_source", campaign_name="campaign_name"
-):
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-    file_path = os.path.join(subfolder_path, yaml_file_name)
-    # create a fake yaml file in temp folder
-    write_yaml(yaml_dict, file_path)
-    assert os.path.exists(file_path)
-    return file_path
+from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 def test_get_archive_metadata_key_value(tmp_path):
+    base_dir = tmp_path / "DISDRODB"
+
     expected_result = []
 
-    base_dir = os.path.join(tmp_path, "DISDRODB")
     # Test 1 : one config file
-    yaml_file_name = "station_1.yml"
     expected_key = "key1"
     expected_value = "value1"
     data_source = "data_source"
     campaign_name = "campaign_name"
+    station_name = "station_name1"
 
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
+    metadata_dict = {expected_key: expected_value}
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    result = get_archive_metadata_key_value(key=expected_key, return_tuple=True, base_dir=base_dir)
+    expected_result.append((data_source, campaign_name, station_name, expected_value))
 
     assert sorted(result) == sorted(expected_result)
 
     # Test 2 : two config files
-    yaml_file_name = "station_2.yml"
     expected_key = "key1"
     expected_value = "value1"
     data_source = "data_source"
     campaign_name = "campaign_name"
-
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
+    station_name = "station_name2"
+    metadata_dict = {expected_key: expected_value}
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=True)
+    expected_result.append((data_source, campaign_name, station_name, expected_value))
 
     assert sorted(result) == sorted(expected_result)
+    assert len(result) == 2
 
     # Test 3: test tuple
-    yaml_file_name = "station_3.yml"
     expected_key = "key1"
     expected_value = "value1"
     data_source = "data_source"
     campaign_name = "campaign_name"
-    yaml_dict = {expected_key: expected_value}
-    create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=False)
-    expected_result.append((data_source, campaign_name, os.path.splitext(yaml_file_name)[0], expected_value))
-    expected_result = [item[3] for item in expected_result]
+    station_name = "station_name3"
 
-    assert sorted(result) == sorted(expected_result)
+    metadata_dict = {expected_key: expected_value}
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=True)
+    values = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=False)
+    expected_result.append((data_source, campaign_name, station_name, expected_value))
+    expected_values = [item[3] for item in result]
+
+    assert sorted(values) == sorted(expected_values)

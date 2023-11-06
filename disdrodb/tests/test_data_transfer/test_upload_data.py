@@ -86,7 +86,7 @@ def test_station_upload(tmp_path, requests_mock, station_url, force):
     metadata_dict = {}
     metadata_dict["disdrodb_data_url"] = station_url
 
-    create_fake_metadata_file(
+    _ = create_fake_metadata_file(
         base_dir=base_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
@@ -141,7 +141,7 @@ def test_station_upload_raise_error(tmp_path, requests_mock):
     metadata_dict = {}
     metadata_dict["disdrodb_data_url"] = "existing_url"
 
-    create_fake_metadata_file(
+    _ = create_fake_metadata_file(
         base_dir=base_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,

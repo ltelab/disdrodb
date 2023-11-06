@@ -29,23 +29,9 @@ import xarray as xr
 
 from disdrodb import __root_path__
 from disdrodb.l0 import io
-from disdrodb.utils.yaml import write_yaml
+from disdrodb.tests.conftest import create_fake_metadata_file
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
-
-
-def create_fake_metadata_file(
-    tmp_path, yaml_file_name, yaml_dict, data_source="data_source", campaign_name="campaign_name"
-):
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-    file_path = os.path.join(subfolder_path, yaml_file_name)
-    # create a fake yaml file in temp folder
-    write_yaml(yaml_dict, file_path)
-    assert os.path.exists(file_path)
-
-    return file_path
 
 
 def test_check_is_processed_dir(tmp_path):
@@ -63,17 +49,17 @@ def test_check_processed_dir(tmp_path):
 
 
 def test_create_initial_directory_structure(tmp_path, mocker):
+    base_dir = tmp_path / "DISDRODB"
     station_name = "station_1"
-    yaml_dict = {}
     data_source = "data_source"
     campaign_name = "CAMPAIGN_NAME"
-
-    create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=f"{station_name}.yml",
-        yaml_dict=yaml_dict,
+    metadata_dict = {}
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     raw_dir = os.path.join(tmp_path, "DISDRODB", "Raw", "data_source", campaign_name)
@@ -99,17 +85,17 @@ def test_create_initial_directory_structure(tmp_path, mocker):
 
 
 def test_create_directory_structure(tmp_path, mocker):
+    base_dir = tmp_path / "DISDRODB"
     station_name = "station_1"
-    yaml_dict = {}
     data_source = "data_source"
     campaign_name = "CAMPAIGN_NAME"
-
-    create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=f"{station_name}.yml",
-        yaml_dict=yaml_dict,
+    metadata_dict = {}
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     os.path.join(tmp_path, "DISDRODB", "Raw", "data_source", campaign_name)
@@ -141,21 +127,19 @@ def test_create_directory_structure(tmp_path, mocker):
 
 
 def test_check_raw_dir_input(tmp_path):
-    base_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = tmp_path / "DISDRODB"
     station_name = "station_1"
-    yaml_dict = {}
     data_source = "data_source"
     campaign_name = "campaign_name"
-
-    create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=f"{station_name}.yml",
-        yaml_dict=yaml_dict,
+    metadata_dict = {}
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
-
-    io._check_raw_dir_input(base_dir)
+    io._check_raw_dir_input(str(base_dir))
 
 
 def test_check_directory_exist():

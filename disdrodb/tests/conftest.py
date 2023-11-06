@@ -44,6 +44,9 @@ def create_fake_metadata_file(
     # Write metadata
     write_yaml(metadata_dict, metadata_fpath)
 
+    # Return filepath
+    return str(metadata_fpath)
+
 
 @pytest.fixture
 def create_test_config_files(request):

@@ -20,21 +20,10 @@
 
 import os
 
-from disdrodb.metadata.io import _get_list_all_metadata, _get_list_metadata_with_data
-from disdrodb.utils.yaml import write_yaml
+import pytest
 
-
-def create_fake_metadata_file(
-    tmp_path, yaml_file_name, yaml_dict, data_source="data_source", campaign_name="campaign_name"
-):
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-    file_path = os.path.join(subfolder_path, yaml_file_name)
-    # create a fake yaml file in temp folder
-    write_yaml(yaml_dict, file_path)
-    assert os.path.exists(file_path)
-    return file_path
+from disdrodb.metadata.io import _get_list_all_metadata, _get_list_metadata_with_data, get_list_metadata
+from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 def create_fake_data_file(tmp_path, data_source="data_source", campaign_name="campaign_name", station_name=""):
@@ -52,74 +41,80 @@ def create_fake_data_file(tmp_path, data_source="data_source", campaign_name="ca
 
 
 def test__get_list_all_metadata(tmp_path):
-    excepted_result = list()
-    base_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = tmp_path / "DISDRODB"
+
+    expected_result = []
+
     # Test 1 : one metadata file
-    yaml_file_name = "station_1.yml"
     key_name = "key1"
-    yaml_dict = {key_name: "value1"}
+    metadata_dict = {key_name: "value1"}
     data_source = "data_source"
     campaign_name = "campaign_name"
+    station_name = "station_1"
 
-    fake_metadata_file_path = create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=yaml_file_name,
-        yaml_dict=yaml_dict,
+    metadata_filepath = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
 
-    excepted_result.append(fake_metadata_file_path)
-
+    expected_result.append(metadata_filepath)
     result = _get_list_all_metadata(
-        base_dir=base_dir,
+        base_dir=str(base_dir),
         data_sources=data_source,
         campaign_names=campaign_name,
     )
 
-    assert excepted_result == result
+    assert expected_result == result
 
     # Test 2 : two metadata files
-    yaml_file_name = "station_2.yml"
-    fake_metadata_file_path = create_fake_metadata_file(tmp_path, yaml_file_name, yaml_dict, data_source, campaign_name)
-    excepted_result.append(fake_metadata_file_path)
-    result = _get_list_all_metadata(
+    station_name = "station_2"
+    metadata_filepath = create_fake_metadata_file(
         base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    expected_result.append(metadata_filepath)
+    result = _get_list_all_metadata(
+        base_dir=str(base_dir),
         data_sources=data_source,
         campaign_names=campaign_name,
     )
 
-    assert excepted_result == excepted_result
+    assert expected_result == expected_result
 
 
-def test_get_list_metadata_with_data(tmp_path):
-    expected_result = list()
+def test__get_list_metadata_with_data(tmp_path):
+    expected_result = []
 
-    base_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = tmp_path / "DISDRODB"
+
     # Test 1 : one metadata file + one data file
-    station_name = "station_1"
-    yaml_file_name = f"{station_name}.yml"
-    key_name = "key1"
-    yaml_dict = {key_name: "value1"}
     data_source = "data_source"
     campaign_name = "campaign_name"
+    station_name = "station_1"
 
-    fake_metadata_file_path = create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=yaml_file_name,
-        yaml_dict=yaml_dict,
+    key_name = "key1"
+    metadata_dict = {key_name: "value1"}
+    metadata_filepath = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
-
-    expected_result.append(fake_metadata_file_path)
-
     create_fake_data_file(
         tmp_path=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
+    expected_result.append(metadata_filepath)
+
     result = _get_list_metadata_with_data(
-        base_dir=base_dir,
+        base_dir=str(base_dir),
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -128,35 +123,31 @@ def test_get_list_metadata_with_data(tmp_path):
 
     # Test 1 : two metadata files + one data file
     station_name = "station_2"
-    yaml_file_name = f"{station_name}.yml"
     key_name = "key1"
-    yaml_dict = {key_name: "value1"}
+    metadata_dict = {key_name: "value1"}
 
-    fake_metadata_file_path = create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=yaml_file_name,
-        yaml_dict=yaml_dict,
+    metadata_filepath = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
-
     result = _get_list_metadata_with_data(
-        base_dir=base_dir,
+        base_dir=str(base_dir),
         data_sources=data_source,
         campaign_names=campaign_name,
     )
-
     assert result == expected_result
 
     # Test 3 : two metadata files + two data files
     create_fake_data_file(
         tmp_path=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
-
-    expected_result.append(fake_metadata_file_path)
+    expected_result.append(metadata_filepath)
 
     result = _get_list_metadata_with_data(
-        base_dir=base_dir,
+        base_dir=str(base_dir),
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -164,40 +155,51 @@ def test_get_list_metadata_with_data(tmp_path):
     assert sorted(result) == sorted(expected_result)
 
 
-#
-# def test_get_list_metadata_file(tmp_path):
-#     expected_result = []
+def test_get_list_metadata_file(tmp_path):
+    from pathlib import Path
 
-#     # test 1 :
-#     # - one config file with url
-#     data_source = "data_source"
-#     campaign_name = "campaign_name"
-#     station_name = "station_name"
-#     create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name)
-#     base_dir = str(os.path.join(tmp_path, "DISDRODB"))
-#     result = get_list_metadata(base_dir, data_source,
-#                                campaign_name, station_name, False)
-#     testing_path = os.path.join(
-#         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
-#     )
-#     expected_result.append(testing_path)
-#     assert expected_result == result
+    tmp_path = Path("/tmp/test_test")
+    base_dir = tmp_path / "DISDRODB"
 
-#     # test 2 :
-#     # - downalod_data function without parameter
-#     result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
-#     assert expected_result == result
+    data_source = "data_source"
+    campaign_name = "campaign_name"
+    station_name = "station_name"
+    metadata_filepath = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict={},
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
-#     # test 3 :
-#     # - one config file with url
-#     # - one config file without url
-#     data_source = "data_source2"
-#     campaign_name = "campaign_name"
-#     station_name = "station_name"
-#     create_fake_metadata_file(tmp_path, data_source, campaign_name, station_name, with_url=False)
-#     result = get_list_metadata(str(os.path.join(tmp_path, "DISDRODB")), with_stations_data=False)
-#     testing_path = os.path.join(
-#         tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
-#     )
-#     expected_result.append(testing_path)
-#     assert sorted(expected_result) == sorted(result)
+    # Test 1 : Retrieve specific station name
+    result = get_list_metadata(
+        base_dir=str(base_dir),
+        data_sources=data_source,
+        campaign_names=campaign_name,
+        station_names=station_name,
+        with_stations_data=False,
+    )
+    assert result == [metadata_filepath]
+
+    # Test 2: Retrieve all metadata
+    result = get_list_metadata(base_dir=str(base_dir), with_stations_data=False)
+    assert result == [metadata_filepath]
+
+    # Test 3: Retrieve all metadata with data
+    with pytest.raises(ValueError):  # raise error if None
+        get_list_metadata(base_dir=str(base_dir), with_stations_data=True)
+
+    # Test 4: Check return [] if no metadata
+    result = get_list_metadata(base_dir=str(base_dir), data_sources="unexisting", with_stations_data=False)
+    assert result == []
+
+    result = get_list_metadata(base_dir=str(base_dir), station_names="unexisting", with_stations_data=False)
+    assert result == []
+
+    result = get_list_metadata(base_dir=str(base_dir), campaign_names="unexisting", with_stations_data=False)
+    assert result == []
+
+    # Test 5: Check by station names
+    result = get_list_metadata(base_dir=str(base_dir), station_names=station_name, with_stations_data=False)
+    assert [metadata_filepath] == result

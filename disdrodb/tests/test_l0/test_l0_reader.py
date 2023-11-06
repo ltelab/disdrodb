@@ -19,7 +19,6 @@
 """Test DISDRODB L0 readers routines."""
 
 import inspect
-import os
 
 import pytest
 
@@ -33,24 +32,11 @@ from disdrodb.l0.l0_reader import (
     get_reader_function_from_metadata_key,
     get_station_reader_function,
 )
-from disdrodb.utils.yaml import write_yaml
+from disdrodb.tests.conftest import create_fake_metadata_file
 
 # Some test are based on the following reader:
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "EPFL_2009"
-
-
-def create_fake_metadata_file(
-    tmp_path, yaml_file_name, yaml_dict, data_source="data_source", campaign_name="campaign_name"
-):
-    subfolder_path = os.path.join(tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata")
-    if not os.path.exists(subfolder_path):
-        os.makedirs(subfolder_path, exist_ok=True)
-    file_path = os.path.join(subfolder_path, yaml_file_name)
-    # create a fake yaml file in temp folder
-    write_yaml(yaml_dict, file_path)
-    assert os.path.exists(file_path)
-    return file_path
 
 
 def test_available_readers():
@@ -77,18 +63,19 @@ def test_check_metadata_reader():
 
 
 def test_get_station_reader_function(tmp_path):
-    base_dir = os.path.join(tmp_path, "DISDRODB")
-    station_name = "station_1"
-    yaml_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
+    base_dir = tmp_path / "DISDRODB"
     data_source = "data_source"
     campaign_name = "campaign_name"
+    station_name = "station_name"
 
-    create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=f"{station_name}.yml",
-        yaml_dict=yaml_dict,
+    metadata_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
+
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     result = get_station_reader_function(
@@ -101,19 +88,22 @@ def test_get_station_reader_function(tmp_path):
 
 
 def test_get_reader_from_metadata(tmp_path):
-    station_name = "station_1"
-    yaml_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
+    base_dir = tmp_path / "DISDRODB"
     data_source = DATA_SOURCE
     campaign_name = CAMPAIGN_NAME
+    station_name = "station_name"
+
+    metadata_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
     reader_data_source_name = f"{DATA_SOURCE}/{CAMPAIGN_NAME}"
 
-    create_fake_metadata_file(
-        tmp_path=tmp_path,
-        yaml_file_name=f"{station_name}.yml",
-        yaml_dict=yaml_dict,
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
+        station_name=station_name,
     )
+
     result = get_reader_function_from_metadata_key(reader_data_source_name=reader_data_source_name)
     assert callable(result)
 
