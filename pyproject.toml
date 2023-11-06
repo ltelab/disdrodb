@@ -71,8 +71,9 @@ disdrodb_run_l0b_concat="disdrodb.l0.scripts.run_disdrodb_l0b_concat:run_disdrod
 disdrodb_run_l0b="disdrodb.l0.scripts.run_disdrodb_l0b:run_disdrodb_l0b"
 disdrodb_run_l0="disdrodb.l0.scripts.run_disdrodb_l0:run_disdrodb_l0"
 # Data transfer
-disdrodb_download_archive="disdrodb.data_transfer.scripts.download_disdrodb_archive:download_disdrodb_archive"
-disdrodb_upload_archive="disdrodb.data_transfer.scripts.upload_disdrodb_archive:upload_disdrodb_archive"
+disdrodb_download_archive="disdrodb.data_transfer.scripts.disdrodb_download_archive:disdrodb_download_archive"
+disdrodb_upload_archive="disdrodb.data_transfer.scripts.disdrodb_upload_archive:disdrodb_upload_archive"
+disdrodb_upload_station="disdrodb.data_transfer.scripts.disdrodb_upload_station:disdrodb_upload_station"
 # Metadata archive
 disdrodb_check_metadata_archive="disdrodb.metadata.scripts.check_metadata_archive:check_metadata_archive"
 

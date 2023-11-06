@@ -12,6 +12,38 @@ import pytest
 from disdrodb import __root_path__
 from disdrodb.utils.yaml import write_yaml
 
+# from pathlib import Path
+# tmp_path = Path("/tmp/")
+
+
+def create_fake_metadata_file(
+    base_dir,
+    metadata_dict={},
+    data_source="data_source",
+    campaign_name="campaign_name",
+    station_name="station_name",
+):
+    # Define metadata directory
+    metadata_dir = base_dir / "Raw" / data_source / campaign_name / "metadata"
+
+    # Create if does not exist
+    if not metadata_dir.exists():
+        metadata_dir.mkdir(parents=True)
+
+    # Define metadata filepath
+    metadata_fpath = metadata_dir / f"{station_name}.yml"
+
+    # Define defaults fields
+    if "data_source" not in metadata_dict:
+        metadata_dict["data_source"] = data_source
+    if "campaign_name" not in metadata_dict:
+        metadata_dict["campaign_name"] = campaign_name
+    if "station_name" not in metadata_dict:
+        metadata_dict["station_name"] = station_name
+
+    # Write metadata
+    write_yaml(metadata_dict, metadata_fpath)
+
 
 @pytest.fixture
 def create_test_config_files(request):

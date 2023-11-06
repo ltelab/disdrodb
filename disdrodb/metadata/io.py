@@ -26,27 +26,32 @@ from disdrodb.configs import get_base_dir
 from disdrodb.utils.yaml import read_yaml
 
 
-def read_station_metadata(product, data_source, campaign_name, station_name, base_dir=None):
-    """Open the station metadata YAML file into a dictionary.
+def get_metadata_filepath(data_source, campaign_name, station_name, base_dir=None, product="RAW", check_exist=True):
+    """Return the filepath of the station metadata.
 
     Parameters
     ----------
-    data_sources : str or list of str
-        Name of data source of interest.
-        The name must be UPPER CASE.
-    campaign_names : str
-        Name of the campaign of interest.
-        The name must be UPPER CASE.
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
-        Station name of interest.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        The name of the station.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    product : str, optional
+        The DISDRODB product in which to search for the metadata file.
+        The default is "RAW".
+    check_exist : bool, optional
+        Whether to check if the campaign directory exists. The default is True.
 
     Returns
     -------
-    metadata: dictionary
-        The station metadata dictionary
+    metadata_fpath : str
+        Filepath of the station metadata.
 
     """
     base_dir = get_base_dir(base_dir)
@@ -56,11 +61,48 @@ def read_station_metadata(product, data_source, campaign_name, station_name, bas
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exist=True,
+        check_exist=check_exist,
     )
     # Define metadata filepath
     metadata_fpath = os.path.join(campaign_dir, "metadata", f"{station_name}.yml")
+    return metadata_fpath
 
+
+def read_station_metadata(data_source, campaign_name, station_name, base_dir=None, product="RAW"):
+    """Open the station metadata YAML file into a dictionary.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    product : str, optional
+        The DISDRODB product in which to search for the metadata file.
+        The default is "RAW".
+
+    Returns
+    -------
+    metadata: dictionary
+        The station metadata dictionary
+
+    """
+    # Retrieve metadata filepath
+    metadata_fpath = get_metadata_filepath(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        product=product,
+        check_exist=True,
+    )
     # Check the file exists
     if not os.path.exists(metadata_fpath):
         raise ValueError(f"The metadata file for {station_name} at {metadata_fpath} does not exists.")

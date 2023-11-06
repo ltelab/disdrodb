@@ -137,8 +137,6 @@ def _check_metadata_sensor_name(metadata):
 
 def check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None):
     """Check DISDRODB metadata compliance."""
-    from disdrodb.l0.l0_reader import _check_metadata_reader
-
     metadata = read_station_metadata(
         base_dir=base_dir,
         product="RAW",

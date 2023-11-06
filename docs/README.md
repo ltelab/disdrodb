@@ -19,9 +19,7 @@ sphinx-build -b html source build
 ```
 
 
-
 The output of the previous command should be checked for warnings and errors. In case of any changes made to the code such as adding new classes or
-functions, it is necessary to regenerate the disdrodb documentation
-files before running the command mentioned above :
+functions, it is necessary to regenerate the disdrodb documentation files before running the command mentioned above :
 
     sphinx-apidoc -f -o source/api .. ../setup.py

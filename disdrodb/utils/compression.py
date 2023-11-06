@@ -231,3 +231,25 @@ def _compress_file_bzip2(file_path: str, compressed_file_path: str) -> None:
     with open(file_path, "rb") as f_in:
         with bz2.open(compressed_file_path, "wb") as f_out:
             f_out.writelines(f_in)
+
+
+def archive_station_data(metadata_fpath: str) -> str:
+    """Archive station data into a zip file (based on metadata filepath).
+
+    It create a zip file into a temporary directory !
+
+    Parameters
+    ----------
+    metadata_fpath: str
+        Metadata file path.
+
+    Returns
+    -------
+    station_zip_fpath
+        Filepath of the zip file containing the station's data.
+    """
+
+    station_data_path = metadata_fpath.replace("metadata", "data")
+    station_data_path = os.path.splitext(station_data_path)[0]  # remove trailing ".yml"
+    station_zip_fpath = _zip_dir(station_data_path)
+    return station_zip_fpath

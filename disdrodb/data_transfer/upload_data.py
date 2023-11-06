@@ -18,19 +18,57 @@
 # -----------------------------------------------------------------------------.
 """Routines to upload data to the DISDRODB Decentralized Data Archive."""
 
-import os
 from typing import List, Optional
 
 import click
 
-from disdrodb.metadata import get_list_metadata
-from disdrodb.utils.compression import _zip_dir
-from disdrodb.utils.yaml import read_yaml, write_yaml
-from disdrodb.utils.zenodo import _create_zenodo_deposition, _upload_file_to_zenodo
+from disdrodb.data_transfer.zenodo import upload_archive_to_zenodo, upload_station_to_zenodo
+from disdrodb.metadata import get_list_metadata, get_metadata_filepath
+from disdrodb.utils.yaml import read_yaml
 
 
-def click_upload_option(function: object):
-    """Click command line options for DISDRODB archive upload transfer.
+def click_station_arguments(function: object):
+    """Click command line arguments for L0 processing of a station.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.argument("station_name", metavar="<station>")(function)
+    function = click.argument("campaign_name", metavar="<campaign_name>")(function)
+    function = click.argument("data_source", metavar="<data_source>")(function)
+    return function
+
+
+def click_upload_options(function: object):
+    function = click.option(
+        "--platform",
+        type=click.Choice(["zenodo"], case_sensitive=False),
+        show_default=True,
+        default="",
+        help="Name of remote platform. If not provided (None), the default platform is Zenodo.",
+    )(function)
+    function = click.option(
+        "-f",
+        "--force",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Force uploading even if data already exists on another remote location.",
+    )(function)
+    function = click.option(
+        "--base_dir",
+        type=str,
+        show_default=True,
+        default=None,
+        help="DISDRODB root directory",
+    )(function)
+    return function
+
+
+def click_upload_archive_options(function: object):
+    """Click command line options for DISDRODB archive upload.
 
     Parameters
     ----------
@@ -66,153 +104,90 @@ def click_upload_option(function: object):
     Multiple station names  can be specified by separating them with spaces.
     """,
     )(function)
-    function = click.option(
-        "--platform",
-        type=click.Choice(["zenodo"], case_sensitive=False),
-        show_default=True,
-        default="",
-        help="Name of remote platform. If not provided (None), the default platform is Zenodo.",
-    )(function)
-    function = click.option(
-        "-f",
-        "--force",
-        type=bool,
-        show_default=True,
-        default=True,
-        help="Force uploading even if data already exists on another remote location.",
-    )(function)
-    function = click.option(
-        "--base_dir",
-        type=str,
-        show_default=True,
-        default=None,
-        help="DISDRODB root directory",
-    )(function)
     return function
 
 
-def _filter_already_uploaded(metadata_fpaths: List[str]) -> List[str]:
-    """Filter metadata files that already have a remote url specified."""
+def _check_if_upload(metadata_fpath, force):
+    """Check if data must be uploaded."""
+    if not force:
+        disdrodb_data_url = read_yaml(metadata_fpath).get("disdrodb_data_url", "")
+        if isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 1:
+            raise ValueError(f"'force' is False and {metadata_fpath} has already a 'disdrodb_data_url' specified.")
 
+
+def _filter_already_uploaded(metadata_fpaths: List[str], force: bool) -> List[str]:
+    """Filter metadata files that already have a remote url specified."""
     filtered = []
     for metadata_fpath in metadata_fpaths:
-        metadata_dict = read_yaml(metadata_fpath)
-        if metadata_dict.get("disdrodb_data_url"):
-            print(f"{metadata_fpath} already has a remote url specified. Skipping.")
-            continue
-        filtered.append(metadata_fpath)
+        try:
+            _check_if_upload(metadata_fpath, force=force)
+            filtered.append(metadata_fpath)
+        except Exception:
+            msg = (
+                f"'force' is False and {metadata_fpath} has already a 'disdrodb_data_url' specified. Skipping data"
+                " upload ..."
+            )
+            print(msg)
     return filtered
 
 
-def _upload_data_to_zenodo(metadata_fpaths: List[str], sandbox: bool = False) -> None:
-    """Upload data to Zenodo Sandbox.
-
-    Parameters
-    ----------
-    metadata_fpaths: list of str
-        List of metadata file paths.
-    sandbox: bool
-        If True, upload to Zenodo sandbox for testing purposes.
-    """
-
-    deposition_id, bucket_url = _create_zenodo_deposition(sandbox)
-    zenodo_host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
-    deposition_url = f"https://{zenodo_host}/deposit/{deposition_id}"
-    print(f"Zenodo deposition created: {deposition_url}.")
-
-    for metadata_fpath in metadata_fpaths:
-        remote_path = _upload_station_data_to_zenodo(metadata_fpath, bucket_url)
-        _update_metadata_with_zenodo_url(metadata_fpath, deposition_id, remote_path, sandbox)
-
-    print("Data uploaded. Please review your deposition an publish it when ready.")
-
-
-def _generate_data_remote_path(metadata_fpath: str) -> str:
-    """Generate data remote path from a metadata path.
-
-    metadata_fpath has the form "base_dir/Raw/data_source/campaign_name/metadata/station_name.yml".
-    The remote path has the form "data_source/campaign_name/station_name".
-
-    Parameters
-    ----------
-    metadata_fpath: str
-        Metadata file path.
-    """
-
-    remote_path = os.path.normpath(metadata_fpath)
-    # Remove up to "Raw/"
-    remote_path = remote_path.split("Raw" + os.sep)[1]
-    # Remove "/metadata"
-    remote_path = remote_path.replace(os.sep + "metadata", "")
-    # Remove trailing ".yml"
-    remote_path = os.path.splitext(remote_path)[0]
-
-    return remote_path
-
-
-def _upload_station_data_to_zenodo(metadata_fpath: str, bucket_url: str) -> str:
-    """Zip and upload station data to Zenodo.
-
-    Update the metadata file with the remote url, and zip the data directory before uploading.
-
-    Parameters
-    ----------
-    metadata_fpath: str
-        Metadata file path.
-    bucket_url: str
-        Zenodo bucket url.
-    """
-
-    remote_path = _generate_data_remote_path(metadata_fpath)
-    remote_url = f"{bucket_url}/{remote_path}.zip"
-    temp_zip_path = _archive_station_data(metadata_fpath)
-
-    _upload_file_to_zenodo(temp_zip_path, remote_url)
-
-    os.remove(temp_zip_path)
-
-    return remote_path
-
-
-def _archive_station_data(metadata_fpath: str) -> str:
-    """Archive station data.
-
-    Parameters
-    ----------
-    metadata_fpath: str
-        Metadata file path.
-    """
-
-    data_path = metadata_fpath.replace("metadata", "data")
-    data_path = os.path.splitext(data_path)[0]  # remove trailing ".yml"
-    temp_zip_path = _zip_dir(data_path)
-
-    return temp_zip_path
-
-
-def _update_metadata_with_zenodo_url(
-    metadata_fpath: str, deposition_id: int, remote_path: str, sandbox: bool = False
+def upload_station(
+    data_source: str,
+    campaign_name: str,
+    station_name: str,
+    platform: Optional[str] = None,
+    force: bool = False,
+    base_dir: Optional[str] = None,
 ) -> None:
-    """Update metadata with Zenodo zip file url.
+    """
+    Upload data from a single DISDRODB station on a remote repository.
+
+    This function also automatically update the disdrodb_data url in the metadata file.
 
     Parameters
     ----------
-    metadata_fpath: str
-        Metadata file path.
-    deposition_id: int
-        Zenodo deposition id.
-    remote_path: str
-        Remote path of the zip file.
-    sandbox: bool
-        If True, set reference to Zenodo sandbox for testing purposes.
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    platform: str, optional
+        Name of the remote platform.
+        If not provided (None), the default platform is Zenodo.
+        The default is platform=None.
+    force: bool, optional
+        If True, upload the data and overwrite the disdrodb_data_url.
+        The default is force=False.
+
     """
-    zenodo_host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
-    metadata_dict = read_yaml(metadata_fpath)
-    metadata_dict["disdrodb_data_url"] = f"https://{zenodo_host}/record/{deposition_id}/files/{remote_path}.zip"
-    write_yaml(metadata_dict, metadata_fpath)
+    # Define metadata_fpath
+    metadata_fpath = get_metadata_filepath(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        product="RAW",
+    )
+    # Check if data must be uploaded
+    _check_if_upload(metadata_fpath, force=force)
+
+    # Upload the data
+    if platform == "zenodo":
+        upload_station_to_zenodo(metadata_fpath, sandbox=False)
+
+    elif platform == "zenodo.sandbox":  # Only for testing purposes, not available through CLI
+        upload_station_to_zenodo(metadata_fpath, sandbox=True)
+    else:
+        raise NotImplementedError(f"Data upload for platform {platform} is not implemented.")
 
 
-def upload_disdrodb_archives(
+def upload_archive(
     platform: Optional[str] = None,
     force: bool = False,
     base_dir: Optional[str] = None,
@@ -249,22 +224,27 @@ def upload_disdrodb_archives(
         If not provided (None), all stations will be uploaded.
         The default is station_name=None.
     """
-
+    # Get list metadata
     metadata_fpaths = get_list_metadata(
         **kwargs,
         base_dir=base_dir,
         with_stations_data=True,
     )
-
+    # If force=False, keep only metadata without disdrodb_data_url
     if not force:
-        metadata_fpaths = _filter_already_uploaded(metadata_fpaths)
+        metadata_fpaths = _filter_already_uploaded(metadata_fpaths, force=force)
 
+    # Check there are some stations to upload
     if len(metadata_fpaths) == 0:
-        print("There is no data fulfilling the criteria.")
+        print("There is no remaining data to upload.")
         return
 
+    # Upload the data
     if platform == "zenodo":
-        _upload_data_to_zenodo(metadata_fpaths)
+        upload_archive_to_zenodo(metadata_fpaths, sandbox=False)
 
-    elif platform == "sandbox.zenodo":  # Only for testing purposes, not available through CLI
-        _upload_data_to_zenodo(metadata_fpaths, sandbox=True)
+    elif platform == "zenodo.sandbox":  # Only for testing purposes, not available through CLI
+        upload_archive_to_zenodo(metadata_fpaths, sandbox=True)
+    else:
+        valid_platform = ["zenodo", "zenodo.sandbox"]
+        raise NotImplementedError(f"Invalid platform {platform}. Valid platforms are {valid_platform}.")

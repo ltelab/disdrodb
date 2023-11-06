@@ -88,7 +88,7 @@ def click_download_option(function: object):
     return function
 
 
-def download_disdrodb_archives(
+def download_archive(
     data_sources: Optional[Union[str, List[str]]] = None,
     campaign_names: Optional[Union[str, List[str]]] = None,
     station_names: Optional[Union[str, List[str]]] = None,

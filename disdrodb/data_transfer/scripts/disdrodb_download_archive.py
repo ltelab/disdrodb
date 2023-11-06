@@ -27,21 +27,21 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 @click.command()
 @click_download_option
-def download_disdrodb_archive(
+def disdrodb_download_archive(
     base_dir=None,
     data_sources=None,
     campaign_names=None,
     station_names=None,
     force=True,
 ):
-    from disdrodb.data_transfer.download_data import download_disdrodb_archives
+    from disdrodb.data_transfer.download_data import download_archive
     from disdrodb.utils.scripts import parse_arg_to_list
 
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
-    download_disdrodb_archives(
+    download_archive(
         base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,

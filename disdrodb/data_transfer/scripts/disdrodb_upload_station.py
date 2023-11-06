@@ -16,33 +16,35 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB donfig utility.
+"""Routines to upload data of a station to the DISDRODB Decentralized Data Archive."""
 
-See https://donfig.readthedocs.io/en/latest/configuration.html for more info.
-"""
+import sys
 
-from donfig import Config
+import click
 
-from disdrodb.configs import read_disdrodb_configs
+from disdrodb.data_transfer.upload_data import click_station_arguments, click_upload_options
 
-
-def _get_disdrodb_default_configs():
-    """Retrieve the default DISDRODB settings from the .config_disdrodb.yml file."""
-    try:
-        config_dict = read_disdrodb_configs()
-        config_dict = {key: value for key, value in config_dict.items() if value is not None}
-    except Exception:
-        config_dict = {}
-    return config_dict
+sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
-_CONFIG_DEFAULTS = {
-    "base_dir": None,
-    "zenodo_sandbox_token": None,
-    "zenodo_token": None,
-}
-_CONFIG_DEFAULTS.update(_get_disdrodb_default_configs())
+@click.command()
+@click_station_arguments
+@click_upload_options
+def disdrodb_upload_station(
+    data_source,
+    campaign_name,
+    station_name,
+    platform=None,
+    base_dir=None,
+    force=False,
+):
+    from disdrodb.data_transfer.upload_data import upload_station
 
-_CONFIG_PATHS = []
-
-config = Config("disdrodb", defaults=[_CONFIG_DEFAULTS], paths=_CONFIG_PATHS)
+    upload_station(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        platform=platform,
+        force=force,
+    )

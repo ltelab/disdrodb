@@ -120,7 +120,7 @@ Then, run the following command to download the data you just uploaded:
 
 .. code:: bash
    export DISDRODB_BASE_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited/DISDRODB"
-   download_disdrodb_archive  --data_sources <your_data_source> --campaign_names <your_new_campaign> --force true
+   disdrodb_download_archive  --data_sources <your_data_source> --campaign_names <your_new_campaign> --force true
 
 ::note
    Be sure to specify a ``DISDRODB_BASE_DIR`` environment variable that points to a copy of the metadata archive you edited
