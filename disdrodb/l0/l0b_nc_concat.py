@@ -22,6 +22,8 @@ import glob
 import logging
 import os
 
+from disdrodb.api.io import get_disdrodb_path
+from disdrodb.configs import get_base_dir
 from disdrodb.l0.io import get_l0b_dir, get_l0b_fpath
 from disdrodb.utils.logger import (
     close_logger,
@@ -37,7 +39,7 @@ from disdrodb.utils.scripts import _execute_cmd
 logger = logging.getLogger(__name__)
 
 
-def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose=False):
+def concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose=False):
     """Concatenate all L0B netCDF files into a single netCDF file.
 
     The single netCDF file is saved at <processed_dir>/L0B.
@@ -100,6 +102,39 @@ def _concatenate_netcdf_files(processed_dir, station_name, remove=False, verbose
 
     # Return the dataset
     return None
+
+
+####---------------------------------------------------------------------------.
+
+
+def run_l0b_concat_station(
+    # Station arguments
+    data_source,
+    campaign_name,
+    station_name,
+    # L0B concat options
+    remove_l0b=False,
+    verbose=True,
+    base_dir: str = None,
+):
+    """Define the L0B file concatenation of a station."""
+    # Retrieve processed_dir
+    base_dir = get_base_dir(base_dir)
+    processed_dir = get_disdrodb_path(
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exist=True,
+    )
+
+    # Run concatenation
+    concatenate_netcdf_files(
+        processed_dir=processed_dir,
+        station_name=station_name,
+        remove=remove_l0b,
+        verbose=verbose,
+    )
 
 
 ####---------------------------------------------------------------------------.

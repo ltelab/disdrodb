@@ -18,7 +18,7 @@ import sys
 
 import click
 
-from disdrodb.l0.l0_processing import (
+from disdrodb.l0.routines import (
     click_l0_processing_options,
     click_l0_station_arguments,
 )
@@ -44,9 +44,8 @@ def run_disdrodb_l0a_station(
     debugging_mode: bool = False,
     base_dir: str = None,
 ):
-    """Run the L0A processing of a specific DISDRODB station from the terminal.
-
-    Note: this function is used also for processing raw netCDF into L0B format.
+    """
+    Run the L0A processing of a specific DISDRODB station from the terminal.
 
     Parameters
     ----------
@@ -76,19 +75,17 @@ def run_disdrodb_l0a_station(
         If True, it reduces the amount of data to process.
         It processes just the first 3 raw data files.
         The default is False.
-    base_dir : str \n
-        Base directory of DISDRODB \n
-        Format: <...>/DISDRODB \n
-        If not specified, uses path specified in the DISDRODB active configuration. \n
+    base_dir : str
+        Base directory of DISDRODB.
+        Format: <...>/DISDRODB
+        If not specified, uses path specified in the DISDRODB active configuration.
     """
     import os
 
     import dask
     from dask.distributed import Client, LocalCluster
 
-    from disdrodb.api.io import get_disdrodb_path
-    from disdrodb.configs import get_base_dir
-    from disdrodb.l0.l0_reader import get_station_reader_function
+    from disdrodb.l0.l0_processing import run_l0a_station
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
@@ -108,42 +105,20 @@ def run_disdrodb_l0a_station(
         )
         Client(cluster)
     # -------------------------------------------------------------------------.
-    # Get reader
-    base_dir = get_base_dir(base_dir)
-    reader = get_station_reader_function(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    # Define raw_dir and process_dir
-    raw_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-    processed_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product="L0A",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exist=False,
-    )
 
-    # Run L0A processing
-    # --> The reader call the run_l0a within the custom defined reader function
-    # --> For the special case of raw netCDF data, it calls the run_l0b_from_nc function
-    reader(
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
+    run_l0a_station(
+        # Station arguments
+        data_source=data_source,
+        campaign_name=campaign_name,
         station_name=station_name,
         # Processing options
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        base_dir=base_dir,
     )
+
     # -------------------------------------------------------------------------.
     # Close the cluster
     if parallel:

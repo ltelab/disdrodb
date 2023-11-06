@@ -25,7 +25,7 @@ import netCDF4 as nc
 import numpy as np
 import xarray as xr
 
-from disdrodb.l0.l0b_nc_concat import _concatenate_netcdf_files, run_disdrodb_l0b_concat
+from disdrodb.l0.l0b_nc_concat import concatenate_netcdf_files, run_disdrodb_l0b_concat
 from disdrodb.utils.yaml import write_yaml
 
 
@@ -77,7 +77,7 @@ def create_fake_data_file(tmp_path, data_source, campaign_name, station_name="",
     return subfolder_path
 
 
-def test_concatenate_netcdf_files(tmp_path):
+def testconcatenate_netcdf_files(tmp_path):
     # Assign data to variables
     lat_data = np.linspace(-90, 90, 10, dtype=np.float32)
     lon_data = np.linspace(-180, 180, 10, dtype=np.float32)
@@ -110,7 +110,7 @@ def test_concatenate_netcdf_files(tmp_path):
 
     l0b_processing.write_l0b = mock_write_l0b
 
-    _concatenate_netcdf_files(processed_dir=root_dir_path, station_name=station_name, remove=False, verbose=False)
+    concatenate_netcdf_files(processed_dir=root_dir_path, station_name=station_name, remove=False, verbose=False)
 
     # read netcdf file
     path_to_file = glob.glob(os.path.join(root_dir_path, "L0B", "*.nc"))[0]

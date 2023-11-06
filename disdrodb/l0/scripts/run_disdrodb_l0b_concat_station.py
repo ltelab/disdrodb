@@ -21,7 +21,7 @@ import sys
 
 import click
 
-from disdrodb.l0.l0_processing import (
+from disdrodb.l0.routines import (
     click_l0_station_arguments,
     click_l0b_concat_options,
 )
@@ -61,31 +61,22 @@ def run_disdrodb_l0b_concat_station(
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
-    base_dir : str \n
-        Base directory of DISDRODB \n
-        Format: <...>/DISDRODB \n
-        If not specified, uses path specified in the DISDRODB active configuration. \n
+    base_dir : str
+        Base directory of DISDRODB
+        Format: <...>/DISDRODB
+        If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.api.io import get_disdrodb_path
-    from disdrodb.configs import get_base_dir
-    from disdrodb.l0.l0b_nc_concat import _concatenate_netcdf_files
+    from disdrodb.l0.l0b_nc_concat import run_l0b_concat_station
 
-    # Retrieve processed_dir
-    base_dir = get_base_dir(base_dir)
-    processed_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product="L0B",
+    run_l0b_concat_station(
+        # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exist=True,
-    )
-
-    # Run concatenation
-    _concatenate_netcdf_files(
-        processed_dir=processed_dir,
         station_name=station_name,
-        remove=remove_l0b,
+        # Processing options
+        remove_l0b=remove_l0b,
         verbose=verbose,
+        base_dir=base_dir,
     )
 
     return None

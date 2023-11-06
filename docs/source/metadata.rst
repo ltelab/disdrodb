@@ -34,7 +34,7 @@ To check the validity of the metadata YAML files, run the following code:
 
 .. code-block:: python
 
-    from disdrodb.l0 import check_archive_metadata_compliance, check_archive_metadata_geolocation
+    from disdrodb import check_archive_metadata_compliance, check_archive_metadata_geolocation
 
     base_dir = "<...>/DISDRODB"
     check_archive_metadata_compliance(base_dir)

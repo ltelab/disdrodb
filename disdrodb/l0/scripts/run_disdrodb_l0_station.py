@@ -18,7 +18,7 @@ import sys
 
 import click
 
-from disdrodb.l0.l0_processing import (
+from disdrodb.l0.routines import (
     click_l0_archive_options,
     click_l0_processing_options,
     click_l0_station_arguments,
@@ -106,7 +106,7 @@ def run_disdrodb_l0_station(
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
-    from disdrodb.l0.l0_processing import run_disdrodb_l0_station
+    from disdrodb.l0.routines import run_disdrodb_l0_station
 
     run_disdrodb_l0_station(
         base_dir=base_dir,

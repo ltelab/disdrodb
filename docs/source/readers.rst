@@ -436,7 +436,7 @@ Once you defined your metadata YAML files, check their validity by running:
 
 .. code-block:: python
 
-    from disdrodb.l0 import check_archive_metadata_compliance, check_archive_metadata_geolocation
+    from disdrodb import check_archive_metadata_compliance, check_archive_metadata_geolocation
 
     check_archive_metadata_compliance()
     check_archive_metadata_geolocation()

@@ -18,7 +18,7 @@ import sys
 
 import click
 
-from disdrodb.l0.l0_processing import (
+from disdrodb.l0.routines import (
     click_l0_archive_options,
     click_l0_processing_options,
     click_l0_stations_options,
@@ -112,12 +112,12 @@ def run_disdrodb_l0(
         For L0A, it processes just the first 3 raw data files.
         For L0B, it processes just the first 100 rows of 3 L0A files.
         The default is False.
-    base_dir : str \n
-        Base directory of DISDRODB \n
-        Format: <...>/DISDRODB \n
-        If not specified, uses path specified in the DISDRODB active configuration. \n
+    base_dir : str
+        Base directory of DISDRODB
+        Format: <...>/DISDRODB
+        If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.l0_processing import run_disdrodb_l0
+    from disdrodb.l0.routines import run_disdrodb_l0
 
     # Parse data_sources, campaign_names and station arguments
     data_sources = parse_arg_to_list(data_sources)

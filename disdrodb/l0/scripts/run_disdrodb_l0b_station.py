@@ -18,7 +18,7 @@ import sys
 
 import click
 
-from disdrodb.l0.l0_processing import (
+from disdrodb.l0.routines import (
     click_l0_processing_options,
     click_l0_station_arguments,
 )
@@ -75,19 +75,17 @@ def run_disdrodb_l0b_station(
         If True, it reduces the amount of data to process.
         It processes just the first 100 rows of 3 L0A files.
         The default is False.
-    base_dir : str \n
-        Base directory of DISDRODB \n
-        Format: <...>/DISDRODB \n
-        If not specified, uses path specified in the DISDRODB active configuration. \n
+    base_dir : str
+        Base directory of DISDRODB
+        Format: <...>/DISDRODB
+        If not specified, uses path specified in the DISDRODB active configuration.
     """
     import os
 
     import dask
     from dask.distributed import Client, LocalCluster
 
-    from disdrodb.api.io import get_disdrodb_path
-    from disdrodb.configs import get_base_dir
-    from disdrodb.l0.l0_processing import run_l0b
+    from disdrodb.l0.l0_processing import run_l0b_station
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
@@ -108,24 +106,19 @@ def run_disdrodb_l0b_station(
         Client(cluster)
 
     # -------------------------------------------------------------------------.
-    # Define processed dir
-    base_dir = get_base_dir(base_dir)
-    processed_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product="L0B",
+    run_l0b_station(
+        # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exist=False,
-    )
-    run_l0b(
-        processed_dir=processed_dir,
         station_name=station_name,
         # Processing options
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        base_dir=base_dir,
     )
+
     # -------------------------------------------------------------------------.
     # Close the cluster
     if parallel:
