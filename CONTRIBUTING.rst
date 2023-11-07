@@ -9,9 +9,9 @@ You can contribute in many ways :
    `discussions <https://github.com/ltelab/disdrodb/discussions>`__
 - Report software `issues <#issue-reporting-guidelines>`__
 - Help us developing new readers
-- Add new data to the DISDRODB Decentralized Data Archive 
+- Add new data to the DISDRODB Decentralized Data Archive
 - Implement new products (e.g. L1, L2, L3)
-- ... 
+- ...
 - Any code improvements are welcome !
 
 **We Develop with GitHub !**
@@ -37,7 +37,7 @@ Issue Reporting
 -  If you do not find the required GitHub Issue Template, please ask for a new template.
 
 
-Setup the contributor environment 
+Setup the contributor environment
 -----------------------------------
 
 **First Time Contributors ?**

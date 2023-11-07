@@ -90,8 +90,7 @@ Install pre-commit code quality checking
 ..............................................
 
 After setting up your development environment, install the git
-pre-commit hook by executing the following command in the repository’s
-root:
+pre-commit hook by executing the following command in the repository’s root:
 
 .. code-block:: bash
 

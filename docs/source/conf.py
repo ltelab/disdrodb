@@ -69,6 +69,7 @@ html_title = "disdrodb"
 html_theme_options = {
     "repository_url": "https://github.com/ltelab/disdrodb",
     "use_repository_button": True,
+    "tocdepth": 2,  # Adjust the depth as needed
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

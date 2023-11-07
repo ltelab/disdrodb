@@ -23,7 +23,7 @@ Then clone the DISDRODB Metadata Archive repository with:
 This will create a directory called ``disdrodb-data``.
 
 .. note:: Remember that the DISDRODB Metadata Archive is often updated with new stations or metadata.
-          To update your local DISDRODB Metada Archive (and therefore download recently added new stations), 
+          To update your local DISDRODB Metada Archive (and therefore download recently added new stations),
           run :code:`git pull` inside the ``disdrodb-data`` directory.
 
 
@@ -80,9 +80,9 @@ Parameters:
    whether existing files should be overwritten.
 
 To download data from multiple data sources, campaigns, or stations, please provide a space-separated string of
-the data sources, campaigns or stations you require. 
+the data sources, campaigns or stations you require.
 
-For example: 
+For example:
 
 - if you want to download all EPFL and NASA data use ``--data_sources "EPFL NASA"``,
 - if you want to download only stations of specific campaigns, use ``--campaign_names "HYMEX_LTE_SOP3 HYMEX_LTE_SOP4"``.

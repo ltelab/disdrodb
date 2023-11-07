@@ -23,7 +23,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click.option("--base_dir", type=str, show_default=True, default=None, help="DISDRODB root directory")
+@click.option("--base_dir", type=str, show_default=True, default=None, help="DISDRODB base directory")
 def check_metadata_archive(base_dir=None):
     from disdrodb.metadata.check_metadata import check_archive_metadata_compliance
 

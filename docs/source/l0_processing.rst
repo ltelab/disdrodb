@@ -32,57 +32,57 @@ Pythonic solution
 ~~~~~~~~~~~~~~~~~~~
 
 
-.. code-block:: python
+.. code-block::
 
-	from disdrodb.l0 import run_disdrodb_l0_station
-	run_disdrodb_l0_station(<data_source>, <campaign_name>, <station_name>, ...)
+    from disdrodb.l0 import run_disdrodb_l0_station
+
+    run_disdrodb_l0_station(data_source, campaign_name, station_name, **kwargs)
 
 
 Example :
 
+
 .. code-block:: python
 
-	from disdrodb.l0 import run_disdrodb_l0_station
-	from disdrodb.configs import get_base_dir
+    from disdrodb.l0 import run_disdrodb_l0_station
+    from disdrodb.configs import get_base_dir
 
-	base_dir = get_base_dir()
-	data_source='EPFL'
-	campaign_name='EPFL_2008'
-	station_name="10"
+    base_dir = get_base_dir()
+    data_source = "EPFL"
+    campaign_name = "EPFL_2008"
+    station_name = "10"
 
-	# L0 processing settings
-	l0a_processing=True
-	l0b_processing=True
-	l0b_concat=True
-	remove_l0a=False
-	remove_l0b=False
+    # L0 processing settings
+    l0a_processing = True
+    l0b_processing = True
+    l0b_concat = True
+    remove_l0a = False
+    remove_l0b = False
 
-	# L0 processing options
-	force=True
-	verbose=True
-	debugging_mode=True
-	parallel=False
+    # L0 processing options
+    force = True
+    verbose = True
+    debugging_mode = True
+    parallel = False
 
-	# Run the processing
-	run_disdrodb_l0_station(
-		base_dir=base_dir,
-		data_source=data_source,
-		campaign_name=campaign_name,
-		station_name=station_name,
-		
-		# L0 processing settings
-		l0a_processing=l0a_processing,
-		l0b_processing=l0b_processing,
-		l0b_concat=l0b_concat,
-		remove_l0a=remove_l0a,
-		remove_l0b=remove_l0b,
-
-		# L0 processing options
-		parallel=parallel,
-		verbose=verbose,
-		force=force,
-		debugging_mode=debugging_mode,
-	)
+    # Run the processing
+    run_disdrodb_l0_station(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # L0 processing settings
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        l0b_concat=l0b_concat,
+        remove_l0a=remove_l0a,
+        remove_l0b=remove_l0b,
+        # L0 processing options
+        parallel=parallel,
+        verbose=verbose,
+        force=force,
+        debugging_mode=debugging_mode,
+    )
 
 
 Launch DISDRODB L0 processing for a set of stations
@@ -107,7 +107,7 @@ Command line solution
 ~~~~~~~~~~~~~~~~~~~~~~
 
 
-.. code-block::
+.. code-block:: bash
 
 	disdrodb_run_l0 --data_sources <data_sources> --campaign_names <campaign_names> --station_names <station_names> [parameters]
 
@@ -131,51 +131,50 @@ Pythonic solution
 ~~~~~~~~~~~~~~~~~~~
 
 
-.. code-block:: python
+.. code-block::
 
-	from disdrodb.l0 import run_disdrodb_l0
-	run_disdrodb_l0(<data_source>, <campaign_name>, ...)
+    from disdrodb.l0 import run_disdrodb_l0
+
+    run_disdrodb_l0(data_source, campaign_name, **kwargs)
 
 
 Example :
 
 .. code-block:: python
 
-	from disdrodb.l0 import run_disdrodb_l0
-	from disdrodb.configs import get_base_dir
+    from disdrodb.l0 import run_disdrodb_l0
+    from disdrodb.configs import get_base_dir
 
-	base_dir = get_base_dir()
-	data_sources=['EPFL']
-	campaign_names=['EPFL_2008']
+    base_dir = get_base_dir()
+    data_sources = ["EPFL"]
+    campaign_names = ["EPFL_2008"]
 
-	# L0 processing settings
-	l0a_processing=True
-	l0b_processing=True
-	l0b_concat=False
-	remove_l0a=False
-	remove_l0b=False
-	# L0 processing options
-	force=True
-	verbose=True
-	debugging_mode=True
-	parallel=False
+    # L0 processing settings
+    l0a_processing = True
+    l0b_processing = True
+    l0b_concat = False
+    remove_l0a = False
+    remove_l0b = False
+    # L0 processing options
+    force = True
+    verbose = True
+    debugging_mode = True
+    parallel = False
 
-	run_disdrodb_l0(
-		base_dir=base_dir,
-		data_sources=data_sources,
-		campaign_names=campaign_names,
-		# station_names=station_names,
-
-		# L0 processing settings
-		l0a_processing=l0a_processing,
-		l0b_processing=l0b_processing,
-		l0b_concat=l0b_concat,
-		remove_l0a=remove_l0a,
-		remove_l0b=remove_l0b,
-
-		# L0 processing options
-		parallel=parallel,
-		verbose=verbose,
-		force=force,
-		debugging_mode=debugging_mode,
-	)
+    run_disdrodb_l0(
+        base_dir=base_dir,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        # station_names=station_names,
+        # L0 processing settings
+        l0a_processing=l0a_processing,
+        l0b_processing=l0b_processing,
+        l0b_concat=l0b_concat,
+        remove_l0a=remove_l0a,
+        remove_l0b=remove_l0b,
+        # L0 processing options
+        parallel=parallel,
+        verbose=verbose,
+        force=force,
+        debugging_mode=debugging_mode,
+    )

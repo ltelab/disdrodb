@@ -62,7 +62,7 @@ def click_upload_options(function: object):
         type=str,
         show_default=True,
         default=None,
-        help="DISDRODB root directory",
+        help="DISDRODB base directory",
     )(function)
     return function
 

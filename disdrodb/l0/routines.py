@@ -123,7 +123,7 @@ def click_l0_processing_options(function: object):
         type=str,
         show_default=True,
         default=None,
-        help="DISDRODB root directory",
+        help="DISDRODB base directory",
     )(function)
     return function
 
@@ -196,7 +196,7 @@ def click_l0b_concat_options(function: object):
         type=str,
         show_default=True,
         default=None,
-        help="DISDRODB root directory",
+        help="DISDRODB base directory",
     )(function)
     function = click.option("-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose")(function)
     return function

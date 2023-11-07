@@ -43,7 +43,7 @@ To update the DISDRODB Metadata Archive follow these steps:
 
    .. note::
       If you are adding information regarding a new station, please name the branch as follows: ``add-metadata-<data_source>-<campaign_name>``.
-      
+
       If you are just improving some specific information of an existing station, please name the branch as follows: ``update-metadata-<data_source>-<campaign_name>-<station_name>``.
 
 3. Edit or add the metadata files that you are interested in.
