@@ -30,7 +30,7 @@ This will create a directory called ``disdrodb-data``.
 Define the DISDRODB Base Directory
 ------------------------------------------
 
-The DISDRODB base directory is the directory ``DISDRODB`` inside ``disdrodb-data`` (i.e. ``<the_root_folder>/disdrodb-data/DISDRODB>``) .
+The DISDRODB base directory is the directory ``DISDRODB`` inside ``disdrodb-data``.
 
 You can set the default DISDRODB base directory by running in python:
 
@@ -84,6 +84,8 @@ the data sources, campaigns or stations you require.
 
 For example:
 
-- if you want to download all EPFL and NASA data use ``--data_sources "EPFL NASA"``,
-- if you want to download only stations of specific campaigns, use ``--campaign_names "HYMEX_LTE_SOP3 HYMEX_LTE_SOP4"``.
-- if you want to download only stations named in a specific way, use ``--station_names "station1 station2"``.
+* if you want to download all EPFL and NASA data use ``--data_sources "EPFL NASA"``,
+
+* if you want to download stations of specific campaigns, use ``--campaign_names "HYMEX_LTE_SOP3 HYMEX_LTE_SOP4"``.
+
+* if you want to download stations named in a specific way, use ``--station_names "station1 station2"``.

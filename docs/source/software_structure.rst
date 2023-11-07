@@ -6,10 +6,10 @@ The current software structure is described below:
 
 | 📁 data/
 | 📁 disdrodb/
-| ├── 📁 api
-|     ├── 📜 checks.py
-|     ├── 📜 info.py
-|     ├── 📜 io.py
+| ├──  📁 api
+|       ├── 📜 checks.py
+|       ├── 📜 info.py
+|       ├── 📜 io.py
 | ├── 📁 metadata
 |     ├── 📁 scripts
 |         ├── 📜 check_metadata_archive.py

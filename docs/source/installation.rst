@@ -27,8 +27,6 @@ disdrodb is available from the `Python Packaging Index (PyPI) <https://pypi.org/
 
 
 
-
-
 Installation for contributors
 ================================
 
@@ -49,41 +47,35 @@ According to the `contributors guidelines <https://disdrodb.readthedocs.io/en/la
     cd disdrodb
 
 
-
-
-
-
-Install the DISDRODB package dependencies
+Install the disdrodb package dependencies
 ............................................
 
 You can use either pip or conda:
 
 
-* **pip**
+**pip**
 
-	.. code-block:: bash
+.. code-block:: bash
 
-	   pip install -r requirements.txt
-
-
+	pip install -r requirements.txt
 
 
 * **conda**
 
-	Create the `disdrodb-dev` conda environment and install the required dependencies:
+Create the `disdrodb-dev` conda environment and install the required dependencies:
 
-	.. code-block:: bash
+.. code-block:: bash
 
-		conda env update -f environment.yml
+	conda env update -f environment.yml
 
 
-To install the project in editable mode :
+Install the disdrodb package in editable mode
+................................................
+
 
 .. code-block:: bash
 
 	pip install -e .
-
-
 
 
 Install pre-commit code quality checking
@@ -123,39 +115,38 @@ While not mandatory, utilizing a virtual environment when installing DISDRODB is
 
 To set up a virtual environment, follow these steps :
 
-* **With venv :**
+**With venv:**
 
-	* Windows: Create a virtual environment with venv:
+* Windows: Create a virtual environment with venv:
 
-		.. code-block:: bash
+.. code-block:: bash
 
-		   python -m venv disdrodb-dev
-		   cd disdrodb-dev/Scripts
-		   activate
-
-
-	* Mac/Linux: Create a virtual environment with venv:
-
-		.. code-block:: bash
-
-		   virtualenv -p python3 disdrodb-dev
-		   source disdrodb-dev/bin/activate
+   python -m venv disdrodb-dev
+   cd disdrodb-dev/Scripts
+   activate
 
 
+* Mac/Linux: Create a virtual environment with venv:
 
-* **With conda:**
+.. code-block:: bash
 
-	* Create the `disdrodb-dev` (or anay other name) conda environment:
+   virtualenv -p python3 disdrodb-dev
+   source disdrodb-dev/bin/activate
 
-		.. code-block:: bash
+**With conda:**
 
-			conda create --name disdrodb-dev python=3.9 --no-default-packages
+* Create the `disdrodb-dev` (or anay other name) conda environment:
 
-	* Activate the disdrodb conda environment:
+.. code-block:: bash
 
-		.. code-block:: bash
+	conda create --name disdrodb-dev python=3.9 --no-default-packages
 
-			conda activate disdrodb-dev
+
+* Activate the `disdrodb-dev` conda environment:
+
+.. code-block:: bash
+
+	conda activate disdrodb-dev
 
 
 Run DISDRODB on Jupyter Notebooks

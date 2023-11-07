@@ -13,39 +13,38 @@ The data contributor is asked to perform the following 4 tasks:
 
 Before proceeding, you need to start thinking about the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` names of your stations.
 The name you adopt for the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` will be used to define:
+
 -  the name of the directories where the raw data and the metadata of your stations will be stored in the DISDRODB Archive.
 -  the name of the DISDRODB reader you will implement for your data.
 
- .. note::
-	Guidelines for the naming of the ``<DATA_SOURCE>``:
+.. note:: Guidelines for the naming of the ``<DATA_SOURCE>``:
 
-    * We use the institution name when campaign data spans more than 1 country.
+   * We use the institution name when campaign data spans more than 1 country.
 
-    * We use country when all campaigns (or sensor networks) are inside a given country.
+   * We use country when all campaigns (or sensor networks) are inside a given country.
 
-    * The ``<DATA_SOURCE>`` must be defined UPPER_CASE and without spaces.
+   * The ``<DATA_SOURCE>`` must be defined UPPER_CASE and without spaces.
 
 
-.. note::
-	Guidelines for the naming of the ``<CAMPAIGN_NAME>``:
+.. note:: Guidelines for the naming of the ``<CAMPAIGN_NAME>``:
 
-    * The ``<CAMPAIGN_NAME>`` must be defined UPPER_CASE and without spaces.
+   * The ``<CAMPAIGN_NAME>`` must be defined UPPER_CASE and without spaces.
 
-    * Avoid the usage of dash ( - ) and dots ( . ) to separate words. Use the underscore ( _ ) instead!
+   * Avoid the usage of dash ( - ) and dots ( . ) to separate words. Use the underscore ( _ ) instead!
 
-    * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. `EPFL_2009`)
+   * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. `EPFL_2009`)
 
 
 Here below we provide a detailed description of the steps to follow to contribute your data to DISDRODB:
 
 * `Step 1 <#step1>`_: Fork and download the DISDRODB Metadata Archive
-* `Step 2 <#step2>`_: Define the DISDRODB base directory
+* `Step 2 <#step2>`_: Define the local DISDRODB Data Archive base directory
 * `Step 3 <#step3>`_: Add metadata the local DISDRODB Data Archive
 * `Step 4 <#step4>`_: Add the raw data the local DISDRODB Data Archive
 * `Step 5 <#step5>`_: Fork and install the disdrodb python package in editable mode
 * `Step 6 <#step6>`_: Define the reader name and add a prototype reader to the disdrodb python package
 * `Step 7 <#step7>`_: Implement the reader for your data
-* `Step 8 <#step8>`_: Run the DISDRODB L0 processing
+* `Step 8 <#step8>`_: Test the reader by running the DISDRODB L0 processing
 * `Step 9 <#step9>`_: Add reader testing files to the disdrodb python package
 * `Step 10 <#step10>`_: Upload your raw data on Zenodo and link it to the DISDRODB Decentralized Data Archive
 * `Step 11 <#step11>`_: Test the download and DISDRODB L0 processing of the stations you just contributed
@@ -76,7 +75,7 @@ Step 1: Fork and download the DISDRODB Metadata Archive
 
 4. Set the remote upstream branch:
 
-    .. code:: bash
+   .. code:: bash
 
       git push --set-upstream origin "add-metadata-<data_source>-<campaign_name>"
 
@@ -100,23 +99,24 @@ Step 1: Fork and download the DISDRODB Metadata Archive
 Step 2: Define the DISDRODB base directory
 --------------------------------------------
 
-Here we define the DISDRODB base directory of the archive.
-The directory path is saved into the DISDRODB configuration file,
-which is used by the disdrodb python package to locate the DISDRODB archive.
-On Windows, the DISDRODB base directory will have a path ending by `"\DISDRODB"`,  while on Mac/Linux, it will have a path ending by `"/DISDRODB"`
+Here we define the local DISDRODB archive base directory.
+
+The directory path is saved into the DISDRODB configuration file, which is used by the disdrodb python package to locate the DISDRODB archive.
+
+On Windows, the DISDRODB base directory will have a path ending by ``"\DISDRODB"``,  while on Mac/Linux, it will have a path ending by ``"/DISDRODB"``
 
 .. code:: python
 
     import disdrodb
 
     base_dir = "<path_to>/disdrodb-data/DISDRODB"
-    disdrodb.define_configs(zenodo_token="<your zenodo token>", zenodo_sandbox_token="<your zenodo sandbox token>")
+    disdrodb.define_configs(base_dir=base_dir)
 
 
 .. _step3:
 
-Step 3: Add metadata the local DISDRODB Data Archive
------------------------------------------------------------
+Step 3: Add metadata
+-----------------------
 
 Now let's create the directory structure and the defaults metadata files for the stations you wish to contribute.
 If you contribute multiple stations, just rerun the following command for each station.
@@ -126,27 +126,27 @@ If you contribute multiple stations, just rerun the following command for each s
    disdrodb_initialize_station_files <DATA_SOURCE> <CAMPAIGN_NAME> <STATION_NAME>
 
 
-The DISDRODB Raw archive has the following structure:
+The DISDRODB Raw archive will have the following structure:
 
 | 📁 DISDRODB
 | ├── 📁 Raw
-|    ├── 📁 <data_source>
-|       ├── 📁 <campaign_name>
-|           ├── 📁 data
-|               ├── 📁 <station_name>
-|                    ├── 📜 \*.\*  : raw files
-|           ├── 📁 issue
-|               ├── 📜 <station_name>.yml
-|           ├── 📁 metadata
-|               ├── 📜 <station_name>.yml
+|      ├── 📁 <DATA_SOURCE>
+|          ├── 📁 <CAMPAIGN_NAME>
+|              ├── 📁 data
+|                  ├── 📁 <STATION_NAME>
+|                       ├── 📜 \*.\*  : raw data files
+|              ├── 📁 issue
+|                  ├── 📜 <STATION_NAME>.yml
+|              ├── 📁 metadata
+|                  ├── 📜 <STATION_NAME>.yml
 
 
 Go in the ``disdrodb-data/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>/metadata/`` directory and start editing the metadata files
 of the stations you wish to contribute.
-The metadata YAML file contains **relevant** information of the station (e.g. type of raw data, type of device, geolocation, ...) which is
-required for the correct processing and integration into the DISDRODB archive.
+The metadata YAML file contains information of the station (e.g. type of raw data, type of device, geolocation, ...) which is
+required for the correct processing and integration of the station into the DISDRODB archive.
 
-The list and description of the metadata is available in the `Metadata <https://disdrodb.readthedocs.io/en/latest/metadata.html>`_ section.
+The list and description of the metadata keys is available in the `Metadata <https://disdrodb.readthedocs.io/en/latest/metadata.html>`_ section.
 
 There are 7 metadata keys for which is mandatory to specify the value:
 
@@ -156,30 +156,31 @@ There are 7 metadata keys for which is mandatory to specify the value:
 * the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_names()``.
   If the sensor which produced your data is not within the available sensors, you first need to add the sensor
   configurations. For this task, read the section `Add new sensor configs <https://disdrodb.readthedocs.io/en/latest/sensor_configs.html>`_
-* the ``raw_data_format`` must be either 'txt' or 'netcdf'. 'txt' if the source data are text/ASCII files. 'netcdf' if source data are netCDFs.
-* the ``platform_type`` must be either 'fixed' or 'mobile'. If 'mobile', the DISDRODB L0 processing accepts latitude/longitude/altitude coordinates to vary with time.
+* the ``raw_data_format`` must be either ``'txt'`` or ``'netcdf'``. ``'txt'`` if the source data are text/ASCII files. ``'netcdf'`` if source data are netCDFs.
+* the ``platform_type`` must be either ``'fixed'`` or ``'mobile'``. If ``'mobile'``, the DISDRODB L0 processing accepts latitude, longitude and altitude coordinates to vary with time.
 * the ``reader`` name is essential to enable to select the correct reader when processing the station.
 
 Please take care of the following points when editing the metadata files:
 
 *  Do not eliminate metadata keys for which no information is available !
-*  You will define the ``reader`` name in Step 6 along with the implementation of the reader
+*  You will define the ``reader`` name in `Step 6 <#step6>`_ along with the implementation of the reader
 *  The station metadata YAML file must keep the name of the station (i.e. ``<station_name>.yml``)
 *  For each ``<station_name>`` directory in the ``/data`` folder there must be an equally named ``<station_name>.yml`` file in the ``/metadata`` folder.
 
 When you are done with the editing of the metadata files, please run the following command to check that the metadata files are valid:
 
-   .. code:: bash
 
-      disdrodb_check_metadata_archive --raise_error=False
+.. code:: bash
+
+   disdrodb_check_metadata_archive --raise_error=False
 
 
 The only error you should temporary get is the one related to the missing value of the ``reader`` key !
 
 .. _step4:
 
-Step 4: Add the raw data the local DISDRODB Data Archive
----------------------------------------------------------------
+Step 4: Add the raw data
+--------------------------
 
 It's now time to move the raw data of each station into the corresponding ``disdrodb-data/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>/data/<STATION_NAME>`` directory.
 
@@ -187,8 +188,8 @@ Once done, you are mostly ready for the next step: implementing the DISDRODB rea
 
 .. _step5:
 
-Step 5: Fork and install the disdrodb python package in editable mode
------------------------------------------------------------------------
+Step 5: Install disdrodb in editable mode
+-------------------------------------------
 
 But first, let's fork and install the `disdrodb python package  <https://github.com/ltelab/disdrodb>`__ in editable mode,
 so that you will be able to share the reader you are going to develop with the community.
@@ -212,7 +213,7 @@ To do so, follow the steps below:
 
 4. Set the remote upstream branch:
 
-    .. code:: bash
+   .. code:: bash
 
       git push --set-upstream origin "reader-<data_source>-<campaign_name>"
 
@@ -269,7 +270,7 @@ python file into the relevant ``disdrodb.l0.reader.<READER_DATA_SOURCE>`` direct
 If the ``<READER_DATA_SOURCE>`` for your reader does not yet exists, create a new directory.
 
 Once the reader template has been copied and renamed in the appropriate location of the disdrodb package,
-it's time to **update the value of the ``reader`` key in the metadata files** !!!
+it's time to **update the value of the** ``reader`` **key in the metadata files** !!!
 
 The ``reader`` key value must be defined with the pattern ``<READER_DATA_SOURCE>/<READER_NAME>`` where:
 
@@ -307,53 +308,87 @@ If you updated the station metadata files, your reader function should also now 
 
 Once you updated your metadata YAML files, check once again the validity of the metadata by running:
 
-   .. code:: bash
+.. code:: bash
 
-      disdrodb_check_metadata_archive
+   disdrodb_check_metadata_archive
 
 
 At this point, no error and printed message should appear !!!
 
 If you have any question at this point, you are encountering some issues, or you just want to let the DISRODB maintainers know that you are working on the
-implementation of a reader for your data, just  ``git add *``, ``git commit -m <describe-your-change>``, ``git push`` your code changes ...
-and open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__ and `GitHub disdrodb-data repository <https://github.com/ltelab/disdrodb-data>`__
-so that we keep track of your work and we can help you if needed !
+implementation of a reader for your data, just  ``git add *``, ``git commit -m <describe-your-change>``, ``git push`` your code changes.
+Then, open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__ and `GitHub disdrodb-data repository <https://github.com/ltelab/disdrodb-data>`__
+so that we keep track of your work and we can help you if need !
 
 .. _step7:
 
-Step 7: Implement the reader for your data
----------------------------------------------
+Step 7: Implement the reader
+------------------------------
 
-Once the DISDRODB directory structure, reader and metadata are set up, you can start analyzing the content of your data.
-To facilitate the task, we provide you with the `reader_preparation Jupyter Notebook Tutorial <https://disdrodb.readthedocs.io/en/latest/reader_preparation.html>`_.
-We highly suggest to copy the notebook and adapt it to your own data.
+Once the DISDRODB directory structure, the raw data and the metadata are set up, you are ready to implement the DISDRODB reader of your data.
 
-However, before starting adapting the Jupyter Notebook to your own data,
-we highly suggest to first try it out with the sample lightweight dataset provided within the disdrodb repository.
-Such step-by-step notebook tutorial is also visible in the `Step-by-step reader preparation <#step-by-step-reader-preparation>`_ subsection
-of this documentation.
+However, before actually implementing it, we highly suggest to first read the
+`DISDRODB reader structure <https://disdrodb.readthedocs.io/en/latest/readers.html#reader-structure>`_ section.
 
-This notebook will guide you through the definition of the 4 relevant DISDRODB reader components:
+To facilitate the task of developing the reader, we provide a `step-by-step tutorial <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_
+which will guide you to the definition of the 4 relevant DISDRODB reader components:
 
-* The ``glob_patterns`` to search for the data files within the ``.../data/<station_name>`` directory.
+* The ``glob_patterns`` string to search for the data files within the ``.../<CAMPAIGN_NAME>/data/<station_name>`` directory.
 
-* The ``reader_kwargs`` dictionary guides the pandas dataframe creation.
-
-For more information on the possible key-value arguments, read the `pandas <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_
-documentation.
+* The ``reader_kwargs`` dictionary containing all specifications to open the text file into a pandas dataframe. For more information on the possible key-value arguments, read the `pandas <https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html>`_ documentation.
 
 * The ``column_names`` list defines the column names of the read raw text file.
 
-* The ``df_sanitizer_fun()`` function that defines the processing to apply on the read dataframe in order for the dataframe to match the DISDRODB standards.
+* The ``df_sanitizer_fun()`` function that defines the processing to apply on the read dataframe in order for the dataframe to match the DISDRODB standards. The dataframe which is returned by the ``df_sanitizer_fun`` must have only columns compliant with the DISDRODB standards !
 
-The dataframe which is returned by the ``df_sanitizer_fun`` must have only columns compliant with the DISDRODB standards !
+When this 4 components are correctly defined, they can be transcribed into the reader you defined in `Step 6 <#step6>`_ and you are ready
+to test if the reader works properly and enable to process the raw data.
 
-When this 4 components are correctly defined, they can be transcribed into the reader you defined in `Step 7 <#step7>`_
+We highly suggest to copy the ``reader_preparation.ipynb`` Jupyter Notebook from the
+`tutorials directory of the disdrodb package <https://github.com/ltelab/disdrodb/blob/main/tutorials>`_  and adapt it to your own data.
+However, before starting adapting the Jupyter Notebook to your own data, we recommend to first try it out
+with the sample lightweight dataset provided within the disdrodb package.
 
-Now you are ready to test the reader works properly and enable to process all stations data.
+Note that this step-by-step tutorial is also accessible in read-only mode in the `Reader preparation tutorial <https://disdrodb.readthedocs.io/en/latest/reader_preparation.html>`_ subsection
+of the `DISDRODB reader documentation <https://disdrodb.readthedocs.io/en/latest/readers.html>`_.
 
-If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, do it now so
-that the DISDRODB maintainers can review your code and help you with the final steps !
+-------------------------------------------------------------------------------
+
+If you want to run the ``reader_preparation.ipynb`` Jupyter Notebook proceed as follow:
+
+1. Enter your project virtual environment or conda environment. Please, refer to the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`_ section if needed.
+
+2. Navigate to the ``disdrodb/tutorials`` directory.
+
+3. Start the Jupyter Notebook with:
+
+.. code-block:: bash
+
+    jupyter notebook
+
+This will open your default web browser with Jupyter Notebook on the main page.
+
+4. Double click on the ``reader_preparation.ipynb``.
+
+5. Specify the IPython kernel on which to run the Jupyter Notebook.
+
+To do so, first click on the top ``Kernel`` tab, then click on en ``Change Kernel``, and then select your environment.
+
+If the environment is not available, close the Jupyter Notebook, type the following command and relaunch the Jupyter Notebook:
+
+.. code-block:: bash
+
+    python -m ipykernel install --user --name=<YOUR-ENVIRONMENT-NAME>
+
+Now you can start the start the step-by-step tutorial.
+
+-------------------------------------------------------------------------------
+
+.. note::
+
+   If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, do it now so
+   that the DISDRODB maintainers can review your code and help you with the final steps !
+
 
 .. _step8:
 
@@ -365,68 +400,69 @@ DISDRODB L0 processing of the stations for which you added the reader.
 
 To run the processing of a single station, you can run:
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        disdrodb_run_l0_station <data_source> <campaign_name> <station_name> [parameters]
+   disdrodb_run_l0_station <DATA_SOURCE> <CAMPAIGN_NAME> <STATION_NAME> [parameters]
 
 
 For example, to process the data of station 10 of the EPFL_2008 campaign, you would run:
 
-    .. code-block:: bash
+.. code-block:: bash
 
-        disdrodb_run_l0_station EPFL  EPFL_2008 10 --force True --verbose True --parallel False
+   disdrodb_run_l0_station EPFL  EPFL_2008 10 --force True --verbose True --parallel False
 
 
 If no problems arise, try to run the processing for all stations within a campaign, with:
 
-	.. code-block:: bash
+.. code-block:: bash
 
-		disdrodb_run_l0 --data_sources <data_sources> --campaign_names <campaign_names> [parameters]
+   disdrodb_run_l0 --data_sources <DATA_SOURCES> --campaign_names <CAMPAIGN_NAMES> [parameters]
 
 For example, to process all stations of the EPFL_2008 campaign, you would run:
 
-	.. code-block:: bash
+.. code-block:: bash
 
-		disdrodb_run_l0 --data_sources EPFL --campaign_names EPFL_2008 --force True --verbose True --parallel False
+   disdrodb_run_l0 --data_sources EPFL --campaign_names EPFL_2008 --force True --verbose True --parallel False
 
 
 .. note::
 
-    * For more details and options related to DISDRODB L0 processing, read the section `Run DISDRODB L0 Processing <https://disdrodb.readthedocs.io/en/latest/l0_processing.html>`_.
+   For more details and options related to DISDRODB L0 processing, read the section `Run DISDRODB L0 Processing <https://disdrodb.readthedocs.io/en/latest/l0_processing.html>`_.
 
 
 The DISDRODB L0 processing generates the DISDRODB `Processed` directories tree illustrated here below.
 
 | 📁 DISDRODB
 | ├── 📁 Processed
-|    ├── 📁 <data_source>
-|       ├── 📁 <campaign_name>
-|           ├── 📁 L0A
-|               ├── 📁 <station_name>
-|                   ├── 📜 \*.parquet
-|           ├── 📁 L0B
-|               ├── 📁 <station_name>
-|                    ├── 📜 \*.nc
-|           ├── 📁 info
-|           ├── 📁 logs
-|               ├── 📁 L0A
-|                   ├── 📁 <station_name>
-|                        ├── 📜 \*.log
-|                   ├── 📜 logs_problem_<station_name>.log
-|                   ├── 📜 logs_summary_<station_name>.log
-|               ├── 📁 L0B
-|                   ├── 📁 <station_name>
-|                        ├── 📜 \*.log
-|                   ├── 📜 logs_problem_<station_name>.log
-|                   ├── 📜 logs_summary_<station_name>.log
-|           ├── 📁 metadata
-|               ├── 📜 <station_name>.yml
+|      ├── 📁 <DATA_SOURCE>
+|          ├── 📁 <CAMPAIGN_NAME>
+|              ├── 📁 L0A
+|                   ├── 📁 <STATION_NAME>
+|                        ├── 📜 \*.parquet
+|                   ├── 📁 L0B
+|                        ├── 📁 <STATION_NAME>
+|                             ├── 📜 \*.nc
+|                   ├── 📁 info
+|                   ├── 📁 logs
+|                        ├── 📁 L0A
+|                             ├── 📁 <STATION_NAME>
+|                                 ├── 📜 \*.log
+|                             ├── 📜 logs_problem_<STATION_NAME>.log
+|                             ├── 📜 logs_summary_<STATION_NAME>.log
+|                        ├── 📁 L0B
+|                             ├── 📁 <STATION_NAME>
+|                                 ├── 📜 \*.log
+|                             ├── 📜 logs_problem_<STATION_NAME>.log
+|                             ├── 📜 logs_summary_<STATION_NAME>.log
+|                  ├── 📁 metadata
+|                       ├── 📜 <STATION_NAME>.yml
 
 
 If you inspect the ``logs/L0A`` and ``logs/L0B``, you will see the logging reports of the DISDRODB L0 processing.
 For every raw file, a processing log is generated.
-The ``logs_summary_<station_name>.log`` summarizes all the logs regarding the processing of a station.
-Instead, if the ``logs_problem_<station_name>.log`` file is not present in the logs directory,
+
+The ``logs_summary_<STATION_NAME>.log`` summarizes all the logs regarding the processing of a station.
+Instead, if the ``logs_problem_<STATION_NAME>.log`` file is not present in the logs directory,
 it means that the reader you implemented worked correctly, and no errors were raise by DISDRODB.
 
 Otherwise, you need to investigate the reported errors, improve the readers and rerun the DISDRODB L0 processing.
@@ -461,18 +497,18 @@ You should place you data and config files under the following directory tree:
 
 | 📁 disdrodb/tests/data/check_readers/DISDRODB
 | ├── 📁 Raw
-|    ├── 📁 <DATA_SOURCE>
-|       ├── 📁 <CAMPAIGN_NAME>
-|           ├── 📁 issue
-|               ├── 📜 <station_name>.yml
-|           ├── 📁 metadata
-|               ├── 📜 <station_name>.yml
-|           ├── 📁 data
-|               ├── 📁 <station_name>
-|                   ├── 📜 <station_name>.\*
-|           ├── 📁 ground_truth
-|               ├── 📁 <station_name>
-|                   ├── 📜 <station_name>.\*
+|      ├── 📁 <DATA_SOURCE>
+|          ├── 📁 <CAMPAIGN_NAME>
+|               ├── 📁 issue
+|                    ├── 📜 <STATION_NAME>.yml
+|               ├── 📁 metadata
+|                    ├── 📜 <STATION_NAME>.yml
+|               ├── 📁 data
+|                    ├── 📁 <STATION_NAME>
+|                        ├── 📜 <STATION_NAME>.\*
+|               ├── 📁 ground_truth
+|                   ├── 📁 <STATION_NAME>
+|                       ├── 📜 <STATION_NAME>.\*
 
 
 
@@ -494,8 +530,8 @@ that the DISDRODB maintainers can review your code and help you with the final s
 
 .. _step10:
 
-Step 10: Upload your raw data on Zenodo and link it to the DISDRODB Decentralized Data Archive
--------------------------------------------------------------------------------------------------
+Step 10: Upload your raw data on Zenodo
+------------------------------------------
 
 We provide users with a code to easily upload their stations raw data to `Zenodo <https://zenodo.org/>`_.
 
@@ -524,6 +560,7 @@ To generate the tokens, for `Zenodo go here <https://zenodo.org/account/settings
 you can choose the name you want (i.e. DISDRODB), but you need to select the ``deposit:actions`` and ``deposit:write`` scopes.
 
 When the token is generated, you will see something similar to the following:
+
 .. image:: /static/zenodo.png
 
 
@@ -559,6 +596,14 @@ If you feel safe about your data and the whole procedure, you can also use the c
 
 Consider that if you previously uploaded data on Zenodo Sandbox for testing purposes, you need to specify ``--force True``
 when uploading data to the official Zenodo repository !
+
+.. note::
+   If you wish to upload the data in another remote data repository, you are free to do so. However, you will have
+   to manually upload the data and manually add the correct ``disdrodb_data_url`` to the station metadata files.
+
+   Moreover, you must take care of compressing all stations data into a single zip file before uploading it into
+   your remote data repository of choice !
+
 
 .. _step11:
 
@@ -603,4 +648,4 @@ When the script finish, check that the content in the ``test_base_directory`` di
 
 If everything looks as expected ... congratulations, you made it !!!
 
-Your Pull Requests will likely be immediately merged and the data and reader will be available to the DISDRODB community.
+Your Pull Requests will be merged as soon as a DISDRODB maintainer can check your work, and the data and reader will be available to the DISDRODB community.

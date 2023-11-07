@@ -45,10 +45,10 @@ Documentation
    data_download
    l0_processing
    metadata_archive
-   contribute_data
-   metadata
    readers
+   metadata
    sensor_configs
+   contribute_data
    contributors_guidelines
    maintainers_guidelines
    authors
@@ -56,7 +56,7 @@ Documentation
 
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    DISDRODB API <api/modules>
 

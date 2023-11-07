@@ -23,17 +23,17 @@ In this directory, the name of the subdirectories correspond to ``the sensor_nam
 
 For each sensor, the following list of configuration YAML files are required:
 
-| 📁 disdrodb/
-| ├── 📁 l0 : Contains the software to produce the DISDRODB L0 products
-|     ├── 📁 configs : Contains the specifications of various types of disdrometers
-|     	├── 📁 `<sensor_name>` : e.g. OTT_Parsivel, OTT_Parsivel2, Thies_LPM, RD_80
-|     		├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
-|     		├── 📜 bins_diameter.yml : Information related to sensor diameter bins
-|     		├── 📜 bins_velocity.yml : Information related to sensor velocity bins
-|     		├── 📜 raw_data_format.yml : Information related to the variables logged by the sensor
-|     		├── 📜 l0a_encodings.yml : Variables encodings for the L0A product
-|     		├── 📜 l0b_encodings.yml : Variables encodings for the L0B product
-|     		├── 📜 l0b_variables_attrs.yml : Variables CF attributes for the L0B product
+|   📁 disdrodb/
+|   ├── 📁 l0 : Contains the software to produce the DISDRODB L0 products
+|       ├── 📁 configs : Contains the specifications of various types of disdrometers
+|           ├── 📁 `<sensor_name>` : e.g. OTT_Parsivel, OTT_Parsivel2, Thies_LPM, RD_80
+|               ├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
+|               ├── 📜 bins_diameter.yml : Information related to sensor diameter bins
+|               ├── 📜 bins_velocity.yml : Information related to sensor velocity bins
+|               ├── 📜 raw_data_format.yml : Information related to the variables logged by the sensor
+|               ├── 📜 l0a_encodings.yml : Variables encodings for the L0A product
+|               ├── 📜 l0b_encodings.yml : Variables encodings for the L0B product
+|               ├── 📜 l0b_variables_attrs.yml : Variables CF attributes for the L0B product
 
 
 If you want to add a new sensor configuration, you will need to copy the YAML files
@@ -41,12 +41,12 @@ of one of the implemented sensors, and adapt the specifications.
 
 Once you added a new sensor configuration, check the validity with the following command:
 
-    .. code-block:: python
+.. code-block:: python
 
-        from disdrodb.l0.check_configs import check_sensor_configs
+    from disdrodb.l0.check_configs import check_sensor_configs
 
-        sensor_name = "OTT_Parsivel"  # Change with your sensor_name
-        check_sensor_configs(sensor_name)
+    sensor_name = "OTT_Parsivel"  # Change with your sensor_name
+    check_sensor_configs(sensor_name)
 
 Here below we details further information related to each of the configuration
 YAML files.

@@ -85,18 +85,18 @@ A reader is a function defined by the following input arguments:
 
 * ``raw_dir`` : str - The directory path where all the raw data of a specific campaign/network are stored.
 
-        * The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name``.
-        * Inside the raw_dir directory, the software expects to find the following structure:
+    * The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name``.
+    * Inside the raw_dir directory, the software expects to find the following structure:
 
-            * ``<raw_dir>/data/<station_name>/<raw_files>``
-            * ``<raw_dir>/metadata/<station_name>.yml``
+        * ``<raw_dir>/data/<station_name>/<raw_files>``
+        * ``<raw_dir>/metadata/<station_name>.yml``
 
 
 * ``processed_dir`` : str - The desired directory path where to save the DISDRODB L0A and L0B products.
 
-        * The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
-        * The ``<campaign_name>`` must match with the one specified in the ``raw_dir``.
-        * For reader testing purposes, you can define i.e. ``/tmp/DISDRODB/Processed/<data_source>/<campaign_name>``
+    * The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
+    * The ``<campaign_name>`` must match with the one specified in the ``raw_dir``.
+    * For reader testing purposes, you can define i.e. ``/tmp/DISDRODB/Processed/<data_source>/<campaign_name>``
 
 
 * ``station_name`` : str - Name of the station to be processed.
@@ -104,8 +104,8 @@ A reader is a function defined by the following input arguments:
 
 * ``force`` : bool [true\| **false** ] - Whether to overwrite existing data.
 
-        *  If ``True``, overwrite existing data into destination directories.
-        *  If ``False``, raise an error if there are already data into destination directories.
+    *  If ``True``, overwrite existing data into destination directories.
+    *  If ``False``, raise an error if there are already data into destination directories.
 
 
 * ``verbose`` : bool [true\| **false** ] - Whether to print detailed processing information into terminal.
@@ -113,12 +113,12 @@ A reader is a function defined by the following input arguments:
 
 * ``debugging_mode`` : bool [true\| **false** ] -  If ``True``, it reduces the amount of data to process.
 
-        * It processes just 3 raw data files.
+    * It processes just 3 raw data files.
 
 * ``parallel`` : bool [true\| **false** ] - Whether to process multiple files simultaneously.
 
-        * If ``parallel=False``, the raw files are processed sequentially.
-        * If ``parallel=True``, each file is processed in a separate core.
+    * If ``parallel=False``, the raw files are processed sequentially.
+    * If ``parallel=True``, each file is processed in a separate core.
 
 
 Inside the reader function, a few components must be customized.
@@ -235,59 +235,16 @@ Finally, the reader will call the ``run_l0b_from_nc`` function, by passing to it
 
 
 
-How to add a new reader
---------------------------
+How to develop a new reader
+-----------------------------
 
 Please refers to the dedicated subsection in
 `How to Contribute New Data  <https://disdrodb.readthedocs.io/en/latest/contribute_data.html#implement-the-reader-for-your-data>`_.
 
-
-
-Reader preparation tutorial
-------------------------------
-
-Please visit the following page to access a read-only tutorial notebook:
+The following page provide read-only access to the DISDRODB reader preparation Jupyter Notebook tutorial.
 
 
 .. toctree::
    :maxdepth: 1
 
    reader_preparation
-
-If you want to run an interactive notebook, you need to run jupyter notebook in your local machine. Proceed as follow :
-
-1. Make sure you have the latest version of the code in your local folder.
-See the git clone command in the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`_ section.
-
-2. Enter your project virtual environment or conda environment.
-Please, refer to the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`_ section if needed.
-
-3. Navigate to the disdrodb folder.
-
-4. Start the Jupyter Notebook with:
-
-	.. code-block:: bash
-
-		python -m notebook
-
-	or
-
-	.. code-block:: bash
-
-		jupyter notebook
-
-	This will open your default web browser with Jupyter Notebook on the main page.
-
-
-5. Navigate to ``tutorials`` and double click on the ``reader_preparation.ipynb``.
-
-6. Specify the IPython kernel on which to run the Jupyter Notebook.
-To do so, first click on the top ``Kernel`` tab, then click on en ``Change Kernel``, and then select your environment.
-If the environment is not available, close the Jupyter Notebook, type the following command and relaunch the notebook:
-
-.. code-block:: bash
-
-    python -m ipykernel install --user --name=<YOUR-ENVIRONMENT-NAME>
-
-
-7. You can now start using the tutorial notebook.

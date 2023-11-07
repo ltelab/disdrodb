@@ -5,8 +5,7 @@ Hi! Thanks for taking the time to contribute to DISDRODB.
 
 You can contribute in many ways :
 
-- Join the
-   `discussions <https://github.com/ltelab/disdrodb/discussions>`__
+- Join the `discussions <https://github.com/ltelab/disdrodb/discussions>`__
 - Report software `issues <#issue-reporting-guidelines>`__
 - Help us developing new readers
 - Add new data to the DISDRODB Decentralized Data Archive
