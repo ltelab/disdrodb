@@ -392,11 +392,10 @@ Now you can start the start the step-by-step tutorial.
 
 .. _step8:
 
-Step 8: Run the DISDRODB L0 processing
+Step 8: Test the DISDRODB L0 processing
 ---------------------------------------
 
-To test the reader works properly, the easiest way now it's to run the
-DISDRODB L0 processing of the stations for which you added the reader.
+To test if the reader works properly, the easiest way it's to run the DISDRODB L0 processing of the stations for which you added the reader.
 
 To run the processing of a single station, you can run:
 

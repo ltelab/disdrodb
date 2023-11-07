@@ -241,7 +241,7 @@ How to develop a new reader
 Please refers to the dedicated subsection in
 `How to Contribute New Data  <https://disdrodb.readthedocs.io/en/latest/contribute_data.html#implement-the-reader-for-your-data>`_.
 
-The following page provide read-only access to the DISDRODB reader preparation Jupyter Notebook tutorial.
+The following page provide read-only access to the DISDRODB reader preparation Jupyter Notebook tutorial:
 
 
 .. toctree::

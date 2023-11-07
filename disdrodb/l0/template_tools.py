@@ -148,7 +148,7 @@ def print_df_column_names(df: pd.DataFrame) -> None:
     return None
 
 
-def print_valid_L0_column_names(sensor_name: str) -> None:
+def print_valid_l0_column_names(sensor_name: str) -> None:
     """Print valid columns names from the standard.
 
     Parameters
