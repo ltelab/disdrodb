@@ -23,18 +23,16 @@ Then clone the DISDRODB Metadata Archive repository with:
 This will create a directory called ``disdrodb-data``.
 
 .. note:: Remember that the DISDRODB Metadata Archive is often updated with new stations or metadata.
-          To update your local DISDRODB Metada Archive (and therefore download recently added new stations), run:
-
-         .. code:: bash
-              git pull
+          To update your local DISDRODB Metada Archive (and therefore download recently added new stations), 
+          run :code:`git pull` inside the ``disdrodb-data`` directory.
 
 
-Define the DISDRODB root directory
+Define the DISDRODB Base Directory
 ------------------------------------------
 
-The DISDRODB root directory is the directory ``DISDRODB`` inside ``disdrodb-data`` (i.e. ``<the_root_folder>/disdrodb-data/DISDRODB>``) .
+The DISDRODB base directory is the directory ``DISDRODB`` inside ``disdrodb-data`` (i.e. ``<the_root_folder>/disdrodb-data/DISDRODB>``) .
 
-You can set the default DISDRODB root directory by running in python:
+You can set the default DISDRODB base directory by running in python:
 
 .. code:: python
 
@@ -47,9 +45,11 @@ By running this command, the disdrodb software will write a ``.config_disdrodb.y
 that will be used as default configuration file when running the disdrodb software.
 
 
-Alternatively, you can also define the DISDRODB root directory as an environment variable ``DISDRODB_BASE_DIR``.
+Alternatively, you can also define the DISDRODB base directory as an environment variable ``DISDRODB_BASE_DIR``.
 In the terminal, you must type the following command:
+
 .. code:: bash
+
    export DISDRODB_BASE_DIR="<the_root_folder>/disdrodb-data/DISDRODB"
 
 .. note:: It's important to remember that the environment variable ``DISDRODB_BASE_DIR`` (if defined) will take priority over the default path
@@ -68,17 +68,22 @@ To download all data stored into the DISDRODB Decentralized Data Archive, you ju
 
    disdrodb_download_archive  --data_sources <data_source> --campaign_names <campaign_name> --station_names <station_name> --force true
 
-The ``data_sources``, ``campaign_names`` and ``station_names`` parameters are optional and are meant to restrict the download processing to a specific
-data source, campaign, or station.
+The ``data_sources``, ``campaign_names`` and ``station_names`` parameters are optional and are meant to restrict the download to a specific set of
+data sources, campaigns, and/or stations.
 
 Parameters:
 
--  ``data_sources`` (optional): Station data source.
--  ``campaign_names`` (optional): Station campaign name.
+-  ``data_sources`` (optional): Station data sources.
+-  ``campaign_names`` (optional): Station campaign names.
 -  ``station_names`` (optional): Name of the stations.
 -  ``force`` (optional, default = ``False``): a boolean value indicating
    whether existing files should be overwritten.
 
 To download data from multiple data sources, campaigns, or stations, please provide a space-separated string of
-the data sources, campaigns or stations you require. For example, to download all EPFL and NASA data use ``--data_sources "EPFL NASA"``,
-while if you want to download only stations named in a specific way, use ``--station_names "station1 station2"``.
+the data sources, campaigns or stations you require. 
+
+For example: 
+
+- if you want to download all EPFL and NASA data use ``--data_sources "EPFL NASA"``,
+- if you want to download only stations of specific campaigns, use ``--campaign_names "HYMEX_LTE_SOP3 HYMEX_LTE_SOP4"``.
+- if you want to download only stations named in a specific way, use ``--station_names "station1 station2"``.

@@ -8,8 +8,7 @@ The GitHub platform facilitates community collaboration to continuously enhance 
 This approach also enables recursive data quality improvements, while keeping the DISDRODB product chain transparent and fully reproducible.
 
 To ensure quality and consistency of metadata, a comprehensive standard set of metadata keys has been established.
-The DISDRODB community is empowered to pinpoint specific timestamps or periods when sensors might have malfunctioned or
- generated erroneous data logs through specific issues YAML files.
+The DISDRODB community is empowered to pinpoint specific timestamps or periods when sensors might have malfunctioned or generated erroneous data logs through specific issues YAML files.
 
 The DISDRODB Metadata Repository is therefore updated on a regular basis to reflect the latest status of the stations and the data availability.
 
@@ -44,6 +43,7 @@ To update the DISDRODB Metadata Archive follow these steps:
 
    .. note::
       If you are adding information regarding a new station, please name the branch as follows: ``add-metadata-<data_source>-<campaign_name>``.
+      
       If you are just improving some specific information of an existing station, please name the branch as follows: ``update-metadata-<data_source>-<campaign_name>-<station_name>``.
 
 3. Edit or add the metadata files that you are interested in.
@@ -53,10 +53,10 @@ To update the DISDRODB Metadata Archive follow these steps:
    .. code:: bash
 
       export DISDRODB_BASE_DIR="<path_to_the>/disdrodb-data/DISDRODB"
-      disdrodb_check_metadata_archive_compliance
+      disdrodb_check_metadata_archive
 
    .. note::
-      The ``DISDRODB_BASE_DIR`` environment variable has to be specified only if the DISDRODB root directory had not been specified before.
+      The ``DISDRODB_BASE_DIR`` environment variable has to be specified only if the DISDRODB base directory has not been specified before in the DISDRODB configuration file.
 
 5. Commit your changes and push your branch to GitHub:
 

@@ -212,10 +212,10 @@ def ensure_unique_dimension_values(list_ds: list, fpaths: str, dim: str = "time"
         List of netCDFs file paths.
     """
     # Reorder the files and filepaths by the starting dimension value (time)
-    sorted_list_ds, sorted_fpaths = _sort_datasets_by_dim(list_ds=list_ds, fpaths=fpaths, dim=dim)
+    list_ds, fpaths = _sort_datasets_by_dim(list_ds=list_ds, fpaths=fpaths, dim=dim)
 
     # Get the datasets dimension values array (and associated list_ds/xr.Dataset indices)
-    dim_values, list_index, ds_index = _get_dim_values_index(sorted_list_ds, dim=dim)
+    dim_values, list_index, ds_index = _get_dim_values_index(list_ds, dim=dim)
 
     # Get duplicated indices
     idx_duplicated = _get_duplicated_indices(dim_values, keep="first")

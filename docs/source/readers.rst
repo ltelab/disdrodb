@@ -8,7 +8,7 @@ The following subsections describe, first, what a reader is and how it can be de
 Then, it illustrates multiple methods how a reader can be called (i.e. from terminal or within python) to process raw data into DISDRODB L0 products.
 
 What is a reader
-=================
+------------------
 
 A DISDRODB reader is a python function encoding all the required information to convert
 raw disdrometer text (or netCDF) data into DISDRODB L0A and/or DISDRODB L0B products.
@@ -36,7 +36,7 @@ In the DISDRODB metadata of each station:
 
 
 Available readers
-======================
+------------------
 
 In the in the disdrodb software, the readers are organized by data source.
 You can have a preliminary look on how the readers looks like by exploring
@@ -64,7 +64,7 @@ The dictionary has the following structure:
 
 
 Reader structure
-======================
+------------------
 
 A reader is a function defined by the following input arguments:
 
@@ -235,8 +235,8 @@ Finally, the reader will call the ``run_l0b_from_nc`` function, by passing to it
 
 
 
-Adding a new reader
-======================
+How to add a new reader
+--------------------------
 
 We describe here the steps required to create a reader for your raw text files.
 To share the reader with the community, please also read the `Contributing guide <contributors_guidelines.html>`_.
@@ -252,7 +252,7 @@ To share the reader with the community, please also read the `Contributing guide
 
 
 Step 1 : Add the raw data to the DISDRODB Raw archive
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The DISDRODB Raw archive has the following structure:
 
@@ -318,7 +318,7 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
 
 
 Step 2 : Define the reader name
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 Since you aim to design a new reader, you can start by copy-pasting
@@ -360,7 +360,7 @@ The reader will be customized successively, after having completed `Step 4 <#ste
 
 
 Step 3 : Define the stations metadata YAML files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The accurate definition of the stations metadata is essential for the correct
 processing of the raw data.
@@ -476,7 +476,7 @@ Now you are ready to test the reader works properly and enable to process all st
 
 
 Step 5 : Run the DISDRODB L0 processing
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 To test the reader works properly, the easiest way now it's to run the
 DISDRODB L0 processing of the stations for which you added the reader.
@@ -553,7 +553,7 @@ Reiterate between Step 4 and Step 5 till the DISDRODB L0 processing does not rai
 
 
 Step 6 : Add reader testing files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 If you arrived at this final step, it means that your reader is now almost ready to be shared with the community.
@@ -618,13 +618,8 @@ Once the reader is run with the raw data, the output files is compared to the gr
 	* Example : `LOCARNO2018` or `GID` .
 
 
-
-
-
-
-
-Tutorial : Reader preparation step-by-step
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Reader Preparation Tutorial
+------------------------------
 
 Please visit the following page to access a read-only tutorial notebook:
 

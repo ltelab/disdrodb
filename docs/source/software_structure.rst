@@ -19,8 +19,13 @@ The current software structure is described below:
 |     ├── 📜 manipulation.py
 |     ├── 📜 standards.py
 | ├── 📁 data_transfer
+|     ├── 📁 scripts
+|         ├── 📜 disdrodb_download_archive.py
+|         ├── 📜 disdrodb_upload_archive.py
+|         ├── 📜 disdrodb_upload_station.py
 |     ├── 📜 download_data.py
 |     ├── 📜 upload_data.py
+|     ├── 📜 zenodo.py
 | ├── 📁 l0
 |     ├── 📁 configs
 |     	├── 📁 `<sensor_name>`
@@ -50,7 +55,6 @@ The current software structure is described below:
 |     ├── 📜 l0b_nc_processing.py
 |     ├── 📜 l0b_nc_concat.py
 |     ├── 📜 l0_reader.py
-|     ├── 📜 metadata.py
 |     ├── 📜 standards.py
 |     ├── 📜 summary.py
 |     ├── 📜 template_tools.py
@@ -63,6 +67,7 @@ The current software structure is described below:
 |   ├── 📜 logger.py
 |   ├── 📜 scripts.py
 |   ├── 📜 netcdf.py
+|   ├── 📜 yaml.py
 | 📁 docs/
 | 📁 tutorials
 | 📜 .gitignore

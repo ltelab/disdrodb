@@ -5,11 +5,20 @@ Hi! Thanks for taking the time to contribute to DISDRODB.
 
 You can contribute in many ways :
 
--  Join the
-   `discussion <https://github.com/ltelab/disdrodb/discussions>`__
-- Report `issues <#issue-reporting-guidelines>`__
+- Join the
+   `discussions <https://github.com/ltelab/disdrodb/discussions>`__
+- Report software `issues <#issue-reporting-guidelines>`__
 - Help us developing new readers
-- Any others code improvements are welcome !
+- Add new data to the DISDRODB Decentralized Data Archive 
+- Implement new products (e.g. L1, L2, L3)
+- ... 
+- Any code improvements are welcome !
+
+**We Develop with GitHub !**
+
+We use GitHub to host code, to track issues and feature requests, as well as accept Pull Requests.
+We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__.
+So all code changes happen through Pull Requests (PRs).
 
 
 Before adding your contribution, please make sure to take a moment and read through the following documnents :
@@ -20,38 +29,25 @@ Before adding your contribution, please make sure to take a moment and read thro
 - `Code review checklist <#code-review-checklist>`__
 
 
+Issue Reporting
+-----------------
 
-Issue Reporting Guidelines
---------------------------
-
--  Always use one available `issue
-   templates <https://github.com/ltelab/disdrodb/issues/new/choose>`__
--  If you do not find the required GitHub issue template, please ask for a new template.
-
-
-GitHub
------------------------
-
-**We Develop with GitHub !**
-
-We use GitHub to host code, to track issues and feature requests, as well as accept Pull Requests.
-We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__.
-So all code changes happen through Pull Requests (PRs).
+-  Always use one of the available `GitHub Issue
+   Templates <https://github.com/ltelab/disdrodb/issues/new/choose>`__
+-  If you do not find the required GitHub Issue Template, please ask for a new template.
 
 
-
-
-Contributing environment setup
+Setup the contributor environment 
 -----------------------------------
 
 **First Time Contributors ?**
 
 Please follow the following steps to install your developing environment :
 
--  Setting up the development environment
+-  Set up the development environment
 -  Install pre-commit hooks
 
-Setting up the development environment
+Set up the development environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 You will need python to set up the development environment.
@@ -111,7 +107,7 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 
 
 
-Fork the repository
+1. Fork the repository
 ~~~~~~~~~~~~~~~~~~~
 
 Once you have set the development environment (see `Setting up the development environment`_), the next step is creating
@@ -132,8 +128,8 @@ modifications. The steps to follow are:
 
 Done! Now you have a local copy of the disdrodb repository.
 
-Create a new branch
-~~~~~~~~~~~~~~~~~~~
+2. Create a new branch
+~~~~~~~~~~~~~~~~~~~~~~~
 
 Each contribution should be made in a separate new branch of your forked repository.
 For example, if you plan to contribute with new readers, please create a branch for every single reader.
@@ -162,8 +158,8 @@ Please define the name of your branch based on the scope of the contribution. Tr
 
 
 
-Work on your changes
-~~~~~~~~~~~~~~~~~~~~
+3. Work on your changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 We follow the `PEP 8 <https://pep8.org/>`__ style guide for python code.
@@ -332,7 +328,7 @@ They are automatically run when you push your changes to the main repository via
 
 
 
-Code testing
+4. Code testing
 ~~~~~~~~~~~~~~~~
 
 
@@ -402,8 +398,8 @@ The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage.
 
 
 
-Push your changes to your fork repository
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+5. Push your changes to your fork repository
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 During this process, pre-commit hooks will be run. Your commit will be
 allowed only if quality requirements are fulfilled.
@@ -419,8 +415,8 @@ The goal is to increase readability and ease of contribution.
 
 
 
-Create a new Pull Request in GitHub.
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+6. Create a new Pull Request in GitHub.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once your code has been uploaded into your DISDRODB fork, you can create
 a Pull Request (PR) to the DISDRODB main branch.

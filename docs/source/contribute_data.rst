@@ -2,25 +2,29 @@
 How to Contribute New Data
 ==============================
 
-Users can make their own data accessible to the community. DISDRODB
-provides a central storage for code (readers), issues and metadata.
-However, the raw data itself must be stored by the data provider due to
-size limitations.
+Users can make their own data accessible to the community.
+DISDRODB provides a central storage for code (readers), issues and metadata.
+However, the raw data itself must be stored by the data provider on a remote data 
+repository (e.g., Zenodo, Figshare, etc.). 
+
 
 Two types of data must be distinguished:
 
--  Station Raw Data:
+-  DISDRODB Raw Data:
 
-   -  Stores disdrometer measurements for days, weeks, and years.
-   -  This dataset can be very heavy.
-   -  No central storage is provided.
+   -  Contain disdrometer measurements for days, weeks, and years.
+   -  This data can be very large. No central storage is provided.
+   -  DISDRODB provides utility functions to easily upload the raw data on remote data 
+      repositories (i.e. Zenodo)
+   -  DISDRODB provides utility functions to download the raw data from the remote data repositories.
 
--  Station Metadata and Issues YAML files:
+-  DISDRODB Metadata and Issues YAML files:
 
-   -  Stores a standard set of metadata and measurement issues of each disdrometer.
-   -  Central storage is provided in the ``disdro-data`` Git repository.
-   -  The ``/metadata`` folder contains a YAML metadata file called
-      ``<station_name>.yml``. It has a ``disdrodb_data_url`` key that references to the remote/online repository where station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
+   -  Each disdrometer station has a standardized metadata and issue YAML file. 
+   -  The ``disdrodb_data_url`` metadata key references to the remote/online repository where 
+   -  station's raw data are stored. At this URL, a single zip file provides all data available for a given station.
+   -  The DISDRODB Metadata Archive, hosted on the ``disdro-data`` GitHub repository, acts as a centralized storage
+      for the metadata and issue YAML files of all DISDRODB stations.
 
 
 Data transfer upload and download schema:

@@ -156,9 +156,9 @@ def test__get_list_metadata_with_data(tmp_path):
 
 
 def test_get_list_metadata_file(tmp_path):
-    from pathlib import Path
-
-    tmp_path = Path("/tmp/test_test")
+    # from pathlib import Path
+    # tmp_path = Path("/tmp/test_test")
+    
     base_dir = tmp_path / "DISDRODB"
 
     data_source = "data_source"
