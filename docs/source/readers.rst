@@ -8,7 +8,7 @@ The following subsections describe, first, what a DISDRODB reader is and how it 
 Then, it illustrates multiple methods how a DISDRODB reader can be called (i.e. from terminal or within python) to process raw data into DISDRODB L0 products.
 
 What is a reader
-------------------- 
+-------------------
 
 A DISDRODB reader is a python function encoding all the required information to convert
 raw disdrometer text (or netCDF) data into DISDRODB L0A and/or DISDRODB L0B products.
@@ -238,7 +238,7 @@ Finally, the reader will call the ``run_l0b_from_nc`` function, by passing to it
 How to add a new reader
 --------------------------
 
-Please refers to the dedicated subsection in 
+Please refers to the dedicated subsection in
 `How to Contribute New Data  <https://disdrodb.readthedocs.io/en/latest/contribute_data.html#implement-the-reader-for-your-data>`_.
 
 

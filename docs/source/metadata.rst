@@ -29,7 +29,7 @@ There are 7 metadata keys for which is mandatory to specify the value :
     For example, to use the GPM IFLOODS reader (defined at `disdrodb.l0.reader.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/GPM/IFLOODS.py>`_)
     to process the data, you specify the reader name ``GPM/IFLOODS``.
 
-The ``disdrodb_data_url`` metadata key references to the remote/online repository where station's raw data are stored. 
+The ``disdrodb_data_url`` metadata key references to the remote/online repository where station's raw data are stored.
 At this URL, a single zip file provides all data available for a given station.
 
 To check the validity of the metadata YAML files, run the following code:

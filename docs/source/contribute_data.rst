@@ -4,15 +4,15 @@ How to Contribute New Data
 
 Do you want to contribute your own data to to DISDRODB ? Great! You are in the right place !
 
-The data contributor is asked to perform the following 4 tasks: 
+The data contributor is asked to perform the following 4 tasks:
 
 - add the metadata of the stations he wish to contribute to the DISDRODB Metadata Archive,
-- implement and add to the disdrodb python package the reader enabling the processing of the raw data to DISDRODB L0 products, 
+- implement and add to the disdrodb python package the reader enabling the processing of the raw data to DISDRODB L0 products,
 - upload the raw data on a remote data repository (e.g., Zenodo, Figshare, etc.),
 - test that the download and DISDRODB L0 processing of the stations he/she contributed is working correctly.
 
 Before proceeding, you need to start thinking about the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` names of your stations.
-The name you adopt for the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` will be used to define: 
+The name you adopt for the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` will be used to define:
 -  the name of the directories where the raw data and the metadata of your stations will be stored in the DISDRODB Archive.
 -  the name of the DISDRODB reader you will implement for your data.
 
@@ -71,13 +71,13 @@ Step 1: Fork and download the DISDRODB Metadata Archive
 
       git checkout -b "add-metadata-<data_source>-<campaign_name>"
 
-   .. note:: 
+   .. note::
       The ``<data_source>`` and ``<campaign_name>`` should correspond to the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` of the station you aim to contribute.
 
 4. Set the remote upstream branch:
- 
+
     .. code:: bash
-      
+
       git push --set-upstream origin "add-metadata-<data_source>-<campaign_name>"
 
 5. Every time you will now ``git add *`` and ``git commit -m <describe-your-change>`` your changes, you will be able to push them to your forked repository with:
@@ -92,25 +92,25 @@ Step 1: Fork and download the DISDRODB Metadata Archive
    For more information on GitHub Pull Requests, read the
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
-   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__ 
+   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__
    or ask in the `disdrodb slack channel <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
 
 .. _step2:
 
-Step 2: Define the DISDRODB base directory 
+Step 2: Define the DISDRODB base directory
 --------------------------------------------
 
-Here we define the DISDRODB base directory of the archive. 
+Here we define the DISDRODB base directory of the archive.
 The directory path is saved into the DISDRODB configuration file,
 which is used by the disdrodb python package to locate the DISDRODB archive.
 On Windows, the DISDRODB base directory will have a path ending by `"\DISDRODB"`,  while on Mac/Linux, it will have a path ending by `"/DISDRODB"`
 
-.. code:: python 
+.. code:: python
 
-   import disdrodb
-   base_dir = "<path_to>/disdrodb-data/DISDRODB"
-   disdrodb.define_configs(zenodo_token="<your zenodo token>",
-                           zenodo_sandbox_token="<your zenodo sandbox token>")
+    import disdrodb
+
+    base_dir = "<path_to>/disdrodb-data/DISDRODB"
+    disdrodb.define_configs(zenodo_token="<your zenodo token>", zenodo_sandbox_token="<your zenodo sandbox token>")
 
 
 .. _step3:
@@ -119,8 +119,8 @@ Step 3: Add metadata the local DISDRODB Data Archive
 -----------------------------------------------------------
 
 Now let's create the directory structure and the defaults metadata files for the stations you wish to contribute.
-If you contribute multiple stations, just rerun the following command for each station. 
-   
+If you contribute multiple stations, just rerun the following command for each station.
+
 .. code:: bash
 
    disdrodb_initialize_station_files <DATA_SOURCE> <CAMPAIGN_NAME> <STATION_NAME>
@@ -141,9 +141,9 @@ The DISDRODB Raw archive has the following structure:
 |               ├── 📜 <station_name>.yml
 
 
-Go in the ``disdrodb-data/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>/metadata/`` directory and start editing the metadata files 
-of the stations you wish to contribute. 
-The metadata YAML file contains **relevant** information of the station (e.g. type of raw data, type of device, geolocation, ...) which is 
+Go in the ``disdrodb-data/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>/metadata/`` directory and start editing the metadata files
+of the stations you wish to contribute.
+The metadata YAML file contains **relevant** information of the station (e.g. type of raw data, type of device, geolocation, ...) which is
 required for the correct processing and integration into the DISDRODB archive.
 
 The list and description of the metadata is available in the `Metadata <https://disdrodb.readthedocs.io/en/latest/metadata.html>`_ section.
@@ -187,7 +187,7 @@ Once done, you are mostly ready for the next step: implementing the DISDRODB rea
 
 .. _step5:
 
-Step 5: Fork and install the disdrodb python package in editable mode 
+Step 5: Fork and install the disdrodb python package in editable mode
 -----------------------------------------------------------------------
 
 But first, let's fork and install the `disdrodb python package  <https://github.com/ltelab/disdrodb>`__ in editable mode,
@@ -211,9 +211,9 @@ To do so, follow the steps below:
 
 
 4. Set the remote upstream branch:
- 
+
     .. code:: bash
-      
+
       git push --set-upstream origin "reader-<data_source>-<campaign_name>"
 
 5. Every time you will now ``git add *`` and ``git commit -m <describe-your-change>`` your changes, you will be able to push them to your forked repository with:
@@ -229,7 +229,7 @@ To do so, follow the steps below:
    For more information on GitHub Pull Requests, read the
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
-   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ 
+   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__
    or ask in the `disdrodb slack channel <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
 
 
@@ -245,7 +245,7 @@ To do so, follow the steps below:
 Step 6: Define the reader name and add a prototype reader to the disdrodb python package
 -------------------------------------------------------------------------------------------
 
-DISDRODB readers are python functions that enable to read the raw data of a station. 
+DISDRODB readers are python functions that enable to read the raw data of a station.
 DISDRODB readers are located inside the disdrodb python package at `disdrodb.l0.reader.<READER_DATA_SOURCE>.<READER_NAME>.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers>`_
 
 In order to guarantee consistency between DISDRODB readers, it is very important to follow a specific nomenclature for ``<READER_NAME>`` and ``<READER_DATA_SOURCE>``
@@ -268,8 +268,8 @@ python file into the relevant ``disdrodb.l0.reader.<READER_DATA_SOURCE>`` direct
 
 If the ``<READER_DATA_SOURCE>`` for your reader does not yet exists, create a new directory.
 
-Once the reader template has been copied and renamed in the appropriate location of the disdrodb package, 
-it's time to **update the value of the ``reader`` key in the metadata files** !!! 
+Once the reader template has been copied and renamed in the appropriate location of the disdrodb package,
+it's time to **update the value of the ``reader`` key in the metadata files** !!!
 
 The ``reader`` key value must be defined with the pattern ``<READER_DATA_SOURCE>/<READER_NAME>`` where:
 
@@ -287,7 +287,7 @@ To check you are specifying the correct ``reader`` value in the metadata, adapt 
 
     from disdrodb.l0.l0_reader import get_reader_function_from_metadata_key
 
-    reader_name = "GPM/IFLOODS" # <READER_DATA_SOURCE>/<READER_NAME>
+    reader_name = "GPM/IFLOODS"  # <READER_DATA_SOURCE>/<READER_NAME>
     reader = get_reader_function_from_metadata_key(reader_name)
     print(reader)
 
@@ -302,9 +302,7 @@ If you updated the station metadata files, your reader function should also now 
     data_source = "<DATA_SOURCE>"
     station_name = "<STATION_NAME>"
     reader = get_station_reader_function(
-        data_source=data_source,
-        campaign_name=campaign_name, 
-        station_name=station_name
+        data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
 Once you updated your metadata YAML files, check once again the validity of the metadata by running:
@@ -316,9 +314,9 @@ Once you updated your metadata YAML files, check once again the validity of the 
 
 At this point, no error and printed message should appear !!!
 
-If you have any question at this point, you are encountering some issues, or you just want to let the DISRODB maintainers know that you are working on the 
-implementation of a reader for your data, just  ``git add *``, ``git commit -m <describe-your-change>``, ``git push`` your code changes ... 
-and open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__ and `GitHub disdrodb-data repository <https://github.com/ltelab/disdrodb-data>`__ 
+If you have any question at this point, you are encountering some issues, or you just want to let the DISRODB maintainers know that you are working on the
+implementation of a reader for your data, just  ``git add *``, ``git commit -m <describe-your-change>``, ``git push`` your code changes ...
+and open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__ and `GitHub disdrodb-data repository <https://github.com/ltelab/disdrodb-data>`__
 so that we keep track of your work and we can help you if needed !
 
 .. _step7:
@@ -482,17 +480,17 @@ The ``/data`` folder must contain your raw data files, while the ``/ground_truth
 
 Once the reader is run with the raw data, the output files is compared to the ground truth files. If the files are identical, the reader is considered valid.
 
-If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__ 
+If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__
 and in the `Github DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, do it now so
 that the DISDRODB maintainers can review your code and help you with the final steps !
 
-.. note:: 
-   To open a Pull Request in the `Github DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, you need to  ``git push`` the changes 
-   of your local ``disdrodb-data`` directory. 
+.. note::
+   To open a Pull Request in the `Github DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, you need to  ``git push`` the changes
+   of your local ``disdrodb-data`` directory.
 
-.. note:: 
-   To open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, you need to ``git push`` the changes 
-   of your local ``disdrodb`` python package directory. 
+.. note::
+   To open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, you need to ``git push`` the changes
+   of your local ``disdrodb`` python package directory.
 
 .. _step10:
 
@@ -501,7 +499,7 @@ Step 10: Upload your raw data on Zenodo and link it to the DISDRODB Decentralize
 
 We provide users with a code to easily upload their stations raw data to `Zenodo <https://zenodo.org/>`_.
 
-If you aim to upload the data of a single station, run: 
+If you aim to upload the data of a single station, run:
 
 .. code:: bash
 
@@ -512,17 +510,16 @@ If ``--platform zenodo.sandbox`` is specified, you are actually uploading the da
 It's good practice to first upload the station there, to check that everything works fine (see `Step 11 <#step11>`_ below),
 and then upload the data in the production environment using ``--platform zenodo``
 
-In order to upload the data to Zenodo, you need to specify the Zenodo tokens into the DISDRODB configuration file with: 
+In order to upload the data to Zenodo, you need to specify the Zenodo tokens into the DISDRODB configuration file with:
 
-.. code:: python 
+.. code:: python
 
-   import disdrodb
+    import disdrodb
 
-   disdrodb.define_configs(zenodo_token="<your zenodo token>",
-                           zenodo_sandbox_token="<your zenodo sandbox token>")
+    disdrodb.define_configs(zenodo_token="<your zenodo token>", zenodo_sandbox_token="<your zenodo sandbox token>")
 
 
-To generate the tokens, for `Zenodo go here <https://zenodo.org/account/settings/applications/tokens/new/>`_, while for 
+To generate the tokens, for `Zenodo go here <https://zenodo.org/account/settings/applications/tokens/new/>`_, while for
 `Zenodo Sandbox go here <https://sandbox.zenodo.org/account/settings/applications/tokens/new/>`_. When generating the tokens,
 you can choose the name you want (i.e. DISDRODB), but you need to select the ``deposit:actions`` and ``deposit:write`` scopes.
 
@@ -530,80 +527,80 @@ When the token is generated, you will see something similar to the following:
 .. image:: /static/zenodo.png
 
 
-When the command  ``disdrodb_upload_station`` is executed, the data are automatically uploaded on Zenodo. 
-A link will be displayed that the user must use to go to the Zenodo web interface to manually publish the data. 
+When the command  ``disdrodb_upload_station`` is executed, the data are automatically uploaded on Zenodo.
+A link will be displayed that the user must use to go to the Zenodo web interface to manually publish the data.
 Please select the community ``DISDRODB`` (see top blue button) before publishing the data !
 
 .. image:: /static/zenodo_publishing_data.png
 
-If you are uploading multiple stations, you can an overview of the data still waiting for publication at: 
+If you are uploading multiple stations, you can an overview of the data still waiting for publication at:
 
 * `https://sandbox.zenodo.org/me/uploads for the Zenodo Sandbox repository <https://sandbox.zenodo.org/me/uploads>`_
-  
+
 * `https://zenodo.org/me/uploads for the Zenodo repository <https://zenodo.org/me/uploads>`_
 
-Note that: 
+Note that:
 
-* when the data are uploaded on Zenodo, the metadata key ``disdrodb_data_url`` of the station is automatically 
+* when the data are uploaded on Zenodo, the metadata key ``disdrodb_data_url`` of the station is automatically
   updated with the Zenodo URL where the station data are stored (and can be downloaded)
 
-* if the ``authors``, ``authors_url`` and ``institution`` DISDRODB metadata keys are correctly specified 
-  (i.e. each author information is comma-separated), these keys values are automatically added to the Zenodo metadata 
+* if the ``authors``, ``authors_url`` and ``institution`` DISDRODB metadata keys are correctly specified
+  (i.e. each author information is comma-separated), these keys values are automatically added to the Zenodo metadata
   required for the publication of the data.
 
 * if the station data is not yet published on Zenodo, the data can still already be downloaded (i.e. for testing purposes).
 
 
-If you feel safe about your data and the whole procedure, you can also use the command below to upload all stations of a given campaign. 
+If you feel safe about your data and the whole procedure, you can also use the command below to upload all stations of a given campaign.
 
 .. code:: bash
 
-   disdrodb_upload_archive --data_sources <DATA SOURCE> --campaign_name> <CAMPAIGN_NAME> --platform zenodo.sandbox --force False 
+   disdrodb_upload_archive --data_sources <DATA SOURCE> --campaign_name> <CAMPAIGN_NAME> --platform zenodo.sandbox --force False
 
-Consider that if you previously uploaded data on Zenodo Sandbox for testing purposes, you need to specify ``--force True`` 
-when uploading data to the official Zenodo repository ! 
+Consider that if you previously uploaded data on Zenodo Sandbox for testing purposes, you need to specify ``--force True``
+when uploading data to the official Zenodo repository !
 
 .. _step11:
 
 Step 11: Test the download and DISDRODB L0 processing of the stations you just contributed
 -------------------------------------------------------------------------------------------
 
-To test that the data upload has been successfull, you can try to download the data and run the DISDRODB L0 processing. 
-However you **must NOT perform this test in the disdrodb-data directory you where working till now** because you would risk to 
+To test that the data upload has been successful, you can try to download the data and run the DISDRODB L0 processing.
+However you **must NOT perform this test in the disdrodb-data directory you where working till now** because you would risk to
 overwrite/delete the data you just uploaded on Zenodo.
 
-We provide this python script that should enable you to test safely the whole procedure. 
+We provide this python script that should enable you to test safely the whole procedure.
 
-.. code:: python 
+.. code:: python
 
-   import disdrodb 
-   from disdrodb.l0.io import prepare_test_archive
-   
-   data_source="<your_data_source>"
-   campaign_name="<your_campaign>"
-   station_name="<your_campaign>"
+    import disdrodb
+    from disdrodb.l0.io import prepare_test_archive
 
-   test_base_directory = "/tmp/DISDRODB" 
-   prepare_test_archive(test_base_directory=test_base_directory, 
-                        data_source=data_source, 
-                        campaign_name=campaign_name,
-                        station_name=station_name,
-   )
+    data_source = "<your_data_source>"
+    campaign_name = "<your_campaign>"
+    station_name = "<your_campaign>"
 
-   disdrodb.download_station(base_dir=test_base_directory,
-                             data_source=data_source, 
-                             campaign_name=campaign_name,
-                             station_name=station_name)
-   disdrodb.run_l0_station(base_dir=test_base_directory,
-                           data_source=data_source, 
-                           campaign_name=campaign_name,
-                           station_name=station_name,
-                           debugging_mode=True, # to speed up
-   ) 
+    test_base_directory = "/tmp/DISDRODB"
+    prepare_test_archive(
+        test_base_directory=test_base_directory,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
-When the script finish, check that the content in the ``test_base_directory`` directory is what you expected to be. 
+    disdrodb.download_station(
+        base_dir=test_base_directory, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+    disdrodb.run_l0_station(
+        base_dir=test_base_directory,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        debugging_mode=True,  # to speed up
+    )
 
-If everything looks as expected ... congratulations, you made it !!! 
+When the script finish, check that the content in the ``test_base_directory`` directory is what you expected to be.
+
+If everything looks as expected ... congratulations, you made it !!!
 
 Your Pull Requests will likely be immediately merged and the data and reader will be available to the DISDRODB community.
-
