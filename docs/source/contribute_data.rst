@@ -32,8 +32,8 @@ Data transfer upload and download schema:
 .. image:: /static/transfer.png
 
 
-Update the DISDRODB metadata archive
-----------------------------------------
+Add stations information to the DISDRODB metadata archive
+----------------------------------------------------------
 
 Do you want to contribute to the project with your own data? Great! Just
 follow these steps:
@@ -122,8 +122,9 @@ To do so, first make a copy of the DISDRODB metadata archive you just edited, in
 
 Then, run the following command to download the data you just uploaded:
 
-.. code:: bash
-   export DISDRODB_BASE_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited/DISDRODB"
+.. code:: 
+
+   export DISDRODB_BASE_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited>/DISDRODB"
    disdrodb_download_archive  --data_sources <your_data_source> --campaign_names <your_new_campaign> --force true
 
 ::note
@@ -134,8 +135,9 @@ If the download is successful, and you also already implemented the DISDRODB rea
 
 To do so, run the following command:
 
-.. code:: bash
-   export DISDRODB_BASE_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited/DISDRODB"
+.. code:: 
+
+   export DISDRODB_BASE_DIR="<the_path_to_a_copy_of_the_disdrodb-data_you_edited>/DISDRODB"
    disdrodb_run_l0  --data_sources <your_data_source> --campaign_names <your_new_campaign>
 
    ::note

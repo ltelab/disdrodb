@@ -158,9 +158,9 @@ Therefore, the ``raw_drop_number`` field value is expected to look like ``"000,0
 For example, if the ``raw_drop_number`` looks like the following three cases, you need to preprocess it accordingly
 into the ``df_sanitizer_fun``:
 
-* Case 1: ``"000001002 ...001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/NETHERLANDS/DELFT.py>`_
-* Case 2: ``"000 001 002 ... 001"``. Convert to ``"000,001,002, ..., 001"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/CHINA/CHONGQING.py>`_
-* Case 3: ``",,,1,2,...,,,"``. Convert to ``"0,0,0,1,2,...,0,0,0"``.  Example reader `here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/FRANCE/SIRTA_OTT2.py>`_
+* Case 1: ``"000001002 ...001"``. Convert to ``"000,001,002, ..., 001"``.  Example `DELFT reader here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/NETHERLANDS/DELFT.py>`_
+* Case 2: ``"000 001 002 ... 001"``. Convert to ``"000,001,002, ..., 001"``.  Example `CHONGQING reader here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/CHINA/CHONGQING.py>`_
+* Case 3: ``",,,1,2,...,,,"``. Convert to ``"0,0,0,1,2,...,0,0,0"``.  Example reader `SIRTA reader here <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/FRANCE/SIRTA_OTT2.py>`_
 
 Finally, the reader will call the ``run_l0a`` function, by passing to it all the above described arguments.
 
@@ -242,12 +242,12 @@ We describe here the steps required to create a reader for your raw text files.
 To share the reader with the community, please also read the `Contributing guide <contributors_guidelines.html>`_.
 
 
-* `Step 1 <#step-1-add-the-raw-data-to-the-disdrodb-raw-archive>`_ : Set up the DISDRODB "Raw" directory structure
+* `Step 1 <#step-1-add-the-raw-data-to-the-disdrodb-raw-archive>`_: Set up the DISDRODB "Raw" directory structure
 * `Step 2 <#step-2-define-the-reader-name>`_: Define the reader name
 * `Step 3 <#step-3-define-the-stations-metadata-yaml-files>`_: Define and check the validity of the stations metadata
-* `Step 4 <#step-4-analyse-the-data-and-define-the-reader-components>`_ : Analyse the raw data and implement the reader
-* `Step 5 <#step-5-run-the-disdrodb-l0-processing>`_ : Run the DISDRODB L0 processing
-* `Step 6 <#step-6-add-reader-testing-files>`_ : Create the reader test files
+* `Step 4 <#step-4-analyse-the-data-and-define-the-reader-components>`_: Analyse the raw data and implement the reader
+* `Step 5 <#step-5-run-the-disdrodb-l0-processing>`_: Run the DISDRODB L0 processing
+* `Step 6 <#step-6-add-reader-testing-files>`_: Create the reader test files
 
 
 
@@ -304,7 +304,7 @@ in the `Contributors Guidelines <https://disdrodb.readthedocs.io/en/latest/contr
 
     * The metadata YAML file contains **relevant** information of the station (e.g. type of raw data, type of device, geolocation, ...) which is required for the correct processing and integration into the DISDRODB archive.
 
-    * Read carefully `Step 2 <#step-2-define-the-metadata-of-the-stations>`_ to define the metadata correctly!
+    * Read carefully `Step 3 <#step-3-define-the-stations-metadata-yaml-files>`_ to define the metadata correctly!
 
 .. note::
     Guidelines for the definition of the **issue YAML files**:

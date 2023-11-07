@@ -10,8 +10,7 @@ Launch DISDRODB L0 processing for a specific station
 ======================================================
 
 
-Command line solution
-~~~~~~~~~~~~~~~~~~~~~~
+**Command line solution**
 
 
 .. code-block:: bash
@@ -28,9 +27,8 @@ Example:
 Type ``disdrodb_run_l0_station --help`` in the terminal to get more information on the possible parameters.
 
 
-Pythonic solution
-~~~~~~~~~~~~~~~~~~~
-
+**Pythonic solution**
+ 
 
 .. code-block::
 
@@ -103,8 +101,8 @@ For example:
 - if only the ``--station_names`` argument is specified, DISDRODB will process only the specified stations.
 
 
-Command line solution
-~~~~~~~~~~~~~~~~~~~~~~
+**Command line solution**
+
 
 
 .. code-block:: bash
@@ -127,8 +125,7 @@ To  specify multiple campaigns you can do the follow
 Type ``disdrodb_run_l0 --help`` in the terminal to get more information on the possible parameters.
 
 
-Pythonic solution
-~~~~~~~~~~~~~~~~~~~
+**Pythonic solution**
 
 
 .. code-block::

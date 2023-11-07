@@ -108,9 +108,9 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 
 
 1. Fork the repository
-~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
 
-Once you have set the development environment (see `Setting up the development environment`_), the next step is creating
+Once you have set the development environment (see `Set up the development environment`_), the next step is creating
 your local copy of the repository, where you will commit your
 modifications. The steps to follow are:
 
@@ -271,9 +271,7 @@ To run `Black` locally :
 
 
 .. note::
-	To maintain consistency, make sure to stick to the version defined in the
-   `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file.
-   This version will be used in the CI.
+	To maintain consistency, make sure to stick to the version defined in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file. This version will be used in the CI.
 
 
 
@@ -287,9 +285,7 @@ To run `Ruff` locally :
 
 
 .. note::
-	To maintain consistency, make sure to stick to the version and the rule configuration defined in the
-   `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file.
-   This version will be used in the CI.
+	To maintain consistency, make sure to stick to the version and the rule configuration defined in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file. This version will be used in the CI.
 
 
 
@@ -303,28 +299,26 @@ To run `Codespell` locally :
 
 
 .. note::
-	To maintain consistency, make sure to stick to the version and the rule configuration defined in the
-   `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file.
-   This version will be used in the CI.
+	To maintain consistency, make sure to stick to the version and the rule configuration defined in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file. This version will be used in the CI.
 
 
 In the table below, some CI tool are mentioned for your information, but does not need to be installed on your computer.
 They are automatically run when you push your changes to the main repository via a GitHub Pull Request.
 
 
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
-|  Tool                                                                                         | Aim                                                              |
-+===============================================================================================+==================================================================+
-| `pre-commit.ci   <https://pre-commit.ci/>`__                                                  | Run pre-commit (as defined in `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ )        |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
-| `CodeBeat      <https://codebeat.co/>`__                                                      | Automated code review and analysis tools                         |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
-| `CodeScene <https://codescene.com/>`__                                                        | Automated code review and analysis tools                         |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
-| `CodeFactor <https://www.codefactor.io/>`__                                                   | Automated code review and analysis tools                         |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
-| `Snyk Code <https://snyk.io/product/snyk-code/>`__                                            | Automated code security checks                                   |
-+-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
++----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| Tool                                               | Aim                                                                                                                               |
++====================================================+===================================================================================================================================+
+| `pre-commit.ci <https://pre-commit.ci/>`__         | Run pre-commit (as defined in `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ ) |
++----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| `CodeBeat <https://codebeat.co/>`__                | Automated code review and analysis tools                                                                                          |
++----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| `CodeScene <https://codescene.com/>`__             | Automated code review and analysis tools                                                                                          |
++----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| `CodeFactor <https://www.codefactor.io/>`__        | Automated code review and analysis tools                                                                                          |
++----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
+| `Snyk Code <https://snyk.io/product/snyk-code/>`__ | Automated code security checks                                                                                                    |
++----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 
 
 
@@ -431,16 +425,16 @@ a Pull Request (PR) to the DISDRODB main branch.
 -  If adding a new feature:
 
    -  Add accompanying test case.
-   -  Provide a convincing reason to add this feature.
--     Ideally, you should open a suggestion issue first and have it approved before working on it.
+   -  Provide a convincing reason to add this feature. Ideally, you should open a suggestion issue first and have it approved before working on it.
    -  Optionally, you can also present your issue in the repository `Discussions <https://github.com/ltelab/disdrodb/discussions>`__.
 
 -  If fixing bug:
 
-   -  If you are resolving a special issue, add ``(fix #xxxx)`` in your PR title for a better release log.
-      For example: ``Update L0 encoding compression (fix #3899)``.
+   -  If you are resolving a special issue, add ``(fix #xxxx)`` in your PR title for a better release log. For example: ``Update L0 encoding compression (fix #3899)``.
    -  Provide a detailed description of the bug in the PR.
    -  Add appropriate test coverage if applicable.
+
+
 
 .. _section-1:
 
