@@ -68,7 +68,15 @@ html_theme = "sphinx_book_theme"
 html_title = "disdrodb"
 html_theme_options = {
     "repository_url": "https://github.com/ltelab/disdrodb",
+    "repository_branch": "main",
     "use_repository_button": True,
+    "use_edit_page_button": True,
+    # "use_source_button": True,
+    "use_issues_button": True,
+    # "use_repository_button": True,
+    "use_download_button": True,
+    # "use_sidenotes": True,
+    "show_toc_level": 2,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
