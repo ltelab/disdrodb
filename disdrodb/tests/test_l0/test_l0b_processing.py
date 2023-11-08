@@ -94,7 +94,7 @@ def define_test_dummy_configs():
         "raw_data_format.yml": raw_data_format_dict,
         "bins_velocity.yml": bins_velocity_dict,
         "bins_diameter.yml": bins_diameter_dict,
-        "l0b_variables_attrs.yml": cf_attrs,
+        "l0b_cf_attrs.yml": cf_attrs,
     }
     return dummy_configs_dict
 

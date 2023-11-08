@@ -20,6 +20,7 @@
 
 import datetime
 import functools
+import glob
 import logging
 import os
 import time
@@ -37,7 +38,11 @@ from disdrodb.l0.io import (
     create_directory_structure,
     create_initial_directory_structure,
     get_l0a_file_list,
+    get_l0a_fpath,
+    get_l0b_dir,
+    get_l0b_fpath,
     get_raw_file_list,
+    read_l0a_dataframe,
 )
 from disdrodb.l0.issue import read_issue
 from disdrodb.l0.l0_reader import get_station_reader_function
@@ -50,9 +55,9 @@ from disdrodb.utils.logger import (
     close_logger,
     create_file_logger,
     define_summary_log,
-    # log_warning,
     log_error,
     log_info,
+    log_warning,
 )
 
 logger = logging.getLogger(__name__)
@@ -96,8 +101,6 @@ def _generate_l0a(
     issue_dict={},
 ):
     """Generate L0A file from raw file."""
-
-    from disdrodb.l0.io import get_l0a_fpath
     from disdrodb.l0.l0a_processing import (
         process_raw_file,
         write_l0a,
@@ -180,7 +183,6 @@ def _generate_l0b(
     debugging_mode,
     parallel,
 ):
-    from disdrodb.l0.io import get_l0b_fpath, read_l0a_dataframe
     from disdrodb.l0.l0b_processing import (
         create_l0b_from_l0a,
         write_l0b,
@@ -258,7 +260,6 @@ def _generate_l0b_from_nc(
     verbose,
     parallel,
 ):
-    from disdrodb.l0.io import get_l0b_fpath
     from disdrodb.l0.l0b_nc_processing import process_raw_nc
     from disdrodb.l0.l0b_processing import write_l0b
 
@@ -783,6 +784,72 @@ def run_l0b_from_nc(
     return None
 
 
+def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
+    """Concatenate all L0B netCDF files into a single netCDF file.
+
+    The single netCDF file is saved at <processed_dir>/L0B.
+    """
+    from disdrodb.l0.l0b_processing import write_l0b
+    from disdrodb.utils.netcdf import xr_concat_datasets
+
+    # Create logger
+    filename = f"concatenatation_{station_name}"
+    logger = create_file_logger(
+        processed_dir=processed_dir,
+        product="L0B",
+        station_name="",  # locate outside the station directory
+        filename=filename,
+        parallel=False,
+    )
+
+    # -------------------------------------------------------------------------.
+    # Retrieve L0B files
+    l0b_dir_path = get_l0b_dir(processed_dir, station_name)
+    file_list = sorted(glob.glob(os.path.join(l0b_dir_path, "*.nc")))
+
+    # -------------------------------------------------------------------------.
+    # Check there are at least two files
+    n_files = len(file_list)
+    if n_files == 0:
+        msg = f"No L0B file is available for concatenation in {l0b_dir_path}."
+        log_error(logger=logger, msg=msg, verbose=False)
+        raise ValueError(msg)
+
+    if n_files == 1:
+        msg = f"Only a single file is available for concatenation in {l0b_dir_path}."
+        log_warning(logger=logger, msg=msg, verbose=verbose)
+        raise ValueError(msg)
+
+    # -------------------------------------------------------------------------.
+    # Concatenate the files
+    ds = xr_concat_datasets(file_list)
+
+    # -------------------------------------------------------------------------.
+    # Define the filepath of the concatenated L0B netCDF
+    single_nc_fpath = get_l0b_fpath(ds, processed_dir, station_name, l0b_concat=True)
+    force = True  # TODO add as argument
+    write_l0b(ds, fpath=single_nc_fpath, force=force)
+
+    # -------------------------------------------------------------------------.
+    # Close file and delete
+    ds.close()
+    del ds
+
+    # -------------------------------------------------------------------------.
+    # If remove = True, remove all the single files
+    if remove:
+        log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
+        _ = [os.remove(fpath) for fpath in file_list]
+        log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
+
+    # -------------------------------------------------------------------------.
+    # Close the file logger
+    close_logger(logger)
+
+    # Return the dataset
+    return None
+
+
 ####--------------------------------------------------------------------------.
 #### DISDRODB Station Functions
 
@@ -802,7 +869,8 @@ def run_l0a_station(
     """
     Run the L0A processing of a specific DISDRODB station when invoked from the terminal.
 
-    This function is intended to be called through the ``run_disdrodb_l0a_station`` command-line interface.
+    This function is intended to be called through the ``disdrodb_run_l0a_station``
+    command-line interface.
 
     Parameters
     ----------
@@ -884,7 +952,8 @@ def run_l0b_station(
     """
     Run the L0B processing of a specific DISDRODB station when invoked from the terminal.
 
-    This function is intended to be called through the ``run_disdrodb_l0b_station`` command-line interface.
+    This function is intended to be called through the ``disdrodb_run_l0b_station``
+    command-line interface.
 
     Parameters
     ----------
@@ -933,6 +1002,58 @@ def run_l0b_station(
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+    )
+
+
+def run_l0b_concat_station(
+    # Station arguments
+    data_source,
+    campaign_name,
+    station_name,
+    # L0B concat options
+    remove_l0b=False,
+    verbose=True,
+    base_dir: str = None,
+):
+    """Define the L0B file concatenation of a station.
+
+    This function is intended to be called through the ``disdrodb_run_l0b_concat station``
+    command-line interface.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    verbose : bool, optional
+        If ``True`` (default), detailed processing information will be printed to the terminal.
+        If ``False``, less information will be displayed.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    """
+    # Retrieve processed_dir
+    base_dir = get_base_dir(base_dir)
+    processed_dir = get_disdrodb_path(
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exist=True,
+    )
+
+    # Run concatenation
+    run_l0b_concat(
+        processed_dir=processed_dir,
+        station_name=station_name,
+        remove=remove_l0b,
+        verbose=verbose,
     )
 
 

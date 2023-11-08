@@ -34,7 +34,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_l0_station_arguments
 @click_l0_processing_options
 @click_l0_archive_options
-def run_disdrodb_l0_station(
+def disdrodb_run_l0_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -93,7 +93,7 @@ def run_disdrodb_l0_station(
         If True, the files are processed simultaneously in multiple processes.\n
         Each process will use a single thread to avoid issues with the HDF/netCDF library.\n
         By default, the number of process is defined with os.cpu_count().\n
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0_station\n
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0_station\n
         If False, the files are processed sequentially in a single process.\n
         If False, multi-threading is automatically exploited to speed up I/0 tasks.\n
     debugging_mode : bool \n

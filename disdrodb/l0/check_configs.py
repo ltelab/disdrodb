@@ -43,7 +43,7 @@ CONFIG_FILES_LIST = [
     "raw_data_format.yml",
     "l0a_encodings.yml",
     "l0b_encodings.yml",
-    "l0b_variables_attrs.yml",
+    "l0b_cf_attrs.yml",
 ]
 
 
@@ -81,7 +81,7 @@ def _check_variable_consistency(sensor_name: str) -> None:
     ValueError
         If the keys are not consistent.
     """
-    list_variables = read_config_file(sensor_name, product="L0A", filename="l0b_variables_attrs.yml").keys()
+    list_variables = read_config_file(sensor_name, product="L0A", filename="l0b_cf_attrs.yml").keys()
     file_names = [
         "raw_data_format.yml",
         "l0a_encodings.yml",
@@ -247,14 +247,14 @@ def _check_raw_data_format(sensor_name: str) -> None:
 
 
 def _check_cf_attributes(sensor_name: str) -> None:
-    """Check that the l0b_variables_attrs.yml description, long_name and units values are strings.
+    """Check that the l0b_cf_attrs.yml description, long_name and units values are strings.
 
     Parameters
     ----------
     sensor_name : str
         Name of the sensor.
     """
-    cf_dict = read_config_file(sensor_name, product="L0A", filename="l0b_variables_attrs.yml")
+    cf_dict = read_config_file(sensor_name, product="L0A", filename="l0b_cf_attrs.yml")
     for var, attrs_dict in cf_dict.items():
         for key, value in attrs_dict.items():
             if not isinstance(value, str):

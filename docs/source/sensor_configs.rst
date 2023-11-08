@@ -33,7 +33,7 @@ For each sensor, the following list of configuration YAML files are required:
 |               ├── 📜 raw_data_format.yml : Information related to the variables logged by the sensor
 |               ├── 📜 l0a_encodings.yml : Variables encodings for the L0A product
 |               ├── 📜 l0b_encodings.yml : Variables encodings for the L0B product
-|               ├── 📜 l0b_variables_attrs.yml : Variables CF attributes for the L0B product
+|               ├── 📜 l0b_cf_attrs.yml : Variables CF attributes for the L0B product
 
 
 If you want to add a new sensor configuration, you will need to copy the YAML files
@@ -119,9 +119,9 @@ and therefore ``dimension_order = ["diameter_bin_center", "velocity_bin_center"]
 DISDRODB L0B variables attributes
 ---------------------------------
 
-The ``l0b_variables_attrs.yml`` file defines the DISDRODB L0B netCDF variable CF attributes.
+The ``l0b_cf_attrs.yml`` file defines the DISDRODB L0B netCDF variable CF attributes.
 The variables defined in this file must be a subset of the variables listed in the ``raw_data_format.yml`` file.
-Only the variables defined in the ``l0b_variables_attrs.yml`` file are used in the other ``l0*.yml`` files.
+Only the variables defined in the ``l0b_cf_attrs.yml`` file are used in the other ``l0*.yml`` files.
 The expected keys for each variable are: ``long_name``, ``units`` and ``description``.
 Please read the Climate and Forecast Conventions guidelines for
 `long_name <https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#long-name>`_

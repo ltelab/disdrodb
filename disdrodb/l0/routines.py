@@ -218,7 +218,7 @@ def run_disdrodb_l0a_station(
     parallel: bool = True,
     base_dir: str = None,
 ):
-    """Run the L0A processing of a station calling run_disdrodb_l0a_station in the terminal."""
+    """Run the L0A processing of a station calling the disdrodb_l0a_station in the terminal."""
     # Define command
     cmd = " ".join(
         [
@@ -257,7 +257,7 @@ def run_disdrodb_l0b_station(
     parallel: bool = True,
     base_dir: str = None,
 ):
-    """Run the L0B processing of a station calling run_disdrodb_l0b_station in the terminal."""
+    """Run the L0B processing of a station calling disdrodb_run_l0b_station in the terminal."""
     # Define command
     cmd = " ".join(
         [
@@ -282,6 +282,35 @@ def run_disdrodb_l0b_station(
     # Execute command
     _execute_cmd(cmd)
     return None
+
+
+def run_disdrodb_l0b_concat_station(
+    data_source,
+    campaign_name,
+    station_name,
+    remove_l0b=False,
+    verbose=False,
+    base_dir=None,
+):
+    """Concatenate the L0B files of a single DISDRODB station.
+
+    This function runs the ``disdrodb_run_l0b_concat_station`` script in the terminal.
+    """
+    cmd = " ".join(
+        [
+            "disdrodb_run_l0b_concat_station",
+            data_source,
+            campaign_name,
+            station_name,
+            "--remove_l0b",
+            str(remove_l0b),
+            "--verbose",
+            str(verbose),
+            "--base_dir",
+            str(base_dir),
+        ]
+    )
+    _execute_cmd(cmd)
 
 
 ####--------------------------------------------------------------------------.
@@ -358,7 +387,6 @@ def run_disdrodb_l0_station(
         If None (the default), the disdrodb config variable 'dir' is used.
     """
     from disdrodb.api.io import get_disdrodb_path
-    from disdrodb.l0.l0b_nc_concat import run_disdrodb_l0b_concat_station
 
     # ---------------------------------------------------------------------.
     t_i = time.time()
@@ -435,7 +463,8 @@ def run_disdrodb_l0_station(
 def _check_available_stations(list_info):
     # If no stations available, raise an error
     if len(list_info) == 0:
-        raise ValueError("No stations are available !")
+        msg = "No stations available given the provided `data_sources` and `campaign_names` arguments !"
+        raise ValueError(msg)
 
 
 def _filter_list_info(list_info, station_names):
@@ -444,7 +473,7 @@ def _filter_list_info(list_info, station_names):
         list_info = [info for info in list_info if info[2] in station_names]
         # If nothing left, raise an error
         if len(list_info) == 0:
-            raise ValueError("No stations to concatenate given the provided `station_name` argument!")
+            raise ValueError("No stations available given the provided `station_names` argument !")
     return list_info
 
 
@@ -673,6 +702,48 @@ def run_disdrodb_l0b(
         debugging_mode=debugging_mode,
         parallel=parallel,
     )
+
+
+def run_disdrodb_l0b_concat(
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    remove_l0b=False,
+    verbose=False,
+    base_dir=None,
+):
+    """Concatenate the L0B files of the DISDRODB archive.
+
+    This function is called by the ``disdrodb_run_l0b_concat`` script.
+    """
+    from disdrodb.api.io import available_stations
+
+    list_info = available_stations(
+        base_dir=base_dir,
+        product="L0B",
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+    )
+
+    _check_available_stations(list_info)
+    list_info = _filter_list_info(list_info, station_names)
+
+    # Print message
+    n_stations = len(list_info)
+    print(f"Concatenation of {n_stations} L0B stations started.")
+
+    # Start the loop to launch the concatenation of each station
+    for data_source, campaign_name, station_name in list_info:
+        print(f"L0B files concatenation of {data_source} {campaign_name} {station_name} station started.")
+        run_disdrodb_l0b_concat_station(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            remove_l0b=remove_l0b,
+            verbose=verbose,
+        )
+    print(f"L0 files concatenation of {data_source} {campaign_name} {station_name} station ended.")
 
 
 ####---------------------------------------------------------------------------.

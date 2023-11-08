@@ -183,25 +183,25 @@ def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseMod
 
 
 class L0BVariableAttributesSchema(BaseModel):
-    """Define the expected keys and values of the each variable in the l0b_variables_attrs file."""
+    """Define the expected keys and values of the each variable in the l0b_cf_attrs file."""
 
     description: str
     units: str
     long_name: str
 
 
-# Test the format and content of the l0b_variables_attrs.yml files
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_variables_attrs.yml")
+# Test the format and content of the l0b_cf_attrs.yml files
+list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_cf_attrs.yml")
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_l0b_variables_attrs_format(yaml_file_path: str) -> None:
-    """Test the l0b_variables_attrs.yml file format.
+def test_l0b_cf_attrs_format(yaml_file_path: str) -> None:
+    """Test the l0b_cf_attrs.yml file format.
 
     Parameters
     ----------
     yaml_file_path : str
-        Path of the l0b_variables_attrs.yml file to test.
+        Path of the l0b_cf_attrs.yml file to test.
     """
     data = read_yaml_file(yaml_file_path)
     assert is_dict(data)

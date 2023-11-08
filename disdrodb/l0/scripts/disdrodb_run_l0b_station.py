@@ -32,23 +32,23 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_l0_station_arguments
 @click_l0_processing_options
-def run_disdrodb_l0a_station(
+def disdrodb_run_l0b_station(
     # Station arguments
     data_source,
     campaign_name,
     station_name,
     # Processing options
     force: bool = False,
-    verbose: bool = False,
+    verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
     base_dir: str = None,
 ):
-    """
-    Run the L0A processing of a specific DISDRODB station from the terminal.
+    """Run the L0B processing of a specific DISDRODB station from the terminal.
 
     Parameters
     ----------
+
     data_source : str
         Institution name (when campaign data spans more than 1 country),
         or country (when all campaigns (or sensor networks) are inside a given country).
@@ -66,17 +66,17 @@ def run_disdrodb_l0a_station(
         The default is True.
     parallel : bool
         If True, the files are processed simultaneously in multiple processes.
-        Each process will use a single thread.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
         By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 run_disdrodb_l0a_station
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0b_station
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        It processes just the first 3 raw data files.
+        It processes just the first 100 rows of 3 L0A files.
         The default is False.
     base_dir : str
-        Base directory of DISDRODB.
+        Base directory of DISDRODB
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
@@ -85,7 +85,7 @@ def run_disdrodb_l0a_station(
     import dask
     from dask.distributed import Client, LocalCluster
 
-    from disdrodb.l0.l0_processing import run_l0a_station
+    from disdrodb.l0.l0_processing import run_l0b_station
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
@@ -104,9 +104,9 @@ def run_disdrodb_l0a_station(
             # silence_logs=False,
         )
         Client(cluster)
-    # -------------------------------------------------------------------------.
 
-    run_l0a_station(
+    # -------------------------------------------------------------------------.
+    run_l0b_station(
         # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,

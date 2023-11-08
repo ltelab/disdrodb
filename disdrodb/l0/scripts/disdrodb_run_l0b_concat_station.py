@@ -32,7 +32,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_l0_station_arguments
 @click_l0b_concat_options
-def run_disdrodb_l0b_concat_station(
+def disdrodb_run_l0b_concat_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -66,7 +66,7 @@ def run_disdrodb_l0b_concat_station(
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.l0b_nc_concat import run_l0b_concat_station
+    from disdrodb.l0.l0_processing import run_l0b_concat_station
 
     run_l0b_concat_station(
         # Station arguments

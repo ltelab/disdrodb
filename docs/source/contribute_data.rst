@@ -541,7 +541,8 @@ If you aim to upload the data of a single station, run:
    disdrodb_upload_station <DATA SOURCE> <CAMPAIGN_NAME> <STATION_NAME> --platform zenodo.sandbox --force False
 
 
-If ``--platform zenodo.sandbox`` is specified, you are actually uploading the data in the Zenodo sandbox testing environment.
+If ``--platform zenodo.sandbox`` is specified, you are actually uploading the data in the
+`Zenodo Sandbox <https://sandbox.zenodo.org/ testing environment>`_.
 It's good practice to first upload the station there, to check that everything works fine (see `Step 11 <#step11>`_ below),
 and then upload the data in the production environment using ``--platform zenodo``
 

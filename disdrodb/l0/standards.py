@@ -255,7 +255,7 @@ def get_l0b_cf_attrs_dict(sensor_name: str) -> dict:
         CF attributes of each sensor variable.
         For each variable, the 'units', 'description', and 'long_name' attributes are specified.
     """
-    return read_config_file(sensor_name=sensor_name, product="L0A", filename="l0b_variables_attrs.yml")
+    return read_config_file(sensor_name=sensor_name, product="L0A", filename="l0b_cf_attrs.yml")
 
 
 ####-------------------------------------------------------------------------.

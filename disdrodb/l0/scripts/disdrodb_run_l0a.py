@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -14,16 +15,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-##################################################
-## Wrapper to concat L0B files by command lines ##
-##################################################
 import sys
 
 import click
 
 from disdrodb.l0.routines import (
+    click_l0_processing_options,
     click_l0_stations_options,
-    click_l0b_concat_options,
 )
 from disdrodb.utils.scripts import parse_arg_to_list
 
@@ -32,15 +30,25 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 @click.command()
 @click_l0_stations_options
-@click_l0b_concat_options
-def run_disdrodb_l0b_concat(
-    data_sources, campaign_names, station_names, remove_l0b=False, verbose=True, base_dir: str = None
+@click_l0_processing_options
+def disdrodb_run_l0a(
+    # L0 disdrodb stations options
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    # Processing options
+    force: bool = False,
+    verbose: bool = True,
+    parallel: bool = True,
+    debugging_mode: bool = False,
+    base_dir: str = None,
 ):
-    """Run the L0B concatenation of available DISDRODB stations.
+    """
+    Run the L0A processing of DISDRODB stations.
 
     This function enable to launch the processing of many DISDRODB stations with a single command.
-    From the list of all available DISDRODB stations, it runs the processing of the
-    stations matching the provided data_sources, campaign_names and station_names.
+    From the list of all available DISDRODB stations, it runs the processing
+    of the stations matching the provided data_sources, campaign_names and station_names.
 
     Parameters
     ----------
@@ -57,34 +65,51 @@ def run_disdrodb_l0b_concat(
     station_names : str
         Station names.
         To specify multiple stations, write i.e.: --station_names 'station1 station2'
-    remove_l0b : bool
-        If true, remove all source L0B files once L0B concatenation is terminated.
+    force : bool
+        If True, overwrite existing data into destination directories.
+        If False, raise an error if there are already data into destination directories.
         The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal.
+        The default is False.
+    parallel : bool
+        If True, the files are processed simultaneously in multiple processes.
+        Each process will use a single thread.
+        By default, the number of process is defined with os.cpu_count().
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0a
+        If False, the files are processed sequentially in a single process.
+        If False, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If True, it reduces the amount of data to process.
+        It processes just the first 3 raw data files for each station.
         The default is False.
     base_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.l0b_nc_concat import run_disdrodb_l0b_concat
+    from disdrodb.l0.routines import run_disdrodb_l0a
 
     # Parse data_sources, campaign_names and station arguments
+    # print(data_sources)
+    # print(campaign_names)
+    # print(station_names)
+
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
-    # Run concatenation
-    run_disdrodb_l0b_concat(
+    # Run processing
+    run_disdrodb_l0a(
         base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
-        remove_l0b=remove_l0b,
+        # Processing options
+        force=force,
         verbose=verbose,
+        debugging_mode=debugging_mode,
+        parallel=parallel,
     )
 
-
-if __name__ == "__main__":
-    run_disdrodb_l0b_concat()
+    return None
