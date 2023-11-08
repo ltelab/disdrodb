@@ -30,8 +30,8 @@ from disdrodb.configs import get_base_dir
 from disdrodb.l0.io import _infer_disdrodb_tree_path
 from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.compression import _unzip_file
-from disdrodb.utils.yaml import read_yaml
 from disdrodb.utils.directories import is_empty_directory
+from disdrodb.utils.yaml import read_yaml
 
 
 def click_download_option(function: object):

@@ -29,18 +29,15 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from disdrodb.utils.logger import log_info, log_warning
 from disdrodb.utils.directories import (
-    ensure_string_path,
     check_directory_exist,
-    create_directory,
-    is_empty_directory,
-    create_required_directory,
-    remove_if_exists,
     copy_file,
+    create_directory,
+    create_required_directory,
+    ensure_string_path,
     remove_path_trailing_slash,
 )
-
+from disdrodb.utils.logger import log_info, log_warning
 
 logger = logging.getLogger(__name__)
 
@@ -967,10 +964,8 @@ def check_processed_dir(processed_dir):
         Path of the processed campaign directory
     """
     # Check path type
-    processed_dir = ensure_string_path(processed_dir, 
-                                       msg="Provide 'processed_dir' as a string",
-                                       accepth_pathlib=True)
-    
+    processed_dir = ensure_string_path(processed_dir, msg="Provide 'processed_dir' as a string", accepth_pathlib=True)
+
     # Ensure valid path format
     processed_dir = remove_path_trailing_slash(processed_dir)
 
@@ -1085,7 +1080,7 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
 
     - If force=True, remove all data inside the station folder.
     - If force=False, raise error.
-    
+
     NOTE: force=False behaviour could be changed to enable updating of missing files.
          This would require also adding code to check whether a downstream file already exist.
     """
@@ -1093,7 +1088,7 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
 
     # Get list of available stations
     list_stations = _get_list_stations_with_data(product=product, campaign_dir=campaign_dir)
-   
+
     # Check if station data are already present
     station_already_present = station_name in list_stations
 
@@ -1116,13 +1111,14 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
             raise ValueError(msg)
 
 
-def create_initial_directory_structure(raw_dir,
-                                       processed_dir,
-                                       station_name,
-                                       force,
-                                       product,
-                                       verbose=False,
-                                       ):
+def create_initial_directory_structure(
+    raw_dir,
+    processed_dir,
+    station_name,
+    force,
+    product,
+    verbose=False,
+):
     """Create directory structure for the first L0 DISDRODB product.
 
     If the input data are raw text files --> product = "L0A"    (run_l0a)
@@ -1162,11 +1158,7 @@ def create_initial_directory_structure(raw_dir,
     )
 
 
-def create_directory_structure(processed_dir,
-                               product, 
-                               station_name, 
-                               force, 
-                               verbose=False):
+def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
     from disdrodb.api.checks import check_product
     from disdrodb.api.io import _get_list_stations_with_data

@@ -20,10 +20,7 @@
 
 import os
 
-import pytest
-
 from disdrodb.data_transfer.download_data import _download_file_from_url
-
 
 # from disdrodb.data_transfer.download_data import _download_station_data
 # from disdrodb.tests.conftest import create_fake_metadata_file

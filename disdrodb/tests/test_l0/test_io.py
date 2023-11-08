@@ -21,7 +21,6 @@
 import datetime
 import os
 
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -457,8 +456,6 @@ def test_get_raw_file_list():
 
 folder_name = "folder_creation_deletion_test"
 path_file_temp = os.path.join(TEST_DATA_DIR, "test_dir_creation", folder_name)
-
-
 
 
 def test_check_raw_dir():

@@ -23,7 +23,6 @@ import os
 
 import numpy as np
 import pandas as pd
-import pytest
 import xarray as xr
 
 from disdrodb.l0.l0_processing import run_l0b_concat
@@ -267,8 +266,8 @@ def test_run_disdrodb_l0b_concat(tmp_path):
         remove_l0b=True,
         verbose=False,
     )
-    
-    # TODO: DEBUG 
+
+    # TODO: DEBUG
     # # Assert the presence of 2 concatenated netcdf files (one for each station)
     # expected_dst_dir = os.path.join(base_dir, "Processed", data_source, campaign_name, "L0B")
     # list_files = glob.glob(os.path.join(expected_dst_dir, "*.nc"))

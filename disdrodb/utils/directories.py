@@ -17,23 +17,23 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define utilities for Directory/File Checks/Creation/Deletion."""
- 
-import os 
-import pathlib 
+
 import logging
+import os
+import pathlib
 import shutil
 
 logger = logging.getLogger(__name__)
- 
- 
+
+
 def ensure_string_path(path, msg, accepth_pathlib=False):
-   if accepth_pathlib:
-       valid_types = (str, pathlib.PurePath)
-   else: 
-       valid_types = str 
-   if not isinstance(path, valid_types):
-       raise TypeError(msg)
-   return str(path) 
+    if accepth_pathlib:
+        valid_types = (str, pathlib.PurePath)
+    else:
+        valid_types = str
+    if not isinstance(path, valid_types):
+        raise TypeError(msg)
+    return str(path)
 
 
 def check_directory_exist(dir_path):
@@ -66,49 +66,49 @@ def create_required_directory(dir_path, dir_name):
         msg = f"Can not create folder {dir_name} at {new_dir_path}. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
-        
-        
+
+
 def is_empty_directory(path):
     """Check if a directory path is empty.
-    
+
     Return False if path is a file or non-empty directory.
     If the path does not exist, raise an error.
     """
     if not os.path.exists(path):
         raise OSError(f"{path} does not exist.")
     if not os.path.isdir(path):
-        return False 
-    
+        return False
+
     list_files = os.listdir(path)
     if len(list_files) == 0:
         return True
     else:
         return False
-    
 
-def _remove_file_or_directories(path): 
+
+def _remove_file_or_directories(path):
     """Return the file/directory or subdirectories tree of 'path'.
-    
+
     Use this function with caution.
     """
     # If file
-    if os.path.isfile(path): 
+    if os.path.isfile(path):
         os.remove(path)
         logger.info(f"Deleted the file {path}")
-    # If empty directory 
-    elif is_empty_directory(path): 
+    # If empty directory
+    elif is_empty_directory(path):
         os.rmdir(path)
         logger.info(f"Deleted the empty directory {path}")
-    # If not empty directory 
-    else: 
+    # If not empty directory
+    else:
         shutil.rmtree(path)
-        logger.info(f"Deleted directiories within {path}")
-    return None 
-    
-    
+        logger.info(f"Deleted directories within {path}")
+    return None
+
+
 def remove_if_exists(path: str, force: bool = False) -> None:
     """Remove file or directory if exists and force=True.
-    
+
     If force=False --> Raise error
     """
     # If the path does not exist, do nothing
@@ -121,16 +121,13 @@ def remove_if_exists(path: str, force: bool = False) -> None:
         logger.error(msg)
         raise ValueError(msg)
 
-    # If force=True, remove the file/directory or subdirectories and files ! 
+    # If force=True, remove the file/directory or subdirectories and files !
     try:
         _remove_file_or_directories(path)
     except Exception as e:
         msg = f"Can not delete file(s) at {path}. The error is: {e}"
         logger.error(msg)
         raise ValueError(msg)
-    
-
-
 
 
 def copy_file(src_fpath, dst_fpath):

@@ -29,7 +29,6 @@ from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
     check_l0b_standards,
 )
-from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.l0.standards import (
     # get_valid_coordinates_names,
     get_bin_coords_dict,
@@ -43,6 +42,7 @@ from disdrodb.l0.standards import (
     get_time_encoding,
     set_disdrodb_attrs,
 )
+from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.utils.logger import (
     # log_warning,
     # log_debug,

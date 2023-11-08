@@ -28,7 +28,6 @@ import numpy as np
 import pandas as pd
 
 from disdrodb.l0.check_standards import check_l0a_column_names, check_l0a_standards
-from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.l0.l0b_processing import infer_split_str
 from disdrodb.l0.standards import (
     get_data_range_dict,
@@ -36,6 +35,7 @@ from disdrodb.l0.standards import (
     get_nan_flags_dict,
     get_valid_values_dict,
 )
+from disdrodb.utils.directories import create_directory, remove_if_exists
 
 # Logger
 from disdrodb.utils.logger import (
