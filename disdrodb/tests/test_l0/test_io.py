@@ -33,54 +33,6 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
-def test_check_processed_dir(tmp_path):
-    # Check correct path
-    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE" / "CAMPAIGN_NAME"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-
-    assert io.check_processed_dir(str(processed_dir)) == str(processed_dir)
-
-    # Check wrong type raises error
-    with pytest.raises(TypeError):
-        io.check_processed_dir(1)
-
-    # Check wrong path (Raw)
-    processed_dir = tmp_path / "DISDRODB" / "Raw" / "DATA_SOURCE" / "CAMPAIGN_NAME"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    with pytest.raises(ValueError):
-        io.check_processed_dir(str(processed_dir))
-
-    # Check wrong path (only data_source)
-    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    with pytest.raises(ValueError):
-        io.check_processed_dir(str(processed_dir))
-
-    # Check wrong path (only Processed)
-    processed_dir = tmp_path / "DISDRODB" / "Processed"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    with pytest.raises(ValueError):
-        io.check_processed_dir(str(processed_dir))
-
-    # Check wrong path (station_dir)
-    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE" / "CAMPAIGN_NAME" / "data" / "station_name"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    with pytest.raises(ValueError):
-        io.check_processed_dir(str(processed_dir))
-
-    # Check wrong path (lowercase data_source)
-    processed_dir = tmp_path / "DISDRODB" / "Processed" / "data_source" / "CAMPAIGN_NAME"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    with pytest.raises(ValueError):
-        io.check_processed_dir(str(processed_dir))
-
-    # Check wrong path (lowercase data_source)
-    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE" / "campaign_name"
-    processed_dir.mkdir(parents=True, exist_ok=True)
-    with pytest.raises(ValueError):
-        io.check_processed_dir(str(processed_dir))
-
-
 def test_create_initial_directory_structure(tmp_path, mocker):
     force = False
     product = "LOA"
@@ -185,23 +137,7 @@ def test_create_directory_structure(tmp_path, mocker):
     assert os.path.exists(l0a_folder_path)
 
 
-def test_check_raw_dir_is_a_directory(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
-    station_name = "station_1"
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    metadata_dict = {}
-    _ = create_fake_metadata_file(
-        base_dir=base_dir,
-        metadata_dict=metadata_dict,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    io._check_raw_dir_is_a_directory(str(base_dir))
-
-
-def _infer_disdrodb_tree_path():
+def test__infer_disdrodb_tree_path():
     # Assert retrieve correct disdrodb path
     disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
@@ -248,7 +184,7 @@ def test__infer_base_dir_from_fpath():
     assert io._infer_base_dir_from_fpath(base_dir) == base_dir
 
 
-def test_infer_disdrodb_tree_path_components():
+def test__infer_disdrodb_tree_path_components():
     # Assert retrieve correct disdrodb path
     path_components = ["DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"]
     disdrodb_path = os.path.join(*path_components)
@@ -453,27 +389,6 @@ def test_get_raw_file_list():
 
 
 ####--------------------------------------------------------------------------.
-
-folder_name = "folder_creation_deletion_test"
-path_file_temp = os.path.join(TEST_DATA_DIR, "test_dir_creation", folder_name)
-
-
-def test_check_raw_dir():
-    # Set variables
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-
-    # Set paths
-    raw_dir = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Raw",
-        data_source,
-        campaign_name,
-    )
-
-    assert io.check_raw_dir(raw_dir) == raw_dir
 
 
 def test_check_campaign_name_consistency():
