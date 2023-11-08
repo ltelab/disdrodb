@@ -18,15 +18,17 @@
 # -----------------------------------------------------------------------------.
 """Define DISDRODB Checks for Raw and Processed Campaign Directories."""
 
-import os 
-import numpy as np 
-import glob 
+import glob
 import logging
-from disdrodb.l0.io import (
-    _infer_base_dir_from_fpath,
-    _infer_data_source_from_path,
-    _infer_campaign_name_from_path,
-    _infer_disdrodb_tree_path_components,
+import os
+
+import numpy as np
+
+from disdrodb.api.info import (
+    infer_base_dir_from_fpath,
+    infer_campaign_name_from_path,
+    infer_data_source_from_path,
+    infer_disdrodb_tree_path_components,
 )
 from disdrodb.utils.directories import (
     create_directory,
@@ -34,7 +36,6 @@ from disdrodb.utils.directories import (
     remove_path_trailing_slash,
 )
 from disdrodb.utils.logger import log_info, log_warning
-
 
 logger = logging.getLogger(__name__)
 
@@ -140,7 +141,7 @@ def _get_available_issue_filepaths(raw_dir):
 
 def _check_campaign_name_is_upper_case(campaign_dir):
     """Check the campaign name of campaign_dir is upper case !"""
-    campaign_name = _infer_campaign_name_from_path(campaign_dir)
+    campaign_name = infer_campaign_name_from_path(campaign_dir)
     upper_campaign_name = campaign_name.upper()
     if campaign_name != upper_campaign_name:
         msg = f"The campaign directory name {campaign_name} must be uppercase: {upper_campaign_name}"
@@ -150,7 +151,7 @@ def _check_campaign_name_is_upper_case(campaign_dir):
 
 def _check_data_source_is_upper_case(campaign_dir):
     """Check the data_source name of campaign_dir is upper case !"""
-    data_source = _infer_data_source_from_path(campaign_dir)
+    data_source = infer_data_source_from_path(campaign_dir)
     upper_data_source = data_source.upper()
     if data_source != upper_data_source:
         msg = f"The data_source directory name {data_source} must be defined uppercase: {upper_data_source}"
@@ -159,7 +160,7 @@ def _check_data_source_is_upper_case(campaign_dir):
 
 
 #### -------------------------------------------------------------------------.
-#### Checks for RAW Campaign directory 
+#### Checks for RAW Campaign directory
 
 
 def _check_directories_in_raw_dir(raw_dir):
@@ -319,9 +320,9 @@ def _check_valid_metadata(metadata_filepaths):
 
     for fpath in metadata_filepaths:
         # Get station info
-        base_dir = _infer_base_dir_from_fpath(fpath)
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        base_dir = infer_base_dir_from_fpath(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
         # Check compliance
         check_metadata_compliance(
@@ -330,6 +331,7 @@ def _check_valid_metadata(metadata_filepaths):
             campaign_name=campaign_name,
             station_name=station_name,
         )
+
 
 def _check_valid_issue_files(filepaths):
     """Check all specified issue files are compliant with DISDRODB standards."""
@@ -456,7 +458,7 @@ def _check_valid_processed_dir(processed_dir):
     The path must represents this path */DISDRODB/Processed/<DATA_SOURCE>/
     """
     last_component = os.path.basename(processed_dir)
-    tree_components = _infer_disdrodb_tree_path_components(processed_dir)
+    tree_components = infer_disdrodb_tree_path_components(processed_dir)
     tree_path = "/".join(tree_components)
     # Check that is not data_source or 'Processed' directory
     if len(tree_components) < 4:

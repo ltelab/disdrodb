@@ -22,13 +22,12 @@ import glob
 import logging
 import os
 import shutil
-from pathlib import Path
 from typing import Union
 
-import numpy as np
 import pandas as pd
 import xarray as xr
 
+from disdrodb.api.info import infer_campaign_name_from_path
 from disdrodb.utils.directories import (
     check_directory_exist,
     copy_file,
@@ -37,136 +36,6 @@ from disdrodb.utils.directories import (
 from disdrodb.utils.logger import log_info
 
 logger = logging.getLogger(__name__)
-
-####---------------------------------------------------------------------------.
-#### Info from file or directory
-
-
-def _infer_base_dir_from_fpath(path: str) -> str:
-    """Return the disdrodb base directory from a file or directory path.
-
-    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
-
-    Parameters
-    ----------
-    path : str
-        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
-
-    Returns
-    -------
-    str
-        Path of the DISDRODB directory.
-    """
-    # Retrieve path elements (os-specific)
-    p = Path(path)
-    list_path_elements = [str(part) for part in p.parts]
-    # Retrieve where "DISDRODB" directory occurs
-    idx_occurrence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
-    # If DISDRODB directory not present, raise error
-    if len(idx_occurrence) == 0:
-        raise ValueError(f"The DISDRODB directory is not present in {path}")
-    # Find the rightermost occurrence
-    right_most_occurrence = max(idx_occurrence)
-    # Define the base_dir path
-    base_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
-    return base_dir
-
-
-def _infer_disdrodb_tree_path(path: str) -> str:
-    """Return the directory tree path from the base_dir directory.
-
-    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
-
-    Parameters
-    ----------
-    path : str
-        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
-
-    Returns
-    -------
-    str
-        Path inside the DISDRODB archive.
-        Format: DISDRODB/<Raw or Processed>/<DATA_SOURCE>/...
-    """
-    # Retrieve path elements (os-specific)
-    p = Path(path)
-    list_path_elements = [str(part) for part in p.parts]
-    # Retrieve where "DISDRODB" directory occurs
-    idx_occurrence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
-    # If DISDRODB directory not present, raise error
-    if len(idx_occurrence) == 0:
-        raise ValueError(f"The DISDRODB directory is not present in the path '{path}'")
-    # Find the rightermost occurrence
-    right_most_occurrence = max(idx_occurrence)
-    # Define the disdrodb path
-    disdrodb_fpath = os.path.join(*list_path_elements[right_most_occurrence:])
-    return disdrodb_fpath
-
-
-def _infer_disdrodb_tree_path_components(path: str) -> list:
-    """Return a list with the component of the disdrodb_path.
-
-    Parameters
-    ----------
-    path : str
-        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
-
-    Returns
-    -------
-    list
-        Path element inside the DISDRODB archive.
-        Format: ["DISDRODB", <Raw or Processed>, <DATA_SOURCE>, ...]
-    """
-    # Retrieve disdrodb path
-    disdrodb_fpath = _infer_disdrodb_tree_path(path)
-    # Retrieve path elements (os-specific)
-    p = Path(disdrodb_fpath)
-    list_path_elements = [str(part) for part in p.parts]
-    return list_path_elements
-
-
-def _infer_campaign_name_from_path(path: str) -> str:
-    """Return the campaign name from a file or directory path.
-
-    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
-
-    Parameters
-    ----------
-    path : str
-       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
-
-    Returns
-    -------
-    str
-        Name of the campaign.
-    """
-    list_path_elements = _infer_disdrodb_tree_path_components(path)
-    if len(list_path_elements) <= 3:
-        raise ValueError(f"Impossible to determine campaign_name from {path}")
-    campaign_name = list_path_elements[3]
-    return campaign_name
-
-
-def _infer_data_source_from_path(path: str) -> str:
-    """Return the data_source from a file or directory path.
-
-    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
-
-    Parameters
-    ----------
-    path : str
-       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
-
-    Returns
-    -------
-    str
-        Name of the data source.
-    """
-    list_path_elements = _infer_disdrodb_tree_path_components(path)
-    if len(list_path_elements) <= 2:
-        raise ValueError(f"Impossible to determine data_source from {path}")
-    data_source = list_path_elements[2]
-    return data_source
 
 
 ####--------------------------------------------------------------------------.
@@ -273,7 +142,7 @@ def get_l0a_fname(df, processed_dir, station_name: str) -> str:
     starting_time, ending_time = _get_dataframe_min_max_time(df)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-    campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
+    campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
     version = PRODUCT_VERSION
     fname = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return fname
@@ -301,7 +170,7 @@ def get_l0b_fname(ds, processed_dir, station_name: str) -> str:
     starting_time, ending_time = _get_dataset_min_max_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-    campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
+    campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
     version = PRODUCT_VERSION
     fname = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return fname
@@ -515,10 +384,6 @@ def get_l0a_file_list(processed_dir, station_name, debugging_mode):
     return filepaths
 
 
-####--------------------------------------------------------------------------.
-#### RAW Directory Checks
-
-
 ####---------------------------------------------------------------------------.
 #### L0A and L0B directory creation routines
 
@@ -543,8 +408,8 @@ def _check_data_source_consistency(raw_dir: str, processed_dir: str) -> str:
     ValueError
         Error if the data_source of the two directory paths does not match.
     """
-    raw_data_source = _infer_campaign_name_from_path(raw_dir)
-    processed_data_source = _infer_campaign_name_from_path(processed_dir)
+    raw_data_source = infer_campaign_name_from_path(raw_dir)
+    processed_data_source = infer_campaign_name_from_path(processed_dir)
     if raw_data_source != processed_data_source:
         msg = f"'raw_dir' and 'processed_dir' must ends with same <CAMPAIGN_NAME>: {raw_data_source}"
         logger.error(msg)
@@ -572,8 +437,8 @@ def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
     ValueError
         Error if the campaign_name of the two directory paths does not match.
     """
-    raw_campaign_name = _infer_campaign_name_from_path(raw_dir)
-    processed_campaign_name = _infer_campaign_name_from_path(processed_dir)
+    raw_campaign_name = infer_campaign_name_from_path(raw_dir)
+    processed_campaign_name = infer_campaign_name_from_path(processed_dir)
     if raw_campaign_name != processed_campaign_name:
         msg = f"'raw_dir' and 'processed_dir' must ends with same <CAMPAIGN_NAME>: {raw_campaign_name}"
         logger.error(msg)

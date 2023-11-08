@@ -83,6 +83,55 @@ def test_create_initial_directory_structure(tmp_path, mocker):
     assert os.path.exists(expected_folder_path)
 
 
+# def test_create_initial_directory_structure():
+#     campaign_name = "CAMPAIGN_NAME"
+#     data_source = "DATA_SOURCE"
+#     station_name = "STATION_NAME"
+#     product = "L0A"
+#     force = True
+#     verbose=False
+
+#     raw_dir = os.path.join(
+#         TEST_DATA_DIR,
+#         "test_dir_structure",
+#         "DISDRODB",
+#         "Raw",
+#         data_source,
+#         campaign_name,
+#     )
+#     processed_dir = os.path.join(
+#         TEST_DATA_DIR,
+#         "test_dir_creation",
+#         "DISDRODB",
+#         "Processed",
+#         data_source,
+#         campaign_name,
+#     )
+#     # Define expected directory
+#     expected_product_dir = os.path.join(processed_dir, product)
+
+#     # TODO:
+#     # - Need to remove file to check function works, but then next test is invalidated
+#     # - I think we need to create a default directory that we can reinitialize at each test !
+
+#     # Remove directory if exists already
+#     if os.path.exists(expected_product_dir):
+#         shutil.rmtree(expected_product_dir)
+#     assert not os.path.exists(expected_product_dir)
+
+#     # Create directories
+#     assert io.create_directory_structure(processed_dir=processed_dir,
+#                                          product=product,
+#                                          station_name=station_name,
+#                                          force=force,
+#                                          verbose=verbose,
+#                                          ) is None
+#     # Check the directory has been created
+#     assert not os.path.exists(expected_product_dir)
+#     # TODO:
+#     # - check that if data are already present and force=False, raise Error
+
+
 def test_create_directory_structure(tmp_path, mocker):
     # from pathlib import Path
     # tmp_path = Path("/tmp/test12")
@@ -137,91 +186,105 @@ def test_create_directory_structure(tmp_path, mocker):
     assert os.path.exists(l0a_folder_path)
 
 
-def test__infer_disdrodb_tree_path():
-    # Assert retrieve correct disdrodb path
-    disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join("whatever_path", disdrodb_path)
-    assert io._infer_disdrodb_tree_path(path) == disdrodb_path
+# def testcreate_directory_structure():
+#     campaign_name = "CAMPAIGN_NAME"
+#     data_source = "DATA_SOURCE"
+#     station_name = "STATION_NAME"
+#     product = "L0B"
+#     force = True
+#     verbose=False
 
-    # Assert raise error if not disdrodb path
-    disdrodb_path = os.path.join("no_disdro_dir", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join("whatever_path", disdrodb_path)
-    with pytest.raises(ValueError):
-        io._infer_disdrodb_tree_path(path)
+#     processed_dir = os.path.join(
+#         TEST_DATA_DIR,
+#         "test_dir_creation",
+#         "DISDRODB",
+#         "Processed",
+#         data_source,
+#         campaign_name,
+#     )
+#     # Define expected directory
+#     expected_product_dir = os.path.join(processed_dir, product)
 
-    # Assert raise error if not valid DISDRODB directory
-    disdrodb_path = os.path.join("DISDRODB_UNVALID", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join("whatever_path", disdrodb_path)
-    with pytest.raises(ValueError):
-        io._infer_disdrodb_tree_path(path)
+#     # Remove directory if exists already
+#     if os.path.exists(expected_product_dir):
+#         shutil.rmtree(expected_product_dir)
+#     assert not os.path.exists(expected_product_dir)
 
-    # Assert it takes the right most DISDRODB occurrence
-    disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join("whatever_occurrence", "DISDRODB", "DISDRODB", "directory", disdrodb_path)
-    assert io._infer_disdrodb_tree_path(path) == disdrodb_path
-
-    # Assert behaviour when path == base_dir
-    base_dir = os.path.join("home", "DISDRODB")
-    assert io._infer_disdrodb_tree_path(base_dir) == "DISDRODB"
-
-
-def test__infer_base_dir_from_fpath():
-    # Assert retrieve correct disdrodb path
-    base_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
-    disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join(base_dir, disdrodb_path)
-    assert io._infer_base_dir_from_fpath(path) == base_dir
-
-    # Assert raise error if not disdrodb path
-    base_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
-    disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join(base_dir, disdrodb_path)
-    with pytest.raises(ValueError):
-        io._infer_base_dir_from_fpath(path)
-
-    # Assert behaviour when path == base_dir
-    base_dir = os.path.join("home", "DISDRODB")
-    assert io._infer_base_dir_from_fpath(base_dir) == base_dir
+#     # Create directories
+#     assert io.create_directory_structure(processed_dir=processed_dir,
+#                                          product=product,
+#                                          station_name=station_name,
+#                                          force=force,
+#                                          verbose=verbose,
+#                                          ) is None
+#     # Check the directory has been created
+#     assert not os.path.exists(expected_product_dir)
+#     # TODO - check that if data are already present and force=False, raise Error
 
 
-def test__infer_disdrodb_tree_path_components():
-    # Assert retrieve correct disdrodb path
-    path_components = ["DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"]
-    disdrodb_path = os.path.join(*path_components)
-    path = os.path.join("whatever_path", disdrodb_path)
-    assert io._infer_disdrodb_tree_path_components(path) == path_components
+def test_check_campaign_name_consistency():
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+    path_raw = os.path.join(
+        TEST_DATA_DIR,
+        "test_dir_structure",
+        "DISDRODB",
+        "Raw",
+        data_source,
+        campaign_name,
+    )
+    path_process = os.path.join(
+        TEST_DATA_DIR,
+        "test_dir_creation",
+        "DISDRODB",
+        "Processed",
+        data_source,
+        campaign_name,
+    )
+
+    assert io._check_campaign_name_consistency(path_raw, path_process) == campaign_name
 
 
-def test__infer_data_source_from_path():
-    # Assert retrieve correct
-    path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    assert io._infer_data_source_from_path(path) == "DATA_SOURCE"
+def test_copy_station_metadata():
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+    station_name = "STATION_NAME"
+    raw_dir = os.path.join(
+        TEST_DATA_DIR,
+        "test_dir_structure",
+        "DISDRODB",
+        "Raw",
+        data_source,
+        campaign_name,
+    )
+    processed_dir = os.path.join(
+        TEST_DATA_DIR,
+        "test_dir_creation",
+        "DISDRODB",
+        "Processed",
+        data_source,
+        campaign_name,
+    )
+    destination_metadata_dir = os.path.join(processed_dir, "metadata")
 
-    # Assert raise error if path stop at Raw or Processed
-    path = os.path.join("whatever_path", "DISDRODB", "Raw")
-    with pytest.raises(ValueError):
-        io._infer_data_source_from_path(path)
+    # Ensure processed_dir and metadata folder exists
+    if not os.path.exists(processed_dir):
+        os.makedirs(processed_dir)
+    if not os.path.exists(destination_metadata_dir):
+        os.makedirs(destination_metadata_dir)
 
-    # Assert raise error if path not within DISDRODB
-    path = os.path.join("whatever_path", "is", "not", "valid")
-    with pytest.raises(ValueError):
-        io._infer_data_source_from_path(path)
+    # Define expected metadata file name
+    expected_metadata_fpath = os.path.join(destination_metadata_dir, f"{station_name}.yml")
+    # Ensure metadata file does not exist
+    if os.path.exists(expected_metadata_fpath):
+        os.remove(expected_metadata_fpath)
+    assert not os.path.exists(expected_metadata_fpath)
 
+    # Check the function returns None
+    assert io._copy_station_metadata(raw_dir, processed_dir, station_name) is None
 
-def test__infer_campaign_name_from_path():
-    # Assert retrieve correct
-    path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
-    assert io._infer_campaign_name_from_path(path) == "CAMPAIGN_NAME"
-
-    # Assert raise error if path stop at Raw or Processed
-    path = os.path.join("whatever_path", "DISDRODB", "Raw")
-    with pytest.raises(ValueError):
-        io._infer_campaign_name_from_path(path)
-
-    # Assert raise error if path not within DISDRODB
-    path = os.path.join("whatever_path", "is", "not", "valid")
-    with pytest.raises(ValueError):
-        io._infer_campaign_name_from_path(path)
+    # Check the function has copied the file
+    assert os.path.exists(expected_metadata_fpath)
 
 
 ####--------------------------------------------------------------------------.
@@ -386,159 +449,6 @@ def test_get_raw_file_list():
             station_name=station_name,
             glob_patterns="*.csv",
         )
-
-
-####--------------------------------------------------------------------------.
-
-
-def test_check_campaign_name_consistency():
-    campaign_name = "CAMPAIGN_NAME"
-    data_source = "DATA_SOURCE"
-    path_raw = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Raw",
-        data_source,
-        campaign_name,
-    )
-    path_process = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        campaign_name,
-    )
-
-    assert io._check_campaign_name_consistency(path_raw, path_process) == campaign_name
-
-
-def test_copy_station_metadata():
-    campaign_name = "CAMPAIGN_NAME"
-    data_source = "DATA_SOURCE"
-    station_name = "STATION_NAME"
-    raw_dir = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Raw",
-        data_source,
-        campaign_name,
-    )
-    processed_dir = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        campaign_name,
-    )
-    destination_metadata_dir = os.path.join(processed_dir, "metadata")
-
-    # Ensure processed_dir and metadata folder exists
-    if not os.path.exists(processed_dir):
-        os.makedirs(processed_dir)
-    if not os.path.exists(destination_metadata_dir):
-        os.makedirs(destination_metadata_dir)
-
-    # Define expected metadata file name
-    expected_metadata_fpath = os.path.join(destination_metadata_dir, f"{station_name}.yml")
-    # Ensure metadata file does not exist
-    if os.path.exists(expected_metadata_fpath):
-        os.remove(expected_metadata_fpath)
-    assert not os.path.exists(expected_metadata_fpath)
-
-    # Check the function returns None
-    assert io._copy_station_metadata(raw_dir, processed_dir, station_name) is None
-
-    # Check the function has copied the file
-    assert os.path.exists(expected_metadata_fpath)
-
-
-# def test_create_initial_directory_structure():
-#     campaign_name = "CAMPAIGN_NAME"
-#     data_source = "DATA_SOURCE"
-#     station_name = "STATION_NAME"
-#     product = "L0A"
-#     force = True
-#     verbose=False
-
-#     raw_dir = os.path.join(
-#         TEST_DATA_DIR,
-#         "test_dir_structure",
-#         "DISDRODB",
-#         "Raw",
-#         data_source,
-#         campaign_name,
-#     )
-#     processed_dir = os.path.join(
-#         TEST_DATA_DIR,
-#         "test_dir_creation",
-#         "DISDRODB",
-#         "Processed",
-#         data_source,
-#         campaign_name,
-#     )
-#     # Define expected directory
-#     expected_product_dir = os.path.join(processed_dir, product)
-
-#     # TODO:
-#     # - Need to remove file to check function works, but then next test is invalidated
-#     # - I think we need to create a default directory that we can reinitialize at each test !
-
-#     # Remove directory if exists already
-#     if os.path.exists(expected_product_dir):
-#         shutil.rmtree(expected_product_dir)
-#     assert not os.path.exists(expected_product_dir)
-
-#     # Create directories
-#     assert io.create_directory_structure(processed_dir=processed_dir,
-#                                          product=product,
-#                                          station_name=station_name,
-#                                          force=force,
-#                                          verbose=verbose,
-#                                          ) is None
-#     # Check the directory has been created
-#     assert not os.path.exists(expected_product_dir)
-#     # TODO:
-#     # - check that if data are already present and force=False, raise Error
-
-
-# def testcreate_directory_structure():
-#     campaign_name = "CAMPAIGN_NAME"
-#     data_source = "DATA_SOURCE"
-#     station_name = "STATION_NAME"
-#     product = "L0B"
-#     force = True
-#     verbose=False
-
-#     processed_dir = os.path.join(
-#         TEST_DATA_DIR,
-#         "test_dir_creation",
-#         "DISDRODB",
-#         "Processed",
-#         data_source,
-#         campaign_name,
-#     )
-#     # Define expected directory
-#     expected_product_dir = os.path.join(processed_dir, product)
-
-#     # Remove directory if exists already
-#     if os.path.exists(expected_product_dir):
-#         shutil.rmtree(expected_product_dir)
-#     assert not os.path.exists(expected_product_dir)
-
-#     # Create directories
-#     assert io.create_directory_structure(processed_dir=processed_dir,
-#                                          product=product,
-#                                          station_name=station_name,
-#                                          force=force,
-#                                          verbose=verbose,
-#                                          ) is None
-#     # Check the directory has been created
-#     assert not os.path.exists(expected_product_dir)
-#     # TODO - check that if data are already present and force=False, raise Error
 
 
 ####--------------------------------------------------------------------------.

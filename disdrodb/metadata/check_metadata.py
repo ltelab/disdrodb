@@ -23,11 +23,11 @@ from typing import Union
 
 import numpy as np
 
-from disdrodb.configs import get_base_dir
-from disdrodb.l0.io import (
-    _infer_campaign_name_from_path,
-    _infer_data_source_from_path,
+from disdrodb.api.info import (
+    infer_campaign_name_from_path,
+    infer_data_source_from_path,
 )
+from disdrodb.configs import get_base_dir
 from disdrodb.l0.l0_reader import _check_metadata_reader
 from disdrodb.metadata.io import get_list_metadata, read_station_metadata
 from disdrodb.metadata.standards import get_valid_metadata_keys
@@ -265,8 +265,8 @@ def check_archive_metadata_keys(base_dir: str = None) -> bool:
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -306,8 +306,8 @@ def check_archive_metadata_campaign_name(base_dir: str = None) -> bool:
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -346,8 +346,8 @@ def check_archive_metadata_data_source(base_dir: str = None) -> bool:
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -386,8 +386,8 @@ def check_archive_metadata_sensor_name(base_dir: str = None) -> bool:
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -426,8 +426,8 @@ def check_archive_metadata_station_name(base_dir: str = None) -> bool:
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -467,8 +467,8 @@ def check_archive_metadata_reader(base_dir: str = None) -> bool:
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(
@@ -510,8 +510,8 @@ def check_archive_metadata_compliance(base_dir: str = None, raise_error=False):
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
         # Check compliance
         try:
@@ -553,8 +553,8 @@ def check_archive_metadata_geolocation(base_dir: str = None):
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
 
         metadata = read_station_metadata(

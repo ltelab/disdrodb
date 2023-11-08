@@ -18,12 +18,11 @@
 # -----------------------------------------------------------------------------.
 """Metadata Manipulation Tools."""
 
-from disdrodb.metadata.check_metadata import get_metadata_invalid_keys, get_metadata_missing_keys
-from disdrodb.metadata.standards import get_valid_metadata_keys
-
 
 def remove_invalid_metadata_keys(metadata):
     """Remove invalid keys from the metadata dictionary."""
+    from disdrodb.metadata.check_metadata import get_metadata_invalid_keys
+
     invalid_keys = get_metadata_invalid_keys(metadata)
     for k in invalid_keys:
         _ = metadata.pop(k)
@@ -32,6 +31,8 @@ def remove_invalid_metadata_keys(metadata):
 
 def add_missing_metadata_keys(metadata):
     """Add missing keys to the metadata dictionary."""
+    from disdrodb.metadata.check_metadata import get_metadata_missing_keys
+
     missing_keys = get_metadata_missing_keys(metadata)
     for k in missing_keys:
         metadata[k] = ""
@@ -40,6 +41,8 @@ def add_missing_metadata_keys(metadata):
 
 def sort_metadata_dictionary(metadata):
     """Sort the keys of the metadata dictionary by valid_metadata_keys list order."""
+    from disdrodb.metadata.standards import get_valid_metadata_keys
+
     list_metadata_keys = get_valid_metadata_keys()
     metadata = {k: metadata[k] for k in list_metadata_keys}
     return metadata

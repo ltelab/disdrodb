@@ -20,8 +20,8 @@
 
 import os
 
+from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
 from disdrodb.configs import get_base_dir
-from disdrodb.l0.io import _infer_campaign_name_from_path, _infer_data_source_from_path
 from disdrodb.metadata.manipulation import sort_metadata_dictionary
 from disdrodb.metadata.standards import get_valid_metadata_keys
 from disdrodb.utils.yaml import read_yaml, write_yaml
@@ -97,8 +97,8 @@ def write_default_metadata(fpath: str) -> None:
     metadata = _get_default_metadata_dict()
     # Try infer the data_source, campaign_name and station_name from fpath
     try:
-        campaign_name = _infer_campaign_name_from_path(fpath)
-        data_source = _infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
         station_name = os.path.basename(fpath).split(".yml")[0]
         metadata["data_source"] = data_source
         metadata["campaign_name"] = campaign_name

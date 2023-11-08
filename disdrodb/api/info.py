@@ -16,10 +16,11 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Retrieve file information from DISDRODB products file names."""
+"""Retrieve file information from DISDRODB products file names and filepaths."""
 
 import os
 import re
+from pathlib import Path
 
 import numpy as np
 from trollsift import Parser
@@ -81,9 +82,9 @@ def get_key_from_filepaths(fpaths, key):
 
 
 ####--------------------------------------------------------------------------.
-####################################
+###################################
 #### DISDRODB File Information ####
-####################################
+###################################
 
 
 def _get_version_from_filepath(filepath, integer=False):
@@ -129,6 +130,139 @@ def get_start_end_time_from_filepaths(filepaths):
     list_start_time = get_key_from_filepaths(filepaths, key="start_time")
     list_end_time = get_key_from_filepaths(filepaths, key="end_time")
     return np.array(list_start_time), np.array(list_end_time)
+
+
+####--------------------------------------------------------------------------.
+###################################
+#### DISDRODB Tree Components  ####
+###################################
+
+
+def infer_base_dir_from_fpath(path: str) -> str:
+    """Return the disdrodb base directory from a file or directory path.
+
+    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+
+    Parameters
+    ----------
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    str
+        Path of the DISDRODB directory.
+    """
+    # Retrieve path elements (os-specific)
+    p = Path(path)
+    list_path_elements = [str(part) for part in p.parts]
+    # Retrieve where "DISDRODB" directory occurs
+    idx_occurrence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    # If DISDRODB directory not present, raise error
+    if len(idx_occurrence) == 0:
+        raise ValueError(f"The DISDRODB directory is not present in {path}")
+    # Find the rightermost occurrence
+    right_most_occurrence = max(idx_occurrence)
+    # Define the base_dir path
+    base_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
+    return base_dir
+
+
+def infer_disdrodb_tree_path(path: str) -> str:
+    """Return the directory tree path from the base_dir directory.
+
+    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+
+    Parameters
+    ----------
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    str
+        Path inside the DISDRODB archive.
+        Format: DISDRODB/<Raw or Processed>/<DATA_SOURCE>/...
+    """
+    # Retrieve path elements (os-specific)
+    p = Path(path)
+    list_path_elements = [str(part) for part in p.parts]
+    # Retrieve where "DISDRODB" directory occurs
+    idx_occurrence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
+    # If DISDRODB directory not present, raise error
+    if len(idx_occurrence) == 0:
+        raise ValueError(f"The DISDRODB directory is not present in the path '{path}'")
+    # Find the rightermost occurrence
+    right_most_occurrence = max(idx_occurrence)
+    # Define the disdrodb path
+    disdrodb_fpath = os.path.join(*list_path_elements[right_most_occurrence:])
+    return disdrodb_fpath
+
+
+def infer_disdrodb_tree_path_components(path: str) -> list:
+    """Return a list with the component of the disdrodb_path.
+
+    Parameters
+    ----------
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    list
+        Path element inside the DISDRODB archive.
+        Format: ["DISDRODB", <Raw or Processed>, <DATA_SOURCE>, ...]
+    """
+    # Retrieve disdrodb path
+    disdrodb_fpath = infer_disdrodb_tree_path(path)
+    # Retrieve path elements (os-specific)
+    p = Path(disdrodb_fpath)
+    list_path_elements = [str(part) for part in p.parts]
+    return list_path_elements
+
+
+def infer_campaign_name_from_path(path: str) -> str:
+    """Return the campaign name from a file or directory path.
+
+    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+
+    Parameters
+    ----------
+    path : str
+       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    str
+        Name of the campaign.
+    """
+    list_path_elements = infer_disdrodb_tree_path_components(path)
+    if len(list_path_elements) <= 3:
+        raise ValueError(f"Impossible to determine campaign_name from {path}")
+    campaign_name = list_path_elements[3]
+    return campaign_name
+
+
+def infer_data_source_from_path(path: str) -> str:
+    """Return the data_source from a file or directory path.
+
+    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+
+    Parameters
+    ----------
+    path : str
+       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    str
+        Name of the data source.
+    """
+    list_path_elements = infer_disdrodb_tree_path_components(path)
+    if len(list_path_elements) <= 2:
+        raise ValueError(f"Impossible to determine data_source from {path}")
+    data_source = list_path_elements[2]
+    return data_source
 
 
 ####--------------------------------------------------------------------------.

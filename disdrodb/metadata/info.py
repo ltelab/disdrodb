@@ -19,11 +19,11 @@
 """Test Metadata Info Extraction."""
 import os
 
-from disdrodb.configs import get_base_dir
-from disdrodb.l0.io import (
-    _infer_campaign_name_from_path,
-    _infer_data_source_from_path,
+from disdrodb.api.info import (
+    infer_campaign_name_from_path,
+    infer_data_source_from_path,
 )
+from disdrodb.configs import get_base_dir
 from disdrodb.metadata.io import get_list_metadata, read_station_metadata
 
 
@@ -55,8 +55,8 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, base_dir
     )
     list_info = []
     for fpath in list_metadata_paths:
-        data_source = _infer_data_source_from_path(fpath)
-        campaign_name = _infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")
         metadata = read_station_metadata(
             base_dir=base_dir,

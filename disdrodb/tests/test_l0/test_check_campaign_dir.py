@@ -19,21 +19,20 @@
 """Test DISDRDB checks of the campaign directory."""
 
 import os
- 
+
 import pytest
- 
-from disdrodb.l0.check_campaign_directories import (
-    _check_raw_dir_is_a_directory, 
-    check_raw_dir,
-    check_processed_dir,
-)
 
 from disdrodb import __root_path__
+from disdrodb.l0.check_campaign_directories import (
+    _check_raw_dir_is_a_directory,
+    check_processed_dir,
+    check_raw_dir,
+)
 from disdrodb.tests.conftest import create_fake_metadata_file
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
-  
-    
+
+
 def test_check_raw_dir_is_a_directory(tmp_path):
     base_dir = tmp_path / "DISDRODB"
     station_name = "station_1"
@@ -48,8 +47,8 @@ def test_check_raw_dir_is_a_directory(tmp_path):
         station_name=station_name,
     )
     _check_raw_dir_is_a_directory(str(base_dir))
-    
-    
+
+
 def test_check_raw_dir():
     # Set variables
     data_source = "DATA_SOURCE"
@@ -66,7 +65,7 @@ def test_check_raw_dir():
     )
 
     assert check_raw_dir(raw_dir) == raw_dir
-    
+
 
 def test_check_processed_dir(tmp_path):
     # Check correct path
@@ -114,5 +113,3 @@ def test_check_processed_dir(tmp_path):
     processed_dir.mkdir(parents=True, exist_ok=True)
     with pytest.raises(ValueError):
         check_processed_dir(str(processed_dir))
-        
-    

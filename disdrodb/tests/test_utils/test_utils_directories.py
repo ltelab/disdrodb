@@ -19,10 +19,10 @@
 """Test directories utility."""
 
 import os
+import platform
 
 import pytest
 
-# import platform
 from disdrodb.utils.directories import (
     # ensure_string_path,
     check_directory_exist,
@@ -82,7 +82,6 @@ def test_create_directory(tmp_path):
     assert res
 
 
-# @pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
 def test_remove_if_exists_empty_directory(tmp_path):
     tmp_directory = os.path.join(tmp_path, "temp_folder")
 
@@ -116,6 +115,7 @@ def test_remove_if_exists_file(tmp_path):
     assert not os.path.exists(file_path)
 
 
+@pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
 def test_remove_if_exists_with_shutil(tmp_path):
     from pathlib import Path
 

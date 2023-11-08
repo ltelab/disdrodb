@@ -26,8 +26,8 @@ import click
 import pooch
 import tqdm
 
+from disdrodb.api.info import infer_disdrodb_tree_path
 from disdrodb.configs import get_base_dir
-from disdrodb.l0.io import _infer_disdrodb_tree_path
 from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.compression import _unzip_file
 from disdrodb.utils.directories import is_empty_directory
@@ -136,7 +136,7 @@ def download_archive(
         try:
             _download_station_data(metadata_fpath, force)
         except Exception as e:
-            station_dir_path = _infer_disdrodb_tree_path(metadata_fpath).replace("metadata", "data").replace(".yml", "")
+            station_dir_path = infer_disdrodb_tree_path(metadata_fpath).replace("metadata", "data").replace(".yml", "")
             print(f"ERROR during downloading the station {station_dir_path}: {e}")
             print(" ")
 

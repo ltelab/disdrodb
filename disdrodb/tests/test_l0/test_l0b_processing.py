@@ -265,7 +265,7 @@ def test_get_bin_coords_dict(create_test_config_files):
     assert result == expected_result
 
 
-def test_infer_split_str():
+def testinfer_split_str():
     # Test type error if string=None
     with pytest.raises(TypeError):
         l0b_processing.infer_split_str(None)
