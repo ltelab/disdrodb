@@ -34,25 +34,70 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
-def test_check_is_processed_dir(tmp_path):
-    subfolder_path = tmp_path / "DISDRODB" / "Processed" / "data_source" / "campaign_name"
-    subfolder_path.mkdir(parents=True)
-
-    assert io._check_is_processed_dir(str(subfolder_path)) == str(subfolder_path)
-
-
 def test_check_processed_dir(tmp_path):
-    subfolder_path = tmp_path / "DISDRODB" / "Processed" / "data_source" / "campaign_name"
-    subfolder_path.mkdir(parents=True)
+    # Check correct path
+    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE" / "CAMPAIGN_NAME"
+    processed_dir.mkdir(parents=True, exist_ok=True)
 
-    assert io.check_processed_dir(str(subfolder_path)) == str(subfolder_path)
+    assert io.check_processed_dir(str(processed_dir)) == str(processed_dir)
+
+    # Check wrong type raises error
+    with pytest.raises(TypeError):
+        io.check_processed_dir(1)
+
+    # Check wrong path (Raw)
+    processed_dir = tmp_path / "DISDRODB" / "Raw" / "DATA_SOURCE" / "CAMPAIGN_NAME"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(ValueError):
+        io.check_processed_dir(str(processed_dir))
+
+    # Check wrong path (only data_source)
+    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(ValueError):
+        io.check_processed_dir(str(processed_dir))
+
+    # Check wrong path (only Processed)
+    processed_dir = tmp_path / "DISDRODB" / "Processed"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(ValueError):
+        io.check_processed_dir(str(processed_dir))
+
+    # Check wrong path (station_dir)
+    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE" / "CAMPAIGN_NAME" / "data" / "station_name"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(ValueError):
+        io.check_processed_dir(str(processed_dir))
+
+    # Check wrong path (lowercase data_source)
+    processed_dir = tmp_path / "DISDRODB" / "Processed" / "data_source" / "CAMPAIGN_NAME"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(ValueError):
+        io.check_processed_dir(str(processed_dir))
+
+    # Check wrong path (lowercase data_source)
+    processed_dir = tmp_path / "DISDRODB" / "Processed" / "DATA_SOURCE" / "campaign_name"
+    processed_dir.mkdir(parents=True, exist_ok=True)
+    with pytest.raises(ValueError):
+        io.check_processed_dir(str(processed_dir))
 
 
 def test_create_initial_directory_structure(tmp_path, mocker):
+    force = False
+    product = "LOA"
+
+    # Define station info
     base_dir = tmp_path / "DISDRODB"
-    station_name = "station_1"
-    data_source = "data_source"
+    data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_1"
+
+    # Define Raw campaign directory structure
+    raw_dir = tmp_path / "DISDRODB" / "Raw" / "DATA_SOURCE" / campaign_name
+    raw_station_dir = raw_dir / "data" / station_name
+    raw_station_dir.mkdir(parents=True)
+
+    # - Add metadata
     metadata_dict = {}
     _ = create_fake_metadata_file(
         base_dir=base_dir,
@@ -61,34 +106,52 @@ def test_create_initial_directory_structure(tmp_path, mocker):
         campaign_name=campaign_name,
         station_name=station_name,
     )
-
-    raw_dir = os.path.join(tmp_path, "DISDRODB", "Raw", "data_source", campaign_name)
-    force = False
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / "data_source" / campaign_name / "data" / station_name
-    subfolder_path.mkdir(parents=True)
-
-    fake_csv_file_path = os.path.join(subfolder_path, f"{station_name}.csv")
+    # - Add fake file
+    fake_csv_file_path = os.path.join(raw_station_dir, f"{station_name}.csv")
     with open(fake_csv_file_path, "w") as f:
         f.write("fake csv file")
 
-    processed_dir = os.path.join(tmp_path, "DISDRODB", "Processed", campaign_name)
-    subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name
-    subfolder_path.mkdir(parents=True)
+    # Define Processed campaign directory
+    processed_dir = tmp_path / "DISDRODB" / "Processed" / data_source / campaign_name
+    processed_dir.mkdir(parents=True)
+
+    # Mock to pass metadata checks
     mocker.patch("disdrodb.metadata.check_metadata.check_metadata_compliance", return_value=None)
 
+    # Execute create_initial_directory_structure
     io.create_initial_directory_structure(
-        raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name, force=force
+        raw_dir=str(raw_dir),
+        processed_dir=str(processed_dir),
+        station_name=station_name,
+        force=force,
+        product=product,
     )
 
-    l0a_folder_path = os.path.join(processed_dir, "L0A")
-    assert os.path.exists(l0a_folder_path)
+    # Test product directory has been created
+    expected_folder_path = os.path.join(processed_dir, product)
+    assert os.path.exists(expected_folder_path)
 
 
 def test_create_directory_structure(tmp_path, mocker):
+    # from pathlib import Path
+    # tmp_path = Path("/tmp/test12")
+    # tmp_path.mkdir()
+
+    force = False
+    product = "L0B"
+
+    # Define station info
     base_dir = tmp_path / "DISDRODB"
-    station_name = "station_1"
-    data_source = "data_source"
+    data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_1"
+
+    # Define Raw campaign directory structure
+    raw_dir = tmp_path / "DISDRODB" / "Raw" / "DATA_SOURCE" / campaign_name
+    raw_station_dir = raw_dir / "data" / station_name
+    raw_station_dir.mkdir(parents=True)
+
+    # - Add metadata
     metadata_dict = {}
     _ = create_fake_metadata_file(
         base_dir=base_dir,
@@ -97,40 +160,37 @@ def test_create_directory_structure(tmp_path, mocker):
         campaign_name=campaign_name,
         station_name=station_name,
     )
-
-    os.path.join(tmp_path, "DISDRODB", "Raw", "data_source", campaign_name)
-    force = False
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / "data_source" / campaign_name / "data" / station_name
-    subfolder_path.mkdir(parents=True)
-
-    fake_csv_file_path = os.path.join(subfolder_path, f"{station_name}.csv")
+    # - Add fake file
+    fake_csv_file_path = os.path.join(raw_station_dir, f"{station_name}.csv")
     with open(fake_csv_file_path, "w") as f:
         f.write("fake csv file")
 
-    processed_dir = os.path.join(tmp_path, "DISDRODB", "Processed", campaign_name)
-    subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name / "L0B"
-    subfolder_path.mkdir(parents=True)
+    # Define Processed campaign directory
+    processed_dir = tmp_path / "DISDRODB" / "Processed" / data_source / campaign_name
+    processed_dir.mkdir(parents=True)
 
-    product = "L0B"
-    station_name = "station_1"
-    force = False
+    # subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name / "L0B"
+    # subfolder_path.mkdir(parents=True)
 
+    # Mock to pass some internal checks
     mocker.patch("disdrodb.api.io._get_list_stations_with_data", return_value=[station_name])
     mocker.patch("disdrodb.l0.io._check_pre_existing_station_data", return_value=None)
 
+    # Execute create_directory_structure
     io.create_directory_structure(
-        processed_dir=processed_dir, product=product, station_name=station_name, force=force, verbose=False
+        processed_dir=str(processed_dir), product=product, station_name=station_name, force=force, verbose=False
     )
 
-    l0a_folder_path = os.path.join(processed_dir, "L0B")
+    # Test product directory has been created
+    l0a_folder_path = os.path.join(processed_dir, product)
     assert os.path.exists(l0a_folder_path)
 
 
 def test_check_raw_dir_is_a_directory(tmp_path):
     base_dir = tmp_path / "DISDRODB"
     station_name = "station_1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     metadata_dict = {}
     _ = create_fake_metadata_file(
         base_dir=base_dir,
@@ -193,12 +253,12 @@ def test__infer_base_dir_from_fpath():
     assert io._infer_base_dir_from_fpath(base_dir) == base_dir
 
 
-def test__infer_disdrodb_tree_path_components():
+def test_infer_disdrodb_tree_path_components():
     # Assert retrieve correct disdrodb path
     path_components = ["DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME"]
     disdrodb_path = os.path.join(*path_components)
     path = os.path.join("whatever_path", disdrodb_path)
-    assert io.__infer_disdrodb_tree_path_components(path) == path_components
+    assert io._infer_disdrodb_tree_path_components(path) == path_components
 
 
 def test__infer_data_source_from_path():
@@ -432,14 +492,14 @@ def test__remove_directory(tmp_path):
     assert res
 
 
-def test_parse_fpath():
+def testremove_path_trailing_slash():
     path_dir_windows_in = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME\\"
     path_dir_windows_out = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME"
-    assert io._parse_fpath(path_dir_windows_in) == path_dir_windows_out
+    assert io.remove_path_trailing_slash(path_dir_windows_in) == path_dir_windows_out
 
     path_dir_linux_in = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/"
     path_dir_linux_out = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME"
-    assert io._parse_fpath(path_dir_linux_in) == path_dir_linux_out
+    assert io.remove_path_trailing_slash(path_dir_linux_in) == path_dir_linux_out
 
 
 def test_check_raw_dir():
@@ -460,7 +520,7 @@ def test_check_raw_dir():
     assert io.check_raw_dir(raw_dir) == raw_dir
 
 
-def test_check_campaign_name():
+def test_check_campaign_name_consistency():
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     path_raw = os.path.join(
@@ -480,7 +540,7 @@ def test_check_campaign_name():
         campaign_name,
     )
 
-    assert io._check_campaign_name(path_raw, path_process) == campaign_name
+    assert io._check_campaign_name_consistency(path_raw, path_process) == campaign_name
 
 
 def test_copy_station_metadata():

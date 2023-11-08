@@ -19,8 +19,8 @@ from disdrodb.utils.yaml import write_yaml
 def create_fake_metadata_file(
     base_dir,
     metadata_dict={},
-    data_source="data_source",
-    campaign_name="campaign_name",
+    data_source="DATA_SOURCE",
+    campaign_name="CAMPAIGN_NAME",
     station_name="station_name",
 ):
     # Define metadata directory

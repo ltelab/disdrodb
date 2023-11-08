@@ -126,14 +126,14 @@ def test_check_archive_metadata_campaign_name(tmp_path):
     base_dir = tmp_path / "DISDRODB"
 
     # Test 1 : Correct campaign_name metadata key
-    campaign_name = "campaign_name"
+    campaign_name = "CAMPAIGN_NAME"
     metadata_dict = {"campaign_name": campaign_name}
     _ = create_fake_metadata_file(base_dir=base_dir, campaign_name=campaign_name, metadata_dict=metadata_dict)
     is_valid = check_archive_metadata_campaign_name(str(base_dir))
     assert is_valid
 
     # Test 2 : Wrong campaign_name metadata key
-    campaign_name = "campaign_name"
+    campaign_name = "CAMPAIGN_NAME"
     metadata_dict = {"campaign_name": ""}
     _ = create_fake_metadata_file(base_dir=base_dir, campaign_name=campaign_name, metadata_dict=metadata_dict)
     is_valid = check_archive_metadata_campaign_name(str(base_dir))
@@ -144,14 +144,14 @@ def test_check_archive_metadata_data_source(tmp_path):
     base_dir = tmp_path / "DISDRODB"
 
     # Test 1 : Correct data_source metadata key
-    data_source = "data_source"
+    data_source = "DATA_SOURCE"
     metadata_dict = {"data_source": data_source}
     _ = create_fake_metadata_file(base_dir=base_dir, data_source=data_source, metadata_dict=metadata_dict)
     is_valid = check_archive_metadata_data_source(str(base_dir))
     assert is_valid
 
     # Test 2 : Wrong data_source metadata key
-    data_source = "data_source"
+    data_source = "DATA_SOURCE"
     metadata_dict = {"data_source": ""}
     _ = create_fake_metadata_file(base_dir=base_dir, data_source=data_source, metadata_dict=metadata_dict)
     is_valid = check_archive_metadata_data_source(str(base_dir))

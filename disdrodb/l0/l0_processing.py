@@ -352,7 +352,7 @@ def run_l0a(
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
+        The path must have the following structure: ``<...>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
             - ``/data/<station_name>/<raw_files>``
@@ -362,15 +362,15 @@ def run_l0a(
 
         - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
         - The ``campaign_name`` are expected to be UPPER CASE.
-        - The ``<campaign_name>`` must semantically match between:
+        - The ``<CAMPAIGN_NAME>`` must semantically match between:
             - the ``raw_dir`` and ``processed_dir`` directory paths;
             - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``.
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         For testing purposes, this function exceptionally accepts also a directory path simply ending
-        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
+        with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
 
     station_name : str
     The name of the station.
@@ -498,7 +498,7 @@ def run_l0b(
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
+        The path must have the following structure: ``<...>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
             - ``/data/<station_name>/<raw_files>``
@@ -508,15 +508,15 @@ def run_l0b(
 
         - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
         - The ``campaign_name`` are expected to be UPPER CASE.
-        - The ``<campaign_name>`` must semantically match between:
+        - The ``<CAMPAIGN_NAME>`` must semantically match between:
             - the ``raw_dir`` and ``processed_dir`` directory paths;
             - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``.
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         For testing purposes, this function exceptionally accepts also a directory path simply ending
-        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
+        with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
 
     station_name : str
         The name of the station.
@@ -644,7 +644,7 @@ def run_l0b_from_nc(
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure: ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
+        The path must have the following structure: ``<...>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
             - ``/data/<station_name>/<raw_files>``
@@ -654,15 +654,15 @@ def run_l0b_from_nc(
 
         - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
         - The ``campaign_name`` are expected to be UPPER CASE.
-        - The ``<campaign_name>`` must semantically match between:
+        - The ``<CAMPAIGN_NAME>`` must semantically match between:
             - the ``raw_dir`` and ``processed_dir`` directory paths;
             - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``.
+        The path should have the following structure: ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         For testing purposes, this function exceptionally accepts also a directory path simply ending
-        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
+        with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
 
     station_name : str
         The name of the station.

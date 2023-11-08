@@ -33,7 +33,7 @@ TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def create_fake_station_file(
-    base_dir, data_source="data_source", campaign_name="campaign_name", station_name="station_name"
+    base_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name="station_name"
 ):
     subfolder_path = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
     if not os.path.exists(subfolder_path):
@@ -72,7 +72,7 @@ def test_get_default_metadata():
     assert isinstance(_get_default_metadata_dict(), dict)
 
 
-def create_fake_metadata_folder(tmp_path, data_source="data_source", campaign_name="campaign_name"):
+def create_fake_metadata_folder(tmp_path, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
     subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
     if not os.path.exists(subfolder_path):
         subfolder_path.mkdir(parents=True)
@@ -83,8 +83,8 @@ def create_fake_metadata_folder(tmp_path, data_source="data_source", campaign_na
 
 
 def test_write_default_metadata(tmp_path):
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
 
     fpath = os.path.join(create_fake_metadata_folder(tmp_path, data_source, campaign_name), f"{station_name}.yml")

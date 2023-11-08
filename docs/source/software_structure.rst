@@ -33,8 +33,8 @@ The current software structure is described below:
 |     ├── 📁 manuals
 |       ├── 📜 \*.pdf
 |     ├── 📁 readers
-|     	├── 📁 `<data_source>`
-|           ├── 📜 \<reader_name>.py
+|     	├── 📁 `<DATA_SOURCE>`
+|           ├── 📜 \<READER_NAME>.py
 |     ├── 📁 scripts
 |         ├── 📜 disdrodb_run_l0_station.py
 |         ├── 📜 disdrodb_run_l0

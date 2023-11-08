@@ -64,8 +64,8 @@ def test_check_metadata_reader():
 
 def test_get_station_reader_function(tmp_path):
     base_dir = tmp_path / "DISDRODB"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAGIN_NAME"
     station_name = "station_name"
 
     metadata_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}

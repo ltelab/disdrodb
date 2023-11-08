@@ -81,7 +81,7 @@ def _infer_disdrodb_tree_path(path: str) -> str:
     -------
     str
         Path inside the DISDRODB archive.
-        Format: DISDRODB/<Raw or Processed>/<data_source>/...
+        Format: DISDRODB/<Raw or Processed>/<DATA_SOURCE>/...
     """
     # Retrieve path elements (os-specific)
     p = Path(path)
@@ -90,7 +90,7 @@ def _infer_disdrodb_tree_path(path: str) -> str:
     idx_occurrence = np.where(np.isin(list_path_elements, "DISDRODB"))[0]
     # If DISDRODB directory not present, raise error
     if len(idx_occurrence) == 0:
-        raise ValueError(f"The DISDRODB directory is not present in {path}")
+        raise ValueError(f"The DISDRODB directory is not present in the path '{path}'")
     # Find the rightermost occurrence
     right_most_occurrence = max(idx_occurrence)
     # Define the disdrodb path
@@ -98,7 +98,7 @@ def _infer_disdrodb_tree_path(path: str) -> str:
     return disdrodb_fpath
 
 
-def __infer_disdrodb_tree_path_components(path: str) -> list:
+def _infer_disdrodb_tree_path_components(path: str) -> list:
     """Return a list with the component of the disdrodb_path.
 
     Parameters
@@ -110,7 +110,7 @@ def __infer_disdrodb_tree_path_components(path: str) -> list:
     -------
     list
         Path element inside the DISDRODB archive.
-        Format: ["DISDRODB", <Raw or Processed>, <data_source>, ...]
+        Format: ["DISDRODB", <Raw or Processed>, <DATA_SOURCE>, ...]
     """
     # Retrieve disdrodb path
     disdrodb_fpath = _infer_disdrodb_tree_path(path)
@@ -135,7 +135,7 @@ def _infer_campaign_name_from_path(path: str) -> str:
     str
         Name of the campaign.
     """
-    list_path_elements = __infer_disdrodb_tree_path_components(path)
+    list_path_elements = _infer_disdrodb_tree_path_components(path)
     if len(list_path_elements) <= 3:
         raise ValueError(f"Impossible to determine campaign_name from {path}")
     campaign_name = list_path_elements[3]
@@ -157,11 +157,31 @@ def _infer_data_source_from_path(path: str) -> str:
     str
         Name of the data source.
     """
-    list_path_elements = __infer_disdrodb_tree_path_components(path)
+    list_path_elements = _infer_disdrodb_tree_path_components(path)
     if len(list_path_elements) <= 2:
         raise ValueError(f"Impossible to determine data_source from {path}")
     data_source = list_path_elements[2]
     return data_source
+
+
+def _check_campaign_name_is_upper_case(campaign_dir):
+    """Check the campaign name of campaign_dir is upper case !"""
+    campaign_name = _infer_campaign_name_from_path(campaign_dir)
+    upper_campaign_name = campaign_name.upper()
+    if campaign_name != upper_campaign_name:
+        msg = f"The campaign directory name {campaign_name} must be uppercase: {upper_campaign_name}"
+        logger.error(msg)
+        raise ValueError(msg)
+
+
+def _check_data_source_is_upper_case(campaign_dir):
+    """Check the data_source name of campaign_dir is upper case !"""
+    data_source = _infer_data_source_from_path(campaign_dir)
+    upper_data_source = data_source.upper()
+    if data_source != upper_data_source:
+        msg = f"The data_source directory name {data_source} must be defined uppercase: {upper_data_source}"
+        logger.error(msg)
+        raise ValueError(msg)
 
 
 ####--------------------------------------------------------------------------.
@@ -443,7 +463,7 @@ def get_raw_file_list(raw_dir, station_name, glob_patterns, verbose=False, debug
     ----------
     raw_dir : str
         Directory of the campaign where to search for files.
-        Format <..>/DISDRODB/Raw/<data_source>/<campaign_name>
+        Format <..>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>
     station_name : str
         ID of the station
     verbose : bool, optional
@@ -483,7 +503,7 @@ def get_l0a_file_list(processed_dir, station_name, debugging_mode):
     ----------
     processed_dir : str
         Directory of the campaign where to search for the L0A files.
-        Format <..>/DISDRODB/Processed/<data_source>/<campaign_name>
+        Format <..>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>
     station_name : str
         ID of the station
     debugging_mode : bool, optional
@@ -572,36 +592,67 @@ def _remove_if_exists(fpath: str, force: bool = False) -> None:
     logger.info(f"Deleted folder {fpath}")
 
 
-def _parse_fpath(fpath: str) -> str:
-    """Ensure fpath does not end with /.
+def _create_required_directory(dir_path, dir_name):
+    """Create directory <dir_name> inside the <dir_path> directory."""
+    try:
+        new_dir_path = os.path.join(dir_path, dir_name)
+        os.makedirs(new_dir_path, exist_ok=True)
+    except Exception as e:
+        msg = f"Can not create folder {dir_name} at {new_dir_path}. Error: {e}"
+        logger.exception(msg)
+        raise FileNotFoundError(msg)
+
+
+def _copy_file(src_fpath, dst_fpath):
+    """Copy a file from a location to another."""
+    filename = os.path.basename(src_fpath)
+    dst_dir = os.path.dirname(dst_fpath)
+    try:
+        shutil.copy(src_fpath, dst_fpath)
+        msg = f"{filename} copied at {dst_fpath}."
+        logger.info(msg)
+    except Exception as e:
+        msg = f"Something went wrong when copying {filename} into {dst_dir}.\n The error is: {e}."
+        logger.error(msg)
+        raise ValueError(msg)
+
+
+def remove_path_trailing_slash(path: str) -> str:
+    """
+    Removes a trailing slash or backslash from a file path if it exists.
+
+    This function ensures that the provided file path is normalized by removing
+    any trailing directory separator characters ('/' or '\\'). This is useful for
+    maintaining consistency in path strings and for preparing paths for operations
+    that may not expect a trailing slash.
 
     Parameters
     ----------
-    fpath : str
-        Input file path
+    path : str
+        The file path to normalize.
 
     Returns
     -------
     str
-        Output file path
+        The normalized path without a trailing slash.
 
     Raises
     ------
     TypeError
-        Error il file path not compliant
+        If the input path is not a string.
+
+    Examples
+    --------
+    >>> remove_trailing_slash("some/path/")
+    'some/path'
+    >>> remove_trailing_slash("another\\path\\")
+    'another\\path'
     """
-
-    if not isinstance(fpath, str):
-        raise TypeError("'_parse_fpath' expects a directory/filepath string.")
-    if fpath[-1] == "/":
-        print(f"{fpath} should not end with /.")
-        fpath = fpath[:-1]
-
-    elif fpath[-1] == "\\":
-        print(f"{fpath} should not end with /.")
-        fpath = fpath[:-1]
-
-    return fpath
+    if not isinstance(path, str):
+        raise TypeError("Input must be a string representing a file path.")
+    # Remove trailing slash or backslash (if present)
+    path = path.rstrip("/\\")
+    return path
 
 
 ####--------------------------------------------------------------------------.
@@ -945,7 +996,7 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     2. Check that 'raw_dir' follows the expect directory structure
     3. Check that each station_name directory contains data
     4. Check that for each station_name the mandatory metadata.yml is specified.
-    4. Check that for each station_name the mandatory issue.yml is specified.
+    5. Check that for each station_name the mandatory issue.yml is specified.
 
     Parameters
     ----------
@@ -960,7 +1011,11 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     _check_raw_dir_is_a_directory(raw_dir)
 
     # Ensure valid path format
-    raw_dir = _parse_fpath(raw_dir)
+    raw_dir = remove_path_trailing_slash(raw_dir)
+
+    # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
+    _check_data_source_is_upper_case(raw_dir)
+    _check_campaign_name_is_upper_case(raw_dir)
 
     # Check there are directories in raw_dir
     _check_directories_in_raw_dir(raw_dir)
@@ -981,77 +1036,131 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
 #### PROCESSED Directory Checks
 
 
-def _check_is_processed_dir(processed_dir):
-    if not isinstance(processed_dir, str):
-        raise TypeError("Provide 'processed_dir' as a string'.")
-
-    # Parse the fpath
-    processed_dir = _parse_fpath(processed_dir)
-
+def _check_is_inside_processed_directory(processed_dir):
+    """Check the path is located within the DISDRODB/Processed directory."""
     # Check is the processed_dir
     if processed_dir.find("DISDRODB/Processed") == -1 and processed_dir.find("DISDRODB\\Processed") == -1:
         msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/*. or *\\DISDRODB\\Processed\\*."
         logger.error(msg)
         raise ValueError(msg)
 
-    # Check processed_dir does not end with "DISDRODB/Processed"
-    # - It must contain also the <campaign_name> directory
-    if (
-        processed_dir.endswith("Processed")
-        or processed_dir.endswith("Processed/")
-        or processed_dir.endswith("Processed\\")
-    ):
-        msg = "Expecting 'processed_dir' to contain the pattern */DISDRODB/Processed/<campaign_name>."
+
+def _check_valid_processed_dir(processed_dir):
+    """Check the validity of 'processed_dir'.
+
+    The path must represents this path */DISDRODB/Processed/<DATA_SOURCE>/
+    """
+    last_component = os.path.basename(processed_dir)
+    tree_components = _infer_disdrodb_tree_path_components(processed_dir)
+    tree_path = "/".join(tree_components)
+    # Check that is not data_source or 'Processed' directory
+    if len(tree_components) < 4:
+        msg = "Expecting 'processed_dir' to contain the pattern <...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>."
+        msg = msg + f"It only provides {tree_path}"
         logger.error(msg)
         raise ValueError(msg)
+    # Check that ends with the campaign_name
+    campaign_name = tree_components[3]
+    if last_component != campaign_name:
+        msg = "Expecting 'processed_dir' to contain the pattern <...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>."
+        msg = msg + f"The 'processed_dir' path {processed_dir} does not end with '{campaign_name}'!"
+        logger.error(msg)
+        raise ValueError(msg)
+
+
+def check_processed_dir(processed_dir):
+    """Check input, format and validity of the 'processed_dir' directory path.
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path to the campaign directory in the 'DISDRODB/Processed directory tree
+
+    Returns
+    -------
+    str
+        Path of the processed campaign directory
+    """
+    # Check path type
+    if not isinstance(processed_dir, str):
+        raise TypeError("Provide 'processed_dir' as a string'.")
+
+    # Ensure valid path format
+    processed_dir = remove_path_trailing_slash(processed_dir)
+
+    # Check the path is inside the DISDRDB/Processed directory
+    _check_is_inside_processed_directory(processed_dir)
+
+    # Check processed_dir is <...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>
+    _check_valid_processed_dir(processed_dir)
+
+    # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
+    _check_data_source_is_upper_case(processed_dir)
+    _check_campaign_name_is_upper_case(processed_dir)
+
     return processed_dir
 
 
-def _check_campaign_name(raw_dir: str, processed_dir: str) -> str:
+####---------------------------------------------------------------------------.
+#### L0A and L0B directory creation routines
+
+
+def _check_data_source_consistency(raw_dir: str, processed_dir: str) -> str:
+    """Check that 'raw_dir' and 'processed_dir' have same data_source.
+
+    Parameters
+    ----------
+    raw_dir : str
+        Path of the raw campaign directory
+    processed_dir : str
+        Path of the processed campaign directory
+
+    Returns
+    -------
+    str
+        data_source in capital letter.
+
+    Raises
+    ------
+    ValueError
+        Error if the data_source of the two directory paths does not match.
+    """
+    raw_data_source = _infer_campaign_name_from_path(raw_dir)
+    processed_data_source = _infer_campaign_name_from_path(processed_dir)
+    if raw_data_source != processed_data_source:
+        msg = f"'raw_dir' and 'processed_dir' must ends with same <CAMPAIGN_NAME>: {raw_data_source}"
+        logger.error(msg)
+        raise ValueError(msg)
+    return raw_data_source.upper()
+
+
+def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
     """Check that 'raw_dir' and 'processed_dir' have same campaign_name.
 
     Parameters
     ----------
     raw_dir : str
-        Path of the raw directory
+        Path of the raw campaign directory
     processed_dir : str
-        Path of the processed directory
+        Path of the processed campaign directory
 
     Returns
     -------
     str
-        Campaign name in capital letter
+        Campaign name in capital letter.
 
     Raises
     ------
     ValueError
-        Error if both paths do not match.
+        Error if the campaign_name of the two directory paths does not match.
     """
-    upper_campaign_name = os.path.basename(raw_dir).upper()
-    raw_campaign_name = os.path.basename(raw_dir)
-    processed_campaign_name = os.path.basename(processed_dir)
+    raw_campaign_name = _infer_campaign_name_from_path(raw_dir)
+    processed_campaign_name = _infer_campaign_name_from_path(processed_dir)
     if raw_campaign_name != processed_campaign_name:
-        msg = f"'raw_dir' and 'processed_dir' must ends with same <campaign_name> {upper_campaign_name}"
+        msg = f"'raw_dir' and 'processed_dir' must ends with same <CAMPAIGN_NAME>: {raw_campaign_name}"
         logger.error(msg)
         raise ValueError(msg)
-
-    if raw_campaign_name != upper_campaign_name:
-        msg = f"'raw_dir' and 'processed_dir' must ends with UPPERCASE <campaign_name> {upper_campaign_name}"
-        logger.error(msg)
-        raise ValueError(msg)
-
-    return upper_campaign_name
-
-
-def _create_processed_dir_folder(processed_dir, dir_name):
-    """Create directory <dir_name> inside the processed_dir directory."""
-    try:
-        folder_path = os.path.join(processed_dir, dir_name)
-        os.makedirs(folder_path, exist_ok=True)
-    except Exception as e:
-        msg = f"Can not create folder {dir_name} at {folder_path}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
+    return raw_campaign_name.upper()
 
 
 def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) -> None:
@@ -1060,9 +1169,9 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) 
     Parameters
     ----------
     raw_dir : str
-        Path of the raw directory
+        Path of the raw campaign directory
     processed_dir : str
-        Path of the processed directory
+        Path of the processed campaign directory
 
     Raises
     ------
@@ -1080,15 +1189,8 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) 
         raise ValueError(f"No metadata available for {station_name} at {raw_metadata_fpath}")
     # Define the destination fpath
     processed_metadata_fpath = os.path.join(processed_metadata_dir, os.path.basename(raw_metadata_fpath))
-    # Try copying the file
-    try:
-        shutil.copy(raw_metadata_fpath, processed_metadata_fpath)
-        msg = f"{metadata_fname} copied at {processed_metadata_fpath}."
-        logger.info(msg)
-    except Exception as e:
-        msg = f"Something went wrong when copying {metadata_fname} into {processed_metadata_dir}.\n The error is: {e}."
-        logger.error(msg)
-        raise ValueError(msg)
+    # Copy the metadata file
+    _copy_file(src_fpath=raw_metadata_fpath, dst_fpath=processed_metadata_fpath)
     return None
 
 
@@ -1127,24 +1229,13 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
             raise ValueError(msg)
 
 
-def check_processed_dir(processed_dir):
-    """Check input, format and validity of the directory path
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-
-    Returns
-    -------
-    str
-        Path of the processed directory
-    """
-    processed_dir = _check_is_processed_dir(processed_dir)
-    return processed_dir
-
-
-def create_initial_directory_structure(raw_dir, processed_dir, station_name, force, verbose=False, product="L0A"):
+def create_initial_directory_structure(raw_dir,
+                                       processed_dir,
+                                       station_name,
+                                       force,
+                                       product,
+                                       verbose=False,
+                                       ):
     """Create directory structure for the first L0 DISDRODB product.
 
     If the input data are raw text files --> product = "L0A"    (run_l0a)
@@ -1156,10 +1247,9 @@ def create_initial_directory_structure(raw_dir, processed_dir, station_name, for
     raw_dir = check_raw_dir(raw_dir=raw_dir, verbose=verbose)
     processed_dir = check_processed_dir(processed_dir=processed_dir)
 
-    # Check valid campaign name
-    # - The campaign_name concides between raw and processed dir
-    # - The campaign_name is all upper case
-    _ = _check_campaign_name(raw_dir=raw_dir, processed_dir=processed_dir)
+    # Check consistent data_source and campaign name
+    _ = _check_data_source_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
+    _ = _check_campaign_name_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
 
     # Get list of available stations (at raw level)
     list_stations = _get_list_stations_with_data(product="RAW", campaign_dir=raw_dir)
@@ -1169,9 +1259,9 @@ def create_initial_directory_structure(raw_dir, processed_dir, station_name, for
         raise ValueError(f"No data available for station {station_name}. Available stations: {list_stations}.")
 
     # Create required directory (if they don't exists)
-    _create_processed_dir_folder(processed_dir, dir_name="metadata")
-    _create_processed_dir_folder(processed_dir, dir_name="info")
-    _create_processed_dir_folder(processed_dir, dir_name=product)
+    _create_required_directory(processed_dir, dir_name="metadata")
+    _create_required_directory(processed_dir, dir_name="info")
+    _create_required_directory(processed_dir, dir_name=product)
 
     # Copy the station metadata
     _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
@@ -1185,7 +1275,11 @@ def create_initial_directory_structure(raw_dir, processed_dir, station_name, for
     )
 
 
-def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
+def create_directory_structure(processed_dir,
+                               product, 
+                               station_name, 
+                               force, 
+                               verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
     from disdrodb.api.checks import check_product
     from disdrodb.api.io import _get_list_stations_with_data
@@ -1207,7 +1301,7 @@ def create_directory_structure(processed_dir, product, station_name, force, verb
         )
 
     # Create required directory (if they don't exists)
-    _create_processed_dir_folder(processed_dir, dir_name=product)
+    _create_required_directory(processed_dir, dir_name=product)
 
     # Remove <product>/<station_name> directory if force=True
     _check_pre_existing_station_data(
@@ -1220,6 +1314,9 @@ def create_directory_structure(processed_dir, product, station_name, force, verb
 
 ####--------------------------------------------------------------------------.
 #### DISDRODB L0A Readers
+
+
+# --> TODO: in L0A processing !
 def _read_l0a(fpath: str, verbose: bool = False, debugging_mode: bool = False) -> pd.DataFrame:
     # Log
     msg = f" - Reading L0 Apache Parquet file at {fpath} started."
@@ -1267,6 +1364,7 @@ def read_l0a_dataframe(
     # Check filepaths validity
     if not isinstance(fpaths, (list, str)):
         raise TypeError("Expecting fpaths to be a string or a list of strings.")
+
     # ----------------------------------------
     # If fpath is a string, convert to list
     if isinstance(fpaths, str):

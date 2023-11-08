@@ -31,8 +31,8 @@ def test_get_archive_metadata_key_value(tmp_path):
     # Test 1 : one config file
     expected_key = "key1"
     expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name1"
 
     metadata_dict = {expected_key: expected_value}
@@ -51,8 +51,8 @@ def test_get_archive_metadata_key_value(tmp_path):
     # Test 2 : two config files
     expected_key = "key1"
     expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name2"
     metadata_dict = {expected_key: expected_value}
     _ = create_fake_metadata_file(
@@ -71,8 +71,8 @@ def test_get_archive_metadata_key_value(tmp_path):
     # Test 3: test tuple
     expected_key = "key1"
     expected_value = "value1"
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name3"
 
     metadata_dict = {expected_key: expected_value}

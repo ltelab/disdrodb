@@ -26,7 +26,7 @@ from disdrodb.metadata.io import _get_list_all_metadata, _get_list_metadata_with
 from disdrodb.tests.conftest import create_fake_metadata_file
 
 
-def create_fake_data_file(tmp_path, data_source="data_source", campaign_name="campaign_name", station_name=""):
+def create_fake_data_file(tmp_path, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name=""):
     subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "data" / station_name
     if not os.path.exists(subfolder_path):
         subfolder_path.mkdir(parents=True)
@@ -48,8 +48,8 @@ def test__get_list_all_metadata(tmp_path):
     # Test 1 : one metadata file
     key_name = "key1"
     metadata_dict = {key_name: "value1"}
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
 
     metadata_filepath = create_fake_metadata_file(
@@ -94,8 +94,8 @@ def test__get_list_metadata_with_data(tmp_path):
     base_dir = tmp_path / "DISDRODB"
 
     # Test 1 : one metadata file + one data file
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
 
     key_name = "key1"
@@ -161,8 +161,8 @@ def test_get_list_metadata_file(tmp_path):
 
     base_dir = tmp_path / "DISDRODB"
 
-    data_source = "data_source"
-    campaign_name = "campaign_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
     metadata_filepath = create_fake_metadata_file(
         base_dir=base_dir,

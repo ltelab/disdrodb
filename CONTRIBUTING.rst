@@ -354,8 +354,8 @@ To create a new reader test, simply add a small, single-station dataset and the 
 |           ├── 📁 check_readers
 |     	      ├── 📁 DISDRODB
 |     		      ├── 📁 Raw
-|     			      ├── 📁 `<data_source>` : e.g. GPM, ARM, EPFL, ...
-|     				      ├── 📁 `<campaign_name>` : e.g. PARSIVEL_2007
+|     			      ├── 📁 `<DATA_SOURCE>` : e.g. GPM, ARM, EPFL, ...
+|     				      ├── 📁 `<CAMPAIGN_NAME>` : e.g. PARSIVEL_2007
 |     				         ├── 📁 data
 |     				            ├── 📁 `<station_name>`.\*
 |     				         ├── 📁 issue

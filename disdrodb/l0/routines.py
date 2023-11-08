@@ -48,8 +48,8 @@ def click_l0_station_arguments(function: object):
         Function.
     """
     function = click.argument("station_name", metavar="<station>")(function)
-    function = click.argument("campaign_name", metavar="<campaign_name>")(function)
-    function = click.argument("data_source", metavar="<data_source>")(function)
+    function = click.argument("campaign_name", metavar="<CAMPAIGN_NAME>")(function)
+    function = click.argument("data_source", metavar="<DATA_SOURCE>")(function)
     return function
 
 

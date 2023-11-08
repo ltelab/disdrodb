@@ -157,7 +157,7 @@ def _get_campaigns_stations(base_dir, product, data_source, campaign_names):
 def _get_data_source_stations(base_dir, product, data_source):
     """Return list of available stations for a specific data source.
 
-    Returns a tuple (<data_source>, <campaign_name>, <station_name>)
+    Returns a tuple (<DATA_SOURCE>, <CAMPAIGN_NAME>, <station_name>)
     """
     # Get data source directory
     data_source_dir = get_disdrodb_path(

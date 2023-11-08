@@ -32,7 +32,7 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 def create_fake_data_dir(
-    base_dir, data_source="data_source", campaign_name="campaign_name", station_name="station_name"
+    base_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name="station_name"
 ):
     data_dir = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
     if not data_dir.exists():

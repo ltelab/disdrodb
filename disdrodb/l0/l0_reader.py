@@ -275,19 +275,19 @@ def _check_metadata_reader(metadata):
     if "reader" not in metadata:
         raise ValueError("The reader is not specified in the metadata.")
     # If the reader name is specified, test it is valid.
-    # - Convention: reader: "<data_source>/<reader_name>" in disdrodb.l0.readers
+    # - Convention: reader: "<DATA_SOURCE>/<READER_NAME>" in disdrodb.l0.readers
     reader_reference = metadata.get("reader")
     # - Check it contains /
     if "/" not in reader_reference:
         raise ValueError(
             f"The reader '{reader_reference}' reported in the metadata is not valid. Must have"
-            " '<data_source>/<reader_name>' pattern."
+            " '<DATA_SOURCE>/<READER_NAME>' pattern."
         )
     # - Get the reader_reference component list
     reader_components = reader_reference.split("/")
     # - Check composed by two elements
     if len(reader_components) != 2:
-        raise ValueError("Expecting the reader reference to be composed of <data_source>/<reader_name>.")
+        raise ValueError("Expecting the reader reference to be composed of <DATA_SOURCE>/<READER_NAME>.")
     # - Retrieve reader data source and reader name
     reader_data_source = reader_components[0]
     reader_name = reader_components[1]
@@ -380,7 +380,7 @@ def reader_generic_docstring():
     ----------
     raw_dir : str
         The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure ``<...>/DISDRODB/Raw/<data_source>/<campaign_name>``.
+        The path must have the following structure ``<...>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         Inside the ``raw_dir`` directory, it is required to adopt the following structure::
 
             - ``/data/<station_name>/<raw_files>``
@@ -389,17 +389,17 @@ def reader_generic_docstring():
         **Important points:**
 
         - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
-        - The ``<campaign_name>`` are expected to be UPPER CASE.
-        - The ``<campaign_name>`` must semantically match between:
+        - The ``<CAMPAIGN_NAME>`` are expected to be UPPER CASE.
+        - The ``<CAMPAIGN_NAME>`` must semantically match between:
 
             - the ``raw_dir`` and ``processed_dir`` directory paths;
             - with the key ``campaign_name`` within the metadata YAML files.
 
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure ``<...>/DISDRODB/Processed/<data_source>/<campaign_name>``
+        The path should have the following structure ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``
         For testing purposes, this function exceptionally accepts also a directory path simply ending
-        with ``<campaign_name>`` (e.g., ``/tmp/<campaign_name>``).
+        with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
 
     station_name : str
         The name of the station.
