@@ -59,7 +59,7 @@ def get_disdrodb_path(
         Directory path
     """
     from disdrodb.api.checks import check_base_dir
-    from disdrodb.l0.io import _check_directory_exist
+    from disdrodb.utils.directories import check_directory_exist
 
     # Check base_dir validity
     check_base_dir(base_dir)
@@ -73,7 +73,7 @@ def get_disdrodb_path(
     else:
         dir_path = os.path.join(base_dir, "Processed", data_source, campaign_name)
     if check_exist:
-        _check_directory_exist(dir_path)
+        check_directory_exist(dir_path)
     return dir_path
 
 

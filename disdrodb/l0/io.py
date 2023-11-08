@@ -30,6 +30,17 @@ import pandas as pd
 import xarray as xr
 
 from disdrodb.utils.logger import log_info, log_warning
+from disdrodb.utils.directories import (
+    ensure_string_path,
+    check_directory_exist,
+    create_directory,
+    is_empty_directory,
+    create_required_directory,
+    remove_if_exists,
+    copy_file,
+    remove_path_trailing_slash,
+)
+
 
 logger = logging.getLogger(__name__)
 
@@ -188,7 +199,7 @@ def _check_data_source_is_upper_case(campaign_dir):
 #### Directory/Filepaths L0A and L0B products
 
 
-def get_dataset_min_max_time(ds: xr.Dataset):
+def _get_dataset_min_max_time(ds: xr.Dataset):
     """Retrieves dataset starting and ending time.
 
     Parameters
@@ -208,7 +219,7 @@ def get_dataset_min_max_time(ds: xr.Dataset):
     return (starting_time, ending_time)
 
 
-def get_dataframe_min_max_time(df: pd.DataFrame):
+def _get_dataframe_min_max_time(df: pd.DataFrame):
     """Retrieves dataframe starting and ending time.
 
     Parameters
@@ -285,7 +296,7 @@ def get_l0a_fname(df, processed_dir, station_name: str) -> str:
     """
     from disdrodb.l0.standards import PRODUCT_VERSION
 
-    starting_time, ending_time = get_dataframe_min_max_time(df)
+    starting_time, ending_time = _get_dataframe_min_max_time(df)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
@@ -313,7 +324,7 @@ def get_l0b_fname(ds, processed_dir, station_name: str) -> str:
     """
     from disdrodb.l0.standards import PRODUCT_VERSION
 
-    starting_time, ending_time = get_dataset_min_max_time(ds)
+    starting_time, ending_time = _get_dataset_min_max_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = _infer_campaign_name_from_path(processed_dir).replace(".", "-")
@@ -531,131 +542,6 @@ def get_l0a_file_list(processed_dir, station_name, debugging_mode):
 
 
 ####--------------------------------------------------------------------------.
-#### Directory/File Checks/Creation/Deletion
-
-
-def _check_directory_exist(dir_path):
-    """Check if the directory exist."""
-    # Check the directory exist
-    if not os.path.exists(dir_path):
-        raise ValueError(f"{dir_path} directory does not exist.")
-    if not os.path.isdir(dir_path):
-        raise ValueError(f"{dir_path} is not a directory.")
-
-
-def _create_directory(path: str, exist_ok=True) -> None:
-    """Create a directory."""
-    if not isinstance(path, str):
-        raise TypeError("'path' must be a string.")
-    try:
-        os.makedirs(path, exist_ok=exist_ok)
-        logger.debug(f"Created directory {path}.")
-    except Exception as e:
-        dir_name = os.path.basename(path)
-        msg = f"Can not create folder {dir_name} inside <path>. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
-
-
-def _remove_if_exists(fpath: str, force: bool = False) -> None:
-    """Remove file or directory if exists and force=True."""
-    # If the file does not exist, do nothing
-    if not os.path.exists(fpath):
-        return None
-
-    # If the file exist and force=False, raise Error
-    if not force:
-        msg = f"--force is False and a file already exists at:{fpath}"
-        logger.error(msg)
-        raise ValueError(msg)
-
-    # If force=True, remove the file.
-    try:
-        os.remove(fpath)
-    except IsADirectoryError:
-        try:
-            os.rmdir(fpath)
-        except OSError:
-            try:
-                # shutil.rmtree(fpath.rpartition('.')[0])
-                for f in glob.glob(fpath + "/*"):
-                    try:
-                        os.remove(f)
-                    except OSError as e:
-                        msg = f"Can not delete file {f}, error: {e.strerror}"
-                        logger.exception(msg)
-                os.rmdir(fpath)
-            except Exception:
-                msg = f"Something wrong with: {fpath}"
-                logger.error(msg)
-                raise ValueError(msg)
-    logger.info(f"Deleted folder {fpath}")
-
-
-def _create_required_directory(dir_path, dir_name):
-    """Create directory <dir_name> inside the <dir_path> directory."""
-    try:
-        new_dir_path = os.path.join(dir_path, dir_name)
-        os.makedirs(new_dir_path, exist_ok=True)
-    except Exception as e:
-        msg = f"Can not create folder {dir_name} at {new_dir_path}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
-
-
-def _copy_file(src_fpath, dst_fpath):
-    """Copy a file from a location to another."""
-    filename = os.path.basename(src_fpath)
-    dst_dir = os.path.dirname(dst_fpath)
-    try:
-        shutil.copy(src_fpath, dst_fpath)
-        msg = f"{filename} copied at {dst_fpath}."
-        logger.info(msg)
-    except Exception as e:
-        msg = f"Something went wrong when copying {filename} into {dst_dir}.\n The error is: {e}."
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-def remove_path_trailing_slash(path: str) -> str:
-    """
-    Removes a trailing slash or backslash from a file path if it exists.
-
-    This function ensures that the provided file path is normalized by removing
-    any trailing directory separator characters ('/' or '\\'). This is useful for
-    maintaining consistency in path strings and for preparing paths for operations
-    that may not expect a trailing slash.
-
-    Parameters
-    ----------
-    path : str
-        The file path to normalize.
-
-    Returns
-    -------
-    str
-        The normalized path without a trailing slash.
-
-    Raises
-    ------
-    TypeError
-        If the input path is not a string.
-
-    Examples
-    --------
-    >>> remove_trailing_slash("some/path/")
-    'some/path'
-    >>> remove_trailing_slash("another\\path\\")
-    'another\\path'
-    """
-    if not isinstance(path, str):
-        raise TypeError("Input must be a string representing a file path.")
-    # Remove trailing slash or backslash (if present)
-    path = path.rstrip("/\\")
-    return path
-
-
-####--------------------------------------------------------------------------.
 #### RAW Directory Checks
 
 
@@ -799,7 +685,7 @@ def _check_presence_metadata_directory(raw_dir):
     if not _is_metadata_directory_available(raw_dir):
         # Create metadata directory
         metadata_dir = _define_metadata_directory_path(raw_dir)
-        _create_directory(metadata_dir)
+        create_directory(metadata_dir)
         # Create default metadata yml file for each station (since the folder didn't existed)
         list_data_station_names = _get_available_stations_with_data_directory(raw_dir)
         list_metadata_fpath = [
@@ -818,7 +704,7 @@ def _check_presence_issue_directory(raw_dir, verbose):
     if not _is_issue_directory_available(raw_dir):
         # Create issue directory
         issue_dir = _define_issue_directory_path(raw_dir)
-        _create_directory(issue_dir)
+        create_directory(issue_dir)
         # Create issue yml file for each station (since the folder didn't existed)
         list_data_station_names = _get_available_stations_with_data_directory(raw_dir)
         list_issue_fpath = [_define_issue_filepath(raw_dir, station_name) for station_name in list_data_station_names]
@@ -934,8 +820,7 @@ def _check_valid_issue_files(filepaths):
 
 def _check_raw_dir_is_a_directory(raw_dir):
     """Check that raw_dir is a directory and exists."""
-    if not isinstance(raw_dir, str):
-        raise TypeError("Provide 'raw_dir' as a string'.")
+    raw_dir = ensure_string_path(raw_dir, msg="Provide 'raw_dir' as a string", accepth_pathlib=True)
     if not os.path.exists(raw_dir):
         raise ValueError(f"'raw_dir' {raw_dir} directory does not exist.")
     if not os.path.isdir(raw_dir):
@@ -1082,9 +967,10 @@ def check_processed_dir(processed_dir):
         Path of the processed campaign directory
     """
     # Check path type
-    if not isinstance(processed_dir, str):
-        raise TypeError("Provide 'processed_dir' as a string'.")
-
+    processed_dir = ensure_string_path(processed_dir, 
+                                       msg="Provide 'processed_dir' as a string",
+                                       accepth_pathlib=True)
+    
     # Ensure valid path format
     processed_dir = remove_path_trailing_slash(processed_dir)
 
@@ -1190,7 +1076,7 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) 
     # Define the destination fpath
     processed_metadata_fpath = os.path.join(processed_metadata_dir, os.path.basename(raw_metadata_fpath))
     # Copy the metadata file
-    _copy_file(src_fpath=raw_metadata_fpath, dst_fpath=processed_metadata_fpath)
+    copy_file(src_fpath=raw_metadata_fpath, dst_fpath=processed_metadata_fpath)
     return None
 
 
@@ -1199,11 +1085,15 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
 
     - If force=True, remove all data inside the station folder.
     - If force=False, raise error.
+    
+    NOTE: force=False behaviour could be changed to enable updating of missing files.
+         This would require also adding code to check whether a downstream file already exist.
     """
     from disdrodb.api.io import _get_list_stations_with_data
 
     # Get list of available stations
     list_stations = _get_list_stations_with_data(product=product, campaign_dir=campaign_dir)
+   
     # Check if station data are already present
     station_already_present = station_name in list_stations
 
@@ -1213,12 +1103,9 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
     # If the station data are already present:
     # - If force=True, remove all data inside the station folder
     # - If force=False, raise error
-    # NOTE:
-    # - force=False behaviour could be changed to enable updating of missing files.
-    #   This would require also adding code to check whether a downstream file already exist.
     if station_already_present:
         # Check is a directory
-        _check_directory_exist(station_dir)
+        check_directory_exist(station_dir)
         # If force=True, remove all the content
         if force:
             # Remove all station directory content
@@ -1259,9 +1146,9 @@ def create_initial_directory_structure(raw_dir,
         raise ValueError(f"No data available for station {station_name}. Available stations: {list_stations}.")
 
     # Create required directory (if they don't exists)
-    _create_required_directory(processed_dir, dir_name="metadata")
-    _create_required_directory(processed_dir, dir_name="info")
-    _create_required_directory(processed_dir, dir_name=product)
+    create_required_directory(processed_dir, dir_name="metadata")
+    create_required_directory(processed_dir, dir_name="info")
+    create_required_directory(processed_dir, dir_name=product)
 
     # Copy the station metadata
     _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
@@ -1301,7 +1188,7 @@ def create_directory_structure(processed_dir,
         )
 
     # Create required directory (if they don't exists)
-    _create_required_directory(processed_dir, dir_name=product)
+    create_required_directory(processed_dir, dir_name=product)
 
     # Remove <product>/<station_name> directory if force=True
     _check_pre_existing_station_data(

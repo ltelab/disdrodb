@@ -28,7 +28,7 @@ import numpy as np
 import pandas as pd
 
 from disdrodb.l0.check_standards import check_l0a_column_names, check_l0a_standards
-from disdrodb.l0.io import _create_directory, _remove_if_exists
+from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.l0.l0b_processing import infer_split_str
 from disdrodb.l0.standards import (
     get_data_range_dict,
@@ -710,12 +710,12 @@ def write_l0a(
 
     # -------------------------------------------------------------------------.
     # Create station directory if does not exist
-    _create_directory(os.path.dirname(fpath))
+    create_directory(os.path.dirname(fpath))
 
     # Check if the file already exists
     # - If force=True --> Remove it
     # - If force=False --> Raise error
-    _remove_if_exists(fpath, force=force)
+    remove_if_exists(fpath, force=force)
 
     # -------------------------------------------------------------------------.
     # Define writing options

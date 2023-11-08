@@ -22,36 +22,11 @@ import os
 
 import pytest
 
-from disdrodb.data_transfer.download_data import (
-    _download_file_from_url,
-    _is_empty_directory,
-)
+from disdrodb.data_transfer.download_data import _download_file_from_url
+
 
 # from disdrodb.data_transfer.download_data import _download_station_data
 # from disdrodb.tests.conftest import create_fake_metadata_file
-
-
-class TestIsEmptyDirectory:
-    def test_non_existent_directory(self):
-        with pytest.raises(OSError, match=r".* does not exist."):
-            _is_empty_directory("non_existent_directory")
-
-    def test_non_directory_path(self, tmp_path):
-        # Create a temporary file
-        file_path = tmp_path / "test_file.txt"
-        file_path.write_text("This is a test file.")
-        with pytest.raises(OSError, match=r".* is not a directory."):
-            _is_empty_directory(str(file_path))
-
-    def test_empty_directory(self, tmp_path):
-        # `tmp_path` is a pytest fixture that provides a temporary directory unique to the test invocation
-        assert _is_empty_directory(tmp_path)
-
-    def test_non_empty_directory(self, tmp_path):
-        # Create a temporary file inside the temporary directory
-        file_path = tmp_path / "test_file.txt"
-        file_path.write_text("This is a test file.")
-        assert not _is_empty_directory(tmp_path)
 
 
 def test_download_file_from_url(tmp_path):

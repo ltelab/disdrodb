@@ -29,7 +29,7 @@ from disdrodb.l0.check_standards import (
     _check_raw_fields_available,
     check_l0b_standards,
 )
-from disdrodb.l0.io import _create_directory, _remove_if_exists
+from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.l0.standards import (
     # get_valid_coordinates_names,
     get_bin_coords_dict,
@@ -611,12 +611,12 @@ def write_l0b(ds: xr.Dataset, fpath: str, force=False) -> None:
         If False, raise an error if there are already data into destination directories. This is the default.
     """
     # Create station directory if does not exist
-    _create_directory(os.path.dirname(fpath))
+    create_directory(os.path.dirname(fpath))
 
     # Check if the file already exists
     # - If force=True --> Remove it
     # - If force=False --> Raise error
-    _remove_if_exists(fpath, force=force)
+    remove_if_exists(fpath, force=force)
 
     # Get sensor name from dataset
     sensor_name = ds.attrs.get("sensor_name")

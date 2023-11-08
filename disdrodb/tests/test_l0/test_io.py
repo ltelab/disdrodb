@@ -20,7 +20,7 @@
 
 import datetime
 import os
-import platform
+
 
 import numpy as np
 import pandas as pd
@@ -202,10 +202,6 @@ def test_check_raw_dir_is_a_directory(tmp_path):
     io._check_raw_dir_is_a_directory(str(base_dir))
 
 
-def test_check_directory_exist():
-    assert io._check_directory_exist(TEST_DATA_DIR) is None
-
-
 def _infer_disdrodb_tree_path():
     # Assert retrieve correct disdrodb path
     disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
@@ -299,11 +295,11 @@ PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed"
 PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
 
 
-def test_get_dataset_min_max_time():
+def test__get_dataset_min_max_time():
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
-    res = io.get_dataset_min_max_time(df)
+    res = io._get_dataset_min_max_time(df)
     assert all(pd.to_datetime(res, format="%Y-%m-%d") == [start_date, end_date])
 
 
@@ -463,43 +459,6 @@ folder_name = "folder_creation_deletion_test"
 path_file_temp = os.path.join(TEST_DATA_DIR, "test_dir_creation", folder_name)
 
 
-def test_create_directory(tmp_path):
-    temp_folder = os.path.join(tmp_path, "temp_folder")
-    io._create_directory(temp_folder)
-    if os.path.exists(temp_folder):
-        res = True
-    else:
-        res = False
-    assert res
-
-
-@pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
-def test__remove_directory(tmp_path):
-    path_file_temp = os.path.join(tmp_path, "temp_folder")
-
-    # Create empty folder if not exists
-    if not os.path.exists(path_file_temp):
-        io._create_directory(path_file_temp)
-
-    # Remove this folder
-    io._remove_if_exists(path_file_temp, True)
-
-    # Test the removal
-    if os.path.exists(path_file_temp):
-        res = False
-    else:
-        res = True
-    assert res
-
-
-def testremove_path_trailing_slash():
-    path_dir_windows_in = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME\\"
-    path_dir_windows_out = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME"
-    assert io.remove_path_trailing_slash(path_dir_windows_in) == path_dir_windows_out
-
-    path_dir_linux_in = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/"
-    path_dir_linux_out = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME"
-    assert io.remove_path_trailing_slash(path_dir_linux_in) == path_dir_linux_out
 
 
 def test_check_raw_dir():
@@ -634,7 +593,7 @@ def test_copy_station_metadata():
 #     # - check that if data are already present and force=False, raise Error
 
 
-# def test_create_directory_structure():
+# def testcreate_directory_structure():
 #     campaign_name = "CAMPAIGN_NAME"
 #     data_source = "DATA_SOURCE"
 #     station_name = "STATION_NAME"

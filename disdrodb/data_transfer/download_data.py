@@ -31,6 +31,7 @@ from disdrodb.l0.io import _infer_disdrodb_tree_path
 from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.compression import _unzip_file
 from disdrodb.utils.yaml import read_yaml
+from disdrodb.utils.directories import is_empty_directory
 
 
 def click_download_option(function: object):
@@ -199,19 +200,6 @@ def _get_station_url_and_dir_path(metadata_fpath: str) -> tuple:
     return disdrodb_data_url, station_dir_path
 
 
-def _is_empty_directory(dir_path):
-    """Check if a directory is empty."""
-    if not os.path.exists(dir_path):
-        raise OSError(f"{dir_path} does not exist.")
-    if not os.path.isdir(dir_path):
-        raise OSError(f"{dir_path} is not a directory.")
-    list_files = os.listdir(dir_path)
-    if len(list_files) == 0:
-        return True
-    else:
-        return False
-
-
 def _download_file_from_url(url: str, dst_dir_path: str, force: bool = False) -> str:
     """Download station zip file into the DISDRODB station data directory.
 
@@ -234,7 +222,7 @@ def _download_file_from_url(url: str, dst_dir_path: str, force: bool = False) ->
     fname = os.path.basename(url)
     dst_fpath = os.path.join(dst_dir_path, fname)
     os.makedirs(dst_dir_path, exist_ok=True)
-    if not _is_empty_directory(dst_dir_path):
+    if not is_empty_directory(dst_dir_path):
         if force:
             shutil.rmtree(dst_dir_path)
             os.makedirs(dst_dir_path)  # station directory
