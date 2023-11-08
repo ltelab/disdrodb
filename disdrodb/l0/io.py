@@ -1229,13 +1229,14 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
             raise ValueError(msg)
 
 
-def create_initial_directory_structure(raw_dir,
-                                       processed_dir,
-                                       station_name,
-                                       force,
-                                       product,
-                                       verbose=False,
-                                       ):
+def create_initial_directory_structure(
+    raw_dir,
+    processed_dir,
+    station_name,
+    force,
+    product,
+    verbose=False,
+):
     """Create directory structure for the first L0 DISDRODB product.
 
     If the input data are raw text files --> product = "L0A"    (run_l0a)
@@ -1275,11 +1276,7 @@ def create_initial_directory_structure(raw_dir,
     )
 
 
-def create_directory_structure(processed_dir,
-                               product, 
-                               station_name, 
-                               force, 
-                               verbose=False):
+def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
     from disdrodb.api.checks import check_product
     from disdrodb.api.io import _get_list_stations_with_data
