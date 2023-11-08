@@ -38,7 +38,7 @@ def disdrodb_run_l0b_concat(
 ):
     """Run the L0B concatenation of available DISDRODB stations.
 
-    This function enable to launch the processing of many DISDRODB stations with a single command.
+    This function allow to launch the processing of many DISDRODB stations with a single command.
     From the list of all available DISDRODB stations, it runs the processing of the
     stations matching the provided data_sources, campaign_names and station_names.
 
@@ -84,4 +84,3 @@ def disdrodb_run_l0b_concat(
         remove_l0b=remove_l0b,
         verbose=verbose,
     )
-

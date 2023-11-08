@@ -126,7 +126,7 @@ def test_create_directory_structure(tmp_path, mocker):
     assert os.path.exists(l0a_folder_path)
 
 
-def test_check_raw_dir_input(tmp_path):
+def test_check_raw_dir_is_a_directory(tmp_path):
     base_dir = tmp_path / "DISDRODB"
     station_name = "station_1"
     data_source = "data_source"
@@ -139,7 +139,7 @@ def test_check_raw_dir_input(tmp_path):
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    io._check_raw_dir_input(str(base_dir))
+    io._check_raw_dir_is_a_directory(str(base_dir))
 
 
 def test_check_directory_exist():
@@ -358,12 +358,12 @@ def test_get_l0b_fpath():
 ####--------------------------------------------------------------------------.
 
 
-def test_check_glob_pattern():
+def test__check_glob_pattern():
     with pytest.raises(TypeError, match="Expect pattern as a string."):
-        io.check_glob_pattern(1)
+        io._check_glob_pattern(1)
 
     with pytest.raises(ValueError, match="glob_pattern should not start with /"):
-        io.check_glob_pattern("/1")
+        io._check_glob_pattern("/1")
 
 
 def test_get_raw_file_list():

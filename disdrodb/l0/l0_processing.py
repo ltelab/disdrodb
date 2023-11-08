@@ -818,7 +818,6 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
     if n_files == 1:
         msg = f"Only a single file is available for concatenation in {l0b_dir_path}."
         log_warning(logger=logger, msg=msg, verbose=verbose)
-        raise ValueError(msg)
 
     # -------------------------------------------------------------------------.
     # Concatenate the files

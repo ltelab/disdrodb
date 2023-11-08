@@ -506,7 +506,7 @@ def run_disdrodb_l0(
 ):
     """Run the L0 processing of DISDRODB stations.
 
-    This function enable to launch the processing of many DISDRODB stations with a single command.
+    This function allows to launch the processing of many DISDRODB stations with a single command.
     From the list of all available DISDRODB stations, it runs the processing of the
     stations matching the provided data_sources, campaign_names and station_names.
 
@@ -618,7 +618,7 @@ def run_disdrodb_l0a(
 ):
     """Run the L0A processing of DISDRODB stations.
 
-    This function enable to launch the processing of many DISDRODB stations with a single command.
+    This function allows to launch the processing of many DISDRODB stations with a single command.
     From the list of all available DISDRODB stations, it runs the processing of the
     stations matching the provided data_sources, campaign_names and station_names.
 

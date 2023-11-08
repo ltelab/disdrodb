@@ -23,6 +23,7 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 import xarray as xr
 
 from disdrodb.l0.l0_processing import run_l0b_concat
@@ -70,10 +71,6 @@ def create_dummy_l0b_file(filepath: str, time):
 
 
 def test_xr_concat_datasets(tmp_path):
-    # from pathlib import Path
-    # tmp_path = Path("/tmp/test8")
-    # tmp_path.mkdir()
-
     # Write L0B files
     filepath_1 = os.path.join(tmp_path, "test_1.nc")
     filepath_2 = os.path.join(tmp_path, "test_2.nc")
@@ -224,6 +221,10 @@ def test_run_l0b_concat_station(tmp_path):
 
 
 def test_run_disdrodb_l0b_concat(tmp_path):
+    # from pathlib import Path
+    # tmp_path = Path("/tmp/test10")
+    # tmp_path.mkdir()
+
     # Define stations info
     base_dir = os.path.join(tmp_path, "DISDRODB")
     data_source = "data_source"
@@ -270,3 +271,14 @@ def test_run_disdrodb_l0b_concat(tmp_path):
     # Assert the presence of 2 concatenated netcdf files (one for each station)
     list_files = glob.glob(os.path.join(base_dir, "Processed", data_source, campaign_name, "L0B", "*.nc"))
     assert len(list_files) == 2
+
+    # Check that if L0B files are removed, raise error if no stations available
+    with pytest.raises(ValueError):
+        run_disdrodb_l0b_concat(
+            base_dir=base_dir,
+            data_sources=data_source,
+            campaign_names=campaign_name,
+            station_names=[station_name1, station_name2],
+            remove_l0b=True,
+            verbose=False,
+        )
