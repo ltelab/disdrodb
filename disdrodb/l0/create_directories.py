@@ -17,21 +17,20 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Tools to create Raw, L0A and L0B DISDRODB directories."""
+import logging
 import os
 import shutil
-import logging
 
 from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
 from disdrodb.configs import get_base_dir
 from disdrodb.metadata.manipulation import sort_metadata_dictionary
 from disdrodb.metadata.standards import get_valid_metadata_keys
-from disdrodb.utils.yaml import write_yaml
 from disdrodb.utils.directories import (
     check_directory_exist,
     copy_file,
     create_required_directory,
 )
-
+from disdrodb.utils.yaml import write_yaml
 
 logger = logging.getLogger(__name__)
 

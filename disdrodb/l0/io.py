@@ -17,10 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define DISDRODB Data Input/Output."""
-import os
-
 import glob
 import logging
+import os
 from typing import Union
 
 import pandas as pd
@@ -473,4 +472,3 @@ def read_metadata(campaign_dir: str, station_name: str) -> dict:
     metadata_fpath = os.path.join(campaign_dir, "metadata", station_name + ".yml")
     metadata = read_yaml(metadata_fpath)
     return metadata
-

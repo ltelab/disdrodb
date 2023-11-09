@@ -19,22 +19,21 @@
 """Test DISDRODB L0 Directory Creation."""
 import os
 
-import pytest 
+import pytest
 
 from disdrodb import __root_path__
-from disdrodb.tests.conftest import create_fake_metadata_file
 from disdrodb.l0.create_directories import (
     _check_campaign_name_consistency,
     _check_data_source_consistency,
     _copy_station_metadata,
-    create_directory_structure,
-    create_initial_directory_structure,
     _get_default_metadata_dict,
     create_campaign_default_metadata,
+    create_directory_structure,
+    create_initial_directory_structure,
     write_default_metadata,
 )
+from disdrodb.tests.conftest import create_fake_metadata_file
 from disdrodb.utils.yaml import read_yaml
-
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
@@ -249,8 +248,8 @@ def test_check_campaign_name_consistency():
     )
 
     assert _check_campaign_name_consistency(path_raw, path_process) == campaign_name
-    
-    # Test when is not consistent 
+
+    # Test when is not consistent
     path_process = os.path.join(
         TEST_DATA_DIR,
         "test_dir_creation",
@@ -261,7 +260,7 @@ def test_check_campaign_name_consistency():
     )
     with pytest.raises(ValueError):
         assert _check_campaign_name_consistency(path_raw, path_process)
-        
+
 
 def test_check_data_source_consistency():
     campaign_name = "CAMPAIGN_NAME"
@@ -274,8 +273,8 @@ def test_check_data_source_consistency():
         data_source,
         campaign_name,
     )
-    
-    # Test when consistent 
+
+    # Test when consistent
     path_process = os.path.join(
         TEST_DATA_DIR,
         "test_dir_creation",
@@ -286,8 +285,8 @@ def test_check_data_source_consistency():
     )
 
     assert _check_data_source_consistency(path_raw, path_process) == data_source
-    
-    # Test when is not consistent 
+
+    # Test when is not consistent
     path_process = os.path.join(
         TEST_DATA_DIR,
         "test_dir_creation",
@@ -340,7 +339,6 @@ def test_copy_station_metadata():
 
     # Check the function has copied the file
     assert os.path.exists(expected_metadata_fpath)
-
 
 
 def create_fake_station_file(
@@ -419,4 +417,6 @@ def test_write_default_metadata(tmp_path):
     # remove dictionary
     if os.path.exists(fpath):
         os.remove(fpath)
-# 
+
+
+#

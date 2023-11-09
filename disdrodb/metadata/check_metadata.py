@@ -137,7 +137,7 @@ def _check_metadata_sensor_name(metadata):
 def check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None):
     """Check DISDRODB metadata compliance."""
     from disdrodb.l0.l0_reader import _check_metadata_reader
-    
+
     metadata = read_station_metadata(
         base_dir=base_dir,
         product="RAW",
@@ -462,7 +462,7 @@ def check_archive_metadata_reader(base_dir: str = None) -> bool:
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
     from disdrodb.l0.l0_reader import _check_metadata_reader
-    
+
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(

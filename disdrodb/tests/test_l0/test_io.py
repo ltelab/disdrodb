@@ -31,7 +31,7 @@ from disdrodb.l0 import io
 from disdrodb.l0.create_directories import _get_default_metadata_dict, write_default_metadata
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
- 
+
 PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed"
 PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
 

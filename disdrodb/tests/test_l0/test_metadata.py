@@ -17,8 +17,3 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0 metadata routines."""
-
-
-
-
-
