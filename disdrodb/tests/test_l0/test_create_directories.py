@@ -29,7 +29,11 @@ from disdrodb.l0.create_directories import (
     _copy_station_metadata,
     create_directory_structure,
     create_initial_directory_structure,
+    _get_default_metadata_dict,
+    create_campaign_default_metadata,
+    write_default_metadata,
 )
+from disdrodb.utils.yaml import read_yaml
 
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
@@ -338,4 +342,81 @@ def test_copy_station_metadata():
     assert os.path.exists(expected_metadata_fpath)
 
 
+
+def create_fake_station_file(
+    base_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name="station_name"
+):
+    subfolder_path = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+
+    subfolder_path = base_dir / "Raw" / data_source / campaign_name / "metadata"
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+
+    path_file = os.path.join(subfolder_path, f"{station_name}.txt")
+    print(path_file)
+    with open(path_file, "w") as f:
+        f.write("This is some fake text.")
+
+
+def create_fake_metadata_folder(tmp_path, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
+    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
+    if not os.path.exists(subfolder_path):
+        subfolder_path.mkdir(parents=True)
+
+    assert os.path.exists(subfolder_path)
+
+    return subfolder_path
+
+
+def test_create_campaign_default_metadata(tmp_path):
+    base_dir = tmp_path / "DISDRODB"
+    campaign_name = "test_campaign"
+    data_source = "test_data_source"
+    station_name = "test_station"
+
+    create_fake_station_file(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+
+    create_campaign_default_metadata(base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
+
+    expected_file_path = os.path.join(
+        tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
+    )
+
+    assert os.path.exists(expected_file_path)
+
+
+def test_get_default_metadata():
+    assert isinstance(_get_default_metadata_dict(), dict)
+
+
+def test_write_default_metadata(tmp_path):
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_name"
+
+    fpath = os.path.join(create_fake_metadata_folder(tmp_path, data_source, campaign_name), f"{station_name}.yml")
+
+    # create metadata file
+    write_default_metadata(str(fpath))
+
+    # check file exist
+    assert os.path.exists(fpath)
+
+    # open it
+    dictionary = read_yaml(str(fpath))
+
+    # check is the expected dictionary
+    expected_dict = _get_default_metadata_dict()
+    expected_dict["data_source"] = data_source
+    expected_dict["campaign_name"] = campaign_name
+    expected_dict["station_name"] = station_name
+    assert expected_dict == dictionary
+
+    # remove dictionary
+    if os.path.exists(fpath):
+        os.remove(fpath)
 # 

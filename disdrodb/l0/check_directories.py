@@ -202,7 +202,7 @@ def _check_presence_metadata_directory(raw_dir):
     If the 'metadata' does not exists, it create default metadata files
     for each station present in the 'data' directory.
     """
-    from disdrodb.l0.metadata import write_default_metadata
+    from disdrodb.l0.create_directories import write_default_metadata
 
     if not _is_metadata_directory_available(raw_dir):
         # Create metadata directory
@@ -241,7 +241,7 @@ def _check_presence_all_metadata_files(raw_dir):
     The function raise error if there is not a metadata file for each station
     folder present in the 'data' directory.
     """
-    from disdrodb.l0.metadata import write_default_metadata
+    from disdrodb.l0.create_directories import write_default_metadata
 
     # Get stations with available metadata
     list_metadata_station_name = _get_available_stations_with_metadata_files(raw_dir)

@@ -28,7 +28,6 @@ from disdrodb.api.info import (
     infer_data_source_from_path,
 )
 from disdrodb.configs import get_base_dir
-from disdrodb.l0.l0_reader import _check_metadata_reader
 from disdrodb.metadata.io import get_list_metadata, read_station_metadata
 from disdrodb.metadata.standards import get_valid_metadata_keys
 from disdrodb.utils.yaml import read_yaml
@@ -137,6 +136,8 @@ def _check_metadata_sensor_name(metadata):
 
 def check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None):
     """Check DISDRODB metadata compliance."""
+    from disdrodb.l0.l0_reader import _check_metadata_reader
+    
     metadata = read_station_metadata(
         base_dir=base_dir,
         product="RAW",
@@ -460,7 +461,8 @@ def check_archive_metadata_reader(base_dir: str = None) -> bool:
     bool
         If the check succeeds, the result is True, and if it fails, the result is False.
     """
-
+    from disdrodb.l0.l0_reader import _check_metadata_reader
+    
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
