@@ -27,7 +27,7 @@ from disdrodb.api.path import (
     define_metadata_filepath,
     define_station_dir,
 )
-from disdrodb.l0.create_directories import (
+from disdrodb.api.create_directories import (
     _check_campaign_name_consistency,
     _check_data_source_consistency,
     _copy_station_metadata,

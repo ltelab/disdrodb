@@ -38,7 +38,7 @@ from disdrodb.api.path import (
 from disdrodb.configs import get_base_dir
 
 # Directory
-from disdrodb.l0.create_directories import (
+from disdrodb.api.create_directories import (
     create_directory_structure,
     create_initial_directory_structure,
 )
