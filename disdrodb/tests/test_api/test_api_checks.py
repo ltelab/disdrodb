@@ -53,7 +53,7 @@ def test_check_url():
 def test_check_base_dir():
     from pathlib import Path
 
-    base_dir = "/path/to/DISDRODB"
+    base_dir = os.path("path", "to", "DISDRODB")
     assert checks.check_base_dir(base_dir) == base_dir
 
     assert checks.check_base_dir(Path(base_dir)) == base_dir
