@@ -26,8 +26,10 @@ import pytest
 from click.testing import CliRunner
 
 from disdrodb import __root_path__
+from disdrodb.api.io import define_station_dir
+from disdrodb.utils.directories import list_files
 
-RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "PARSIVEL_2007"
 STATION_NAME = "10"
@@ -35,7 +37,7 @@ STATION_NAME = "10"
 
 @pytest.fixture
 def remove_processed_folder(request: list) -> None:
-    path_processed_folder = os.path.join(RAW_DIR, "Processed")
+    path_processed_folder = os.path.join(BASE_DIR, "Processed")
     if os.path.exists(path_processed_folder):
         shutil.rmtree(path_processed_folder)
     yield
@@ -50,25 +52,12 @@ def test_disdrodb_run_l0a_station(remove_processed_folder):
     from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", RAW_DIR])
-    list_of_l0a = glob.glob(
-        os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0A", STATION_NAME, "*.parquet")
-    )
-    assert len(list_of_l0a) > 0
+    runner.invoke(disdrodb_run_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
 
-
-@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0a(remove_processed_folder):
-    """Test the disdrodb_run_l0a command."""
-
-    from disdrodb.l0.scripts.disdrodb_run_l0a import disdrodb_run_l0a
-
-    runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a, ["--base_dir", RAW_DIR])
-    list_of_l0a = glob.glob(
-        os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0A", STATION_NAME, "*.parquet")
-    )
-    assert len(list_of_l0a) > 0
+    product = "L0A"
+    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
+    assert len(filepaths) > 0
 
 
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
@@ -77,14 +66,16 @@ def test_disdrodb_run_l0b_station(remove_processed_folder):
     from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", RAW_DIR])
+    runner.invoke(disdrodb_run_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
 
     from disdrodb.l0.scripts.disdrodb_run_l0b_station import disdrodb_run_l0b_station
 
-    runner.invoke(disdrodb_run_l0b_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", RAW_DIR])
+    runner.invoke(disdrodb_run_l0b_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
 
-    list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
-    assert len(list_of_l0b) > 0
+    product = "L0B"
+    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
+    assert len(filepaths) > 0
 
 
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
@@ -94,10 +85,27 @@ def test_disdrodb_run_l0_station(remove_processed_folder):
     from disdrodb.l0.scripts.disdrodb_run_l0_station import disdrodb_run_l0_station
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", RAW_DIR])
+    runner.invoke(disdrodb_run_l0_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
 
-    list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
-    assert len(list_of_l0b) > 0
+    product = "L0B"
+    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
+    assert len(filepaths) > 0
+
+
+
+@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
+def test_disdrodb_run_l0a(remove_processed_folder):
+    """Test the disdrodb_run_l0a command."""
+
+    from disdrodb.l0.scripts.disdrodb_run_l0a import disdrodb_run_l0a
+
+    runner = CliRunner()
+    runner.invoke(disdrodb_run_l0a, ["--base_dir", BASE_DIR])
+    product = "L0A"
+    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
+    assert len(filepaths) > 0
 
 
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
@@ -107,13 +115,16 @@ def test_disdrodb_run_l0b(remove_processed_folder):
     from disdrodb.l0.scripts.disdrodb_run_l0a import disdrodb_run_l0a
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a, ["--base_dir", RAW_DIR])
+    runner.invoke(disdrodb_run_l0a, ["--base_dir", BASE_DIR])
 
     from disdrodb.l0.scripts.disdrodb_run_l0b import disdrodb_run_l0b
 
-    runner.invoke(disdrodb_run_l0b, ["--base_dir", RAW_DIR])
-    list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
-    assert len(list_of_l0b) > 0
+    runner.invoke(disdrodb_run_l0b, ["--base_dir", BASE_DIR])
+
+    product = "L0B"
+    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
+    assert len(filepaths) > 0
 
 
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
@@ -123,7 +134,9 @@ def test_full_disdrodb_run_l0(remove_processed_folder):
     from disdrodb.l0.scripts.disdrodb_run_l0 import disdrodb_run_l0
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0, ["--base_dir", RAW_DIR])
-
-    list_of_l0b = glob.glob(os.path.join(RAW_DIR, "Processed", DATA_SOURCE, CAMPAIGN_NAME, "L0B", STATION_NAME, "*.nc"))
-    assert len(list_of_l0b) > 0
+    runner.invoke(disdrodb_run_l0, ["--base_dir", BASE_DIR])
+    
+    product = "L0B"
+    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
+    assert len(filepaths) > 0

@@ -25,6 +25,7 @@ from typing import List, Optional, Union
 import numpy as np
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
+from disdrodb.utils.directories import list_files
 from disdrodb.api.configs import available_sensor_names, get_sensor_configs_dir, read_config_file
 from disdrodb.l0.standards import (
     get_diameter_bin_center,
@@ -56,8 +57,8 @@ def _check_yaml_files_exists(sensor_name: str) -> None:
         Name of the sensor.
     """
     config_dir = get_sensor_configs_dir(sensor_name, product="L0A")
-    glob_pattern = os.path.join(config_dir, "*.yml")
-    list_of_file_names = [os.path.split(i)[-1] for i in glob.glob(glob_pattern)]
+    list_filepaths = list_files(config_dir, glob_pattern="*.yml", recursive=False)
+    list_of_file_names = [os.path.split(i)[-1] for i in list_filepaths]
     missing_keys = set(CONFIG_FILES_LIST).difference(set(list_of_file_names))
     if missing_keys:
         missing_keys_text = ",".join(missing_keys)

@@ -24,6 +24,7 @@ import os
 
 import numpy as np
 
+from disdrodb.utils.directories import list_files
 from disdrodb.api.info import (
     infer_base_dir_from_fpath,
     infer_campaign_name_from_path,
@@ -108,8 +109,7 @@ def _get_station_raw_filepaths(raw_dir, station_name):
     Note that this function exclude directories !
     """
     station_dir = _define_station_directory_path(raw_dir, station_name)
-    paths = glob.glob(os.path.join(station_dir, "*"))
-    filepaths = [f for f in paths if os.path.isfile(f)]
+    filepaths = list_files(station_dir, glob_pattern="*", recursive=True)
     return filepaths
 
 
@@ -131,13 +131,13 @@ def _get_available_stations_with_issue_files(raw_dir):
 
 def _get_available_metadata_filepaths(raw_dir):
     """Return the filepaths of available metadata YAML files."""
-    filepaths = glob.glob(os.path.join(raw_dir, "metadata", "*.yml"))
+    filepaths = list_files(os.path.join(raw_dir, "metadata"), glob_pattern="*.yml", recursive=False)
     return filepaths
 
 
 def _get_available_issue_filepaths(raw_dir):
     """Return the filepaths of available issue YAML files."""
-    filepaths = glob.glob(os.path.join(raw_dir, "issue", "*.yml"))
+    filepaths = list_files(os.path.join(raw_dir, "issue"), glob_pattern="*.yml", recursive=False)
     return filepaths
 
 
@@ -188,8 +188,8 @@ def check_presence_metadata_file(campaign_dir, station_name):
 
 
 def _check_directories_in_raw_dir(raw_dir):
-    list_directories = os.listdir(raw_dir)
-    if len(list_directories) == 0:
+    dir_paths = os.listdir(raw_dir)
+    if len(dir_paths) == 0:
         raise ValueError(f"There are not directories within {raw_dir}")
 
 

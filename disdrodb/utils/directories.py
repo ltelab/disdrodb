@@ -37,23 +37,44 @@ def ensure_string_path(path, msg, accepth_pathlib=False):
     return str(path)
 
 
-def list_files(glob_pattern):
+def _recursive_glob(dir_path, glob_pattern): 
+    # ** search for all files recursively
+    # glob_pattern = os.path.join(base_dir, "**", "metadata", f"{station_name}.yml")
+    # metadata_fpaths = glob.glob(glob_pattern, recursive=True)
+            
+    dir_path = pathlib.Path(dir_path)
+    return [str(path) for path in dir_path.rglob(glob_pattern)]
+ 
+
+def list_paths(dir_path, glob_pattern, recursive=False): 
+    if not recursive: 
+        return glob.glob(os.path.join(dir_path, glob_pattern))
+    else: 
+        return _recursive_glob(dir_path, glob_pattern)
+
+
+def list_files(dir_path, glob_pattern, recursive=False):
     """Return a list of filepaths (exclude directory paths)."""
-    paths = glob.glob(glob_pattern)
+    paths = list_paths(dir_path, glob_pattern, recursive=recursive)
     filepaths = [f for f in paths if os.path.isfile(f)]
     return filepaths
 
 
-def list_directories(glob_pattern):
+def list_directories(dir_path, glob_pattern, recursive=False):
     """Return a list of directory paths (exclude file paths)."""
-    paths = glob.glob(glob_pattern)
+    paths = list_paths(dir_path, glob_pattern, recursive=recursive)
     dir_paths = [f for f in paths if os.path.isdir(f)]
     return dir_paths
 
 
-def count_files(glob_pattern):
+def count_files(dir_path, glob_pattern, recursive=False):
     """Return the number of files (exclude directories)."""
-    return len(list_files(glob_pattern))
+    return len(list_files(dir_path, glob_pattern, recursive=recursive))
+
+
+def count_directories(dir_path, glob_pattern, recursive=False):
+    """Return the number of files (exclude directories)."""
+    return len(list_directories(dir_path, glob_pattern, recursive=recursive))
 
 
 def check_directory_exists(dir_path):

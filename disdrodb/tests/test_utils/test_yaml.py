@@ -30,18 +30,27 @@ TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 def test_read_yaml():
-    # Test reading a valid YAML file
-    dictionary = {"key1": "value1", "key2": "value2"}
-    valid_filepath = os.path.join(TEST_DATA_DIR, "test_check_metadata", "valid.yaml")
+    # Test reading a YAML file get the expect types
+    # - string, list, int, float, list[str], list[int], None
+    dictionary = {"key1": "value1", 
+                  "key2": 2,
+                  "key3": 3.0,
+                  "key4": ["value4"], 
+                  "key5": [5], 
+                  "key6": None, 
+                  "key7": "",
+                  }
+    filepath = os.path.join(TEST_DATA_DIR, "test_yaml", "valid.yaml")
+    assert read_yaml(filepath) == dictionary
 
-    assert read_yaml(valid_filepath) == dictionary
+    # Test reading a YAML file with invalid syntax
+    invalid_yaml_filepath = os.path.join(TEST_DATA_DIR, "test_yaml", "invalid.yaml")
+    with pytest.raises(yaml.YAMLError):
+        read_yaml(invalid_yaml_filepath)
 
     # Test reading a non-existent YAML file
-    non_existent_filepath = os.path.join(TEST_DATA_DIR, "test_check_metadata", "non_existent.yaml")
+    non_existent_filepath = os.path.join(TEST_DATA_DIR, "non_existent.yaml")
     with pytest.raises(FileNotFoundError):
         read_yaml(non_existent_filepath)
 
-    # Test reading a YAML file with invalid syntax
-    invalid_yaml_filepath = os.path.join(TEST_DATA_DIR, "test_check_metadata", "invalid.yaml")
-    with pytest.raises(yaml.YAMLError):
-        read_yaml(invalid_yaml_filepath)
+

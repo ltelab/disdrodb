@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0B netCDF concatenation routines."""
 
-import glob
 import os
 
 import numpy as np
@@ -30,6 +29,7 @@ from disdrodb.l0.l0_processing import run_l0b_concat
 from disdrodb.l0.routines import run_disdrodb_l0b_concat
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_station_dir
 from disdrodb.utils.netcdf import xr_concat_datasets
+from disdrodb.utils.directories import list_files
 
 
 def create_dummy_l0b_file(filepath: str, time):
@@ -201,7 +201,7 @@ def test_run_l0b_concat_station(tmp_path):
     run_l0b_concat(processed_dir=processed_dir, station_name=station_name, remove=False, verbose=False)
 
     # Assert only 1 file is created
-    list_concatenated_files = glob.glob(os.path.join(processed_dir, "L0B", "*.nc"))
+    list_concatenated_files = list_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False)
     assert len(list_concatenated_files) == 1
 
     # Read concatenated netCDF file
@@ -276,8 +276,8 @@ def test_run_disdrodb_l0b_concat(tmp_path):
     # processed_dir = define_campaign_dir(
     #     base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
     # )
-
-    # list_concatenated_files = glob.glob(os.path.join(processed_dir, "L0B", "*.nc"))
+      
+    # list_concatenated_files = list_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False)
     # assert len(list_concatenated_files) == 2
 
     # Check that if L0B files are removed, raise error if no stations available

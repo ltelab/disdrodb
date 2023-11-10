@@ -27,6 +27,7 @@ import xarray as xr
 
 from disdrodb.api.info import infer_campaign_name_from_path
 from disdrodb.utils.logger import log_info
+from disdrodb.utils.directories import list_files
 
 logger = logging.getLogger(__name__)
 
@@ -273,8 +274,8 @@ def _get_file_list_from_glob_pattern(raw_dir: str, station_name, glob_pattern) -
         List of file paths.
     """
     data_dir = os.path.join(raw_dir, "data", station_name)
-    glob_fpath_pattern = os.path.join(data_dir, glob_pattern)
-    filepaths = sorted(glob.glob(glob_fpath_pattern))
+    filepaths = list_files(data_dir, glob_pattern=glob_pattern, recursive=True)
+    filepaths = sorted(filepaths)
     return filepaths
 
 
@@ -364,7 +365,7 @@ def get_l0a_file_list(processed_dir, station_name, debugging_mode):
 
     """
     l0a_dir_path = get_l0a_dir(processed_dir, station_name)
-    filepaths = glob.glob(os.path.join(l0a_dir_path, "*.parquet"))
+    filepaths = list_files(l0a_dir_path, glob_pattern="*.parquet", recursive=True)
 
     # Filter out filepaths if debugging_mode=True
     filepaths = _filter_filepaths(filepaths, debugging_mode=debugging_mode)

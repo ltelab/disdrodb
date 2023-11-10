@@ -294,7 +294,7 @@ def _get_list_stations_with_data(product, campaign_dir):
     # Get stations directory
     list_stations_dir = _get_list_stations_dirs(product=product, campaign_dir=campaign_dir)
     # Count number of files within directory
-    list_nfiles_per_station = [count_files(os.path.join(path, "*")) for path in list_stations_dir]
+    list_nfiles_per_station = [count_files(station_dir, "*", recursive=True) for station_dir in list_stations_dir]
     # Keep only stations with at least one file
     list_stations = [os.path.basename(path) for n, path in zip(list_nfiles_per_station, list_stations_dir) if n >= 1]
     return list_stations
@@ -304,7 +304,7 @@ def _get_list_stations_with_metadata(campaign_dir):
     # Get directory where metadata are stored
     metadata_path = os.path.join(campaign_dir, "metadata")
     # List metadata files
-    list_metadata_files = list_files(os.path.join(metadata_path, "*.yml"))
+    list_metadata_files = list_files(metadata_path, glob_pattern="*.yml", recursive=False)
     # Return stations with metadata
     list_stations = [os.path.basename(fpath).replace(".yml", "") for fpath in list_metadata_files]
     return list_stations
@@ -460,7 +460,7 @@ def _check_campaign_names(base_dir, product, campaign_names):
     # Get product directory path
     dir_path = get_disdrodb_path(base_dir=base_dir, product=product)
     # Get campaigns directory path
-    list_campaigns_path = list_directories(os.path.join(dir_path, "*", "*"))
+    list_campaigns_path = list_directories(dir_path, glob_pattern=os.path.join("*", "*"), recursive=False)
     # Get campaigns names
     list_campaign_names = [os.path.basename(path) for path in list_campaigns_path]
     # Remove duplicates

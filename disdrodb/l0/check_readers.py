@@ -25,6 +25,7 @@ import shutil
 import pandas as pd
 
 from disdrodb import __root_path__
+from disdrodb.utils.directories import list_files
 from disdrodb.api.io import get_disdrodb_path
 from disdrodb.l0.l0_reader import get_station_reader_function
 
@@ -79,8 +80,9 @@ def _get_list_test_stations(data_source: str, campaign_name: str) -> list:
         List of test stations.
 
     """
-    yml_files = glob.glob(os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "metadata", "*.yml"))
-    list_station_names = [os.path.splitext(os.path.basename(i))[0] for i in yml_files]
+    metadata_dir = os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "metadata")
+    filepaths = list_files(metadata_dir, glob_pattern="*.yml", recursive=False)
+    list_station_names = [os.path.splitext(os.path.basename(i))[0] for i in filepaths]
 
     return list_station_names
 
@@ -167,13 +169,15 @@ def check_all_readers() -> None:
     for data_source in _get_list_test_data_sources():
         for campaign_name in _get_list_test_campaigns(data_source):
             process_dir = _run_reader_on_test_data(data_source, campaign_name)
-            ground_truth = glob.glob(
-                os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "ground_truth", "*", "*.parquet")
-            )
-            processed_file = glob.glob(os.path.join(process_dir, "L0A", "*", "*.parquet"))
-            for i, ground_truth_fpath in enumerate(ground_truth):
-                station_name = os.path.basename(os.path.dirname(ground_truth[i]))
-                processed_file_fpath = processed_file[i]
+            ground_truth_dir = os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "ground_truth")
+            processed_product_dir = os.path.join(process_dir, "L0A")
+
+            glob_pattern = os.path.join("*", "*.parquet")
+            ground_truth_files = list_files(ground_truth_dir, glob_pattern=glob_pattern, recursive=False)
+            processed_files = list_files(processed_product_dir, glob_pattern=glob_pattern, recursive=False)
+        
+            for ground_truth_fpath, processed_file_fpath in zip(ground_truth_files, processed_files):
+                station_name = os.path.basename(os.path.dirname(ground_truth_fpath))
                 is_correct = _is_parquet_files_identical(ground_truth_fpath, processed_file_fpath)
                 if not is_correct:
                     raise Exception(

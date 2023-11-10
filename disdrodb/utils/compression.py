@@ -29,6 +29,7 @@ from typing import Optional
 
 from disdrodb.api.checks import check_base_dir
 from disdrodb.api.io import define_station_dir
+from disdrodb.utils.directories import list_files
 
 
 def _unzip_file(file_path: str, dest_path: str) -> None:
@@ -86,7 +87,7 @@ def compress_station_files(base_dir: str, data_source: str, campaign_name: str, 
     """
 
     base_dir = check_base_dir(base_dir)
-    data_dir = define_station_dir(
+    station_dir = define_station_dir(
         base_dir=base_dir,
         product="RAW",
         data_source=data_source,
@@ -94,14 +95,14 @@ def compress_station_files(base_dir: str, data_source: str, campaign_name: str, 
         station_name=station_name,
         check_exists=False,
     )
-    if not os.path.isdir(data_dir):
-        print(f"Station data directory {data_dir} does not exist. Skipping.")
+    if not os.path.isdir(station_dir):
+        print(f"Station data directory {station_dir} does not exist. Skipping.")
         return
 
     # use glob to get list of files recursively
-    files = glob.glob(os.path.join(data_dir, "**"), recursive=True)
+    file_paths = list_files(station_dir, glob_pattern="*", recursive=True)
 
-    for file_path in files:
+    for file_path in file_paths:
         if os.path.isfile(file_path):
             _compress_file(file_path, method)
 

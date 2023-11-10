@@ -37,8 +37,6 @@ from disdrodb.l0.l0b_processing import (
 )
 from disdrodb.l0.standards import get_bin_coords_dict
 
-TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
-
 
 # NOTE:
 # The following fixtures are not defined in this file, but are used and injected by Pytest:

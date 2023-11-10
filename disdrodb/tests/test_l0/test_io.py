@@ -21,15 +21,17 @@
 import datetime
 import os
 
+import pytest
 import numpy as np
 import pandas as pd
-import pytest
+
 import xarray as xr
 
 from disdrodb import __root_path__
 from disdrodb.l0 import io
+from disdrodb.api.io import define_campaign_dir
+from disdrodb.tests.conftest import create_fake_raw_data_file
 
-TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed"
 PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
@@ -65,15 +67,12 @@ def test_get_l0b_dir(path_process_dir):
     assert res == "L0BSTATION_NAME"
 
 
-def test_get_l0a_fpath():
-    """
-    Test the naming and the path of the L0A file
-    Note that this test needs "/data/test_dir_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
-    metadata/STATION_NAME.yml"
-    """
+def test_get_l0a_fpath(tmp_path):
     from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
+    product = "L0A"
+    base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -83,38 +82,31 @@ def test_get_l0a_fpath():
     end_date_str = end_date.strftime("%Y%m%d%H%M%S")
 
     # Set paths
-    path_campaign_name = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        campaign_name,
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
     )
 
     # Create dataframe
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
     # Test the function
-    res = io.get_l0a_fpath(df, path_campaign_name, station_name)
+    res = io.get_l0a_fpath(df, processed_dir, station_name)
 
     # Define expected results
     expected_name = (
-        f"L0A.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.parquet"
+        f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.parquet"
     )
-    expected_path = os.path.join(path_campaign_name, "L0A", station_name, expected_name)
+    expected_path = os.path.join(processed_dir, product, station_name, expected_name)
     assert res == expected_path
 
 
-def test_get_l0b_fpath():
-    """
-    Test the naming and the path of the L0B file
-    Note that this test needs "/data/test_dir_structure/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/
-    metadata/STATION_NAME.yml"
-    """
+def test_get_l0b_fpath(tmp_path):
     from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
+
+    product = "L0B"
+    base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -124,13 +116,8 @@ def test_get_l0b_fpath():
     end_date_str = end_date.strftime("%Y%m%d%H%M%S")
 
     # Set paths
-    path_campaign_name = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        campaign_name,
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
     )
 
     # Create xarray object
@@ -143,11 +130,11 @@ def test_get_l0b_fpath():
     )
 
     # Test the function
-    res = io.get_l0b_fpath(ds, path_campaign_name, station_name)
+    res = io.get_l0b_fpath(ds, processed_dir, station_name)
 
     # Define expected results
-    expected_name = f"L0B.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
-    expected_path = os.path.join(path_campaign_name, "L0B", station_name, expected_name)
+    expected_name = f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
+    expected_path = os.path.join(processed_dir, product, station_name, expected_name)
     assert res == expected_path
 
 
@@ -162,32 +149,51 @@ def test__check_glob_pattern():
         io._check_glob_pattern("/1")
 
 
-def test_get_raw_file_list():
-    path_test_directory = os.path.join(TEST_DATA_DIR, "test_l0a_processing", "files")
-
+def test_get_raw_file_list(tmp_path):
+    # Define station info
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
+
+    glob_pattern="*.txt"
+    raw_dir = define_campaign_dir(base_dir=base_dir,
+                                    product="RAW",
+                                    data_source=data_source,
+                                    campaign_name=campaign_name
+    )
+    # Add fake data files
+    for filename in ["file1.txt", "file2.txt"]:
+     _ = create_fake_raw_data_file(
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        filename=filename,
+    )
 
     # Test that the function returns the correct number of files in debugging mode
     file_list = io.get_raw_file_list(
-        raw_dir=path_test_directory,
+        raw_dir=raw_dir,
         station_name=station_name,
-        glob_patterns="*.txt",
+        glob_patterns=glob_pattern,
         debugging_mode=True,
     )
     assert len(file_list) == 2  # max(2, 3)
 
     # Test that the function returns the correct number of files in normal mode
-    file_list = io.get_raw_file_list(raw_dir=path_test_directory, station_name=station_name, glob_patterns="*.txt")
+    file_list = io.get_raw_file_list(raw_dir=raw_dir, station_name=station_name, glob_patterns="*.txt")
     assert len(file_list) == 2
 
     # Test that the function raises an error if the glob_patterns is not a str or list
     with pytest.raises(ValueError, match="'glob_patterns' must be a str or list of strings."):
-        io.get_raw_file_list(raw_dir=path_test_directory, station_name=station_name, glob_patterns=1)
+        io.get_raw_file_list(raw_dir=raw_dir, station_name=station_name, glob_patterns=1)
 
     # Test that the function raises an error if no files are found
     with pytest.raises(ValueError):
         io.get_raw_file_list(
-            raw_dir=path_test_directory,
+            raw_dir=raw_dir,
             station_name=station_name,
             glob_patterns="*.csv",
         )

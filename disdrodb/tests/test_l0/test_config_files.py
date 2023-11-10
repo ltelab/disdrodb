@@ -25,26 +25,10 @@ import yaml
 from pydantic import BaseModel
 
 from disdrodb import __root_path__
+from disdrodb.utils.directories import list_files 
 
 CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
-
-def list_files(path: str, file_name: str) -> List[str]:
-    """Return the list filepaths of files named <file_name> within the path subdirectories.
-
-    Parameters
-    ----------
-    path : str
-        Path of the directory
-    file_name : str
-        Name of the file
-
-    Returns
-    -------
-    List[str]
-        List of filepaths of files named <file_name> within the path subdirectories.
-    """
-    return [os.path.join(root, name) for root, dirs, files in os.walk(path) for name in files if name == file_name]
 
 
 def read_yaml_file(path_file: str) -> Dict:
@@ -191,7 +175,7 @@ class L0BVariableAttributesSchema(BaseModel):
 
 
 # Test the format and content of the l0b_cf_attrs.yml files
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_cf_attrs.yml")
+list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_cf_attrs.yml", recursive=True)
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
@@ -215,7 +199,7 @@ def test_l0b_cf_attrs_format(yaml_file_path: str) -> None:
 filenames = ["bins_diameter.yml", "bins_velocity.yml"]
 list_of_yaml_file_paths = []
 for filename in filenames:
-    list_of_yaml_file_paths.extend(list_files(CONFIG_FOLDER, filename))
+    list_of_yaml_file_paths.extend(list_files(CONFIG_FOLDER, filename, recursive=True))
 
 
 @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
@@ -279,7 +263,7 @@ def test_bins_format(yaml_file_path: str) -> None:
 
 
 # # Test the format and content of the raw_data_format.yml files
-# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "raw_data_format.yml")
+# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "raw_data_format.yml", recursive=True)
 
 
 # @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
@@ -300,7 +284,7 @@ def test_bins_format(yaml_file_path: str) -> None:
 
 
 # # Test format and content of l0a_encodings.yml
-# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0a_encodings.yml")
+# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0a_encodings.yml", recursive=True)
 
 
 # @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
@@ -334,7 +318,7 @@ def test_bins_format(yaml_file_path: str) -> None:
 
 
 # # Test the format and content of the l0b_encodings.yml files
-# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml")
+# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml", recursive=True)
 
 
 # @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)

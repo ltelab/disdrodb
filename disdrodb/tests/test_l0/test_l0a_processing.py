@@ -42,8 +42,6 @@ from disdrodb.l0.l0a_processing import (
     strip_string_spaces,
 )
 
-TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
-
 # NOTE:
 # The following fixtures are not defined in this file, but are used and injected by Pytest:
 # - create_test_config_files  # defined in tests/conftest.py

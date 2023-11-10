@@ -32,6 +32,7 @@ from disdrodb.api.checks import check_sensor_name
 from disdrodb.api.info import infer_path_info_dict
 from disdrodb.api.io import get_disdrodb_path
 from disdrodb.configs import get_base_dir
+from disdrodb.utils.directories import list_files
 
 # Directory
 from disdrodb.l0.create_directories import (
@@ -805,7 +806,8 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
     # -------------------------------------------------------------------------.
     # Retrieve L0B files
     l0b_dir_path = get_l0b_dir(processed_dir, station_name)
-    file_list = sorted(glob.glob(os.path.join(l0b_dir_path, "*.nc")))
+    file_list = list_files(l0b_dir_path, glob_pattern="*.nc", recursive=True)
+    file_list = sorted(file_list)
 
     # -------------------------------------------------------------------------.
     # Check there are at least two files
