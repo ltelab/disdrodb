@@ -28,21 +28,7 @@ import disdrodb
 from disdrodb.data_transfer.upload_data import upload_archive, upload_station
 from disdrodb.data_transfer.zenodo import _create_zenodo_deposition
 from disdrodb.metadata import read_station_metadata
-from disdrodb.tests.conftest import create_fake_metadata_file
-
-
-def create_fake_data_dir(
-    base_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name="station_name"
-):
-    data_dir = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
-    if not data_dir.exists():
-        data_dir.mkdir(parents=True)
-
-    # Create fake file
-    data_fpath = data_dir / "test_data.txt"
-    data_fpath.touch()
-
-    return data_dir
+from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_raw_data_file
 
 
 def test_wrong_http_response(requests_mock):
@@ -94,7 +80,7 @@ def test_station_upload(tmp_path, requests_mock, station_url, force):
         station_name=station_name,
     )
 
-    create_fake_data_dir(
+    _ = create_fake_raw_data_file(
         base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
@@ -148,7 +134,7 @@ def test_station_upload_raise_error(tmp_path, requests_mock):
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    create_fake_data_dir(
+    _ = create_fake_raw_data_file(
         base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 

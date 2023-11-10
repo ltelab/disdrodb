@@ -22,8 +22,9 @@ from typing import List, Optional
 
 import click
 
+from disdrodb.api.io import define_metadata_filepath
 from disdrodb.data_transfer.zenodo import upload_archive_to_zenodo, upload_station_to_zenodo
-from disdrodb.metadata import get_list_metadata, get_metadata_filepath
+from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.yaml import read_yaml
 
 
@@ -167,12 +168,13 @@ def upload_station(
 
     """
     # Define metadata_fpath
-    metadata_fpath = get_metadata_filepath(
+    metadata_fpath = define_metadata_filepath(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
         base_dir=base_dir,
         product="RAW",
+        check_exists=True,
     )
     # Check if data must be uploaded
     _check_if_upload(metadata_fpath, force=force)

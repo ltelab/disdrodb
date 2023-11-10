@@ -22,22 +22,23 @@ import os
 
 import pytest
 
-from disdrodb.metadata.io import _get_list_all_metadata, _get_list_metadata_with_data, get_list_metadata
-from disdrodb.tests.conftest import create_fake_metadata_file
-
-
-def create_fake_data_file(tmp_path, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name=""):
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "data" / station_name
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-    file_path = os.path.join(subfolder_path, "fake_data_file.txt")
-    # create a fake yaml file in temp folder
-    with open(file_path, "w") as f:
-        f.write("This is a fake sample file.")
-
-    assert os.path.exists(file_path)
-
-    return file_path
+from disdrodb.api.io import define_metadata_filepath
+from disdrodb.metadata.io import (
+    _define_default_metadata_dict,
+    _get_list_all_metadata,
+    _get_list_metadata_with_data,
+    create_station_metadata,
+    # _define_default_metadata_dict,
+    get_list_metadata,
+    read_station_metadata,
+    write_default_metadata,
+)
+from disdrodb.tests.conftest import (
+    create_fake_metadata_directory,
+    create_fake_metadata_file,
+    create_fake_raw_data_file,
+)
+from disdrodb.utils.yaml import read_yaml
 
 
 def test__get_list_all_metadata(tmp_path):
@@ -107,8 +108,8 @@ def test__get_list_metadata_with_data(tmp_path):
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    create_fake_data_file(
-        tmp_path=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    _ = create_fake_raw_data_file(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
     expected_result.append(metadata_filepath)
@@ -141,8 +142,8 @@ def test__get_list_metadata_with_data(tmp_path):
     assert result == expected_result
 
     # Test 3 : two metadata files + two data files
-    create_fake_data_file(
-        tmp_path=tmp_path, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    _ = create_fake_raw_data_file(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
     expected_result.append(metadata_filepath)
 
@@ -156,11 +157,7 @@ def test__get_list_metadata_with_data(tmp_path):
 
 
 def test_get_list_metadata_file(tmp_path):
-    # from pathlib import Path
-    # tmp_path = Path("/tmp/test_test")
-
     base_dir = tmp_path / "DISDRODB"
-
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
@@ -203,3 +200,90 @@ def test_get_list_metadata_file(tmp_path):
     # Test 5: Check by station names
     result = get_list_metadata(base_dir=str(base_dir), station_names=station_name, with_stations_data=False)
     assert [metadata_filepath] == result
+
+
+def test_get_default_metadata():
+    assert isinstance(_define_default_metadata_dict(), dict)
+
+
+def test_write_default_metadata(tmp_path):
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_name"
+
+    # Create the default metadata file
+    _ = create_fake_metadata_directory(
+        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+    )
+    metadata_fpath = define_metadata_filepath(
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
+    )
+    write_default_metadata(metadata_fpath)
+
+    # Check file exist
+    assert os.path.exists(metadata_fpath)
+
+    # Open it
+    dictionary = read_yaml(str(metadata_fpath))
+
+    # Check is the expected dictionary
+    expected_dict = _define_default_metadata_dict()
+    expected_dict["data_source"] = data_source
+    expected_dict["campaign_name"] = campaign_name
+    expected_dict["station_name"] = station_name
+    assert expected_dict == dictionary
+
+
+@pytest.mark.parametrize("product", ["RAW", "L0A", "L0B"])
+def test_read_station_metadata(tmp_path, product):
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_name"
+
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    metadata_dict = read_station_metadata(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    assert isinstance(metadata_dict, dict)
+
+
+@pytest.mark.parametrize("product", ["RAW", "L0A", "L0B"])
+def test_create_station_metadata(tmp_path, product):
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_name"
+
+    _ = create_station_metadata(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    metadata_dict = read_station_metadata(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    assert isinstance(metadata_dict, dict)

@@ -27,7 +27,8 @@ import tempfile
 import zipfile
 from typing import Optional
 
-from ..api.checks import check_base_dir
+from disdrodb.api.checks import check_base_dir
+from disdrodb.api.io import define_station_dir
 
 
 def _unzip_file(file_path: str, dest_path: str) -> None:
@@ -84,9 +85,15 @@ def compress_station_files(base_dir: str, data_source: str, campaign_name: str, 
 
     """
 
-    check_base_dir(str(base_dir))
-    data_dir = os.path.join(base_dir, "Raw", data_source, campaign_name, "data", station_name)
-
+    base_dir = check_base_dir(base_dir)
+    data_dir = define_station_dir(
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
+    )
     if not os.path.isdir(data_dir):
         print(f"Station data directory {data_dir} does not exist. Skipping.")
         return

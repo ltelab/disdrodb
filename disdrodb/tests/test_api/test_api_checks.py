@@ -51,7 +51,12 @@ def test_check_url():
 
 
 def test_check_base_dir():
-    assert checks.check_base_dir("/path/to/DISDRODB") is None
+    from pathlib import Path
+
+    base_dir = "/path/to/DISDRODB"
+    assert checks.check_base_dir(base_dir) == base_dir
+
+    assert checks.check_base_dir(Path(base_dir)) == base_dir
 
     with pytest.raises(ValueError):
         checks.check_base_dir("/path/to/DISDRO")

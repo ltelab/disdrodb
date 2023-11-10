@@ -166,6 +166,30 @@ def infer_disdrodb_tree_path_components(path: str) -> list:
     return components
 
 
+def infer_path_info_dict(path: str) -> dict:
+    """Return a dictionary with the base_dir, data_source and campaign_name of the disdrodb_path.
+
+    Parameters
+    ----------
+    path : str
+        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+
+    Returns
+    -------
+    list
+        Dictionary with the path element of the DISDRODB archive.
+        Valid keys: "base_dir", "data_source", "campaign_name"
+    """
+    components = infer_disdrodb_tree_path_components(path=path)
+    if len(components) <= 3:
+        raise ValueError(f"Impossible to determine data_source and campaign_name from {path}")
+    path_dict = {}
+    path_dict["base_dir"] = components[0]
+    path_dict["data_source"] = components[2]
+    path_dict["campaign_name"] = components[3]
+    return path_dict
+
+
 def infer_disdrodb_tree_path(path: str) -> str:
     """Return the directory tree path from the base_dir directory.
 
@@ -220,10 +244,10 @@ def infer_campaign_name_from_path(path: str) -> str:
     str
         Name of the campaign.
     """
-    list_path_elements = infer_disdrodb_tree_path_components(path)
-    if len(list_path_elements) <= 3:
+    components = infer_disdrodb_tree_path_components(path)
+    if len(components) <= 3:
         raise ValueError(f"Impossible to determine campaign_name from {path}")
-    campaign_name = list_path_elements[3]
+    campaign_name = components[3]
     return campaign_name
 
 
@@ -242,10 +266,10 @@ def infer_data_source_from_path(path: str) -> str:
     str
         Name of the data source.
     """
-    list_path_elements = infer_disdrodb_tree_path_components(path)
-    if len(list_path_elements) <= 2:
+    components = infer_disdrodb_tree_path_components(path)
+    if len(components) <= 2:
         raise ValueError(f"Impossible to determine data_source from {path}")
-    data_source = list_path_elements[2]
+    data_source = components[2]
     return data_source
 
 

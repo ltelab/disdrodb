@@ -25,7 +25,7 @@ import pytest
 
 from disdrodb.utils.directories import (
     # ensure_string_path,
-    check_directory_exist,
+    check_directory_exists,
     create_directory,
     # create_required_directory,
     # copy_file,
@@ -35,19 +35,19 @@ from disdrodb.utils.directories import (
 )
 
 
-def test_check_directory_exist(tmp_path):
+def test_check_directory_exists(tmp_path):
     # Check when is a directory
-    assert check_directory_exist(tmp_path) is None
+    assert check_directory_exists(tmp_path) is None
 
     # Check raise error when path is a file
     file_path = tmp_path / "test_file.txt"
     file_path.write_text("This is a test file.")
     with pytest.raises(ValueError):
-        check_directory_exist(file_path)
+        check_directory_exists(file_path)
 
     # Check raise error when unexisting path
     with pytest.raises(ValueError):
-        check_directory_exist("unexisting_path")
+        check_directory_exists("unexisting_path")
 
 
 class TestIsEmptyDirectory:
@@ -117,11 +117,6 @@ def test_remove_if_exists_file(tmp_path):
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
 def test_remove_if_exists_with_shutil(tmp_path):
-    from pathlib import Path
-
-    tmp_path = Path("/tmp/test211")
-    tmp_path.mkdir()
-
     tmp_sub_directory = tmp_path / "subfolder"
     tmp_sub_directory.mkdir()
     tmp_filepath = tmp_sub_directory / "test_file.txt"

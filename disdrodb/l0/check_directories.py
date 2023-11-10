@@ -75,9 +75,14 @@ def _is_issue_directory_available(raw_dir):
     return "issue" in os.listdir(raw_dir)
 
 
-def _is_metadata_directory_available(raw_dir):
+def _is_metadata_directory_available(campaign_dir):
     """Return True if the 'metadata' directory is present."""
-    return "metadata" in os.listdir(raw_dir)
+    return "metadata" in os.listdir(campaign_dir)
+
+
+def _is_metadata_file_available(campaign_dir, station_name):
+    metadata_filepath = _define_metadata_filepath(campaign_dir, station_name)
+    return os.path.exists(metadata_filepath)
 
 
 def _is_data_directory_available(raw_dir):
@@ -159,6 +164,25 @@ def _check_data_source_is_upper_case(campaign_dir):
         raise ValueError(msg)
 
 
+def check_presence_metadata_directory(campaign_dir):
+    """Check that the 'metadata' directory exists.
+
+    If the 'metadata' does not exists, raise an error.
+    """
+    if not _is_metadata_directory_available(campaign_dir):
+        raise ValueError(f"No 'metadata' directory available in {campaign_dir}")
+
+
+def check_presence_metadata_file(campaign_dir, station_name):
+    """Check that the metadata YAML file for the station exists.
+
+    If the metadata YAML file does not exists, raise an error.
+    """
+    metadata_filepath = _define_metadata_filepath(campaign_dir, station_name)
+    if not _is_metadata_file_available(campaign_dir, station_name):
+        raise ValueError(f"No metadata YAML file available at {metadata_filepath}")
+
+
 #### -------------------------------------------------------------------------.
 #### Checks for RAW Campaign directory
 
@@ -202,7 +226,7 @@ def _check_presence_metadata_directory(raw_dir):
     If the 'metadata' does not exists, it create default metadata files
     for each station present in the 'data' directory.
     """
-    from disdrodb.l0.create_directories import write_default_metadata
+    from disdrodb.metadata.io import write_default_metadata
 
     if not _is_metadata_directory_available(raw_dir):
         # Create metadata directory
@@ -241,7 +265,7 @@ def _check_presence_all_metadata_files(raw_dir):
     The function raise error if there is not a metadata file for each station
     folder present in the 'data' directory.
     """
-    from disdrodb.l0.create_directories import write_default_metadata
+    from disdrodb.metadata.io import write_default_metadata
 
     # Get stations with available metadata
     list_metadata_station_name = _get_available_stations_with_metadata_files(raw_dir)

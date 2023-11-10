@@ -25,10 +25,11 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
+from disdrodb.api.io import define_campaign_dir
 from disdrodb.l0.l0_processing import run_l0b_concat
 from disdrodb.l0.routines import run_disdrodb_l0b_concat
+from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_station_dir
 from disdrodb.utils.netcdf import xr_concat_datasets
-from disdrodb.utils.yaml import write_yaml
 
 
 def create_dummy_l0b_file(filepath: str, time):
@@ -67,6 +68,7 @@ def create_dummy_l0b_file(filepath: str, time):
     # Write the dataset to a new NetCDF file
     ds.to_netcdf(filepath)
     ds.close()
+    return filepath
 
 
 def test_xr_concat_datasets(tmp_path):
@@ -77,8 +79,8 @@ def test_xr_concat_datasets(tmp_path):
     time_data_1 = np.array(pd.date_range(start="2023-01-01", periods=3, freq="D"))
     time_data_2 = np.array(pd.date_range(start="2023-01-04", periods=3, freq="D"))
 
-    create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
 
     # Check with file in correct orders
     fpaths = [filepath_1, filepath_2]
@@ -104,9 +106,9 @@ def test_xr_concat_completely_overlapped_datasets(tmp_path):
     time_data_1 = np.array(pd.date_range(start="2023-01-01", periods=6, freq="D"))
     time_data_2 = np.array(pd.date_range(start="2023-01-04", periods=3, freq="D"))
 
-    create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
-    create_dummy_l0b_file(filepath=filepath_3, time=time_data_2[::-1])
+    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath_3, time=time_data_2[::-1])
 
     # Check with file in correct orders
     fpaths = [filepath_1, filepath_2]
@@ -140,8 +142,8 @@ def test_xr_concat_completely_partial_overlapped_datasets(tmp_path):
 
     unique_time_data = np.sort(np.unique(np.concatenate((time_data_1, time_data_2))))
 
-    create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
 
     # Check with file in correct orders
     fpaths = [filepath_1, filepath_2]
@@ -158,49 +160,34 @@ def test_xr_concat_completely_partial_overlapped_datasets(tmp_path):
     np.testing.assert_allclose(time_values.astype(float), unique_time_data.astype(float))
 
 
-def create_fake_data_file(tmp_path, data_source, campaign_name, station_name="", with_metadata_file=False):
-    subfolder_path = tmp_path / "DISDRODB" / "Processed" / data_source / campaign_name / "L0B" / station_name
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-    assert os.path.exists(subfolder_path)
-
-    if with_metadata_file:
-        metedata_folder_path = tmp_path / "DISDRODB" / "Processed" / data_source / campaign_name / "metadata"
-        if not os.path.exists(metedata_folder_path):
-            metedata_folder_path.mkdir(parents=True)
-        assert os.path.exists(metedata_folder_path)
-
-        file_path = os.path.join(metedata_folder_path, f"{station_name}.yml")
-        write_yaml({"station_name": station_name}, file_path)
-
-    return subfolder_path
-
-
 def test_run_l0b_concat_station(tmp_path):
     # Define station info
+    base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "test_station"
-    root_dir_path = os.path.join(tmp_path, "DISDRODB", "Processed", data_source, campaign_name)
 
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
+    )
     # Define fake L0B directory structure
-    folder_temp = create_fake_data_file(
-        tmp_path,
+    station_dir = create_fake_station_dir(
+        base_dir=base_dir,
+        product="L0B",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        with_metadata_file=False,
     )
 
     # Add dummy L0B files
-    filepath_1 = os.path.join(folder_temp, "test_1.nc")
-    filepath_2 = os.path.join(folder_temp, "test_2.nc")
+    filepath_1 = os.path.join(station_dir, "test_1.nc")
+    filepath_2 = os.path.join(station_dir, "test_2.nc")
 
     time_data_1 = np.array([0.0, 1.0, 2.0], dtype=np.float64)
     time_data_2 = np.array([3.0, 4.0, 5.0], dtype=np.float64)
 
-    create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
 
     # Monkey patch the write_l0b function
     def mock_write_l0b(ds: xr.Dataset, fpath: str, force=False) -> None:
@@ -211,51 +198,64 @@ def test_run_l0b_concat_station(tmp_path):
     l0b_processing.write_l0b = mock_write_l0b
 
     # Run concatenation command
-    run_l0b_concat(processed_dir=root_dir_path, station_name=station_name, remove=False, verbose=False)
+    run_l0b_concat(processed_dir=processed_dir, station_name=station_name, remove=False, verbose=False)
+
+    # Assert only 1 file is created
+    list_concatenated_files = glob.glob(os.path.join(processed_dir, "L0B", "*.nc"))
+    assert len(list_concatenated_files) == 1
 
     # Read concatenated netCDF file
-    path_to_file = glob.glob(os.path.join(root_dir_path, "L0B", "*.nc"))[0]
-    ds = xr.open_dataset(path_to_file)
+    ds = xr.open_dataset(list_concatenated_files[0])
     assert len(ds["time"].values) == 6
 
 
 def test_run_disdrodb_l0b_concat(tmp_path):
-    # from pathlib import Path
-    # tmp_path = Path("/tmp/test13")
-    # tmp_path.mkdir()
-
     # Define stations info
-    base_dir = os.path.join(tmp_path, "DISDRODB")
+    base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name1 = "test_station_1"
     station_name2 = "test_station_2"
 
-    # Define fake L0B directory structure for the two stations
-    folder_temp_1 = create_fake_data_file(
-        tmp_path=tmp_path,
+    # Define fake directory structure for the two L0B stations
+    #     # Define fake L0B directory structure
+    station1_dir = create_fake_station_dir(
+        base_dir=base_dir,
+        product="L0B",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name1,
-        with_metadata_file=True,
     )
-    folder_temp_2 = create_fake_data_file(
-        tmp_path=tmp_path,
+    station2_dir = create_fake_station_dir(
+        base_dir=base_dir,
+        product="L0B",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name2,
-        with_metadata_file=True,
     )
-
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name1,
+    )
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name2,
+    )
     # Add dummy L0B files for two stations
-    filepath_1 = os.path.join(folder_temp_1, f"{station_name1}_file.nc")
-    filepath_2 = os.path.join(folder_temp_2, f"{station_name2}_file.nc")
+    filepath_1 = os.path.join(station1_dir, f"{station_name1}_file.nc")
+    filepath_2 = os.path.join(station2_dir, f"{station_name2}_file.nc")
 
     time_data_1 = np.array([0.0, 1.0, 2.0], dtype=np.float64)
     time_data_2 = np.array([3.0, 4.0, 5.0], dtype=np.float64)
 
-    create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
 
     # Run concatenation command
     run_disdrodb_l0b_concat(
@@ -267,16 +267,23 @@ def test_run_disdrodb_l0b_concat(tmp_path):
         verbose=False,
     )
 
-    # TODO: DEBUG
-    # # Assert the presence of 2 concatenated netcdf files (one for each station)
-    # expected_dst_dir = os.path.join(base_dir, "Processed", data_source, campaign_name, "L0B")
-    # list_files = glob.glob(os.path.join(expected_dst_dir, "*.nc"))
-    # assert len(list_files) == 2
+    # BUGGY WITH PYTEST !
+    # # Assert files where removed
+    # assert not os.path.exists(filepath_1)
+    # assert not os.path.exists(filepath_2)
 
-    # # Check that if L0B files are removed, raise error if no stations available
+    # # Assert the presence of 2 concatenated netcdf files (one for each station)
+    # processed_dir = define_campaign_dir(
+    #     base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
+    # )
+
+    # list_concatenated_files = glob.glob(os.path.join(processed_dir, "L0B", "*.nc"))
+    # assert len(list_concatenated_files) == 2
+
+    # Check that if L0B files are removed, raise error if no stations available
     # with pytest.raises(ValueError):
     #     run_disdrodb_l0b_concat(
-    #         base_dir=base_dir,
+    #         base_dir=str(base_dir),
     #         data_sources=data_source,
     #         campaign_names=campaign_name,
     #         station_names=[station_name1, station_name2],

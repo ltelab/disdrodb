@@ -27,7 +27,6 @@ import xarray as xr
 
 from disdrodb.api.info import infer_campaign_name_from_path
 from disdrodb.utils.logger import log_info
-from disdrodb.utils.yaml import read_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -447,28 +446,3 @@ def read_l0a_dataframe(
     # ---------------------------------------------------
     # Return dataframe
     return df
-
-
-####--------------------------------------------------------------------------.
-#### Metadata reader & writers
-
-
-def read_metadata(campaign_dir: str, station_name: str) -> dict:
-    """Read YAML metadata file.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Path of the raw directory
-    station_name : int
-        Id of the station.
-
-    Returns
-    -------
-    dict
-        Dictionary  of the metadata.
-    """
-
-    metadata_fpath = os.path.join(campaign_dir, "metadata", station_name + ".yml")
-    metadata = read_yaml(metadata_fpath)
-    return metadata

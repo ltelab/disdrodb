@@ -21,51 +21,12 @@
 import glob
 import os
 
-from disdrodb.api.io import get_disdrodb_path
+from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
+from disdrodb.api.io import define_metadata_filepath
 from disdrodb.configs import get_base_dir
-from disdrodb.utils.yaml import read_yaml
-
-
-def get_metadata_filepath(data_source, campaign_name, station_name, base_dir=None, product="RAW", check_exist=True):
-    """Return the filepath of the station metadata.
-
-    Parameters
-    ----------
-    data_source : str
-        The name of the institution (for campaigns spanning multiple countries) or
-        the name of the country (for campaigns or sensor networks within a single country).
-        Must be provided in UPPER CASE.
-    campaign_name : str
-        The name of the campaign. Must be provided in UPPER CASE.
-    station_name : str
-        The name of the station.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    product : str, optional
-        The DISDRODB product in which to search for the metadata file.
-        The default is "RAW".
-    check_exist : bool, optional
-        Whether to check if the campaign directory exists. The default is True.
-
-    Returns
-    -------
-    metadata_fpath : str
-        Filepath of the station metadata.
-
-    """
-    base_dir = get_base_dir(base_dir)
-    # Retrieve campaign directory
-    campaign_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exist=check_exist,
-    )
-    # Define metadata filepath
-    metadata_fpath = os.path.join(campaign_dir, "metadata", f"{station_name}.yml")
-    return metadata_fpath
+from disdrodb.metadata.manipulation import sort_metadata_dictionary
+from disdrodb.metadata.standards import get_valid_metadata_keys
+from disdrodb.utils.yaml import read_yaml, write_yaml
 
 
 def read_station_metadata(data_source, campaign_name, station_name, base_dir=None, product="RAW"):
@@ -95,18 +56,14 @@ def read_station_metadata(data_source, campaign_name, station_name, base_dir=Non
 
     """
     # Retrieve metadata filepath
-    metadata_fpath = get_metadata_filepath(
+    metadata_fpath = define_metadata_filepath(
+        base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
         product=product,
-        check_exist=True,
+        check_exists=True,
     )
-    # Check the file exists
-    if not os.path.exists(metadata_fpath):
-        raise ValueError(f"The metadata file for {station_name} at {metadata_fpath} does not exists.")
-
     metadata_dict = read_yaml(metadata_fpath)
     return metadata_dict
 
@@ -287,3 +244,102 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     ]
 
     return metadata_fpaths
+
+
+####--------------------------------------------------------------------------.
+#### Default (empty) metadata
+def _define_default_metadata_dict() -> dict:
+    """Get DISDRODB metadata default values.
+
+    Returns
+    -------
+    dict
+        Dictionary of attributes standard
+    """
+    # Get valid metadata keys
+    list_attrs = get_valid_metadata_keys()
+    attrs = {key: "" for key in list_attrs}
+
+    # Add default values for certain keys
+    attrs["latitude"] = -9999
+    attrs["longitude"] = -9999
+    attrs["altitude"] = -9999
+    attrs["raw_data_format"] = "txt"  # ['txt', 'netcdf']
+    attrs["platform_type"] = "fixed"  # ['fixed', 'mobile']
+    return attrs
+
+
+def write_default_metadata(fpath: str) -> None:
+    """Create default YAML metadata file at the specified filepath.
+
+    Parameters
+    ----------
+    fpath : str
+        File path
+    """
+    # Get default metadata dict
+    metadata = _define_default_metadata_dict()
+
+    # Try infer the data_source, campaign_name and station_name from fpath
+    try:
+        campaign_name = infer_campaign_name_from_path(fpath)
+        data_source = infer_data_source_from_path(fpath)
+        station_name = os.path.basename(fpath).split(".yml")[0]
+        metadata["data_source"] = data_source
+        metadata["campaign_name"] = campaign_name
+        metadata["station_name"] = station_name
+    except Exception:
+        pass
+
+    # Write the metadata
+    metadata = sort_metadata_dictionary(metadata)
+    write_yaml(metadata, fpath=fpath, sort_keys=False)
+    return None
+
+
+def create_station_metadata(data_source, campaign_name, station_name, base_dir=None, product="RAW"):
+    """Create a default (semi-empty) YAML metadata file for a DISDRODB station.
+
+    An error is raised if the file already exists !
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    product : str, optional
+        The DISDRODB product in which to search for the metadata file.
+        The default is "RAW".
+
+    Returns
+    -------
+    metadata: dictionary
+        The station metadata dictionary
+
+    """
+    # Define metadata filepath
+    metadata_fpath = define_metadata_filepath(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        product=product,
+        check_exists=False,
+    )
+    if os.path.exists(metadata_fpath):
+        raise ValueError("A metadata YAML file already exists at {metadata_fpath}.")
+    # Create metadata dir if not existing
+    metadata_dir = os.path.dirname(metadata_fpath)
+    os.makedirs(metadata_dir, exist_ok=True)
+    # Write metadata file
+    write_default_metadata(fpath=metadata_fpath)
+    print(f"An empty metadata for station {station_name} has been created .")
+    return None

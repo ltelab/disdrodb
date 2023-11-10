@@ -17,20 +17,21 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Tools to create Raw, L0A and L0B DISDRODB directories."""
+
+# L0A and L0B from raw NC: create_initial_directory_structure(raw_dir, processed_dir)
+# L0B: create_directory_structure(processed_dir)
+
 import logging
 import os
 import shutil
 
 from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
-from disdrodb.configs import get_base_dir
-from disdrodb.metadata.manipulation import sort_metadata_dictionary
-from disdrodb.metadata.standards import get_valid_metadata_keys
+from disdrodb.api.io import define_metadata_dir, define_station_dir
 from disdrodb.utils.directories import (
-    check_directory_exist,
+    check_directory_exists,
     copy_file,
     create_required_directory,
 )
-from disdrodb.utils.yaml import write_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -149,7 +150,7 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
     # - If force=False, raise error
     if station_already_present:
         # Check is a directory
-        check_directory_exist(station_dir)
+        check_directory_exists(station_dir)
         # If force=True, remove all the content
         if force:
             # Remove all station directory content
@@ -158,6 +159,40 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
             msg = f"The station directory {station_dir} already exists and force=False."
             logger.error(msg)
             raise ValueError(msg)
+
+
+def create_metadata_directory(base_dir, product, data_source, campaign_name):
+    metadata_dir = define_metadata_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
+    )
+    if not os.path.exists(metadata_dir):
+        os.makedirs(metadata_dir, exist_ok=True)
+    return str(metadata_dir)
+
+
+def create_station_directory(base_dir, product, data_source, campaign_name, station_name):
+    station_dir = define_station_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
+    )
+    if not os.path.exists(station_dir):
+        os.makedirs(station_dir, exist_ok=True)
+    return str(station_dir)
+
+
+def create_issue_directory(base_dir, data_source, campaign_name):
+    issue_dir = os.path.join(base_dir, "Raw", data_source, campaign_name, "issue")
+    if not os.path.exists(issue_dir):
+        os.makedirs(issue_dir, exist_ok=True)
+    return str(issue_dir)
 
 
 def create_initial_directory_structure(
@@ -206,13 +241,15 @@ def create_initial_directory_structure(
         station_name=station_name,
         force=force,
     )
+    # Create the <product>/<station> directory
+    create_required_directory(os.path.join(processed_dir, product), dir_name=station_name)
 
 
 def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
     from disdrodb.api.checks import check_product
     from disdrodb.api.io import _get_list_stations_with_data
-    from disdrodb.l0.check_directories import check_processed_dir
+    from disdrodb.l0.check_directories import check_presence_metadata_file, check_processed_dir
 
     # Check inputs
     check_product(product)
@@ -230,6 +267,9 @@ def create_directory_structure(processed_dir, product, station_name, force, verb
             f"No {required_product} data available for station {station_name}. Available stations: {list_stations}."
         )
 
+    # Check metadata file is available
+    check_presence_metadata_file(campaign_dir=processed_dir, station_name=station_name)
+
     # Create required directory (if they don't exists)
     create_required_directory(processed_dir, dir_name=product)
 
@@ -240,82 +280,3 @@ def create_directory_structure(processed_dir, product, station_name, force, verb
         station_name=station_name,
         force=force,
     )
-
-
-####--------------------------------------------------------------------------.
-#### Default (empty) metadata
-def _get_default_metadata_dict() -> dict:
-    """Get DISDRODB metadata default values.
-
-    Returns
-    -------
-    dict
-        Dictionary of attributes standard
-    """
-    # Get valid metadata keys
-    list_attrs = get_valid_metadata_keys()
-    attrs = {key: "" for key in list_attrs}
-
-    # Add default values for certain keys
-    attrs["latitude"] = -9999
-    attrs["longitude"] = -9999
-    attrs["altitude"] = -9999
-    attrs["raw_data_format"] = "txt"  # ['txt', 'netcdf']
-    attrs["platform_type"] = "fixed"  # ['fixed', 'mobile']
-    return attrs
-
-
-def _write_metadata(metadata, fpath):
-    """Write dictionary to YAML file."""
-    metadata = sort_metadata_dictionary(metadata)
-    write_yaml(
-        dictionary=metadata,
-        fpath=fpath,
-        sort_keys=False,
-    )
-    return None
-
-
-def write_default_metadata(fpath: str) -> None:
-    """Create default YAML metadata file at the specified filepath.
-
-    Parameters
-    ----------
-    fpath : str
-        File path
-    """
-    # Get default metadata dict
-    metadata = _get_default_metadata_dict()
-    # Try infer the data_source, campaign_name and station_name from fpath
-    try:
-        campaign_name = infer_campaign_name_from_path(fpath)
-        data_source = infer_data_source_from_path(fpath)
-        station_name = os.path.basename(fpath).split(".yml")[0]
-        metadata["data_source"] = data_source
-        metadata["campaign_name"] = campaign_name
-        metadata["station_name"] = station_name
-    except Exception:
-        pass
-    # Write the metadata
-    _write_metadata(metadata=metadata, fpath=fpath)
-    return None
-
-
-def create_campaign_default_metadata(
-    campaign_name,
-    data_source,
-    base_dir=None,
-):
-    """Create default YAML metadata files for all stations within a campaign.
-
-    Use the function with caution to avoid overwrite existing YAML files.
-    """
-    base_dir = get_base_dir(base_dir)
-    data_dir = os.path.join(base_dir, "Raw", data_source, campaign_name, "data")
-    metadata_dir = os.path.join(base_dir, "Raw", data_source, campaign_name, "metadata")
-    station_names = os.listdir(data_dir)
-    for station_name in station_names:
-        metadata_fpath = os.path.join(metadata_dir, station_name + ".yml")
-        write_default_metadata(fpath=metadata_fpath)
-    print(f"The default metadata were created for stations {station_names}.")
-    return None

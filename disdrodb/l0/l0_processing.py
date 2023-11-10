@@ -28,8 +28,8 @@ import time
 import dask
 import dask.bag as db
 
-# Standards
 from disdrodb.api.checks import check_sensor_name
+from disdrodb.api.info import infer_path_info_dict
 from disdrodb.api.io import get_disdrodb_path
 from disdrodb.configs import get_base_dir
 
@@ -45,10 +45,10 @@ from disdrodb.l0.io import (
     get_l0b_fpath,
     get_raw_file_list,
     read_l0a_dataframe,
-    read_metadata,
 )
 from disdrodb.l0.issue import read_issue
 from disdrodb.l0.l0_reader import get_station_reader_function
+from disdrodb.metadata import read_station_metadata
 
 # Logger
 from disdrodb.utils.logger import (
@@ -129,7 +129,7 @@ def _generate_l0a(
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
+    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -210,7 +210,7 @@ def _generate_l0b(
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
+    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -282,7 +282,7 @@ def _generate_l0b_from_nc(
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
+    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -546,7 +546,7 @@ def run_l0b(
     """
     # -----------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_metadata(campaign_dir=processed_dir, station_name=station_name)
+    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
 
     # Skip run_l0b processing if the raw data are netCDFs
     if attrs["raw_data_format"] == "netcdf":
@@ -918,7 +918,7 @@ def run_l0a_station(
         product="L0A",
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exist=False,
+        check_exists=False,
     )
 
     # Run L0A processing
@@ -990,7 +990,7 @@ def run_l0b_station(
         product="L0B",
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exist=False,
+        check_exists=False,
     )
     # Run L0B
     run_l0b(
@@ -1044,7 +1044,7 @@ def run_l0b_concat_station(
         product="L0B",
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exist=True,
+        check_exists=True,
     )
 
     # Run concatenation

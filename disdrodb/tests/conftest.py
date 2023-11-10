@@ -12,26 +12,50 @@ import pytest
 from disdrodb import __root_path__
 from disdrodb.utils.yaml import write_yaml
 
-# from pathlib import Path
-# tmp_path = Path("/tmp/")
+
+def create_fake_metadata_directory(base_dir, product, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
+    from disdrodb.l0.create_directories import create_metadata_directory
+
+    return create_metadata_directory(
+        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+    )
+
+
+def create_fake_station_dir(
+    base_dir, product, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name="station_name"
+):
+    from disdrodb.l0.create_directories import create_station_directory
+
+    return create_station_directory(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
 
 def create_fake_metadata_file(
     base_dir,
+    product="RAW",
     metadata_dict={},
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
     station_name="station_name",
 ):
-    # Define metadata directory
-    metadata_dir = base_dir / "Raw" / data_source / campaign_name / "metadata"
-
-    # Create if does not exist
-    if not metadata_dir.exists():
-        metadata_dir.mkdir(parents=True)
+    from disdrodb.api.io import define_metadata_filepath
 
     # Define metadata filepath
-    metadata_fpath = metadata_dir / f"{station_name}.yml"
+    metadata_fpath = define_metadata_filepath(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
+    )
+    # Create metadata directory
+    os.makedirs(os.path.dirname(metadata_fpath), exist_ok=True)
 
     # Define defaults fields
     if "data_source" not in metadata_dict:
@@ -46,6 +70,38 @@ def create_fake_metadata_file(
 
     # Return filepath
     return str(metadata_fpath)
+
+
+def create_fake_raw_data_file(
+    base_dir,
+    product="RAW",
+    data_source="DATA_SOURCE",
+    campaign_name="CAMPAIGN_NAME",
+    station_name="station_name",
+    filename="test_data.txt",
+):
+    # Define station data directory
+    from disdrodb.l0.create_directories import create_station_directory
+
+    station_dir = create_station_directory(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # Define filepath
+    filepath = os.path.join(station_dir, filename)
+    # filepath = station_dir / filename
+
+    # Write fake data
+    # filepath.touch()
+    with open(filepath, "w") as f:
+        f.write("This is some fake text.")
+
+    # Return filepath as string
+    return str(filepath)
 
 
 @pytest.fixture

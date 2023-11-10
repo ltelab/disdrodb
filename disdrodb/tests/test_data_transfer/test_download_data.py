@@ -57,7 +57,7 @@ def test_download_file_from_url(tmp_path):
 
 
 # def test_download_station_data(tmp_path):
-#     # DUBUG
+#     # DEBUG
 #     # from pathlib import Path
 #     # tmp_path = Path("/tmp/empty_3")
 #     # os.makedirs(tmp_path)

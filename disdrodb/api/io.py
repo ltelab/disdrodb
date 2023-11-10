@@ -18,13 +18,13 @@
 # -----------------------------------------------------------------------------.
 """Routines tot extract information from the DISDRODB infrastructure."""
 
-import glob
 import os
 
 import numpy as np
 
 from disdrodb.api.checks import check_product
 from disdrodb.configs import get_base_dir
+from disdrodb.utils.directories import check_directory_exists, count_files, list_directories, list_files
 
 
 def get_disdrodb_path(
@@ -32,7 +32,7 @@ def get_disdrodb_path(
     product,
     data_source="",
     campaign_name="",
-    check_exist=True,
+    check_exists=True,
 ):
     """Return the directory in the DISDRODB infrastructure.
 
@@ -50,7 +50,7 @@ def get_disdrodb_path(
         The data source. Must be specified if campaign_name is specified.
     campaign_name : str, optional
         The campaign_name.
-    check_exist : bool, optional
+    check_exists : bool, optional
         Whether to check if the directory exists. By default True.
 
     Returns
@@ -59,10 +59,10 @@ def get_disdrodb_path(
         Directory path
     """
     from disdrodb.api.checks import check_base_dir
-    from disdrodb.utils.directories import check_directory_exist
+    from disdrodb.utils.directories import check_directory_exists
 
     # Check base_dir validity
-    check_base_dir(base_dir)
+    base_dir = check_base_dir(base_dir)
     if len(campaign_name) > 0:
         if len(data_source) == 0:
             raise ValueError("If campaign_name is specified, data_source must be specified.")
@@ -72,9 +72,203 @@ def get_disdrodb_path(
         dir_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
     else:
         dir_path = os.path.join(base_dir, "Processed", data_source, campaign_name)
-    if check_exist:
-        check_directory_exist(dir_path)
+    if check_exists:
+        check_directory_exists(dir_path)
     return dir_path
+
+
+def define_campaign_dir(
+    product,
+    data_source,
+    campaign_name,
+    base_dir=None,
+    check_exists=False,
+):
+    """Return the campaign directory in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+    data_source : str
+        The data source. Must be specified if campaign_name is specified.
+    campaign_name : str
+        The campaign_name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default False.
+
+    Returns
+    -------
+    station_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    campaign_dir = get_disdrodb_path(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=check_exists,
+    )
+    return str(campaign_dir)
+
+
+def define_station_dir(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    check_exists=False,
+):
+    """Return the station data directory in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    station_name : str
+        The station name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default False.
+
+    Returns
+    -------
+    station_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    campaign_dir = get_disdrodb_path(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=check_exists,
+    )
+    if product.upper() == "RAW":
+        station_dir = os.path.join(campaign_dir, "data", station_name)
+    else:
+        station_dir = os.path.join(campaign_dir, product, station_name)
+    if check_exists:
+        check_directory_exists(station_dir)
+    return str(station_dir)
+
+
+def define_metadata_dir(
+    product,
+    data_source,
+    campaign_name,
+    base_dir=None,
+    check_exists=False,
+):
+    """Return the metadata directory in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default False.
+
+    Returns
+    -------
+    metadata_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    campaign_dir = define_campaign_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=check_exists,
+    )
+    if product.upper() == "RAW":
+        metadata_dir = os.path.join(campaign_dir, "metadata")
+    else:
+        metadata_dir = os.path.join(campaign_dir, "metadata")
+    if check_exists:
+        check_directory_exists(metadata_dir)
+    return str(metadata_dir)
+
+
+def define_metadata_filepath(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    check_exists=False,
+):
+    """Return the station metadata filepath in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    station_name : str
+        The station name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default False.
+
+    Returns
+    -------
+    metadata_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    metadata_dir = define_metadata_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
+    )
+    metadata_fpath = os.path.join(metadata_dir, f"{station_name}.yml")
+
+    if check_exists and not os.path.exists(metadata_fpath):
+        raise ValueError(f"The metadata file for {station_name} at {metadata_fpath} does not exists.")
+
+    return str(metadata_fpath)
+
+
+def define_config_dir(product):
+    """Define the config directory path of a given DISDRODB product."""
+    from disdrodb import __root_path__
+
+    if product.upper() in ["RAW", "L0A", "L0B"]:
+        dir_name = "l0"
+    else:
+        raise NotImplementedError(f"Product {product} not implemented.")
+    config_dir_path = os.path.join(__root_path__, "disdrodb", dir_name, "configs")
+    return config_dir_path
+
+
+####---------------------------------------------------------------------------.
 
 
 def _get_list_stations_dirs(product, campaign_dir):
@@ -100,7 +294,7 @@ def _get_list_stations_with_data(product, campaign_dir):
     # Get stations directory
     list_stations_dir = _get_list_stations_dirs(product=product, campaign_dir=campaign_dir)
     # Count number of files within directory
-    list_nfiles_per_station = [len(glob.glob(os.path.join(path, "*"))) for path in list_stations_dir]
+    list_nfiles_per_station = [count_files(os.path.join(path, "*")) for path in list_stations_dir]
     # Keep only stations with at least one file
     list_stations = [os.path.basename(path) for n, path in zip(list_nfiles_per_station, list_stations_dir) if n >= 1]
     return list_stations
@@ -110,7 +304,7 @@ def _get_list_stations_with_metadata(campaign_dir):
     # Get directory where metadata are stored
     metadata_path = os.path.join(campaign_dir, "metadata")
     # List metadata files
-    list_metadata_files = glob.glob(os.path.join(metadata_path, "*.yml"))
+    list_metadata_files = list_files(os.path.join(metadata_path, "*.yml"))
     # Return stations with metadata
     list_stations = [os.path.basename(fpath).replace(".yml", "") for fpath in list_metadata_files]
     return list_stations
@@ -266,7 +460,7 @@ def _check_campaign_names(base_dir, product, campaign_names):
     # Get product directory path
     dir_path = get_disdrodb_path(base_dir=base_dir, product=product)
     # Get campaigns directory path
-    list_campaigns_path = glob.glob(os.path.join(dir_path, "*", "*"))
+    list_campaigns_path = list_directories(os.path.join(dir_path, "*", "*"))
     # Get campaigns names
     list_campaign_names = [os.path.basename(path) for path in list_campaigns_path]
     # Remove duplicates
@@ -373,7 +567,3 @@ def available_stations(
         # TODO: ENSURE THAT NO DUPLICATED STATION NAMES ?
         list_stations = [info[2] for info in list_info]
         return list_stations
-
-
-####---------------------------------------------------------------------------.
-#### DISDRODB CONFIGS

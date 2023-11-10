@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Define utilities for Directory/File Checks/Creation/Deletion."""
 
+import glob
 import logging
 import os
 import pathlib
@@ -36,7 +37,26 @@ def ensure_string_path(path, msg, accepth_pathlib=False):
     return str(path)
 
 
-def check_directory_exist(dir_path):
+def list_files(glob_pattern):
+    """Return a list of filepaths (exclude directory paths)."""
+    paths = glob.glob(glob_pattern)
+    filepaths = [f for f in paths if os.path.isfile(f)]
+    return filepaths
+
+
+def list_directories(glob_pattern):
+    """Return a list of directory paths (exclude file paths)."""
+    paths = glob.glob(glob_pattern)
+    dir_paths = [f for f in paths if os.path.isdir(f)]
+    return dir_paths
+
+
+def count_files(glob_pattern):
+    """Return the number of files (exclude directories)."""
+    return len(list_files(glob_pattern))
+
+
+def check_directory_exists(dir_path):
     """Check if the directory exist."""
     if not os.path.exists(dir_path):
         raise ValueError(f"{dir_path} directory does not exist.")

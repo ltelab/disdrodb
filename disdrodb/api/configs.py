@@ -22,21 +22,10 @@ import logging
 import os
 
 from disdrodb.api.checks import check_product, check_sensor_name
+from disdrodb.api.io import define_config_dir
 from disdrodb.utils.yaml import read_yaml
 
 logger = logging.getLogger(__name__)
-
-
-def _get_config_dir(product):
-    """Define the config directory path of a given DISDRODB product."""
-    from disdrodb import __root_path__
-
-    if product.upper() in ["RAW", "L0A", "L0B"]:
-        dir_name = "l0"
-    else:
-        raise NotImplementedError(f"Product {product} not implemented.")
-    config_dir_path = os.path.join(__root_path__, "disdrodb", dir_name, "configs")
-    return config_dir_path
 
 
 def get_sensor_configs_dir(sensor_name: str, product: str) -> str:
@@ -61,7 +50,7 @@ def get_sensor_configs_dir(sensor_name: str, product: str) -> str:
     """
     check_sensor_name(sensor_name, product=product)
     product = check_product(product)
-    config_dir_path = _get_config_dir(product=product)
+    config_dir_path = define_config_dir(product=product)
     config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
     if not os.path.exists(config_sensor_dir_path):
         list_sensors = sorted(os.listdir(config_dir_path))
@@ -116,5 +105,5 @@ def available_sensor_names(product: str = "L0A") -> sorted:
         By default, it returns the sensors available for DISDRODB L0A products.
     """
     product = check_product(product)
-    config_dir_path = _get_config_dir(product=product)
+    config_dir_path = define_config_dir(product=product)
     return sorted(os.listdir(config_dir_path))

@@ -21,402 +21,338 @@ import os
 
 import pytest
 
-from disdrodb import __root_path__
+from disdrodb.api.io import (
+    define_campaign_dir,
+    define_metadata_dir,
+    define_metadata_filepath,
+    define_station_dir,
+)
 from disdrodb.l0.create_directories import (
     _check_campaign_name_consistency,
     _check_data_source_consistency,
     _copy_station_metadata,
-    _get_default_metadata_dict,
-    create_campaign_default_metadata,
     create_directory_structure,
     create_initial_directory_structure,
-    write_default_metadata,
+    create_metadata_directory,
 )
-from disdrodb.tests.conftest import create_fake_metadata_file
+from disdrodb.tests.conftest import create_fake_metadata_directory, create_fake_metadata_file, create_fake_raw_data_file
 from disdrodb.utils.yaml import read_yaml
 
-TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
-
-def test_create_initial_directory_structure(tmp_path, mocker):
-    force = False
-    product = "LOA"
-
+@pytest.mark.parametrize("product", ["L0A", "L0B"])
+def test_create_initial_directory_structure(tmp_path, mocker, product):
     # Define station info
     base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
+    raw_dir = define_campaign_dir(
+        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+    )
 
-    # Define Raw campaign directory structure
-    raw_dir = tmp_path / "DISDRODB" / "Raw" / "DATA_SOURCE" / campaign_name
-    raw_station_dir = raw_dir / "data" / station_name
-    raw_station_dir.mkdir(parents=True)
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+    )
 
-    # - Add metadata
-    metadata_dict = {}
-    _ = create_fake_metadata_file(
+    dst_metadata_dir = define_metadata_dir(
         base_dir=base_dir,
-        metadata_dict=metadata_dict,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+    dst_station_dir = define_station_dir(
+        base_dir=base_dir,
+        product=product,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    # - Add fake file
-    fake_csv_file_path = os.path.join(raw_station_dir, f"{station_name}.csv")
-    with open(fake_csv_file_path, "w") as f:
-        f.write("fake csv file")
 
-    # Define Processed campaign directory
-    processed_dir = tmp_path / "DISDRODB" / "Processed" / data_source / campaign_name
-    processed_dir.mkdir(parents=True)
+    dst_metadata_fpath = define_metadata_filepath(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
+    )
+
+    # Create station Raw directory structure (with fake data)
+    # - Add fake raw data file
+    _ = create_fake_raw_data_file(
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # - Add fake metadata
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # def mock_check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None):
+    #     return None
+    # from disdrodb.metadata import check_metadata
+    # check_metadata.check_metadata_compliance = mock_check_metadata_compliance
 
     # Mock to pass metadata checks
     mocker.patch("disdrodb.metadata.check_metadata.check_metadata_compliance", return_value=None)
 
+    # Test that if station_name is unexisting in data, raise error
+    with pytest.raises(ValueError):
+        create_initial_directory_structure(
+            product=product,
+            force=False,
+            raw_dir=raw_dir,
+            processed_dir=processed_dir,
+            station_name="INEXISTENT_STATION",
+        )
+
     # Execute create_initial_directory_structure
     create_initial_directory_structure(
-        raw_dir=str(raw_dir),
-        processed_dir=str(processed_dir),
-        station_name=station_name,
-        force=force,
         product=product,
+        force=False,
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        station_name=station_name,
     )
 
-    # Test product directory has been created
-    expected_folder_path = os.path.join(processed_dir, product)
-    assert os.path.exists(expected_folder_path)
+    # Check create default metadata/issue files in raw_dir !
+    # - TODO
 
+    # Test product, metadata and station directories have been created
+    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
+    assert os.path.exists(dst_metadata_dir) and os.path.isdir(dst_metadata_dir)
+    # Test it copied the metadata from RAW
+    assert os.path.exists(dst_metadata_fpath) and os.path.isfile(dst_metadata_fpath)
+    os.remove(dst_metadata_fpath)
 
-# def test_create_initial_directory_structure():
-#     campaign_name = "CAMPAIGN_NAME"
-#     data_source = "DATA_SOURCE"
-#     station_name = "STATION_NAME"
-#     product = "L0A"
-#     force = True
-#     verbose=False
+    # Test raise error if already data in L0A (if force=False)
+    product_filepath = create_fake_raw_data_file(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
-#     raw_dir = os.path.join(
-#         TEST_DATA_DIR,
-#         "test_dir_structure",
-#         "DISDRODB",
-#         "Raw",
-#         data_source,
-#         campaign_name,
-#     )
-#     processed_dir = os.path.join(
-#         TEST_DATA_DIR,
-#         "test_dir_creation",
-#         "DISDRODB",
-#         "Processed",
-#         data_source,
-#         campaign_name,
-#     )
-#     # Define expected directory
-#     expected_product_dir = os.path.join(processed_dir, product)
+    with pytest.raises(ValueError):
+        create_initial_directory_structure(
+            product=product,
+            force=False,
+            raw_dir=raw_dir,
+            processed_dir=processed_dir,
+            station_name=station_name,
+        )
+    assert os.path.exists(product_filepath)
 
-#     # TODO:
-#     # - Need to remove file to check function works, but then next test is invalidated
-#     # - I think we need to create a default directory that we can reinitialize at each test !
-
-#     # Remove directory if exists already
-#     if os.path.exists(expected_product_dir):
-#         shutil.rmtree(expected_product_dir)
-#     assert not os.path.exists(expected_product_dir)
-
-#     # Create directories
-#     assert create_directory_structure(processed_dir=processed_dir,
-#                                          product=product,
-#                                          station_name=station_name,
-#                                          force=force,
-#                                          verbose=verbose,
-#                                          ) is None
-#     # Check the directory has been created
-#     assert not os.path.exists(expected_product_dir)
-#     # TODO:
-#     # - check that if data are already present and force=False, raise Error
+    # Test delete file if already data in L0A (if force=True)
+    create_initial_directory_structure(
+        product=product,
+        force=True,
+        raw_dir=raw_dir,
+        processed_dir=processed_dir,
+        station_name=station_name,
+    )
+    assert not os.path.exists(product_filepath)
+    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
+    assert os.path.exists(dst_metadata_dir) and os.path.isdir(dst_metadata_dir)
+    assert os.path.exists(dst_metadata_fpath) and os.path.isfile(dst_metadata_fpath)
 
 
 def test_create_directory_structure(tmp_path, mocker):
-    # from pathlib import Path
-    # tmp_path = Path("/tmp/test12")
-    # tmp_path.mkdir()
-
-    force = False
-    product = "L0B"
-
+    start_product = "L0A"
+    dst_product = "L0B"
     # Define station info
     base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
 
-    # Define Raw campaign directory structure
-    raw_dir = tmp_path / "DISDRODB" / "Raw" / "DATA_SOURCE" / campaign_name
-    raw_station_dir = raw_dir / "data" / station_name
-    raw_station_dir.mkdir(parents=True)
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product=start_product, data_source=data_source, campaign_name=campaign_name
+    )
 
-    # - Add metadata
-    metadata_dict = {}
-    _ = create_fake_metadata_file(
+    # Test raise error without data
+    with pytest.raises(ValueError):
+        create_directory_structure(
+            product=dst_product,
+            force=False,
+            processed_dir=processed_dir,
+            station_name=station_name,
+        )
+
+    # Add fake file
+    _ = create_fake_raw_data_file(
         base_dir=base_dir,
-        metadata_dict=metadata_dict,
+        product=start_product,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    # - Add fake file
-    fake_csv_file_path = os.path.join(raw_station_dir, f"{station_name}.csv")
-    with open(fake_csv_file_path, "w") as f:
-        f.write("fake csv file")
 
-    # Define Processed campaign directory
-    processed_dir = tmp_path / "DISDRODB" / "Processed" / data_source / campaign_name
-    processed_dir.mkdir(parents=True)
+    # Test raise error without metadata file
+    with pytest.raises(ValueError):
+        create_directory_structure(
+            product=dst_product,
+            force=False,
+            processed_dir=processed_dir,
+            station_name=station_name,
+        )
 
-    # subfolder_path = tmp_path / "DISDRODB" / "Processed" / campaign_name / "L0B"
-    # subfolder_path.mkdir(parents=True)
-
-    # Mock to pass some internal checks
-    mocker.patch("disdrodb.api.io._get_list_stations_with_data", return_value=[station_name])
-    mocker.patch("disdrodb.l0.create_directories._check_pre_existing_station_data", return_value=None)
+    # Add metadata
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        product=start_product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
     # Execute create_directory_structure
     create_directory_structure(
-        processed_dir=str(processed_dir), product=product, station_name=station_name, force=force, verbose=False
+        processed_dir=processed_dir, product=dst_product, station_name=station_name, force=False, verbose=False
     )
 
     # Test product directory has been created
-    l0a_folder_path = os.path.join(processed_dir, product)
-    assert os.path.exists(l0a_folder_path)
+    dst_station_dir = os.path.join(processed_dir, dst_product)
+    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
 
-
-# def testcreate_directory_structure():
-#     campaign_name = "CAMPAIGN_NAME"
-#     data_source = "DATA_SOURCE"
-#     station_name = "STATION_NAME"
-#     product = "L0B"
-#     force = True
-#     verbose=False
-
-#     processed_dir = os.path.join(
-#         TEST_DATA_DIR,
-#         "test_dir_creation",
-#         "DISDRODB",
-#         "Processed",
-#         data_source,
-#         campaign_name,
-#     )
-#     # Define expected directory
-#     expected_product_dir = os.path.join(processed_dir, product)
-
-#     # Remove directory if exists already
-#     if os.path.exists(expected_product_dir):
-#         shutil.rmtree(expected_product_dir)
-#     assert not os.path.exists(expected_product_dir)
-
-#     # Create directories
-#     assert create_directory_structure(processed_dir=processed_dir,
-#                                          product=product,
-#                                          station_name=station_name,
-#                                          force=force,
-#                                          verbose=verbose,
-#                                          ) is None
-#     # Check the directory has been created
-#     assert not os.path.exists(expected_product_dir)
-#     # TODO - check that if data are already present and force=False, raise Error
-
-
-def test_check_campaign_name_consistency():
-    campaign_name = "CAMPAIGN_NAME"
-    data_source = "DATA_SOURCE"
-    path_raw = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Raw",
-        data_source,
-        campaign_name,
-    )
-    path_process = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        campaign_name,
+    # Test raise error if already data in dst_product (if force=False)
+    dst_product_file_filepath = create_fake_raw_data_file(
+        base_dir=base_dir,
+        product=dst_product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
-    assert _check_campaign_name_consistency(path_raw, path_process) == campaign_name
-
-    # Test when is not consistent
-    path_process = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        "ANOTHER_CAMPAIGN_NAME",
-    )
     with pytest.raises(ValueError):
-        assert _check_campaign_name_consistency(path_raw, path_process)
+        create_directory_structure(
+            product=dst_product,
+            force=False,
+            processed_dir=processed_dir,
+            station_name=station_name,
+        )
+    assert os.path.exists(dst_product_file_filepath)
+
+    # Test delete file if already data in L0A (if force=True)
+    create_directory_structure(
+        product=dst_product,
+        force=True,
+        processed_dir=processed_dir,
+        station_name=station_name,
+    )
+    assert not os.path.exists(dst_product_file_filepath)
+    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
 
 
-def test_check_data_source_consistency():
+def test_check_campaign_name_consistency(tmp_path):
+    base_dir = tmp_path / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
-    path_raw = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Raw",
-        data_source,
-        campaign_name,
+
+    raw_dir = define_campaign_dir(
+        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
     )
 
     # Test when consistent
-    path_process = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        campaign_name,
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
     )
-
-    assert _check_data_source_consistency(path_raw, path_process) == data_source
+    assert _check_campaign_name_consistency(raw_dir, processed_dir) == campaign_name
 
     # Test when is not consistent
-    path_process = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "DISDRODB",
-        "Processed",
-        "ANOTHER_DATA_SOURCE",
-        campaign_name,
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name="ANOTHER_CAMPAIGN_NAME"
     )
     with pytest.raises(ValueError):
-        assert _check_data_source_consistency(path_raw, path_process)
+        _check_campaign_name_consistency(raw_dir, processed_dir)
 
 
-def test_copy_station_metadata():
+def test_check_data_source_consistency(tmp_path):
+    base_dir = tmp_path / "DISDRODB"
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+    raw_dir = define_campaign_dir(
+        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+    )
+
+    # Test when consistent
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
+    )
+
+    assert _check_data_source_consistency(raw_dir, processed_dir) == data_source
+
+    # Test when is not consistent
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0A", data_source="ANOTHER_DATA_SOURCE", campaign_name=campaign_name
+    )
+    with pytest.raises(ValueError):
+        _check_data_source_consistency(raw_dir, processed_dir)
+
+
+def test_copy_station_metadata(tmp_path):
+    base_dir = tmp_path / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     station_name = "STATION_NAME"
-    raw_dir = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_structure",
-        "DISDRODB",
-        "Raw",
-        data_source,
-        campaign_name,
+
+    raw_dir = define_campaign_dir(
+        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
     )
-    processed_dir = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "DISDRODB",
-        "Processed",
-        data_source,
-        campaign_name,
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
     )
-    destination_metadata_dir = os.path.join(processed_dir, "metadata")
-
-    # Ensure processed_dir and metadata folder exists
-    if not os.path.exists(processed_dir):
-        os.makedirs(processed_dir)
-    if not os.path.exists(destination_metadata_dir):
-        os.makedirs(destination_metadata_dir)
-
-    # Define expected metadata file name
-    expected_metadata_fpath = os.path.join(destination_metadata_dir, f"{station_name}.yml")
-    # Ensure metadata file does not exist
-    if os.path.exists(expected_metadata_fpath):
-        os.remove(expected_metadata_fpath)
-    assert not os.path.exists(expected_metadata_fpath)
-
-    # Check the function returns None
-    assert _copy_station_metadata(raw_dir, processed_dir, station_name) is None
-
-    # Check the function has copied the file
-    assert os.path.exists(expected_metadata_fpath)
-
-
-def create_fake_station_file(
-    base_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME", station_name="station_name"
-):
-    subfolder_path = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-
-    subfolder_path = base_dir / "Raw" / data_source / campaign_name / "metadata"
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-
-    path_file = os.path.join(subfolder_path, f"{station_name}.txt")
-    print(path_file)
-    with open(path_file, "w") as f:
-        f.write("This is some fake text.")
-
-
-def create_fake_metadata_folder(tmp_path, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
-    subfolder_path = tmp_path / "DISDRODB" / "Raw" / data_source / campaign_name / "metadata"
-    if not os.path.exists(subfolder_path):
-        subfolder_path.mkdir(parents=True)
-
-    assert os.path.exists(subfolder_path)
-
-    return subfolder_path
-
-
-def test_create_campaign_default_metadata(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
-    campaign_name = "test_campaign"
-    data_source = "test_data_source"
-    station_name = "test_station"
-
-    create_fake_station_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    dst_metadata_fpath = define_metadata_filepath(
+        base_dir=base_dir,
+        product="L0A",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
     )
 
-    create_campaign_default_metadata(base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
-
-    expected_file_path = os.path.join(
-        tmp_path, "DISDRODB", "Raw", data_source, campaign_name, "metadata", f"{station_name}.yml"
+    # Create fake metadata directory in RAW
+    _ = create_fake_metadata_directory(
+        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
     )
 
-    assert os.path.exists(expected_file_path)
+    # Test raise error if no data
+    with pytest.raises(ValueError):
+        _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
 
+    # Create fake metadata file
+    raw_metadata_fpath = create_fake_metadata_file(
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
-def test_get_default_metadata():
-    assert isinstance(_get_default_metadata_dict(), dict)
+    # Test raise error if no destination metadata directory
+    with pytest.raises(ValueError):
+        _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
 
+    # Copy metadata
+    _ = create_metadata_directory(
+        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
+    )
 
-def test_write_default_metadata(tmp_path):
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "station_name"
+    _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
 
-    fpath = os.path.join(create_fake_metadata_folder(tmp_path, data_source, campaign_name), f"{station_name}.yml")
+    # Ensure metadata file has been copied
+    assert os.path.exists(dst_metadata_fpath)
 
-    # create metadata file
-    write_default_metadata(str(fpath))
-
-    # check file exist
-    assert os.path.exists(fpath)
-
-    # open it
-    dictionary = read_yaml(str(fpath))
-
-    # check is the expected dictionary
-    expected_dict = _get_default_metadata_dict()
-    expected_dict["data_source"] = data_source
-    expected_dict["campaign_name"] = campaign_name
-    expected_dict["station_name"] = station_name
-    assert expected_dict == dictionary
-
-    # remove dictionary
-    if os.path.exists(fpath):
-        os.remove(fpath)
-
-
-#
+    # Read both files and check are equally
+    src_dict = read_yaml(raw_metadata_fpath)
+    dst_dict = read_yaml(dst_metadata_fpath)
+    assert src_dict == dst_dict

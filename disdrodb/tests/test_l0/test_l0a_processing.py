@@ -527,18 +527,14 @@ def test_check_df_sanitizer_fun():
         _check_df_sanitizer_fun(bad_fun2)
 
 
-def test_write_l0a():
+def test_write_l0a(tmp_path):
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")
     df["time"] = pd.Timestamp.now()
 
     # Write parquet file
-    path_parquet_file = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "fake_data_sample.parquet",
-    )
+    path_parquet_file = os.path.join(tmp_path, "fake_data_sample.parquet")
     l0a_processing.write_l0a(df, path_parquet_file, True, False)
 
     # Read parquet file

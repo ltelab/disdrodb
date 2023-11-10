@@ -139,7 +139,7 @@ def _run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
             product="L0A",
             data_source=data_source,
             campaign_name=campaign_name,
-            check_exist=False,
+            check_exists=False,
         )
         # Call the reader
         reader(

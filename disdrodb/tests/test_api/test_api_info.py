@@ -40,6 +40,7 @@ from disdrodb.api.info import (
     infer_data_source_from_path,
     infer_disdrodb_tree_path,
     infer_disdrodb_tree_path_components,
+    infer_path_info_dict,
 )
 
 # Constants for testing
@@ -173,6 +174,21 @@ def test_infer_campaign_name_from_path():
     path = os.path.join("whatever_path", "is", "not", "valid")
     with pytest.raises(ValueError):
         infer_campaign_name_from_path(path)
+
+
+def test_infer_path_info_dict():
+    # Assert retrieve correct
+    base_dir = os.path.join("whatever_path", "DISDRODB")
+    path = os.path.join(base_dir, "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
+    info_dict = infer_path_info_dict(path)
+    info_dict["campaign_name"] == "CAMPAIGN_NAME"
+    info_dict["data_source"] == "DATA_SOURCE"
+    info_dict["base_dir"] == base_dir
+
+    # Assert raise error if path stop at Raw or Processed
+    path = os.path.join("whatever_path", "DISDRODB", "Raw")
+    with pytest.raises(ValueError):
+        infer_path_info_dict(path)
 
 
 def test_get_info_from_filepath(valid_filepath):

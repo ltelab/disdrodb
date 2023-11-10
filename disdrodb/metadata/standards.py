@@ -31,8 +31,6 @@ def get_valid_metadata_keys() -> list:
     # - the disdrodb-data repository
     # - disdrodb/data/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/metadata/*.yml
     # - disdrodb/tests/data/check_readers/DISDRODB/Raw/*/*/metadata/10.yml
-    # - disdrodb/tests/data/test_dir_creation/metadata/123.yml
-    # - disdrodb/tests/data/test_dir_creation/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml
     # - /disdrodb/tests/data/test_dir_structure/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml
     list_attrs = [
         ## Mandatory fields

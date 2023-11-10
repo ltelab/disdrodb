@@ -65,8 +65,10 @@ def check_url(url: str) -> bool:
 
 def check_base_dir(base_dir: str):
     """Raise an error if the path does not end with "DISDRODB"."""
+    base_dir = str(base_dir)  # convert Pathlib to string
     if not base_dir.endswith("DISDRODB"):
         raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
+    return base_dir
 
 
 def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:

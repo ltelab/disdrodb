@@ -18,11 +18,9 @@
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 configuration files."""
 
-import os
 
 import pytest
 
-from disdrodb import __root_path__
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.l0.check_configs import (
     _check_bin_consistency,
@@ -34,8 +32,6 @@ from disdrodb.l0.check_configs import (
     check_all_sensors_configs,
     check_l0b_encoding,
 )
-
-TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
 
 @pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))

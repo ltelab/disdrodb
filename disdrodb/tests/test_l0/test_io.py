@@ -28,7 +28,6 @@ import xarray as xr
 
 from disdrodb import __root_path__
 from disdrodb.l0 import io
-from disdrodb.l0.create_directories import _get_default_metadata_dict, write_default_metadata
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
@@ -197,17 +196,13 @@ def test_get_raw_file_list():
 ####--------------------------------------------------------------------------.
 
 
-def test__read_l0a():
+def test__read_l0a(tmp_path):
     # create dummy dataframe
     data = [{"a": "1", "b": "2"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data)
 
     # save dataframe to parquet file
-    path_parquet_file = os.path.join(
-        TEST_DATA_DIR,
-        "test_dir_creation",
-        "fake_data_sample.parquet",
-    )
+    path_parquet_file = os.path.join(tmp_path, "fake_data_sample.parquet")
     df.to_parquet(path_parquet_file, compression="gzip")
 
     # read written parquet file
@@ -216,7 +211,7 @@ def test__read_l0a():
     assert df.equals(df_written)
 
 
-def test_read_l0a_dataframe():
+def test_read_l0a_dataframe(tmp_path):
     list_of_parquet_file_paths = list()
 
     for i in [0, 1]:
@@ -227,8 +222,7 @@ def test_read_l0a_dataframe():
 
         # save dataframe to parquet file
         path_parquet_file = os.path.join(
-            TEST_DATA_DIR,
-            "test_dir_creation",
+            tmp_path,
             f"fake_data_sample_{i}.parquet",
         )
         df.to_parquet(path_parquet_file, compression="gzip")
@@ -256,29 +250,3 @@ def test_read_l0a_dataframe():
     comparison = df_written_list == df_concatenate_list
 
     assert comparison
-
-
-def test_read_metadata():
-    raw_dir = os.path.join(TEST_DATA_DIR, "test_dir_creation")
-    station_name = "123"
-
-    metadata_folder_path = os.path.join(raw_dir, "metadata")
-
-    if not os.path.exists(metadata_folder_path):
-        os.makedirs(metadata_folder_path)
-
-    metadata_path = os.path.join(metadata_folder_path, f"{station_name}.yml")
-
-    if os.path.exists(metadata_path):
-        os.remove(metadata_path)
-
-    # create data
-    data = _get_default_metadata_dict()
-
-    # create metadata file
-    write_default_metadata(str(metadata_path))
-
-    # Read the metadata file
-    function_return = io.read_metadata(raw_dir, station_name)
-
-    assert function_return == data
