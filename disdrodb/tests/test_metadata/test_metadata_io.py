@@ -22,13 +22,12 @@ import os
 
 import pytest
 
-from disdrodb.api.io import define_metadata_filepath
+from disdrodb.api.path import define_metadata_filepath
 from disdrodb.metadata.io import (
-    _define_default_metadata_dict,
+    _create_default_metadata_dict,
     _get_list_all_metadata,
     _get_list_metadata_with_data,
     create_station_metadata,
-    # _define_default_metadata_dict,
     get_list_metadata,
     read_station_metadata,
     write_default_metadata,
@@ -203,7 +202,7 @@ def test_get_list_metadata_file(tmp_path):
 
 
 def test_get_default_metadata():
-    assert isinstance(_define_default_metadata_dict(), dict)
+    assert isinstance(_create_default_metadata_dict(), dict)
 
 
 def test_write_default_metadata(tmp_path):
@@ -233,7 +232,7 @@ def test_write_default_metadata(tmp_path):
     dictionary = read_yaml(str(metadata_filepath))
 
     # Check is the expected dictionary
-    expected_dict = _define_default_metadata_dict()
+    expected_dict = _create_default_metadata_dict()
     expected_dict["data_source"] = data_source
     expected_dict["campaign_name"] = campaign_name
     expected_dict["station_name"] = station_name

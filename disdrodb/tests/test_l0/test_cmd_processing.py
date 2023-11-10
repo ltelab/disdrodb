@@ -25,7 +25,7 @@ import pytest
 from click.testing import CliRunner
 
 from disdrodb import __root_path__
-from disdrodb.api.io import define_station_dir
+from disdrodb.api.path import define_station_dir
 from disdrodb.utils.directories import list_files
 
 BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")

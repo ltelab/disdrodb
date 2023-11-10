@@ -27,7 +27,7 @@ import zipfile
 from typing import Optional
 
 from disdrodb.api.checks import check_base_dir
-from disdrodb.api.io import define_station_dir
+from disdrodb.api.path import define_station_dir
 from disdrodb.utils.directories import list_files
 
 

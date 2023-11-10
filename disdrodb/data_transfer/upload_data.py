@@ -22,7 +22,7 @@ from typing import List, Optional
 
 import click
 
-from disdrodb.api.io import define_metadata_filepath
+from disdrodb.api.path import define_metadata_filepath
 from disdrodb.data_transfer.zenodo import upload_archive_to_zenodo, upload_station_to_zenodo
 from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.yaml import read_yaml

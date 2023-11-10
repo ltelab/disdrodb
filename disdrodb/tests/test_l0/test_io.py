@@ -18,124 +18,14 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0 Input/Output routines."""
 
-import datetime
 import os
 
-import numpy as np
 import pandas as pd
 import pytest
-import xarray as xr
 
-from disdrodb.api.io import define_campaign_dir
+from disdrodb.api.path import define_campaign_dir
 from disdrodb.l0 import io
 from disdrodb.tests.conftest import create_fake_raw_data_file
-
-PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\Processed"
-PROCESSED_FOLDER_LINUX = "/DISDRODB/Processed"
-
-
-def test__get_dataset_min_max_time():
-    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
-    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
-    df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
-    res = io._get_dataset_min_max_time(df)
-    assert all(pd.to_datetime(res, format="%Y-%m-%d") == [start_date, end_date])
-
-
-@pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
-def test_get_l0a_dir(processed_folder):
-    res = (
-        io.get_l0a_dir(processed_folder, "STATION_NAME")
-        .replace(processed_folder, "")
-        .replace("\\", "")
-        .replace("/", "")
-    )
-    assert res == "L0ASTATION_NAME"
-
-
-@pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
-def test_get_l0b_dir(processed_folder):
-    res = (
-        io.get_l0b_dir(processed_folder, "STATION_NAME")
-        .replace(processed_folder, "")
-        .replace("\\", "")
-        .replace("/", "")
-    )
-    assert res == "L0BSTATION_NAME"
-
-
-def test_get_l0a_filepath(tmp_path):
-    from disdrodb.l0.standards import PRODUCT_VERSION
-
-    # Set variables
-    product = "L0A"
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "STATION_NAME"
-    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
-    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
-    start_date_str = start_date.strftime("%Y%m%d%H%M%S")
-    end_date_str = end_date.strftime("%Y%m%d%H%M%S")
-
-    # Set paths
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
-    )
-
-    # Create dataframe
-    df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
-
-    # Test the function
-    res = io.get_l0a_filepath(df, processed_dir, station_name)
-
-    # Define expected results
-    expected_name = (
-        f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.parquet"
-    )
-    expected_path = os.path.join(processed_dir, product, station_name, expected_name)
-    assert res == expected_path
-
-
-def test_get_l0b_filepath(tmp_path):
-    from disdrodb.l0.standards import PRODUCT_VERSION
-
-    # Set variables
-
-    product = "L0B"
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "STATION_NAME"
-    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
-    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
-    start_date_str = start_date.strftime("%Y%m%d%H%M%S")
-    end_date_str = end_date.strftime("%Y%m%d%H%M%S")
-
-    # Set paths
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
-    )
-
-    # Create xarray object
-    timesteps = pd.date_range(start=start_date, end=end_date)
-    data = np.zeros(timesteps.shape)
-    ds = xr.DataArray(
-        data=data,
-        dims=["time"],
-        coords={"time": pd.date_range(start=start_date, end=end_date)},
-    )
-
-    # Test the function
-    res = io.get_l0b_filepath(ds, processed_dir, station_name)
-
-    # Define expected results
-    expected_name = (
-        f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
-    )
-    expected_path = os.path.join(processed_dir, product, station_name, expected_name)
-    assert res == expected_path
-
 
 ####--------------------------------------------------------------------------.
 

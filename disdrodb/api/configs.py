@@ -22,7 +22,7 @@ import logging
 import os
 
 from disdrodb.api.checks import check_product, check_sensor_name
-from disdrodb.api.io import define_config_dir
+from disdrodb.api.path import define_config_dir
 from disdrodb.utils.yaml import read_yaml
 
 logger = logging.getLogger(__name__)

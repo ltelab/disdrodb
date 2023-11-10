@@ -16,37 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""YAML utility."""
+"""Xarray utility."""
 
-import yaml
+import xarray as xr 
 
 
-def read_yaml(filepath: str) -> dict:
-    """Read a YAML file into a dictionary.
+def get_dataset_start_end_time(ds: xr.Dataset):
+    """Retrieves dataset starting and ending time.
 
     Parameters
     ----------
-    filepath : str
-        Input YAML file path.
+    ds : xr.Dataset
+        Input dataset
 
     Returns
     -------
-    dict
-        Dictionary with the attributes read from the YAML file.
+    tuple
+        (starting_time, ending_time)
+
     """
-    with open(filepath) as f:
-        dictionary = yaml.safe_load(f)
-    return dictionary
-
-
-def write_yaml(dictionary, filepath, sort_keys=False):
-    """Write a dictionary into a YAML file.
-
-    Parameters
-    ----------
-    dictionary : dict
-        Dictionary to write into a YAML file.
-    """
-    with open(filepath, "w") as f:
-        yaml.dump(dictionary, f, sort_keys=sort_keys)
-    return None
+    starting_time = ds["time"].values[0]
+    ending_time = ds["time"].values[-1]
+    return (starting_time, ending_time)

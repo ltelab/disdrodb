@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from disdrodb.api.io import define_campaign_dir
+from disdrodb.api.path import define_campaign_dir
 from disdrodb.l0.l0_processing import run_l0b_concat
 from disdrodb.l0.routines import run_disdrodb_l0b_concat
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_station_dir

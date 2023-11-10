@@ -23,43 +23,48 @@ import os
 
 import pytest
 
-from disdrodb.api import checks
+from disdrodb.api.checks import (
+    check_base_dir,
+    check_path,
+    check_sensor_name,
+    check_url,
+)
 
 
 def test_check_path():
     # Test a valid path
     path = os.path.abspath(__file__)
-    assert checks.check_path(path) is None
+    assert check_path(path) is None
 
     # Test an invalid path
     path = "/path/that/does/not/exist"
     with pytest.raises(FileNotFoundError):
-        checks.check_path(path)
+        check_path(path)
 
 
 def test_check_url():
     # Test with valid URLs
-    assert checks.check_url("https://www.example.com") is True
-    assert checks.check_url("http://example.com/path/to/file.html?param=value") is True
-    assert checks.check_url("www.example.com") is True
-    assert checks.check_url("example.com") is True
+    assert check_url("https://www.example.com") is True
+    assert check_url("http://example.com/path/to/file.html?param=value") is True
+    assert check_url("www.example.com") is True
+    assert check_url("example.com") is True
 
     # Test with invalid URLs
-    assert checks.check_url("ftp://example.com") is False
-    assert checks.check_url("htp://example.com") is False
-    assert checks.check_url("http://example.com/path with spaces") is False
+    assert check_url("ftp://example.com") is False
+    assert check_url("htp://example.com") is False
+    assert check_url("http://example.com/path with spaces") is False
 
 
 def test_check_base_dir():
     from pathlib import Path
 
-    base_dir = os.path("path", "to", "DISDRODB")
-    assert checks.check_base_dir(base_dir) == base_dir
+    base_dir = os.path.join("path", "to", "DISDRODB")
+    assert check_base_dir(base_dir) == base_dir
 
-    assert checks.check_base_dir(Path(base_dir)) == base_dir
+    assert check_base_dir(Path(base_dir)) == base_dir
 
     with pytest.raises(ValueError):
-        checks.check_base_dir("/path/to/DISDRO")
+        check_base_dir("/path/to/DISDRO")
 
 
 def test_check_sensor_name():
@@ -67,8 +72,8 @@ def test_check_sensor_name():
 
     # Test with an unknown device
     with pytest.raises(ValueError):
-        checks.check_sensor_name(sensor_name)
+        check_sensor_name(sensor_name)
 
     # Test with a woronf type
     with pytest.raises(TypeError):
-        checks.check_sensor_name(123)
+        check_sensor_name(123)

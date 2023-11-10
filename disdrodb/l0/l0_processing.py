@@ -29,7 +29,12 @@ import dask.bag as db
 
 from disdrodb.api.checks import check_sensor_name
 from disdrodb.api.info import infer_path_info_dict
-from disdrodb.api.io import get_disdrodb_path
+from disdrodb.api.path import (
+    define_l0a_filepath,
+    define_l0b_filepath,
+    define_l0b_station_dir,
+    get_disdrodb_path,
+)
 from disdrodb.configs import get_base_dir
 
 # Directory
@@ -38,10 +43,7 @@ from disdrodb.l0.create_directories import (
     create_initial_directory_structure,
 )
 from disdrodb.l0.io import (
-    get_l0a_filepath,
     get_l0a_filepaths,
-    get_l0b_dir,
-    get_l0b_filepath,
     get_raw_filepaths,
     read_l0a_dataframe,
 )
@@ -150,7 +152,7 @@ def _generate_l0a(
 
         ##--------------------------------------------------------------------.
         #### - Write to Parquet
-        filepath = get_l0a_filepath(df=df, processed_dir=processed_dir, station_name=station_name)
+        filepath = define_l0a_filepath(df=df, processed_dir=processed_dir, station_name=station_name)
         write_l0a(df=df, filepath=filepath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
@@ -226,7 +228,7 @@ def _generate_l0b(
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        filepath = get_l0b_filepath(ds, processed_dir, station_name)
+        filepath = define_l0b_filepath(ds, processed_dir, station_name)
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -301,7 +303,7 @@ def _generate_l0b_from_nc(
         )
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        filepath = get_l0b_filepath(ds, processed_dir, station_name)
+        filepath = define_l0b_filepath(ds, processed_dir, station_name)
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -804,7 +806,7 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
 
     # -------------------------------------------------------------------------.
     # Retrieve L0B files
-    station_dir = get_l0b_dir(processed_dir, station_name)
+    station_dir = define_l0b_station_dir(processed_dir, station_name)
     filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
     filepaths = sorted(filepaths)
 
@@ -826,7 +828,7 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
 
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
-    single_nc_filepath = get_l0b_filepath(ds, processed_dir, station_name, l0b_concat=True)
+    single_nc_filepath = define_l0b_filepath(ds, processed_dir, station_name, l0b_concat=True)
     force = True  # TODO add as argument
     write_l0b(ds, filepath=single_nc_filepath, force=force)
 

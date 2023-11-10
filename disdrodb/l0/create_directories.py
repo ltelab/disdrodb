@@ -26,7 +26,7 @@ import os
 import shutil
 
 from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
-from disdrodb.api.io import define_metadata_dir, define_station_dir
+from disdrodb.api.path import define_metadata_dir, define_station_dir
 from disdrodb.utils.directories import (
     check_directory_exists,
     copy_file,

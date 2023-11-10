@@ -386,7 +386,7 @@ def run_disdrodb_l0_station(
         Base directory of DISDRODB. Format: <...>/DISDRODB
         If None (the default), the disdrodb config variable 'dir' is used.
     """
-    from disdrodb.api.io import get_disdrodb_path
+    from disdrodb.api.path import get_disdrodb_path
 
     # ---------------------------------------------------------------------.
     t_i = time.time()

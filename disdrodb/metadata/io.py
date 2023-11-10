@@ -22,7 +22,7 @@ import glob
 import os
 
 from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
-from disdrodb.api.io import define_metadata_filepath
+from disdrodb.api.path import define_metadata_filepath
 from disdrodb.configs import get_base_dir
 from disdrodb.metadata.manipulation import sort_metadata_dictionary
 from disdrodb.metadata.standards import get_valid_metadata_keys
@@ -245,7 +245,7 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
 
 ####--------------------------------------------------------------------------.
 #### Default (empty) metadata
-def _define_default_metadata_dict() -> dict:
+def _create_default_metadata_dict() -> dict:
     """Get DISDRODB metadata default values.
 
     Returns
@@ -275,7 +275,7 @@ def write_default_metadata(filepath: str) -> None:
         File path
     """
     # Get default metadata dict
-    metadata = _define_default_metadata_dict()
+    metadata = _create_default_metadata_dict()
 
     # Try infer the data_source, campaign_name and station_name from filepath
     try:

@@ -43,7 +43,7 @@ def create_fake_metadata_file(
     campaign_name="CAMPAIGN_NAME",
     station_name="station_name",
 ):
-    from disdrodb.api.io import define_metadata_filepath
+    from disdrodb.api.path import define_metadata_filepath
 
     # Define metadata filepath
     metadata_filepath = define_metadata_filepath(

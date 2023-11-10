@@ -24,7 +24,7 @@ import shutil
 import pandas as pd
 
 from disdrodb import __root_path__
-from disdrodb.api.io import get_disdrodb_path
+from disdrodb.api.path import get_disdrodb_path
 from disdrodb.l0.l0_reader import get_station_reader_function
 from disdrodb.utils.directories import list_files
 

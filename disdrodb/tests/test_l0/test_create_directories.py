@@ -21,7 +21,7 @@ import os
 
 import pytest
 
-from disdrodb.api.io import (
+from disdrodb.api.path import (
     define_campaign_dir,
     define_metadata_dir,
     define_metadata_filepath,

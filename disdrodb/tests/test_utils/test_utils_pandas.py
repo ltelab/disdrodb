@@ -16,37 +16,18 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""YAML utility."""
+"""Test Pandas utility."""
 
-import yaml
+import datetime
+import pandas as pd
+ 
 
-
-def read_yaml(filepath: str) -> dict:
-    """Read a YAML file into a dictionary.
-
-    Parameters
-    ----------
-    filepath : str
-        Input YAML file path.
-
-    Returns
-    -------
-    dict
-        Dictionary with the attributes read from the YAML file.
-    """
-    with open(filepath) as f:
-        dictionary = yaml.safe_load(f)
-    return dictionary
+from disdrodb.utils.pandas import get_dataframe_start_end_time
 
 
-def write_yaml(dictionary, filepath, sort_keys=False):
-    """Write a dictionary into a YAML file.
-
-    Parameters
-    ----------
-    dictionary : dict
-        Dictionary to write into a YAML file.
-    """
-    with open(filepath, "w") as f:
-        yaml.dump(dictionary, f, sort_keys=sort_keys)
-    return None
+def test_get_dataframe_start_end_time():
+    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
+    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
+    df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
+    res = get_dataframe_start_end_time(df)
+    assert all(pd.to_datetime(res, format="%Y-%m-%d") == [start_date, end_date])

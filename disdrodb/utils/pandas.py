@@ -16,37 +16,26 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""YAML utility."""
+"""Pandas utility."""
 
-import yaml
+import pandas as pd
 
 
-def read_yaml(filepath: str) -> dict:
-    """Read a YAML file into a dictionary.
+def get_dataframe_start_end_time(df: pd.DataFrame):
+    """Retrieves dataframe starting and ending time.
 
     Parameters
     ----------
-    filepath : str
-        Input YAML file path.
+    df : pd.DataFrame
+        Input dataframe
 
     Returns
     -------
-    dict
-        Dictionary with the attributes read from the YAML file.
+    tuple
+        (starting_time, ending_time)
+
     """
-    with open(filepath) as f:
-        dictionary = yaml.safe_load(f)
-    return dictionary
 
-
-def write_yaml(dictionary, filepath, sort_keys=False):
-    """Write a dictionary into a YAML file.
-
-    Parameters
-    ----------
-    dictionary : dict
-        Dictionary to write into a YAML file.
-    """
-    with open(filepath, "w") as f:
-        yaml.dump(dictionary, f, sort_keys=sort_keys)
-    return None
+    starting_time = df["time"].iloc[0]
+    ending_time = df["time"].iloc[-1]
+    return (starting_time, ending_time)
