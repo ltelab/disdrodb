@@ -112,23 +112,23 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) 
     # Get src and dst metadata directory
     raw_metadata_dir = os.path.join(raw_dir, "metadata")
     processed_metadata_dir = os.path.join(processed_dir, "metadata")
-    # Retrieve the metadata fpath in the raw directory
-    metadata_fname = f"{station_name}.yml"
-    raw_metadata_fpath = os.path.join(raw_metadata_dir, metadata_fname)
+    # Retrieve the metadata filepath in the raw directory
+    metadata_filename = f"{station_name}.yml"
+    raw_metadata_filepath = os.path.join(raw_metadata_dir, metadata_filename)
     # Check the metadata exists
-    if not os.path.isfile(raw_metadata_fpath):
-        raise ValueError(f"No metadata available for {station_name} at {raw_metadata_fpath}")
-    # Define the destination fpath
-    processed_metadata_fpath = os.path.join(processed_metadata_dir, os.path.basename(raw_metadata_fpath))
+    if not os.path.isfile(raw_metadata_filepath):
+        raise ValueError(f"No metadata available for {station_name} at {raw_metadata_filepath}")
+    # Define the destination filepath
+    processed_metadata_filepath = os.path.join(processed_metadata_dir, os.path.basename(raw_metadata_filepath))
     # Copy the metadata file
-    copy_file(src_fpath=raw_metadata_fpath, dst_fpath=processed_metadata_fpath)
+    copy_file(src_filepath=raw_metadata_filepath, dst_filepath=processed_metadata_filepath)
     return None
 
 
 def _check_pre_existing_station_data(campaign_dir, product, station_name, force=False):
     """Check for pre-existing station data.
 
-    - If force=True, remove all data inside the station folder.
+    - If force=True, remove all data inside the station directory.
     - If force=False, raise error.
 
     NOTE: force=False behaviour could be changed to enable updating of missing files.
@@ -146,7 +146,7 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
     station_dir = os.path.join(campaign_dir, product, station_name)
 
     # If the station data are already present:
-    # - If force=True, remove all data inside the station folder
+    # - If force=True, remove all data inside the station directory
     # - If force=False, raise error
     if station_already_present:
         # Check is a directory

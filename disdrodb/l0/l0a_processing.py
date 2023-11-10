@@ -86,12 +86,12 @@ def _preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     return reader_kwargs
 
 
-def read_raw_data(
+def read_raw_file(
     filepath: str,
     column_names: list,
     reader_kwargs: dict,
 ) -> pd.DataFrame:
-    """Read raw data into a dataframe.
+    """Read a raw file into a dataframe.
 
     Parameters
     ----------
@@ -613,7 +613,7 @@ def process_raw_file(
     _check_df_sanitizer_fun(df_sanitizer_fun)
 
     # Read the data
-    df = read_raw_data(
+    df = read_raw_file(
         filepath=filepath,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
@@ -680,7 +680,7 @@ def process_raw_file(
 
 def write_l0a(
     df: pd.DataFrame,
-    fpath: str,
+    filepath: str,
     force: bool = False,
     verbose: bool = False,
 ):
@@ -690,7 +690,7 @@ def write_l0a(
     ----------
     df : pd.DataFrame
         Input dataframe.
-    fpath : str
+    filepath : str
         Output file path.
     force : bool, optional
         Whether to overwrite existing data.
@@ -710,12 +710,12 @@ def write_l0a(
 
     # -------------------------------------------------------------------------.
     # Create station directory if does not exist
-    create_directory(os.path.dirname(fpath))
+    create_directory(os.path.dirname(filepath))
 
     # Check if the file already exists
     # - If force=True --> Remove it
     # - If force=False --> Raise error
-    remove_if_exists(fpath, force=force)
+    remove_if_exists(filepath, force=force)
 
     # -------------------------------------------------------------------------.
     # Define writing options
@@ -726,12 +726,12 @@ def write_l0a(
     # Save dataframe to Apache Parquet
     try:
         df.to_parquet(
-            fpath,
+            filepath,
             engine=engine,
             compression=compression,
             row_group_size=row_group_size,
         )
-        msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {fpath}."
+        msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {filepath}."
         log_info(logger=logger, msg=msg, verbose=False)
     except Exception as e:
         msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."

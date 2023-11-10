@@ -90,11 +90,11 @@ def _create_zenodo_deposition(sandbox) -> Tuple[int, str]:
     return deposit_id, deposit_url, bucket_url
 
 
-def _upload_file_to_zenodo(filepath: str, metadata_fpath: str, sandbox: bool) -> None:
+def _upload_file_to_zenodo(filepath: str, metadata_filepath: str, sandbox: bool) -> None:
     """Upload a file to a Zenodo bucket."""
 
     # Read metadata
-    metadata = read_yaml(metadata_fpath)
+    metadata = read_yaml(metadata_filepath)
     data_source = metadata["data_source"]
     campaign_name = metadata["campaign_name"]
 
@@ -182,63 +182,63 @@ def _define_zenodo_metadata(metadata):
     return zenodo_metadata
 
 
-def _update_metadata_with_zenodo_url(metadata_fpath: str, disdrodb_data_url: str) -> None:
+def _update_metadata_with_zenodo_url(metadata_filepath: str, disdrodb_data_url: str) -> None:
     """Update metadata with Zenodo zip file url.
 
     Parameters
     ----------
-    metadata_fpath: str
+    metadata_filepath: str
         Metadata file path.
     disdrodb_data_url: str
         Remote URL where the station data are stored.
     """
-    metadata_dict = read_yaml(metadata_fpath)
+    metadata_dict = read_yaml(metadata_filepath)
     metadata_dict["disdrodb_data_url"] = disdrodb_data_url
-    write_yaml(metadata_dict, metadata_fpath)
+    write_yaml(metadata_dict, metadata_filepath)
 
 
-def upload_station_to_zenodo(metadata_fpath: str, sandbox: bool = True) -> str:
+def upload_station_to_zenodo(metadata_filepath: str, sandbox: bool = True) -> str:
     """Zip station data, upload data to Zenodo and update the metadata disdrodb_data_url.
 
     Parameters
     ----------
-    metadata_fpath: str
+    metadata_filepath: str
         Metadata file path.
     sandbox: bool
         If True, upload to Zenodo Sandbox for testing purposes.
     """
     # Zip station data
-    station_zip_fpath = archive_station_data(metadata_fpath)
+    station_zip_filepath = archive_station_data(metadata_filepath)
 
     # Upload the station data zip file on Zenodo
     # - After upload, it removes the zip file !
     try:
         disdrodb_data_url = _upload_file_to_zenodo(
-            filepath=station_zip_fpath, metadata_fpath=metadata_fpath, sandbox=sandbox
+            filepath=station_zip_filepath, metadata_filepath=metadata_filepath, sandbox=sandbox
         )
-        os.remove(station_zip_fpath)
+        os.remove(station_zip_filepath)
     except Exception as e:
-        os.remove(station_zip_fpath)
+        os.remove(station_zip_filepath)
         raise ValueError(f"The upload on Zenodo has failed: {e}.")
 
     # Add the disdrodb_data_url information to the metadata
-    _update_metadata_with_zenodo_url(metadata_fpath=metadata_fpath, disdrodb_data_url=disdrodb_data_url)
+    _update_metadata_with_zenodo_url(metadata_filepath=metadata_filepath, disdrodb_data_url=disdrodb_data_url)
 
 
-def upload_archive_to_zenodo(metadata_fpaths: List[str], sandbox: bool = True) -> None:
+def upload_archive_to_zenodo(metadata_filepaths: List[str], sandbox: bool = True) -> None:
     """Upload data to Zenodo Sandbox.
 
     Parameters
     ----------
-    metadata_fpaths: list of str
+    metadata_filepaths: list of str
         List of metadata file paths.
     sandbox: bool
         If True, upload to Zenodo Sandbox for testing purposes.
     """
-    for metadata_fpath in metadata_fpaths:
+    for metadata_filepath in metadata_filepaths:
         try:
             # Upload station data
-            upload_station_to_zenodo(metadata_fpath, sandbox=sandbox)
+            upload_station_to_zenodo(metadata_filepath, sandbox=sandbox)
         except Exception as e:
             print(f"{e}")
 

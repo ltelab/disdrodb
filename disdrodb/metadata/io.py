@@ -56,7 +56,7 @@ def read_station_metadata(data_source, campaign_name, station_name, base_dir=Non
 
     """
     # Retrieve metadata filepath
-    metadata_fpath = define_metadata_filepath(
+    metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -64,7 +64,7 @@ def read_station_metadata(data_source, campaign_name, station_name, base_dir=Non
         product=product,
         check_exists=True,
     )
-    metadata_dict = read_yaml(metadata_fpath)
+    metadata_dict = read_yaml(metadata_filepath)
     return metadata_dict
 
 
@@ -100,7 +100,7 @@ def get_list_metadata(
 
     Returns
     -------
-    metadata_fpaths: list
+    metadata_filepaths: list
         List of metadata YAML file paths
 
     """
@@ -148,11 +148,11 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
 
     Returns
     -------
-    metadata_fpaths: list
+    metadata_filepaths: list
         List of metadata YAML file paths
 
     """
-    # Get all config files from the metadata folders
+    # Get all config files from the metadata directories
     list_of_base_path = []
     if data_sources:
         if isinstance(data_sources, str):
@@ -170,22 +170,19 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
             base_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
             list_of_base_path.append(base_path)
 
-    metadata_folder_name = "metadata"
-
-    metadata_fpaths = []
-
+    metadata_filepaths = []
     for base_path in list_of_base_path:
         if station_names:
             if isinstance(station_names, str):
                 station_names = [station_names]
             for station_name in station_names:
-                metadata_path = os.path.join(base_path, "**", metadata_folder_name, f"{station_name}.yml")
-                metadata_fpaths += glob.glob(metadata_path, recursive=True)
+                metadata_path = os.path.join(base_path, "**", "metadata", f"{station_name}.yml")
+                metadata_filepaths += glob.glob(metadata_path, recursive=True)
         else:
-            metadata_path = os.path.join(base_path, "**", metadata_folder_name, "*.yml")
-            metadata_fpaths += glob.glob(metadata_path, recursive=True)
+            metadata_path = os.path.join(base_path, "**", "metadata", "*.yml")
+            metadata_filepaths += glob.glob(metadata_path, recursive=True)
 
-    return list(set(metadata_fpaths))
+    return list(set(metadata_filepaths))
 
 
 def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=None, station_names=None):
@@ -211,7 +208,7 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
 
     Returns
     -------
-    metadata_fpaths: list
+    metadata_filepaths: list
         List of metadata YAML file paths
 
     """
@@ -238,12 +235,12 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
         raise ValueError("No stations are available !")
 
     # Get metadata filepaths
-    metadata_fpaths = [
+    metadata_filepaths = [
         os.path.join(base_dir, "Raw", data_source, campaign_name, "metadata", (station_name + ".yml"))
         for data_source, campaign_name, station_name in list_info
     ]
 
-    return metadata_fpaths
+    return metadata_filepaths
 
 
 ####--------------------------------------------------------------------------.
@@ -269,22 +266,22 @@ def _define_default_metadata_dict() -> dict:
     return attrs
 
 
-def write_default_metadata(fpath: str) -> None:
+def write_default_metadata(filepath: str) -> None:
     """Create default YAML metadata file at the specified filepath.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         File path
     """
     # Get default metadata dict
     metadata = _define_default_metadata_dict()
 
-    # Try infer the data_source, campaign_name and station_name from fpath
+    # Try infer the data_source, campaign_name and station_name from filepath
     try:
-        campaign_name = infer_campaign_name_from_path(fpath)
-        data_source = infer_data_source_from_path(fpath)
-        station_name = os.path.basename(fpath).split(".yml")[0]
+        campaign_name = infer_campaign_name_from_path(filepath)
+        data_source = infer_data_source_from_path(filepath)
+        station_name = os.path.basename(filepath).split(".yml")[0]
         metadata["data_source"] = data_source
         metadata["campaign_name"] = campaign_name
         metadata["station_name"] = station_name
@@ -293,7 +290,7 @@ def write_default_metadata(fpath: str) -> None:
 
     # Write the metadata
     metadata = sort_metadata_dictionary(metadata)
-    write_yaml(metadata, fpath=fpath, sort_keys=False)
+    write_yaml(metadata, filepath=filepath, sort_keys=False)
     return None
 
 
@@ -326,7 +323,7 @@ def create_station_metadata(data_source, campaign_name, station_name, base_dir=N
 
     """
     # Define metadata filepath
-    metadata_fpath = define_metadata_filepath(
+    metadata_filepath = define_metadata_filepath(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -334,12 +331,12 @@ def create_station_metadata(data_source, campaign_name, station_name, base_dir=N
         product=product,
         check_exists=False,
     )
-    if os.path.exists(metadata_fpath):
-        raise ValueError("A metadata YAML file already exists at {metadata_fpath}.")
+    if os.path.exists(metadata_filepath):
+        raise ValueError("A metadata YAML file already exists at {metadata_filepath}.")
     # Create metadata dir if not existing
-    metadata_dir = os.path.dirname(metadata_fpath)
+    metadata_dir = os.path.dirname(metadata_filepath)
     os.makedirs(metadata_dir, exist_ok=True)
     # Write metadata file
-    write_default_metadata(fpath=metadata_fpath)
+    write_default_metadata(filepath=metadata_filepath)
     print(f"An empty metadata for station {station_name} has been created .")
     return None

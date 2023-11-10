@@ -175,9 +175,9 @@ class TestIsEmptyDirectory:
 
 
 def test_create_directory(tmp_path):
-    temp_folder = os.path.join(tmp_path, "temp_folder")
-    create_directory(temp_folder)
-    if os.path.exists(temp_folder):
+    temp_dir = os.path.join(tmp_path, "temp_dir")
+    create_directory(temp_dir)
+    if os.path.exists(temp_dir):
         res = True
     else:
         res = False
@@ -185,9 +185,9 @@ def test_create_directory(tmp_path):
 
 
 def test_remove_if_exists_empty_directory(tmp_path):
-    tmp_directory = os.path.join(tmp_path, "temp_folder")
+    tmp_directory = os.path.join(tmp_path, "temp_dir")
 
-    # Create empty folder if not exists
+    # Create empty directory if not exists
     if not os.path.exists(tmp_directory):
         create_directory(tmp_directory)
 
@@ -195,7 +195,7 @@ def test_remove_if_exists_empty_directory(tmp_path):
     with pytest.raises(ValueError):
         remove_if_exists(tmp_directory, force=False)
 
-    # Check it removes the folder
+    # Check it removes the directory
     remove_if_exists(tmp_directory, force=True)
 
     # Test the removal
@@ -210,7 +210,7 @@ def test_remove_if_exists_file(tmp_path):
     with pytest.raises(ValueError):
         remove_if_exists(filepath, force=False)
 
-    # Check it removes the folder
+    # Check it removes the directory
     remove_if_exists(filepath, force=True)
 
     # Test the removal
@@ -219,12 +219,12 @@ def test_remove_if_exists_file(tmp_path):
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
 def test_remove_if_exists_with_shutil(tmp_path):
-    tmp_sub_directory = tmp_path / "subfolder"
+    tmp_sub_directory = tmp_path / "subdirectory"
     tmp_sub_directory.mkdir()
     tmp_filepath = tmp_sub_directory / "test_file.txt"
     tmp_filepath.write_text("This is a test file.")
 
-    # Create empty folder if not exists
+    # Create empty directory if not exists
     if not os.path.exists(tmp_sub_directory):
         create_directory(tmp_sub_directory)
 
@@ -232,7 +232,7 @@ def test_remove_if_exists_with_shutil(tmp_path):
     with pytest.raises(ValueError):
         remove_if_exists(tmp_path, force=False)
 
-    # Check it removes the folder
+    # Check it removes the directory
     remove_if_exists(tmp_path, force=True)
 
     # Test the removal
@@ -242,10 +242,10 @@ def test_remove_if_exists_with_shutil(tmp_path):
 
 
 def test_remove_path_trailing_slash():
-    path_dir_windows_in = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME\\"
-    path_dir_windows_out = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME"
-    assert remove_path_trailing_slash(path_dir_windows_in) == path_dir_windows_out
+    path_windows_in = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME\\"
+    path_windows_out = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME"
+    assert remove_path_trailing_slash(path_windows_in) == path_windows_out
 
-    path_dir_linux_in = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/"
-    path_dir_linux_out = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME"
-    assert remove_path_trailing_slash(path_dir_linux_in) == path_dir_linux_out
+    path_linux_in = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/"
+    path_linux_out = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME"
+    assert remove_path_trailing_slash(path_linux_in) == path_linux_out

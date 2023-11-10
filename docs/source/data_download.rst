@@ -12,7 +12,7 @@ to the remote data repositiores where the DISDRODB stations are stored.
 Download the official DISDRODB Metadata Archive
 -----------------------------------------------
 
-First travel to the directory where you want to store the DISDRODB Data Archive with :code:`cd <the_root_folder>`
+First travel to the directory where you want to store the DISDRODB Data Archive with :code:`cd <the_root_directory>`
 
 Then clone the DISDRODB Metadata Archive repository with:
 
@@ -38,7 +38,7 @@ You can set the default DISDRODB base directory by running in python:
 
     import disdrodb
 
-    base_dir = "<the_root_folder>/disdrodb-data/DISDRODB>"
+    base_dir = "<the_root_directory>/disdrodb-data/DISDRODB>"
     disdrodb.define_configs(base_dir=base_dir)
 
 By running this command, the disdrodb software will write a ``.config_disdrodb.yml`` file into your home directory (i.e. ``~/.config_disdrodb.yml``)
@@ -50,7 +50,7 @@ In the terminal, you must type the following command:
 
 .. code:: bash
 
-   export DISDRODB_BASE_DIR="<the_root_folder>/disdrodb-data/DISDRODB"
+   export DISDRODB_BASE_DIR="<the_root_directory>/disdrodb-data/DISDRODB"
 
 .. note:: It's important to remember that the environment variable ``DISDRODB_BASE_DIR`` (if defined) will take priority over the default path
           defined in the ``.config_disdrodb.yml`` file.

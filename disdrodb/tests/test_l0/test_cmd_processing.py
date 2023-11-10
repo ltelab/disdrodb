@@ -36,12 +36,12 @@ STATION_NAME = "10"
 
 @pytest.fixture
 def remove_processed_folder(request: list) -> None:
-    path_processed_folder = os.path.join(BASE_DIR, "Processed")
-    if os.path.exists(path_processed_folder):
-        shutil.rmtree(path_processed_folder)
+    processed_folder = os.path.join(BASE_DIR, "Processed")
+    if os.path.exists(processed_folder):
+        shutil.rmtree(processed_folder)
     yield
-    if os.path.exists(path_processed_folder):
-        shutil.rmtree(path_processed_folder)
+    if os.path.exists(processed_folder):
+        shutil.rmtree(processed_folder)
 
 
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)

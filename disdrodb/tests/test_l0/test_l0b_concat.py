@@ -73,25 +73,25 @@ def create_dummy_l0b_file(filepath: str, time):
 
 def test_xr_concat_datasets(tmp_path):
     # Write L0B files
-    filepath_1 = os.path.join(tmp_path, "test_1.nc")
-    filepath_2 = os.path.join(tmp_path, "test_2.nc")
+    filepath1 = os.path.join(tmp_path, "test_1.nc")
+    filepath2 = os.path.join(tmp_path, "test_2.nc")
 
     time_data_1 = np.array(pd.date_range(start="2023-01-01", periods=3, freq="D"))
     time_data_2 = np.array(pd.date_range(start="2023-01-04", periods=3, freq="D"))
 
-    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath2, time=time_data_2)
 
     # Check with file in correct orders
-    fpaths = [filepath_1, filepath_2]
-    ds = xr_concat_datasets(fpaths)
+    filepaths = [filepath1, filepath2]
+    ds = xr_concat_datasets(filepaths)
     time_values = ds["time"].values
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), np.concatenate((time_data_1, time_data_2)).astype(float))
 
     # Check with file in reverse orders
-    fpaths = [filepath_2, filepath_1]
-    ds = xr_concat_datasets(fpaths)
+    filepaths = [filepath2, filepath1]
+    ds = xr_concat_datasets(filepaths)
     time_values = ds["time"].values
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), np.concatenate((time_data_1, time_data_2)).astype(float))
@@ -99,34 +99,34 @@ def test_xr_concat_datasets(tmp_path):
 
 def test_xr_concat_completely_overlapped_datasets(tmp_path):
     # Write L0B files
-    filepath_1 = os.path.join(tmp_path, "test_1.nc")
-    filepath_2 = os.path.join(tmp_path, "test_2.nc")
-    filepath_3 = os.path.join(tmp_path, "test_3.nc")
+    filepath1 = os.path.join(tmp_path, "test_1.nc")
+    filepath2 = os.path.join(tmp_path, "test_2.nc")
+    filepath3 = os.path.join(tmp_path, "test_3.nc")
 
     time_data_1 = np.array(pd.date_range(start="2023-01-01", periods=6, freq="D"))
     time_data_2 = np.array(pd.date_range(start="2023-01-04", periods=3, freq="D"))
 
-    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
-    _ = create_dummy_l0b_file(filepath=filepath_3, time=time_data_2[::-1])
+    _ = create_dummy_l0b_file(filepath=filepath1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath3, time=time_data_2[::-1])
 
     # Check with file in correct orders
-    fpaths = [filepath_1, filepath_2]
-    ds = xr_concat_datasets(fpaths)
+    filepaths = [filepath1, filepath2]
+    ds = xr_concat_datasets(filepaths)
     time_values = ds["time"].values
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), time_data_1.astype(float))
 
     # Check with file in reverse orders
-    fpaths = [filepath_2, filepath_1]
-    ds = xr_concat_datasets(fpaths)
+    filepaths = [filepath2, filepath1]
+    ds = xr_concat_datasets(filepaths)
     time_values = ds["time"].values
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), time_data_1.astype(float))
 
     # Check if completely overlapped but reversed order
-    fpaths = [filepath_2, filepath_3]
-    ds = xr_concat_datasets(fpaths)
+    filepaths = [filepath2, filepath3]
+    ds = xr_concat_datasets(filepaths)
     time_values = ds["time"].values
     assert len(time_values) == 3
     np.testing.assert_allclose(time_values.astype(float), time_data_2.astype(float))
@@ -134,27 +134,27 @@ def test_xr_concat_completely_overlapped_datasets(tmp_path):
 
 def test_xr_concat_completely_partial_overlapped_datasets(tmp_path):
     # Write L0B files
-    filepath_1 = os.path.join(tmp_path, "test_1.nc")
-    filepath_2 = os.path.join(tmp_path, "test_2.nc")
+    filepath1 = os.path.join(tmp_path, "test_1.nc")
+    filepath2 = os.path.join(tmp_path, "test_2.nc")
 
     time_data_1 = np.array(pd.date_range(start="2023-01-01", periods=4, freq="D"))
     time_data_2 = np.array(pd.date_range(start="2023-01-04", periods=3, freq="D"))
 
     unique_time_data = np.sort(np.unique(np.concatenate((time_data_1, time_data_2))))
 
-    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath2, time=time_data_2)
 
     # Check with file in correct orders
-    fpaths = [filepath_1, filepath_2]
-    ds = xr_concat_datasets(fpaths)
+    filepaths = [filepath1, filepath2]
+    ds = xr_concat_datasets(filepaths)
     time_values = ds["time"].values
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), unique_time_data.astype(float))
 
     # Check with file in reverse orders
-    fpaths = [filepath_2, filepath_1]
-    ds = xr_concat_datasets(fpaths)
+    filepaths = [filepath2, filepath1]
+    ds = xr_concat_datasets(filepaths)
     time_values = ds["time"].values
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), unique_time_data.astype(float))
@@ -180,18 +180,18 @@ def test_run_l0b_concat_station(tmp_path):
     )
 
     # Add dummy L0B files
-    filepath_1 = os.path.join(station_dir, "test_1.nc")
-    filepath_2 = os.path.join(station_dir, "test_2.nc")
+    filepath1 = os.path.join(station_dir, "test_1.nc")
+    filepath2 = os.path.join(station_dir, "test_2.nc")
 
     time_data_1 = np.array([0.0, 1.0, 2.0], dtype=np.float64)
     time_data_2 = np.array([3.0, 4.0, 5.0], dtype=np.float64)
 
-    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath2, time=time_data_2)
 
     # Monkey patch the write_l0b function
-    def mock_write_l0b(ds: xr.Dataset, fpath: str, force=False) -> None:
-        ds.to_netcdf(fpath, engine="netcdf4")
+    def mock_write_l0b(ds: xr.Dataset, filepath: str, force=False) -> None:
+        ds.to_netcdf(filepath, engine="netcdf4")
 
     from disdrodb.l0 import l0b_processing
 
@@ -248,14 +248,14 @@ def test_run_disdrodb_l0b_concat(tmp_path):
         station_name=station_name2,
     )
     # Add dummy L0B files for two stations
-    filepath_1 = os.path.join(station1_dir, f"{station_name1}_file.nc")
-    filepath_2 = os.path.join(station2_dir, f"{station_name2}_file.nc")
+    filepath1 = os.path.join(station1_dir, f"{station_name1}_file.nc")
+    filepath2 = os.path.join(station2_dir, f"{station_name2}_file.nc")
 
     time_data_1 = np.array([0.0, 1.0, 2.0], dtype=np.float64)
     time_data_2 = np.array([3.0, 4.0, 5.0], dtype=np.float64)
 
-    _ = create_dummy_l0b_file(filepath=filepath_1, time=time_data_1)
-    _ = create_dummy_l0b_file(filepath=filepath_2, time=time_data_2)
+    _ = create_dummy_l0b_file(filepath=filepath1, time=time_data_1)
+    _ = create_dummy_l0b_file(filepath=filepath2, time=time_data_2)
 
     # Run concatenation command
     run_disdrodb_l0b_concat(
@@ -269,8 +269,8 @@ def test_run_disdrodb_l0b_concat(tmp_path):
 
     # BUGGY WITH PYTEST !
     # # Assert files where removed
-    # assert not os.path.exists(filepath_1)
-    # assert not os.path.exists(filepath_2)
+    # assert not os.path.exists(filepath1)
+    # assert not os.path.exists(filepath2)
 
     # # Assert the presence of 2 concatenated netcdf files (one for each station)
     # processed_dir = define_campaign_dir(

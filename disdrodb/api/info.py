@@ -39,44 +39,44 @@ DISDRODB_FNAME_PATTERN = (
 ##########################
 
 
-def _parse_fname(fname):
+def _parse_filename(filename):
     """Parse the filename with trollsift."""
     # Retrieve information from filename
     p = Parser(DISDRODB_FNAME_PATTERN)
-    info_dict = p.parse(fname)
+    info_dict = p.parse(filename)
     return info_dict
 
 
-def _get_info_from_filename(fname):
+def _get_info_from_filename(filename):
     """Retrieve file information dictionary from filename."""
     # Try to parse the filename
     try:
-        info_dict = _parse_fname(fname)
+        info_dict = _parse_filename(filename)
     except ValueError:
-        raise ValueError(f"{fname} can not be parsed. Report the issue.")
+        raise ValueError(f"{filename} can not be parsed. Report the issue.")
     # Return info dictionary
     return info_dict
 
 
-def get_info_from_filepath(fpath):
+def get_info_from_filepath(filepath):
     """Retrieve file information dictionary from filepath."""
-    if not isinstance(fpath, str):
-        raise TypeError("'fpath' must be a string.")
-    fname = os.path.basename(fpath)
-    return _get_info_from_filename(fname)
+    if not isinstance(filepath, str):
+        raise TypeError("'filepath' must be a string.")
+    filename = os.path.basename(filepath)
+    return _get_info_from_filename(filename)
 
 
-def get_key_from_filepath(fpath, key):
+def get_key_from_filepath(filepath, key):
     """Extract specific key information from a list of filepaths."""
-    value = get_info_from_filepath(fpath)[key]
+    value = get_info_from_filepath(filepath)[key]
     return value
 
 
-def get_key_from_filepaths(fpaths, key):
+def get_key_from_filepaths(filepaths, key):
     """Extract specific key information from a list of filepaths."""
-    if isinstance(fpaths, str):
-        fpaths = [fpaths]
-    return [get_key_from_filepath(fpath, key=key) for fpath in fpaths]
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+    return [get_key_from_filepath(filepath, key=key) for filepath in filepaths]
 
 
 ####--------------------------------------------------------------------------.
@@ -93,7 +93,7 @@ def _get_version_from_filepath(filepath):
 def get_version_from_filepaths(filepaths):
     if isinstance(filepaths, str):
         filepaths = [filepaths]
-    list_version = [_get_version_from_filepath(fpath) for fpath in filepaths]
+    list_version = [_get_version_from_filepath(filepath) for filepath in filepaths]
     return list_version
 
 
@@ -207,8 +207,8 @@ def infer_disdrodb_tree_path(path: str) -> str:
         Format: DISDRODB/<Raw or Processed>/<DATA_SOURCE>/...
     """
     components = infer_disdrodb_tree_path_components(path=path)
-    tree_fpath = os.path.join("DISDRODB", *components[1:])
-    return tree_fpath
+    tree_filepath = os.path.join("DISDRODB", *components[1:])
+    return tree_filepath
 
 
 def infer_base_dir_from_path(path: str) -> str:

@@ -40,8 +40,8 @@ def _get_list_test_data_sources() -> list:
         List of test data sources.
     """
 
-    list_of_data_sources = os.listdir(os.path.join(TEST_BASE_DIR, "Raw"))
-    return list_of_data_sources
+    data_sources = os.listdir(os.path.join(TEST_BASE_DIR, "Raw"))
+    return data_sources
 
 
 def _get_list_test_campaigns(data_source: str) -> list:
@@ -58,8 +58,8 @@ def _get_list_test_campaigns(data_source: str) -> list:
         List of test campaigns.
 
     """
-    list_of_campaigns = os.listdir(os.path.join(TEST_BASE_DIR, "Raw", data_source))
-    return list_of_campaigns
+    campaign_names = os.listdir(os.path.join(TEST_BASE_DIR, "Raw", data_source))
+    return campaign_names
 
 
 def _get_list_test_stations(data_source: str, campaign_name: str) -> list:
@@ -175,9 +175,9 @@ def check_all_readers() -> None:
             ground_truth_files = list_files(ground_truth_dir, glob_pattern=glob_pattern, recursive=False)
             processed_files = list_files(processed_product_dir, glob_pattern=glob_pattern, recursive=False)
 
-            for ground_truth_fpath, processed_file_fpath in zip(ground_truth_files, processed_files):
-                station_name = os.path.basename(os.path.dirname(ground_truth_fpath))
-                is_correct = _is_parquet_files_identical(ground_truth_fpath, processed_file_fpath)
+            for ground_truth_filepath, processed_file_filepath in zip(ground_truth_files, processed_files):
+                station_name = os.path.basename(os.path.dirname(ground_truth_filepath))
+                is_correct = _is_parquet_files_identical(ground_truth_filepath, processed_file_filepath)
                 if not is_correct:
                     raise Exception(
                         f"Reader validation has failed for data_source '{data_source}', campaign_name '{campaign_name}'"

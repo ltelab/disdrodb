@@ -7,12 +7,12 @@ Created on Thu Nov  2 15:42:45 2023
 import yaml
 
 
-def read_yaml(fpath: str) -> dict:
+def read_yaml(filepath: str) -> dict:
     """Read a YAML file into a dictionary.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Input YAML file path.
 
     Returns
@@ -20,12 +20,12 @@ def read_yaml(fpath: str) -> dict:
     dict
         Dictionary with the attributes read from the YAML file.
     """
-    with open(fpath) as f:
+    with open(filepath) as f:
         dictionary = yaml.safe_load(f)
     return dictionary
 
 
-def write_yaml(dictionary, fpath, sort_keys=False):
+def write_yaml(dictionary, filepath, sort_keys=False):
     """Write a dictionary into a YAML file.
 
     Parameters
@@ -33,6 +33,6 @@ def write_yaml(dictionary, fpath, sort_keys=False):
     dictionary : dict
         Dictionary to write into a YAML file.
     """
-    with open(fpath, "w") as f:
+    with open(filepath, "w") as f:
         yaml.dump(dictionary, f, sort_keys=sort_keys)
     return None

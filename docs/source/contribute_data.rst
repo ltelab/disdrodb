@@ -165,7 +165,7 @@ Please take care of the following points when editing the metadata files:
 *  Do not eliminate metadata keys for which no information is available !
 *  You will define the ``reader`` name in `Step 6 <#step6>`_ along with the implementation of the reader
 *  The station metadata YAML file must keep the name of the station (i.e. ``<station_name>.yml``)
-*  For each ``<station_name>`` directory in the ``/data`` folder there must be an equally named ``<station_name>.yml`` file in the ``/metadata`` folder.
+*  For each ``<station_name>`` directory in the ``/data`` directory there must be an equally named ``<station_name>.yml`` file in the ``/metadata`` directory.
 
 When you are done with the editing of the metadata files, please run the following command to check that the metadata files are valid:
 
@@ -511,7 +511,7 @@ You should place you data and config files under the following directory tree:
 
 
 
-The ``/data`` folder must contain your raw data files, while the ``/ground_truth`` folder must contain the corresponding ground truth files.
+The ``/data`` directory must contain your raw data files, while the ``/ground_truth`` directory must contain the corresponding ground truth files.
 
 Once the reader is run with the raw data, the output files is compared to the ground truth files. If the files are identical, the reader is considered valid.
 

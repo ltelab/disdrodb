@@ -230,16 +230,16 @@ def check_issue_dict(issue_dict):
     return issue_dict
 
 
-def check_issue_file(fpath: str) -> None:
+def check_issue_file(filepath: str) -> None:
     """Check issue YAML file validity.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Issue YAML file path.
 
     """
-    issue_dict = _load_yaml_without_date_parsing(fpath)
+    issue_dict = _load_yaml_without_date_parsing(filepath)
     issue_dict = check_issue_dict(issue_dict)
     return None
 
@@ -270,12 +270,12 @@ def _write_issue_docs(f):
     return None
 
 
-def _write_issue(fpath: str, timesteps: list = None, time_periods: list = None) -> None:
+def _write_issue(filepath: str, timesteps: list = None, time_periods: list = None) -> None:
     """Write the issue YAML file.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Filepath of the issue YAML to write.
     timesteps : list, optional
         List of timesteps (to be dropped in L0 processing).
@@ -295,8 +295,8 @@ def _write_issue(fpath: str, timesteps: list = None, time_periods: list = None) 
         time_periods = new_periods
 
     # Write the issue YAML file
-    logger.info(f"Creating issue YAML file at {fpath}")
-    with open(fpath, "w") as f:
+    logger.info(f"Creating issue YAML file at {filepath}")
+    with open(filepath, "w") as f:
         # Write the docs for the issue.yml
         _write_issue_docs(f)
 
@@ -312,32 +312,32 @@ def _write_issue(fpath: str, timesteps: list = None, time_periods: list = None) 
     return None
 
 
-def write_issue_dict(fpath: str, issue_dict: dict) -> None:
+def write_issue_dict(filepath: str, issue_dict: dict) -> None:
     """Write the issue YAML file.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Filepath of the issue YAML to write.
     issue_dict : dict
         Issue dictionary
     """
     _write_issue(
-        fpath=fpath,
+        filepath=filepath,
         timesteps=issue_dict.get("timesteps", None),
         time_periods=issue_dict.get("time_periods", None),
     )
 
 
-def write_default_issue(fpath: str) -> None:
+def write_default_issue(filepath: str) -> None:
     """Write an empty issue YAML file.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Filepath of the issue YAML to write.
     """
-    _write_issue(fpath=fpath)
+    _write_issue(filepath=filepath)
     return None
 
 
@@ -377,12 +377,12 @@ def _load_yaml_without_date_parsing(filepath):
     return dictionary
 
 
-def _read_issue_file(fpath: str) -> dict:
+def _read_issue_file(filepath: str) -> dict:
     """Read YAML issue file.
 
     Parameters
     ----------
-    fpath : str
+    filepath : str
         Filepath of the issue YAML.
 
     Returns
@@ -390,7 +390,7 @@ def _read_issue_file(fpath: str) -> dict:
     dict
         Issue dictionary.
     """
-    issue_dict = _load_yaml_without_date_parsing(fpath)
+    issue_dict = _load_yaml_without_date_parsing(filepath)
     issue_dict = check_issue_dict(issue_dict)
     return issue_dict
 
@@ -411,5 +411,5 @@ def read_issue(raw_dir: str, station_name: str) -> dict:
         Issue dictionary.
     """
 
-    issue_fpath = os.path.join(raw_dir, "issue", station_name + ".yml")
-    return _read_issue_file(issue_fpath)
+    issue_filepath = os.path.join(raw_dir, "issue", station_name + ".yml")
+    return _read_issue_file(issue_filepath)

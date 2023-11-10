@@ -115,16 +115,16 @@ def _get_station_raw_filepaths(raw_dir, station_name):
 def _get_available_stations_with_metadata_files(raw_dir):
     """Return the name of stations with available metadata YAML files."""
     filepaths = _get_available_metadata_filepaths(raw_dir)
-    filenames = [os.path.basename(fpath) for fpath in filepaths]
-    station_names = [fname.replace(".yml", "") for fname in filenames]
+    filenames = [os.path.basename(filepath) for filepath in filepaths]
+    station_names = [filename.replace(".yml", "") for filename in filenames]
     return station_names
 
 
 def _get_available_stations_with_issue_files(raw_dir):
     """Return the name of stations with available issue YAML files."""
     filepaths = _get_available_issue_filepaths(raw_dir)
-    filenames = [os.path.basename(fpath) for fpath in filepaths]
-    station_names = [fname.replace(".yml", "") for fname in filenames]
+    filenames = [os.path.basename(filepath) for filepath in filepaths]
+    station_names = [filename.replace(".yml", "") for filename in filenames]
     return station_names
 
 
@@ -195,7 +195,7 @@ def _check_directories_in_raw_dir(raw_dir):
 def _check_presence_data_directory(raw_dir):
     """Check presence of the 'data' directory in the campaign directory."""
     if not _is_data_directory_available(raw_dir):
-        raise ValueError(f"'raw_dir' {raw_dir} should have the /data subfolder.")
+        raise ValueError(f"'raw_dir' {raw_dir} should have the /data subdirectory.")
 
 
 def _check_presence_stations_directories(raw_dir):
@@ -231,13 +231,13 @@ def _check_presence_metadata_directory(raw_dir):
         # Create metadata directory
         metadata_dir = _define_metadata_directory_path(raw_dir)
         create_directory(metadata_dir)
-        # Create default metadata yml file for each station (since the folder didn't existed)
+        # Create default metadata yml file for each station (since the directory didn't existed)
         list_data_station_names = _get_available_stations_with_data_directory(raw_dir)
-        list_metadata_fpath = [
+        list_metadata_filepath = [
             _define_metadata_filepath(raw_dir, station_name) for station_name in list_data_station_names
         ]
-        _ = [write_default_metadata(fpath) for fpath in list_metadata_fpath]
-        msg = f"'raw_dir' {raw_dir} should have the /metadata subfolder. "
+        _ = [write_default_metadata(filepath) for filepath in list_metadata_filepath]
+        msg = f"'raw_dir' {raw_dir} should have the /metadata subdirectory. "
         msg1 = "It has been now created with also empty metadata files to be filled for each station."
         raise ValueError(msg + msg1)
 
@@ -250,11 +250,15 @@ def _check_presence_issue_directory(raw_dir, verbose):
         # Create issue directory
         issue_dir = _define_issue_directory_path(raw_dir)
         create_directory(issue_dir)
-        # Create issue yml file for each station (since the folder didn't existed)
+        # Create issue yml file for each station (since the directory didn't existed)
         list_data_station_names = _get_available_stations_with_data_directory(raw_dir)
-        list_issue_fpath = [_define_issue_filepath(raw_dir, station_name) for station_name in list_data_station_names]
-        _ = [write_default_issue(fpath) for fpath in list_issue_fpath]
-        msg = "The /issue subfolder has been now created to document and then remove timesteps with problematic data."
+        list_issue_filepath = [
+            _define_issue_filepath(raw_dir, station_name) for station_name in list_data_station_names
+        ]
+        _ = [write_default_issue(filepath) for filepath in list_issue_filepath]
+        msg = (
+            "The /issue subdirectory has been now created to document and then remove timesteps with problematic data."
+        )
         log_info(logger, msg, verbose)
 
 
@@ -262,7 +266,7 @@ def _check_presence_all_metadata_files(raw_dir):
     """Check that the 'metadata' directory contains YAML files.
 
     The function raise error if there is not a metadata file for each station
-    folder present in the 'data' directory.
+    directory present in the 'data' directory.
     """
     from disdrodb.metadata.io import write_default_metadata
 
@@ -277,10 +281,10 @@ def _check_presence_all_metadata_files(raw_dir):
     idx_missing_station_data = np.where(np.isin(list_data_station_names, list_metadata_station_name, invert=True))[0]
     if len(idx_missing_station_data) > 0:
         list_missing_station_name = [list_data_station_names[idx] for idx in idx_missing_station_data]
-        list_missing_metadata_fpath = [
+        list_missing_metadata_filepath = [
             _define_metadata_filepath(raw_dir, station_name) for station_name in list_missing_station_name
         ]
-        _ = [write_default_metadata(fpath) for fpath in list_missing_metadata_fpath]
+        _ = [write_default_metadata(filepath) for filepath in list_missing_metadata_filepath]
         msg = f"The metadata files for the following station_name were missing: {list_missing_station_name}"
         raise ValueError(msg + " Now have been created to be filled.")
 
@@ -299,10 +303,10 @@ def _check_presence_all_issues_files(raw_dir, verbose):
     # - If missing, create the defaults files and raise an error
     if len(idx_missing_station_data) > 0:
         list_missing_station_name = [list_data_station_names[idx] for idx in idx_missing_station_data]
-        list_missing_issue_fpath = [
+        list_missing_issue_filepath = [
             os.path.join(raw_dir, "issue", station_name + ".yml") for station_name in list_missing_station_name
         ]
-        _ = [write_default_issue(fpath) for fpath in list_missing_issue_fpath]
+        _ = [write_default_issue(filepath) for filepath in list_missing_issue_filepath]
         msg = f"The issue files for the following station_name were missing: {list_missing_station_name}"
         log_warning(logger, msg, verbose)
 
@@ -341,12 +345,12 @@ def _check_valid_metadata(metadata_filepaths):
     """Check all specified metadata files are compliant with DISDRODB standards."""
     from disdrodb.metadata.check_metadata import check_metadata_compliance
 
-    for fpath in metadata_filepaths:
+    for filepath in metadata_filepaths:
         # Get station info
-        base_dir = infer_base_dir_from_path(fpath)
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+        base_dir = infer_base_dir_from_path(filepath)
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
         # Check compliance
         check_metadata_compliance(
             base_dir=base_dir,
@@ -360,7 +364,7 @@ def _check_valid_issue_files(filepaths):
     """Check all specified issue files are compliant with DISDRODB standards."""
     from disdrodb.l0.issue import check_issue_file
 
-    _ = [check_issue_file(fpath) for fpath in filepaths]
+    _ = [check_issue_file(filepath) for filepath in filepaths]
 
 
 def _check_raw_dir_is_a_directory(raw_dir):
@@ -388,7 +392,7 @@ def _check_raw_dir_metadata(raw_dir, verbose=True):
     """Check `data` directory in raw campaign directory.
 
     This function assumes that `the `_check_raw_dir_data`` function
-    does not raise errors: a 'data' directory exists, with station subfolders and data files.
+    does not raise errors: a 'data' directory exists, with station subdirectories and data files.
     """
     # Check the 'data' directory is present
     _check_presence_data_directory(raw_dir)
@@ -450,13 +454,13 @@ def check_raw_dir(raw_dir: str, verbose: bool = False) -> None:
     # Check there are directories in raw_dir
     _check_directories_in_raw_dir(raw_dir)
 
-    # Check there is valid /data subfolder
+    # Check there is valid /data subdirectory
     _check_raw_dir_data(raw_dir)
 
-    # Check there is valid /metadata subfolder
+    # Check there is valid /metadata subdirectory
     _check_raw_dir_metadata(raw_dir, verbose=verbose)
 
-    # Check there is valid /issue subfolder
+    # Check there is valid /issue subdirectory
     _check_raw_dir_issue(raw_dir, verbose=verbose)
 
     return raw_dir

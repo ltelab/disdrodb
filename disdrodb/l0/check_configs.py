@@ -56,9 +56,9 @@ def _check_yaml_files_exists(sensor_name: str) -> None:
         Name of the sensor.
     """
     config_dir = get_sensor_configs_dir(sensor_name, product="L0A")
-    list_filepaths = list_files(config_dir, glob_pattern="*.yml", recursive=False)
-    list_of_file_names = [os.path.split(i)[-1] for i in list_filepaths]
-    missing_keys = set(CONFIG_FILES_LIST).difference(set(list_of_file_names))
+    filepaths = list_files(config_dir, glob_pattern="*.yml", recursive=False)
+    filenames = [os.path.split(i)[-1] for i in filepaths]
+    missing_keys = set(CONFIG_FILES_LIST).difference(set(filenames))
     if missing_keys:
         missing_keys_text = ",".join(missing_keys)
         raise FileNotFoundError(f"Missing YAML files {missing_keys_text} in {config_dir} for sensor {sensor_name}.")
@@ -82,25 +82,25 @@ def _check_variable_consistency(sensor_name: str) -> None:
         If the keys are not consistent.
     """
     list_variables = read_config_file(sensor_name, product="L0A", filename="l0b_cf_attrs.yml").keys()
-    file_names = [
+    filenames = [
         "raw_data_format.yml",
         "l0a_encodings.yml",
         "l0b_encodings.yml",
     ]
-    for file_name in file_names:
-        keys_to_check = read_config_file(sensor_name, product="L0A", filename=file_name).keys()
+    for filename in filenames:
+        keys_to_check = read_config_file(sensor_name, product="L0A", filename=filename).keys()
         missing_keys = set(list_variables).difference(set(keys_to_check))
         extra_keys = set(keys_to_check).difference(set(list_variables))
         if missing_keys:
-            msg = f"The {sensor_name} {file_name} file does not have the following keys {missing_keys}"
+            msg = f"The {sensor_name} {filename} file does not have the following keys {missing_keys}"
             if extra_keys:
-                if file_name == "raw_data_format.yml":
+                if filename == "raw_data_format.yml":
                     msg = msg + f"FYI the file has the following extra keys {extra_keys}."
                 else:
                     msg = msg + f"and it has the following extra keys {extra_keys}."
             raise ValueError(msg)
-        if extra_keys and file_name != "raw_data_format.yml":
-            msg = f"The {sensor_name} {file_name} has the following extra keys {extra_keys}."
+        if extra_keys and filename != "raw_data_format.yml":
+            msg = f"The {sensor_name} {filename} has the following extra keys {extra_keys}."
             raise ValueError(msg)
 
 

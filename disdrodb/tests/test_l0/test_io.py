@@ -30,8 +30,8 @@ from disdrodb.api.io import define_campaign_dir
 from disdrodb.l0 import io
 from disdrodb.tests.conftest import create_fake_raw_data_file
 
-PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed"
-PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
+PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\Processed"
+PROCESSED_FOLDER_LINUX = "/DISDRODB/Processed"
 
 
 def test__get_dataset_min_max_time():
@@ -42,29 +42,29 @@ def test__get_dataset_min_max_time():
     assert all(pd.to_datetime(res, format="%Y-%m-%d") == [start_date, end_date])
 
 
-@pytest.mark.parametrize("path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX])
-def test_get_l0a_dir(path_process_dir):
+@pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
+def test_get_l0a_dir(processed_folder):
     res = (
-        io.get_l0a_dir(path_process_dir, "STATION_NAME")
-        .replace(path_process_dir, "")
+        io.get_l0a_dir(processed_folder, "STATION_NAME")
+        .replace(processed_folder, "")
         .replace("\\", "")
         .replace("/", "")
     )
     assert res == "L0ASTATION_NAME"
 
 
-@pytest.mark.parametrize("path_process_dir", [PATH_PROCESS_DIR_WINDOWS, PATH_PROCESS_DIR_LINUX])
-def test_get_l0b_dir(path_process_dir):
+@pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
+def test_get_l0b_dir(processed_folder):
     res = (
-        io.get_l0b_dir(path_process_dir, "STATION_NAME")
-        .replace(path_process_dir, "")
+        io.get_l0b_dir(processed_folder, "STATION_NAME")
+        .replace(processed_folder, "")
         .replace("\\", "")
         .replace("/", "")
     )
     assert res == "L0BSTATION_NAME"
 
 
-def test_get_l0a_fpath(tmp_path):
+def test_get_l0a_filepath(tmp_path):
     from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
@@ -87,7 +87,7 @@ def test_get_l0a_fpath(tmp_path):
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
     # Test the function
-    res = io.get_l0a_fpath(df, processed_dir, station_name)
+    res = io.get_l0a_filepath(df, processed_dir, station_name)
 
     # Define expected results
     expected_name = (
@@ -97,7 +97,7 @@ def test_get_l0a_fpath(tmp_path):
     assert res == expected_path
 
 
-def test_get_l0b_fpath(tmp_path):
+def test_get_l0b_filepath(tmp_path):
     from disdrodb.l0.standards import PRODUCT_VERSION
 
     # Set variables
@@ -127,7 +127,7 @@ def test_get_l0b_fpath(tmp_path):
     )
 
     # Test the function
-    res = io.get_l0b_fpath(ds, processed_dir, station_name)
+    res = io.get_l0b_filepath(ds, processed_dir, station_name)
 
     # Define expected results
     expected_name = (
@@ -205,17 +205,17 @@ def test__read_l0a(tmp_path):
     df = pd.DataFrame(data)
 
     # save dataframe to parquet file
-    path_parquet_file = os.path.join(tmp_path, "fake_data_sample.parquet")
-    df.to_parquet(path_parquet_file, compression="gzip")
+    filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
+    df.to_parquet(filepath, compression="gzip")
 
     # read written parquet file
-    df_written = io._read_l0a(path_parquet_file, False)
+    df_written = io._read_l0a(filepath, False)
 
     assert df.equals(df_written)
 
 
 def test_read_l0a_dataframe(tmp_path):
-    list_of_parquet_filepaths = list()
+    filepaths = list()
 
     for i in [0, 1]:
         # create dummy dataframe
@@ -224,12 +224,12 @@ def test_read_l0a_dataframe(tmp_path):
         df["time"] = pd.Timestamp.now()
 
         # save dataframe to parquet file
-        path_parquet_file = os.path.join(
+        filepath = os.path.join(
             tmp_path,
             f"fake_data_sample_{i}.parquet",
         )
-        df.to_parquet(path_parquet_file, compression="gzip")
-        list_of_parquet_filepaths.append(path_parquet_file)
+        df.to_parquet(filepath, compression="gzip")
+        filepaths.append(filepath)
 
         # create concatenate dataframe
         if i == 0:
@@ -243,7 +243,7 @@ def test_read_l0a_dataframe(tmp_path):
     df_concatenate = df_concatenate.sort_values(by="time")
 
     # read written parquet files
-    df_written = io.read_l0a_dataframe(list_of_parquet_filepaths, False)
+    df_written = io.read_l0a_dataframe(filepaths, False)
 
     # Create lists
     df_concatenate_list = df_concatenate.values.tolist()

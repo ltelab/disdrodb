@@ -31,17 +31,17 @@ def _get_readers_directory() -> str:
     """Returns the path to the disdrodb.l0.readers directory within the disdrodb package."""
     from disdrodb import __root_path__
 
-    reader_folder_path = os.path.join(__root_path__, "disdrodb", "l0", "readers")
-    return reader_folder_path
+    reader_dir = os.path.join(__root_path__, "disdrodb", "l0", "readers")
+    return reader_dir
 
 
 def _get_readers_data_sources() -> list:
     """Returns the readers data sources available at disdrodb.l0.readers"""
-    # Readers folder path
-    reader_folder_path = _get_readers_directory()
+    # Readers directory path
+    reader_dir = _get_readers_directory()
 
-    # List of readers folder
-    list_data_sources = [os.path.basename(f.path) for f in os.scandir(reader_folder_path) if f.is_dir()]
+    # List of readers directory
+    list_data_sources = [os.path.basename(f.path) for f in os.scandir(reader_dir) if f.is_dir()]
     # Directory to remove
     bad_dirs = ["__pycache__", ".ipynb_checkpoints"]
     list_data_sources = [name for name in list_data_sources if name not in bad_dirs]
@@ -51,11 +51,11 @@ def _get_readers_data_sources() -> list:
 
 def _get_readers_data_sources_path() -> list:
     """Returns the list of readers data sources directory paths within disdrodb.l0.readers"""
-    # Readers folder path
-    reader_folder_path = _get_readers_directory()
+    # Readers directory path
+    reader_dir = _get_readers_directory()
 
-    # List of readers folder
-    list_data_sources = [f.path for f in os.scandir(reader_folder_path) if f.is_dir()]
+    # List of readers directory
+    list_data_sources = [f.path for f in os.scandir(reader_dir) if f.is_dir()]
     return list_data_sources
 
 
@@ -65,8 +65,8 @@ def _get_readers_paths_by_data_source(data_source):
     This function does not check the data_source validity.
     """
     # Retrieve reader data source directory
-    reader_folder_path = _get_readers_directory()
-    reader_data_source_path = os.path.join(reader_folder_path, data_source)
+    reader_dir = _get_readers_directory()
+    reader_data_source_path = os.path.join(reader_dir, data_source)
     if not os.path.isdir(reader_data_source_path):
         raise ValueError(f"No {data_source} directory in disdrodb.l0.readers")
     # Retrieve list of available readers paths
@@ -388,7 +388,7 @@ def reader_generic_docstring():
 
         **Important points:**
 
-        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subdirectory.
         - The ``<CAMPAIGN_NAME>`` are expected to be UPPER CASE.
         - The ``<CAMPAIGN_NAME>`` must semantically match between:
 

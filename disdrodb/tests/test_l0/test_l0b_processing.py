@@ -537,15 +537,3 @@ def test_rechunk_dataset():
     ds_rechunked = l0b_processing.rechunk_dataset(ds, encoding_dict)
     assert ds_rechunked["a"].chunks == ((1, 1), (2, 1))
     assert ds_rechunked["b"].chunks == ((2,), (1, 1, 1))
-
-
-def test_set_encodings():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0b_processing.set_encodings()
-    assert 1 == 1
-
-
-def test_write_l0b():
-    # not tested yet because relies on config files that can be modified
-    # function_return = l0b_processing.write_l0b()
-    assert 1 == 1

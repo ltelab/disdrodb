@@ -32,12 +32,12 @@ logger = logging.getLogger(__name__)
 
 
 ####---------------------------------------------------------------------------.
-def _sort_datasets_by_dim(list_ds: list, fpaths: str, dim: str = "time") -> Tuple[list, list]:
+def _sort_datasets_by_dim(list_ds: list, filepaths: str, dim: str = "time") -> Tuple[list, list]:
     """Sort a list of xarray.Dataset and corresponding file paths by the starting value of a specified dimension.
 
     Parameters
     ----------
-    fpaths : list
+    filepaths : list
         List of netCDFs file paths.
     list_ds : list
         List of xarray Dataset.
@@ -52,8 +52,8 @@ def _sort_datasets_by_dim(list_ds: list, fpaths: str, dim: str = "time") -> Tupl
     start_values = [ds[dim].values[0] for ds in list_ds]
     sorted_idx = np.argsort(start_values)
     sorted_list_ds = [list_ds[i] for i in sorted_idx]
-    sorted_fpaths = [fpaths[i] for i in sorted_idx]
-    return sorted_list_ds, sorted_fpaths
+    sorted_filepaths = [filepaths[i] for i in sorted_idx]
+    return sorted_list_ds, sorted_filepaths
 
 
 def _get_dim_values_index(list_ds: list, dim: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -159,7 +159,7 @@ def _get_bad_info_dict(
     return dict_ds_bad_values, dict_ds_bad_idx
 
 
-def _remove_dataset_bad_values(list_ds, fpaths, dict_ds_bad_idx, dim):
+def _remove_dataset_bad_values(list_ds, filepaths, dict_ds_bad_idx, dim):
     """Remove portions of xarray Datasets corresponding to duplicated values.
 
     Parameters
@@ -187,18 +187,18 @@ def _remove_dataset_bad_values(list_ds, fpaths, dict_ds_bad_idx, dim):
 
     # Keep non-empty datasets
     new_list_ds = [list_ds[idx] for idx in list_index_valid]
-    new_fpaths = [fpaths[idx] for idx in list_index_valid]
-    return new_list_ds, new_fpaths
+    new_filepaths = [filepaths[idx] for idx in list_index_valid]
+    return new_list_ds, new_filepaths
 
 
-def ensure_unique_dimension_values(list_ds: list, fpaths: str, dim: str = "time", verbose: bool = False) -> list:
+def ensure_unique_dimension_values(list_ds: list, filepaths: str, dim: str = "time", verbose: bool = False) -> list:
     """Ensure that a list of xr.Dataset has non duplicated dimension values.
 
     Parameters
     ----------
     list_ds : list
         List of xarray Dataset.
-    fpaths : list
+    filepaths : list
         List of netCDFs file paths.
     dim : str, optional
         Dimension name.
@@ -212,7 +212,7 @@ def ensure_unique_dimension_values(list_ds: list, fpaths: str, dim: str = "time"
         List of netCDFs file paths.
     """
     # Reorder the files and filepaths by the starting dimension value (time)
-    list_ds, fpaths = _sort_datasets_by_dim(list_ds=list_ds, fpaths=fpaths, dim=dim)
+    list_ds, filepaths = _sort_datasets_by_dim(list_ds=list_ds, filepaths=filepaths, dim=dim)
 
     # Get the datasets dimension values array (and associated list_ds/xr.Dataset indices)
     dim_values, list_index, ds_index = _get_dim_values_index(list_ds, dim=dim)
@@ -233,34 +233,35 @@ def ensure_unique_dimension_values(list_ds: list, fpaths: str, dim: str = "time"
         # Report for each dataset, the duplicates values occurring
         for list_index_bad, bad_values in dict_ds_bad_values.items():
             # Retrieve dataset filepath
-            fpath = fpaths[list_index_bad]
+            filepath = filepaths[list_index_bad]
             # If all values inside the file are duplicated, report it
             if len(bad_values) == len(list_ds[list_index_bad][dim]):
                 msg = (
-                    f"{fpath} is excluded from concatenation. All {dim} values are already present in some other file."
+                    f"{filepath} is excluded from concatenation. All {dim} values are already present in some other"
+                    " file."
                 )
                 log_warning(logger=logger, msg=msg, verbose=verbose)
             else:
                 if np.issubdtype(bad_values.dtype, np.datetime64):
                     bad_values = bad_values.astype("M8[s]")
-                msg = f"In {fpath}, dropping {dim} values {bad_values} to avoid duplicated {dim} values."
+                msg = f"In {filepath}, dropping {dim} values {bad_values} to avoid duplicated {dim} values."
                 log_warning(logger=logger, msg=msg, verbose=verbose)
 
         # Remove duplicated values
-        list_ds, fpaths = _remove_dataset_bad_values(
-            list_ds=list_ds, fpaths=fpaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
+        list_ds, filepaths = _remove_dataset_bad_values(
+            list_ds=list_ds, filepaths=filepaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
         )
-    return list_ds, fpaths
+    return list_ds, filepaths
 
 
-def ensure_monotonic_dimension(list_ds: list, fpaths: str, dim: str = "time", verbose: bool = False) -> list:
+def ensure_monotonic_dimension(list_ds: list, filepaths: str, dim: str = "time", verbose: bool = False) -> list:
     """Ensure that a list of xr.Dataset has a monotonic increasing (non duplicated) dimension values.
 
     Parameters
     ----------
     list_ds : list
         List of xarray Dataset.
-    fpaths : list
+    filepaths : list
         List of netCDFs file paths.
     dim : str, optional
         Dimension name.
@@ -275,7 +276,7 @@ def ensure_monotonic_dimension(list_ds: list, fpaths: str, dim: str = "time", ve
     """
     # Reorder the files and filepaths by the starting dimension value (time)
     # TODO: should maybe also split by non-continuous time ...
-    list_ds, fpaths = _sort_datasets_by_dim(list_ds=list_ds, fpaths=fpaths, dim=dim)
+    list_ds, filepaths = _sort_datasets_by_dim(list_ds=list_ds, filepaths=filepaths, dim=dim)
 
     # Get the datasets dimension values array (and associated list_ds/xr.Dataset indices)
     dim_values, list_index, ds_index = _get_dim_values_index(list_ds, dim=dim)
@@ -296,27 +297,28 @@ def ensure_monotonic_dimension(list_ds: list, fpaths: str, dim: str = "time", ve
         # Report for each dataset, the values to be dropped
         for list_index_bad, bad_values in dict_ds_bad_values.items():
             # Retrieve dataset filepath
-            fpath = fpaths[list_index_bad]
+            filepath = filepaths[list_index_bad]
             # If all values inside the file should be dropped, report it
             if len(bad_values) == len(list_ds[list_index_bad][dim]):
                 msg = (
-                    f"{fpath} is excluded from concatenation. All {dim} values cause the dimension to be non-monotonic."
+                    f"{filepath} is excluded from concatenation. All {dim} values cause the dimension to be"
+                    " non-monotonic."
                 )
                 log_warning(logger=logger, msg=msg, verbose=verbose)
             else:
                 if np.issubdtype(bad_values.dtype, np.datetime64):
                     bad_values = bad_values.astype("M8[s]")
-                msg = f"In {fpath}, dropping {dim} values {bad_values} to ensure monotonic {dim} dimension."
+                msg = f"In {filepath}, dropping {dim} values {bad_values} to ensure monotonic {dim} dimension."
                 log_warning(logger=logger, msg=msg, verbose=verbose)
 
         # Remove duplicated values
-        list_ds, fpaths = _remove_dataset_bad_values(
-            list_ds=list_ds, fpaths=fpaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
+        list_ds, filepaths = _remove_dataset_bad_values(
+            list_ds=list_ds, filepaths=filepaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
         )
         # Iterative check
-        list_ds, fpaths = ensure_monotonic_dimension(list_ds=list_ds, fpaths=fpaths, dim=dim)
+        list_ds, filepaths = ensure_monotonic_dimension(list_ds=list_ds, filepaths=filepaths, dim=dim)
 
-    return list_ds, fpaths
+    return list_ds, filepaths
 
 
 # ds_index = [0,1,2,3,0,1,2,3,4]
@@ -328,12 +330,12 @@ def ensure_monotonic_dimension(list_ds: list, fpaths: str, dim: str = "time", ve
 
 
 ####---------------------------------------------------------------------------
-def get_list_ds(fpaths: str) -> list:
+def get_list_ds(filepaths: str) -> list:
     """Get list of xarray datasets from file paths.
 
     Parameters
     ----------
-    fpaths : list
+    filepaths : list
         List of netCDFs file paths.
 
     Returns
@@ -342,22 +344,22 @@ def get_list_ds(fpaths: str) -> list:
         List of xarray datasets.
     """
     list_ds = []
-    for fpath in fpaths:
+    for filepath in filepaths:
         # This context manager is required to avoid random HDF locking
         # - cache=True: store data in memory to avoid reading back from disk
         # --> but LRU cache might cause the netCDF to not be closed !
-        with xr.open_dataset(fpath, cache=False) as data:
+        with xr.open_dataset(filepath, cache=False) as data:
             ds = data.load()
         list_ds.append(ds)
     return list_ds
 
 
-# def get_list_ds(fpaths: str) -> list:
+# def get_list_ds(filepaths: str) -> list:
 #     """Get list of xarray datasets from file paths.
 
 #     Parameters
 #     ----------
-#     fpaths : list
+#     filepaths : list
 #         List of netCDFs file paths.
 
 #     Returns
@@ -367,7 +369,7 @@ def get_list_ds(fpaths: str) -> list:
 #     """
 #     # WARNING: READING IN PARALLEL USING MULTIPROCESS CAUSE HDF LOCK ERRORS
 #     @dask.delayed
-#     def open_dataset_delayed(fpath):
+#     def open_dataset_delayed(filepath):
 #         import os
 
 #         os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
@@ -376,13 +378,13 @@ def get_list_ds(fpaths: str) -> list:
 #         # This context manager is required to avoid random HDF locking
 #         # - cache=True: store data in memory to avoid reading back from disk
 #         # --> but LRU cache might cause the netCDF to not be closed !
-#         with xr.open_dataset(fpath, cache=False) as data:
+#         with xr.open_dataset(filepath, cache=False) as data:
 #             ds = data.load()
 #         return ds
 
 #     list_ds_delayed = []
-#     for fpath in fpaths:
-#         list_ds_delayed.append(open_dataset_delayed(fpath))
+#     for filepath in filepaths:
+#         list_ds_delayed.append(open_dataset_delayed(filepath))
 #     list_ds = dask.compute(list_ds_delayed)[0]
 #     return list_ds
 
@@ -407,14 +409,14 @@ def _concatenate_datasets(list_ds, dim="time", verbose=False):
     return ds
 
 
-def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
+def xr_concat_datasets(filepaths: str, verbose=False) -> xr.Dataset:
     """Concat xr.Dataset in a robust and parallel way.
 
     1. It checks for time dimension monotonicity
 
     Parameters
     ----------
-    fpaths : list
+    filepaths : list
         List of netCDFs file paths.
 
     Returns
@@ -431,14 +433,16 @@ def xr_concat_datasets(fpaths: str, verbose=False) -> xr.Dataset:
 
     # --------------------------------------.
     # Open xr.Dataset lazily in parallel using dask delayed
-    list_ds = get_list_ds(fpaths)
+    list_ds = get_list_ds(filepaths)
 
     # --------------------------------------.
     # Ensure time dimension contains no duplicated values
-    list_ds, fpaths = ensure_unique_dimension_values(list_ds=list_ds, fpaths=fpaths, dim="time", verbose=verbose)
+    list_ds, filepaths = ensure_unique_dimension_values(
+        list_ds=list_ds, filepaths=filepaths, dim="time", verbose=verbose
+    )
 
     # Ensure time dimension is monotonic increasingly
-    list_ds, fpaths = ensure_monotonic_dimension(list_ds=list_ds, fpaths=fpaths, dim="time", verbose=verbose)
+    list_ds, filepaths = ensure_monotonic_dimension(list_ds=list_ds, filepaths=filepaths, dim="time", verbose=verbose)
 
     # --------------------------------------.
     # Concatenate all netCDFs

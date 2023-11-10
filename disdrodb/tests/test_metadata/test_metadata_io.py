@@ -216,7 +216,7 @@ def test_write_default_metadata(tmp_path):
     _ = create_fake_metadata_directory(
         base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
     )
-    metadata_fpath = define_metadata_filepath(
+    metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         product="RAW",
         data_source=data_source,
@@ -224,13 +224,13 @@ def test_write_default_metadata(tmp_path):
         station_name=station_name,
         check_exists=False,
     )
-    write_default_metadata(metadata_fpath)
+    write_default_metadata(metadata_filepath)
 
     # Check file exist
-    assert os.path.exists(metadata_fpath)
+    assert os.path.exists(metadata_filepath)
 
     # Open it
-    dictionary = read_yaml(str(metadata_fpath))
+    dictionary = read_yaml(str(metadata_filepath))
 
     # Check is the expected dictionary
     expected_dict = _define_default_metadata_dict()

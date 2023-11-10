@@ -248,12 +248,12 @@ def define_metadata_filepath(
         campaign_name=campaign_name,
         check_exists=False,
     )
-    metadata_fpath = os.path.join(metadata_dir, f"{station_name}.yml")
+    metadata_filepath = os.path.join(metadata_dir, f"{station_name}.yml")
 
-    if check_exists and not os.path.exists(metadata_fpath):
-        raise ValueError(f"The metadata file for {station_name} at {metadata_fpath} does not exists.")
+    if check_exists and not os.path.exists(metadata_filepath):
+        raise ValueError(f"The metadata file for {station_name} at {metadata_filepath} does not exists.")
 
-    return str(metadata_fpath)
+    return str(metadata_filepath)
 
 
 def define_config_dir(product):
@@ -264,8 +264,8 @@ def define_config_dir(product):
         dir_name = "l0"
     else:
         raise NotImplementedError(f"Product {product} not implemented.")
-    config_dir_path = os.path.join(__root_path__, "disdrodb", dir_name, "configs")
-    return config_dir_path
+    config_dir = os.path.join(__root_path__, "disdrodb", dir_name, "configs")
+    return config_dir
 
 
 ####---------------------------------------------------------------------------.
@@ -276,16 +276,16 @@ def _get_list_stations_dirs(product, campaign_dir):
     # - Raw: <campaign>/data/<...>
     # - Processed: <campaign>/L0A/L0B>
     if product.upper() == "RAW":
-        data_path = os.path.join(campaign_dir, "data")
+        product_dir = os.path.join(campaign_dir, "data")
     else:
-        data_path = os.path.join(campaign_dir, product)
+        product_dir = os.path.join(campaign_dir, product)
     # Check if the data directory exists
     # - For a fresh disdrodb-data cloned repo, no "data" directories
-    if not os.path.exists(data_path):
+    if not os.path.exists(product_dir):
         return []
     # Get list of directories (stations)
-    list_stations = os.listdir(data_path)
-    list_stations_dir = [os.path.join(data_path, station_name) for station_name in list_stations]
+    stations_names = os.listdir(product_dir)
+    list_stations_dir = [os.path.join(product_dir, station_name) for station_name in stations_names]
     return list_stations_dir
 
 
@@ -296,8 +296,8 @@ def _get_list_stations_with_data(product, campaign_dir):
     # Count number of files within directory
     list_nfiles_per_station = [count_files(station_dir, "*", recursive=True) for station_dir in list_stations_dir]
     # Keep only stations with at least one file
-    list_stations = [os.path.basename(path) for n, path in zip(list_nfiles_per_station, list_stations_dir) if n >= 1]
-    return list_stations
+    stations_names = [os.path.basename(path) for n, path in zip(list_nfiles_per_station, list_stations_dir) if n >= 1]
+    return stations_names
 
 
 def _get_list_stations_with_metadata(campaign_dir):
@@ -306,8 +306,8 @@ def _get_list_stations_with_metadata(campaign_dir):
     # List metadata files
     metadata_filepaths = list_files(metadata_path, glob_pattern="*.yml", recursive=False)
     # Return stations with metadata
-    list_stations = [os.path.basename(fpath).replace(".yml", "") for fpath in metadata_filepaths]
-    return list_stations
+    stations_names = [os.path.basename(filepath).replace(".yml", "") for filepath in metadata_filepaths]
+    return stations_names
 
 
 def _get_campaign_stations(base_dir, product, data_source, campaign_name):
@@ -323,10 +323,10 @@ def _get_campaign_stations(base_dir, product, data_source, campaign_name):
     list_stations_data = _get_list_stations_with_data(product=product, campaign_dir=campaign_dir)
     list_stations_metadata = _get_list_stations_with_metadata(campaign_dir)
     # Get list of stations with both data and metadata
-    list_stations = list(set(list_stations_data).intersection(list_stations_metadata))
+    stations_names = list(set(list_stations_data).intersection(list_stations_metadata))
 
     # Return all available stations for a give campaign
-    return list_stations
+    return stations_names
 
 
 def _get_campaigns_stations(base_dir, product, data_source, campaign_names):
@@ -335,13 +335,13 @@ def _get_campaigns_stations(base_dir, product, data_source, campaign_names):
     list_available_stations = []
     for campaign_name in campaign_names:
         # Get list of available stations
-        list_stations = _get_campaign_stations(
+        stations_names = _get_campaign_stations(
             base_dir=base_dir,
             product=product,
             data_source=data_source,
             campaign_name=campaign_name,
         )
-        for station_name in list_stations:
+        for station_name in stations_names:
             list_available_stations.append((data_source, campaign_name, station_name))
 
     # Return all available stations for the asked campaigns (and specific data source)

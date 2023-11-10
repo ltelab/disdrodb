@@ -30,12 +30,12 @@ from disdrodb.utils.directories import list_files
 CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
 
-def read_yaml_file(path_file: str) -> Dict:
+def read_yaml_file(filepath: str) -> Dict:
     """Read a YAML file and return a dictionary.
 
     Parameters
     ----------
-    path_file : str
+    filepath : str
         Path of the YAML file
 
     Returns
@@ -43,7 +43,7 @@ def read_yaml_file(path_file: str) -> Dict:
     dictionary: dict
         Content of the YAML file
     """
-    with open(path_file) as f:
+    with open(filepath) as f:
         try:
             data = yaml.safe_load(f)
         except Exception:
@@ -217,13 +217,13 @@ def test_bins_format(yaml_filepath: str) -> None:
         assert is_list(list(data.values()))
         # Check the second level of the dictionary
         for first_level_key, first_level_value in data.items():
-            list_of_second_level_keys = list(first_level_value.keys())
-            list_of_second_level_values = list(first_level_value.values())
+            list_of_nested_keys = list(first_level_value.keys())
+            list_of_nested_values = list(first_level_value.values())
             # Check that the keys are sorted integers
-            assert is_sorted_int_keys(list_of_second_level_keys)
+            assert is_sorted_int_keys(list_of_nested_keys)
             # Check that the values are numeric
             if first_level_key in ["center", "width"]:
-                assert is_numeric_list(list_of_second_level_values)
+                assert is_numeric_list(list_of_nested_values)
             # Check that 'bounds' is a list
             if first_level_key in ["bounds"]:
                 for _, second_level_value in first_level_value.items():

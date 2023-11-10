@@ -32,7 +32,7 @@ from disdrodb.utils.directories import list_files
 
 
 def _unzip_file(filepath: str, dest_path: str) -> None:
-    """Unzip a file into a folder
+    """Unzip a file into a directory
 
     Parameters
 
@@ -40,7 +40,7 @@ def _unzip_file(filepath: str, dest_path: str) -> None:
     filepath : str
         Path of the file to unzip
     dest_path : str
-        Path of the destination folder
+        Path of the destination directory
     """
 
     with zipfile.ZipFile(filepath, "r") as zip_ref:
@@ -240,23 +240,23 @@ def _compress_file_bzip2(filepath: str, compressed_filepath: str) -> None:
             f_out.writelines(f_in)
 
 
-def archive_station_data(metadata_fpath: str) -> str:
+def archive_station_data(metadata_filepath: str) -> str:
     """Archive station data into a zip file (based on metadata filepath).
 
     It create a zip file into a temporary directory !
 
     Parameters
     ----------
-    metadata_fpath: str
+    metadata_filepath: str
         Metadata file path.
 
     Returns
     -------
-    station_zip_fpath
+    station_zip_filepath
         Filepath of the zip file containing the station's data.
     """
 
-    station_data_path = metadata_fpath.replace("metadata", "data")
+    station_data_path = metadata_filepath.replace("metadata", "data")
     station_data_path = os.path.splitext(station_data_path)[0]  # remove trailing ".yml"
-    station_zip_fpath = _zip_dir(station_data_path)
-    return station_zip_fpath
+    station_zip_filepath = _zip_dir(station_data_path)
+    return station_zip_filepath

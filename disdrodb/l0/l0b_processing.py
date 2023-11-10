@@ -594,14 +594,14 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     return ds
 
 
-def write_l0b(ds: xr.Dataset, fpath: str, force=False) -> None:
+def write_l0b(ds: xr.Dataset, filepath: str, force=False) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
     ----------
     ds : xr.Dataset
         Input xarray dataset.
-    fpath : str
+    filepath : str
         Output file path.
     sensor_name : str
         Name of the sensor.
@@ -611,12 +611,12 @@ def write_l0b(ds: xr.Dataset, fpath: str, force=False) -> None:
         If False, raise an error if there are already data into destination directories. This is the default.
     """
     # Create station directory if does not exist
-    create_directory(os.path.dirname(fpath))
+    create_directory(os.path.dirname(filepath))
 
     # Check if the file already exists
     # - If force=True --> Remove it
     # - If force=False --> Raise error
-    remove_if_exists(fpath, force=force)
+    remove_if_exists(filepath, force=force)
 
     # Get sensor name from dataset
     sensor_name = ds.attrs.get("sensor_name")
@@ -625,7 +625,7 @@ def write_l0b(ds: xr.Dataset, fpath: str, force=False) -> None:
     ds = set_encodings(ds=ds, sensor_name=sensor_name)
 
     # Write netcdf
-    ds.to_netcdf(fpath, engine="netcdf4")
+    ds.to_netcdf(filepath, engine="netcdf4")
 
 
 ####--------------------------------------------------------------------------.

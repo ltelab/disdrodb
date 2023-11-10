@@ -40,7 +40,7 @@ def ensure_string_path(path, msg, accepth_pathlib=False):
 def _recursive_glob(dir_path, glob_pattern):
     # ** search for all files recursively
     # glob_pattern = os.path.join(base_dir, "**", "metadata", f"{station_name}.yml")
-    # metadata_fpaths = glob.glob(glob_pattern, recursive=True)
+    # metadata_filepaths = glob.glob(glob_pattern, recursive=True)
 
     dir_path = pathlib.Path(dir_path)
     return [str(path) for path in dir_path.rglob(glob_pattern)]
@@ -93,7 +93,7 @@ def create_directory(path: str, exist_ok=True) -> None:
         logger.debug(f"Created directory {path}.")
     except Exception as e:
         dir_name = os.path.basename(path)
-        msg = f"Can not create folder {dir_name} inside <path>. Error: {e}"
+        msg = f"Can not create directory {dir_name} inside <path>. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
 
@@ -101,10 +101,10 @@ def create_directory(path: str, exist_ok=True) -> None:
 def create_required_directory(dir_path, dir_name):
     """Create directory <dir_name> inside the <dir_path> directory."""
     try:
-        new_dir_path = os.path.join(dir_path, dir_name)
-        os.makedirs(new_dir_path, exist_ok=True)
+        new_dir = os.path.join(dir_path, dir_name)
+        os.makedirs(new_dir, exist_ok=True)
     except Exception as e:
-        msg = f"Can not create folder {dir_name} at {new_dir_path}. Error: {e}"
+        msg = f"Can not create directory {dir_name} at {new_dir}. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
 
@@ -171,13 +171,13 @@ def remove_if_exists(path: str, force: bool = False) -> None:
         raise ValueError(msg)
 
 
-def copy_file(src_fpath, dst_fpath):
+def copy_file(src_filepath, dst_filepath):
     """Copy a file from a location to another."""
-    filename = os.path.basename(src_fpath)
-    dst_dir = os.path.dirname(dst_fpath)
+    filename = os.path.basename(src_filepath)
+    dst_dir = os.path.dirname(dst_filepath)
     try:
-        shutil.copy(src_fpath, dst_fpath)
-        msg = f"{filename} copied at {dst_fpath}."
+        shutil.copy(src_filepath, dst_filepath)
+        msg = f"{filename} copied at {dst_filepath}."
         logger.info(msg)
     except Exception as e:
         msg = f"Something went wrong when copying {filename} into {dst_dir}.\n The error is: {e}."

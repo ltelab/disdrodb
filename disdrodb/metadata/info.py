@@ -54,10 +54,10 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, base_dir
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
     list_info = []
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
         metadata = read_station_metadata(
             base_dir=base_dir,
             product="RAW",

@@ -35,12 +35,12 @@ from disdrodb.l0.check_standards import (
 )
 from disdrodb.l0.standards import get_raw_array_nvalues, get_sensor_logged_variables
 
-RAW_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
 
 def test_check_l0a_standards():
-    path_file = os.path.join(
-        RAW_DIR,
+    filepath = os.path.join(
+        BASE_DIR,
         "Raw",
         "EPFL",
         "PARSIVEL_2007",
@@ -50,7 +50,7 @@ def test_check_l0a_standards():
     )
 
     # read apache parquet file
-    df = pd.read_parquet(path_file)
+    df = pd.read_parquet(filepath)
 
     assert check_l0a_standards(df, sensor_name="OTT_Parsivel") is None
 
@@ -123,14 +123,14 @@ def test_check_l0a_column_names(capsys):
     sensor_name = sensor_names[0]
 
     # Test 1 : All columns are present
-    list_column_names = get_sensor_logged_variables(sensor_name) + ["time", "latitude", "longitude"]
-    dict_data = {i: [1, 2] for i in list_column_names}
+    column_names = get_sensor_logged_variables(sensor_name) + ["time", "latitude", "longitude"]
+    dict_data = {i: [1, 2] for i in column_names}
     df = pd.DataFrame.from_dict(dict_data)
     assert check_l0a_column_names(df, sensor_name=sensor_name) is None
 
     # Test 2 : Missing columns time
-    list_column_names = get_sensor_logged_variables(sensor_name) + ["latitude", "longitude"]
-    dict_data = {i: [1, 2] for i in list_column_names}
+    column_names = get_sensor_logged_variables(sensor_name) + ["latitude", "longitude"]
+    dict_data = {i: [1, 2] for i in column_names}
     df = pd.DataFrame.from_dict(dict_data)
     with pytest.raises(ValueError):
         check_l0a_column_names(df, sensor_name=sensor_name)

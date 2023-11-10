@@ -249,15 +249,15 @@ def test_check_issue_dict():
 def test_write_issue(tmpdir):
     """Test the _write_issue function."""
     # Define test inputs
-    fpath = os.path.join(tmpdir, "test_issue.yml")
+    filepath = os.path.join(tmpdir, "test_issue.yml")
     timesteps = np.array([0, 1, 2])
     time_periods = np.array([[0, 1], [2, 3]])
 
     # Call function
-    issue._write_issue(fpath, timesteps=timesteps, time_periods=time_periods)
+    issue._write_issue(filepath, timesteps=timesteps, time_periods=time_periods)
 
     # Load YAML file
-    with open(fpath) as f:
+    with open(filepath) as f:
         issue_dict = yaml.load(f, Loader=yaml.FullLoader)
 
     # Check the issue dictionary
@@ -274,9 +274,9 @@ def test_write_issue(tmpdir):
         "timesteps": timesteps,
     }
 
-    issue._write_issue(fpath, timesteps=np.array(timesteps), time_periods=None)
+    issue._write_issue(filepath, timesteps=np.array(timesteps), time_periods=None)
 
-    result = issue._read_issue_file(fpath)
+    result = issue._read_issue_file(filepath)
 
     timesteps_datetime = np.array(timesteps, dtype="datetime64[s]")
     expected_result = {

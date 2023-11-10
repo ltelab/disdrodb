@@ -71,15 +71,15 @@ def test_download_file_from_url(tmp_path):
 #     metadata_dict["disdrodb_data_url"] = disdrodb_data_url
 #     # Create metadata file
 #     base_dir = tmp_path / "DISDRODB"
-#     metadata_fpath = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict)
+#     metadata_filepath = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict)
 #     # Download data
-#     station_dir_path = metadata_fpath.replace("metadata", "data").replace(".yml", "")
-#     _download_station_data(metadata_fpath=metadata_fpath, force=True)
+#     station_dir = metadata_filepath.replace("metadata", "data").replace(".yml", "")
+#     _download_station_data(metadata_filepath=metadata_filepath, force=True)
 #     # Assert files in the zip file have been unzipped
-#     assert os.path.isfile(os.path.join(station_dir_path, "station_file1.txt"))
+#     assert os.path.isfile(os.path.join(station_dir, "station_file1.txt"))
 #     # Assert inner zipped files are not unzipped !
-#     assert os.path.isfile(os.path.join(station_dir_path, "station_file2.zip"))
+#     assert os.path.isfile(os.path.join(station_dir, "station_file2.zip"))
 #     # Assert inner directories are there
-#     assert os.path.isdir(os.path.join(station_dir_path, "2020"))
+#     assert os.path.isdir(os.path.join(station_dir, "2020"))
 #     # Assert zip file has been removed
-#     assert not os.path.exists(os.path.join(station_dir_path, "station_files.zip"))
+#     assert not os.path.exists(os.path.join(station_dir, "station_files.zip"))

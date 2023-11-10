@@ -29,11 +29,11 @@ def open_sensor_documentation(sensor_name):
     from disdrodb import __root_path__
 
     check_sensor_name(sensor_name)
-    docs_fpath = os.path.join(__root_path__, "disdrodb", "l0", "manuals", sensor_name + ".pdf")
-    webbrowser.open(docs_fpath)
+    docs_filepath = os.path.join(__root_path__, "disdrodb", "l0", "manuals", sensor_name + ".pdf")
+    webbrowser.open(docs_filepath)
 
 
 def open_documentation():
     """Open the DISDRODB documentation the browser."""
-    docs_fpath = "https://disdrodb.readthedocs.io/en/latest/"
-    webbrowser.open(docs_fpath)
+    docs_filepath = "https://disdrodb.readthedocs.io/en/latest/"
+    webbrowser.open(docs_filepath)

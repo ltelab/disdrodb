@@ -445,19 +445,19 @@ def create_fake_csv(filename, data):
     df.to_csv(filename, index=False)
 
 
-def test_read_raw_data(tmp_path):
+def test_read_raw_file(tmp_path):
     # Create a valid test file
-    path_test_data = os.path.join(tmp_path, "test.csv")
+    filepath = os.path.join(tmp_path, "test.csv")
     data = {"att_1": ["11", "21"], "att_2": ["12", "22"]}
-    create_fake_csv(path_test_data, data)
+    create_fake_csv(filepath, data)
 
     reader_kwargs = {}
     reader_kwargs["delimiter"] = ","
     reader_kwargs["header"] = 0
     reader_kwargs["engine"] = "python"
 
-    r = l0a_processing.read_raw_data(
-        filepath=path_test_data,
+    r = l0a_processing.read_raw_file(
+        filepath=filepath,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
     )
@@ -465,28 +465,28 @@ def test_read_raw_data(tmp_path):
     assert r.equals(expected_output)
 
     # Test with an empty file without column
-    path_test_data = os.path.join(tmp_path, "test_empty.csv")
-    print(path_test_data)
+    filepath = os.path.join(tmp_path, "test_empty.csv")
+    print(filepath)
     data = {}
-    create_fake_csv(path_test_data, data)
+    create_fake_csv(filepath, data)
 
     # Call the function and catch the exception
     with pytest.raises(UnboundLocalError):
-        r = l0a_processing.read_raw_data(
-            filepath=path_test_data,
+        r = l0a_processing.read_raw_file(
+            filepath=filepath,
             column_names=[],
             reader_kwargs=reader_kwargs,
         )
 
     # Test with an empty file with column
-    path_test_data = os.path.join(tmp_path, "test_empty2.csv")
-    print(path_test_data)
+    filepath = os.path.join(tmp_path, "test_empty2.csv")
+    print(filepath)
     data = {"att_1": [], "att_2": []}
-    create_fake_csv(path_test_data, data)
+    create_fake_csv(filepath, data)
 
     # Call the function and catch the exception
-    r = l0a_processing.read_raw_data(
-        filepath=path_test_data,
+    r = l0a_processing.read_raw_file(
+        filepath=filepath,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
     )
@@ -531,11 +531,11 @@ def test_write_l0a(tmp_path):
     df["time"] = pd.Timestamp.now()
 
     # Write parquet file
-    path_parquet_file = os.path.join(tmp_path, "fake_data_sample.parquet")
-    l0a_processing.write_l0a(df, path_parquet_file, True, False)
+    filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
+    l0a_processing.write_l0a(df, filepath, True, False)
 
     # Read parquet file
-    df_written = io.read_l0a_dataframe([path_parquet_file], False)
+    df_written = io.read_l0a_dataframe([filepath], False)
 
     # Check if parquet file are similar
     is_equal = df.equals(df_written)

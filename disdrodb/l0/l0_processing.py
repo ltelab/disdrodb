@@ -38,10 +38,10 @@ from disdrodb.l0.create_directories import (
     create_initial_directory_structure,
 )
 from disdrodb.l0.io import (
+    get_l0a_filepath,
     get_l0a_filepaths,
-    get_l0a_fpath,
     get_l0b_dir,
-    get_l0b_fpath,
+    get_l0b_filepath,
     get_raw_filepaths,
     read_l0a_dataframe,
 )
@@ -118,9 +118,9 @@ def _generate_l0a(
     )
 
     if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger_fpath = logger.handlers[0].baseFilename
+        logger_filepath = logger.handlers[0].baseFilename
     else:
-        logger_fpath = None
+        logger_filepath = None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -150,8 +150,8 @@ def _generate_l0a(
 
         ##--------------------------------------------------------------------.
         #### - Write to Parquet
-        fpath = get_l0a_fpath(df=df, processed_dir=processed_dir, station_name=station_name)
-        write_l0a(df=df, fpath=fpath, force=force, verbose=verbose)
+        filepath = get_l0a_filepath(df=df, processed_dir=processed_dir, station_name=station_name)
+        write_l0a(df=df, filepath=filepath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
         # Clean environment
@@ -171,7 +171,7 @@ def _generate_l0a(
     close_logger(logger)
 
     # Return the logger file path
-    return logger_fpath
+    return logger_filepath
 
 
 def _generate_l0b(
@@ -199,9 +199,9 @@ def _generate_l0b(
         parallel=parallel,
     )
     if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger_fpath = logger.handlers[0].baseFilename
+        logger_filepath = logger.handlers[0].baseFilename
     else:
-        logger_fpath = None
+        logger_filepath = None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -226,8 +226,8 @@ def _generate_l0b(
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        fpath = get_l0b_fpath(ds, processed_dir, station_name)
-        write_l0b(ds, fpath=fpath, force=force)
+        filepath = get_l0b_filepath(ds, processed_dir, station_name)
+        write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
         # Clean environment
@@ -247,7 +247,7 @@ def _generate_l0b(
     close_logger(logger)
 
     # Return the logger file path
-    return logger_fpath
+    return logger_filepath
 
 
 def _generate_l0b_from_nc(
@@ -273,7 +273,7 @@ def _generate_l0b_from_nc(
         filename=filename,
         parallel=parallel,
     )
-    logger_fpath = logger.handlers[0].baseFilename
+    logger_filepath = logger.handlers[0].baseFilename
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -301,8 +301,8 @@ def _generate_l0b_from_nc(
         )
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        fpath = get_l0b_fpath(ds, processed_dir, station_name)
-        write_l0b(ds, fpath=fpath, force=force)
+        filepath = get_l0b_filepath(ds, processed_dir, station_name)
+        write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
         # Clean environment
@@ -322,7 +322,7 @@ def _generate_l0b_from_nc(
     close_logger(logger)
 
     # Return the logger file path
-    return logger_fpath
+    return logger_filepath
 
 
 ####------------------------------------------------------------------------.
@@ -360,7 +360,7 @@ def run_l0a(
 
         **Important points:**
 
-        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subdirectory.
         - The ``campaign_name`` are expected to be UPPER CASE.
         - The ``<CAMPAIGN_NAME>`` must semantically match between:
             - the ``raw_dir`` and ``processed_dir`` directory paths;
@@ -506,7 +506,7 @@ def run_l0b(
 
         **Important points:**
 
-        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subdirectory.
         - The ``campaign_name`` are expected to be UPPER CASE.
         - The ``<CAMPAIGN_NAME>`` must semantically match between:
             - the ``raw_dir`` and ``processed_dir`` directory paths;
@@ -652,7 +652,7 @@ def run_l0b_from_nc(
 
         **Important points:**
 
-        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subfolder.
+        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subdirectory.
         - The ``campaign_name`` are expected to be UPPER CASE.
         - The ``<CAMPAIGN_NAME>`` must semantically match between:
             - the ``raw_dir`` and ``processed_dir`` directory paths;
@@ -804,20 +804,20 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
 
     # -------------------------------------------------------------------------.
     # Retrieve L0B files
-    l0b_dir_path = get_l0b_dir(processed_dir, station_name)
-    filepaths = list_files(l0b_dir_path, glob_pattern="*.nc", recursive=True)
+    station_dir = get_l0b_dir(processed_dir, station_name)
+    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
     filepaths = sorted(filepaths)
 
     # -------------------------------------------------------------------------.
     # Check there are at least two files
     n_files = len(filepaths)
     if n_files == 0:
-        msg = f"No L0B file is available for concatenation in {l0b_dir_path}."
+        msg = f"No L0B file is available for concatenation in {station_dir}."
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     if n_files == 1:
-        msg = f"Only a single file is available for concatenation in {l0b_dir_path}."
+        msg = f"Only a single file is available for concatenation in {station_dir}."
         log_warning(logger=logger, msg=msg, verbose=verbose)
 
     # -------------------------------------------------------------------------.
@@ -826,9 +826,9 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
 
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
-    single_nc_fpath = get_l0b_fpath(ds, processed_dir, station_name, l0b_concat=True)
+    single_nc_filepath = get_l0b_filepath(ds, processed_dir, station_name, l0b_concat=True)
     force = True  # TODO add as argument
-    write_l0b(ds, fpath=single_nc_fpath, force=force)
+    write_l0b(ds, filepath=single_nc_filepath, force=force)
 
     # -------------------------------------------------------------------------.
     # Close file and delete
@@ -839,7 +839,7 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
     # If remove = True, remove all the single files
     if remove:
         log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
-        _ = [os.remove(fpath) for fpath in filepaths]
+        _ = [os.remove(filepath) for filepath in filepaths]
         log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
 
     # -------------------------------------------------------------------------.

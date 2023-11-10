@@ -68,7 +68,7 @@ def test_create_initial_directory_structure(tmp_path, mocker, product):
         station_name=station_name,
     )
 
-    dst_metadata_fpath = define_metadata_filepath(
+    dst_metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         product=product,
         data_source=data_source,
@@ -130,8 +130,8 @@ def test_create_initial_directory_structure(tmp_path, mocker, product):
     assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
     assert os.path.exists(dst_metadata_dir) and os.path.isdir(dst_metadata_dir)
     # Test it copied the metadata from RAW
-    assert os.path.exists(dst_metadata_fpath) and os.path.isfile(dst_metadata_fpath)
-    os.remove(dst_metadata_fpath)
+    assert os.path.exists(dst_metadata_filepath) and os.path.isfile(dst_metadata_filepath)
+    os.remove(dst_metadata_filepath)
 
     # Test raise error if already data in L0A (if force=False)
     product_filepath = create_fake_raw_data_file(
@@ -163,7 +163,7 @@ def test_create_initial_directory_structure(tmp_path, mocker, product):
     assert not os.path.exists(product_filepath)
     assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
     assert os.path.exists(dst_metadata_dir) and os.path.isdir(dst_metadata_dir)
-    assert os.path.exists(dst_metadata_fpath) and os.path.isfile(dst_metadata_fpath)
+    assert os.path.exists(dst_metadata_filepath) and os.path.isfile(dst_metadata_filepath)
 
 
 def test_create_directory_structure(tmp_path, mocker):
@@ -311,7 +311,7 @@ def test_copy_station_metadata(tmp_path):
     processed_dir = define_campaign_dir(
         base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
     )
-    dst_metadata_fpath = define_metadata_filepath(
+    dst_metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         product="L0A",
         data_source=data_source,
@@ -330,7 +330,7 @@ def test_copy_station_metadata(tmp_path):
         _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
 
     # Create fake metadata file
-    raw_metadata_fpath = create_fake_metadata_file(
+    raw_metadata_filepath = create_fake_metadata_file(
         base_dir=base_dir,
         product="RAW",
         data_source=data_source,
@@ -350,9 +350,9 @@ def test_copy_station_metadata(tmp_path):
     _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
 
     # Ensure metadata file has been copied
-    assert os.path.exists(dst_metadata_fpath)
+    assert os.path.exists(dst_metadata_filepath)
 
     # Read both files and check are equally
-    src_dict = read_yaml(raw_metadata_fpath)
-    dst_dict = read_yaml(dst_metadata_fpath)
+    src_dict = read_yaml(raw_metadata_filepath)
+    dst_dict = read_yaml(dst_metadata_filepath)
     assert src_dict == dst_dict

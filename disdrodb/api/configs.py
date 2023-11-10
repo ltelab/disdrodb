@@ -50,13 +50,13 @@ def get_sensor_configs_dir(sensor_name: str, product: str) -> str:
     """
     check_sensor_name(sensor_name, product=product)
     product = check_product(product)
-    config_dir_path = define_config_dir(product=product)
-    config_sensor_dir_path = os.path.join(config_dir_path, sensor_name)
-    if not os.path.exists(config_sensor_dir_path):
-        list_sensors = sorted(os.listdir(config_dir_path))
+    config_dir = define_config_dir(product=product)
+    config_sensor_dir = os.path.join(config_dir, sensor_name)
+    if not os.path.exists(config_sensor_dir):
+        list_sensors = sorted(os.listdir(config_dir))
         print(f"Available sensor_name are {list_sensors}")
-        raise ValueError(f"The config directory {config_sensor_dir_path} does not exist.")
-    return config_sensor_dir_path
+        raise ValueError(f"The config directory {config_sensor_dir} does not exist.")
+    return config_sensor_dir
 
 
 def read_config_file(sensor_name: str, product: str, filename: str) -> dict:
@@ -81,15 +81,15 @@ def read_config_file(sensor_name: str, product: str, filename: str) -> dict:
     """
     check_sensor_name(sensor_name, product=product)
     product = check_product(product)
-    config_sensor_dir_path = get_sensor_configs_dir(sensor_name, product=product)
-    config_fpath = os.path.join(config_sensor_dir_path, filename)
+    config_sensor_dir = get_sensor_configs_dir(sensor_name, product=product)
+    config_filepath = os.path.join(config_sensor_dir, filename)
     # Check yaml file exists
-    if not os.path.exists(config_fpath):
-        msg = f"{filename} not available in {config_sensor_dir_path}"
+    if not os.path.exists(config_filepath):
+        msg = f"{filename} not available in {config_sensor_dir}"
         logger.exception(msg)
         raise ValueError(msg)
     # Open dictionary
-    dictionary = read_yaml(config_fpath)
+    dictionary = read_yaml(config_filepath)
     return dictionary
 
 
@@ -105,5 +105,5 @@ def available_sensor_names(product: str = "L0A") -> sorted:
         By default, it returns the sensors available for DISDRODB L0A products.
     """
     product = check_product(product)
-    config_dir_path = define_config_dir(product=product)
-    return sorted(os.listdir(config_dir_path))
+    config_dir = define_config_dir(product=product)
+    return sorted(os.listdir(config_dir))

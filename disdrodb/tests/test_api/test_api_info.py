@@ -71,17 +71,17 @@ INVALID_KEY = "nonexistent_key"
 @pytest.fixture
 def valid_filepath(tmp_path):
     # Create a valid filepath for testing
-    fpath = tmp_path / VALID_FNAME
-    fpath.write_text("content does not matter")
-    return str(fpath)
+    filepath = tmp_path / VALID_FNAME
+    filepath.write_text("content does not matter")
+    return str(filepath)
 
 
 @pytest.fixture
 def invalid_filepath(tmp_path):
     # Create an invalid filepath for testing
-    fpath = tmp_path / INVALID_FNAME
-    fpath.write_text("content does not matter")
-    return str(fpath)
+    filepath = tmp_path / INVALID_FNAME
+    filepath.write_text("content does not matter")
+    return str(filepath)
 
 
 def test_infer_disdrodb_tree_path_components():

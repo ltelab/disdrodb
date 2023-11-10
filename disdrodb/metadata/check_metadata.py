@@ -200,12 +200,12 @@ def check_metadata_geolocation(metadata) -> None:
     return None
 
 
-def identify_missing_metadata_coords(metadata_fpaths: str) -> None:
+def identify_missing_metadata_coords(metadata_filepaths: str) -> None:
     """Identify missing coordinates.
 
     Parameters
     ----------
-    metadata_fpaths : str
+    metadata_filepaths : str
         Input YAML file path.
 
     Raises
@@ -214,18 +214,18 @@ def identify_missing_metadata_coords(metadata_fpaths: str) -> None:
         Error if latitude or longitude coordinates are not present or are wrongly formatted.
 
     """
-    for fpath in metadata_fpaths:
-        metadata = read_yaml(fpath)
+    for filepath in metadata_filepaths:
+        metadata = read_yaml(filepath)
         check_metadata_geolocation(metadata)
     return None
 
 
-def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) -> None:
+def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list]) -> None:
     """Identify empty metadata keys.
 
     Parameters
     ----------
-    metadata_fpaths : str
+    metadata_filepaths : str
         Input YAML file path.
     keys : Union[str,list]
         Attributes to verify the presence.
@@ -234,11 +234,11 @@ def identify_empty_metadata_keys(metadata_fpaths: list, keys: Union[str, list]) 
     if isinstance(keys, str):
         keys = [keys]
 
-    for fpath in metadata_fpaths:
+    for filepath in metadata_filepaths:
         for key in keys:
-            metadata = read_yaml(fpath)
+            metadata = read_yaml(filepath)
             if len(str(metadata.get(key, ""))) == 0:  # ensure is string to avoid error
-                print(f"Empty {key} at: ", fpath)
+                print(f"Empty {key} at: ", filepath)
     return None
 
 
@@ -265,10 +265,10 @@ def check_archive_metadata_keys(base_dir: str = None) -> bool:
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
 
         metadata = read_station_metadata(
             base_dir=base_dir,
@@ -306,10 +306,10 @@ def check_archive_metadata_campaign_name(base_dir: str = None) -> bool:
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
 
         metadata = read_station_metadata(
             base_dir=base_dir,
@@ -346,10 +346,10 @@ def check_archive_metadata_data_source(base_dir: str = None) -> bool:
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
 
         metadata = read_station_metadata(
             base_dir=base_dir,
@@ -386,10 +386,10 @@ def check_archive_metadata_sensor_name(base_dir: str = None) -> bool:
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
 
         metadata = read_station_metadata(
             base_dir=base_dir,
@@ -426,10 +426,10 @@ def check_archive_metadata_station_name(base_dir: str = None) -> bool:
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
 
         metadata = read_station_metadata(
             base_dir=base_dir,
@@ -468,10 +468,10 @@ def check_archive_metadata_reader(base_dir: str = None) -> bool:
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
 
         metadata = read_station_metadata(
             base_dir=base_dir,
@@ -511,10 +511,10 @@ def check_archive_metadata_compliance(base_dir: str = None, raise_error=False):
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
         # Check compliance
         try:
             check_metadata_compliance(
@@ -554,10 +554,10 @@ def check_archive_metadata_geolocation(base_dir: str = None):
     list_metadata_paths = get_list_metadata(
         base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
     )
-    for fpath in list_metadata_paths:
-        data_source = infer_data_source_from_path(fpath)
-        campaign_name = infer_campaign_name_from_path(fpath)
-        station_name = os.path.basename(fpath).replace(".yml", "")
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
 
         metadata = read_station_metadata(
             base_dir=base_dir,

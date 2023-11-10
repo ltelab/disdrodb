@@ -109,8 +109,8 @@ def test_check_archive_metadata_keys(tmp_path):
     base_dir = tmp_path / "DISDRODB"
 
     # Test 1: Correct metadata key
-    list_of_valid_metadata_keys = get_valid_metadata_keys()
-    metadata_dict = {i: "value1" for i in list_of_valid_metadata_keys}
+    valid_metadata_keys = get_valid_metadata_keys()
+    metadata_dict = {i: "value1" for i in valid_metadata_keys}
     _ = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict)
 
     is_valid = check_archive_metadata_keys(str(base_dir))
@@ -258,16 +258,16 @@ def test_identify_missing_metadata_coords(tmp_path):
 
     # Test correct coordinates
     metadata_dict = {"longitude": 170, "latitude": 80, "platform_type": "fixed"}
-    metadata_fpath = create_fake_metadata_file(
+    metadata_filepath = create_fake_metadata_file(
         base_dir=base_dir,
         metadata_dict=metadata_dict,
     )
 
-    function_return = identify_missing_metadata_coords([metadata_fpath])
+    function_return = identify_missing_metadata_coords([metadata_filepath])
     assert function_return is None
 
     # Test bad coordinates
     metadata_dict = {"longitude": "8r0", "latitude": "170", "platform_type": "fixed"}
-    metadata_fpath = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict)
+    metadata_filepath = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict)
     with pytest.raises(TypeError):
-        identify_missing_metadata_coords([metadata_fpath])
+        identify_missing_metadata_coords([metadata_filepath])

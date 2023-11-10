@@ -90,8 +90,8 @@ def get_l0a_dir(processed_dir: str, station_name: str) -> str:
     str
         L0A directory path.
     """
-    dir_path = os.path.join(processed_dir, "L0A", station_name)
-    return dir_path
+    station_dir = os.path.join(processed_dir, "L0A", station_name)
+    return station_dir
 
 
 def get_l0b_dir(processed_dir: str, station_name: str) -> str:
@@ -109,11 +109,11 @@ def get_l0b_dir(processed_dir: str, station_name: str) -> str:
     str
         Path of the L0B directory
     """
-    dir_path = os.path.join(processed_dir, "L0B", station_name)
-    return dir_path
+    station_dir = os.path.join(processed_dir, "L0B", station_name)
+    return station_dir
 
 
-def get_l0a_fname(df, processed_dir, station_name: str) -> str:
+def get_l0a_filename(df, processed_dir, station_name: str) -> str:
     """Define L0A file name.
 
     Parameters
@@ -137,11 +137,11 @@ def get_l0a_fname(df, processed_dir, station_name: str) -> str:
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
     version = PRODUCT_VERSION
-    fname = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
-    return fname
+    filename = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
+    return filename
 
 
-def get_l0b_fname(ds, processed_dir, station_name: str) -> str:
+def get_l0b_filename(ds, processed_dir, station_name: str) -> str:
     """Define L0B file name.
 
     Parameters
@@ -165,11 +165,11 @@ def get_l0b_fname(ds, processed_dir, station_name: str) -> str:
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
     version = PRODUCT_VERSION
-    fname = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
-    return fname
+    filename = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    return filename
 
 
-def get_l0a_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> str:
+def get_l0a_filepath(df: pd.DataFrame, processed_dir: str, station_name: str) -> str:
     """Define L0A file path.
 
     Parameters
@@ -186,13 +186,13 @@ def get_l0a_fpath(df: pd.DataFrame, processed_dir: str, station_name: str) -> st
     str
         L0A file path.
     """
-    fname = get_l0a_fname(df=df, processed_dir=processed_dir, station_name=station_name)
-    dir_path = get_l0a_dir(processed_dir=processed_dir, station_name=station_name)
-    fpath = os.path.join(dir_path, fname)
-    return fpath
+    filename = get_l0a_filename(df=df, processed_dir=processed_dir, station_name=station_name)
+    station_dir = get_l0a_dir(processed_dir=processed_dir, station_name=station_name)
+    filepath = os.path.join(station_dir, filename)
+    return filepath
 
 
-def get_l0b_fpath(ds: xr.Dataset, processed_dir: str, station_name: str, l0b_concat=False) -> str:
+def get_l0b_filepath(ds: xr.Dataset, processed_dir: str, station_name: str, l0b_concat=False) -> str:
     """Define L0B file path.
 
     Parameters
@@ -212,12 +212,14 @@ def get_l0b_fpath(ds: xr.Dataset, processed_dir: str, station_name: str, l0b_con
     str
         L0B file path.
     """
-    dir_path = get_l0b_dir(processed_dir, station_name)
+    station_dir = get_l0b_dir(processed_dir, station_name)
+    filename = get_l0b_filename(ds, processed_dir, station_name)
     if l0b_concat:
-        dir_path = os.path.dirname(dir_path)
-    fname = get_l0b_fname(ds, processed_dir, station_name)
-    fpath = os.path.join(dir_path, fname)
-    return fpath
+        product_dir = os.path.dirname(station_dir)
+        filepath = os.path.join(product_dir, filename)
+    else:
+        filepath = os.path.join(station_dir, filename)
+    return filepath
 
 
 ####--------------------------------------------------------------------------.
@@ -286,8 +288,8 @@ def _get_available_filepaths(raw_dir, station_name, glob_patterns):
     # Check there are files
     n_files = len(filepaths)
     if n_files == 0:
-        glob_fpath_patterns = [os.path.join(raw_dir, pattern) for pattern in glob_patterns]
-        raise ValueError(f"No file found at {glob_fpath_patterns}.")
+        glob_filepath_patterns = [os.path.join(raw_dir, pattern) for pattern in glob_patterns]
+        raise ValueError(f"No file found at {glob_filepath_patterns}.")
     return filepaths
 
 
@@ -363,15 +365,15 @@ def get_l0a_filepaths(processed_dir, station_name, debugging_mode):
         List of L0A file paths.
 
     """
-    l0a_dir_path = get_l0a_dir(processed_dir, station_name)
-    filepaths = list_files(l0a_dir_path, glob_pattern="*.parquet", recursive=True)
+    station_dir = get_l0a_dir(processed_dir, station_name)
+    filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
 
     # Filter out filepaths if debugging_mode=True
     filepaths = _filter_filepaths(filepaths, debugging_mode=debugging_mode)
 
     # If no file available, raise error
     if len(filepaths) == 0:
-        msg = f"No L0A Apache Parquet file is available in {l0a_dir_path}. Run L0A processing first."
+        msg = f"No L0A Apache Parquet file is available in {station_dir}. Run L0A processing first."
         raise ValueError(msg)
 
     return filepaths
@@ -382,22 +384,22 @@ def get_l0a_filepaths(processed_dir, station_name, debugging_mode):
 
 
 # --> TODO: in L0A processing !
-def _read_l0a(fpath: str, verbose: bool = False, debugging_mode: bool = False) -> pd.DataFrame:
+def _read_l0a(filepath: str, verbose: bool = False, debugging_mode: bool = False) -> pd.DataFrame:
     # Log
-    msg = f" - Reading L0 Apache Parquet file at {fpath} started."
+    msg = f" - Reading L0 Apache Parquet file at {filepath} started."
     log_info(logger, msg, verbose)
     # Open file
-    df = pd.read_parquet(fpath)
+    df = pd.read_parquet(filepath)
     if debugging_mode:
         df = df.iloc[0:100]
     # Log
-    msg = f" - Reading L0 Apache Parquet file at {fpath} ended."
+    msg = f" - Reading L0 Apache Parquet file at {filepath} ended."
     log_info(logger, msg, verbose)
     return df
 
 
 def read_l0a_dataframe(
-    fpaths: Union[str, list],
+    filepaths: Union[str, list],
     verbose: bool = False,
     debugging_mode: bool = False,
 ) -> pd.DataFrame:
@@ -405,14 +407,14 @@ def read_l0a_dataframe(
 
     Parameters
     ----------
-    fpaths : str or list
+    filepaths : str or list
         Either a list or a single filepath .
     verbose : bool
         Whether to print detailed processing information into terminal.
         The default is False.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        If fpaths is a list, it reads only the first 3 files
+        If filepaths is a list, it reads only the first 3 files
         For each file it select only the first 100 rows.
         The default is False.
 
@@ -427,20 +429,20 @@ def read_l0a_dataframe(
 
     # ----------------------------------------
     # Check filepaths validity
-    if not isinstance(fpaths, (list, str)):
-        raise TypeError("Expecting fpaths to be a string or a list of strings.")
+    if not isinstance(filepaths, (list, str)):
+        raise TypeError("Expecting filepaths to be a string or a list of strings.")
 
     # ----------------------------------------
-    # If fpath is a string, convert to list
-    if isinstance(fpaths, str):
-        fpaths = [fpaths]
+    # If filepath is a string, convert to list
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
     # ---------------------------------------------------
-    # - If debugging_mode=True, it reads only the first 3 fpaths
+    # - If debugging_mode=True, it reads only the first 3 filepaths
     if debugging_mode:
-        fpaths = fpaths[0:3]  # select first 3 fpaths
+        filepaths = filepaths[0:3]  # select first 3 filepaths
 
     # - Define the list of dataframe
-    list_df = [_read_l0a(fpath, verbose=verbose, debugging_mode=debugging_mode) for fpath in fpaths]
+    list_df = [_read_l0a(filepath, verbose=verbose, debugging_mode=debugging_mode) for filepath in filepaths]
     # - Concatenate dataframe
     df = concatenate_dataframe(list_df, verbose=verbose)
     # ---------------------------------------------------

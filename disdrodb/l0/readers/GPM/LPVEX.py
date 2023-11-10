@@ -46,7 +46,7 @@ def reader(
     # - Need for zipped raw file (GPM files)
     reader_kwargs["zipped"] = True
     # - Searched file into tar files
-    reader_kwargs["file_name_to_read_zipped"] = "spectrum.txt"
+    reader_kwargs["filename_to_read_zipped"] = "spectrum.txt"
     # - Avoid first column to become df index
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines

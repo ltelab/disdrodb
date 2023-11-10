@@ -81,7 +81,7 @@ def click_upload_archive_options(function: object):
         type=str,
         show_default=True,
         default="",
-        help="""Data source folder name (eg: EPFL). If not provided (None),
+        help="""Data source name (eg: EPFL). If not provided (None),
     all data sources will be uploaded.
     Multiple data sources can be specified by separating them with spaces.
     """,
@@ -108,24 +108,24 @@ def click_upload_archive_options(function: object):
     return function
 
 
-def _check_if_upload(metadata_fpath, force):
+def _check_if_upload(metadata_filepath, force):
     """Check if data must be uploaded."""
     if not force:
-        disdrodb_data_url = read_yaml(metadata_fpath).get("disdrodb_data_url", "")
+        disdrodb_data_url = read_yaml(metadata_filepath).get("disdrodb_data_url", "")
         if isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 1:
-            raise ValueError(f"'force' is False and {metadata_fpath} has already a 'disdrodb_data_url' specified.")
+            raise ValueError(f"'force' is False and {metadata_filepath} has already a 'disdrodb_data_url' specified.")
 
 
-def _filter_already_uploaded(metadata_fpaths: List[str], force: bool) -> List[str]:
+def _filter_already_uploaded(metadata_filepaths: List[str], force: bool) -> List[str]:
     """Filter metadata files that already have a remote url specified."""
     filtered = []
-    for metadata_fpath in metadata_fpaths:
+    for metadata_filepath in metadata_filepaths:
         try:
-            _check_if_upload(metadata_fpath, force=force)
-            filtered.append(metadata_fpath)
+            _check_if_upload(metadata_filepath, force=force)
+            filtered.append(metadata_filepath)
         except Exception:
             msg = (
-                f"'force' is False and {metadata_fpath} has already a 'disdrodb_data_url' specified. Skipping data"
+                f"'force' is False and {metadata_filepath} has already a 'disdrodb_data_url' specified. Skipping data"
                 " upload ..."
             )
             print(msg)
@@ -167,8 +167,8 @@ def upload_station(
         The default is force=False.
 
     """
-    # Define metadata_fpath
-    metadata_fpath = define_metadata_filepath(
+    # Define metadata_filepath
+    metadata_filepath = define_metadata_filepath(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -177,14 +177,14 @@ def upload_station(
         check_exists=True,
     )
     # Check if data must be uploaded
-    _check_if_upload(metadata_fpath, force=force)
+    _check_if_upload(metadata_filepath, force=force)
 
     # Upload the data
     if platform == "zenodo":
-        upload_station_to_zenodo(metadata_fpath, sandbox=False)
+        upload_station_to_zenodo(metadata_filepath, sandbox=False)
 
     elif platform == "zenodo.sandbox":  # Only for testing purposes, not available through CLI
-        upload_station_to_zenodo(metadata_fpath, sandbox=True)
+        upload_station_to_zenodo(metadata_filepath, sandbox=True)
     else:
         raise NotImplementedError(f"Data upload for platform {platform} is not implemented.")
 
@@ -214,7 +214,7 @@ def upload_archive(
     ----------------
 
     data_sources: str or list of str, optional
-        Data source folder name (eg: EPFL).
+        Data source name (eg: EPFL).
         If not provided (None), all data sources will be uploaded.
         The default is data_source=None.
     campaign_names: str or list of str, optional
@@ -227,26 +227,26 @@ def upload_archive(
         The default is station_name=None.
     """
     # Get list metadata
-    metadata_fpaths = get_list_metadata(
+    metadata_filepaths = get_list_metadata(
         **kwargs,
         base_dir=base_dir,
         with_stations_data=True,
     )
     # If force=False, keep only metadata without disdrodb_data_url
     if not force:
-        metadata_fpaths = _filter_already_uploaded(metadata_fpaths, force=force)
+        metadata_filepaths = _filter_already_uploaded(metadata_filepaths, force=force)
 
     # Check there are some stations to upload
-    if len(metadata_fpaths) == 0:
+    if len(metadata_filepaths) == 0:
         print("There is no remaining data to upload.")
         return
 
     # Upload the data
     if platform == "zenodo":
-        upload_archive_to_zenodo(metadata_fpaths, sandbox=False)
+        upload_archive_to_zenodo(metadata_filepaths, sandbox=False)
 
     elif platform == "zenodo.sandbox":  # Only for testing purposes, not available through CLI
-        upload_archive_to_zenodo(metadata_fpaths, sandbox=True)
+        upload_archive_to_zenodo(metadata_filepaths, sandbox=True)
     else:
         valid_platform = ["zenodo", "zenodo.sandbox"]
         raise NotImplementedError(f"Invalid platform {platform}. Valid platforms are {valid_platform}.")

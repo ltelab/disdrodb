@@ -46,7 +46,7 @@ def create_fake_metadata_file(
     from disdrodb.api.io import define_metadata_filepath
 
     # Define metadata filepath
-    metadata_fpath = define_metadata_filepath(
+    metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         product=product,
         data_source=data_source,
@@ -55,7 +55,7 @@ def create_fake_metadata_file(
         check_exists=False,
     )
     # Create metadata directory
-    os.makedirs(os.path.dirname(metadata_fpath), exist_ok=True)
+    os.makedirs(os.path.dirname(metadata_filepath), exist_ok=True)
 
     # Define defaults fields
     if "data_source" not in metadata_dict:
@@ -66,10 +66,10 @@ def create_fake_metadata_file(
         metadata_dict["station_name"] = station_name
 
     # Write metadata
-    write_yaml(metadata_dict, metadata_fpath)
+    write_yaml(metadata_dict, metadata_filepath)
 
     # Return filepath
-    return str(metadata_fpath)
+    return str(metadata_filepath)
 
 
 def create_fake_raw_data_file(
@@ -117,23 +117,23 @@ def create_test_config_files(request):
     ----------
     request : _pytest.fixtures.SubRequest
         The request object provided by pytest. It must contain a parameter `param`
-        with a dictionary structure {"<config_file_name>.yml": <config_dict>}.
+        with a dictionary structure {"<config_filename>.yml": <config_dict>}.
         `request.param` is used to extract the configuration data and file names
         for the configuration files to be created.
 
     """
 
     config_dicts = request.param
-    for file_name, dictionary in config_dicts.items():
-        config_folder = os.path.join(__root_path__, "disdrodb", "l0", "configs")
+    for filename, dictionary in config_dicts.items():
+        config_dir = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
-        test_folder = os.path.join(config_folder, "test")
-        if not os.path.exists(test_folder):
-            os.makedirs(test_folder)
+        test_dir = os.path.join(config_dir, "test")
+        if not os.path.exists(test_dir):
+            os.makedirs(test_dir)
 
-        test_filepath = os.path.join(test_folder, file_name)
+        test_filepath = os.path.join(test_dir, filename)
         write_yaml(dictionary, test_filepath)
 
     yield
     os.remove(test_filepath)
-    shutil.rmtree(test_folder)
+    shutil.rmtree(test_dir)

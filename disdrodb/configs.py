@@ -10,12 +10,12 @@ from typing import Dict
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
 
-def _define_config_fpath():
+def _define_config_filepath():
     # Retrieve user home directory
     home_directory = os.path.expanduser("~")
     # Define path where .config_disdrodb.yaml file should be located
-    fpath = os.path.join(home_directory, ".config_disdrodb.yml")
-    return fpath
+    filepath = os.path.join(home_directory, ".config_disdrodb.yml")
+    return filepath
 
 
 def define_disdrodb_configs(base_dir: str = None, zenodo_token: str = None, zenodo_sandbox_token: str = None):
@@ -39,11 +39,11 @@ def define_disdrodb_configs(base_dir: str = None, zenodo_token: str = None, zeno
 
     """
     # Define path to .config_disdrodb.yaml file
-    fpath = _define_config_fpath()
+    filepath = _define_config_filepath()
 
     # If the config exists, read it and update it ;)
-    if os.path.exists(fpath):
-        config_dict = read_yaml(fpath)
+    if os.path.exists(filepath):
+        config_dict = read_yaml(filepath)
         action_msg = "updated"
     else:
         config_dict = {}
@@ -60,7 +60,7 @@ def define_disdrodb_configs(base_dir: str = None, zenodo_token: str = None, zeno
         config_dict["zenodo_sandbox_token"] = zenodo_sandbox_token
 
     # Write the DISDRODB config file
-    write_yaml(config_dict, fpath, sort_keys=False)
+    write_yaml(config_dict, filepath, sort_keys=False)
 
     print(f"The DISDRODB config file has been {action_msg} successfully!")
     return
@@ -86,11 +86,11 @@ def read_disdrodb_configs() -> Dict[str, str]:
     This function reads the YAML configuration file located at ~/.config_disdrodb.yml.
     """
     # Define path where .config_disdrodb.yaml file should be located
-    fpath = _define_config_fpath()
-    if not os.path.exists(fpath):
+    filepath = _define_config_filepath()
+    if not os.path.exists(filepath):
         raise ValueError("The DISDRODB config file has not been specified. Use disdrodb.define_configs to specify it !")
     # Read the DISDRODB config file
-    config_dict = read_yaml(fpath)
+    config_dict = read_yaml(filepath)
     return config_dict
 
 

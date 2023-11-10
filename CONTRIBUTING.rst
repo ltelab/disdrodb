@@ -336,7 +336,7 @@ DISDRODB tests are written using the third-party `pytest <https://docs.pytest.or
 
 
 
-The tests located in the ``/disdrodb/tests`` folder are used to test various functions of the code and are automatically run
+The tests located in the ``/disdrodb/tests`` directory are used to test various functions of the code and are automatically run
 when changes are pushed to the main repository through a GitHub Pull Request.
 
 .. code-block:: bash

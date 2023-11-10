@@ -46,7 +46,7 @@ def click_download_option(function: object):
         type=str,
         show_default=True,
         default="",
-        help="""Data source folder name (eg : EPFL). If not provided (None),
+        help="""Data source name (eg : EPFL). If not provided (None),
     all data sources will be downloaded.
     Multiple data sources can be specified by separating them with spaces.
     """,
@@ -102,7 +102,7 @@ def download_archive(
     Parameters
     ----------
     data_sources : str or list of str, optional
-        Data source folder name (eg : EPFL).
+        Data source name (eg : EPFL).
         If not provided (None), all data sources will be downloaded.
         The default is data_source=None.
     campaign_names : str or list of str, optional
@@ -123,7 +123,7 @@ def download_archive(
     """
     # Retrieve the requested metadata
     base_dir = get_base_dir(base_dir)
-    metadata_fpaths = get_list_metadata(
+    metadata_filepaths = get_list_metadata(
         base_dir=base_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
@@ -132,106 +132,106 @@ def download_archive(
     )
     # Try to download the data
     # - It will download data only if the disdrodb_data_url is specified !
-    for metadata_fpath in metadata_fpaths:
+    for metadata_filepath in metadata_filepaths:
         try:
-            _download_station_data(metadata_fpath, force)
+            _download_station_data(metadata_filepath, force)
         except Exception as e:
-            station_dir_path = infer_disdrodb_tree_path(metadata_fpath).replace("metadata", "data").replace(".yml", "")
-            print(f"ERROR during downloading the station {station_dir_path}: {e}")
+            station_dir = infer_disdrodb_tree_path(metadata_filepath).replace("metadata", "data").replace(".yml", "")
+            print(f"ERROR during downloading the station {station_dir}: {e}")
             print(" ")
 
 
-def _extract_station_files(zip_fpath, station_dir_path):
+def _extract_station_files(zip_filepath, station_dir):
     """Extract files from the station.zip file and remove the station.zip file."""
-    _unzip_file(filepath=zip_fpath, dest_path=station_dir_path)
-    if os.path.exists(zip_fpath):
-        os.remove(zip_fpath)
+    _unzip_file(filepath=zip_filepath, dest_path=station_dir)
+    if os.path.exists(zip_filepath):
+        os.remove(zip_filepath)
 
 
-def _download_station_data(metadata_fpath: str, force: bool = False) -> None:
+def _download_station_data(metadata_filepath: str, force: bool = False) -> None:
     """Download and unzip the station data .
 
     Parameters
     ----------
-    metadata_fpaths : str
+    metadata_filepaths : str
         Metadata file path.
     force : bool, optional
         force download, by default False
 
     """
-    disdrodb_data_url, station_dir_path = _get_station_url_and_dir_path(metadata_fpath)
+    disdrodb_data_url, station_dir = _get_station_url_and_dir_path(metadata_filepath)
     if isinstance(disdrodb_data_url, str) and disdrodb_data_url != "":
         # Download file
-        zip_fpath, to_unzip = _download_file_from_url(disdrodb_data_url, dst_dir_path=station_dir_path, force=force)
+        zip_filepath, to_unzip = _download_file_from_url(disdrodb_data_url, dst_dir=station_dir, force=force)
         # Extract the stations files from the downloaded station.zip file
         if to_unzip:
-            _extract_station_files(zip_fpath, station_dir_path=station_dir_path)
+            _extract_station_files(zip_filepath, station_dir=station_dir)
 
 
-def _get_valid_station_name(metadata_fpath, metadata_dict):
+def _get_valid_station_name(metadata_filepath, metadata_dict):
     """Check consistent station_name between YAML file name and metadata key."""
     # Check consistent station name
-    expected_station_name = os.path.basename(metadata_fpath).replace(".yml", "")
+    expected_station_name = os.path.basename(metadata_filepath).replace(".yml", "")
     station_name = metadata_dict.get("station_name")
     if station_name and str(station_name) != str(expected_station_name):
-        raise ValueError(f"Inconsistent station_name values in the {metadata_fpath} file. Download aborted.")
+        raise ValueError(f"Inconsistent station_name values in the {metadata_filepath} file. Download aborted.")
     return station_name
 
 
-def _get_station_url_and_dir_path(metadata_fpath: str) -> tuple:
+def _get_station_url_and_dir_path(metadata_filepath: str) -> tuple:
     """Return the station's remote url and the local destination directory path.
 
     Parameters
     ----------
-    metadata_fpath : str
+    metadata_filepath : str
         Path to the metadata YAML file.
 
     Returns
     -------
-    disdrodb_data_url, station_dir_path
+    disdrodb_data_url, station_dir
         Tuple containing the remote url and the DISDRODB station directory path.
     """
-    metadata_dict = read_yaml(metadata_fpath)
-    station_name = _get_valid_station_name(metadata_fpath, metadata_dict)
+    metadata_dict = read_yaml(metadata_filepath)
+    station_name = _get_valid_station_name(metadata_filepath, metadata_dict)
     disdrodb_data_url = metadata_dict.get("disdrodb_data_url", None)
     # Define the destination local filepath path
-    data_dir_path = os.path.dirname(metadata_fpath).replace("metadata", "data")
-    station_dir_path = os.path.join(data_dir_path, station_name)
-    return disdrodb_data_url, station_dir_path
+    data_dir = os.path.dirname(metadata_filepath).replace("metadata", "data")
+    station_dir = os.path.join(data_dir, station_name)
+    return disdrodb_data_url, station_dir
 
 
-def _download_file_from_url(url: str, dst_dir_path: str, force: bool = False) -> str:
+def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
     """Download station zip file into the DISDRODB station data directory.
 
     Parameters
     ----------
     url : str
         URL of the file to download.
-    dst_dir_path : str
-        Local filepath where to download the file (DISDRODB station data directory).
+    dst_dir : str
+        Local directory where to download the file (DISDRODB station data directory).
     force : bool, optional
         Overwrite the raw data file if already existing, by default False.
 
     Returns
     -------
-    dst_fpath
+    dst_filepath
         Path of the downloaded file.
     to_unzip
         Flag that specify if the download station zip file must be unzipped.
     """
-    fname = os.path.basename(url)
-    dst_fpath = os.path.join(dst_dir_path, fname)
-    os.makedirs(dst_dir_path, exist_ok=True)
-    if not is_empty_directory(dst_dir_path):
+    filename = os.path.basename(url)
+    dst_filepath = os.path.join(dst_dir, filename)
+    os.makedirs(dst_dir, exist_ok=True)
+    if not is_empty_directory(dst_dir):
         if force:
-            shutil.rmtree(dst_dir_path)
-            os.makedirs(dst_dir_path)  # station directory
+            shutil.rmtree(dst_dir)
+            os.makedirs(dst_dir)  # station directory
         else:
-            print(f"There are already files within {dst_dir_path}. Skipping the station data download.")
+            print(f"There are already files within {dst_dir}. Skipping the station data download.")
             to_unzip = False
-            return dst_fpath, to_unzip
-    os.makedirs(dst_dir_path, exist_ok=True)
+            return dst_filepath, to_unzip
+    os.makedirs(dst_dir, exist_ok=True)
     downloader = pooch.HTTPDownloader(progressbar=True)
-    pooch.retrieve(url=url, known_hash=None, path=dst_dir_path, fname=fname, downloader=downloader, progressbar=tqdm)
+    pooch.retrieve(url=url, known_hash=None, path=dst_dir, fname=filename, downloader=downloader, progressbar=tqdm)
     to_unzip = True
-    return dst_fpath, to_unzip
+    return dst_filepath, to_unzip

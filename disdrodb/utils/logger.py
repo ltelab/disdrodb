@@ -67,8 +67,8 @@ def create_l0_logger(processed_dir: str, campaign_name: str, verbose: bool = Fal
 
 def _create_logger(log_dir, logger_name):
     # Define log file filepath
-    logger_fname = f'{logger_name}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
-    logger_fpath = os.path.join(log_dir, logger_fname)
+    logger_filename = f'{logger_name}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
+    logger_filepath = os.path.join(log_dir, logger_filename)
     # -------------------------------------------------------------------------.
     # Define logger format
     format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -77,10 +77,10 @@ def _create_logger(log_dir, logger_name):
     level = logging.DEBUG
 
     # Define logging
-    logging.basicConfig(format=format_type, level=level, filename=logger_fpath)
+    logging.basicConfig(format=format_type, level=level, filename=logger_filepath)
 
     # Retrieve logger
-    # logger = logging.getLogger(logger_fpath)
+    # logger = logging.getLogger(logger_filepath)
     # return logger
     return None
 
@@ -110,9 +110,9 @@ def create_file_logger(processed_dir, product, station_name, filename, parallel)
     logs_dir = os.path.join(processed_dir, "logs", product, station_name)
     os.makedirs(logs_dir, exist_ok=True)
 
-    # logger_fname = f'logs_{fname}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
-    logger_fname = f"logs_{filename}.log"
-    logger_fpath = os.path.join(logs_dir, logger_fname)
+    # logger_filename = f'logs_{filename}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
+    logger_filename = f"logs_{filename}.log"
+    logger_filepath = os.path.join(logs_dir, logger_filename)
 
     # -------------------------------------------------------------------------.
     # Set logger (TODO: messy with multiprocess)
@@ -121,7 +121,7 @@ def create_file_logger(processed_dir, product, station_name, filename, parallel)
     else:
         logger = logging.getLogger()  # root logger (messy with multiprocess)
 
-    handler = logging.FileHandler(logger_fpath, mode="w")
+    handler = logging.FileHandler(logger_filepath, mode="w")
     # handler.setLevel(logging.DEBUG)
     format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     handler.setFormatter(logging.Formatter(format_type))
@@ -149,15 +149,15 @@ def define_summary_log(list_logs):
     ####-----------------------------------------------------------------------.
     #### Define summary and problem logs
     # Define summary logs file name
-    summary_fpath = os.path.join(summary_logs_dir, f"logs_summary_{station_name}.log")
+    summary_filepath = os.path.join(summary_logs_dir, f"logs_summary_{station_name}.log")
     # Define logs keywords to select lines to copy into the summary log file
     # -- > "has started" and "has ended" is used to copy the line with the filename being processed
     list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
     re_keyword = re.compile("|".join(list_keywords))
     # Filter and concat all logs files
-    with open(summary_fpath, "w") as output_file:
-        for log_fpath in list_logs:
-            with open(log_fpath) as input_file:
+    with open(summary_filepath, "w") as output_file:
+        for log_filepath in list_logs:
+            with open(log_filepath) as input_file:
                 for line in input_file:
                     if re_keyword.search(line):
                         # Write line to output file
@@ -165,16 +165,16 @@ def define_summary_log(list_logs):
     ####-----------------------------------------------------------------------.
     #### Define problem logs
     # Define problem logs file name
-    problem_fpath = os.path.join(summary_logs_dir, f"logs_problem_{station_name}.log")
+    problem_filepath = os.path.join(summary_logs_dir, f"logs_problem_{station_name}.log")
     # - Copy the log of files with warnings and error
     list_keywords = ["ERROR"]  # "WARNING"
     re_keyword = re.compile("|".join(list_keywords))
     any_problem = False
-    with open(problem_fpath, "w") as output_file:
-        for log_fpath in list_logs:
+    with open(problem_filepath, "w") as output_file:
+        for log_filepath in list_logs:
             log_with_problem = False
             # Check if a warning or error is reported
-            with open(log_fpath) as input_file:
+            with open(log_filepath) as input_file:
                 for line in input_file:
                     if re_keyword.search(line):
                         log_with_problem = True
@@ -182,12 +182,12 @@ def define_summary_log(list_logs):
                         break
             # If it is reported, copy the log file in the logs_problem file
             if log_with_problem:
-                with open(log_fpath) as input_file:
+                with open(log_filepath) as input_file:
                     output_file.write(input_file.read())
 
     # If no problems occurred, remove the logs_problem_<station_name>.log file
     if not any_problem:
-        os.remove(problem_fpath)
+        os.remove(problem_filepath)
     return None
 
 
