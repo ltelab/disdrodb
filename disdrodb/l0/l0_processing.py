@@ -38,11 +38,11 @@ from disdrodb.l0.create_directories import (
     create_initial_directory_structure,
 )
 from disdrodb.l0.io import (
-    get_l0a_file_list,
+    get_l0a_filepaths,
     get_l0a_fpath,
     get_l0b_dir,
     get_l0b_fpath,
-    get_raw_file_list,
+    get_raw_filepaths,
     read_l0a_dataframe,
 )
 from disdrodb.l0.issue import read_issue
@@ -429,7 +429,7 @@ def run_l0a(
 
     # -------------------------------------------------------------------------.
     # List files to process
-    filepaths = get_raw_file_list(
+    filepaths = get_raw_filepaths(
         raw_dir=raw_dir,
         station_name=station_name,
         # L0A reader argument
@@ -571,7 +571,7 @@ def run_l0b(
 
     ##----------------------------------------------------------------.
     # Get L0A files for the station
-    filepaths = get_l0a_file_list(
+    filepaths = get_l0a_filepaths(
         processed_dir=processed_dir,
         station_name=station_name,
         debugging_mode=debugging_mode,
@@ -723,7 +723,7 @@ def run_l0b_from_nc(
 
     # -------------------------------------------------------------------------.
     # List files to process
-    filepaths = get_raw_file_list(
+    filepaths = get_raw_filepaths(
         raw_dir=raw_dir,
         station_name=station_name,
         # Reader argument
@@ -805,12 +805,12 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
     # -------------------------------------------------------------------------.
     # Retrieve L0B files
     l0b_dir_path = get_l0b_dir(processed_dir, station_name)
-    file_list = list_files(l0b_dir_path, glob_pattern="*.nc", recursive=True)
-    file_list = sorted(file_list)
+    filepaths = list_files(l0b_dir_path, glob_pattern="*.nc", recursive=True)
+    filepaths = sorted(filepaths)
 
     # -------------------------------------------------------------------------.
     # Check there are at least two files
-    n_files = len(file_list)
+    n_files = len(filepaths)
     if n_files == 0:
         msg = f"No L0B file is available for concatenation in {l0b_dir_path}."
         log_error(logger=logger, msg=msg, verbose=False)
@@ -822,7 +822,7 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
 
     # -------------------------------------------------------------------------.
     # Concatenate the files
-    ds = xr_concat_datasets(file_list)
+    ds = xr_concat_datasets(filepaths)
 
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
@@ -839,7 +839,7 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
     # If remove = True, remove all the single files
     if remove:
         log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
-        _ = [os.remove(fpath) for fpath in file_list]
+        _ = [os.remove(fpath) for fpath in filepaths]
         log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
 
     # -------------------------------------------------------------------------.

@@ -131,9 +131,9 @@ def create_test_config_files(request):
         if not os.path.exists(test_folder):
             os.makedirs(test_folder)
 
-        test_file_path = os.path.join(test_folder, file_name)
-        write_yaml(dictionary, test_file_path)
+        test_filepath = os.path.join(test_folder, file_name)
+        write_yaml(dictionary, test_filepath)
 
     yield
-    os.remove(test_file_path)
+    os.remove(test_filepath)
     shutil.rmtree(test_folder)

@@ -35,7 +35,7 @@ from disdrodb.api.info import (
     get_start_time_from_filepaths,
     get_station_name_from_filepaths,
     get_version_from_filepaths,
-    infer_base_dir_from_fpath,
+    infer_base_dir_from_path,
     infer_campaign_name_from_path,
     infer_data_source_from_path,
     infer_disdrodb_tree_path,
@@ -125,23 +125,23 @@ def test_infer_disdrodb_tree_path():
     assert infer_disdrodb_tree_path(base_dir) == "DISDRODB"
 
 
-def test_infer_base_dir_from_fpath():
+def test_infer_base_dir_from_path():
     # Assert retrieve correct disdrodb path
     base_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
     disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join(base_dir, disdrodb_path)
-    assert infer_base_dir_from_fpath(path) == base_dir
+    assert infer_base_dir_from_path(path) == base_dir
 
     # Assert raise error if not disdrodb path
     base_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
     disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join(base_dir, disdrodb_path)
     with pytest.raises(ValueError):
-        infer_base_dir_from_fpath(path)
+        infer_base_dir_from_path(path)
 
     # Assert behaviour when path == base_dir
     base_dir = os.path.join("home", "DISDRODB")
-    assert infer_base_dir_from_fpath(base_dir) == base_dir
+    assert infer_base_dir_from_path(base_dir) == base_dir
 
 
 def test_infer_data_source_from_path():

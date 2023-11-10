@@ -120,8 +120,8 @@ def is_empty_directory(path):
     if not os.path.isdir(path):
         return False
 
-    list_files = os.listdir(path)
-    if len(list_files) == 0:
+    paths = os.listdir(path)
+    if len(paths) == 0:
         return True
     else:
         return False

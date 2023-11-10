@@ -304,9 +304,9 @@ def _get_list_stations_with_metadata(campaign_dir):
     # Get directory where metadata are stored
     metadata_path = os.path.join(campaign_dir, "metadata")
     # List metadata files
-    list_metadata_files = list_files(metadata_path, glob_pattern="*.yml", recursive=False)
+    metadata_filepaths = list_files(metadata_path, glob_pattern="*.yml", recursive=False)
     # Return stations with metadata
-    list_stations = [os.path.basename(fpath).replace(".yml", "") for fpath in list_metadata_files]
+    list_stations = [os.path.basename(fpath).replace(".yml", "") for fpath in metadata_filepaths]
     return list_stations
 
 

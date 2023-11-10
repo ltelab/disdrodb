@@ -142,10 +142,10 @@ def test_check_directory_exists(tmp_path):
     assert check_directory_exists(tmp_path) is None
 
     # Check raise error when path is a file
-    file_path = tmp_path / "test_file.txt"
-    file_path.write_text("This is a test file.")
+    filepath = tmp_path / "test_file.txt"
+    filepath.write_text("This is a test file.")
     with pytest.raises(ValueError):
-        check_directory_exists(file_path)
+        check_directory_exists(filepath)
 
     # Check raise error when unexisting path
     with pytest.raises(ValueError):
@@ -157,11 +157,11 @@ class TestIsEmptyDirectory:
         with pytest.raises(OSError, match=r".* does not exist."):
             is_empty_directory("non_existent_directory")
 
-    def test_file_path(self, tmp_path):
+    def test_filepath(self, tmp_path):
         # Create a temporary file
-        file_path = tmp_path / "test_file.txt"
-        file_path.write_text("This is a test file.")
-        assert not is_empty_directory(str(file_path))
+        filepath = tmp_path / "test_file.txt"
+        filepath.write_text("This is a test file.")
+        assert not is_empty_directory(str(filepath))
 
     def test_empty_directory(self, tmp_path):
         # `tmp_path` is a pytest fixture that provides a temporary directory unique to the test invocation
@@ -169,8 +169,8 @@ class TestIsEmptyDirectory:
 
     def test_non_empty_directory(self, tmp_path):
         # Create a temporary file inside the temporary directory
-        file_path = tmp_path / "test_file.txt"
-        file_path.write_text("This is a test file.")
+        filepath = tmp_path / "test_file.txt"
+        filepath.write_text("This is a test file.")
         assert not is_empty_directory(tmp_path)
 
 
@@ -203,18 +203,18 @@ def test_remove_if_exists_empty_directory(tmp_path):
 
 
 def test_remove_if_exists_file(tmp_path):
-    file_path = tmp_path / "test_file.txt"
-    file_path.write_text("This is a test file.")
+    filepath = tmp_path / "test_file.txt"
+    filepath.write_text("This is a test file.")
 
     # Check it raise an error if force=False
     with pytest.raises(ValueError):
-        remove_if_exists(file_path, force=False)
+        remove_if_exists(filepath, force=False)
 
     # Check it removes the folder
-    remove_if_exists(file_path, force=True)
+    remove_if_exists(filepath, force=True)
 
     # Test the removal
-    assert not os.path.exists(file_path)
+    assert not os.path.exists(filepath)
 
 
 @pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")

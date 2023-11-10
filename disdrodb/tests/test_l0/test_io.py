@@ -148,7 +148,7 @@ def test__check_glob_pattern():
         io._check_glob_pattern("/1")
 
 
-def test_get_raw_file_list(tmp_path):
+def test_get_raw_filepaths(tmp_path):
     # Define station info
     base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
@@ -171,25 +171,25 @@ def test_get_raw_file_list(tmp_path):
         )
 
     # Test that the function returns the correct number of files in debugging mode
-    file_list = io.get_raw_file_list(
+    filepaths = io.get_raw_filepaths(
         raw_dir=raw_dir,
         station_name=station_name,
         glob_patterns=glob_pattern,
         debugging_mode=True,
     )
-    assert len(file_list) == 2  # max(2, 3)
+    assert len(filepaths) == 2  # max(2, 3)
 
     # Test that the function returns the correct number of files in normal mode
-    file_list = io.get_raw_file_list(raw_dir=raw_dir, station_name=station_name, glob_patterns="*.txt")
-    assert len(file_list) == 2
+    filepaths = io.get_raw_filepaths(raw_dir=raw_dir, station_name=station_name, glob_patterns="*.txt")
+    assert len(filepaths) == 2
 
     # Test that the function raises an error if the glob_patterns is not a str or list
     with pytest.raises(ValueError, match="'glob_patterns' must be a str or list of strings."):
-        io.get_raw_file_list(raw_dir=raw_dir, station_name=station_name, glob_patterns=1)
+        io.get_raw_filepaths(raw_dir=raw_dir, station_name=station_name, glob_patterns=1)
 
     # Test that the function raises an error if no files are found
     with pytest.raises(ValueError):
-        io.get_raw_file_list(
+        io.get_raw_filepaths(
             raw_dir=raw_dir,
             station_name=station_name,
             glob_patterns="*.csv",
@@ -215,7 +215,7 @@ def test__read_l0a(tmp_path):
 
 
 def test_read_l0a_dataframe(tmp_path):
-    list_of_parquet_file_paths = list()
+    list_of_parquet_filepaths = list()
 
     for i in [0, 1]:
         # create dummy dataframe
@@ -229,7 +229,7 @@ def test_read_l0a_dataframe(tmp_path):
             f"fake_data_sample_{i}.parquet",
         )
         df.to_parquet(path_parquet_file, compression="gzip")
-        list_of_parquet_file_paths.append(path_parquet_file)
+        list_of_parquet_filepaths.append(path_parquet_file)
 
         # create concatenate dataframe
         if i == 0:
@@ -243,7 +243,7 @@ def test_read_l0a_dataframe(tmp_path):
     df_concatenate = df_concatenate.sort_values(by="time")
 
     # read written parquet files
-    df_written = io.read_l0a_dataframe(list_of_parquet_file_paths, False)
+    df_written = io.read_l0a_dataframe(list_of_parquet_filepaths, False)
 
     # Create lists
     df_concatenate_list = df_concatenate.values.tolist()

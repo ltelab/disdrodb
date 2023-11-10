@@ -31,7 +31,7 @@ from disdrodb.l0.l0a_processing import (
     _check_not_empty_dataframe,
     cast_column_dtypes,
     coerce_corrupted_values_to_nan,
-    read_raw_file_list,
+    read_raw_files,
     remove_corrupted_rows,
     remove_issue_timesteps,
     replace_nan_flags,
@@ -543,9 +543,9 @@ def test_write_l0a(tmp_path):
     assert is_equal
 
 
-def test_read_raw_file_list():
+def test_read_raw_files():
     # Set up the inputs
-    file_list = ["test_file1.csv", "test_file2.csv"]
+    filepaths = ["test_file1.csv", "test_file2.csv"]
     column_names = ["time", "value"]
     reader_kwargs = {"delimiter": ","}
     sensor_name = "my_sensor"
@@ -573,8 +573,8 @@ def test_read_raw_file_list():
     l0a_processing.process_raw_file = mock_process_raw_file
 
     # Call the function
-    result = read_raw_file_list(
-        file_list=file_list,
+    result = read_raw_files(
+        filepaths=filepaths,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
         sensor_name=sensor_name,

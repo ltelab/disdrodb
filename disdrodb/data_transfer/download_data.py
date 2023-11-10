@@ -143,7 +143,7 @@ def download_archive(
 
 def _extract_station_files(zip_fpath, station_dir_path):
     """Extract files from the station.zip file and remove the station.zip file."""
-    _unzip_file(file_path=zip_fpath, dest_path=station_dir_path)
+    _unzip_file(filepath=zip_fpath, dest_path=station_dir_path)
     if os.path.exists(zip_fpath):
         os.remove(zip_fpath)
 

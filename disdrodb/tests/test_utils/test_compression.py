@@ -102,8 +102,8 @@ def test_files_compression(tmp_path):
 def test_zip_unzip_directory(tmp_path):
     dir_path = tmp_path / "test_dir"
     dir_path.mkdir()
-    file_path = dir_path / "test_file.txt"
-    file_path.touch()
+    filepath = dir_path / "test_file.txt"
+    filepath.touch()
 
     zip_path = _zip_dir(dir_path)
     assert os.path.isfile(zip_path)

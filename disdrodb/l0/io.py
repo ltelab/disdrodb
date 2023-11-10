@@ -255,7 +255,7 @@ def _check_glob_patterns(patterns: Union[str, list]) -> list:
     return patterns
 
 
-def _get_file_list_from_glob_pattern(raw_dir: str, station_name, glob_pattern) -> list:
+def _get_file_list(raw_dir: str, station_name, glob_pattern) -> list:
     """Get the list of files from a directory based on glob pattern.
 
     Parameters
@@ -280,7 +280,7 @@ def _get_file_list_from_glob_pattern(raw_dir: str, station_name, glob_pattern) -
 
 def _get_available_filepaths(raw_dir, station_name, glob_patterns):
     # Retrieve filepaths list
-    filepaths = [_get_file_list_from_glob_pattern(raw_dir, station_name, pattern) for pattern in glob_patterns]
+    filepaths = [_get_file_list(raw_dir, station_name, glob_pattern=pattern) for pattern in glob_patterns]
     filepaths = [x for xs in filepaths for x in xs]  # flatten list
 
     # Check there are files
@@ -299,7 +299,7 @@ def _filter_filepaths(filepaths, debugging_mode):
     return filepaths
 
 
-def get_raw_file_list(raw_dir, station_name, glob_patterns, verbose=False, debugging_mode=False):
+def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debugging_mode=False):
     """Get the list of files from a directory based on input parameters.
 
     Currently concatenates all files provided by the glob patterns.
@@ -343,7 +343,7 @@ def get_raw_file_list(raw_dir, station_name, glob_patterns, verbose=False, debug
     return filepaths
 
 
-def get_l0a_file_list(processed_dir, station_name, debugging_mode):
+def get_l0a_filepaths(processed_dir, station_name, debugging_mode):
     """Retrieve L0A files for a give station.
 
     Parameters

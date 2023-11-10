@@ -174,19 +174,19 @@ class L0BVariableAttributesSchema(BaseModel):
 
 
 # Test the format and content of the l0b_cf_attrs.yml files
-list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_cf_attrs.yml", recursive=True)
+yaml_filepaths = list_files(CONFIG_FOLDER, "l0b_cf_attrs.yml", recursive=True)
 
 
-@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_l0b_cf_attrs_format(yaml_file_path: str) -> None:
+@pytest.mark.parametrize("yaml_filepath", yaml_filepaths)
+def test_l0b_cf_attrs_format(yaml_filepath: str) -> None:
     """Test the l0b_cf_attrs.yml file format.
 
     Parameters
     ----------
-    yaml_file_path : str
+    yaml_filepath : str
         Path of the l0b_cf_attrs.yml file to test.
     """
-    data = read_yaml_file(yaml_file_path)
+    data = read_yaml_file(yaml_filepath)
     assert is_dict(data)
     assert is_string_list(list(data.keys()))
     # Check the second level of the dictionary match the schema
@@ -196,21 +196,21 @@ def test_l0b_cf_attrs_format(yaml_file_path: str) -> None:
 
 # Test the format and content of the *_bins.yml files
 filenames = ["bins_diameter.yml", "bins_velocity.yml"]
-list_of_yaml_file_paths = []
+yaml_filepaths = []
 for filename in filenames:
-    list_of_yaml_file_paths.extend(list_files(CONFIG_FOLDER, filename, recursive=True))
+    yaml_filepaths.extend(list_files(CONFIG_FOLDER, filename, recursive=True))
 
 
-@pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-def test_bins_format(yaml_file_path: str) -> None:
+@pytest.mark.parametrize("yaml_filepath", yaml_filepaths)
+def test_bins_format(yaml_filepath: str) -> None:
     """Test the bins_*.yml file format.
 
     Parameters
     ----------
-    yaml_file_path : str
+    yaml_filepath : str
         Path of the YAML file to test.
     """
-    data = read_yaml_file(yaml_file_path)
+    data = read_yaml_file(yaml_filepath)
     if data:  # deal with empty bins_velocity.yml (impact disdrometers)
         assert is_dict(data)
         assert is_string_list(list(data.keys()))
@@ -262,19 +262,19 @@ def test_bins_format(yaml_file_path: str) -> None:
 
 
 # # Test the format and content of the raw_data_format.yml files
-# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "raw_data_format.yml", recursive=True)
+# yaml_filepaths = list_files(CONFIG_FOLDER, "raw_data_format.yml", recursive=True)
 
 
-# @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-# def test_raw_data_format(yaml_file_path: str):
+# @pytest.mark.parametrize("yaml_filepath", yaml_filepaths)
+# def test_raw_data_format(yaml_filepath: str):
 #     """Test the raw_data_format.yml file format.
 
 #     Parameters
 #     ----------
-#     yaml_file_path : str
+#     yaml_filepath : str
 #         Path of the raw_data_format.yml file to test.
 #     """
-#     data = read_yaml_file(yaml_file_path)
+#     data = read_yaml_file(yaml_filepath)
 #     assert is_dict(data)
 #     assert is_string_list(list(data.keys()))
 #     # Check the second level of the dictionary match the schema
@@ -283,21 +283,21 @@ def test_bins_format(yaml_file_path: str) -> None:
 
 
 # # Test format and content of l0a_encodings.yml
-# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0a_encodings.yml", recursive=True)
+# yaml_filepaths = list_files(CONFIG_FOLDER, "l0a_encodings.yml", recursive=True)
 
 
-# @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-# def test_l0a_encodings_format(yaml_file_path: str) -> None:
+# @pytest.mark.parametrize("yaml_filepath", yaml_filepaths)
+# def test_l0a_encodings_format(yaml_filepath: str) -> None:
 #     """Test the l0a_encoding.yml format.
 
 #     It should be a dictionary with string keys and string values.
 
 #     Parameters
 #     ----------
-#     yaml_file_path : str
+#     yaml_filepath : str
 #         Path of the yaml file to test.
 #     """
-#     data = read_yaml_file(yaml_file_path)
+#     data = read_yaml_file(yaml_filepath)
 #     assert is_dict(data)
 #     assert is_string_list(list(data.keys()))
 #     assert is_string_list(list(data.values()))
@@ -317,19 +317,19 @@ def test_bins_format(yaml_file_path: str) -> None:
 
 
 # # Test the format and content of the l0b_encodings.yml files
-# list_of_yaml_file_paths = list_files(CONFIG_FOLDER, "l0b_encodings.yml", recursive=True)
+# yaml_filepaths = list_files(CONFIG_FOLDER, "l0b_encodings.yml", recursive=True)
 
 
-# @pytest.mark.parametrize("yaml_file_path", list_of_yaml_file_paths)
-# def test_l0b_encodings_format(yaml_file_path: str) -> None:
+# @pytest.mark.parametrize("yaml_filepath", yaml_filepaths)
+# def test_l0b_encodings_format(yaml_filepath: str) -> None:
 #     """Test the l0b_encodings.yml file format.
 
 #     Parameters
 #     ----------
-#     yaml_file_path : str
+#     yaml_filepath : str
 #         Path of the l0b_encodings.yml file to test.
 #     """
-#     data = read_yaml_file(yaml_file_path)
+#     data = read_yaml_file(yaml_filepath)
 #     assert is_dict(data)
 #     assert is_string_list(list(data.keys()))
 #     # Check the second level of the dictionary match the schema

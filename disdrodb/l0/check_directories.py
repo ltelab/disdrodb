@@ -24,7 +24,7 @@ import os
 import numpy as np
 
 from disdrodb.api.info import (
-    infer_base_dir_from_fpath,
+    infer_base_dir_from_path,
     infer_campaign_name_from_path,
     infer_data_source_from_path,
     infer_disdrodb_tree_path_components,
@@ -343,7 +343,7 @@ def _check_valid_metadata(metadata_filepaths):
 
     for fpath in metadata_filepaths:
         # Get station info
-        base_dir = infer_base_dir_from_fpath(fpath)
+        base_dir = infer_base_dir_from_path(fpath)
         data_source = infer_data_source_from_path(fpath)
         campaign_name = infer_campaign_name_from_path(fpath)
         station_name = os.path.basename(fpath).replace(".yml", "")

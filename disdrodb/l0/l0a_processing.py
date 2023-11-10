@@ -800,8 +800,8 @@ def concatenate_dataframe(list_df: list, verbose: bool = False) -> pd.DataFrame:
     return df
 
 
-def read_raw_file_list(
-    file_list: Union[list, str],
+def read_raw_files(
+    filepaths: Union[list, str],
     column_names: list,
     reader_kwargs: dict,
     sensor_name: str,
@@ -812,7 +812,7 @@ def read_raw_file_list(
 
     Parameters
     ----------
-    file_list : Union[list,str]
+    filepaths : Union[list,str]
         File(s) path(s)
     column_names : list
         Columns names.
@@ -839,18 +839,18 @@ def read_raw_file_list(
 
     # ------------------------------------------------------.
     # Check input list
-    if isinstance(file_list, str):
-        file_list = [file_list]
-    if len(file_list) == 0:
-        raise ValueError("'file_list' must contains at least 1 filepath.")
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+    if len(filepaths) == 0:
+        raise ValueError("'filepaths' must contains at least 1 filepath.")
 
     # ------------------------------------------------------.
     ### - Loop over all raw files
-    n_files = len(file_list)
+    n_files = len(filepaths)
     processed_file_counter = 0
     list_skipped_files_msg = []
     list_df = []
-    for filepath in file_list:
+    for filepath in filepaths:
         try:
             # Try to process a raw file
             df = process_raw_file(
@@ -887,7 +887,7 @@ def read_raw_file_list(
     ##----------------------------------------------------------------.
     #### - Concatenate the dataframe
     if len(list_df) == 0:
-        raise ValueError(f"No dataframe to return. Impossible to parse {file_list}.")
+        raise ValueError(f"No dataframe to return. Impossible to parse {filepaths}.")
     df = concatenate_dataframe(list_df, verbose=verbose)
 
     # - Remove rows with duplicate timestep (keep the first)

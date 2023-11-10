@@ -89,17 +89,17 @@ def test_check_metadata_geolocation():
 def test_identify_missing_metadata_keys(tmp_path, capsys):
     base_dir = tmp_path / "DISDRODB"
     metadata_dict = {"key1": "value1"}
-    metadata_file_path = create_fake_metadata_file(base_dir, metadata_dict=metadata_dict)
+    metadata_filepath = create_fake_metadata_file(base_dir, metadata_dict=metadata_dict)
 
     # Test the key is empty -> print statement with the key name
     tested_key = "key2"
-    identify_empty_metadata_keys([metadata_file_path], [tested_key])
+    identify_empty_metadata_keys([metadata_filepath], [tested_key])
     captured = capsys.readouterr()
     assert tested_key in str(captured.out)
 
     # Test the key is not empty -> no print statement
     tested_key = "key1"
-    identify_empty_metadata_keys([metadata_file_path], [tested_key])
+    identify_empty_metadata_keys([metadata_filepath], [tested_key])
     captured = capsys.readouterr()
     assert not captured.out
 

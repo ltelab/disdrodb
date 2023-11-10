@@ -162,7 +162,7 @@ def _get_available_readers_dict() -> dict:
     Returns
     -------
     dict
-        The dictionary has the following schema {"data_source": {"reader_name": "reader_file_path"}}
+        The dictionary has the following schema {"data_source": {"reader_name": "reader_filepath"}}
     """
     # Format:
     # {data_source: {reader_name: reader_path,

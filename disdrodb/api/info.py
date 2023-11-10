@@ -211,7 +211,7 @@ def infer_disdrodb_tree_path(path: str) -> str:
     return tree_fpath
 
 
-def infer_base_dir_from_fpath(path: str) -> str:
+def infer_base_dir_from_path(path: str) -> str:
     """Return the disdrodb base directory from a file or directory path.
 
     Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!

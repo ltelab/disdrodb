@@ -90,7 +90,7 @@ def _create_zenodo_deposition(sandbox) -> Tuple[int, str]:
     return deposit_id, deposit_url, bucket_url
 
 
-def _upload_file_to_zenodo(file_path: str, metadata_fpath: str, sandbox: bool) -> None:
+def _upload_file_to_zenodo(filepath: str, metadata_fpath: str, sandbox: bool) -> None:
     """Upload a file to a Zenodo bucket."""
 
     # Read metadata
@@ -103,7 +103,7 @@ def _upload_file_to_zenodo(file_path: str, metadata_fpath: str, sandbox: bool) -
 
     # Define remote filename and remote url
     # --> <data_source>-<campaign_name>-<station_name>.zip !
-    filename = os.path.basename(file_path)
+    filename = os.path.basename(filepath)
     filename = f"{data_source}-{campaign_name}-{filename}"
     remote_url = f"{bucket_url}/{filename}"
 
@@ -113,10 +113,10 @@ def _upload_file_to_zenodo(file_path: str, metadata_fpath: str, sandbox: bool) -
 
     ###----------------------------------------------------------.
     # Upload data
-    with open(file_path, "rb") as f:
+    with open(filepath, "rb") as f:
         response = requests.put(remote_url, data=f, params=params)
     host_name = "Zenodo Sandbox" if sandbox else "Zenodo"
-    _check_http_response(response, 201, f"Upload of {file_path} to {host_name}.")
+    _check_http_response(response, 201, f"Upload of {filepath} to {host_name}.")
 
     ###----------------------------------------------------------.
     # Add zenodo metadata
@@ -214,7 +214,7 @@ def upload_station_to_zenodo(metadata_fpath: str, sandbox: bool = True) -> str:
     # - After upload, it removes the zip file !
     try:
         disdrodb_data_url = _upload_file_to_zenodo(
-            file_path=station_zip_fpath, metadata_fpath=metadata_fpath, sandbox=sandbox
+            filepath=station_zip_fpath, metadata_fpath=metadata_fpath, sandbox=sandbox
         )
         os.remove(station_zip_fpath)
     except Exception as e:
