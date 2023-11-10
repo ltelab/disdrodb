@@ -28,8 +28,8 @@ from disdrodb.api.io import define_campaign_dir
 from disdrodb.l0.l0_processing import run_l0b_concat
 from disdrodb.l0.routines import run_disdrodb_l0b_concat
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_station_dir
-from disdrodb.utils.netcdf import xr_concat_datasets
 from disdrodb.utils.directories import list_files
+from disdrodb.utils.netcdf import xr_concat_datasets
 
 
 def create_dummy_l0b_file(filepath: str, time):
@@ -276,7 +276,7 @@ def test_run_disdrodb_l0b_concat(tmp_path):
     # processed_dir = define_campaign_dir(
     #     base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
     # )
-      
+
     # list_concatenated_files = list_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False)
     # assert len(list_concatenated_files) == 2
 

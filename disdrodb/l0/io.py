@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define DISDRODB Data Input/Output."""
-import glob
 import logging
 import os
 from typing import Union
@@ -26,8 +25,8 @@ import pandas as pd
 import xarray as xr
 
 from disdrodb.api.info import infer_campaign_name_from_path
-from disdrodb.utils.logger import log_info
 from disdrodb.utils.directories import list_files
+from disdrodb.utils.logger import log_info
 
 logger = logging.getLogger(__name__)
 

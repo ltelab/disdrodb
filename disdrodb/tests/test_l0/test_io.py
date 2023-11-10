@@ -21,17 +21,14 @@
 import datetime
 import os
 
-import pytest
 import numpy as np
 import pandas as pd
-
+import pytest
 import xarray as xr
 
-from disdrodb import __root_path__
-from disdrodb.l0 import io
 from disdrodb.api.io import define_campaign_dir
+from disdrodb.l0 import io
 from disdrodb.tests.conftest import create_fake_raw_data_file
-
 
 PATH_PROCESS_DIR_WINDOWS = "\\DISDRODB\\Processed"
 PATH_PROCESS_DIR_LINUX = "/DISDRODB/Processed"
@@ -133,7 +130,9 @@ def test_get_l0b_fpath(tmp_path):
     res = io.get_l0b_fpath(ds, processed_dir, station_name)
 
     # Define expected results
-    expected_name = f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
+    expected_name = (
+        f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
+    )
     expected_path = os.path.join(processed_dir, product, station_name, expected_name)
     assert res == expected_path
 
@@ -156,22 +155,20 @@ def test_get_raw_file_list(tmp_path):
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
 
-    glob_pattern="*.txt"
-    raw_dir = define_campaign_dir(base_dir=base_dir,
-                                    product="RAW",
-                                    data_source=data_source,
-                                    campaign_name=campaign_name
+    glob_pattern = "*.txt"
+    raw_dir = define_campaign_dir(
+        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
     )
     # Add fake data files
     for filename in ["file1.txt", "file2.txt"]:
-     _ = create_fake_raw_data_file(
-        base_dir=base_dir,
-        product="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        filename=filename,
-    )
+        _ = create_fake_raw_data_file(
+            base_dir=base_dir,
+            product="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            filename=filename,
+        )
 
     # Test that the function returns the correct number of files in debugging mode
     file_list = io.get_raw_file_list(

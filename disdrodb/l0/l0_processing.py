@@ -20,7 +20,6 @@
 
 import datetime
 import functools
-import glob
 import logging
 import os
 import time
@@ -32,7 +31,6 @@ from disdrodb.api.checks import check_sensor_name
 from disdrodb.api.info import infer_path_info_dict
 from disdrodb.api.io import get_disdrodb_path
 from disdrodb.configs import get_base_dir
-from disdrodb.utils.directories import list_files
 
 # Directory
 from disdrodb.l0.create_directories import (
@@ -50,6 +48,7 @@ from disdrodb.l0.io import (
 from disdrodb.l0.issue import read_issue
 from disdrodb.l0.l0_reader import get_station_reader_function
 from disdrodb.metadata import read_station_metadata
+from disdrodb.utils.directories import list_files
 
 # Logger
 from disdrodb.utils.logger import (

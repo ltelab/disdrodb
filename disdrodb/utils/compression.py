@@ -19,7 +19,6 @@
 """DISDRODB raw data compression utility."""
 
 import bz2
-import glob
 import gzip
 import os
 import shutil

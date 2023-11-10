@@ -26,41 +26,42 @@ import pytest
 from disdrodb.utils.directories import (
     # ensure_string_path,
     check_directory_exists,
+    count_directories,
+    count_files,
     create_directory,
     # create_required_directory,
     # copy_file,
     is_empty_directory,
+    list_directories,
+    list_files,
     remove_if_exists,
     remove_path_trailing_slash,
-    list_files,
-    list_directories,
-    count_files, 
-    count_directories,
-)  
+)
+
 
 def test_list_count_files(tmp_path):
     # Set up test environment
     ext = "txt"
-    dir1 = tmp_path / 'dir1'
+    dir1 = tmp_path / "dir1"
     dir1.mkdir()
-    
-    dir1_dummy = tmp_path / 'dir1_dummy'
+
+    dir1_dummy = tmp_path / "dir1_dummy"
     dir1_dummy.mkdir()
-    
-    dir2 = dir1 / 'dir2'
+
+    dir2 = dir1 / "dir2"
     dir2.mkdir()
-    
-    dir2_dummy = dir1 / 'dir2_dummy'
+
+    dir2_dummy = dir1 / "dir2_dummy"
     dir2_dummy.mkdir()
-    
-    file1 = tmp_path / f'file1.{ext}'
-    file2 = tmp_path / f'file2.{ext}'
-    file3 = tmp_path / 'file3.ANOTHER'
-    
-    file4 = dir1 / f'file4.{ext}'
-    file5 = dir1 / 'file5.ANOTHER'
-    
-    file6 = dir2 / f'file6.{ext}'
+
+    file1 = tmp_path / f"file1.{ext}"
+    file2 = tmp_path / f"file2.{ext}"
+    file3 = tmp_path / "file3.ANOTHER"
+
+    file4 = dir1 / f"file4.{ext}"
+    file5 = dir1 / "file5.ANOTHER"
+
+    file6 = dir2 / f"file6.{ext}"
 
     file1.touch()
     file2.touch()
@@ -68,32 +69,32 @@ def test_list_count_files(tmp_path):
     file4.touch()
     file5.touch()
     file6.touch()
-    
-    glob_pattern = '*'
+
+    glob_pattern = "*"
     expected_files = [file1, file2, file3]
     assert set(list_files(tmp_path, glob_pattern, recursive=False)) == set(map(str, expected_files))
-    
-    glob_pattern = os.path.join('*','*')
+
+    glob_pattern = os.path.join("*", "*")
     expected_files = [file4, file5]
     assert set(list_files(tmp_path, glob_pattern, recursive=False)) == set(map(str, expected_files))
     assert count_files(tmp_path, glob_pattern, recursive=False) == len(expected_files)
-    
-    glob_pattern = f'*.{ext}'
+
+    glob_pattern = f"*.{ext}"
     expected_files = [file1, file2]
     assert set(list_files(tmp_path, glob_pattern, recursive=False)) == set(map(str, expected_files))
     assert count_files(tmp_path, glob_pattern, recursive=False) == len(expected_files)
-    
-    glob_pattern = os.path.join('*', f'*.{ext}')
+
+    glob_pattern = os.path.join("*", f"*.{ext}")
     expected_files = [file4]
     assert set(list_files(tmp_path, glob_pattern, recursive=False)) == set(map(str, expected_files))
     assert count_files(tmp_path, glob_pattern, recursive=False) == len(expected_files)
-    
-    glob_pattern = f'*.{ext}'
+
+    glob_pattern = f"*.{ext}"
     expected_files = [file1, file2, file4, file6]
     assert set(list_files(tmp_path, glob_pattern, recursive=True)) == set(map(str, expected_files))
     assert count_files(tmp_path, glob_pattern, recursive=True) == len(expected_files)
-    
-    glob_pattern = os.path.join('*', f'*.{ext}')
+
+    glob_pattern = os.path.join("*", f"*.{ext}")
     expected_files = [file4, file6]
     assert set(list_files(tmp_path, glob_pattern, recursive=True)) == set(map(str, expected_files))
     assert count_files(tmp_path, glob_pattern, recursive=True) == len(expected_files)
@@ -101,36 +102,36 @@ def test_list_count_files(tmp_path):
 
 def test_list_and_count_directories(tmp_path):
     # Set up test environment
-    dir1 = tmp_path / 'dir1'
+    dir1 = tmp_path / "dir1"
     dir1.mkdir()
 
-    dir2 = dir1 / 'dir2'
+    dir2 = dir1 / "dir2"
     dir2.mkdir()
 
     # Adding some files to check if they are excluded
-    file1 = tmp_path / 'file1.txt'
+    file1 = tmp_path / "file1.txt"
     file1.touch()
-    file2 = dir1 / 'file2.txt'
+    file2 = dir1 / "file2.txt"
     file2.touch()
 
     # Non-recursive tests
-    glob_pattern = '*'
+    glob_pattern = "*"
     expected_dirs = [dir1]
     assert set(list_directories(tmp_path, glob_pattern, recursive=False)) == set(map(str, expected_dirs))
     assert count_directories(tmp_path, glob_pattern, recursive=False) == len(expected_dirs)
 
-    glob_pattern = os.path.join('dir1', '*')
+    glob_pattern = os.path.join("dir1", "*")
     expected_dirs = [dir2]
     assert set(list_directories(tmp_path, glob_pattern, recursive=False)) == set(map(str, expected_dirs))
     assert count_directories(tmp_path, glob_pattern, recursive=False) == len(expected_dirs)
 
     # Recursive tests
-    glob_pattern = '*'
+    glob_pattern = "*"
     expected_dirs = [dir1, dir2]
     assert set(list_directories(tmp_path, glob_pattern, recursive=True)) == set(map(str, expected_dirs))
     assert count_directories(tmp_path, glob_pattern, recursive=True) == len(expected_dirs)
 
-    glob_pattern = os.path.join('**', '*')
+    glob_pattern = os.path.join("**", "*")
     expected_dirs = [dir1, dir2]
     assert set(list_directories(tmp_path, glob_pattern, recursive=True)) == set(map(str, expected_dirs))
     assert count_directories(tmp_path, glob_pattern, recursive=True) == len(expected_dirs)

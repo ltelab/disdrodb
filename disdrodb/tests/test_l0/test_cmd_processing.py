@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0 processing commands."""
 
-import glob
 import os
 import shutil
 
@@ -55,7 +54,13 @@ def test_disdrodb_run_l0a_station(remove_processed_folder):
     runner.invoke(disdrodb_run_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
 
     product = "L0A"
-    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    station_dir = define_station_dir(
+        base_dir=BASE_DIR,
+        product=product,
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
     filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
     assert len(filepaths) > 0
 
@@ -73,7 +78,13 @@ def test_disdrodb_run_l0b_station(remove_processed_folder):
     runner.invoke(disdrodb_run_l0b_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
 
     product = "L0B"
-    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    station_dir = define_station_dir(
+        base_dir=BASE_DIR,
+        product=product,
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
     filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
     assert len(filepaths) > 0
 
@@ -88,10 +99,15 @@ def test_disdrodb_run_l0_station(remove_processed_folder):
     runner.invoke(disdrodb_run_l0_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
 
     product = "L0B"
-    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    station_dir = define_station_dir(
+        base_dir=BASE_DIR,
+        product=product,
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
     filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
     assert len(filepaths) > 0
-
 
 
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
@@ -103,7 +119,13 @@ def test_disdrodb_run_l0a(remove_processed_folder):
     runner = CliRunner()
     runner.invoke(disdrodb_run_l0a, ["--base_dir", BASE_DIR])
     product = "L0A"
-    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    station_dir = define_station_dir(
+        base_dir=BASE_DIR,
+        product=product,
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
     filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
     assert len(filepaths) > 0
 
@@ -122,7 +144,13 @@ def test_disdrodb_run_l0b(remove_processed_folder):
     runner.invoke(disdrodb_run_l0b, ["--base_dir", BASE_DIR])
 
     product = "L0B"
-    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    station_dir = define_station_dir(
+        base_dir=BASE_DIR,
+        product=product,
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
     filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
     assert len(filepaths) > 0
 
@@ -135,8 +163,14 @@ def test_full_disdrodb_run_l0(remove_processed_folder):
 
     runner = CliRunner()
     runner.invoke(disdrodb_run_l0, ["--base_dir", BASE_DIR])
-    
+
     product = "L0B"
-    station_dir = define_station_dir(base_dir=BASE_DIR, product=product, data_source=DATA_SOURCE, campaign_name=CAMPAIGN_NAME, station_name=STATION_NAME)
+    station_dir = define_station_dir(
+        base_dir=BASE_DIR,
+        product=product,
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
     filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
     assert len(filepaths) > 0

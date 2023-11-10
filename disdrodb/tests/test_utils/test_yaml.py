@@ -32,14 +32,15 @@ TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 def test_read_yaml():
     # Test reading a YAML file get the expect types
     # - string, list, int, float, list[str], list[int], None
-    dictionary = {"key1": "value1", 
-                  "key2": 2,
-                  "key3": 3.0,
-                  "key4": ["value4"], 
-                  "key5": [5], 
-                  "key6": None, 
-                  "key7": "",
-                  }
+    dictionary = {
+        "key1": "value1",
+        "key2": 2,
+        "key3": 3.0,
+        "key4": ["value4"],
+        "key5": [5],
+        "key6": None,
+        "key7": "",
+    }
     filepath = os.path.join(TEST_DATA_DIR, "test_yaml", "valid.yaml")
     assert read_yaml(filepath) == dictionary
 
@@ -52,5 +53,3 @@ def test_read_yaml():
     non_existent_filepath = os.path.join(TEST_DATA_DIR, "non_existent.yaml")
     with pytest.raises(FileNotFoundError):
         read_yaml(non_existent_filepath)
-
-

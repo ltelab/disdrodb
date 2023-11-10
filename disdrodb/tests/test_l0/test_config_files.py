@@ -18,17 +18,16 @@
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 configuration files."""
 import os
-from typing import Dict, List, Union
+from typing import Dict, Union
 
 import pytest
 import yaml
 from pydantic import BaseModel
 
 from disdrodb import __root_path__
-from disdrodb.utils.directories import list_files 
+from disdrodb.utils.directories import list_files
 
 CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
-
 
 
 def read_yaml_file(path_file: str) -> Dict:

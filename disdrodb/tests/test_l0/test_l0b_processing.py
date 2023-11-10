@@ -19,14 +19,11 @@
 """Test DISDRODB L0B processing routines."""
 
 
-import os
-
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 
-from disdrodb import __root_path__
 from disdrodb.l0 import l0b_processing
 from disdrodb.l0.l0b_processing import (
     _set_attrs_dict,
@@ -36,7 +33,6 @@ from disdrodb.l0.l0b_processing import (
     create_l0b_from_l0a,
 )
 from disdrodb.l0.standards import get_bin_coords_dict
-
 
 # NOTE:
 # The following fixtures are not defined in this file, but are used and injected by Pytest:

@@ -24,7 +24,6 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from disdrodb import __root_path__
 from disdrodb.l0 import io, l0a_processing
 from disdrodb.l0.l0a_processing import (
     _check_df_sanitizer_fun,

@@ -18,14 +18,12 @@
 # -----------------------------------------------------------------------------.
 """Check configuration files."""
 
-import glob
 import os
 from typing import List, Optional, Union
 
 import numpy as np
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
 
-from disdrodb.utils.directories import list_files
 from disdrodb.api.configs import available_sensor_names, get_sensor_configs_dir, read_config_file
 from disdrodb.l0.standards import (
     get_diameter_bin_center,
@@ -37,6 +35,7 @@ from disdrodb.l0.standards import (
     get_velocity_bin_upper,
     get_velocity_bin_width,
 )
+from disdrodb.utils.directories import list_files
 
 CONFIG_FILES_LIST = [
     "bins_diameter.yml",

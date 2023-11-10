@@ -25,9 +25,7 @@ import numpy as np
 import pytest
 import yaml
 
-from disdrodb import __root_path__
 from disdrodb.l0 import issue
-
 
 ####--------------------------------------------------------------------------.
 #### Checks

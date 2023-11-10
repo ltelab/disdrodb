@@ -18,16 +18,15 @@
 # -----------------------------------------------------------------------------.
 """Check readers."""
 
-import glob
 import os
 import shutil
 
 import pandas as pd
 
 from disdrodb import __root_path__
-from disdrodb.utils.directories import list_files
 from disdrodb.api.io import get_disdrodb_path
 from disdrodb.l0.l0_reader import get_station_reader_function
+from disdrodb.utils.directories import list_files
 
 TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
@@ -175,7 +174,7 @@ def check_all_readers() -> None:
             glob_pattern = os.path.join("*", "*.parquet")
             ground_truth_files = list_files(ground_truth_dir, glob_pattern=glob_pattern, recursive=False)
             processed_files = list_files(processed_product_dir, glob_pattern=glob_pattern, recursive=False)
-        
+
             for ground_truth_fpath, processed_file_fpath in zip(ground_truth_files, processed_files):
                 station_name = os.path.basename(os.path.dirname(ground_truth_fpath))
                 is_correct = _is_parquet_files_identical(ground_truth_fpath, processed_file_fpath)

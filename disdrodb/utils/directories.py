@@ -37,19 +37,19 @@ def ensure_string_path(path, msg, accepth_pathlib=False):
     return str(path)
 
 
-def _recursive_glob(dir_path, glob_pattern): 
+def _recursive_glob(dir_path, glob_pattern):
     # ** search for all files recursively
     # glob_pattern = os.path.join(base_dir, "**", "metadata", f"{station_name}.yml")
     # metadata_fpaths = glob.glob(glob_pattern, recursive=True)
-            
+
     dir_path = pathlib.Path(dir_path)
     return [str(path) for path in dir_path.rglob(glob_pattern)]
- 
 
-def list_paths(dir_path, glob_pattern, recursive=False): 
-    if not recursive: 
+
+def list_paths(dir_path, glob_pattern, recursive=False):
+    if not recursive:
         return glob.glob(os.path.join(dir_path, glob_pattern))
-    else: 
+    else:
         return _recursive_glob(dir_path, glob_pattern)
 
 

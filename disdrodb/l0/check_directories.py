@@ -18,13 +18,11 @@
 # -----------------------------------------------------------------------------.
 """Define DISDRODB Checks for Raw and Processed Campaign Directories."""
 
-import glob
 import logging
 import os
 
 import numpy as np
 
-from disdrodb.utils.directories import list_files
 from disdrodb.api.info import (
     infer_base_dir_from_fpath,
     infer_campaign_name_from_path,
@@ -34,6 +32,7 @@ from disdrodb.api.info import (
 from disdrodb.utils.directories import (
     create_directory,
     ensure_string_path,
+    list_files,
     remove_path_trailing_slash,
 )
 from disdrodb.utils.logger import log_info, log_warning
