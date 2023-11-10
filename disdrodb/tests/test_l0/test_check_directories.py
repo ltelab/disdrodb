@@ -23,7 +23,7 @@ import os
 import pytest
 
 from disdrodb import __root_path__
-from disdrodb.l0.check_directories import (
+from disdrodb.api.check_directories import (
     _check_raw_dir_is_a_directory,
     check_processed_dir,
     check_raw_dir,
