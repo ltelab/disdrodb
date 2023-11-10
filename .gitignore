@@ -159,6 +159,6 @@ docs\source\reader_preparation.ipynb
 \docs\source\reader_preparation.ipynb
 /docs/source/csv/*.csv
 
-# Ignore specific folders
+# Ignore specific directories
 /disdrodb/tests/temp/
 disdrodb-dev
