@@ -25,21 +25,20 @@ import numpy as np
 import pytest
 import yaml
 
-from disdrodb.issue.checks import(
-    _is_numpy_array_string,
-    _is_numpy_array_datetime,
+from disdrodb.issue.checks import (
+    _check_time_period_nested_list_format,
     _check_timestep_datetime_accuracy,
     _check_timesteps_string,
-    check_timesteps,
-    _check_time_period_nested_list_format,
-    check_time_periods,
-    _get_issue_timesteps,
     _get_issue_time_periods,
-    check_issue_dict)
-
-from disdrodb.issue.writer import _write_issue_docs, _write_issue
+    _get_issue_timesteps,
+    _is_numpy_array_datetime,
+    _is_numpy_array_string,
+    check_issue_dict,
+    check_time_periods,
+    check_timesteps,
+)
 from disdrodb.issue.reader import read_issue
-
+from disdrodb.issue.writer import _write_issue, _write_issue_docs
 
 ####--------------------------------------------------------------------------.
 #### Checks

@@ -55,6 +55,10 @@ def test_parse_arg_to_list_none():
     expected_output = None
     assert parse_arg_to_list(args) == expected_output
 
+    args = "None"
+    expected_output = None
+    assert parse_arg_to_list(args) == expected_output
+
 
 def test_parse_arg_to_list_other_types():
     """Test parse_arg_to_list() with other types of input."""

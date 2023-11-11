@@ -19,8 +19,8 @@
 """Issue YAML File Writer."""
 
 import logging
-import yaml
 
+import yaml
 
 logger = logging.getLogger(__name__)
 

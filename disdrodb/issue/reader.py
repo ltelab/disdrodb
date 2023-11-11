@@ -18,12 +18,11 @@
 # -----------------------------------------------------------------------------.
 """Issue YAML File Reader."""
 import logging
-import os
 
 import yaml
+
 from disdrodb.api.path import define_issue_filepath
 from disdrodb.issue.checks import check_issue_dict
-
 
 logger = logging.getLogger(__name__)
 

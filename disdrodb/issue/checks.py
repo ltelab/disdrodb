@@ -18,9 +18,10 @@
 # -----------------------------------------------------------------------------.
 """Checks for issue YAML files."""
 import logging
+
 import numpy as np
 import pandas as pd
- 
+
 from disdrodb.utils.logger import log_error
 
 logger = logging.getLogger(__name__)
@@ -234,6 +235,7 @@ def check_issue_file(filepath: str) -> None:
 
     """
     from disdrodb.issue.reader import _load_yaml_without_date_parsing
+
     issue_dict = _load_yaml_without_date_parsing(filepath)
     issue_dict = check_issue_dict(issue_dict)
     return None

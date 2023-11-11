@@ -28,12 +28,14 @@ from disdrodb.api.create_directories import (
     create_directory_structure,
     create_initial_directory_structure,
     create_metadata_directory,
+    create_issue_directory,
 )
 from disdrodb.api.path import (
     define_campaign_dir,
     define_metadata_dir,
     define_metadata_filepath,
     define_station_dir,
+    define_issue_dir,
 )
 from disdrodb.tests.conftest import create_fake_metadata_directory, create_fake_metadata_file, create_fake_raw_data_file
 from disdrodb.utils.yaml import read_yaml
@@ -251,7 +253,16 @@ def test_create_directory_structure(tmp_path, mocker):
     )
     assert not os.path.exists(dst_product_file_filepath)
     assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
-
+    
+    # Test raise error if bad station_name 
+    with pytest.raises(ValueError):
+        create_directory_structure(
+            product=dst_product,
+            force=False,
+            processed_dir=processed_dir,
+            station_name="INEXISTENT_STATION",
+        )
+    
 
 def test_check_campaign_name_consistency(tmp_path):
     base_dir = tmp_path / "DISDRODB"
@@ -356,3 +367,12 @@ def test_copy_station_metadata(tmp_path):
     src_dict = read_yaml(raw_metadata_filepath)
     dst_dict = read_yaml(dst_metadata_filepath)
     assert src_dict == dst_dict
+
+
+def test_create_issue_directory(tmp_path):
+    base_dir = tmp_path / "DISDRODB"
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+
+    issue_dir = create_issue_directory(base_dir, data_source=data_source, campaign_name=campaign_name)
+    assert os.path.isdir(issue_dir)
