@@ -20,23 +20,21 @@
 
 
 from disdrodb.metadata.manipulation import (
+    add_missing_metadata_keys,
     remove_invalid_metadata_keys,
-    add_missing_metadata_keys, 
 )
 
+
 def test_remove_invalid_metadata_keys():
-    metadata = {'data_source': 'valid', 'BLABLA': 'invalid'}
-    expected = {'data_source': 'valid'}
+    metadata = {"data_source": "valid", "BLABLA": "invalid"}
+    expected = {"data_source": "valid"}
     result = remove_invalid_metadata_keys(metadata)
     assert result == expected
- 
+
 
 def test_add_missing_metadata_keys():
     # Test data
-    metadata = {'data_source': 'valid'}
+    metadata = {"data_source": "valid"}
     result = add_missing_metadata_keys(metadata)
     "valid" == result.pop("data_source")
-    len(set(result.values())) == 1 # ''
-
-
- 
+    len(set(result.values())) == 1  # ''

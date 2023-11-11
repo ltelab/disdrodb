@@ -17,15 +17,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB configs."""
-import os 
-import pytest 
-from disdrodb.api.configs import ( 
-    get_sensor_configs_dir, 
-    read_config_file,
-    available_sensor_names,
-    )
+import os
 
-def test_available_sensor_names(): 
+import pytest
+
+from disdrodb.api.configs import (
+    available_sensor_names,
+    get_sensor_configs_dir,
+    read_config_file,
+)
+
+
+def test_available_sensor_names():
     assert len(available_sensor_names()) >= 3
 
 
@@ -34,12 +37,11 @@ def test_available_sensor_names():
 def test_get_sensor_configs_dir(sensor_name, product):
     config_sensor_dir = get_sensor_configs_dir(sensor_name=sensor_name, product=product)
     assert os.path.isdir(config_sensor_dir)
-    
-    
+
+
 def test_invalid_sensor_name():
     with pytest.raises(ValueError):
-         get_sensor_configs_dir(sensor_name="NOT_EXIST", product="L0A")
-         
+        get_sensor_configs_dir(sensor_name="NOT_EXIST", product="L0A")
+
     with pytest.raises(ValueError):
-         read_config_file(sensor_name="OTT_Parsivel", product="L0A", filename="UNEXISTENT.yml")
-    
+        read_config_file(sensor_name="OTT_Parsivel", product="L0A", filename="UNEXISTENT.yml")
