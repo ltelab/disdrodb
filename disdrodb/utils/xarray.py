@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Xarray utility."""
 
-import xarray as xr 
+import xarray as xr
 
 
 def get_dataset_start_end_time(ds: xr.Dataset):

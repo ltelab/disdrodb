@@ -16,20 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Check and manipulate issue YAML files."""
+"""Checks for issue YAML files."""
 import logging
-import os
-
 import numpy as np
 import pandas as pd
-import yaml
-
+ 
 from disdrodb.utils.logger import log_error
 
 logger = logging.getLogger(__name__)
-
-####--------------------------------------------------------------------------.
-#### Checks
 
 
 def _is_numpy_array_string(arr):
@@ -239,177 +233,7 @@ def check_issue_file(filepath: str) -> None:
         Issue YAML file path.
 
     """
+    from disdrodb.issue.reader import _load_yaml_without_date_parsing
     issue_dict = _load_yaml_without_date_parsing(filepath)
     issue_dict = check_issue_dict(issue_dict)
     return None
-
-
-####--------------------------------------------------------------------------.
-#### Writer
-
-
-def _write_issue_docs(f):
-    """Provide template for issue.yml"""
-    f.write("""# This file is used to store timesteps/time periods with wrong/corrupted observation.
-# The specified timesteps are dropped during the L0 processing.
-# The time format used is the isoformat : YYYY-mm-dd HH:MM:SS.
-# The 'timesteps' key enable to specify the list of timesteps to be discarded.
-# The 'time_period' key enable to specify the time periods to be dropped.
-# Example:
-#
-# timesteps:
-# - 2018-12-07 14:15:00
-# - 2018-12-07 14:17:00
-# - 2018-12-07 14:19:00
-# - 2018-12-07 14:25:00
-# time_period:
-# - ['2018-08-01 12:00:00', '2018-08-01 14:00:00']
-# - ['2018-08-01 15:44:30', '2018-08-01 15:59:31']
-# - ['2018-08-02 12:44:30', '2018-08-02 12:59:31'] \n
-""")
-    return None
-
-
-def _write_issue(filepath: str, timesteps: list = None, time_periods: list = None) -> None:
-    """Write the issue YAML file.
-
-    Parameters
-    ----------
-    filepath : str
-        Filepath of the issue YAML to write.
-    timesteps : list, optional
-        List of timesteps (to be dropped in L0 processing).
-        The default is None.
-    time_periods : list, optional
-        A list of time periods (to be dropped in L0 processing).
-        The default is None.
-    """
-    # Preprocess timesteps and time_periods (to plain list of strings)
-    if timesteps is not None:
-        timesteps = timesteps.astype(str).tolist()
-
-    if time_periods is not None:
-        new_periods = []
-        for time_period in time_periods:
-            new_periods.append(time_period.astype(str).tolist())
-        time_periods = new_periods
-
-    # Write the issue YAML file
-    logger.info(f"Creating issue YAML file at {filepath}")
-    with open(filepath, "w") as f:
-        # Write the docs for the issue.yml
-        _write_issue_docs(f)
-
-        # Write timesteps if provided
-        if timesteps is not None:
-            timesteps_dict = {"timesteps": timesteps}
-            yaml.dump(timesteps_dict, f, default_flow_style=False)
-
-        # Write time_periods if provided
-        if time_periods is not None:
-            time_periods_dict = {"time_periods": time_periods}
-            yaml.dump(time_periods_dict, f, default_flow_style=None)
-    return None
-
-
-def write_issue_dict(filepath: str, issue_dict: dict) -> None:
-    """Write the issue YAML file.
-
-    Parameters
-    ----------
-    filepath : str
-        Filepath of the issue YAML to write.
-    issue_dict : dict
-        Issue dictionary
-    """
-    _write_issue(
-        filepath=filepath,
-        timesteps=issue_dict.get("timesteps", None),
-        time_periods=issue_dict.get("time_periods", None),
-    )
-
-
-def write_default_issue(filepath: str) -> None:
-    """Write an empty issue YAML file.
-
-    Parameters
-    ----------
-    filepath : str
-        Filepath of the issue YAML to write.
-    """
-    _write_issue(filepath=filepath)
-    return None
-
-
-####--------------------------------------------------------------------------.
-#### Reader
-
-
-class NoDatesSafeLoader(yaml.SafeLoader):
-    @classmethod
-    def remove_implicit_resolver(cls, tag_to_remove):
-        """
-        Remove implicit resolvers for a particular tag
-
-        Takes care not to modify resolvers in super classes.
-
-        We want to load datetimes as strings, not dates, because we
-        go on to serialise as json which doesn't have the advanced types
-        of yaml, and leads to incompatibilities down the track.
-        """
-        if "yaml_implicit_resolvers" not in cls.__dict__:
-            cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
-
-        for first_letter, mappings in cls.yaml_implicit_resolvers.items():
-            cls.yaml_implicit_resolvers[first_letter] = [
-                (tag, regexp) for tag, regexp in mappings if tag != tag_to_remove
-            ]
-
-
-def _load_yaml_without_date_parsing(filepath):
-    "Read a YAML file without converting automatically date string to datetime."
-    NoDatesSafeLoader.remove_implicit_resolver("tag:yaml.org,2002:timestamp")
-    with open(filepath) as f:
-        dictionary = yaml.load(f, Loader=NoDatesSafeLoader)
-    # Return empty dictionary if nothing to be read in the file
-    if isinstance(dictionary, type(None)):
-        dictionary = {}
-    return dictionary
-
-
-def _read_issue_file(filepath: str) -> dict:
-    """Read YAML issue file.
-
-    Parameters
-    ----------
-    filepath : str
-        Filepath of the issue YAML.
-
-    Returns
-    -------
-    dict
-        Issue dictionary.
-    """
-    issue_dict = _load_yaml_without_date_parsing(filepath)
-    issue_dict = check_issue_dict(issue_dict)
-    return issue_dict
-
-
-def read_issue(raw_dir: str, station_name: str) -> dict:
-    """Read YAML issue file.
-
-    Parameters
-    ----------
-    raw_dir : str
-        RAW Directory path of the campaign.
-    station_name : int
-        Station name.
-
-    Returns
-    -------
-    dict
-        Issue dictionary.
-    """
-
-    issue_filepath = os.path.join(raw_dir, "issue", station_name + ".yml")
-    return _read_issue_file(issue_filepath)

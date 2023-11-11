@@ -244,7 +244,7 @@ def _check_presence_metadata_directory(raw_dir):
 
 def _check_presence_issue_directory(raw_dir, verbose):
     """If the 'issue' directory does not exist, it creates default issue YAML files."""
-    from disdrodb.l0.issue import write_default_issue
+    from disdrodb.issue.writer import write_default_issue
 
     if not _is_issue_directory_available(raw_dir):
         # Create issue directory
@@ -290,7 +290,7 @@ def _check_presence_all_metadata_files(raw_dir):
 
 
 def _check_presence_all_issues_files(raw_dir, verbose):
-    from disdrodb.l0.issue import write_default_issue
+    from disdrodb.issue.writer import write_default_issue
 
     # Get stations with available issue files
     list_issue_station_name = _get_available_stations_with_issue_files(raw_dir)
@@ -362,7 +362,7 @@ def _check_valid_metadata(metadata_filepaths):
 
 def _check_valid_issue_files(filepaths):
     """Check all specified issue files are compliant with DISDRODB standards."""
-    from disdrodb.l0.issue import check_issue_file
+    from disdrodb.issue.checks import check_issue_file
 
     _ = [check_issue_file(filepath) for filepath in filepaths]
 

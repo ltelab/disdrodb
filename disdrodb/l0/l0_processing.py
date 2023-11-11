@@ -28,6 +28,12 @@ import dask
 import dask.bag as db
 
 from disdrodb.api.checks import check_sensor_name
+
+# Directory
+from disdrodb.api.create_directories import (
+    create_directory_structure,
+    create_initial_directory_structure,
+)
 from disdrodb.api.info import infer_path_info_dict
 from disdrodb.api.path import (
     define_l0a_filepath,
@@ -36,18 +42,12 @@ from disdrodb.api.path import (
     get_disdrodb_path,
 )
 from disdrodb.configs import get_base_dir
-
-# Directory
-from disdrodb.api.create_directories import (
-    create_directory_structure,
-    create_initial_directory_structure,
-)
+from disdrodb.issue import read_station_issue
 from disdrodb.l0.io import (
     get_l0a_filepaths,
     get_raw_filepaths,
     read_l0a_dataframe,
 )
-from disdrodb.l0.issue import read_issue
 from disdrodb.l0.l0_reader import get_station_reader_function
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.directories import list_files
@@ -443,7 +443,7 @@ def run_l0a(
 
     # -----------------------------------------------------------------.
     # Read issue YAML file
-    issue_dict = read_issue(raw_dir=raw_dir, station_name=station_name)
+    issue_dict = read_station_issue(station_name=station_name, **infer_path_info_dict(raw_dir))
 
     # -----------------------------------------------------------------.
     # Generate L0A files

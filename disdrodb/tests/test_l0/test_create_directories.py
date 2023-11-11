@@ -21,12 +21,6 @@ import os
 
 import pytest
 
-from disdrodb.api.path import (
-    define_campaign_dir,
-    define_metadata_dir,
-    define_metadata_filepath,
-    define_station_dir,
-)
 from disdrodb.api.create_directories import (
     _check_campaign_name_consistency,
     _check_data_source_consistency,
@@ -34,6 +28,12 @@ from disdrodb.api.create_directories import (
     create_directory_structure,
     create_initial_directory_structure,
     create_metadata_directory,
+)
+from disdrodb.api.path import (
+    define_campaign_dir,
+    define_metadata_dir,
+    define_metadata_filepath,
+    define_station_dir,
 )
 from disdrodb.tests.conftest import create_fake_metadata_directory, create_fake_metadata_file, create_fake_raw_data_file
 from disdrodb.utils.yaml import read_yaml

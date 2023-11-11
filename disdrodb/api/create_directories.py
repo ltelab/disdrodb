@@ -208,8 +208,8 @@ def create_initial_directory_structure(
     If the input data are raw text files --> product = "L0A"    (run_l0a)
     If the input data are raw netCDF files --> product = "L0B"  (run_l0b_nc)
     """
-    from disdrodb.api.io import _get_list_stations_with_data
     from disdrodb.api.check_directories import check_processed_dir, check_raw_dir
+    from disdrodb.api.io import _get_list_stations_with_data
 
     # Check inputs
     raw_dir = check_raw_dir(raw_dir=raw_dir, verbose=verbose)
@@ -247,9 +247,9 @@ def create_initial_directory_structure(
 
 def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
+    from disdrodb.api.check_directories import check_presence_metadata_file, check_processed_dir
     from disdrodb.api.checks import check_product
     from disdrodb.api.io import _get_list_stations_with_data
-    from disdrodb.api.check_directories import check_presence_metadata_file, check_processed_dir
 
     # Check inputs
     check_product(product)

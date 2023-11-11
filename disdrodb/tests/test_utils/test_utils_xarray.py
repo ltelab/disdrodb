@@ -18,19 +18,19 @@
 # -----------------------------------------------------------------------------.
 """Test Xarray utility."""
 
-import pytest
-import xarray as xr
 import numpy as np
 import pandas as pd
-from disdrodb.utils.xarray import get_dataset_start_end_time  
+import pytest
+import xarray as xr
+
+from disdrodb.utils.xarray import get_dataset_start_end_time
 
 
 def create_test_dataset():
     """Create a mock xarray.Dataset for testing."""
-    times = pd.date_range('2023-01-01', periods=10, freq='D')
+    times = pd.date_range("2023-01-01", periods=10, freq="D")
     data = np.random.rand(10, 2, 2)  # Random data for the sake of example
-    ds = xr.Dataset({'my_data': (('time', 'x', 'y'), data)},
-                    coords={'time': times})
+    ds = xr.Dataset({"my_data": (("time", "x", "y"), data)}, coords={"time": times})
     return ds
 
 
@@ -43,7 +43,7 @@ def test_get_dataset_start_end_time():
 
     assert start_time == expected_start_time
     assert end_time == expected_end_time
-    
+
     # Test raise if empty dataset
     empty_ds = xr.Dataset()
     with pytest.raises(KeyError):

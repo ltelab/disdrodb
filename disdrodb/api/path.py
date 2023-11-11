@@ -19,15 +19,17 @@
 """Define paths within the DISDRODB infrastructure."""
 
 import os
+
 import pandas as pd
 import xarray as xr
- 
+
+from disdrodb.api.info import infer_campaign_name_from_path
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import check_directory_exists
-from disdrodb.api.info import infer_campaign_name_from_path
 
 ####--------------------------------------------------------------------------.
-#### Paths from BASE_DIR 
+#### Paths from BASE_DIR
+
 
 def get_disdrodb_path(
     base_dir,
@@ -202,13 +204,49 @@ def define_metadata_dir(
         campaign_name=campaign_name,
         check_exists=check_exists,
     )
-    if product.upper() == "RAW":
-        metadata_dir = os.path.join(campaign_dir, "metadata")
-    else:
-        metadata_dir = os.path.join(campaign_dir, "metadata")
+    metadata_dir = os.path.join(campaign_dir, "metadata")
     if check_exists:
         check_directory_exists(metadata_dir)
     return str(metadata_dir)
+
+
+def define_issue_dir(
+    data_source,
+    campaign_name,
+    base_dir=None,
+    check_exists=False,
+):
+    """Return the issue directory in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default False.
+
+    Returns
+    -------
+    issue_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    campaign_dir = define_campaign_dir(
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=check_exists,
+    )
+    issue_dir = os.path.join(campaign_dir, "issue")
+    if check_exists:
+        check_directory_exists(issue_dir)
+    return str(issue_dir)
 
 
 def define_metadata_filepath(
@@ -251,11 +289,52 @@ def define_metadata_filepath(
         check_exists=False,
     )
     metadata_filepath = os.path.join(metadata_dir, f"{station_name}.yml")
-
     if check_exists and not os.path.exists(metadata_filepath):
         raise ValueError(f"The metadata file for {station_name} at {metadata_filepath} does not exists.")
 
     return str(metadata_filepath)
+
+
+def define_issue_filepath(
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    check_exists=False,
+):
+    """Return the station issue filepath in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    station_name : str
+        The station name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default False.
+
+    Returns
+    -------
+    issue_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    issue_dir = define_issue_dir(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
+    )
+    issue_filepath = os.path.join(issue_dir, f"{station_name}.yml")
+    if check_exists and not os.path.exists(issue_filepath):
+        raise ValueError(f"The issue file for {station_name} at {issue_filepath} does not exists.")
+
+    return str(issue_filepath)
 
 
 def define_config_dir(product):
@@ -421,5 +500,6 @@ def define_l0b_filepath(ds: xr.Dataset, processed_dir: str, station_name: str, l
     else:
         filepath = os.path.join(station_dir, filename)
     return filepath
+
 
 ####--------------------------------------------------------------------------.

@@ -27,17 +27,16 @@ import xarray as xr
 
 from disdrodb.api.path import (
     define_campaign_dir,
-    define_l0a_station_dir,
-    define_l0b_station_dir,
-    define_l0b_filepath,
     define_l0a_filepath,
+    define_l0a_station_dir,
+    define_l0b_filepath,
+    define_l0b_station_dir,
 )
- 
 
 PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\Processed"
 PROCESSED_FOLDER_LINUX = "/DISDRODB/Processed"
 
-    
+
 @pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
 def test_define_l0a_station_dir(processed_folder):
     res = (
