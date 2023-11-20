@@ -220,26 +220,24 @@ def run_disdrodb_l0a_station(
 ):
     """Run the L0A processing of a station calling the disdrodb_l0a_station in the terminal."""
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l0a_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-            "--base_dir",
-            str(base_dir),
-        ]
-    )
+    cmd = " ".join([
+        "disdrodb_run_l0a_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+        "--base_dir",
+        str(base_dir),
+    ])
     # Execute command
     _execute_cmd(cmd)
     return None
@@ -259,26 +257,24 @@ def run_disdrodb_l0b_station(
 ):
     """Run the L0B processing of a station calling disdrodb_run_l0b_station in the terminal."""
     # Define command
-    cmd = " ".join(
-        [
-            "disdrodb_run_l0b_station",
-            # Station arguments
-            data_source,
-            campaign_name,
-            station_name,
-            # Processing options
-            "--force",
-            str(force),
-            "--verbose",
-            str(verbose),
-            "--debugging_mode",
-            str(debugging_mode),
-            "--parallel",
-            str(parallel),
-            "--base_dir",
-            str(base_dir),
-        ]
-    )
+    cmd = " ".join([
+        "disdrodb_run_l0b_station",
+        # Station arguments
+        data_source,
+        campaign_name,
+        station_name,
+        # Processing options
+        "--force",
+        str(force),
+        "--verbose",
+        str(verbose),
+        "--debugging_mode",
+        str(debugging_mode),
+        "--parallel",
+        str(parallel),
+        "--base_dir",
+        str(base_dir),
+    ])
     # Execute command
     _execute_cmd(cmd)
     return None
@@ -296,20 +292,18 @@ def run_disdrodb_l0b_concat_station(
 
     This function runs the ``disdrodb_run_l0b_concat_station`` script in the terminal.
     """
-    cmd = " ".join(
-        [
-            "disdrodb_run_l0b_concat_station",
-            data_source,
-            campaign_name,
-            station_name,
-            "--remove_l0b",
-            str(remove_l0b),
-            "--verbose",
-            str(verbose),
-            "--base_dir",
-            str(base_dir),
-        ]
-    )
+    cmd = " ".join([
+        "disdrodb_run_l0b_concat_station",
+        data_source,
+        campaign_name,
+        station_name,
+        "--remove_l0b",
+        str(remove_l0b),
+        "--verbose",
+        str(verbose),
+        "--base_dir",
+        str(base_dir),
+    ])
     _execute_cmd(cmd)
 
 
