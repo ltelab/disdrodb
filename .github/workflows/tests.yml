@@ -43,24 +43,28 @@ jobs:
 
       - name: Test with pytest
         run: |
-          coverage run -m pytest
+          pytest # See pyproject.toml for cov options
+
+      - name: Upload coverage reports to Codacy
+        uses: codacy/codacy-coverage-reporter-action@v1
+        if: matrix.coverage
+        with:
+          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
+          coverage-reports: coverage.xml
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v3
         if: matrix.coverage
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-
-      - name: Generate coverage report in LCOV format
-        if: matrix.coverage
-        run: |
-          coverage lcov -o coverage/lcov.info
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
 
       - name: Coveralls Parallel
         uses: coverallsapp/github-action@v2
         if: matrix.coverage
         with:
           parallel: true
+          files: lcov.info
 
   end-coveralls:
     needs: [tests]
