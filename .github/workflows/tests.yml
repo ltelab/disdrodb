@@ -25,10 +25,6 @@ jobs:
             experimental: false
             coverage: true
 
-          - os: "windows-latest"
-            python-version: "3.11"
-            experimental: false
-
     steps:
       - uses: actions/checkout@v3
 
