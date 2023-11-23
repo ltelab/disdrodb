@@ -77,6 +77,9 @@ disdrodb_upload_station="disdrodb.data_transfer.scripts.disdrodb_upload_station:
 # Metadata archive
 disdrodb_check_metadata_archive="disdrodb.metadata.scripts.disdrodb_check_metadata_archive:disdrodb_check_metadata_archive"
 
+[tool.pytest.ini_options]
+addopts = "--cov --cov-report term-missing --cov-report xml --cov-report lcov:lcov.info"
+
 [tool.ruff]
 select = ["F",
 	  "E",
