@@ -23,7 +23,7 @@ from disdrodb.l0.routines import (
     click_l0_processing_options,
     click_l0_stations_options,
 )
-from disdrodb.utils.scripts import parse_arg_to_list
+from disdrodb.utils.scripts import click_base_dir_option, parse_arg_to_list
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -32,11 +32,12 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_l0_stations_options
 @click_l0_archive_options
 @click_l0_processing_options
+@click_base_dir_option
 def disdrodb_run_l0(
     # L0 disdrodb stations options
-    data_sources=None,
-    campaign_names=None,
-    station_names=None,
+    data_sources: str = None,
+    campaign_names: str = None,
+    station_names: str = None,
     # L0 archive options
     l0a_processing: bool = True,
     l0b_processing: bool = True,

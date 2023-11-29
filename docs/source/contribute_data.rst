@@ -123,7 +123,7 @@ If you contribute multiple stations, just rerun the following command for each s
 
 .. code:: bash
 
-   disdrodb_initialize_station_files <DATA_SOURCE> <CAMPAIGN_NAME> <STATION_NAME>
+   disdrodb_initialize_station <DATA_SOURCE> <CAMPAIGN_NAME> <STATION_NAME>
 
 
 The DISDRODB Raw archive will have the following structure:

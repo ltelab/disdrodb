@@ -19,11 +19,13 @@ import sys
 
 import click
 
+from disdrodb.utils.scripts import click_base_dir_option
+
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click.option("--base_dir", type=str, show_default=True, default=None, help="DISDRODB base directory")
+@click_base_dir_option
 @click.option(
     "--raise_error", type=bool, show_default=True, default=True, help="Whether to raise error of finish the check"
 )

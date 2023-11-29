@@ -89,16 +89,10 @@ def click_download_options(function: object):
         "--force",
         type=bool,
         show_default=True,
-        default=True,
+        default=False,
         help="Force overwriting",
     )(function)
-    function = click.option(
-        "--base_dir",
-        type=str,
-        show_default=True,
-        default=None,
-        help="DISDRODB base directory",
-    )(function)
+
     return function
 
 

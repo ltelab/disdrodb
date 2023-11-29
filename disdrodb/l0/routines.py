@@ -104,13 +104,6 @@ def click_l0_processing_options(function: object):
         default=False,
         help="Force overwriting",
     )(function)
-    function = click.option(
-        "--base_dir",
-        type=str,
-        show_default=True,
-        default=None,
-        help="DISDRODB base directory",
-    )(function)
     return function
 
 
@@ -176,13 +169,6 @@ def click_l0b_concat_options(function: object):
         show_default=True,
         default=False,
         help="If true, remove all source L0B files once L0B concatenation is terminated.",
-    )(function)
-    function = click.option(
-        "--base_dir",
-        type=str,
-        show_default=True,
-        default=None,
-        help="DISDRODB base directory",
     )(function)
     function = click.option("-v", "--verbose", type=bool, show_default=True, default=False, help="Verbose")(function)
     return function

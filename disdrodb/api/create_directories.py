@@ -27,6 +27,7 @@ import shutil
 
 from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
 from disdrodb.api.path import (
+    define_campaign_dir,
     define_issue_dir,
     define_issue_filepath,
     define_metadata_dir,
@@ -208,6 +209,7 @@ def create_issue_directory(base_dir, data_source, campaign_name):
     return str(issue_dir)
 
 
+#### L0A processing
 def create_initial_directory_structure(
     raw_dir,
     processed_dir,
@@ -258,6 +260,7 @@ def create_initial_directory_structure(
     create_required_directory(os.path.join(processed_dir, product), dir_name=station_name)
 
 
+#### > L0A processing
 def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
     from disdrodb.api.check_directories import check_presence_metadata_file, check_processed_dir
@@ -295,29 +298,116 @@ def create_directory_structure(processed_dir, product, station_name, force, verb
     )
 
 
-def create_test_archive(test_base_dir, data_source, campaign_name, station_name, force=False):
+#### Initialization
+def _create_station_directories(
+    data_source,
+    campaign_name,
+    station_name,
+    product="RAW",
+    base_dir=None,
+):
+    """Create the /metadata, /issue and /data/<station_name> directories of a station."""
+    # Create directory structure
+    _ = create_station_directory(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    _ = create_metadata_directory(
+        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+    )
+
+    if product.upper() == "RAW":
+        _ = create_issue_directory(base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
+
+
+def create_initial_station_structure(
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+):
+    """Create the DISDRODB Data Archive structure for a single station."""
+    from disdrodb.issue.writer import create_station_issue
+    from disdrodb.metadata.writer import create_station_metadata
+
+    # Check if already been defined
+    # - Check presence of metadata file
+    metadata_filepath = define_metadata_filepath(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="RAW",
+        check_exists=False,
+    )
+    if os.path.exists(metadata_filepath):
+        raise ValueError(
+            f"A metadata file already exists at {metadata_filepath}. "
+            "The station is already part of the DISDRODB Archive or "
+            "or you already initialized the directory structure for the station !"
+        )
+
+    # Create directory structure (/metadata, /issue and /data/<station_name>)
+    _create_station_directories(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="RAW",
+    )
+
+    # Add default station metadata file
+    create_station_metadata(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="RAW",
+    )
+    # Add default station issue file
+    create_station_issue(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # Report location of the campaign directory
+    campaign_dir = define_campaign_dir(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, product="RAW"
+    )
+    print(f"Initial station directory structure created at: {campaign_dir}")
+
+
+#### Testing upload/download
+def create_test_archive(test_base_dir, data_source, campaign_name, station_name, base_dir=None, force=False):
     """Create test DISDRODB Archive for a single station."""
     # Check test_base_dir is not equal to true base_dir
     if test_base_dir == get_base_dir():
         raise ValueError("Provide a test_base_dir directory different from the true DISDRODB base directory !")
+
     # Create test DISDRODB base directory
     remove_if_exists(test_base_dir, force=force)
     os.makedirs(test_base_dir, exist_ok=True)
-    # Create directory structure
-    _ = create_station_directory(
+
+    # Create directories (/metadata, /issue and /data/<station_name>)
+    _create_station_directories(
         base_dir=test_base_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    _ = create_metadata_directory(
-        base_dir=test_base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
-    )
-    _ = create_issue_directory(base_dir=test_base_dir, data_source=data_source, campaign_name=campaign_name)
-
+    # Copy metadata and issue files in the test archive
     src_metadata_fpath = define_metadata_filepath(
-        product="RAW", data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
     )
     dst_metadata_fpath = define_metadata_filepath(
         product="RAW",
@@ -327,7 +417,10 @@ def create_test_archive(test_base_dir, data_source, campaign_name, station_name,
         base_dir=test_base_dir,
     )
     src_issue_fpath = define_issue_filepath(
-        data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
     )
     dst_issue_fpath = define_issue_filepath(
         data_source=data_source, campaign_name=campaign_name, station_name=station_name, base_dir=test_base_dir

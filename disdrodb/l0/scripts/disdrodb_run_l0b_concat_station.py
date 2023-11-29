@@ -22,7 +22,7 @@ import sys
 import click
 
 from disdrodb.l0.routines import click_l0b_concat_options
-from disdrodb.utils.scripts import click_station_arguments
+from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -30,11 +30,12 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_l0b_concat_options
+@click_base_dir_option
 def disdrodb_run_l0b_concat_station(
     # Station arguments
-    data_source,
-    campaign_name,
-    station_name,
+    data_source: str,
+    campaign_name: str,
+    station_name: str,
     # L0B concat options
     remove_l0b=False,
     verbose=True,

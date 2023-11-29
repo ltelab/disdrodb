@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -16,37 +14,54 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Routines to upload station data to the DISDRODB Decentralized Data Archive."""
-
 import sys
 
 import click
 
-from disdrodb.data_transfer.upload_data import click_base_dir_option, click_upload_options
-from disdrodb.utils.scripts import click_station_arguments
+from disdrodb.utils.scripts import click_station_arguments, click_base_dir_option
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
+
+# -------------------------------------------------------------------------.
+# Click Command Line Interface decorator
 
 
 @click.command()
 @click_station_arguments
-@click_upload_options
 @click_base_dir_option
-def disdrodb_upload_station(
+def disdrodb_initialize_station(
+    # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
-    platform: str = None,
+    # Processing options
     base_dir: str = None,
-    force: bool = False,
 ):
-    from disdrodb.data_transfer.upload_data import upload_station
+    """Initialize the DISDRODB directory structure for a station. 
+    
+    It adds the relevant directories and the default issue and metadata YAML files..
 
-    upload_station(
+    Parameters \n
+    ---------- \n
+    data_source : str \n
+        Institution name (when campaign data spans more than 1 country), or country (when all campaigns (or sensor
+        networks) are inside a given country).\n
+        Must be UPPER CASE.\n
+    campaign_name : str \n
+        Campaign name. Must be UPPER CASE.\n
+    station_name : str \n
+        Station name \n
+    base_dir : str \n
+        Base directory of DISDRODB \n
+        Format: <...>/DISDRODB \n
+        If not specified, uses path specified in the DISDRODB active configuration. \n
+    """
+    from disdrodb.l0.routines import create_initial_station_structure
+
+    create_initial_station_structure(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        platform=platform,
-        force=force,
     )
+    return None

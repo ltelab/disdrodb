@@ -21,21 +21,23 @@
 import sys
 
 import click
-from disdrodb.utils.scripts import click_station_arguments
+
 from disdrodb.data_transfer.download_data import click_download_options
+from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
 @click_station_arguments
+@click_base_dir_option
 @click_download_options
 def disdrodb_download_station(
-    data_source,
-    campaign_name,
-    station_name,
-    base_dir=None,
-    force=False,
+    data_source: str,
+    campaign_name: str,
+    station_name: str,
+    base_dir: str = None,
+    force: bool = False,
 ):
     from disdrodb.data_transfer.download_data import download_station
 

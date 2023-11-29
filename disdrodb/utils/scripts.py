@@ -68,3 +68,14 @@ def click_station_arguments(function: object):
     function = click.argument("campaign_name", metavar="<CAMPAIGN_NAME>")(function)
     function = click.argument("data_source", metavar="<DATA_SOURCE>")(function)
     return function
+
+
+def click_base_dir_option(function: object):
+    function = click.option(
+        "--base_dir",
+        type=str,
+        show_default=True,
+        default=None,
+        help="DISDRODB base directory",
+    )(function)
+    return function

@@ -27,11 +27,14 @@ from disdrodb.api.create_directories import (
     _copy_station_metadata,
     create_directory_structure,
     create_initial_directory_structure,
+    create_initial_station_structure,
     create_issue_directory,
     create_metadata_directory,
+    create_test_archive,
 )
 from disdrodb.api.path import (
     define_campaign_dir,
+    define_issue_filepath,
     define_metadata_dir,
     define_metadata_filepath,
     define_station_dir,
@@ -260,6 +263,96 @@ def test_create_directory_structure(tmp_path, mocker):
             force=False,
             processed_dir=processed_dir,
             station_name="INEXISTENT_STATION",
+        )
+
+
+def test_create_initial_station_structure(tmp_path):
+    """Check creation of station initial files and directories."""
+    base_dir = tmp_path / "DISDRODB"
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+    station_name = "station_name"
+    # Create initial station structure
+    create_initial_station_structure(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    # Check metadata and issue files have been created
+    metadata_filepath = define_metadata_filepath(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="RAW",
+    )
+    issue_filepath = define_issue_filepath(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    assert os.path.exists(metadata_filepath)
+    assert os.path.exists(issue_filepath)
+
+    # Check that if called once again, it raise error
+    with pytest.raises(ValueError):
+        create_initial_station_structure(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+
+
+def test_create_test_archive(tmp_path):
+    """Check creation of test archive."""
+    base_dir = tmp_path / "base" / "DISDRODB"
+    test_base_dir = tmp_path / "test" / "DISDRODB"
+
+    campaign_name = "CAMPAIGN_NAME"
+    data_source = "DATA_SOURCE"
+    station_name = "station_name"
+    # Create initial station structure
+    create_initial_station_structure(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    create_test_archive(
+        test_base_dir=test_base_dir,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    # Check metadata and issue files have been created
+    metadata_filepath = define_metadata_filepath(
+        base_dir=test_base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="RAW",
+    )
+    issue_filepath = define_issue_filepath(
+        base_dir=test_base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    assert os.path.exists(metadata_filepath)
+    assert os.path.exists(issue_filepath)
+
+    # Check that if called once again, it raise error
+    with pytest.raises(ValueError):
+        create_initial_station_structure(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
         )
 
 

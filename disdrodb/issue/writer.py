@@ -19,8 +19,11 @@
 """Issue YAML File Writer."""
 
 import logging
+import os
 
 import yaml
+
+from disdrodb.api.path import define_issue_filepath
 
 logger = logging.getLogger(__name__)
 
@@ -115,4 +118,43 @@ def write_default_issue(filepath: str) -> None:
         Filepath of the issue YAML to write.
     """
     _write_issue(filepath=filepath)
+    return None
+
+
+def create_station_issue(data_source, campaign_name, station_name, base_dir=None):
+    """Write an empty YAML issue YAML file for a DISDRODB station.
+
+    An error is raised if the file already exists !
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    """
+    # Define issue filepath
+    issue_filepath = define_issue_filepath(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        check_exists=False,
+    )
+    if os.path.exists(issue_filepath):
+        raise ValueError("A issue YAML file already exists at {issue_filepath}.")
+    # Create issue dir if not existing
+    issue_dir = os.path.dirname(issue_filepath)
+    os.makedirs(issue_dir, exist_ok=True)
+    # Write issue file
+    write_default_issue(filepath=issue_filepath)
+    print(f"An empty issue YAML file for station {station_name} has been created .")
     return None

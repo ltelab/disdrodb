@@ -41,15 +41,8 @@ def click_upload_options(function: object):
         "--force",
         type=bool,
         show_default=True,
-        default=True,
+        default=False,
         help="Force uploading even if data already exists on another remote location.",
-    )(function)
-    function = click.option(
-        "--base_dir",
-        type=str,
-        show_default=True,
-        default=None,
-        help="DISDRODB base directory",
     )(function)
     return function
 
@@ -94,7 +87,7 @@ def click_upload_archive_options(function: object):
     return function
 
 
-def _check_if_upload(metadata_filepath, force):
+def _check_if_upload(metadata_filepath: str, force: bool):
     """Check if data must be uploaded."""
     if not force:
         disdrodb_data_url = read_yaml(metadata_filepath).get("disdrodb_data_url", "")
