@@ -22,12 +22,23 @@ import os
 import pytest
 
 
-def test_define_disdrodb_configs_new_config(tmp_path, mocker):
+def test_define_disdrodb_configs(tmp_path, mocker):
     import disdrodb
 
     mocker.patch("disdrodb.configs._define_config_filepath", return_value=str(tmp_path / ".config_disdrodb.yml"))
     disdrodb.configs.define_disdrodb_configs(base_dir="test_dir", zenodo_token="test_token")
     assert os.path.exists(tmp_path / ".config_disdrodb.yml")
+
+
+def test_read_disdrodb_configs(tmp_path, mocker):
+    from disdrodb.configs import define_disdrodb_configs, read_disdrodb_configs
+
+    mocker.patch("disdrodb.configs._define_config_filepath", return_value=str(tmp_path / ".config_disdrodb.yml"))
+    define_disdrodb_configs(base_dir="test_dir", zenodo_token="test_token")
+    assert os.path.exists(tmp_path / ".config_disdrodb.yml")
+
+    config_dict = read_disdrodb_configs()
+    assert isinstance(config_dict, dict)
 
 
 def test_update_disdrodb_configs(tmp_path, mocker):
