@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Tools to create Raw, L0A and L0B DISDRODB directories."""
 
-# L0A and L0B from raw NC: create_initial_directory_structure(raw_dir, processed_dir)
+# L0A and L0B from raw NC: create_intial_l0_directory_structure(raw_dir, processed_dir)
 # L0B: create_directory_structure(processed_dir)
 
 import logging
@@ -209,8 +209,8 @@ def create_issue_directory(base_dir, data_source, campaign_name):
     return str(issue_dir)
 
 
-#### L0A processing
-def create_initial_directory_structure(
+#### DISDRODB Products directories
+def create_intial_l0_directory_structure(
     raw_dir,
     processed_dir,
     station_name,
@@ -260,7 +260,6 @@ def create_initial_directory_structure(
     create_required_directory(os.path.join(processed_dir, product), dir_name=station_name)
 
 
-#### > L0A processing
 def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
     """Create directory structure for L0B and higher DISDRODB products."""
     from disdrodb.api.check_directories import check_presence_metadata_file, check_processed_dir
@@ -298,7 +297,7 @@ def create_directory_structure(processed_dir, product, station_name, force, verb
     )
 
 
-#### Initialization
+#### DISDRODB Station Initialization
 def _create_station_directories(
     data_source,
     campaign_name,
@@ -382,9 +381,13 @@ def create_initial_station_structure(
     print(f"Initial station directory structure created at: {campaign_dir}")
 
 
-#### Testing upload/download
+#### DISDRODB upload/download testing
 def create_test_archive(test_base_dir, data_source, campaign_name, station_name, base_dir=None, force=False):
-    """Create test DISDRODB Archive for a single station."""
+    """Create test DISDRODB Archive for a single existing station.
+
+    This function is used to make a copy of metadata and issue files of a stations.
+    This enable to then test data download and DISDRODB processing.
+    """
     # Check test_base_dir is not equal to true base_dir
     if test_base_dir == get_base_dir():
         raise ValueError("Provide a test_base_dir directory different from the true DISDRODB base directory !")

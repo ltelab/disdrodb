@@ -26,8 +26,8 @@ from disdrodb.api.create_directories import (
     _check_data_source_consistency,
     _copy_station_metadata,
     create_directory_structure,
-    create_initial_directory_structure,
     create_initial_station_structure,
+    create_intial_l0_directory_structure,
     create_issue_directory,
     create_metadata_directory,
     create_test_archive,
@@ -44,7 +44,7 @@ from disdrodb.utils.yaml import read_yaml
 
 
 @pytest.mark.parametrize("product", ["L0A", "L0B"])
-def test_create_initial_directory_structure(tmp_path, mocker, product):
+def test_create_intial_l0_directory_structure(tmp_path, mocker, product):
     # Define station info
     base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
@@ -110,7 +110,7 @@ def test_create_initial_directory_structure(tmp_path, mocker, product):
 
     # Test that if station_name is unexisting in data, raise error
     with pytest.raises(ValueError):
-        create_initial_directory_structure(
+        create_intial_l0_directory_structure(
             product=product,
             force=False,
             raw_dir=raw_dir,
@@ -118,8 +118,8 @@ def test_create_initial_directory_structure(tmp_path, mocker, product):
             station_name="INEXISTENT_STATION",
         )
 
-    # Execute create_initial_directory_structure
-    create_initial_directory_structure(
+    # Execute create_intial_l0_directory_structure
+    create_intial_l0_directory_structure(
         product=product,
         force=False,
         raw_dir=raw_dir,
@@ -147,7 +147,7 @@ def test_create_initial_directory_structure(tmp_path, mocker, product):
     )
 
     with pytest.raises(ValueError):
-        create_initial_directory_structure(
+        create_intial_l0_directory_structure(
             product=product,
             force=False,
             raw_dir=raw_dir,
@@ -157,7 +157,7 @@ def test_create_initial_directory_structure(tmp_path, mocker, product):
     assert os.path.exists(product_filepath)
 
     # Test delete file if already data in L0A (if force=True)
-    create_initial_directory_structure(
+    create_intial_l0_directory_structure(
         product=product,
         force=True,
         raw_dir=raw_dir,
