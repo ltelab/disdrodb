@@ -28,8 +28,8 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click_upload_options
 @click_upload_archive_options
+@click_upload_options
 def disdrodb_upload_archive(
     base_dir=None,
     data_sources=None,

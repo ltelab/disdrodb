@@ -21,8 +21,8 @@ import click
 from disdrodb.l0.routines import (
     click_l0_archive_options,
     click_l0_processing_options,
-    click_l0_station_arguments,
 )
+from disdrodb.utils.scripts import click_station_arguments
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -31,7 +31,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click_l0_station_arguments
+@click_station_arguments
 @click_l0_processing_options
 @click_l0_archive_options
 def disdrodb_run_l0_station(

@@ -579,7 +579,7 @@ If you are uploading multiple stations, you can an overview of the data still wa
 Note that:
 
 * when the data are uploaded on Zenodo, the metadata key ``disdrodb_data_url`` of the station is automatically
-  updated with the Zenodo URL where the station data are stored (and can be downloaded)
+  updated with the Zenodo URL where the station data are stored (and can be downloaded **once the data have been published**)
 
 * if the ``authors``, ``authors_url`` and ``institution`` DISDRODB metadata keys are correctly specified
   (i.e. each author information is comma-separated), these keys values are automatically added to the Zenodo metadata
@@ -604,6 +604,10 @@ when uploading data to the official Zenodo repository !
    Moreover, you must take care of compressing all stations data into a single zip file before uploading it into
    your remote data repository of choice !
 
+.. note::
+   Please consider to compress (i.e. with gz) each raw file to reduce the file size.
+   TODO utility !
+
 
 .. _step11:
 
@@ -614,37 +618,65 @@ To test that the data upload has been successful, you can try to download the da
 However you **must NOT perform this test in the disdrodb-data directory you where working till now** because you would risk to
 overwrite/delete the data you just uploaded on Zenodo.
 
+We highly suggest to test this procedure by first uploading and publishing data on the Zenodo Sandbox repository.
+
 We provide this python script that should enable you to test safely the whole procedure.
 
 .. code:: python
 
     import disdrodb
-    from disdrodb.l0.io import prepare_test_archive
+    from disdrodb.l0 import run_disdrodb_l0_station
+    from disdrodb.api.create_directories import create_test_archive
 
+    test_base_dir = "/tmp/DISDRODB"
     data_source = "<your_data_source>"
     campaign_name = "<your_campaign>"
     station_name = "<your_campaign>"
 
-    test_base_directory = "/tmp/DISDRODB"
-    prepare_test_archive(
-        test_base_directory=test_base_directory,
+
+    # Create test DISDRODB archive where to download the data
+    create_test_archive(
+        test_base_dir=test_base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        force=True,
     )
 
+    # Download the data (you just uploaded on Zenodo)
     disdrodb.download_station(
-        base_dir=test_base_directory, data_source=data_source, campaign_name=campaign_name, station_name=station_name
-    )
-    disdrodb.run_l0_station(
-        base_dir=test_base_directory,
+        base_dir=test_base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        debugging_mode=True,  # to speed up
+        force=True,
     )
 
-When the script finish, check that the content in the ``test_base_directory`` directory is what you expected to be.
+    # Test that the DISDRODB L0 processing works
+    # - Start with a small sample and check it works
+    run_disdrodb_l0_station(
+        base_dir=test_base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        debugging_mode=True,
+        verbose=True,
+        parallel=False,
+    )
+
+    # Now run over all data
+    # - If parallel=True, you can visualize progress at http://localhost:8787/status
+    run_disdrodb_l0_station(
+        base_dir=test_base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        debugging_mode=False,
+        verbose=False,
+        parallel=True,
+    )
+
+When the script finish, check that the content in the ``test_base_dir`` directory is what you expected to be.
 
 If everything looks as expected ... congratulations, you made it !!!
 

@@ -236,7 +236,14 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
 
     # Get metadata filepaths
     metadata_filepaths = [
-        os.path.join(base_dir, "Raw", data_source, campaign_name, "metadata", (station_name + ".yml"))
+        define_metadata_filepath(
+            product="Raw",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            base_dir=base_dir,
+            check_exists=False,
+        )
         for data_source, campaign_name, station_name in list_info
     ]
 

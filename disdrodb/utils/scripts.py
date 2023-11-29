@@ -18,6 +18,8 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB scripts utility."""
 
+import click
+
 
 def _execute_cmd(cmd, raise_error=False):
     """Execute command in the terminal, streaming output in python console."""
@@ -52,3 +54,17 @@ def parse_arg_to_list(args):
             # - Remove '' (deal with multi space)
             args = [args for args in list_args if len(args) > 0]
     return args
+
+
+def click_station_arguments(function: object):
+    """Click command line arguments for DISDRODB station processing.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.argument("station_name", metavar="<station>")(function)
+    function = click.argument("campaign_name", metavar="<CAMPAIGN_NAME>")(function)
+    function = click.argument("data_source", metavar="<DATA_SOURCE>")(function)
+    return function

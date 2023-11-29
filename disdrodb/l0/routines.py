@@ -39,20 +39,6 @@ logger = logging.getLogger(__name__)
 #### CLIck
 
 
-def click_l0_station_arguments(function: object):
-    """Click command line arguments for L0 processing of a station.
-
-    Parameters
-    ----------
-    function : object
-        Function.
-    """
-    function = click.argument("station_name", metavar="<station>")(function)
-    function = click.argument("campaign_name", metavar="<CAMPAIGN_NAME>")(function)
-    function = click.argument("data_source", metavar="<DATA_SOURCE>")(function)
-    return function
-
-
 def click_l0_stations_options(function: object):
     """Click command line options for DISDRODB archive L0 processing.
 

@@ -23,31 +23,17 @@ from typing import List, Optional
 import click
 
 from disdrodb.api.path import define_metadata_filepath
-from disdrodb.data_transfer.zenodo import upload_archive_to_zenodo, upload_station_to_zenodo
+from disdrodb.data_transfer.zenodo import upload_station_to_zenodo
 from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.yaml import read_yaml
-
-
-def click_station_arguments(function: object):
-    """Click command line arguments for L0 processing of a station.
-
-    Parameters
-    ----------
-    function : object
-        Function.
-    """
-    function = click.argument("station_name", metavar="<station>")(function)
-    function = click.argument("campaign_name", metavar="<CAMPAIGN_NAME>")(function)
-    function = click.argument("data_source", metavar="<DATA_SOURCE>")(function)
-    return function
 
 
 def click_upload_options(function: object):
     function = click.option(
         "--platform",
-        type=click.Choice(["zenodo"], case_sensitive=False),
+        type=click.Choice(["zenodo", "sandbox.zenodo"], case_sensitive=False),
         show_default=True,
-        default="",
+        default="sandbox.zenodo",
         help="Name of remote platform. If not provided (None), the default platform is Zenodo.",
     )(function)
     function = click.option(
@@ -136,7 +122,7 @@ def upload_station(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    platform: Optional[str] = None,
+    platform: Optional[str] = "sandbox.zenodo",
     force: bool = False,
     base_dir: Optional[str] = None,
 ) -> None:
@@ -160,8 +146,7 @@ def upload_station(
         If not specified, the path specified in the DISDRODB active configuration will be used.
     platform: str, optional
         Name of the remote platform.
-        If not provided (None), the default platform is Zenodo.
-        The default is platform=None.
+        The default platform is "sandbox.zenodo"
     force: bool, optional
         If True, upload the data and overwrite the disdrodb_data_url.
         The default is force=False.
@@ -179,14 +164,16 @@ def upload_station(
     # Check if data must be uploaded
     _check_if_upload(metadata_filepath, force=force)
 
+    print(f"Start uploading of {data_source} {campaign_name} {station_name}")
     # Upload the data
     if platform == "zenodo":
         upload_station_to_zenodo(metadata_filepath, sandbox=False)
 
-    elif platform == "zenodo.sandbox":  # Only for testing purposes, not available through CLI
+    elif platform == "sandbox.zenodo":  # Only for testing purposes, not available through CLI
         upload_station_to_zenodo(metadata_filepath, sandbox=True)
     else:
-        raise NotImplementedError(f"Data upload for platform {platform} is not implemented.")
+        valid_platform = ["zenodo", "sandbox.zenodo"]
+        raise NotImplementedError(f"Invalid platform {platform}. Valid platforms are {valid_platform}.")
 
 
 def upload_archive(
@@ -241,12 +228,22 @@ def upload_archive(
         print("There is no remaining data to upload.")
         return
 
-    # Upload the data
-    if platform == "zenodo":
-        upload_archive_to_zenodo(metadata_filepaths, sandbox=False)
+    # Upload station data
+    for metadata_filepath in metadata_filepaths:
+        metadata = read_yaml(metadata_filepath)
+        data_source = metadata["data_source"]
+        campaign_name = metadata["campaign_name"]
+        station_name = metadata["station_name"]
+        try:
+            upload_station(
+                base_dir=base_dir,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                platform=platform,
+                force=force,
+            )
+        except Exception as e:
+            print(f"{e}")
 
-    elif platform == "zenodo.sandbox":  # Only for testing purposes, not available through CLI
-        upload_archive_to_zenodo(metadata_filepaths, sandbox=True)
-    else:
-        valid_platform = ["zenodo", "zenodo.sandbox"]
-        raise NotImplementedError(f"Invalid platform {platform}. Valid platforms are {valid_platform}.")
+    print("All data have been uploaded. Please review your data depositions and publish it when ready.")

@@ -2,10 +2,10 @@
 source =
 	disdrodb
 omit =
-	*ci*
-	*data*
-	*docs*
-	*tutorials*
+	ci*
+	data*
+	docs*
+	tutorials*
 	disdrodb/l0/readers/*
 	disdrodb/tests/*
 

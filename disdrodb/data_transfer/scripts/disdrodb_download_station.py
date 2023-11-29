@@ -16,36 +16,33 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Routines to upload station data to the DISDRODB Decentralized Data Archive."""
+"""Routines to download station data from the DISDRODB Decentralized Data Archive."""
 
 import sys
 
 import click
-
-from disdrodb.data_transfer.upload_data import click_upload_options
 from disdrodb.utils.scripts import click_station_arguments
+from disdrodb.data_transfer.download_data import click_download_options
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
 @click_station_arguments
-@click_upload_options
-def disdrodb_upload_station(
+@click_download_options
+def disdrodb_download_station(
     data_source,
     campaign_name,
     station_name,
-    platform=None,
     base_dir=None,
     force=False,
 ):
-    from disdrodb.data_transfer.upload_data import upload_station
+    from disdrodb.data_transfer.download_data import download_station
 
-    upload_station(
+    download_station(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        platform=platform,
         force=force,
     )

@@ -20,7 +20,7 @@
 
 import json
 import os
-from typing import List, Tuple
+from typing import Tuple
 
 import requests
 
@@ -90,6 +90,10 @@ def _create_zenodo_deposition(sandbox) -> Tuple[int, str]:
     return deposit_id, deposit_url, bucket_url
 
 
+def _define_disdrodb_data_url(zenodo_host, deposit_id, filename):
+    return f"https://{zenodo_host}/records/{deposit_id}/files/{filename}?download=1"
+
+
 def _upload_file_to_zenodo(filepath: str, metadata_filepath: str, sandbox: bool) -> None:
     """Upload a file to a Zenodo bucket."""
 
@@ -128,15 +132,14 @@ def _upload_file_to_zenodo(filepath: str, metadata_filepath: str, sandbox: bool)
     ###----------------------------------------------------------.
     # Define disdrodb data url
     zenodo_host = "sandbox.zenodo.org" if sandbox else "zenodo.org"
-    disdrodb_data_url = f"https://{zenodo_host}/records/{deposit_id}/files/{filename}"
-    disdrodb_data_url = f"https://{zenodo_host}/records/{deposit_id}/files/{filename}?download=1&preview=1"
+    disdrodb_data_url = _define_disdrodb_data_url(zenodo_host, deposit_id, filename)
 
     # Define Zenodo url to review and publish the uploaded data
     review_url = f"https://{zenodo_host}/uploads/{deposit_id}"
 
     ###----------------------------------------------------------.
-    print(f"Please review your data deposition at {review_url} and publish it when ready !")
-    print(f"The direct link to download station data is {disdrodb_data_url}")
+    print(f" - Please review your data deposition at {review_url} and publish it when ready !")
+    print(f"   The direct link to download station data is {disdrodb_data_url}")
     return disdrodb_data_url
 
 
@@ -208,10 +211,12 @@ def upload_station_to_zenodo(metadata_filepath: str, sandbox: bool = True) -> st
         If True, upload to Zenodo Sandbox for testing purposes.
     """
     # Zip station data
+    print(" - Zipping station data")
     station_zip_filepath = archive_station_data(metadata_filepath)
 
     # Upload the station data zip file on Zenodo
     # - After upload, it removes the zip file !
+    print(" - Uploading station data")
     try:
         disdrodb_data_url = _upload_file_to_zenodo(
             filepath=station_zip_filepath, metadata_filepath=metadata_filepath, sandbox=sandbox
@@ -222,24 +227,5 @@ def upload_station_to_zenodo(metadata_filepath: str, sandbox: bool = True) -> st
         raise ValueError(f"The upload on Zenodo has failed: {e}.")
 
     # Add the disdrodb_data_url information to the metadata
+    print(" - The station metadata 'disdrodb_data_url' key has been updated with the remote url")
     _update_metadata_with_zenodo_url(metadata_filepath=metadata_filepath, disdrodb_data_url=disdrodb_data_url)
-
-
-def upload_archive_to_zenodo(metadata_filepaths: List[str], sandbox: bool = True) -> None:
-    """Upload data to Zenodo Sandbox.
-
-    Parameters
-    ----------
-    metadata_filepaths: list of str
-        List of metadata file paths.
-    sandbox: bool
-        If True, upload to Zenodo Sandbox for testing purposes.
-    """
-    for metadata_filepath in metadata_filepaths:
-        try:
-            # Upload station data
-            upload_station_to_zenodo(metadata_filepath, sandbox=sandbox)
-        except Exception as e:
-            print(f"{e}")
-
-    print("All data have been uploaded. Please review your data depositions and publish it when ready.")

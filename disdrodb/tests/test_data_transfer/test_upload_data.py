@@ -30,6 +30,8 @@ from disdrodb.data_transfer.zenodo import _create_zenodo_deposition
 from disdrodb.metadata import read_station_metadata
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_raw_data_file
 
+DEPOSIT_ID = 123456
+
 
 def test_wrong_http_response(requests_mock):
     """Test wrong response from Zenodo API."""
@@ -39,31 +41,99 @@ def test_wrong_http_response(requests_mock):
         _create_zenodo_deposition(sandbox=True)
 
 
-def mock_zenodo_api(requests_mock):
+def mock_zenodo_api(requests_mock, zenodo_host):
     """Mock Zenodo API."""
-    deposit_id = 123456
+    deposit_id = DEPOSIT_ID
     bucked_id = str(uuid.uuid4())
-    bucket_url = f"https://sandbox.zenodo.org/api/files/{bucked_id}"
-    deposit_url = f"https://sandbox.zenodo.org/api/deposit/depositions/{deposit_id}"
+    bucket_url = f"https://{zenodo_host}.org/api/files/{bucked_id}"
+    deposit_url = f"https://{zenodo_host}.org/api/deposit/depositions"
+    deposit_id_url = f"https://{zenodo_host}.org/api/deposit/depositions/{deposit_id}"
     response = {
         "id": deposit_id,
         "links": {"bucket": bucket_url},
     }
     # Deposition creation
-    requests_mock.post("https://sandbox.zenodo.org/api/deposit/depositions", json=response, status_code=201)
+    requests_mock.post(deposit_url, json=response, status_code=201)
 
     # File upload (match any remote file path)
     file_upload_url = re.compile(f"{bucket_url}/.*")
     requests_mock.put(file_upload_url, status_code=201)
 
     # Metadata update
-    requests_mock.put(deposit_url, json=response, status_code=200)
+    requests_mock.put(deposit_id_url, json=response, status_code=200)
 
 
 @pytest.mark.parametrize("force", [True, False])
-@pytest.mark.parametrize("station_url", ["https://www.example.com", ""])
-def test_station_upload(tmp_path, requests_mock, station_url, force):
-    """Test upload of already uploaded data (force=True)."""
+@pytest.mark.parametrize("station_url", ["existing_url", ""])
+@pytest.mark.parametrize("platform", ["sandbox.zenodo", "zenodo"])
+def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, platform):
+    """Test upload of station data."""
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "test_data_source"
+    campaign_name = "test_campaign_name"
+    station_name = "test_station_name"
+
+    metadata_dict = {}
+    metadata_dict["disdrodb_data_url"] = station_url
+
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    _ = create_fake_raw_data_file(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+
+    # Define token name
+    if "sandbox.zenodo":
+        token_key = "zenodo_sandbox_token"
+    else:
+        token_key = "zenodo_token"
+
+    with disdrodb.config.set({token_key: "test_access_token"}):
+        mock_zenodo_api(requests_mock, zenodo_host=platform)
+        mocker.patch("disdrodb.data_transfer.zenodo._define_disdrodb_data_url", return_value="dummy_url")
+
+        if station_url == "existing_url" and not force:
+            with pytest.raises(ValueError):
+                upload_station(
+                    platform=platform,
+                    base_dir=str(base_dir),
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    force=force,
+                )
+        else:
+            upload_station(
+                platform=platform,
+                base_dir=str(base_dir),
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                force=force,
+            )
+
+            # Check metadata has changed
+            metadata_dict = read_station_metadata(
+                base_dir=base_dir,
+                product="RAW",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+            )
+            new_station_url = metadata_dict["disdrodb_data_url"]
+            new_station_url == "dummy_url"
+
+
+@pytest.mark.parametrize("force", [True, False])
+@pytest.mark.parametrize("station_url", ["existing_url", ""])
+@pytest.mark.parametrize("platform", ["sandbox.zenodo", "zenodo"])
+def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, platform):
+    """Test upload of archive stations data."""
     base_dir = tmp_path / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
@@ -84,11 +154,18 @@ def test_station_upload(tmp_path, requests_mock, station_url, force):
         base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
-    # Upload data (with force=False)
-    with disdrodb.config.set({"zenodo_sandbox_token": "test_access_token"}):
-        mock_zenodo_api(requests_mock)
+    # Define token name
+    if "sandbox.zenodo":
+        token_key = "zenodo_sandbox_token"
+    else:
+        token_key = "zenodo_token"
+
+    # Upload data
+    with disdrodb.config.set({token_key: "test_access_token"}):
+        mock_zenodo_api(requests_mock, zenodo_host=platform)
+        mocker.patch("disdrodb.data_transfer.zenodo._define_disdrodb_data_url", return_value="dummy_url")
         upload_archive(
-            platform="zenodo.sandbox",
+            platform=platform,
             base_dir=str(base_dir),
             data_sources=data_source,
             campaign_names=campaign_name,
@@ -105,48 +182,9 @@ def test_station_upload(tmp_path, requests_mock, station_url, force):
         station_name=station_name,
     )
     new_station_url = metadata_dict["disdrodb_data_url"]
-    if force:
-        # Check key update
-        assert new_station_url != station_url
+    if station_url != "" and not force:
+        # No upload --> No key update
+        assert new_station_url == station_url
     else:
-        if station_url == "":
-            # upload --> key update
-            assert new_station_url != station_url
-        else:
-            # no upload --> no key update
-            assert new_station_url == station_url
-
-
-def test_station_upload_raise_error(tmp_path, requests_mock):
-    """Test upload of already uploaded data (force=True)."""
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "test_data_source"
-    campaign_name = "test_campaign_name"
-    station_name = "test_station_name"
-
-    metadata_dict = {}
-    metadata_dict["disdrodb_data_url"] = "existing_url"
-
-    _ = create_fake_metadata_file(
-        base_dir=base_dir,
-        metadata_dict=metadata_dict,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    _ = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
-    )
-
-    # Upload data (with force=False)
-    with disdrodb.config.set({"zenodo_sandbox_token": "test_access_token"}):
-        mock_zenodo_api(requests_mock)
-        with pytest.raises(ValueError):
-            upload_station(
-                platform="zenodo.sandbox",
-                base_dir=str(base_dir),
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                force=False,
-            )
+        # Upload --> key update
+        assert new_station_url == "dummy_url"

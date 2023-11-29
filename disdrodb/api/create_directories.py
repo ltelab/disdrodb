@@ -26,11 +26,19 @@ import os
 import shutil
 
 from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
-from disdrodb.api.path import define_metadata_dir, define_station_dir
+from disdrodb.api.path import (
+    define_issue_dir,
+    define_issue_filepath,
+    define_metadata_dir,
+    define_metadata_filepath,
+    define_station_dir,
+)
+from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import (
     check_directory_exists,
     copy_file,
     create_required_directory,
+    remove_if_exists,
 )
 
 logger = logging.getLogger(__name__)
@@ -189,7 +197,12 @@ def create_station_directory(base_dir, product, data_source, campaign_name, stat
 
 
 def create_issue_directory(base_dir, data_source, campaign_name):
-    issue_dir = os.path.join(base_dir, "Raw", data_source, campaign_name, "issue")
+    issue_dir = define_issue_dir(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
+    )
     if not os.path.exists(issue_dir):
         os.makedirs(issue_dir, exist_ok=True)
     return str(issue_dir)
@@ -280,3 +293,45 @@ def create_directory_structure(processed_dir, product, station_name, force, verb
         station_name=station_name,
         force=force,
     )
+
+
+def create_test_archive(test_base_dir, data_source, campaign_name, station_name, force=False):
+    """Create test DISDRODB Archive for a single station."""
+    # Check test_base_dir is not equal to true base_dir
+    if test_base_dir == get_base_dir():
+        raise ValueError("Provide a test_base_dir directory different from the true DISDRODB base directory !")
+    # Create test DISDRODB base directory
+    remove_if_exists(test_base_dir, force=force)
+    os.makedirs(test_base_dir, exist_ok=True)
+    # Create directory structure
+    _ = create_station_directory(
+        base_dir=test_base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    _ = create_metadata_directory(
+        base_dir=test_base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+    )
+    _ = create_issue_directory(base_dir=test_base_dir, data_source=data_source, campaign_name=campaign_name)
+
+    src_metadata_fpath = define_metadata_filepath(
+        product="RAW", data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+    dst_metadata_fpath = define_metadata_filepath(
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=test_base_dir,
+    )
+    src_issue_fpath = define_issue_filepath(
+        data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+    dst_issue_fpath = define_issue_filepath(
+        data_source=data_source, campaign_name=campaign_name, station_name=station_name, base_dir=test_base_dir
+    )
+    copy_file(src_issue_fpath, dst_issue_fpath)
+    copy_file(src_metadata_fpath, dst_metadata_fpath)
+    print(f"The test DISDRODB archive for {data_source} {campaign_name} {station_name} has been set up !")

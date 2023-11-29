@@ -72,6 +72,7 @@ disdrodb_run_l0b="disdrodb.l0.scripts.disdrodb_run_l0b:disdrodb_run_l0b"
 disdrodb_run_l0="disdrodb.l0.scripts.disdrodb_run_l0:disdrodb_run_l0"
 # Data transfer
 disdrodb_download_archive="disdrodb.data_transfer.scripts.disdrodb_download_archive:disdrodb_download_archive"
+disdrodb_download_station="disdrodb.data_transfer.scripts.disdrodb_download_station:disdrodb_download_station"
 disdrodb_upload_archive="disdrodb.data_transfer.scripts.disdrodb_upload_archive:disdrodb_upload_archive"
 disdrodb_upload_station="disdrodb.data_transfer.scripts.disdrodb_upload_station:disdrodb_upload_station"
 # Metadata archive

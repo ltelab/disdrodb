@@ -24,7 +24,7 @@ import shutil
 import pandas as pd
 
 from disdrodb import __root_path__
-from disdrodb.api.path import get_disdrodb_path
+from disdrodb.api.path import define_metadata_dir, get_disdrodb_path
 from disdrodb.l0.l0_reader import get_station_reader_function
 from disdrodb.utils.directories import list_files
 
@@ -79,7 +79,13 @@ def _get_list_test_stations(data_source: str, campaign_name: str) -> list:
         List of test stations.
 
     """
-    metadata_dir = os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "metadata")
+    metadata_dir = define_metadata_dir(
+        product="RAW",
+        base_dir=TEST_BASE_DIR,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
+    )
     filepaths = list_files(metadata_dir, glob_pattern="*.yml", recursive=False)
     list_station_names = [os.path.splitext(os.path.basename(i))[0] for i in filepaths]
 

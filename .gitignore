@@ -9,6 +9,11 @@
 /dask-worker-space/
 /data/DISDRODB/Processed
 
+# Test coverage
+coverage.xml
+lcov.info
+.coverage
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
