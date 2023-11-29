@@ -72,7 +72,7 @@ def write_default_metadata(filepath: str) -> None:
 
     # Write the metadata
     metadata = sort_metadata_dictionary(metadata)
-    
+
     write_yaml(metadata, filepath=filepath, sort_keys=False)
     return None
 

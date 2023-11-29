@@ -18,7 +18,7 @@ import sys
 
 import click
 
-from disdrodb.utils.scripts import click_station_arguments, click_base_dir_option
+from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -37,8 +37,8 @@ def disdrodb_initialize_station(
     # Processing options
     base_dir: str = None,
 ):
-    """Initialize the DISDRODB directory structure for a station. 
-    
+    """Initialize the DISDRODB directory structure for a station.
+
     It adds the relevant directories and the default issue and metadata YAML files..
 
     Parameters \n

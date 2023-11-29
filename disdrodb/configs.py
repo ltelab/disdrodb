@@ -94,20 +94,14 @@ def read_disdrodb_configs() -> Dict[str, str]:
     return config_dict
 
 
-def _get_config_key(key):
-    """Return the config key if `value` is None."""
-    value = read_disdrodb_configs().get(key, None)
-    if value is None:
-        raise ValueError(f"The DISDRODB {key} parameter has not been defined ! ")
-    return value
-
-
 def get_base_dir(base_dir=None):
     """Return the DISDRODB base directory."""
     import disdrodb
 
     if base_dir is None:
         base_dir = disdrodb.config["base_dir"]
+    if base_dir is None:
+        raise TypeError("Expecting base_dir to be a string or Path in the donfig.config.")
     base_dir = str(base_dir)  # convert Path to str
     return base_dir
 

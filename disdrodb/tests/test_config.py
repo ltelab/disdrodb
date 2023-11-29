@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+
+# -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2023 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
+"""Check DISDRODB configuration files."""
+import os
+
+import pytest
+
+
+def test_define_disdrodb_configs_new_config(tmp_path, mocker):
+    import disdrodb
+
+    mocker.patch("disdrodb.configs._define_config_filepath", return_value=str(tmp_path / ".config_disdrodb.yml"))
+    disdrodb.configs.define_disdrodb_configs(base_dir="test_dir", zenodo_token="test_token")
+    assert os.path.exists(tmp_path / ".config_disdrodb.yml")
+
+
+def test_update_disdrodb_configs(tmp_path, mocker):
+    import disdrodb
+    from disdrodb.utils.yaml import read_yaml
+
+    config_fpath = str(tmp_path / ".config_disdrodb.yml")
+    mocker.patch("disdrodb.configs._define_config_filepath", return_value=config_fpath)
+
+    # Initialize
+    disdrodb.configs.define_disdrodb_configs(base_dir="test_dir/DISDRODB", zenodo_token="test_token")
+    assert os.path.exists(config_fpath)
+
+    config_dict = read_yaml(config_fpath)
+    config_dict["base_dir"] == "test_dir/DISDRODB"
+
+    # Update
+    disdrodb.configs.define_disdrodb_configs(base_dir="new_test_dir/DISDRODB", zenodo_sandbox_token="new_token")
+    assert os.path.exists(config_fpath)
+    config_dict = read_yaml(config_fpath)
+    config_dict["base_dir"] == "new_test_dir/DISDRODB"
+    config_dict["zenodo_token"] == "test_token"
+    config_dict["zenodo_sandbox_token"] == "new_token"
+
+
+def test_get_base_dir():
+    import disdrodb
+    from disdrodb.configs import get_base_dir
+
+    # Check that if input is not None, return the specified base_dir
+    assert get_base_dir(base_dir="test/DISDRODB") == "test/DISDRODB"
+
+    # Check that if no config YAML file specified, return None
+    with pytest.raises(TypeError):
+        get_base_dir()
+
+    # Set base_dir in the donfig config and check it return it !
+    disdrodb.config.set({"base_dir": "another_test_dir/DISDRODB"})
+    assert get_base_dir() == "another_test_dir/DISDRODB"
+
+    # Now test that return the one from the temporary disdrodb.config donfig object
+    with disdrodb.config.set({"base_dir": "new_test_dir/DISDRODB"}):
+        assert get_base_dir() == "new_test_dir/DISDRODB"
+
+    # And check it return the default one
+    assert get_base_dir() == "another_test_dir/DISDRODB"
+
+
+@pytest.mark.parametrize("sandbox,expected_token", [(False, "my_zenodo_token"), (True, "my_sandbox_zenodo_token")])
+def test_get_zenodo_token(sandbox, expected_token):
+    import disdrodb
+    from disdrodb.configs import get_zenodo_token
+
+    disdrodb.config.set({"zenodo_token": None})
+    disdrodb.config.set({"zenodo_sandbox_token": None})
+
+    # Check raise error if Zenodo Token  not specified
+    with pytest.raises(ValueError):
+        get_zenodo_token(sandbox=sandbox)
+
+    disdrodb.config.set({"zenodo_token": "my_zenodo_token"})
+    disdrodb.config.set({"zenodo_sandbox_token": "my_sandbox_zenodo_token"})
+    assert get_zenodo_token(sandbox=sandbox) == expected_token
