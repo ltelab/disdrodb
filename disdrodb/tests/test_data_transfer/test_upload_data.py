@@ -88,7 +88,7 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
     )
 
     # Define token name
-    if "sandbox.zenodo":
+    if platform == "sandbox.zenodo":
         token_key = "zenodo_sandbox_token"
     else:
         token_key = "zenodo_token"
@@ -129,6 +129,50 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
             new_station_url == "dummy_url"
 
 
+def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
+    """Test upload of station data."""
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "test_data_source"
+    campaign_name = "test_campaign_name"
+    station_name = "test_station_name"
+
+    force = True
+    metadata_dict = {}
+    metadata_dict["disdrodb_data_url"] = "existing_url"
+
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    _ = create_fake_raw_data_file(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+
+    # Check it raise error if invalid platform
+    with pytest.raises(NotImplementedError):
+        upload_station(
+            platform="invalid_platform",
+            base_dir=str(base_dir),
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            force=force,
+        )
+
+    with pytest.raises(NotImplementedError):
+        upload_archive(
+            platform="invalid_platform",
+            base_dir=str(base_dir),
+            data_sources=data_source,
+            campaign_names=campaign_name,
+            station_names=station_name,
+            force=force,
+        )
+
+
 @pytest.mark.parametrize("force", [True, False])
 @pytest.mark.parametrize("station_url", ["existing_url", ""])
 @pytest.mark.parametrize("platform", ["sandbox.zenodo", "zenodo"])
@@ -155,7 +199,7 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
     )
 
     # Define token name
-    if "sandbox.zenodo":
+    if platform == "sandbox.zenodo":
         token_key = "zenodo_sandbox_token"
     else:
         token_key = "zenodo_token"
@@ -188,3 +232,37 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
     else:
         # Upload --> key update
         assert new_station_url == "dummy_url"
+
+
+@pytest.mark.parametrize("platform", ["sandbox.zenodo", "zenodo"])
+def test_upload_archive_do_not_stop(tmp_path, requests_mock, mocker, platform):
+    """Test upload of archive stations is not stopped by station errors."""
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "test_data_source"
+    campaign_name = "test_campaign_name"
+    station_name = "test_station_name"
+
+    metadata_dict = {}
+    metadata_dict["disdrodb_data_url"] = "dummy_url"
+
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    _ = create_fake_raw_data_file(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
+
+    mocker.patch("disdrodb.data_transfer.upload_data.upload_station", side_effect=Exception("Whatever error occurred"))
+    upload_archive(
+        platform=platform,
+        base_dir=str(base_dir),
+        data_sources=data_source,
+        campaign_names=campaign_name,
+        station_names=station_name,
+        force=False,
+    )

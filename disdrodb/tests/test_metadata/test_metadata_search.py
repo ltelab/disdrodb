@@ -18,28 +18,17 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB API metadata utility."""
 
-import os
-
 import pytest
 
-from disdrodb.api.path import define_metadata_filepath
-from disdrodb.metadata.reader import read_station_metadata
 from disdrodb.metadata.search import (
     _get_list_all_metadata,
     _get_list_metadata_with_data,
     get_list_metadata,
 )
-from disdrodb.metadata.writer import (
-    create_station_metadata,
-    get_default_metadata_dict,
-    write_default_metadata,
-)
 from disdrodb.tests.conftest import (
-    create_fake_metadata_directory,
     create_fake_metadata_file,
     create_fake_raw_data_file,
 )
-from disdrodb.utils.yaml import read_yaml
 
 
 def test__get_list_all_metadata(tmp_path):
@@ -203,88 +192,3 @@ def test_get_list_metadata_file(tmp_path):
     assert [metadata_filepath] == result
 
 
-def test_get_default_metadata():
-    assert isinstance(get_default_metadata_dict(), dict)
-
-
-def test_write_default_metadata(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "station_name"
-
-    # Create the default metadata file
-    _ = create_fake_metadata_directory(
-        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
-    )
-    metadata_filepath = define_metadata_filepath(
-        base_dir=base_dir,
-        product="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        check_exists=False,
-    )
-    write_default_metadata(metadata_filepath)
-
-    # Check file exist
-    assert os.path.exists(metadata_filepath)
-
-    # Open it
-    dictionary = read_yaml(str(metadata_filepath))
-
-    # Check is the expected dictionary
-    expected_dict = get_default_metadata_dict()
-    expected_dict["data_source"] = data_source
-    expected_dict["campaign_name"] = campaign_name
-    expected_dict["station_name"] = station_name
-    assert expected_dict == dictionary
-
-
-@pytest.mark.parametrize("product", ["RAW", "L0A", "L0B"])
-def test_read_station_metadata(tmp_path, product):
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "station_name"
-
-    _ = create_fake_metadata_file(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    metadata_dict = read_station_metadata(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
-    assert isinstance(metadata_dict, dict)
-
-
-@pytest.mark.parametrize("product", ["RAW", "L0A", "L0B"])
-def test_create_station_metadata(tmp_path, product):
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "station_name"
-
-    _ = create_station_metadata(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    metadata_dict = read_station_metadata(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    assert isinstance(metadata_dict, dict)

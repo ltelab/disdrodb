@@ -85,7 +85,7 @@ def create_fake_issue_file(
     station_name="station_name",
 ):
     from disdrodb.api.path import define_issue_filepath
-    from disdrodb.issue.writer import write_issue_dict
+    from disdrodb.issue.writer import write_issue
 
     # Define issue filepath
     issue_filepath = define_issue_filepath(
@@ -99,8 +99,11 @@ def create_fake_issue_file(
     os.makedirs(os.path.dirname(issue_filepath), exist_ok=True)
 
     # Write issue
-    write_issue_dict(issue_filepath, issue_dict=issue_dict)
-
+    write_issue(
+        filepath=issue_filepath,
+        timesteps=issue_dict.get("timesteps", None),
+        time_periods=issue_dict.get("time_periods", None),
+    )
     # Return filepath
     return str(issue_filepath)
 

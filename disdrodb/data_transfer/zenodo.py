@@ -151,11 +151,20 @@ def _define_creators_list(metadata):
         list_names = re.split(";|,", metadata["authors"])
         list_identifier = re.split(";|,", metadata["authors_url"])
         list_affiliation = re.split(";|,", metadata["institution"])
+
+        # Check identifier fields match the number of specified authors
+        # - If not, set identifier to ""
         if len(list_names) != len(list_identifier):
-            # print("Impossible to automatically assign identifier to authors. Length mismatch.")
             list_identifier = [""] * len(list_names)
+
+        # If affiliation is only one --> Assume is the same for everyone
         if len(list_affiliation) == 1:
             list_affiliation = list_affiliation * len(list_names)
+        # If more than one affiliation, but does not match list of authors, set to ""
+        if len(list_affiliation) > 1 and len(list_affiliation) != len(list_names):
+            list_affiliation = [""] * len(list_names)
+
+        # Create info dictionary of each author
         list_creator_dict = []
         for name, identifier, affiliation in zip(list_names, list_identifier, list_affiliation):
             creator_dict = {}
@@ -224,7 +233,7 @@ def upload_station_to_zenodo(metadata_filepath: str, sandbox: bool = True) -> st
         os.remove(station_zip_filepath)
     except Exception as e:
         os.remove(station_zip_filepath)
-        raise ValueError(f"The upload on Zenodo has failed: {e}.")
+        raise ValueError(f"{station_zip_filepath} The upload on Zenodo has failed: {e}.")
 
     # Add the disdrodb_data_url information to the metadata
     print(" - The station metadata 'disdrodb_data_url' key has been updated with the remote url")

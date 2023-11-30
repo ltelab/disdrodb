@@ -111,6 +111,13 @@ def _filter_already_uploaded(metadata_filepaths: List[str], force: bool) -> List
     return filtered
 
 
+def _check_valid_platform(platform):
+    """Check upload platform validity."""
+    valid_platform = ["zenodo", "sandbox.zenodo"]
+    if platform not in valid_platform:
+        raise NotImplementedError(f"Invalid platform {platform}. Valid platforms are {valid_platform}.")
+
+
 def upload_station(
     data_source: str,
     campaign_name: str,
@@ -145,6 +152,8 @@ def upload_station(
         The default is force=False.
 
     """
+    _check_valid_platform(platform)
+
     # Define metadata_filepath
     metadata_filepath = define_metadata_filepath(
         data_source=data_source,
@@ -162,11 +171,8 @@ def upload_station(
     if platform == "zenodo":
         upload_station_to_zenodo(metadata_filepath, sandbox=False)
 
-    elif platform == "sandbox.zenodo":  # Only for testing purposes, not available through CLI
+    else:  # platform == "sandbox.zenodo":  # Only for testing purposes, not available through CLI
         upload_station_to_zenodo(metadata_filepath, sandbox=True)
-    else:
-        valid_platform = ["zenodo", "sandbox.zenodo"]
-        raise NotImplementedError(f"Invalid platform {platform}. Valid platforms are {valid_platform}.")
 
 
 def upload_archive(
@@ -206,6 +212,8 @@ def upload_archive(
         If not provided (None), all stations will be uploaded.
         The default is station_name=None.
     """
+    _check_valid_platform(platform)
+
     # Get list metadata
     metadata_filepaths = get_list_metadata(
         **kwargs,

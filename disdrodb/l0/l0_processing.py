@@ -22,6 +22,7 @@ import datetime
 import functools
 import logging
 import os
+import shutil
 import time
 
 import dask
@@ -39,6 +40,7 @@ from disdrodb.api.path import (
     define_l0a_filepath,
     define_l0b_filepath,
     define_l0b_station_dir,
+    define_station_dir,
     get_disdrodb_path,
 )
 from disdrodb.configs import get_base_dir
@@ -785,7 +787,7 @@ def run_l0b_from_nc(
     return None
 
 
-def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
+def run_l0b_concat(processed_dir, station_name, verbose=False):
     """Concatenate all L0B netCDF files into a single netCDF file.
 
     The single netCDF file is saved at <processed_dir>/L0B.
@@ -835,13 +837,6 @@ def run_l0b_concat(processed_dir, station_name, remove=False, verbose=False):
     # Close file and delete
     ds.close()
     del ds
-
-    # -------------------------------------------------------------------------.
-    # If remove = True, remove all the single files
-    if remove:
-        log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
-        _ = [os.remove(filepath) for filepath in filepaths]
-        log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
 
     # -------------------------------------------------------------------------.
     # Close the file logger
@@ -948,6 +943,7 @@ def run_l0b_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    remove_l0a: bool = False,
     base_dir: str = None,
 ):
     """
@@ -1005,6 +1001,18 @@ def run_l0b_station(
         parallel=parallel,
     )
 
+    if remove_l0a:
+        station_dir = define_station_dir(
+            base_dir=base_dir,
+            product="L0A",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        log_info(logger=logger, msg="Removal of single L0A files started.", verbose=verbose)
+        shutil.rmtree(station_dir)
+        log_info(logger=logger, msg="Removal of single L0A files ended.", verbose=verbose)
+
 
 def run_l0b_concat_station(
     # Station arguments
@@ -1053,9 +1061,20 @@ def run_l0b_concat_station(
     run_l0b_concat(
         processed_dir=processed_dir,
         station_name=station_name,
-        remove=remove_l0b,
         verbose=verbose,
     )
+
+    if remove_l0b:
+        station_dir = define_station_dir(
+            base_dir=base_dir,
+            product="L0B",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
+        shutil.rmtree(station_dir)
+        log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
 
 
 ####---------------------------------------------------------------------------.

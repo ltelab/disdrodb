@@ -22,6 +22,7 @@ import click
 from disdrodb.l0.routines import (
     click_l0_processing_options,
     click_l0_stations_options,
+    click_remove_l0a_option,
 )
 from disdrodb.utils.scripts import click_base_dir_option, parse_arg_to_list
 
@@ -31,6 +32,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_l0_stations_options
 @click_l0_processing_options
+@click_remove_l0a_option
 @click_base_dir_option
 def disdrodb_run_l0b(
     # L0 disdrodb stations options
@@ -42,6 +44,7 @@ def disdrodb_run_l0b(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    remove_l0a: bool = False,
     base_dir: str = None,
 ):
     """
@@ -107,6 +110,7 @@ def disdrodb_run_l0b(
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        remove_l0a=remove_l0a,
     )
 
     return None

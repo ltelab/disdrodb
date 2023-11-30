@@ -16,7 +16,7 @@
 # # You should have received a copy of the GNU General Public License
 # # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # # -----------------------------------------------------------------------------.
-# """Test DISDRODB download utility."""
+"""Test DISDRODB download utility."""
 
 import os
 
@@ -103,6 +103,7 @@ def test_download_without_any_remote_url(tmp_path, requests_mock, mocker, disdro
             station_name=station_name,
             force=force,
         )
+
     # Check download archive run
     download_archive(
         base_dir=str(base_dir),
@@ -111,6 +112,34 @@ def test_download_without_any_remote_url(tmp_path, requests_mock, mocker, disdro
         station_names=station_name,
         force=force,
     )
+
+
+def test_download_station_only_with_valid_metadata(tmp_path):
+    """Test download of archive stations is not stopped by single stations download errors."""
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "test_data_source"
+    campaign_name = "test_campaign_name"
+    station_name = "test_station_name"
+
+    metadata_dict = {}
+    metadata_dict["station_name"] = "ANOTHER_STATION_NAME"
+    metadata_dict["disdrodb_data_url"] = TEST_ZIP_FPATH
+
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        metadata_dict=metadata_dict,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    with pytest.raises(ValueError):
+        download_station(
+            base_dir=str(base_dir),
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
 
 
 @pytest.mark.parametrize("force", [True, False])
@@ -188,7 +217,7 @@ def test_download_archive(tmp_path, force, existing_data):
             base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
         )
 
-    # Check download_station raise error if existing data and force=False
+    # Check download_archive does not raise error if existing data and force=False
     download_archive(
         base_dir=str(base_dir),
         data_sources=data_source,

@@ -16,37 +16,34 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Routines to upload station data to the DISDRODB Decentralized Data Archive."""
+"""Test DISDRODB metadata reader."""
 
-import sys
+import pytest
 
-import click
-
-from disdrodb.data_transfer.upload_data import click_upload_options
-from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
-
-sys.tracebacklimit = 0  # avoid full traceback error if occur
+from disdrodb.metadata.reader import read_station_metadata
+from disdrodb.tests.conftest import create_fake_metadata_file
 
 
-@click.command()
-@click_station_arguments
-@click_upload_options
-@click_base_dir_option
-def disdrodb_upload_station(
-    data_source: str,
-    campaign_name: str,
-    station_name: str,
-    platform: str = None,
-    base_dir: str = None,
-    force: bool = False,
-):
-    from disdrodb.data_transfer.upload_data import upload_station
+@pytest.mark.parametrize("product", ["RAW", "L0A", "L0B"])
+def test_read_station_metadata(tmp_path, product):
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_name"
 
-    upload_station(
+    _ = create_fake_metadata_file(
         base_dir=base_dir,
+        product=product,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        platform=platform,
-        force=force,
     )
+    metadata_dict = read_station_metadata(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    assert isinstance(metadata_dict, dict)

@@ -20,7 +20,6 @@
 
 import os
 
-from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
 from disdrodb.api.path import define_metadata_filepath
 from disdrodb.metadata.manipulation import sort_metadata_dictionary
 from disdrodb.metadata.standards import get_valid_metadata_keys
@@ -46,35 +45,6 @@ def get_default_metadata_dict() -> dict:
     attrs["raw_data_format"] = "txt"  # ['txt', 'netcdf']
     attrs["platform_type"] = "fixed"  # ['fixed', 'mobile']
     return attrs
-
-
-def write_default_metadata(filepath: str) -> None:
-    """Write a default YAML metadata file at the specified filepath.
-
-    Parameters
-    ----------
-    filepath : str
-        File path
-    """
-    # Get default metadata dict
-    metadata = get_default_metadata_dict()
-
-    # Try infer the data_source, campaign_name and station_name from filepath
-    try:
-        campaign_name = infer_campaign_name_from_path(filepath)
-        data_source = infer_data_source_from_path(filepath)
-        station_name = os.path.basename(filepath).split(".yml")[0]
-        metadata["data_source"] = data_source
-        metadata["campaign_name"] = campaign_name
-        metadata["station_name"] = station_name
-    except Exception:
-        pass
-
-    # Write the metadata
-    metadata = sort_metadata_dictionary(metadata)
-
-    write_yaml(metadata, filepath=filepath, sort_keys=False)
-    return None
 
 
 def create_station_metadata(data_source, campaign_name, station_name, base_dir=None, product="RAW"):
@@ -111,10 +81,22 @@ def create_station_metadata(data_source, campaign_name, station_name, base_dir=N
     )
     if os.path.exists(metadata_filepath):
         raise ValueError("A metadata YAML file already exists at {metadata_filepath}.")
+
     # Create metadata dir if not existing
     metadata_dir = os.path.dirname(metadata_filepath)
     os.makedirs(metadata_dir, exist_ok=True)
-    # Write metadata file
-    write_default_metadata(filepath=metadata_filepath)
-    print(f"An empty metadata YAML file for station {station_name} has been created .")
+
+    # Get default metadata dict
+    metadata = get_default_metadata_dict()
+
+    # Try infer the data_source, campaign_name and station_name from filepath
+    metadata["data_source"] = data_source
+    metadata["campaign_name"] = campaign_name
+    metadata["station_name"] = station_name
+
+    # Write the metadata
+    metadata = sort_metadata_dictionary(metadata)
+    write_yaml(metadata, filepath=metadata_filepath, sort_keys=False)
+
+    print(f"An empty default metadata YAML file for station {station_name} has been created .")
     return None

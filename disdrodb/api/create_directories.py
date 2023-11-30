@@ -415,7 +415,6 @@ def create_initial_station_structure(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        product="RAW",
     )
     # Add default station issue file
     create_station_issue(
@@ -440,7 +439,7 @@ def create_test_archive(test_base_dir, data_source, campaign_name, station_name,
     This enable to then test data download and DISDRODB processing.
     """
     # Check test_base_dir is not equal to true base_dir
-    if test_base_dir == get_base_dir():
+    if test_base_dir == get_base_dir(base_dir):
         raise ValueError("Provide a test_base_dir directory different from the true DISDRODB base directory !")
 
     # Create test DISDRODB base directory

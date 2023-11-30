@@ -50,7 +50,7 @@ def _write_issue_docs(f):
     return None
 
 
-def _write_issue(filepath: str, timesteps: list = None, time_periods: list = None) -> None:
+def write_issue(filepath: str, timesteps: list = None, time_periods: list = None) -> None:
     """Write the issue YAML file.
 
     Parameters
@@ -92,35 +92,6 @@ def _write_issue(filepath: str, timesteps: list = None, time_periods: list = Non
     return None
 
 
-def write_issue_dict(filepath: str, issue_dict: dict) -> None:
-    """Write the issue YAML file.
-
-    Parameters
-    ----------
-    filepath : str
-        Filepath of the issue YAML to write.
-    issue_dict : dict
-        Issue dictionary
-    """
-    _write_issue(
-        filepath=filepath,
-        timesteps=issue_dict.get("timesteps", None),
-        time_periods=issue_dict.get("time_periods", None),
-    )
-
-
-def write_default_issue(filepath: str) -> None:
-    """Write an empty issue YAML file.
-
-    Parameters
-    ----------
-    filepath : str
-        Filepath of the issue YAML to write.
-    """
-    _write_issue(filepath=filepath)
-    return None
-
-
 def create_station_issue(data_source, campaign_name, station_name, base_dir=None):
     """Write an empty YAML issue YAML file for a DISDRODB station.
 
@@ -155,6 +126,6 @@ def create_station_issue(data_source, campaign_name, station_name, base_dir=None
     issue_dir = os.path.dirname(issue_filepath)
     os.makedirs(issue_dir, exist_ok=True)
     # Write issue file
-    write_default_issue(filepath=issue_filepath)
+    write_issue(filepath=issue_filepath)
     print(f"An empty issue YAML file for station {station_name} has been created .")
     return None

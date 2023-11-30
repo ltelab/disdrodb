@@ -22,13 +22,14 @@ import os
 
 import numpy as np
 import pandas as pd
+import pytest
 import xarray as xr
 
 from disdrodb.api.path import define_campaign_dir
-from disdrodb.l0.l0_processing import run_l0b_concat
+from disdrodb.l0.l0_processing import run_l0b_concat, run_l0b_concat_station
 from disdrodb.l0.routines import run_disdrodb_l0b_concat
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_station_dir
-from disdrodb.utils.directories import list_files
+from disdrodb.utils.directories import count_files, list_files
 from disdrodb.utils.netcdf import xr_concat_datasets
 
 
@@ -160,7 +161,7 @@ def test_xr_concat_completely_partial_overlapped_datasets(tmp_path):
     np.testing.assert_allclose(time_values.astype(float), unique_time_data.astype(float))
 
 
-def test_run_l0b_concat_station(tmp_path):
+def test_run_l0b_concat(tmp_path):
     # Define station info
     base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
@@ -198,7 +199,7 @@ def test_run_l0b_concat_station(tmp_path):
     l0b_processing.write_l0b = mock_write_l0b
 
     # Run concatenation command
-    run_l0b_concat(processed_dir=processed_dir, station_name=station_name, remove=False, verbose=False)
+    run_l0b_concat(processed_dir=processed_dir, station_name=station_name, verbose=False)
 
     # Assert only 1 file is created
     list_concatenated_files = list_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False)
@@ -207,6 +208,68 @@ def test_run_l0b_concat_station(tmp_path):
     # Read concatenated netCDF file
     ds = xr.open_dataset(list_concatenated_files[0])
     assert len(ds["time"].values) == 6
+
+
+def test_run_l0b_concat_station(tmp_path):
+    # Define stations info
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name1 = "test_station_1"
+
+    # Define fake directory structure for the two L0B stations
+    #     # Define fake L0B directory structure
+    station1_dir = create_fake_station_dir(
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name1,
+    )
+    _ = create_fake_metadata_file(
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name1,
+    )
+
+    # Add dummy L0B files for two stations
+    filepath1 = os.path.join(station1_dir, f"{station_name1}_file.nc")
+    time_data_1 = np.array([0.0, 1.0, 2.0], dtype=np.float64)
+
+    _ = create_dummy_l0b_file(filepath=filepath1, time=time_data_1)
+
+    # Run concatenation command
+    run_l0b_concat_station(
+        base_dir=str(base_dir),
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name1,
+        remove_l0b=True,
+        verbose=False,
+    )
+
+    # Assert files where removed
+    assert not os.path.exists(filepath1)
+
+    # Assert the presence of 2 concatenated netcdf files (one for each station)
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
+    )
+
+    assert count_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False) == 1
+
+    # Check that if L0B files are removed, raise error if no stations available
+    with pytest.raises(ValueError):
+        run_l0b_concat_station(
+            base_dir=str(base_dir),
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name1,
+            remove_l0b=True,
+            verbose=False,
+        )
 
 
 def test_run_disdrodb_l0b_concat(tmp_path):
@@ -267,26 +330,24 @@ def test_run_disdrodb_l0b_concat(tmp_path):
         verbose=False,
     )
 
-    # BUGGY WITH PYTEST !
-    # # Assert files where removed
-    # assert not os.path.exists(filepath1)
-    # assert not os.path.exists(filepath2)
+    # Assert files where removed
+    assert not os.path.exists(filepath1)
+    assert not os.path.exists(filepath2)
 
-    # # Assert the presence of 2 concatenated netcdf files (one for each station)
-    # processed_dir = define_campaign_dir(
-    #     base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
-    # )
+    # Assert the presence of 2 concatenated netcdf files (one for each station)
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
+    )
 
-    # list_concatenated_files = list_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False)
-    # assert len(list_concatenated_files) == 2
+    assert count_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False) == 2
 
     # Check that if L0B files are removed, raise error if no stations available
-    # with pytest.raises(ValueError):
-    #     run_disdrodb_l0b_concat(
-    #         base_dir=str(base_dir),
-    #         data_sources=data_source,
-    #         campaign_names=campaign_name,
-    #         station_names=[station_name1, station_name2],
-    #         remove_l0b=True,
-    #         verbose=False,
-    #     )
+    with pytest.raises(ValueError):
+        run_disdrodb_l0b_concat(
+            base_dir=str(base_dir),
+            data_sources=data_source,
+            campaign_names=campaign_name,
+            station_names=[station_name1, station_name2],
+            remove_l0b=True,
+            verbose=False,
+        )

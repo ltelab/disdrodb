@@ -330,6 +330,16 @@ def test_create_test_archive(tmp_path):
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     station_name = "station_name"
+
+    # Check that if raise error if providing the base_dir
+    with pytest.raises(ValueError):
+        create_test_archive(
+            test_base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+
     # Create initial station structure
     create_initial_station_structure(
         base_dir=base_dir,
@@ -361,15 +371,6 @@ def test_create_test_archive(tmp_path):
     )
     assert os.path.exists(metadata_filepath)
     assert os.path.exists(issue_filepath)
-
-    # Check that if called once again, it raise error
-    with pytest.raises(ValueError):
-        create_initial_station_structure(
-            base_dir=base_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-        )
 
 
 def test_check_campaign_name_consistency(tmp_path):

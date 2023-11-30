@@ -26,7 +26,13 @@ from click.testing import CliRunner
 
 from disdrodb import __root_path__
 from disdrodb.api.path import define_station_dir
-from disdrodb.utils.directories import list_files
+from disdrodb.l0.scripts.disdrodb_run_l0 import disdrodb_run_l0
+from disdrodb.l0.scripts.disdrodb_run_l0_station import disdrodb_run_l0_station
+from disdrodb.l0.scripts.disdrodb_run_l0a import disdrodb_run_l0a
+from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
+from disdrodb.l0.scripts.disdrodb_run_l0b import disdrodb_run_l0b
+from disdrodb.l0.scripts.disdrodb_run_l0b_station import disdrodb_run_l0b_station
+from disdrodb.utils.directories import count_files
 
 BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 DATA_SOURCE = "EPFL"
@@ -34,158 +40,171 @@ CAMPAIGN_NAME = "PARSIVEL_2007"
 STATION_NAME = "10"
 
 
-@pytest.fixture
-def remove_processed_folder(request: list) -> None:
-    processed_folder = os.path.join(BASE_DIR, "Processed")
-    if os.path.exists(processed_folder):
-        shutil.rmtree(processed_folder)
-    yield
-    if os.path.exists(processed_folder):
-        shutil.rmtree(processed_folder)
-
-
 @pytest.mark.parametrize("parallel", [True, False])
-@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0a_station(remove_processed_folder, parallel):
+def test_disdrodb_run_l0a_station(tmp_path, parallel):
     """Test the disdrodb_run_l0a_station command."""
-
-    from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(BASE_DIR, test_base_dir)
 
     runner = CliRunner()
     runner.invoke(
         disdrodb_run_l0a_station,
-        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--parallel", parallel],
     )
 
     product = "L0A"
     station_dir = define_station_dir(
-        base_dir=BASE_DIR,
+        base_dir=test_base_dir,
         product=product,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
-    filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
-    assert len(filepaths) > 0
+    assert count_files(station_dir, glob_pattern="*.parquet", recursive=True) > 0
 
 
 @pytest.mark.parametrize("parallel", [True, False])
-@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0b_station(remove_processed_folder, parallel):
+def test_disdrodb_run_l0b_station(tmp_path, parallel):
     """Test the disdrodb_run_l0b_station command."""
-    from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(BASE_DIR, test_base_dir)
 
     runner = CliRunner()
     runner.invoke(
         disdrodb_run_l0a_station,
-        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--parallel", parallel],
     )
-
-    from disdrodb.l0.scripts.disdrodb_run_l0b_station import disdrodb_run_l0b_station
 
     runner.invoke(
         disdrodb_run_l0b_station,
-        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--parallel", parallel],
     )
 
     product = "L0B"
     station_dir = define_station_dir(
-        base_dir=BASE_DIR,
+        base_dir=test_base_dir,
         product=product,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
-    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
-    assert len(filepaths) > 0
+    assert count_files(station_dir, glob_pattern="*.nc", recursive=True) > 0
 
 
-@pytest.mark.parametrize("parallel", [True, False])
-@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0_station(remove_processed_folder, parallel):
+@pytest.mark.parametrize("verbose", [True, False])
+def test_disdrodb_run_l0_station(tmp_path, verbose):
     """Test the disdrodb_run_l0_station command."""
-
-    from disdrodb.l0.scripts.disdrodb_run_l0_station import disdrodb_run_l0_station
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(BASE_DIR, test_base_dir)
 
     runner = CliRunner()
     runner.invoke(
         disdrodb_run_l0_station,
-        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--verbose", verbose],
     )
 
     product = "L0B"
     station_dir = define_station_dir(
-        base_dir=BASE_DIR,
+        base_dir=test_base_dir,
         product=product,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
-    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
-    assert len(filepaths) > 0
+    assert count_files(station_dir, glob_pattern="*.nc", recursive=True) > 0
 
 
-@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0a(remove_processed_folder):
+def test_disdrodb_run_l0a(tmp_path):
     """Test the disdrodb_run_l0a command."""
-
-    from disdrodb.l0.scripts.disdrodb_run_l0a import disdrodb_run_l0a
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(BASE_DIR, test_base_dir)
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a, ["--base_dir", BASE_DIR])
+    runner.invoke(disdrodb_run_l0a, ["--base_dir", test_base_dir])
     product = "L0A"
     station_dir = define_station_dir(
-        base_dir=BASE_DIR,
+        base_dir=test_base_dir,
         product=product,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
-    filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
-    assert len(filepaths) > 0
+    assert count_files(station_dir, glob_pattern="*.parquet", recursive=True) > 0
 
 
-@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0b(remove_processed_folder):
+def test_disdrodb_run_l0b(tmp_path):
     """Test the disdrodb_run_l0b command."""
-
-    from disdrodb.l0.scripts.disdrodb_run_l0a import disdrodb_run_l0a
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(BASE_DIR, test_base_dir)
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a, ["--base_dir", BASE_DIR])
+    runner.invoke(disdrodb_run_l0a, ["--base_dir", test_base_dir])
 
-    from disdrodb.l0.scripts.disdrodb_run_l0b import disdrodb_run_l0b
-
-    runner.invoke(disdrodb_run_l0b, ["--base_dir", BASE_DIR])
+    runner.invoke(disdrodb_run_l0b, ["--base_dir", test_base_dir])
 
     product = "L0B"
     station_dir = define_station_dir(
-        base_dir=BASE_DIR,
+        base_dir=test_base_dir,
         product=product,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
-    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
-    assert len(filepaths) > 0
+    assert count_files(station_dir, glob_pattern="*.nc", recursive=True) > 0
 
 
-@pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_full_disdrodb_run_l0(remove_processed_folder):
+@pytest.mark.parametrize("remove_l0a", [True, False])
+@pytest.mark.parametrize("remove_l0b", [True, False])
+@pytest.mark.parametrize("l0b_concat", [True, False])
+def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
     """Test the disdrodb_run_l0b command."""
-
-    from disdrodb.l0.scripts.disdrodb_run_l0 import disdrodb_run_l0
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(BASE_DIR, test_base_dir)
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0, ["--base_dir", BASE_DIR])
+    runner.invoke(
+        disdrodb_run_l0,
+        [
+            "--base_dir",
+            test_base_dir,
+            "--debugging_mode",
+            True,
+            "--remove_l0a",
+            remove_l0a,
+            "--remove_l0b",
+            remove_l0b,
+            "--l0b_concat",
+            l0b_concat,
+        ],
+    )
 
-    product = "L0B"
-    station_dir = define_station_dir(
-        base_dir=BASE_DIR,
-        product=product,
+    l0a_station_dir = define_station_dir(
+        base_dir=test_base_dir,
+        product="L0A",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
-    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
-    assert len(filepaths) > 0
+    l0b_station_dir = define_station_dir(
+        base_dir=test_base_dir,
+        product="L0B",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
+    if remove_l0a:
+        assert count_files(l0a_station_dir, glob_pattern="*.parquet", recursive=True) == 0
+
+    if not remove_l0a:
+        assert count_files(l0a_station_dir, glob_pattern="*.parquet", recursive=True) > 0
+
+    if l0b_concat:
+        if remove_l0b:
+            assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) == 0
+        else:
+            assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) > 0
+
+    # If not L0B concat, do not remove L0B also if remove_l0b is specified !
+    if not l0b_concat:
+        if remove_l0b:
+            assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) > 0

@@ -207,9 +207,10 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    logger.debug(msg)
-    if verbose:
-        print(" - " + msg)
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        logger.debug(msg)
+        if verbose:
+            print(" - " + msg)
 
 
 def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -244,9 +245,10 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    logger.warning(msg)
-    if verbose:
-        print(" - " + msg)
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        logger.warning(msg)
+        if verbose:
+            print(" - " + msg)
 
 
 def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -262,6 +264,7 @@ def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    logger.error(msg)
-    if verbose:
-        print(" - " + msg)
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        logger.error(msg)
+        if verbose:
+            print(" - " + msg)

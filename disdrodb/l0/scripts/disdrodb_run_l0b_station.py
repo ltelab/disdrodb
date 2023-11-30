@@ -18,7 +18,7 @@ import sys
 
 import click
 
-from disdrodb.l0.routines import click_l0_processing_options
+from disdrodb.l0.routines import click_l0_processing_options, click_remove_l0a_option
 from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -30,6 +30,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_l0_processing_options
+@click_remove_l0a_option
 @click_base_dir_option
 def disdrodb_run_l0b_station(
     # Station arguments
@@ -41,6 +42,7 @@ def disdrodb_run_l0b_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    remove_l0a: bool = False,
     base_dir: str = None,
 ):
     """Run the L0B processing of a specific DISDRODB station from the terminal.
@@ -115,6 +117,7 @@ def disdrodb_run_l0b_station(
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        remove_l0a=remove_l0a,
         base_dir=base_dir,
     )
 

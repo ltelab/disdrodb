@@ -20,8 +20,6 @@
 
 import datetime
 import logging
-import os
-import shutil
 import time
 
 import click
@@ -103,6 +101,17 @@ def click_l0_processing_options(function: object):
         show_default=True,
         default=False,
         help="Force overwriting",
+    )(function)
+    return function
+
+
+def click_remove_l0a_option(function: object):
+    function = click.option(
+        "--remove_l0a",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="If true, remove the L0A files once the L0B processing is terminated.",
     )(function)
     return function
 
@@ -228,6 +237,7 @@ def run_disdrodb_l0b_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     base_dir: str = None,
+    remove_l0a: bool = False,
 ):
     """Run the L0B processing of a station calling disdrodb_run_l0b_station in the terminal."""
     # Define command
@@ -247,6 +257,8 @@ def run_disdrodb_l0b_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
+            "--remove_l0a",
+            str(remove_l0a),
             "--base_dir",
             str(base_dir),
         ]
@@ -358,7 +370,6 @@ def run_disdrodb_l0_station(
         Base directory of DISDRODB. Format: <...>/DISDRODB
         If None (the default), the disdrodb config variable 'dir' is used.
     """
-    from disdrodb.api.path import get_disdrodb_path
 
     # ---------------------------------------------------------------------.
     t_i = time.time()
@@ -394,19 +405,8 @@ def run_disdrodb_l0_station(
             verbose=verbose,
             debugging_mode=debugging_mode,
             parallel=parallel,
+            remove_l0a=remove_l0a,
         )
-
-    # ------------------------------------------------------------------------.
-    # Remove L0A station directory if remove_l0a = True and l0b_processing = True
-    if l0b_processing and remove_l0a:
-        campaign_dir = get_disdrodb_path(
-            base_dir=base_dir,
-            product="L0A",
-            data_source=data_source,
-            campaign_name=campaign_name,
-        )
-        station_product_dir = os.path.join(campaign_dir, "L0A", station_name)
-        shutil.rmtree(station_product_dir)
 
     # ------------------------------------------------------------------------.
     # If l0b_concat=True, concat the netCDF in a single file
@@ -656,6 +656,7 @@ def run_disdrodb_l0b(
     debugging_mode: bool = False,
     parallel: bool = True,
     base_dir: str = None,
+    remove_l0a: bool = False,
 ):
     run_disdrodb_l0(
         base_dir=base_dir,
@@ -666,7 +667,7 @@ def run_disdrodb_l0b(
         l0a_processing=False,
         l0b_processing=True,
         l0b_concat=False,
-        remove_l0a=False,
+        remove_l0a=remove_l0a,
         remove_l0b=False,
         # Processing options
         force=force,
@@ -676,6 +677,7 @@ def run_disdrodb_l0b(
     )
 
 
+####---------------------------------------------------------------------------.
 def run_disdrodb_l0b_concat(
     data_sources=None,
     campaign_names=None,
