@@ -333,41 +333,33 @@ def print_df_with_any_nan_rows(df: pd.DataFrame) -> None:
 
 ####--------------------------------------------------------------------------.
 #### Character checks
+
+
 def arr_has_constant_nchar(arr: np.array) -> bool:
     """Check if the content of an array has a constant number of characters
 
     Parameters
     ----------
     arr : numpy.ndarray
-        The array to analyse
+        The array to analyse.
+        It convert numeric array to unicode before analyzing !
 
     Returns
     -------
     boolean
-        True if the number of character is constant
+        True if the number of character is constant.
+        Empty array are considered constant !
 
     """
-    arr = np.asarray(arr)
-    # Get unique character code
-    unique_character_code = arr.dtype.char
-
-    if unique_character_code == "O":  # If (Python) objects
-        arr = arr.astype(str)
-    elif unique_character_code != "U":  # or if not Unicode string
-        raise TypeError("Expecting object (O) or string (U) dtype.")
-
+    arr = np.asarray(arr).astype(str)
     # Get number of characters (include .)
     str_nchars = np.char.str_len(arr)
     str_nchars_unique = np.unique(str_nchars)
-
-    if len(str_nchars_unique) != 1:
-        return False  # raise ValueError("Non-unique string length !")
-    else:
-        return True
+    return len(str_nchars_unique) in [0, 1]
 
 
 def str_is_number(string: str) -> bool:
-    """Check if a string is numeric
+    """Check if a string represents a number.
 
     Parameters
     ----------
@@ -387,24 +379,8 @@ def str_is_number(string: str) -> bool:
         return False
 
 
-def str_is_not_number(string: str) -> bool:
-    """Check if a string is not numeric
-
-    Parameters
-    ----------
-    string : Input string
-
-
-    Returns
-    -------
-    bool
-        True if not float.
-    """
-    return not str_is_number(string)
-
-
 def str_is_integer(string: str) -> bool:
-    """Check if a string is an integer
+    """Check if a string represent an integer
 
     Parameters
     ----------
@@ -476,9 +452,9 @@ def get_natural_ndigits(string: str) -> int:
         The number of digit.
     """
     if str_is_integer(string):
-        return len(string)
+        return len(string.replace("-",""))
     if str_has_decimal_digits(string):
-        return len(string.split(".")[0])
+        return len(string.split(".")[0].replace("-",""))
     else:
         return 0
 
@@ -497,8 +473,9 @@ def get_ndigits(string: str) -> int:
         Number of digit
     """
 
-    if str_is_not_number(string):
+    if not str_is_number(string):
         return 0
+    string = string.replace("-","")
     if str_has_decimal_digits(string):
         return len(string) - 1  # remove .
     else:

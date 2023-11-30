@@ -260,6 +260,12 @@ def test_check_archive_metadata_station_name(tmp_path):
     write_yaml(metadata_dict, metadata_filepath)
     is_valid = check_archive_metadata_station_name(str(base_dir))
     assert not is_valid
+    
+    # Test 5 : Unvalid station_name value type
+    metadata_dict = {"station_name": 2}
+    _ = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict, station_name=station_name)
+    is_valid = check_archive_metadata_station_name(str(base_dir))
+    assert not is_valid
 
 
 def test_check_archive_metadata_reader(tmp_path):
