@@ -30,8 +30,8 @@ from disdrodb.metadata.search import (
     get_list_metadata,
 )
 from disdrodb.metadata.writer import (
-    _create_default_metadata_dict,
     create_station_metadata,
+    get_default_metadata_dict,
     write_default_metadata,
 )
 from disdrodb.tests.conftest import (
@@ -204,7 +204,7 @@ def test_get_list_metadata_file(tmp_path):
 
 
 def test_get_default_metadata():
-    assert isinstance(_create_default_metadata_dict(), dict)
+    assert isinstance(get_default_metadata_dict(), dict)
 
 
 def test_write_default_metadata(tmp_path):
@@ -234,7 +234,7 @@ def test_write_default_metadata(tmp_path):
     dictionary = read_yaml(str(metadata_filepath))
 
     # Check is the expected dictionary
-    expected_dict = _create_default_metadata_dict()
+    expected_dict = get_default_metadata_dict()
     expected_dict["data_source"] = data_source
     expected_dict["campaign_name"] = campaign_name
     expected_dict["station_name"] = station_name

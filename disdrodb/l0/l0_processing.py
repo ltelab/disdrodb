@@ -32,7 +32,7 @@ from disdrodb.api.checks import check_sensor_name
 # Directory
 from disdrodb.api.create_directories import (
     create_directory_structure,
-    create_intial_l0_directory_structure,
+    create_l0_directory_structure,
 )
 from disdrodb.api.info import infer_path_info_dict
 from disdrodb.api.path import (
@@ -420,7 +420,7 @@ def run_l0a(
 
     # ------------------------------------------------------------------------.
     # Create directory structure
-    create_intial_l0_directory_structure(
+    create_l0_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
         product="L0A",
@@ -568,7 +568,6 @@ def run_l0b(
         product="L0B",
         station_name=station_name,
         force=force,
-        verbose=verbose,
     )
 
     ##----------------------------------------------------------------.
@@ -714,7 +713,7 @@ def run_l0b_from_nc(
 
     # ------------------------------------------------------------------------.
     # Create directory structure
-    create_intial_l0_directory_structure(
+    create_l0_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
         product="L0B",

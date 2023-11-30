@@ -44,6 +44,7 @@ def create_fake_metadata_file(
     station_name="station_name",
 ):
     from disdrodb.api.path import define_metadata_filepath
+    from disdrodb.metadata.writer import get_default_metadata_dict
 
     # Define metadata filepath
     metadata_filepath = define_metadata_filepath(
@@ -65,11 +66,43 @@ def create_fake_metadata_file(
     if "station_name" not in metadata_dict:
         metadata_dict["station_name"] = station_name
 
+    # Update over default metadata dict
+    default_metadata_dict = get_default_metadata_dict()
+    default_metadata_dict.update(metadata_dict)
+
     # Write metadata
-    write_yaml(metadata_dict, metadata_filepath)
+    write_yaml(default_metadata_dict, metadata_filepath)
 
     # Return filepath
     return str(metadata_filepath)
+
+
+def create_fake_issue_file(
+    base_dir,
+    issue_dict={},
+    data_source="DATA_SOURCE",
+    campaign_name="CAMPAIGN_NAME",
+    station_name="station_name",
+):
+    from disdrodb.api.path import define_issue_filepath
+    from disdrodb.issue.writer import write_issue_dict
+
+    # Define issue filepath
+    issue_filepath = define_issue_filepath(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
+    )
+    # Create issue directory
+    os.makedirs(os.path.dirname(issue_filepath), exist_ok=True)
+
+    # Write issue
+    write_issue_dict(issue_filepath, issue_dict=issue_dict)
+
+    # Return filepath
+    return str(issue_filepath)
 
 
 def create_fake_raw_data_file(

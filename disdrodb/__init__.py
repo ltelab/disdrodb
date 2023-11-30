@@ -12,7 +12,7 @@ from disdrodb.configs import define_disdrodb_configs as define_configs
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation
 from disdrodb.metadata import read_station_metadata
-from disdrodb.metadata.check_metadata import (
+from disdrodb.metadata.checks import (
     check_archive_metadata_compliance,
     check_archive_metadata_geolocation,
 )

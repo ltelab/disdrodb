@@ -205,7 +205,3 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     ]
 
     return metadata_filepaths
-
-
-####--------------------------------------------------------------------------.
-#### Default (empty) metadata

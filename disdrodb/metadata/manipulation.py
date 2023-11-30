@@ -21,7 +21,7 @@
 
 def remove_invalid_metadata_keys(metadata):
     """Remove invalid keys from the metadata dictionary."""
-    from disdrodb.metadata.check_metadata import get_metadata_invalid_keys
+    from disdrodb.metadata.checks import get_metadata_invalid_keys
 
     invalid_keys = get_metadata_invalid_keys(metadata)
     for k in invalid_keys:
@@ -31,7 +31,7 @@ def remove_invalid_metadata_keys(metadata):
 
 def add_missing_metadata_keys(metadata):
     """Add missing keys to the metadata dictionary."""
-    from disdrodb.metadata.check_metadata import get_metadata_missing_keys
+    from disdrodb.metadata.checks import get_metadata_missing_keys
 
     missing_keys = get_metadata_missing_keys(metadata)
     for k in missing_keys:

@@ -77,5 +77,3 @@ def disdrodb_run_l0b_concat_station(
         verbose=verbose,
         base_dir=base_dir,
     )
-
-    return None

@@ -23,7 +23,7 @@ import pytest
 
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.l0.l0_reader import available_readers
-from disdrodb.metadata.check_metadata import (
+from disdrodb.metadata.checks import (
     check_archive_metadata_campaign_name,
     check_archive_metadata_compliance,
     check_archive_metadata_data_source,

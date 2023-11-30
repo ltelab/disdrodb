@@ -30,6 +30,6 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
     "--raise_error", type=bool, show_default=True, default=True, help="Whether to raise error of finish the check"
 )
 def disdrodb_check_metadata_archive(base_dir=None, raise_error=True):
-    from disdrodb.metadata.check_metadata import check_archive_metadata_compliance
+    from disdrodb.metadata.checks import check_archive_metadata_compliance
 
     check_archive_metadata_compliance(base_dir=base_dir, raise_error=raise_error)

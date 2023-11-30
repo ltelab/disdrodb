@@ -62,11 +62,6 @@ def test__is_numpy_array_string():
     assert _is_numpy_array_string(arr) is False
 
 
-def test_check_issue_file():
-    # function_return = check_issue_file()
-    assert 1 == 1
-
-
 ####--------------------------------------------------------------------------.
 #### Writer
 

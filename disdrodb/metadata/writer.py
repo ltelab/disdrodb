@@ -27,7 +27,7 @@ from disdrodb.metadata.standards import get_valid_metadata_keys
 from disdrodb.utils.yaml import write_yaml
 
 
-def _create_default_metadata_dict() -> dict:
+def get_default_metadata_dict() -> dict:
     """Get DISDRODB metadata default values.
 
     Returns
@@ -57,7 +57,7 @@ def write_default_metadata(filepath: str) -> None:
         File path
     """
     # Get default metadata dict
-    metadata = _create_default_metadata_dict()
+    metadata = get_default_metadata_dict()
 
     # Try infer the data_source, campaign_name and station_name from filepath
     try:

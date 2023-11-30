@@ -18,14 +18,26 @@
 # -----------------------------------------------------------------------------.
 """Tools to create Raw, L0A and L0B DISDRODB directories."""
 
-# L0A and L0B from raw NC: create_intial_l0_directory_structure(raw_dir, processed_dir)
+# L0A and L0B from raw NC: create_l0_directory_structure(raw_dir, processed_dir)
 # L0B: create_directory_structure(processed_dir)
 
 import logging
 import os
 import shutil
 
-from disdrodb.api.info import infer_campaign_name_from_path, infer_data_source_from_path
+from disdrodb.api.checks import (
+    check_metadata_file,
+    check_processed_dir,
+    check_product,
+    check_raw_dir,
+    check_station_has_data,
+    has_available_station_files,
+)
+from disdrodb.api.info import (
+    infer_campaign_name_from_path,
+    infer_data_source_from_path,
+    infer_disdrodb_tree_path_components,
+)
 from disdrodb.api.path import (
     define_campaign_dir,
     define_issue_dir,
@@ -45,6 +57,7 @@ from disdrodb.utils.directories import (
 logger = logging.getLogger(__name__)
 
 
+#### DISDRODB Products directories
 def _check_data_source_consistency(raw_dir: str, processed_dir: str) -> str:
     """Check that 'raw_dir' and 'processed_dir' have same data_source.
 
@@ -103,7 +116,9 @@ def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
     return raw_campaign_name.upper()
 
 
-def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) -> None:
+def _copy_station_metadata(
+    data_source: str, campaign_name: str, station_name: str, base_dir: str = None, check_validity: bool = False
+) -> None:
     """Copy the station YAML file from the raw_dir/metadata into processed_dir/metadata
 
     Parameters
@@ -118,23 +133,34 @@ def _copy_station_metadata(raw_dir: str, processed_dir: str, station_name: str) 
     ValueError
         Error if the copy fails.
     """
-    # Get src and dst metadata directory
-    raw_metadata_dir = os.path.join(raw_dir, "metadata")
-    processed_metadata_dir = os.path.join(processed_dir, "metadata")
-    # Retrieve the metadata filepath in the raw directory
-    metadata_filename = f"{station_name}.yml"
-    raw_metadata_filepath = os.path.join(raw_metadata_dir, metadata_filename)
-    # Check the metadata exists
-    if not os.path.isfile(raw_metadata_filepath):
-        raise ValueError(f"No metadata available for {station_name} at {raw_metadata_filepath}")
+    # Check the raw metadata YAML file exists
+    raw_metadata_filepath = check_metadata_file(
+        product="RAW",
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_validity=check_validity,
+    )
     # Define the destination filepath
-    processed_metadata_filepath = os.path.join(processed_metadata_dir, os.path.basename(raw_metadata_filepath))
+    processed_metadata_filepath = define_metadata_filepath(
+        product="L0A",
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
     # Copy the metadata file
-    copy_file(src_filepath=raw_metadata_filepath, dst_filepath=processed_metadata_filepath)
+    copy_file(
+        src_filepath=raw_metadata_filepath,
+        dst_filepath=processed_metadata_filepath,
+    )
     return None
 
 
-def _check_pre_existing_station_data(campaign_dir, product, station_name, force=False):
+def _check_pre_existing_station_data(
+    data_source: str, campaign_name: str, station_name: str, product: str, base_dir=None, force=False
+):
     """Check for pre-existing station data.
 
     - If force=True, remove all data inside the station directory.
@@ -143,21 +169,26 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
     NOTE: force=False behaviour could be changed to enable updating of missing files.
          This would require also adding code to check whether a downstream file already exist.
     """
-    from disdrodb.api.io import _get_list_stations_with_data
-
-    # Get list of available stations
-    list_stations = _get_list_stations_with_data(product=product, campaign_dir=campaign_dir)
-
-    # Check if station data are already present
-    station_already_present = station_name in list_stations
-
+    # Check if there are available data
+    available_data = has_available_station_files(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
     # Define the station directory path
-    station_dir = os.path.join(campaign_dir, product, station_name)
-
+    station_dir = define_station_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
     # If the station data are already present:
     # - If force=True, remove all data inside the station directory
     # - If force=False, raise error
-    if station_already_present:
+    if available_data:
         # Check is a directory
         check_directory_exists(station_dir)
         # If force=True, remove all the content
@@ -170,7 +201,139 @@ def _check_pre_existing_station_data(campaign_dir, product, station_name, force=
             raise ValueError(msg)
 
 
+def create_l0_directory_structure(
+    raw_dir,
+    processed_dir,
+    station_name,
+    force,
+    product,
+    verbose=False,
+):
+    """Create directory structure for the first L0 DISDRODB product.
+
+    If the input data are raw text files --> product = "L0A"    (run_l0a)
+    If the input data are raw netCDF files --> product = "L0B"  (run_l0b_nc)
+    """
+    # Check inputs
+    raw_dir = check_raw_dir(raw_dir=raw_dir, station_name=station_name)
+    processed_dir = check_processed_dir(processed_dir=processed_dir)
+
+    # Check consistent data_source and campaign name
+    _ = _check_data_source_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
+    _ = _check_campaign_name_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
+
+    # Retrieve components
+    base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(processed_dir)
+
+    # Check station data are available
+    check_station_has_data(
+        product="RAW",
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # Create required directories (if they don't exist)
+    create_required_directory(processed_dir, dir_name="metadata")
+    create_required_directory(processed_dir, dir_name="info")
+    create_required_directory(processed_dir, dir_name=product)
+
+    # Copy the station metadata
+    _copy_station_metadata(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    # Remove <product>/<station> directory if force=True
+    _check_pre_existing_station_data(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        force=force,
+    )
+    # Create the <product>/<station> directory
+    create_required_directory(os.path.join(processed_dir, product), dir_name=station_name)
+
+
+def create_directory_structure(processed_dir, product, station_name, force):
+    """Create directory structure for L0B and higher DISDRODB products."""
+    # Check inputs
+    check_product(product)
+    processed_dir = check_processed_dir(processed_dir=processed_dir)
+
+    base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(processed_dir)
+
+    # Determine required product
+    if product == "L0B":
+        required_product = "L0A"
+    else:
+        raise NotImplementedError("product {product} not yet implemented.")
+
+    # Check station is available in the previous product level
+    check_station_has_data(
+        product=required_product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # Check metadata file is available
+    check_metadata_file(
+        product=required_product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # Create required directory (if it doesn't exist)
+    create_required_directory(processed_dir, dir_name=product)
+
+    # Remove <product>/<station_name> directory if force=True
+    _check_pre_existing_station_data(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        force=force,
+    )
+
+
+#### DISDRODB Station Initialization
+
+
+def _create_station_directories(
+    data_source,
+    campaign_name,
+    station_name,
+    product="RAW",
+    base_dir=None,
+):
+    """Create the /metadata, /issue and /data/<station_name> directories of a station."""
+    # Create directory structure
+    _ = create_station_directory(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    _ = create_metadata_directory(
+        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+    )
+
+    if product.upper() == "RAW":
+        _ = create_issue_directory(base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
+
+
 def create_metadata_directory(base_dir, product, data_source, campaign_name):
+    """Create metadata directory."""
     metadata_dir = define_metadata_dir(
         base_dir=base_dir,
         product=product,
@@ -184,6 +347,7 @@ def create_metadata_directory(base_dir, product, data_source, campaign_name):
 
 
 def create_station_directory(base_dir, product, data_source, campaign_name, station_name):
+    """Create station data directory."""
     station_dir = define_station_dir(
         base_dir=base_dir,
         product=product,
@@ -207,119 +371,6 @@ def create_issue_directory(base_dir, data_source, campaign_name):
     if not os.path.exists(issue_dir):
         os.makedirs(issue_dir, exist_ok=True)
     return str(issue_dir)
-
-
-#### DISDRODB Products directories
-def create_intial_l0_directory_structure(
-    raw_dir,
-    processed_dir,
-    station_name,
-    force,
-    product,
-    verbose=False,
-):
-    """Create directory structure for the first L0 DISDRODB product.
-
-    If the input data are raw text files --> product = "L0A"    (run_l0a)
-    If the input data are raw netCDF files --> product = "L0B"  (run_l0b_nc)
-    """
-    from disdrodb.api.check_directories import check_processed_dir, check_raw_dir
-    from disdrodb.api.io import _get_list_stations_with_data
-
-    # Check inputs
-    raw_dir = check_raw_dir(raw_dir=raw_dir, verbose=verbose)
-    processed_dir = check_processed_dir(processed_dir=processed_dir)
-
-    # Check consistent data_source and campaign name
-    _ = _check_data_source_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
-    _ = _check_campaign_name_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
-
-    # Get list of available stations (at raw level)
-    list_stations = _get_list_stations_with_data(product="RAW", campaign_dir=raw_dir)
-
-    # Check station is available
-    if station_name not in list_stations:
-        raise ValueError(f"No data available for station {station_name}. Available stations: {list_stations}.")
-
-    # Create required directory (if they don't exists)
-    create_required_directory(processed_dir, dir_name="metadata")
-    create_required_directory(processed_dir, dir_name="info")
-    create_required_directory(processed_dir, dir_name=product)
-
-    # Copy the station metadata
-    _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
-
-    # Remove <product>/<station> directory if force=True
-    _check_pre_existing_station_data(
-        campaign_dir=processed_dir,
-        product=product,
-        station_name=station_name,
-        force=force,
-    )
-    # Create the <product>/<station> directory
-    create_required_directory(os.path.join(processed_dir, product), dir_name=station_name)
-
-
-def create_directory_structure(processed_dir, product, station_name, force, verbose=False):
-    """Create directory structure for L0B and higher DISDRODB products."""
-    from disdrodb.api.check_directories import check_presence_metadata_file, check_processed_dir
-    from disdrodb.api.checks import check_product
-    from disdrodb.api.io import _get_list_stations_with_data
-
-    # Check inputs
-    check_product(product)
-    processed_dir = check_processed_dir(processed_dir=processed_dir)
-
-    # Check station is available in the target processed_dir directory
-    if product == "L0B":
-        required_product = "L0A"
-        list_stations = _get_list_stations_with_data(product=required_product, campaign_dir=processed_dir)
-    else:
-        raise NotImplementedError("product {product} not yet implemented.")
-
-    if station_name not in list_stations:
-        raise ValueError(
-            f"No {required_product} data available for station {station_name}. Available stations: {list_stations}."
-        )
-
-    # Check metadata file is available
-    check_presence_metadata_file(campaign_dir=processed_dir, station_name=station_name)
-
-    # Create required directory (if they don't exists)
-    create_required_directory(processed_dir, dir_name=product)
-
-    # Remove <product>/<station_name> directory if force=True
-    _check_pre_existing_station_data(
-        campaign_dir=processed_dir,
-        product=product,
-        station_name=station_name,
-        force=force,
-    )
-
-
-#### DISDRODB Station Initialization
-def _create_station_directories(
-    data_source,
-    campaign_name,
-    station_name,
-    product="RAW",
-    base_dir=None,
-):
-    """Create the /metadata, /issue and /data/<station_name> directories of a station."""
-    # Create directory structure
-    _ = create_station_directory(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    _ = create_metadata_directory(
-        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
-    )
-
-    if product.upper() == "RAW":
-        _ = create_issue_directory(base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
 
 
 def create_initial_station_structure(

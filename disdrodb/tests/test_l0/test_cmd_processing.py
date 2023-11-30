@@ -44,14 +44,18 @@ def remove_processed_folder(request: list) -> None:
         shutil.rmtree(processed_folder)
 
 
+@pytest.mark.parametrize("parallel", [True, False])
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0a_station(remove_processed_folder):
+def test_disdrodb_run_l0a_station(remove_processed_folder, parallel):
     """Test the disdrodb_run_l0a_station command."""
 
     from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
+    runner.invoke(
+        disdrodb_run_l0a_station,
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+    )
 
     product = "L0A"
     station_dir = define_station_dir(
@@ -65,17 +69,24 @@ def test_disdrodb_run_l0a_station(remove_processed_folder):
     assert len(filepaths) > 0
 
 
+@pytest.mark.parametrize("parallel", [True, False])
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0b_station(remove_processed_folder):
+def test_disdrodb_run_l0b_station(remove_processed_folder, parallel):
     """Test the disdrodb_run_l0b_station command."""
     from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0a_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
+    runner.invoke(
+        disdrodb_run_l0a_station,
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+    )
 
     from disdrodb.l0.scripts.disdrodb_run_l0b_station import disdrodb_run_l0b_station
 
-    runner.invoke(disdrodb_run_l0b_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
+    runner.invoke(
+        disdrodb_run_l0b_station,
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+    )
 
     product = "L0B"
     station_dir = define_station_dir(
@@ -89,14 +100,18 @@ def test_disdrodb_run_l0b_station(remove_processed_folder):
     assert len(filepaths) > 0
 
 
+@pytest.mark.parametrize("parallel", [True, False])
 @pytest.mark.parametrize("remove_processed_folder", [()], indirect=True)
-def test_disdrodb_run_l0_station(remove_processed_folder):
+def test_disdrodb_run_l0_station(remove_processed_folder, parallel):
     """Test the disdrodb_run_l0_station command."""
 
     from disdrodb.l0.scripts.disdrodb_run_l0_station import disdrodb_run_l0_station
 
     runner = CliRunner()
-    runner.invoke(disdrodb_run_l0_station, [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR])
+    runner.invoke(
+        disdrodb_run_l0_station,
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", BASE_DIR, "--parallel", parallel],
+    )
 
     product = "L0B"
     station_dir = define_station_dir(

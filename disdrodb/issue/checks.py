@@ -225,17 +225,14 @@ def check_issue_dict(issue_dict):
     return issue_dict
 
 
-def check_issue_file(filepath: str) -> None:
-    """Check issue YAML file validity.
+def check_issue_compliance(data_source, campaign_name, station_name, base_dir=None):
+    """Check DISDRODB issue compliance."""
+    from disdrodb.issue.reader import read_station_issue
 
-    Parameters
-    ----------
-    filepath : str
-        Issue YAML file path.
-
-    """
-    from disdrodb.issue.reader import _load_yaml_without_date_parsing
-
-    issue_dict = _load_yaml_without_date_parsing(filepath)
+    issue_dict = read_station_issue(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
     issue_dict = check_issue_dict(issue_dict)
-    return None

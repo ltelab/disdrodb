@@ -146,7 +146,7 @@ def infer_disdrodb_tree_path_components(path: str) -> list:
     -------
     list
         Path element of the DISDRODB archive.
-        Format: [<base_dir>, <Raw or Processed>, <DATA_SOURCE>, ...]
+        Format: [<base_dir>, <Raw or Processed>, <DATA_SOURCE>, <CAMPAIGN_NAME>, ...]
     """
     # Retrieve path elements (os-specific)
     p = Path(path)

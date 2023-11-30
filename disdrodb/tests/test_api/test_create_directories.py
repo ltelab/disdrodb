@@ -27,8 +27,8 @@ from disdrodb.api.create_directories import (
     _copy_station_metadata,
     create_directory_structure,
     create_initial_station_structure,
-    create_intial_l0_directory_structure,
     create_issue_directory,
+    create_l0_directory_structure,
     create_metadata_directory,
     create_test_archive,
 )
@@ -39,12 +39,17 @@ from disdrodb.api.path import (
     define_metadata_filepath,
     define_station_dir,
 )
-from disdrodb.tests.conftest import create_fake_metadata_directory, create_fake_metadata_file, create_fake_raw_data_file
+from disdrodb.tests.conftest import (
+    create_fake_issue_file,
+    create_fake_metadata_directory,
+    create_fake_metadata_file,
+    create_fake_raw_data_file,
+)
 from disdrodb.utils.yaml import read_yaml
 
 
 @pytest.mark.parametrize("product", ["L0A", "L0B"])
-def test_create_intial_l0_directory_structure(tmp_path, mocker, product):
+def test_create_l0_directory_structure(tmp_path, mocker, product):
     # Define station info
     base_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
@@ -99,18 +104,25 @@ def test_create_intial_l0_directory_structure(tmp_path, mocker, product):
         campaign_name=campaign_name,
         station_name=station_name,
     )
+    # - Add fake issue file
+    _ = create_fake_issue_file(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
     # def mock_check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None):
     #     return None
-    # from disdrodb.metadata import check_metadata
-    # check_metadata.check_metadata_compliance = mock_check_metadata_compliance
+    # from disdrodb.metadata import checks as check_metadata
+    # check_metadata.checks_compliance = mock_check_metadata_compliance
 
     # Mock to pass metadata checks
-    mocker.patch("disdrodb.metadata.check_metadata.check_metadata_compliance", return_value=None)
+    mocker.patch("disdrodb.metadata.checks.check_metadata_compliance", return_value=None)
 
     # Test that if station_name is unexisting in data, raise error
     with pytest.raises(ValueError):
-        create_intial_l0_directory_structure(
+        create_l0_directory_structure(
             product=product,
             force=False,
             raw_dir=raw_dir,
@@ -118,17 +130,14 @@ def test_create_intial_l0_directory_structure(tmp_path, mocker, product):
             station_name="INEXISTENT_STATION",
         )
 
-    # Execute create_intial_l0_directory_structure
-    create_intial_l0_directory_structure(
+    # Execute create_l0_directory_structure
+    create_l0_directory_structure(
         product=product,
         force=False,
         raw_dir=raw_dir,
         processed_dir=processed_dir,
         station_name=station_name,
     )
-
-    # Check create default metadata/issue files in raw_dir !
-    # - TODO
 
     # Test product, metadata and station directories have been created
     assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
@@ -147,7 +156,7 @@ def test_create_intial_l0_directory_structure(tmp_path, mocker, product):
     )
 
     with pytest.raises(ValueError):
-        create_intial_l0_directory_structure(
+        create_l0_directory_structure(
             product=product,
             force=False,
             raw_dir=raw_dir,
@@ -157,7 +166,7 @@ def test_create_intial_l0_directory_structure(tmp_path, mocker, product):
     assert os.path.exists(product_filepath)
 
     # Test delete file if already data in L0A (if force=True)
-    create_intial_l0_directory_structure(
+    create_l0_directory_structure(
         product=product,
         force=True,
         raw_dir=raw_dir,
@@ -178,6 +187,9 @@ def test_create_directory_structure(tmp_path, mocker):
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
+    metadata_dict = {}
+    metadata_dict["sensor_name"] = "OTT_Parsivel"
+    metadata_dict["reader"] = "GPM/IFLOODS"
 
     processed_dir = define_campaign_dir(
         base_dir=base_dir, product=start_product, data_source=data_source, campaign_name=campaign_name
@@ -217,11 +229,15 @@ def test_create_directory_structure(tmp_path, mocker):
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        metadata_dict=metadata_dict,
     )
 
     # Execute create_directory_structure
     create_directory_structure(
-        processed_dir=processed_dir, product=dst_product, station_name=station_name, force=False, verbose=False
+        processed_dir=processed_dir,
+        product=dst_product,
+        station_name=station_name,
+        force=False,
     )
 
     # Test product directory has been created
@@ -408,12 +424,6 @@ def test_copy_station_metadata(tmp_path):
     data_source = "DATA_SOURCE"
     station_name = "STATION_NAME"
 
-    raw_dir = define_campaign_dir(
-        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
-    )
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
-    )
     dst_metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         product="L0A",
@@ -430,7 +440,9 @@ def test_copy_station_metadata(tmp_path):
 
     # Test raise error if no data
     with pytest.raises(ValueError):
-        _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
+        _copy_station_metadata(
+            base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        )
 
     # Create fake metadata file
     raw_metadata_filepath = create_fake_metadata_file(
@@ -443,14 +455,17 @@ def test_copy_station_metadata(tmp_path):
 
     # Test raise error if no destination metadata directory
     with pytest.raises(ValueError):
-        _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
+        _copy_station_metadata(
+            base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        )
 
     # Copy metadata
     _ = create_metadata_directory(
         base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
     )
-
-    _copy_station_metadata(raw_dir=raw_dir, processed_dir=processed_dir, station_name=station_name)
+    _copy_station_metadata(
+        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+    )
 
     # Ensure metadata file has been copied
     assert os.path.exists(dst_metadata_filepath)
