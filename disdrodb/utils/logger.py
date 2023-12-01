@@ -21,68 +21,31 @@
 import logging
 import os
 import re
-import time
 from asyncio.log import logger
 
 
-def create_l0_logger(processed_dir: str, campaign_name: str, verbose: bool = False) -> logger:
-    """Create L0 logger.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory.
-    campaign_name : str
-        Campaign name.
-    verbose : bool, optional
-        Whether to verbose the processing.
-        The default is False.
-
-    Returns
-    -------
-    logger
-        Logger object.
-    """
-    # Define log name
-    logger_name = "LO_" + "reader_" + campaign_name
+def create_file_logger(processed_dir, product, station_name, filename, parallel):
+    """Create file logger."""
     # Create logs directory
-    logs_dir = os.path.join(processed_dir, "logs")
+    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
     os.makedirs(logs_dir, exist_ok=True)
 
-    # Create logger
-    _create_logger(logs_dir, logger_name)
-    logger = logging.getLogger(campaign_name)
+    # Define logger filepath
+    logger_filename = f"logs_{filename}.log"
+    logger_filepath = os.path.join(logs_dir, logger_filename)
 
-    # logger = _create_logger(logs_dir, logger_name)
-    # -------------------------------------------------.
-    # Update logger
-    msg = "### Script started ###"
-    if verbose:
-        print("\n  " + msg + "\n")
-    logger.info(msg)
-    # -------------------------------------------------.
-    # Return logger
-    return logger
+    # Set logger
+    if parallel:
+        logger = logging.getLogger(filename)  # does not log submodules logs
+    else:
+        logger = logging.getLogger()  # root logger
 
-
-def _create_logger(log_dir, logger_name):
-    # Define log file filepath
-    logger_filename = f'{logger_name}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
-    logger_filepath = os.path.join(log_dir, logger_filename)
-    # -------------------------------------------------------------------------.
-    # Define logger format
+    handler = logging.FileHandler(logger_filepath, mode="w")
     format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-
-    # Define logger level
-    level = logging.DEBUG
-
-    # Define logging
-    logging.basicConfig(format=format_type, level=level, filename=logger_filepath)
-
-    # Retrieve logger
-    # logger = logging.getLogger(logger_filepath)
-    # return logger
-    return None
+    handler.setFormatter(logging.Formatter(format_type))
+    logger.addHandler(handler)
+    logger.setLevel(logging.DEBUG)
+    return logger
 
 
 def close_logger(logger: logger) -> None:
@@ -93,102 +56,11 @@ def close_logger(logger: logger) -> None:
     logger : logger
         Logger object.
     """
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        handlers = logger.handlers[:]
-        for handler in handlers:
-            handler.flush()
-            handler.close()
-            logger.removeHandler(handler)
-        return
-
-
-def create_file_logger(processed_dir, product, station_name, filename, parallel):
-    ##------------------------------------------------------------------------.
-    # Create logs directory
-    if os.environ.get("PYTEST_CURRENT_TEST"):
-        return None
-    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
-    os.makedirs(logs_dir, exist_ok=True)
-
-    # logger_filename = f'logs_{filename}_{time.strftime("%d-%m-%Y_%H-%M-%S")}.log'
-    logger_filename = f"logs_{filename}.log"
-    logger_filepath = os.path.join(logs_dir, logger_filename)
-
-    # -------------------------------------------------------------------------.
-    # Set logger (TODO: messy with multiprocess)
-    if parallel:
-        logger = logging.getLogger(filename)  # does not log submodules logs
-    else:
-        logger = logging.getLogger()  # root logger (messy with multiprocess)
-
-    handler = logging.FileHandler(logger_filepath, mode="w")
-    # handler.setLevel(logging.DEBUG)
-    format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    handler.setFormatter(logging.Formatter(format_type))
-    logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
-    return logger
-
-
-####---------------------------------------------------------------------------.
-
-
-def define_summary_log(list_logs):
-    """Define station summary log file from list of file logs.
-
-    It select only logged lines with root, WARNING and ERROR keywords.
-    It write the summary log in the parent directory.
-    """
-
-    if os.environ.get("PYTEST_CURRENT_TEST"):
-        return None
-    list_logs = sorted(list_logs)
-    logs_dir = os.path.dirname(list_logs[0])
-    station_name = logs_dir.split(os.path.sep)[-1]
-    summary_logs_dir = os.path.dirname(logs_dir)
-    ####-----------------------------------------------------------------------.
-    #### Define summary and problem logs
-    # Define summary logs file name
-    summary_filepath = os.path.join(summary_logs_dir, f"logs_summary_{station_name}.log")
-    # Define logs keywords to select lines to copy into the summary log file
-    # -- > "has started" and "has ended" is used to copy the line with the filename being processed
-    list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
-    re_keyword = re.compile("|".join(list_keywords))
-    # Filter and concat all logs files
-    with open(summary_filepath, "w") as output_file:
-        for log_filepath in list_logs:
-            with open(log_filepath) as input_file:
-                for line in input_file:
-                    if re_keyword.search(line):
-                        # Write line to output file
-                        output_file.write(line)
-    ####-----------------------------------------------------------------------.
-    #### Define problem logs
-    # Define problem logs file name
-    problem_filepath = os.path.join(summary_logs_dir, f"logs_problem_{station_name}.log")
-    # - Copy the log of files with warnings and error
-    list_keywords = ["ERROR"]  # "WARNING"
-    re_keyword = re.compile("|".join(list_keywords))
-    any_problem = False
-    with open(problem_filepath, "w") as output_file:
-        for log_filepath in list_logs:
-            log_with_problem = False
-            # Check if a warning or error is reported
-            with open(log_filepath) as input_file:
-                for line in input_file:
-                    if re_keyword.search(line):
-                        log_with_problem = True
-                        any_problem = True
-                        break
-            # If it is reported, copy the log file in the logs_problem file
-            if log_with_problem:
-                with open(log_filepath) as input_file:
-                    output_file.write(input_file.read())
-
-    # If no problems occurred, remove the logs_problem_<station_name>.log file
-    if not any_problem:
-        os.remove(problem_filepath)
-    return None
+    handlers = logger.handlers[:]
+    for handler in handlers:
+        handler.flush()
+        handler.close()
+        logger.removeHandler(handler)
 
 
 ####---------------------------------------------------------------------------.
@@ -207,10 +79,9 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger.debug(msg)
-        if verbose:
-            print(" - " + msg)
+    if verbose:
+        print(" - " + msg)
+    logger.debug(msg)
 
 
 def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -226,10 +97,9 @@ def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger.info(msg)
-        if verbose:
-            print(" - " + msg)
+    if verbose:
+        print(" - " + msg)
+    logger.info(msg)
 
 
 def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -245,10 +115,9 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger.warning(msg)
-        if verbose:
-            print(" - " + msg)
+    if verbose:
+        print(" - " + msg)
+    logger.warning(msg)
 
 
 def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -264,7 +133,82 @@ def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
         Whether to verbose the processing.
         The default is False.
     """
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger.error(msg)
-        if verbose:
-            print(" - " + msg)
+    if verbose:
+        print(" - " + msg)
+    logger.error(msg)
+
+
+def _get_logs_dir(list_logs):
+    list_logs = sorted(list_logs)
+    station_logs_dir = os.path.dirname(list_logs[0])
+    station_name = station_logs_dir.split(os.path.sep)[-1]
+    logs_dir = os.path.dirname(station_logs_dir)
+    return station_name, logs_dir
+
+
+def _define_station_summary_log_file(list_logs, summary_filepath):
+    # Define logs keywords to select lines to copy into the summary log file
+    # -- > "has started" and "has ended" is used to copy the line with the filename being processed
+    list_keywords = ["has started", "has ended", "WARNING", "ERROR"]  # "DEBUG"
+    re_keyword = re.compile("|".join(list_keywords))
+    # Filter and concat all logs files
+    with open(summary_filepath, "w") as output_file:
+        for log_filepath in list_logs:
+            with open(log_filepath) as input_file:
+                for line in input_file:
+                    if re_keyword.search(line):
+                        # Write line to output file
+                        output_file.write(line)
+
+
+def _define_station_problem_log_file(list_logs, problem_filepath):
+    # - Copy the log of files with warnings and error
+    list_keywords = ["ERROR"]  # "WARNING"
+    re_keyword = re.compile("|".join(list_keywords))
+    any_problem = False
+    with open(problem_filepath, "w") as output_file:
+        for log_filepath in list_logs:
+            log_with_problem = False
+            # Check if an error is reported
+            with open(log_filepath) as input_file:
+                for line in input_file:
+                    if re_keyword.search(line):
+                        log_with_problem = True
+                        any_problem = True
+                        break
+            # If it is reported, copy the log file in the logs_problem file
+            if log_with_problem:
+                with open(log_filepath) as input_file:
+                    output_file.write(input_file.read())
+
+    # If no problems occurred, remove the logs_problem_<station_name>.log file
+    if not any_problem:
+        os.remove(problem_filepath)
+
+
+def define_summary_log(list_logs):
+    """Define a station summary and a problems log file from the list of input logs.
+
+    The summary log select only logged lines with root, WARNING and ERROR keywords.
+    The problems log file select only logged lines with the ERROR keyword.
+    The two log files are saved in the parent directory of the input list_logs.
+
+    Assume logs to be located at:
+
+        /DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>/logs/<product>/<station_name>/*.log
+
+    """
+    # LogCaptureHandler of pytest does not have baseFilename attribute, so it returns None
+    if list_logs[0] is None:
+        return None
+
+    station_name, logs_dir = _get_logs_dir(list_logs)
+
+    # Define station summary log file name
+    summary_filepath = os.path.join(logs_dir, f"logs_summary_{station_name}.log")
+    # Define station problem logs file name
+    problem_filepath = os.path.join(logs_dir, f"logs_problem_{station_name}.log")
+    # Create station summary log file
+    _define_station_summary_log_file(list_logs, summary_filepath)
+    # Create station ptoblems log file (if no problems, no file)
+    _define_station_problem_log_file(list_logs, problem_filepath)

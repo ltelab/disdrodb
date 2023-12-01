@@ -133,7 +133,7 @@ def test_read_l0a_dataframe(tmp_path):
     df_concatenate = df_concatenate.sort_values(by="time")
 
     # read written parquet files
-    df_written = io.read_l0a_dataframe(filepaths, False)
+    df_written = io.read_l0a_dataframe(filepaths, verbose=False)
 
     # Create lists
     df_concatenate_list = df_concatenate.values.tolist()
@@ -143,3 +143,7 @@ def test_read_l0a_dataframe(tmp_path):
     comparison = df_written_list == df_concatenate_list
 
     assert comparison
+
+    # Assert raise error if filepaths is not a list or string
+    with pytest.raises(TypeError, match="Expecting filepaths to be a string or a list of strings."):
+        io.read_l0a_dataframe(1, verbose=False)

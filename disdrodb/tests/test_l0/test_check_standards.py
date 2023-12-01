@@ -38,7 +38,7 @@ from disdrodb.l0.standards import get_raw_array_nvalues, get_sensor_logged_varia
 BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
 
-def test_check_l0a_standards():
+def test_check_l0a_standards(capfd):
     filepath = os.path.join(
         BASE_DIR,
         "Raw",
@@ -49,10 +49,18 @@ def test_check_l0a_standards():
         "L0A.PARSIVEL_2007.10.s20070723141530.e20070723141930.V0.parquet",
     )
 
-    # read apache parquet file
+    # Read apache parquet file and check that check pass
     df = pd.read_parquet(filepath)
-
     assert check_l0a_standards(df, sensor_name="OTT_Parsivel") is None
+
+    # Now add longitude and latitude columns and check it logs info
+    df["longitude"] = 1
+    df["latitude"] = 1
+    check_l0a_standards(df, sensor_name="OTT_Parsivel", verbose=True)
+    # Capture the stdout
+    out, _ = capfd.readouterr()
+    assert "L0A dataframe has column 'latitude'" in out
+    assert "L0A dataframe has column 'longitude'" in out
 
 
 def test_check_valid_range():
@@ -104,7 +112,7 @@ def test_check_valid_values():
 def test_check_raw_fields_available():
     # Test case 1: Missing 'raw_drop_number' column
     df = pd.DataFrame({"other_column": [1, 2, 3]})
-    sensor_name = "some_sensor_type"
+    sensor_name = "OTT_Parsivel"
     with pytest.raises(ValueError):
         _check_raw_fields_available(df, sensor_name)
 

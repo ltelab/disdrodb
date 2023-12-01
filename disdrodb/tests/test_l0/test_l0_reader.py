@@ -33,6 +33,7 @@ from disdrodb.l0.l0_reader import (
     get_station_reader_function,
 )
 from disdrodb.tests.conftest import create_fake_metadata_file
+from disdrodb.utils.yaml import read_yaml, write_yaml
 
 # Some test are based on the following reader:
 DATA_SOURCE = "EPFL"
@@ -41,6 +42,10 @@ CAMPAIGN_NAME = "EPFL_2009"
 
 def test_available_readers():
     result = available_readers(data_sources=None, reader_path=False)
+    assert isinstance(result, dict)
+    assert all(isinstance(value, list) for value in result.values())
+
+    result = available_readers(data_sources="EPFL", reader_path=False)
     assert isinstance(result, dict)
     assert all(isinstance(value, list) for value in result.values())
 
@@ -56,7 +61,20 @@ def test_check_metadata_reader():
 
     # Test when "reader" key is not present
     with pytest.raises(ValueError, match="The reader is not specified in the metadata."):
-        _check_metadata_reader({"reader2": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"})
+        _check_metadata_reader({"another_key": "whatever"})
+
+    # Test when "reader" key is empty
+    with pytest.raises(
+        ValueError,
+        match="The reader '' reported in the metadata is not valid. Must have '<DATA_SOURCE>/<READER_NAME>' pattern.",
+    ):
+        _check_metadata_reader({"reader": ""})
+
+    # Test when "reader" key is made of three components
+    with pytest.raises(
+        ValueError, match="Expecting the reader reference to be composed of <DATA_SOURCE>/<READER_NAME>."
+    ):
+        _check_metadata_reader({"reader": "ONE/TWO/THREE"})
 
     # Test when "reader" key is present and valid
     assert _check_metadata_reader({"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}) is None
@@ -70,7 +88,7 @@ def test_get_station_reader_function(tmp_path):
 
     metadata_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
 
-    _ = create_fake_metadata_file(
+    metadata_filepath = create_fake_metadata_file(
         base_dir=base_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
@@ -85,6 +103,19 @@ def test_get_station_reader_function(tmp_path):
         station_name=station_name,
     )
     assert callable(result)
+
+    # Assert raise error if not reader key in metadata
+    metadata_dict = read_yaml(metadata_filepath)
+    metadata_dict.pop("reader", None)
+    write_yaml(metadata_dict, metadata_filepath)
+
+    with pytest.raises(ValueError, match="The `reader` key is not available in the metadata"):
+        get_station_reader_function(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
 
 
 def test_get_reader_from_metadata(tmp_path):

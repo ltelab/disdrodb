@@ -101,7 +101,7 @@ def get_base_dir(base_dir=None):
     if base_dir is None:
         base_dir = disdrodb.config["base_dir"]
     if base_dir is None:
-        raise TypeError("Expecting base_dir to be a string or Path in the donfig.config.")
+        raise ValueError("The DISDRODB Base Directory is not specified.")
     base_dir = str(base_dir)  # convert Path to str
     return base_dir
 
