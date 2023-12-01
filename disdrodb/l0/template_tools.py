@@ -452,9 +452,9 @@ def get_natural_ndigits(string: str) -> int:
         The number of digit.
     """
     if str_is_integer(string):
-        return len(string.replace("-",""))
+        return len(string.replace("-", ""))
     if str_has_decimal_digits(string):
-        return len(string.split(".")[0].replace("-",""))
+        return len(string.split(".")[0].replace("-", ""))
     else:
         return 0
 
@@ -475,7 +475,7 @@ def get_ndigits(string: str) -> int:
 
     if not str_is_number(string):
         return 0
-    string = string.replace("-","")
+    string = string.replace("-", "")
     if str_has_decimal_digits(string):
         return len(string) - 1  # remove .
     else:

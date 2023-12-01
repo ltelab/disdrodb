@@ -17,16 +17,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB issue writer."""
-import os 
+import os
+from io import StringIO
 
-import pytest
 import numpy as np
+import pytest
 import yaml
 
-from io import StringIO
-from disdrodb.issue.reader import read_station_issue, read_issue
-from disdrodb.issue.writer import write_issue, _write_issue_docs, create_station_issue
-
+from disdrodb.issue.reader import read_issue, read_station_issue
+from disdrodb.issue.writer import _write_issue_docs, create_station_issue, write_issue
 
 
 def test_write_issue_docs():
@@ -59,8 +58,8 @@ def test_write_issue_docs():
 # - ['2018-08-02 12:44:30', '2018-08-02 12:59:31'] \n
 """
     assert written_data == expected_output
-    
-    
+
+
 def test_write_issue(tmpdir):
     """Test the write_issue function."""
     # Define test inputs
@@ -101,8 +100,8 @@ def test_write_issue(tmpdir):
     # assert np.array_equal(result,expected_result)
     assert set(result.keys()) == set(expected_result.keys())
     assert np.array_equal(result["timesteps"], expected_result["timesteps"])
-    
-    
+
+
 def test_create_station_issue(tmp_path):
     """Test the creation of the default issue YAML file."""
     base_dir = tmp_path / "DISDRODB"
@@ -125,8 +124,8 @@ def test_create_station_issue(tmp_path):
     assert isinstance(issue_dict, dict)
     issue_dict["timesteps"] = None
     issue_dict["time_periods"] = None
-    
-    # Test it raise error if creating when already existing 
+
+    # Test it raise error if creating when already existing
     with pytest.raises(ValueError):
         create_station_issue(
             base_dir=base_dir,

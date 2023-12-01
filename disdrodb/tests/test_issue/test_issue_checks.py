@@ -17,13 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 issues processing."""
-import pytest
 import numpy as np
+import pytest
 
 from disdrodb.issue.checks import (
     _check_time_period_nested_list_format,
-    _check_timestep_datetime_accuracy,
-    _check_timesteps_string,
     _get_issue_time_periods,
     _get_issue_timesteps,
     _is_numpy_array_datetime,
@@ -91,16 +89,16 @@ def test_check_timesteps():
     with pytest.raises(TypeError):
         check_timesteps(123)
 
-    # Test invalid datetime input 
+    # Test invalid datetime input
     with pytest.raises(ValueError):
         timesteps = np.array(["2022-01-01", "2022-01-02"], dtype="datetime64[D]")
         check_timesteps(timesteps)
-    
+
     # Test invalid list of string (wrong temporal resolution)
     with pytest.raises(ValueError):
         timesteps = ["2022-01-01 01:00", "2022-01-01 02:00"]
         check_timesteps(timesteps)
-    
+
     # Test invalid list of string (wrong time format)
     with pytest.raises(ValueError):
         timesteps = ["2022-15-01 01:00:00", "2022-15-01 02:00:00"]
@@ -211,6 +209,3 @@ def test_check_issue_dict():
     issue_dict = {"timesteps": timesteps, "invalid_key": "invalid_value"}
     with pytest.raises(ValueError):
         check_issue_dict(issue_dict)
-
-
-

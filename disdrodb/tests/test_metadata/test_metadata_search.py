@@ -190,5 +190,3 @@ def test_get_list_metadata_file(tmp_path):
     # Test 5: Check by station names
     result = get_list_metadata(base_dir=str(base_dir), station_names=station_name, with_stations_data=False)
     assert [metadata_filepath] == result
-
-

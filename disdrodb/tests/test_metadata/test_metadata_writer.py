@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB metadata writer."""
 
-import pytest 
+import pytest
 
 from disdrodb.metadata.reader import read_station_metadata
 from disdrodb.metadata.writer import (
@@ -55,8 +55,8 @@ def test_create_station_metadata(tmp_path):
     metadata_dict["data_source"] = data_source
     metadata_dict["campaign_name"] = campaign_name
     metadata_dict["station_name"] = station_name
-    
-    # Test it raise error if creating when already existing 
+
+    # Test it raise error if creating when already existing
     with pytest.raises(ValueError):
         create_station_metadata(
             base_dir=base_dir,
