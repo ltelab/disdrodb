@@ -17,17 +17,38 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Check DISDRODB configuration files."""
-import os
+import os  # noqa
 
 import pytest
+from unittest import mock
 
 
 def test_disdrodb_config_takes_environment_variable():
-    os.environ["DISDRODB_BASE_DIR"] = "MY_BASE_DIR"
+    from importlib import reload
 
     import disdrodb
 
-    assert disdrodb.config.get("base_dir") == "MY_BASE_DIR"
+    with mock.patch.dict("os.environ", {"DISDRODB_BASE_DIR": "/my_path_to/DISDRODB"}):
+        reload(disdrodb._config)
+        reload(disdrodb)
+        assert disdrodb.config.get("base_dir") == "/my_path_to/DISDRODB"
+
+
+def test_disdrodb_config_takes_config_YAML(tmp_path, mocker):
+    from importlib import reload
+
+    import disdrodb
+
+    # Mock to save config YAML at custom location
+    config_fpath = str(tmp_path / ".config_disdrodb.yml")
+    mocker.patch("disdrodb.configs._define_config_filepath", return_value=config_fpath)
+
+    # Initialize config YAML
+    disdrodb.configs.define_disdrodb_configs(base_dir="test_dir/DISDRODB", zenodo_token="test_token")
+
+    reload(disdrodb._config)
+    reload(disdrodb)
+    assert disdrodb.config.get("base_dir") == "test_dir/DISDRODB"
 
 
 @pytest.mark.parametrize("key", ["base_dir", "zenodo_token", "zenodo_sandbox_token"])

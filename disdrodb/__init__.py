@@ -1,7 +1,7 @@
 import os
 from importlib.metadata import PackageNotFoundError, version
 
-from disdrodb._config import config
+from disdrodb._config import config  # noqa
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.api.io import (
     available_campaigns,
@@ -17,11 +17,7 @@ from disdrodb.metadata.checks import (
     check_archive_metadata_geolocation,
 )
 
-__root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-
 __all__ = [
-    "__root_path__",
-    "config",
     "define_configs",
     "available_stations",
     "available_campaigns",
@@ -36,6 +32,8 @@ __all__ = [
     "download_archive",
     "download_station",
 ]
+
+__root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))  # noqa
 
 # Get version
 try:

@@ -18,7 +18,9 @@
 # -----------------------------------------------------------------------------.
 """Xarray utility."""
 
+import pandas as pd
 import xarray as xr
+from xarray.core import dtypes
 
 
 def get_dataset_start_end_time(ds: xr.Dataset):
@@ -38,3 +40,45 @@ def get_dataset_start_end_time(ds: xr.Dataset):
     starting_time = ds["time"].values[0]
     ending_time = ds["time"].values[-1]
     return (starting_time, ending_time)
+
+
+def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, fill_value=dtypes.NA):
+    """
+    Regularize a dataset across time dimension with uniform resolution.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        DESCRIPTION.
+    time_dim : TYPE, optional
+        DESCRIPTION. The default is "time".
+    freq : str
+        The `freq` string to pass to pd.date_range to define the new time coordinates.
+        Examples: freq="2min"
+    time_dim : TYPE, optional
+        The time dimension in the xr.Dataset. The default is "time".
+    method : TYPE, optional
+        Method to use for filling missing timesteps.
+        If None, fill with fill_value. The default is None.
+        For other possible methods, see https://docs.xarray.dev/en/stable/generated/xarray.Dataset.reindex.html
+    fill_value : float, optional
+        Fill value to fill missing timesteps. The default is dtypes.NA.
+
+    Returns
+    -------
+    ds_reindexed : xr.Dataset
+        Regularized dataset.
+
+    """
+    start = ds[time_dim].values[0]
+    end = ds[time_dim].values[-1]
+    new_time_index = pd.date_range(start=pd.to_datetime(start), end=pd.to_datetime(end), freq=freq)
+
+    # Regularize dataset and fill with NA values
+    ds_reindexed = ds.reindex(
+        {"time": new_time_index},
+        method=method,  # do not fill gaps
+        # tolerance=tolerance,  # mismatch in seconds
+        fill_value=fill_value,
+    )
+    return ds_reindexed
