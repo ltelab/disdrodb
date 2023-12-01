@@ -27,7 +27,7 @@ def test_disdrodb_config_takes_environment_variable():
 
     import disdrodb
 
-    disdrodb.config.get("base_dir") == "MY_BASE_DIR"
+    assert disdrodb.config.get("base_dir") == "MY_BASE_DIR"
 
 
 @pytest.mark.parametrize("key", ["base_dir", "zenodo_token", "zenodo_sandbox_token"])

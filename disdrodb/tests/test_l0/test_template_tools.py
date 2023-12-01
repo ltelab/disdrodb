@@ -23,51 +23,26 @@ import pandas as pd
 import pytest
 
 from disdrodb.l0.template_tools import (
-    arr_has_constant_nchar,
+    _get_possible_keys,
+    _has_constant_characters,
+    check_column_names,
     get_decimal_ndigits,
+    get_df_columns_unique_values_dict,
     get_natural_ndigits,
     get_nchar,
     get_ndigits,
-    get_possible_keys,
+    infer_column_names,
     print_df_column_names,
+    print_df_columns_unique_values,
     print_df_first_n_rows,
     print_df_random_n_rows,
+    print_df_summary_stats,
+    print_df_with_any_nan_rows,
+    print_valid_l0_column_names,
     str_has_decimal_digits,
     str_is_integer,
     str_is_number,
 )
-
-
-class Test_Arr_Has_Constant_Char:
-    """Test arr_has_constant_nchar."""
-
-    def test_constant_nchar(self):
-        arr = np.array(["abc", "def", "ghi"])
-        assert arr_has_constant_nchar(arr)
-
-    def test_not_constant_nchar(self):
-        arr = np.array(["abc", "de", "fghij"])
-        assert not arr_has_constant_nchar(arr)
-
-    def test_empty_array(self):
-        arr = np.array([], dtype="U")
-        assert arr_has_constant_nchar(arr)
-
-        arr = np.array([], dtype="O")
-        assert arr_has_constant_nchar(arr)
-
-        arr = np.array([], dtype=int)
-        assert arr_has_constant_nchar(arr)
-
-        arr = np.array([])
-        assert arr_has_constant_nchar(arr)
-
-    def test_numeric_array(self):
-        arr = np.array([123, 456, 789])
-        assert arr_has_constant_nchar(arr)
-
-        arr = np.array([1.23, 4.56, 7.89])
-        assert arr_has_constant_nchar(arr)
 
 
 @pytest.mark.parametrize(
@@ -118,7 +93,7 @@ def test_get_decimal_ndigits():
 
 def test_get_natural_ndigits():
     assert get_natural_ndigits("123.456") == 3
-    assert get_natural_ndigits("-123.456") == 3  # BUG 4
+    assert get_natural_ndigits("-123.456") == 3
     assert get_natural_ndigits("123") == 3
     assert get_natural_ndigits("-123") == 3
     assert get_natural_ndigits("abc") == 0
@@ -126,7 +101,7 @@ def test_get_natural_ndigits():
 
 def test_get_ndigits():
     assert get_ndigits("123.456") == 6
-    assert get_ndigits("-123.456") == 6  # BUG 7
+    assert get_ndigits("-123.456") == 6
     assert get_ndigits("123") == 3
     assert get_ndigits("-123") == 3
     assert get_ndigits("abc") == 0
@@ -140,27 +115,27 @@ def test_get_nchar():
     assert get_nchar("abc") == 3
 
 
-def test_get_possible_keys():
+def test__get_possible_keys():
     test_dict = {"a": "apple", "b": "banana", "c": "apple"}
-    assert get_possible_keys(test_dict, "apple") == {"a", "c"}
-    assert get_possible_keys(test_dict, "banana") == {"b"}
-    assert get_possible_keys(test_dict, "cherry") == set()
-
-
-def test_print_df_column_names(capfd):
-    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    print_df_column_names(df)
-    out, err = capfd.readouterr()
-    assert "Column 0 : A" in out
-    assert "Column 1 : B" in out
+    assert _get_possible_keys(test_dict, "apple") == {"a", "c"}
+    assert _get_possible_keys(test_dict, "banana") == {"b"}
+    assert _get_possible_keys(test_dict, "cherry") == set()
 
 
 def test_print_df_random_n_rows(capfd):
     df = pd.DataFrame({"A": [1, 2, 3, 4, 5], "B": [6, 7, 8, 9, 10]})
     print_df_random_n_rows(df, n=2)
     out, err = capfd.readouterr()
-    assert "- Column 0 (A) :" in out
-    assert "- Column 1 (B) :" in out
+    assert "- Column 0 ( A ):" in out
+    assert "- Column 1 ( B ):" in out
+
+
+def test_print_df_random_n_rows_without_column_names(capfd):
+    df = pd.DataFrame({"A": [1, 2, 3, 4, 5], "B": [6, 7, 8, 9, 10]})
+    print_df_random_n_rows(df, n=2, print_column_names=False)
+    out, err = capfd.readouterr()
+    assert "- Column 0 :" in out
+    assert "- Column 1 :" in out
 
 
 def test_print_df_first_n_rows(capfd):
@@ -178,12 +153,12 @@ def test_print_df_first_n_rows(capfd):
     assert out == expected_output
 
 
-def test_print_df_first_n_rows_no_column_names(capfd):
+def test_print_df_first_n_rows_without_column_names(capfd):
     # Create a sample DataFrame
     df = pd.DataFrame({"A": [1, 2, 3, 4, 5, 6], "B": ["a", "b", "c", "d", "e", "f"]})
 
     # Call the function with column_names set to False
-    print_df_first_n_rows(df, n=3, column_names=False)
+    print_df_first_n_rows(df, n=3, print_column_names=False)
 
     # Capture the stdout
     out, _ = capfd.readouterr()
@@ -191,3 +166,184 @@ def test_print_df_first_n_rows_no_column_names(capfd):
     # Assert the output
     expected_output = " - Column 0 :\n      [1 2 3 4]\n - Column 1 :\n      ['a' 'b' 'c' 'd']\n"
     assert out == expected_output
+
+
+def test_print_df_column_names(capfd):
+    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
+    print_df_column_names(df)
+    out, _ = capfd.readouterr()
+    assert "Column 0 : A" in out
+    assert "Column 1 : B" in out
+
+
+def test_print_valid_l0_column_names(capfd):
+    print_valid_l0_column_names(sensor_name="OTT_Parsivel")
+    out, _ = capfd.readouterr()
+    "['rainfall_rate_32bit'," in out
+
+
+class Test_Print_Df_Summary_Stats:
+    """Test print_df_summary_stats."""
+
+    def test_print_all_columns(self, capfd):
+        df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6]})
+        print_df_summary_stats(df)
+        out, _ = capfd.readouterr()
+        assert "Column 0 ( A ):" in out
+        assert "Column 1 ( B ):" in out
+
+    @pytest.mark.parametrize("column_indices", ([0, 1], slice(0, 2)))
+    def test_print_specific_columns(self, capfd, column_indices):
+        df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]})
+        print_df_summary_stats(df, column_indices=column_indices)
+        out, _ = capfd.readouterr()
+        assert "Column 0 ( A ):" in out
+        assert "Column 1 ( B ):" in out
+        assert "Column 2 ( C ):" not in out
+
+    def test_non_numeric_columns(self, capfd):
+        df = pd.DataFrame({"A": [1, 2, 3], "B": ["a", "b", "c"]})
+        print_df_summary_stats(df)
+        out, _ = capfd.readouterr()
+        assert "Column 0 ( A ):" in out
+        assert "Column 1 ( B ):" not in out
+
+    def test_empty_dataframe(self):
+        df = pd.DataFrame()
+        with pytest.raises(ValueError):
+            print_df_summary_stats(df)
+
+    def test_no_numeric_columns(self):
+        df = pd.DataFrame({"A": ["a", "b", "c"], "B": ["d", "e", "f"]})
+        with pytest.raises(ValueError):
+            print_df_summary_stats(df)
+
+    def test_no_numeric_columns_at_specific_column(self):
+        df = pd.DataFrame({"A": [1, 2, 3], "B": ["d", "e", "f"]})
+        with pytest.raises(ValueError):
+            print_df_summary_stats(df, column_indices=1)
+
+
+class Test_Print_Df_With_Any_Nan_Rows:
+    """Test test_print_df_with_any_nan_rows."""
+
+    def test_df_with_nan_and_none_values(self, capfd):
+        df = pd.DataFrame(
+            {
+                "A": [1, 2, None, 4],
+                "B": ["a", "b", None, "d"],
+                "C": [1, 2, np.nan, 4],
+                "D": [1, 2, 3, 4],
+            }
+        )
+        print_df_with_any_nan_rows(df)
+        out, _ = capfd.readouterr()
+        assert "Column 0 ( A ):\n      [nan]" in out
+        assert "Column 1 ( B ):\n      [None]" in out
+        assert "Column 2 ( C ):\n      [nan]" in out
+        assert "Column 3 ( D ):\n      [3]" in out
+
+    def test_df_without_nan(self, capfd):
+        df = pd.DataFrame({"A": [1, 2, 3, 4], "B": ["a", "b", "c", "d"]})
+        print_df_with_any_nan_rows(df)
+        out, _ = capfd.readouterr()
+        # Expecting no output since there are no NaN rows
+        assert "The dataframe does not have nan values!" in out
+
+    def test_print_df_with_all_nan_rows(self, capfd):
+        df = pd.DataFrame({"A": [None, None, None], "B": [None, None, None]})
+        print_df_with_any_nan_rows(df)
+        out, _ = capfd.readouterr()
+        # Expecting output for all rows since all are NaN
+        assert "Column 0 ( A ):\n      [None None None]" in out
+        assert "Column 1 ( B ):\n      [None None None]" in out
+
+
+def test_print_df_columns_unique_values(capfd):
+    df = pd.DataFrame({"A": [1, 2, 2, 3], "B": ["a", "b", "b", "c"]})
+    print_df_columns_unique_values(df)
+    out, _ = capfd.readouterr()
+    assert "Column 0 ( A ):" in out
+    assert "[1, 2, 3]" in out
+    assert "Column 1 ( B ):" in out
+    assert "['a', 'b', 'c']" in out
+
+
+def test_get_df_columns_unique_values_dict():
+    df = pd.DataFrame({"A": [1, 2, 2, 3], "B": ["a", "b", "b", "c"]})
+    # Test with column_names
+    result = get_df_columns_unique_values_dict(df)
+    expected = {"A": [1, 2, 3], "B": ["a", "b", "c"]}
+    assert result == expected
+
+    # Test without column_names
+    result = get_df_columns_unique_values_dict(df, column_names=False)
+    expected = {"Column 0": [1, 2, 3], "Column 1": ["a", "b", "c"]}
+    assert result == expected
+
+
+class Test_Has_Constant_Character:
+    """Test _has_constant_characters."""
+
+    def test_constant_nchar(self):
+        arr = np.array(["abc", "def", "ghi"])
+        assert _has_constant_characters(arr)
+
+    def test_not_constant_nchar(self):
+        arr = np.array(["abc", "de", "fghij"])
+        assert not _has_constant_characters(arr)
+
+    def test_empty_array(self):
+        arr = np.array([], dtype="U")
+        assert _has_constant_characters(arr)
+
+        arr = np.array([], dtype="O")
+        assert _has_constant_characters(arr)
+
+        arr = np.array([], dtype=int)
+        assert _has_constant_characters(arr)
+
+        arr = np.array([])
+        assert _has_constant_characters(arr)
+
+    def test_numeric_array(self):
+        arr = np.array([123, 456, 789])
+        assert _has_constant_characters(arr)
+
+        arr = np.array([1.23, 4.56, 7.89])
+        assert _has_constant_characters(arr)
+
+
+def test_infer_column_names(capfd):
+    sensor_name = "OTT_Parsivel"
+    df = pd.DataFrame(
+        {
+            "0": [123.345, 123.345],  # same number of character
+            "1": [12.3456, 1.345],  # not same number characters
+        }
+    )
+    dict_possible_columns = infer_column_names(df=df, sensor_name=sensor_name, row_idx=0)
+    dict_possible_columns[0] == ["rainfall_amount_absolute_32bit"]
+    out, _ = capfd.readouterr()
+    assert "ATTENTION: Column 1 values have non-unique number of characters" in out
+
+
+def test_check_column_names(capfd):
+    sensor_name = "OTT_Parsivel"
+
+    # Test correct type
+    with pytest.raises(TypeError):
+        check_column_names(column_names="a string", sensor_name=sensor_name)
+
+    # Test invalid column print a message
+    column_names = ["raw_drop_number", "invalid_column", "time"]
+    check_column_names(column_names, sensor_name)
+    out, _ = capfd.readouterr()
+    assert "The following columns do no met the DISDRODB standards: ['invalid_column']" in out
+    assert "Please be sure to create the 'time' column" not in out
+
+    # Test m column print a message
+    column_names = ["raw_drop_number"]
+    check_column_names(column_names, sensor_name)
+    out, _ = capfd.readouterr()
+    assert "Please be sure to create the 'time' column" in out

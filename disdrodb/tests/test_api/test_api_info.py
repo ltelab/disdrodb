@@ -181,9 +181,9 @@ def test_infer_path_info_dict():
     base_dir = os.path.join("whatever_path", "DISDRODB")
     path = os.path.join(base_dir, "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
     info_dict = infer_path_info_dict(path)
-    info_dict["campaign_name"] == "CAMPAIGN_NAME"
-    info_dict["data_source"] == "DATA_SOURCE"
-    info_dict["base_dir"] == base_dir
+    assert info_dict["campaign_name"] == "CAMPAIGN_NAME"
+    assert info_dict["data_source"] == "DATA_SOURCE"
+    assert info_dict["base_dir"] == base_dir
 
     # Assert raise error if path stop at Raw or Processed
     path = os.path.join("whatever_path", "DISDRODB", "Raw")

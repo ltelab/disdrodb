@@ -63,7 +63,6 @@ def get_disdrodb_path(
         Directory path
     """
     from disdrodb.api.checks import check_base_dir
-    from disdrodb.utils.directories import check_directory_exists
 
     # Check base_dir validity
     base_dir = check_base_dir(base_dir)

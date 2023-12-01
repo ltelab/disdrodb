@@ -33,8 +33,9 @@ def test_remove_invalid_metadata_keys():
 
 
 def test_add_missing_metadata_keys():
-    # Test data
     metadata = {"data_source": "valid"}
     result = add_missing_metadata_keys(metadata)
-    "valid" == result.pop("data_source")
-    len(set(result.values())) == 1  # ''
+    # Assert that the valid key is still there
+    assert "valid" == result["data_source"]
+    # Assert that the missing keys are added
+    assert "campaign_name" in result

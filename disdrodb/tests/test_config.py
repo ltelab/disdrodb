@@ -53,15 +53,15 @@ def test_update_disdrodb_configs(tmp_path, mocker):
     assert os.path.exists(config_fpath)
 
     config_dict = read_yaml(config_fpath)
-    config_dict["base_dir"] == "test_dir/DISDRODB"
+    assert config_dict["base_dir"] == "test_dir/DISDRODB"
 
     # Update
     disdrodb.configs.define_disdrodb_configs(base_dir="new_test_dir/DISDRODB", zenodo_sandbox_token="new_token")
     assert os.path.exists(config_fpath)
     config_dict = read_yaml(config_fpath)
-    config_dict["base_dir"] == "new_test_dir/DISDRODB"
-    config_dict["zenodo_token"] == "test_token"
-    config_dict["zenodo_sandbox_token"] == "new_token"
+    assert config_dict["base_dir"] == "new_test_dir/DISDRODB"
+    assert config_dict["zenodo_token"] == "test_token"
+    assert config_dict["zenodo_sandbox_token"] == "new_token"
 
 
 def test_get_base_dir():
