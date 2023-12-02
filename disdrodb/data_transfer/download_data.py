@@ -29,7 +29,7 @@ import tqdm
 from disdrodb.api.path import define_metadata_filepath
 from disdrodb.configs import get_base_dir
 from disdrodb.metadata import get_list_metadata
-from disdrodb.utils.compression import _unzip_file
+from disdrodb.utils.compression import unzip_file
 from disdrodb.utils.directories import is_empty_directory
 from disdrodb.utils.yaml import read_yaml
 
@@ -229,7 +229,7 @@ def _select_metadata_with_remote_data_url(metadata_filepaths: List[str]) -> List
 
 def _extract_station_files(zip_filepath, station_dir):
     """Extract files from the station.zip file and remove the station.zip file."""
-    _unzip_file(filepath=zip_filepath, dest_path=station_dir)
+    unzip_file(filepath=zip_filepath, dest_path=station_dir)
     if os.path.exists(zip_filepath):
         os.remove(zip_filepath)
 
