@@ -22,7 +22,11 @@ import sys
 import click
 
 from disdrodb.l0.routines import click_l0b_concat_options
-from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
+from disdrodb.utils.scripts import (
+    click_base_dir_option,
+    click_station_arguments,
+    parse_base_dir,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -66,6 +70,8 @@ def disdrodb_run_l0b_concat_station(
         If not specified, uses path specified in the DISDRODB active configuration.
     """
     from disdrodb.l0.l0_processing import run_l0b_concat_station
+
+    base_dir = parse_base_dir(base_dir)
 
     run_l0b_concat_station(
         # Station arguments

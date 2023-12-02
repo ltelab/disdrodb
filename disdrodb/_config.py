@@ -27,7 +27,6 @@ from disdrodb.configs import read_disdrodb_configs
 
 def _get_disdrodb_default_configs():
     """Retrieve the default DISDRODB settings from the .config_disdrodb.yml file."""
-
     try:
         config_dict = read_disdrodb_configs()
         config_dict = {key: value for key, value in config_dict.items() if value is not None}

@@ -23,7 +23,7 @@ from disdrodb.l0.routines import (
     click_l0_processing_options,
     click_l0_stations_options,
 )
-from disdrodb.utils.scripts import click_base_dir_option, parse_arg_to_list
+from disdrodb.utils.scripts import click_base_dir_option, parse_arg_to_list, parse_base_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -121,6 +121,7 @@ def disdrodb_run_l0(
     from disdrodb.l0.routines import run_disdrodb_l0
 
     # Parse data_sources, campaign_names and station arguments
+    base_dir = parse_base_dir(base_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)

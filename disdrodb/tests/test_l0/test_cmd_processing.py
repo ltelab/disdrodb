@@ -49,7 +49,7 @@ def test_disdrodb_run_l0a_station(tmp_path, parallel):
     runner = CliRunner()
     runner.invoke(
         disdrodb_run_l0a_station,
-        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--parallel", parallel],
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", str(test_base_dir), "--parallel", parallel],
     )
 
     product = "L0A"

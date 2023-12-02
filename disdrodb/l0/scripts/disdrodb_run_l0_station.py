@@ -22,7 +22,11 @@ from disdrodb.l0.routines import (
     click_l0_archive_options,
     click_l0_processing_options,
 )
-from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
+from disdrodb.utils.scripts import (
+    click_base_dir_option,
+    click_station_arguments,
+    parse_base_dir,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -108,6 +112,8 @@ def disdrodb_run_l0_station(
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     from disdrodb.l0.routines import run_disdrodb_l0_station
+
+    base_dir = parse_base_dir(base_dir)
 
     run_disdrodb_l0_station(
         base_dir=base_dir,

@@ -218,7 +218,7 @@ def retrieve_l0b_arrays(
 
     """
 
-    msg = " - Retrieval of L0B data matrix started."
+    msg = " - Retrieval of L0B data arrays started."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
@@ -276,7 +276,7 @@ def retrieve_l0b_arrays(
 
     # -------------------------------------------------------------------------.
     # Log
-    msg = " - Retrieval of L0B data matrices finished."
+    msg = " - Retrieval of L0B data arrays ended."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # Return
     return dict_data

@@ -34,6 +34,21 @@ def _execute_cmd(cmd, raise_error=False):
         raise CalledProcessError(p.returncode, p.args)
 
 
+def _parse_empty_string_and_none(args):
+    """Utility to parse argument passed from the command line.
+    If args = '' --> None
+    If args = 'None' --> None
+    Otherwise return args
+    """
+    # If '', set to 'None'
+    args = None if args == "" else args
+    # - If multiple arguments, split by space
+    if isinstance(args, str):
+        if args == "None":
+            args = None
+    return args
+
+
 def parse_arg_to_list(args):
     """Utility to pass list to command line scripts.
 
@@ -42,18 +57,24 @@ def parse_arg_to_list(args):
     If args = 'variable' --> [variable]
     If args = 'variable1 variable2' --> [variable1, variable2]
     """
-    # If '', set to None
-    args = None if args == "" else args
+    # If '' or 'None' --> Set to None
+    args = _parse_empty_string_and_none(args)
     # - If multiple arguments, split by space
     if isinstance(args, str):
-        if args == "None":
-            args = None
-        else:
-            # - Split by space
-            list_args = args.split(" ")
-            # - Remove '' (deal with multi space)
-            args = [args for args in list_args if len(args) > 0]
+        # - Split by space
+        list_args = args.split(" ")
+        # - Remove '' (deal with multi space)
+        args = [args for args in list_args if len(args) > 0]
     return args
+
+
+def parse_base_dir(base_dir):
+    """Utility to parse base_dir provided by command line.
+    If base_dir = 'None' --> None
+    If base_dir = '' --> None
+    """
+    # If '', set to 'None'
+    return _parse_empty_string_and_none(base_dir)
 
 
 def click_station_arguments(function: object):

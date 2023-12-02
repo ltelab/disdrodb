@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB scripts utility."""
 
-from disdrodb.utils.scripts import parse_arg_to_list
+from disdrodb.utils.scripts import parse_arg_to_list, parse_base_dir
 
 
 def test_parse_arg_to_list_empty_string():
@@ -67,8 +67,17 @@ def test_parse_arg_to_list_other_types():
     assert parse_arg_to_list(args) == expected_output
 
 
-def test_parse_arg_to_list_empty_list():
-    """Test parse_arg_to_list() with an empty list."""
-    args = []
-    expected_output = []
-    assert parse_arg_to_list(args) == expected_output
+def test_parse_base_dir():
+    """Test parse_base_dir()."""
+    base_dir = ""
+    expected_output = None
+    assert parse_base_dir(base_dir) == expected_output
+
+    base_dir = None
+    assert parse_base_dir(base_dir) is None
+
+    base_dir = "None"
+    assert parse_base_dir(base_dir) is None
+
+    base_dir = "/tmp/test10/DISDRODB"
+    assert parse_base_dir(base_dir) == base_dir
