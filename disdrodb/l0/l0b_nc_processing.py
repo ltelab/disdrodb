@@ -29,7 +29,6 @@ from disdrodb.l0.standards import (
     get_bin_coords_dict,
     get_data_range_dict,
     get_nan_flags_dict,
-    get_valid_dimension_names,
     get_valid_names,
     get_valid_values_dict,
     get_valid_variable_names,
@@ -70,18 +69,12 @@ def _get_dict_names_variables(dict_names, sensor_name):
     return variables
 
 
-def _get_dict_names_dimensions(dict_names, sensor_name):
-    """Get DISDRODB dimensions specified in dict_names."""
-    possible_dims = get_valid_dimension_names(sensor_name)
-    dictionary_names = list(dict_names.values())
-    dims = [name for name in dictionary_names if name in possible_dims]
-    return dims
-
-
-def _get_dict_dims(dict_names, sensor_name):
-    dims = _get_dict_names_dimensions(dict_names, sensor_name)
-    dict_dims = {k: v for k, v in dict_names.items() if v in dims}
-    return dict_dims
+def _get_missing_variables(ds, dict_names, sensor_name):
+    """Get list of missing variables in the dataset."""
+    expected_vars = set(_get_dict_names_variables(dict_names, sensor_name))
+    dataset_vars = set(ds.data_vars)
+    missing_vars = expected_vars.difference(dataset_vars)
+    return missing_vars
 
 
 def rename_dataset(ds, dict_names):
@@ -177,9 +170,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     ds = subset_dataset(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
     # If missing variables, infill with NaN array
-    expected_vars = set(_get_dict_names_variables(dict_names, sensor_name))
-    dataset_vars = set(ds.data_vars)
-    missing_vars = expected_vars.difference(dataset_vars)
+    missing_vars = _get_missing_variables(ds, dict_names, sensor_name)
     if len(missing_vars) > 0:
         ds = add_dataset_missing_variables(ds=ds, missing_vars=missing_vars, sensor_name=sensor_name)
 
@@ -191,8 +182,10 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     return ds
 
 
-def replace_custom_nan_flags(ds, dict_nan_flags):
+def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
     """Set values corresponding to nan_flags to np.nan.
+
+    This function must be used in a reader, if necessary.
 
     Parameters
     ----------
@@ -212,9 +205,12 @@ def replace_custom_nan_flags(ds, dict_nan_flags):
         if var in ds:
             # Get occurrence of nan_flags
             is_a_nan_flag = ds[var].isin(nan_flags)
-            # Replace with np.nan
-            ds[var] = ds[var].where(~is_a_nan_flag)
-
+            n_nan_flags_values = np.sum(is_a_nan_flag.data)
+            if n_nan_flags_values > 0:
+                msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                # Replace with np.nan
+                ds[var] = ds[var].where(~is_a_nan_flag)
     # Return dataset
     return ds
 
@@ -238,21 +234,8 @@ def replace_nan_flags(ds, sensor_name, verbose):
     """
     # Get dictionary of nan flags
     dict_nan_flags = get_nan_flags_dict(sensor_name)
-
-    # Loop over the needed variable, and replace nan_flags values with np.nan
-    for var, nan_flags in dict_nan_flags.items():
-        # If the variable is in the dataframe
-        if var in ds:
-            # Get occurrence of nan_flags
-            is_a_nan_flag = ds[var].isin(nan_flags)
-            n_nan_flags_values = np.sum(is_a_nan_flag.data)
-            if n_nan_flags_values > 0:
-                msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
-                log_info(logger=logger, msg=msg, verbose=verbose)
-                # Replace with np.nan
-                ds[var] = ds[var].where(~is_a_nan_flag)
-
-    # Return dataset
+    # Replace nan flags with nan
+    ds = replace_custom_nan_flags(ds, dict_nan_flags, verbose=verbose)
     return ds
 
 
@@ -330,20 +313,20 @@ def set_nan_invalid_values(ds, sensor_name, verbose):
     return ds
 
 
-def process_raw_nc(
-    filepath,
+def create_l0b_from_raw_nc(
+    ds,
     dict_names,
     ds_sanitizer_fun,
     sensor_name,
     verbose,
     attrs,
 ):
-    """Read and convert a raw netCDF into a DISDRODB L0B netCDF.
+    """Convert a raw xr.Dataset into a DISDRODB L0B netCDF.
 
     Parameters
     ----------
-    filepath : str
-        netCDF file path.
+    ds : xr.Dataset
+        xr.Dataset
     dict_names : dict
         Dictionary mapping raw netCDF variables/coordinates/dimension names
         to DISDRODB standards.
@@ -362,10 +345,6 @@ def process_raw_nc(
     xr.Dataset
         L0B xr.Dataset
     """
-    # Open the netCDF
-    with xr.open_dataset(filepath, cache=False) as data:
-        ds = data.load()
-
     # Preprocess netcdf
     ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 

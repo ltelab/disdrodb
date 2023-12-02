@@ -27,6 +27,7 @@ import time
 
 import dask
 import dask.bag as db
+import xarray as xr
 
 from disdrodb.api.checks import check_sensor_name
 
@@ -266,7 +267,7 @@ def _generate_l0b_from_nc(
     verbose,
     parallel,
 ):
-    from disdrodb.l0.l0b_nc_processing import process_raw_nc
+    from disdrodb.l0.l0b_nc_processing import create_l0b_from_raw_nc
     from disdrodb.l0.l0b_processing import write_l0b
 
     # -----------------------------------------------------------------.
@@ -296,9 +297,13 @@ def _generate_l0b_from_nc(
 
     ##------------------------------------------------------------------------.
     try:
-        # Read the raw netCDF and convert to DISDRODB format
-        ds = process_raw_nc(
-            filepath=filepath,
+        # Open the raw netCDF
+        with xr.open_dataset(filepath, cache=False) as data:
+            ds = data.load()
+
+        # Convert to DISDRODB L0 format
+        ds = create_l0b_from_raw_nc(
+            ds=ds,
             dict_names=dict_names,
             ds_sanitizer_fun=ds_sanitizer_fun,
             sensor_name=sensor_name,

@@ -893,7 +893,8 @@ def get_variables_dimension(sensor_name: str):
 
 def get_valid_variable_names(sensor_name):
     """Get list of valid variables."""
-    variables = list(get_l0b_encodings_dict(sensor_name).keys())
+    encoding_dict = read_config_file(sensor_name=sensor_name, product="L0A", filename="l0b_encodings.yml")
+    variables = list(encoding_dict.keys())
     return variables
 
 
