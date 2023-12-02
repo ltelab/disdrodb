@@ -153,7 +153,7 @@ def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debug
     return filepaths
 
 
-def get_l0a_filepaths(processed_dir, station_name, debugging_mode):
+def get_l0a_filepaths(processed_dir, station_name, debugging_mode=False):
     """Retrieve L0A files for a give station.
 
     Parameters

@@ -24,7 +24,13 @@ import pandas as pd
 import pytest
 
 from disdrodb.api.path import define_campaign_dir
-from disdrodb.l0 import io
+from disdrodb.l0.io import (
+    _check_glob_pattern,
+    _read_l0a,
+    get_l0a_filepaths,
+    get_raw_filepaths,
+    read_l0a_dataframe,
+)
 from disdrodb.tests.conftest import create_fake_raw_data_file
 
 ####--------------------------------------------------------------------------.
@@ -32,10 +38,10 @@ from disdrodb.tests.conftest import create_fake_raw_data_file
 
 def test__check_glob_pattern():
     with pytest.raises(TypeError, match="Expect pattern as a string."):
-        io._check_glob_pattern(1)
+        _check_glob_pattern(1)
 
     with pytest.raises(ValueError, match="glob_pattern should not start with /"):
-        io._check_glob_pattern("/1")
+        _check_glob_pattern("/1")
 
 
 def test_get_raw_filepaths(tmp_path):
@@ -61,7 +67,7 @@ def test_get_raw_filepaths(tmp_path):
         )
 
     # Test that the function returns the correct number of files in debugging mode
-    filepaths = io.get_raw_filepaths(
+    filepaths = get_raw_filepaths(
         raw_dir=raw_dir,
         station_name=station_name,
         glob_patterns=glob_pattern,
@@ -70,20 +76,62 @@ def test_get_raw_filepaths(tmp_path):
     assert len(filepaths) == 2  # max(2, 3)
 
     # Test that the function returns the correct number of files in normal mode
-    filepaths = io.get_raw_filepaths(raw_dir=raw_dir, station_name=station_name, glob_patterns="*.txt")
+    filepaths = get_raw_filepaths(raw_dir=raw_dir, station_name=station_name, glob_patterns="*.txt")
     assert len(filepaths) == 2
 
     # Test that the function raises an error if the glob_patterns is not a str or list
     with pytest.raises(ValueError, match="'glob_patterns' must be a str or list of strings."):
-        io.get_raw_filepaths(raw_dir=raw_dir, station_name=station_name, glob_patterns=1)
+        get_raw_filepaths(raw_dir=raw_dir, station_name=station_name, glob_patterns=1)
 
     # Test that the function raises an error if no files are found
     with pytest.raises(ValueError):
-        io.get_raw_filepaths(
+        get_raw_filepaths(
             raw_dir=raw_dir,
             station_name=station_name,
             glob_patterns="*.csv",
         )
+
+
+def test_get_l0a_filepaths(tmp_path):
+    # Define station info
+    base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
+
+    processed_dir = define_campaign_dir(
+        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
+    )
+
+    # Test that the function raises an error if no files presenet
+    with pytest.raises(ValueError):
+        get_l0a_filepaths(
+            processed_dir=processed_dir,
+            station_name=station_name,
+        )
+
+    # Add fake data files
+    for filename in ["file1.parquet", "file2.parquet"]:
+        _ = create_fake_raw_data_file(
+            base_dir=base_dir,
+            product="L0A",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            filename=filename,
+        )
+
+    # Test that the function returns the correct number of files in debugging mode
+    filepaths = get_l0a_filepaths(
+        processed_dir=processed_dir,
+        station_name=station_name,
+        debugging_mode=True,
+    )
+    assert len(filepaths) == 2  # max(2, 3)
+
+    # Test that the function returns the correct number of files in normal mode
+    filepaths = get_l0a_filepaths(processed_dir=processed_dir, station_name=station_name)
+    assert len(filepaths) == 2
 
 
 ####--------------------------------------------------------------------------.
@@ -99,7 +147,7 @@ def test__read_l0a(tmp_path):
     df.to_parquet(filepath, compression="gzip")
 
     # read written parquet file
-    df_written = io._read_l0a(filepath, False)
+    df_written = _read_l0a(filepath, False)
 
     assert df.equals(df_written)
 
@@ -133,7 +181,7 @@ def test_read_l0a_dataframe(tmp_path):
     df_concatenate = df_concatenate.sort_values(by="time")
 
     # read written parquet files
-    df_written = io.read_l0a_dataframe(filepaths, verbose=False)
+    df_written = read_l0a_dataframe(filepaths, verbose=False)
 
     # Create lists
     df_concatenate_list = df_concatenate.values.tolist()
@@ -146,4 +194,4 @@ def test_read_l0a_dataframe(tmp_path):
 
     # Assert raise error if filepaths is not a list or string
     with pytest.raises(TypeError, match="Expecting filepaths to be a string or a list of strings."):
-        io.read_l0a_dataframe(1, verbose=False)
+        read_l0a_dataframe(1, verbose=False)

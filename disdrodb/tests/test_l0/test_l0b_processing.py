@@ -146,6 +146,11 @@ def test_create_l0b_from_l0a(create_test_config_files):
     # Check that the dataset has a CRS coordinate
     assert "crs" in ds.coords
 
+    # Assert that raise error if any raw_* columns present
+    df_bad = df.drop(columns=["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"])
+    with pytest.raises(ValueError):
+        create_l0b_from_l0a(df_bad, attrs)
+
 
 def test_add_dataset_crs_coords():
     # Create example dataset

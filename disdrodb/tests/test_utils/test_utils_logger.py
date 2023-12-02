@@ -57,7 +57,7 @@ def test_define_summary_log(tmp_path):
     # Create dummy log files
     log_contents1 = (
         "INFO: DUMMY MESSAGE \nProcess has started \nWARNING: Potential issue detected \nNOTHING TO SUMMARIZE \n"
-        " Process has ended"
+        " Process has ended \n"
     )
     log_contents2 = "ERROR: Critical failure occurred \n WHATEVER IS IN THE LOG IS COPIED \n "
     log_file1 = create_dummy_log_file(log1_fpath, log_contents1)
@@ -87,6 +87,33 @@ def test_define_summary_log(tmp_path):
     # Log file without error is not copied
     assert "Process has started" not in problem_contents
     assert "DUMMY MESSAGE" not in problem_contents
+
+
+def test_define_summary_log_when_no_problems(tmp_path):
+    """Test that not problem log file is created if no errors occurs."""
+    station_name = "STATION_NAME"
+    logs_dir = tmp_path / "PRODUCT" / "logs"
+    logs_dir.mkdir(parents=True)
+
+    logs_station_dir = logs_dir / station_name
+    logs_station_dir.mkdir(parents=True, exist_ok=True)
+
+    log1_fpath = logs_station_dir / "log1.log"
+    log2_fpath = logs_station_dir / "log2.log"
+
+    summary_log_path = logs_dir / f"logs_summary_{station_name}.log"
+    problem_log_path = logs_dir / f"logs_problem_{station_name}.log"
+
+    # Check that if no problems, the problems log is not created
+    log_contents1 = "INFO: DUMMY MESSAGE \nProcess has started \n Process has ended  \n"
+    log_contents2 = "INFO: DUMMY MESSAGE \nProcess has started \n Process has ended  \n"
+    log_file1 = create_dummy_log_file(log1_fpath, log_contents1)
+    log_file2 = create_dummy_log_file(log2_fpath, log_contents2)
+    list_logs = [str(log_file1), str(log_file2)]
+    define_summary_log(list_logs)
+
+    assert os.path.exists(summary_log_path)
+    assert not os.path.exists(problem_log_path)
 
 
 @pytest.fixture

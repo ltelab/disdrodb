@@ -25,6 +25,7 @@ import pytest
 from disdrodb.l0 import l0_reader
 from disdrodb.l0.l0_reader import (
     _check_metadata_reader,
+    _check_reader_arguments,
     _get_readers_data_sources_path,
     _get_readers_paths_by_data_source,
     available_readers,
@@ -78,6 +79,34 @@ def test_check_metadata_reader():
 
     # Test when "reader" key is present and valid
     assert _check_metadata_reader({"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}) is None
+
+
+def test_check_reader_arguments():
+    # Test correct reader
+    def good_reader(
+        raw_dir,
+        processed_dir,
+        station_name,
+        # Processing options
+        force=False,
+        verbose=False,
+        parallel=False,
+        debugging_mode=False,
+    ):
+        df = "dummy_dataframe"
+        return df
+
+    _check_reader_arguments(good_reader)
+
+    # Test bad reader
+    def bad_reader(
+        bad_arguments,
+    ):
+        df = "dummy_dataframe"
+        return df
+
+    with pytest.raises(ValueError):
+        _check_reader_arguments(bad_reader)
 
 
 def test_get_station_reader_function(tmp_path):

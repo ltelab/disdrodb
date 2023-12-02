@@ -380,16 +380,12 @@ def add_dataset_crs_coords(ds):
 def _define_dataset_variables(df, sensor_name, verbose):
     """Define DISDRODB L0B netCDF variables."""
     # Preprocess raw_spectrum, diameter and velocity arrays if available
-    if np.any(
-        np.isin(
-            ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"],
-            df.columns,
-        )
-    ):
+    raw_fields = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
+    if np.any(np.isin(raw_fields, df.columns)):
         # Retrieve dictionary of raw data matrices for xarray Dataset
         data_vars = retrieve_l0b_arrays(df, sensor_name, verbose=verbose)
     else:
-        data_vars = {}
+        raise ValueError("No raw fields available.")
 
     # Define other disdrometer 'auxiliary' variables varying over time dimension
     valid_core_fields = [
@@ -471,17 +467,11 @@ def create_l0b_from_l0a(
 
     # -----------------------------------------------------------
     # Create xarray Dataset
-    try:
-        ds = xr.Dataset(
-            data_vars=data_vars,
-            coords=coords,
-            attrs=attrs,
-        )
-    except Exception as e:
-        msg = f"Error in the creation of L1 xarray Dataset. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=False)
-        raise ValueError(msg)
-
+    ds = xr.Dataset(
+        data_vars=data_vars,
+        coords=coords,
+        attrs=attrs,
+    )
     ds = finalize_dataset(ds, sensor_name=sensor_name)
 
     # -----------------------------------------------------------

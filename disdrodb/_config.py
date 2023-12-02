@@ -20,13 +20,13 @@
 
 See https://donfig.readthedocs.io/en/latest/configuration.html for more info.
 """
-
 from donfig import Config
+
+from disdrodb.configs import read_disdrodb_configs
 
 
 def _get_disdrodb_default_configs():
     """Retrieve the default DISDRODB settings from the .config_disdrodb.yml file."""
-    from disdrodb.configs import read_disdrodb_configs
 
     try:
         config_dict = read_disdrodb_configs()

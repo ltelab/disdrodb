@@ -24,21 +24,31 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from disdrodb.l0 import io, l0a_processing
+from disdrodb.l0.io import read_l0a_dataframe
 from disdrodb.l0.l0a_processing import (
     _check_df_sanitizer_fun,
     _check_matching_column_number,
     _check_not_empty_dataframe,
+    _is_not_corrupted,
+    _preprocess_reader_kwargs,
+    _strip_delimiter,
     cast_column_dtypes,
     coerce_corrupted_values_to_nan,
+    concatenate_dataframe,
+    drop_time_periods,
+    drop_timesteps,
+    read_raw_file,
     read_raw_files,
     remove_corrupted_rows,
+    remove_duplicated_timesteps,
     remove_issue_timesteps,
+    remove_rows_with_missing_time,
     replace_nan_flags,
     set_nan_invalid_values,
     set_nan_outside_data_range,
     strip_delimiter_from_raw_arrays,
     strip_string_spaces,
+    write_l0a,
 )
 
 # NOTE:
@@ -184,6 +194,12 @@ def test_strip_string_spaces(create_test_config_files):
     # Check if result matches expected result
     assert result.equals(expected)
 
+    # Assert raiser error if an expected string column is not string
+    data = {"key_1": [1, 2, 3], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
+    df = pd.DataFrame(data)
+    with pytest.raises(AttributeError):
+        strip_string_spaces(df, "test")
+
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_coerce_corrupted_values_to_nan(create_test_config_files):
@@ -213,10 +229,30 @@ def test_remove_issue_timesteps():
     assert set(df_cleaned["time"]) == {1, 3, 5}
 
 
+def test_remove_issue_time_periods():
+    # Create an array of datetime values for the time column
+    timesteps = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
+
+    # Define issue timesteps and time_periods
+    issue_time_periods = [timesteps[[10, 20]]]
+    issue_timesteps = timesteps[10:20]
+
+    # Create dummy issue dictionary with timesteps to remove
+    issue_dict = {"time_periods": issue_time_periods}
+
+    # Create the dataframe with the two columns
+    dummy = np.random.rand(len(timesteps))
+    df = pd.DataFrame({"time": timesteps, "dummy": dummy})
+
+    # Call function to remove problematic time_periods
+    df_cleaned = remove_issue_timesteps(df, issue_dict)
+    assert np.all(~df_cleaned["time"].isin(issue_timesteps))
+
+
 def test__preprocess_reader_kwargs():
     # Test that the function removes the 'dtype' key from the reader_kwargs dict
     reader_kwargs = {"dtype": "int64", "other_key": "other_value", "delimiter": ","}
-    preprocessed_kwargs = l0a_processing._preprocess_reader_kwargs(reader_kwargs)
+    preprocessed_kwargs = _preprocess_reader_kwargs(reader_kwargs)
     assert "dtype" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
 
@@ -228,7 +264,7 @@ def test__preprocess_reader_kwargs():
         "other_key": "other_value",
         "delimiter": ",",
     }
-    preprocessed_kwargs = l0a_processing._preprocess_reader_kwargs(
+    preprocessed_kwargs = _preprocess_reader_kwargs(
         reader_kwargs,
     )
     assert "blocksize" not in preprocessed_kwargs
@@ -238,64 +274,64 @@ def test__preprocess_reader_kwargs():
     # Test raise error if delimiter is not specified
     reader_kwargs = {"dtype": "int64", "other_key": "other_value"}
     with pytest.raises(ValueError):
-        l0a_processing._preprocess_reader_kwargs(reader_kwargs)
+        _preprocess_reader_kwargs(reader_kwargs)
 
 
 def test_concatenate_dataframe():
     # Test that the function returns a Pandas dataframe
     df1 = pd.DataFrame({"time": [1, 2, 3], "value": [4, 5, 6]})
     df2 = pd.DataFrame({"time": [7, 8, 9], "value": [10, 11, 12]})
-    concatenated_df = l0a_processing.concatenate_dataframe([df1, df2])
+    concatenated_df = concatenate_dataframe([df1, df2])
     assert isinstance(concatenated_df, pd.DataFrame)
 
     # Test that the function raises a ValueError if the list_df is empty
     with pytest.raises(ValueError, match="No objects to concatenate"):
-        l0a_processing.concatenate_dataframe([])
+        concatenate_dataframe([])
 
     with pytest.raises(ValueError):
-        l0a_processing.concatenate_dataframe(["not a dataframe"])
+        concatenate_dataframe(["not a dataframe"])
 
     with pytest.raises(ValueError):
-        l0a_processing.concatenate_dataframe(["not a dataframe", "not a dataframe"])
+        concatenate_dataframe(["not a dataframe", "not a dataframe"])
 
 
 def test_strip_delimiter():
     # Test it strips all external  delimiters
     s = ",,,,,"
-    assert l0a_processing._strip_delimiter(s) == ""
+    assert _strip_delimiter(s) == ""
     s = "0000,00,"
-    assert l0a_processing._strip_delimiter(s) == "0000,00"
+    assert _strip_delimiter(s) == "0000,00"
     s = ",0000,00,"
-    assert l0a_processing._strip_delimiter(s) == "0000,00"
+    assert _strip_delimiter(s) == "0000,00"
     s = ",,,0000,00,,"
-    assert l0a_processing._strip_delimiter(s) == "0000,00"
+    assert _strip_delimiter(s) == "0000,00"
     # Test if empty string, return the empty string
     s = ""
-    assert l0a_processing._strip_delimiter(s) == ""
+    assert _strip_delimiter(s) == ""
     # Test if None returns None
     s = None
-    assert isinstance(l0a_processing._strip_delimiter(s), type(None))
+    assert isinstance(_strip_delimiter(s), type(None))
     # Test if np.nan returns np.nan
     s = np.nan
-    assert np.isnan(l0a_processing._strip_delimiter(s))
+    assert np.isnan(_strip_delimiter(s))
 
 
 def test_is_not_corrupted():
     # Test empty string
     s = ""
-    assert l0a_processing._is_not_corrupted(s)
+    assert _is_not_corrupted(s)
     # Test valid string (convertible to numeric, after split by ,)
     s = "000,001,000"
-    assert l0a_processing._is_not_corrupted(s)
+    assert _is_not_corrupted(s)
     # Test corrupted string (not convertible to numeric, after split by ,)
     s = "000,xa,000"
-    assert not l0a_processing._is_not_corrupted(s)
+    assert not _is_not_corrupted(s)
     # Test None is considered corrupted
     s = None
-    assert not l0a_processing._is_not_corrupted(s)
+    assert not _is_not_corrupted(s)
     # Test np.nan is considered corrupted
     s = np.nan
-    assert not l0a_processing._is_not_corrupted(s)
+    assert not _is_not_corrupted(s)
 
 
 def test_cast_column_dtypes():
@@ -315,6 +351,11 @@ def test_cast_column_dtypes():
     assert str(df_out["station_number"].dtype) == "object"
     assert str(df_out["altitude"].dtype) == "float64"
 
+    # Assert raise error if can not cast
+    df["altitude"] = "text"
+    with pytest.raises(ValueError):
+        cast_column_dtypes(df, sensor_name, verbose=False)
+
 
 def test_remove_rows_with_missing_time():
     # Create dataframe
@@ -325,7 +366,7 @@ def test_remove_rows_with_missing_time():
     # Add Nat value to a single rows of the time column
     df.at[0, "time"] = np.datetime64("NaT")
     # Test it remove the invalid timestep
-    valid_df = l0a_processing.remove_rows_with_missing_time(df)
+    valid_df = remove_rows_with_missing_time(df)
     assert len(valid_df) == n_rows - 1
     assert not np.any(valid_df["time"].isna())
 
@@ -334,7 +375,7 @@ def test_remove_rows_with_missing_time():
 
     # Test it raise an error if no valid timesteps left
     with pytest.raises(ValueError):
-        l0a_processing.remove_rows_with_missing_time(df=df)
+        remove_rows_with_missing_time(df=df)
 
 
 def test_check_not_empty_dataframe():
@@ -369,7 +410,7 @@ def test_remove_duplicated_timesteps():
     df.at[0, "time"] = df["time"][1]
 
     # Test it removes the duplicated timesteps
-    valid_df = l0a_processing.remove_duplicated_timesteps(df=df)
+    valid_df = remove_duplicated_timesteps(df=df)
     assert len(valid_df) == n_rows - 1
     assert len(np.unique(valid_df)) == len(valid_df)
 
@@ -391,7 +432,7 @@ def test_drop_timesteps():
     timesteps = time[-(n + 1) :]
 
     # Remove timesteps
-    df_out = l0a_processing.drop_timesteps(df, timesteps)
+    df_out = drop_timesteps(df, timesteps)
 
     # Test np.NaT is conserved
     assert np.isnan(df_out["time"])[0]
@@ -401,7 +442,7 @@ def test_drop_timesteps():
 
     # Test error is raised if all timesteps are dropped
     with pytest.raises(ValueError):
-        l0a_processing.drop_timesteps(df, timesteps=time)
+        drop_timesteps(df, timesteps=time)
 
 
 def test_drop_time_periods():
@@ -422,22 +463,22 @@ def test_drop_time_periods():
     df = pd.DataFrame({"time": time, "dummy": dummy})
 
     # Test outside time_periods
-    df_out = l0a_processing.drop_time_periods(df, time_periods=outside_time_period)
+    df_out = drop_time_periods(df, time_periods=outside_time_period)
     pd.testing.assert_frame_equal(df_out, df)
 
     # Test inside time_periods
-    df_out = l0a_processing.drop_time_periods(df, time_periods=inside_time_periods)
+    df_out = drop_time_periods(df, time_periods=inside_time_periods)
     assert not np.any(df_out["time"].between(inside_time_periods[0][0], inside_time_periods[0][1], inclusive="both"))
 
     # Test raise error if all rows are discarded
     with pytest.raises(ValueError):
-        l0a_processing.drop_time_periods(df, time_periods=full_time_period)
+        drop_time_periods(df, time_periods=full_time_period)
 
     # Test code do not break if all rows are removed after first time_period iteration
     # --> Would raise IndexError otherwise
     time_periods = [full_time_period[0], [inside_time_periods[0]]]
     with pytest.raises(ValueError):
-        l0a_processing.drop_time_periods(df, time_periods=time_periods)
+        drop_time_periods(df, time_periods=time_periods)
 
 
 def create_fake_csv(filename, data):
@@ -456,7 +497,7 @@ def test_read_raw_file(tmp_path):
     reader_kwargs["header"] = 0
     reader_kwargs["engine"] = "python"
 
-    r = l0a_processing.read_raw_file(
+    r = read_raw_file(
         filepath=filepath,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
@@ -472,7 +513,7 @@ def test_read_raw_file(tmp_path):
 
     # Call the function and catch the exception
     with pytest.raises(UnboundLocalError):
-        r = l0a_processing.read_raw_file(
+        r = read_raw_file(
             filepath=filepath,
             column_names=[],
             reader_kwargs=reader_kwargs,
@@ -485,7 +526,7 @@ def test_read_raw_file(tmp_path):
     create_fake_csv(filepath, data)
 
     # Call the function and catch the exception
-    r = l0a_processing.read_raw_file(
+    r = read_raw_file(
         filepath=filepath,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
@@ -532,18 +573,23 @@ def test_write_l0a(tmp_path):
 
     # Write parquet file
     filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
-    l0a_processing.write_l0a(df, filepath, True, False)
+    write_l0a(df, filepath, True, False)
 
     # Read parquet file
-    df_written = io.read_l0a_dataframe([filepath], False)
+    df_written = read_l0a_dataframe([filepath], False)
 
     # Check if parquet file are similar
     is_equal = df.equals(df_written)
-
     assert is_equal
+
+    # Test error is raised when bad parquet file
+    with pytest.raises(ValueError):
+        write_l0a("dummy_object", filepath, True, False)
 
 
 def test_read_raw_files():
+    from disdrodb.l0 import l0a_processing
+
     # Set up the inputs
     filepaths = ["test_file1.csv", "test_file2.csv"]
     column_names = ["time", "value"]
@@ -559,6 +605,16 @@ def test_read_raw_files():
         {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="H"), "value": np.random.rand(25)}
     )
     df_list = [df1, df2]
+
+    # Test raise value error if empty filepaths list is passed
+    with pytest.raises(ValueError):
+        read_raw_files(
+            filepaths=[],
+            column_names=column_names,
+            reader_kwargs=reader_kwargs,
+            sensor_name=sensor_name,
+            verbose=verbose,
+        )
 
     # Mock the process_raw_file function
     # The code block is defining a mock function called mock_process_raw_file
@@ -584,3 +640,30 @@ def test_read_raw_files():
     # Check the result
     expected_result = pd.concat(df_list).reset_index(drop=True)
     assert result.equals(expected_result)
+
+    # Assert that it can also process a single filepath (as string)
+    df1_out = read_raw_files(
+        filepaths=filepaths[0],
+        column_names=column_names,
+        reader_kwargs=reader_kwargs,
+        sensor_name=sensor_name,
+        verbose=verbose,
+    )
+    assert df1_out.equals(df1)
+
+
+def test_read_raw_files_failure():
+    filepaths = ["test1.csv", "test2.csv"]
+    column_names = ["time", "value"]
+    reader_kwargs = {"delimiter": ","}
+    sensor_name = "my_sensor"
+    verbose = False
+
+    with pytest.raises(ValueError):
+        read_raw_files(
+            filepaths=filepaths,
+            column_names=column_names,
+            reader_kwargs=reader_kwargs,
+            sensor_name=sensor_name,
+            verbose=verbose,
+        )

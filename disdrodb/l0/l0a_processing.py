@@ -346,7 +346,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: 
     # Cast dataframe to dtypes
     dtype_dict = get_l0a_dtype(sensor_name)
 
-    # Get string columns
+    # Get numeric columns
     numeric_columns = [k for k, dtype in dtype_dict.items() if "float" in dtype or "int" in dtype]
 
     # Get dataframe column names
@@ -355,12 +355,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: 
     # Cast dataframe columns
     for column in columns:
         if column in numeric_columns:
-            try:
-                df[column] = pd.to_numeric(df[column], errors="coerce")
-            except AttributeError:
-                msg = f"The column {column} is not a numeric column."
-                log_error(logger=logger, msg=msg, verbose=False)
-                raise ValueError(msg)
+            df[column] = pd.to_numeric(df[column], errors="coerce")
     return df
 
 
