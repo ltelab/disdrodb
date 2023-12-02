@@ -182,6 +182,22 @@ def test_print_valid_l0_column_names(capfd):
     "['rainfall_rate_32bit'," in out
 
 
+def test_print_invalid_column_indices():
+    df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]})
+
+    with pytest.raises(ValueError):
+        print_df_summary_stats(df, column_indices=100)
+
+    with pytest.raises(ValueError):
+        print_df_summary_stats(df, column_indices=-1)
+
+    with pytest.raises(TypeError):
+        print_df_summary_stats(df, column_indices=1.0)
+
+    with pytest.raises(TypeError):
+        print_df_summary_stats(df, column_indices="A")
+
+
 class Test_Print_Df_Summary_Stats:
     """Test print_df_summary_stats."""
 

@@ -51,10 +51,8 @@ def _check_valid_column_index(column_idx, n_columns):
 
 
 def _check_columns_indices(column_indices, n_columns):
-    if not isinstance(column_indices, (int, list, type(None), slice)):
+    if not isinstance(column_indices, (int, list, slice)):
         raise TypeError("'column_indices' must be an integer, a list of integers, or None.")
-    if column_indices is None:
-        column_indices = list(range(0, n_columns))
     if isinstance(column_indices, slice):
         start = column_indices.start
         stop = column_indices.stop

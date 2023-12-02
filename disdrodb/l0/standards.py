@@ -710,28 +710,49 @@ def get_l0a_encodings_dict(sensor_name: str) -> dict:
     return d
 
 
-def _ensure_valid_params_contiguous_arrays(encoding_dict):
-    """Ensure contiguous=True if chunksizes is None."""
-    for var in encoding_dict.keys():
-        if isinstance(encoding_dict[var]["chunksizes"], type(None)):
-            if encoding_dict[var].get("contiguous", False):
-                encoding_dict[var]["contiguous"] = True
-                print(f"Set contiguous=True for variable {var} because chunksizes=None")
-        if encoding_dict[var]["contiguous"]:
-            encoding_dict[var]["fletcher32"] = False
-            encoding_dict[var]["zlib"] = False
-            print(f"Set fletcher32=False for variable {var} because contiguous=True")
-            print(f"Set zlib=False for variable {var} because contiguous=True")
+def _check_contiguous_chunksize_agrees(encoding_dict, var):
+    chunksizes = encoding_dict[var].get("chunksizes", None)
+    contiguous = encoding_dict[var].get("contiguous", False)
+    if isinstance(chunksizes, list) and len(chunksizes) >= 1 and contiguous:
+        raise ValueError(
+            f"Invalid encodings for variable {var}. 'chunksizes' are specified but 'contiguous' is set to True !"
+        )
+
+
+def _if_no_chunksizes_set_contiguous(encoding_dict, var):
+    if isinstance(encoding_dict[var].get("chunksizes", None), type(None)):
+        if not encoding_dict[var].get("contiguous", False):
+            encoding_dict[var]["contiguous"] = True
+            print(f"Set contiguous=True for variable {var} because chunksizes=None")
     return encoding_dict
 
 
-def _ensure_valid_params_for_chunked_arrays(encoding_dict):
+def _set_contiguous_encoding_options(encoding_dict, var):
+    if encoding_dict[var].get("contiguous", False):
+        encoding_dict[var]["fletcher32"] = False
+        encoding_dict[var]["zlib"] = False
+        print(f"Set fletcher32=False for variable {var} because contiguous=True")
+        print(f"Set zlib=False for variable {var} because contiguous=True")
+    return encoding_dict
+
+
+def _ensure_valid_chunksizes(encoding_dict, var):
+    if not isinstance(encoding_dict[var].get("chunksizes", None), type(None)):
+        encoding_dict[var]["chunksizes"] = _ensure_list_value(encoding_dict[var]["chunksizes"])
+        encoding_dict[var]["contiguous"] = False
+    else:
+        encoding_dict[var]["chunksizes"] = []
+    return encoding_dict
+
+
+def _ensure_valid_netcdf_encoding_dict(encoding_dict):
     for var in encoding_dict.keys():
-        if not isinstance(encoding_dict[var].get("chunksizes", None), type(None)):
-            encoding_dict[var]["chunksizes"] = _ensure_list_value(encoding_dict[var]["chunksizes"])
-            encoding_dict[var]["contiguous"] = False
-        else:
-            encoding_dict[var]["chunksizes"] = []
+        _check_contiguous_chunksize_agrees(encoding_dict, var)
+        # Ensure valid arguments for contiguous (unchunked) arrays
+        encoding_dict = _if_no_chunksizes_set_contiguous(encoding_dict, var)
+        encoding_dict = _set_contiguous_encoding_options(encoding_dict, var)
+        # Ensure chunksizes is a list
+        encoding_dict = _ensure_valid_chunksizes(encoding_dict, var)
     return encoding_dict
 
 
@@ -749,10 +770,7 @@ def get_l0b_encodings_dict(sensor_name: str) -> dict:
         Encoding to write L0B netCDFs
     """
     encoding_dict = read_config_file(sensor_name=sensor_name, product="L0A", filename="l0b_encodings.yml")
-    # Ensure valid arguments for contiguous (unchunked) arrays
-    encoding_dict = _ensure_valid_params_contiguous_arrays(encoding_dict)
-    # Ensure chunksize is a list
-    encoding_dict = _ensure_valid_params_for_chunked_arrays(encoding_dict)
+    encoding_dict = _ensure_valid_netcdf_encoding_dict(encoding_dict)
     return encoding_dict
 
 

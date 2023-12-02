@@ -24,11 +24,14 @@ import pytest
 
 from disdrodb import __root_path__
 from disdrodb.l0.standards import (
+    _ensure_valid_netcdf_encoding_dict,
     get_data_range_dict,
     get_field_nchar_dict,
     get_field_ndigits_decimals_dict,
     get_field_ndigits_dict,
     get_field_ndigits_natural_dict,
+    get_l0a_encodings_dict,
+    get_n_velocity_bins,
     get_nan_flags_dict,
     get_time_encoding,
     get_valid_coordinates_names,
@@ -104,3 +107,55 @@ def test_get_valid_names(sensor_name):
 
 def test_get_time_encoding():
     assert isinstance(get_time_encoding(), dict)
+
+
+def test_get_n_velocity_bins():
+    # Impact disdrometer
+    sensor_name = "RD_80"
+    assert get_n_velocity_bins(sensor_name) == 0
+
+    # Optical disdrometer
+    sensor_name = "OTT_Parsivel"
+    assert get_n_velocity_bins(sensor_name) > 1
+
+
+def test_ensure_valid_netcdf_encoding_dict():
+    # Check raise error if contiguous=True but chunksize is specified
+    encoding_dict = {}
+    encoding_dict["var"] = {"contiguous": True, "chunksizes": [1, 2]}
+    with pytest.raises(ValueError):
+        _ensure_valid_netcdf_encoding_dict(encoding_dict)
+
+    # Check correct encodings when contiguous array (only contiguous specified¨)
+    encoding_dict = {}
+    encoding_dict["var"] = {"contiguous": False}
+    output_dict = _ensure_valid_netcdf_encoding_dict(encoding_dict)
+    assert not output_dict["var"]["fletcher32"]
+    assert not output_dict["var"]["zlib"]  # this might be relaxed
+    assert output_dict["var"]["chunksizes"] == []
+
+    # Check set contiguous=True encodings when contiguous=False but chunksizes is None
+    encoding_dict = {}
+    encoding_dict["var"] = {"contiguous": False, "chunksizes": None}
+    output_dict = _ensure_valid_netcdf_encoding_dict(encoding_dict)
+    assert output_dict["var"]["contiguous"]  # changed here !
+    assert not output_dict["var"]["fletcher32"]
+    assert not output_dict["var"]["zlib"]  # this might be relaxed
+    assert output_dict["var"]["chunksizes"] == []
+
+    # Check chunksize is list when contiguous=False
+    encoding_dict = {}
+    encoding_dict["var"] = {"contiguous": False, "chunksizes": 5}
+    output_dict = _ensure_valid_netcdf_encoding_dict(encoding_dict)
+    assert output_dict["var"]["chunksizes"] == [5]
+
+    encoding_dict = {}
+    encoding_dict["var"] = {"contiguous": False, "chunksizes": [1, 2]}
+    output_dict = _ensure_valid_netcdf_encoding_dict(encoding_dict)
+    assert output_dict["var"]["chunksizes"] == [1, 2]
+
+
+@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+def test_get_l0a_encodings_dict(sensor_name):
+    function_return = get_l0a_encodings_dict(sensor_name)
+    assert isinstance(function_return, dict)

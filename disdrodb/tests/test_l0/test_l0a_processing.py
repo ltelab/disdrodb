@@ -70,6 +70,8 @@ raw_data_format_dict = {
 }
 config_dict = {"raw_data_format.yml": raw_data_format_dict}
 
+TEST_SENSOR_NAME = "test"
+
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_set_nan_invalid_values(create_test_config_files):
@@ -82,12 +84,12 @@ def test_set_nan_invalid_values(create_test_config_files):
     """
     # Test without modification
     df = pd.DataFrame({"key_1": [1, 2, 1, 2, 1]})
-    output = set_nan_invalid_values(df, "test", verbose=False)
+    output = set_nan_invalid_values(df, sensor_name=TEST_SENSOR_NAME, verbose=False)
     assert df.equals(output)
 
     # Test with modification
     df = pd.DataFrame({"key_1": [1, 2, 1, 2, 4]})
-    output = set_nan_invalid_values(df, "test", verbose=False)
+    output = set_nan_invalid_values(df, sensor_name=TEST_SENSOR_NAME, verbose=False)
     assert np.isnan(output["key_1"][4])
 
 
@@ -98,7 +100,7 @@ def test_set_nan_outside_data_range(create_test_config_files):
 
     df = pd.DataFrame(data)
 
-    result_df = set_nan_outside_data_range(df, "test", verbose=False)
+    result_df = set_nan_outside_data_range(df, sensor_name=TEST_SENSOR_NAME, verbose=False)
 
     assert np.isnan(result_df["key_1"][4])
 
@@ -113,9 +115,7 @@ def test_replace_nan_flags(create_test_config_files):
     df = pd.DataFrame(data)
 
     # Call the function with the sample dataframe
-    sensor_name = "test"
-    verbose = True
-    df = replace_nan_flags(df, sensor_name, verbose)
+    df = replace_nan_flags(df, sensor_name=TEST_SENSOR_NAME, verbose=True)
 
     expected_data = {
         "key_1": [6, 7, 1, 9, -9999],
@@ -181,7 +181,7 @@ def test_strip_string_spaces(create_test_config_files):
     df = pd.DataFrame(data)
 
     # Call function
-    result = strip_string_spaces(df, "test")
+    result = strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
 
     # Define expected result
     expected_data = {
@@ -198,20 +198,20 @@ def test_strip_string_spaces(create_test_config_files):
     data = {"key_1": [1, 2, 3], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
     df = pd.DataFrame(data)
     with pytest.raises(AttributeError):
-        strip_string_spaces(df, "test")
+        strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
 
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_coerce_corrupted_values_to_nan(create_test_config_files):
     # Test with a valid dataframe
     df = pd.DataFrame({"key_4": ["1"]})
-    df_out = coerce_corrupted_values_to_nan(df, "test", verbose=False)
+    df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME, verbose=False)
 
     assert df.equals(df_out)
 
     # Test with a wrong dataframe
     df = pd.DataFrame({"key_4": ["text"]})
-    df_out = coerce_corrupted_values_to_nan(df, "test", verbose=False)
+    df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME, verbose=False)
     assert pd.isnull(df_out["key_4"][0])
 
 
