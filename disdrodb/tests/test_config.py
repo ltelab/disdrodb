@@ -76,8 +76,6 @@ def test_get_base_dir():
     import disdrodb
     from disdrodb.configs import get_base_dir
 
-    test_get_base_dir
-
     # Check that if input is not None, return the specified base_dir
     assert get_base_dir(base_dir="test/DISDRODB") == "test/DISDRODB"
 

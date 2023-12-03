@@ -125,7 +125,7 @@ def test__get_possible_keys():
 def test_print_df_random_n_rows(capfd):
     df = pd.DataFrame({"A": [1, 2, 3, 4, 5], "B": [6, 7, 8, 9, 10]})
     print_df_random_n_rows(df, n=2)
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert "- Column 0 ( A ):" in out
     assert "- Column 1 ( B ):" in out
 
@@ -133,7 +133,7 @@ def test_print_df_random_n_rows(capfd):
 def test_print_df_random_n_rows_without_column_names(capfd):
     df = pd.DataFrame({"A": [1, 2, 3, 4, 5], "B": [6, 7, 8, 9, 10]})
     print_df_random_n_rows(df, n=2, print_column_names=False)
-    out, err = capfd.readouterr()
+    out, _ = capfd.readouterr()
     assert "- Column 0 :" in out
     assert "- Column 1 :" in out
 
@@ -179,7 +179,7 @@ def test_print_df_column_names(capfd):
 def test_print_valid_l0_column_names(capfd):
     print_valid_l0_column_names(sensor_name="OTT_Parsivel")
     out, _ = capfd.readouterr()
-    "['rainfall_rate_32bit'," in out
+    assert "['rainfall_rate_32bit'," in out
 
 
 def test_print_invalid_column_indices():
@@ -339,7 +339,7 @@ def test_infer_column_names(capfd):
         }
     )
     dict_possible_columns = infer_column_names(df=df, sensor_name=sensor_name, row_idx=0)
-    dict_possible_columns[0] == ["rainfall_amount_absolute_32bit"]
+    assert dict_possible_columns[0] == ["rainfall_amount_absolute_32bit"]
     out, _ = capfd.readouterr()
     assert "ATTENTION: Column 1 values have non-unique number of characters" in out
 

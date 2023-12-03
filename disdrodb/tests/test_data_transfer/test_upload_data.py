@@ -126,7 +126,7 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
                 station_name=station_name,
             )
             new_station_url = metadata_dict["disdrodb_data_url"]
-            new_station_url == "dummy_url"
+            assert new_station_url == "dummy_url"
 
 
 def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
