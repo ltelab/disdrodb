@@ -1,0 +1,57 @@
+data_source: UK
+campaign_name: DIVEN
+station_name: CAIRNGORM
+sensor_name: Thies_LPM
+reader: UK/DIVEN
+raw_data_format: netcdf
+platform_type: fixed
+source: NCAS Laser Precipitation Monitor
+source_convention: ''
+source_processing_date: ''
+title: cairngorm
+description: 1 minute precipitation characteristics output for a single day from a
+  DiVeN disdrometer at Cairngorm
+project_name: Disdrometer Verification Network (DiVeN)
+keywords: ''
+summary: ''
+history: ''
+comment: ''
+station_id: '11'
+location: Cairngorm
+country: United Kingdom
+continent: Europe
+latitude: 57.0063
+longitude: -3.6628
+altitude: 781
+deployment_status: ''
+deployment mode: ''
+platform_protection: ''
+platform_orientation: ''
+sensor_long_name: Thies_LPM
+sensor_manufacturer: ''
+sensor_wavelength: 2143 mv mm-2
+sensor_serial_number: ''
+firmware_iop: ''
+firmware_dsp: ''
+firmware_version: ''
+sensor_beam_length: ''
+sensor_beam_width: ''
+sensor_nominal_width: ''
+measurement_interval: ''
+calibration_sensitivity: ''
+calibration_certification_date: ''
+calibration_certification_url: ''
+contributors: Ryan R. Neely III
+authors: Ben Pickering
+authors_url: ''
+contact: Ben Pickering
+contact_information: ben.pickering@ncas.ac.uk
+acknowledgement: ''
+references: ''
+documentation: ''
+website: ''
+institution: National Centre for Atmospheric Science (NCAS)
+source_repository: https://orcid.org/0000-0002-8474-9005
+license: ''
+doi: ''
+disdrodb_data_url: ''

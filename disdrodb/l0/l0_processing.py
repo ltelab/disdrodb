@@ -38,6 +38,7 @@ from disdrodb.api.create_directories import (
 )
 from disdrodb.api.info import infer_path_info_dict
 from disdrodb.api.path import (
+    define_campaign_dir,
     define_l0a_filepath,
     define_l0b_filepath,
     define_l0b_station_dir,
@@ -911,20 +912,18 @@ def run_l0a_station(
         station_name=station_name,
     )
     # Define campaign raw_dir and process_dir
-    raw_dir = get_disdrodb_path(
+    raw_dir = define_campaign_dir(
         base_dir=base_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
     )
-    processed_dir = get_disdrodb_path(
+    processed_dir = define_campaign_dir(
         base_dir=base_dir,
-        product="L0A",
+        product="L0A",  # also works for raw netCDFs
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exists=False,
     )
-
     # Run L0A processing
     # --> The reader call the run_l0a within the custom defined reader function
     # --> For the special case of raw netCDF data, it calls the run_l0b_from_nc function

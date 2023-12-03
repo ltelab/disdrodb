@@ -52,10 +52,9 @@ def test_disdrodb_run_l0a_station(tmp_path, parallel):
         [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", str(test_base_dir), "--parallel", parallel],
     )
 
-    product = "L0A"
     station_dir = define_station_dir(
         base_dir=test_base_dir,
-        product=product,
+        product="L0A",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
@@ -80,10 +79,9 @@ def test_disdrodb_run_l0b_station(tmp_path, parallel):
         [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--parallel", parallel],
     )
 
-    product = "L0B"
     station_dir = define_station_dir(
         base_dir=test_base_dir,
-        product=product,
+        product="L0B",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
@@ -103,10 +101,9 @@ def test_disdrodb_run_l0_station(tmp_path, verbose):
         [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--verbose", verbose],
     )
 
-    product = "L0B"
     station_dir = define_station_dir(
         base_dir=test_base_dir,
-        product=product,
+        product="L0B",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
@@ -121,10 +118,9 @@ def test_disdrodb_run_l0a(tmp_path):
 
     runner = CliRunner()
     runner.invoke(disdrodb_run_l0a, ["--base_dir", test_base_dir])
-    product = "L0A"
     station_dir = define_station_dir(
         base_dir=test_base_dir,
-        product=product,
+        product="L0A",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
@@ -142,10 +138,9 @@ def test_disdrodb_run_l0b(tmp_path):
 
     runner.invoke(disdrodb_run_l0b, ["--base_dir", test_base_dir])
 
-    product = "L0B"
     station_dir = define_station_dir(
         base_dir=test_base_dir,
-        product=product,
+        product="L0B",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
@@ -208,3 +203,31 @@ def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
     if not l0b_concat:
         if remove_l0b:
             assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) > 0
+
+
+@pytest.mark.parametrize("verbose", [True, False])
+def test_disdrodb_run_l0_nc_station(tmp_path, verbose):
+    """Test the disdrodb_run_l0_station process correctly raw netCDF files."""
+
+    BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+    DATA_SOURCE = "UK"
+    CAMPAIGN_NAME = "DIVEN"
+    STATION_NAME = "CAIRNGORM"
+
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(BASE_DIR, test_base_dir)
+
+    runner = CliRunner()
+    runner.invoke(
+        disdrodb_run_l0_station,
+        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--verbose", verbose],
+    )
+
+    station_dir = define_station_dir(
+        base_dir=test_base_dir,
+        product="L0B",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
+    assert count_files(station_dir, glob_pattern="*.nc", recursive=True) > 0

@@ -22,77 +22,40 @@ import os
 import shutil
 
 import pandas as pd
+import xarray as xr
 
 from disdrodb import __root_path__
-from disdrodb.api.path import define_metadata_dir, get_disdrodb_path
-from disdrodb.l0.l0_reader import get_station_reader_function
+from disdrodb.api.io import available_stations
+from disdrodb.api.path import define_campaign_dir, define_station_dir
+from disdrodb.l0.l0_processing import run_l0a_station
+from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.directories import list_files
 
 TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
 
-def _get_list_test_data_sources() -> list:
-    """Get list of test data sources.
-
-    Returns
-    -------
-    list
-        List of test data sources.
-    """
-
-    data_sources = os.listdir(os.path.join(TEST_BASE_DIR, "Raw"))
-    return data_sources
-
-
-def _get_list_test_campaigns(data_source: str) -> list:
-    """Get list of test campaigns for a given data source.
+def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
+    """Check if two L0B netCDF files are identical.
 
     Parameters
     ----------
-    data_source : str
-        Data source.
+    file1 : str
+        Path to the first file.
 
-    Returns
-    -------
-    list
-        List of test campaigns.
-
+    file2 : str
+        Path to the second file.
     """
-    campaign_names = os.listdir(os.path.join(TEST_BASE_DIR, "Raw", data_source))
-    return campaign_names
+    # Open files
+    ds1 = xr.open_dataset(file1)
+    ds2 = xr.open_dataset(file2)
+    # Remove attributes that depends on processing time
+    ds1.attrs.pop("disdrodb_processing_date", None)
+    ds2.attrs.pop("disdrodb_processing_date", None)
+    # Assert equality
+    xr.testing.assert_identical(ds1, ds2)
 
 
-def _get_list_test_stations(data_source: str, campaign_name: str) -> list:
-    """Get list of test stations for a given data source and campaign.
-
-    Parameters
-    ----------
-    data_source : str
-        Data source.
-
-    campaign_name : str
-        Name of the campaign.
-
-    Returns
-    -------
-    list
-        List of test stations.
-
-    """
-    metadata_dir = define_metadata_dir(
-        product="RAW",
-        base_dir=TEST_BASE_DIR,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exists=False,
-    )
-    filepaths = list_files(metadata_dir, glob_pattern="*.yml", recursive=False)
-    list_station_names = [os.path.splitext(os.path.basename(i))[0] for i in filepaths]
-
-    return list_station_names
-
-
-def _is_parquet_files_identical(file1: str, file2: str) -> bool:
+def _check_identical_parquet_files(file1: str, file2: str) -> bool:
     """Check if two parquet files are identical.
 
     Parameters
@@ -102,64 +65,79 @@ def _is_parquet_files_identical(file1: str, file2: str) -> bool:
 
     file2 : str
         Path to the second file.
-
-    Returns
-    -------
-    bool
-        True if the two files are identical, False otherwise.
-
     """
     df1 = pd.read_parquet(file1)
     df2 = pd.read_parquet(file2)
-    return df1.equals(df2)
+    if not df1.equals(df2):
+        raise ValueError("The two Parquet files differ.")
 
 
-def _run_reader_on_test_data(data_source: str, campaign_name: str) -> None:
-    """Run reader over the test data sample.
+def _check_station_reader_results(
+    base_dir,
+    data_source,
+    campaign_name,
+    station_name,
+):
+    raw_dir = define_campaign_dir(
+        base_dir=TEST_BASE_DIR,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
 
-    Parameters
-    ----------
-    data_source : str
-        Data source.
-    campaign_name : str
-        Campaign name.
-    """
-    station_names = _get_list_test_stations(data_source=data_source, campaign_name=campaign_name)
-    for station_name in station_names:
-        reader = get_station_reader_function(
-            base_dir=TEST_BASE_DIR,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-        )
+    run_l0a_station(
+        base_dir=TEST_BASE_DIR,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        force=True,
+        verbose=False,
+        debugging_mode=False,
+        parallel=False,
+    )
 
-        # Define campaign_name raw_dir and process_dir
-        raw_dir = get_disdrodb_path(
-            base_dir=TEST_BASE_DIR,
-            product="RAW",
-            data_source=data_source,
-            campaign_name=campaign_name,
-        )
+    metadata = read_station_metadata(
+        base_dir=TEST_BASE_DIR,
+        product="L0A",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    raw_data_format = metadata["raw_data_format"]
+    if raw_data_format == "netcdf":
+        glob_pattern = "*.nc"
+        check_identical_files = _check_identical_netcdf_files
+        product = "L0B"
+    else:  # raw_data_format == "txt"
+        glob_pattern = "*.parquet"
+        check_identical_files = _check_identical_parquet_files
+        product = "L0A"
 
-        processed_dir = get_disdrodb_path(
-            base_dir=TEST_BASE_DIR,
-            product="L0A",
-            data_source=data_source,
-            campaign_name=campaign_name,
-            check_exists=False,
-        )
-        # Call the reader
-        reader(
-            raw_dir=raw_dir,
-            processed_dir=processed_dir,
-            station_name=station_name,
-            force=True,
-            verbose=False,
-            debugging_mode=False,
-            parallel=False,
-        )
+    ground_truth_station_dir = os.path.join(raw_dir, "ground_truth", station_name)
+    processed_station_dir = define_station_dir(
+        base_dir=TEST_BASE_DIR,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
-        return processed_dir
+    # Retrieve files
+    ground_truth_files = sorted(list_files(ground_truth_station_dir, glob_pattern=glob_pattern, recursive=True))
+    processed_files = sorted(list_files(processed_station_dir, glob_pattern=glob_pattern, recursive=True))
+
+    # Check same number of files
+    n_groud_truth = len(ground_truth_files)
+    n_processed = len(processed_files)
+    if n_groud_truth != n_processed:
+        raise ValueError(f"{n_groud_truth} ground truth files but only {n_processed} are prfoduced.")
+
+    # Compare equality of files
+    for ground_truth_filepath, processed_filepath in zip(ground_truth_files, processed_files):
+        try:
+            check_identical_files(ground_truth_filepath, processed_filepath)
+        except Exception:
+            raise ValueError(f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'")
 
 
 def check_all_readers() -> None:
@@ -171,28 +149,28 @@ def check_all_readers() -> None:
         If the reader validation has failed.
     """
 
-    for data_source in _get_list_test_data_sources():
-        for campaign_name in _get_list_test_campaigns(data_source):
-            process_dir = _run_reader_on_test_data(data_source, campaign_name)
-            ground_truth_dir = os.path.join(TEST_BASE_DIR, "Raw", data_source, campaign_name, "ground_truth")
-            processed_product_dir = os.path.join(process_dir, "L0A")
+    list_stations_info = available_stations(
+        product="RAW",
+        data_sources=None,
+        campaign_names=None,
+        return_tuple=True,
+        base_dir=TEST_BASE_DIR,
+    )
 
-            glob_pattern = os.path.join("*", "*.parquet")
-            ground_truth_files = list_files(ground_truth_dir, glob_pattern=glob_pattern, recursive=False)
-            processed_files = list_files(processed_product_dir, glob_pattern=glob_pattern, recursive=False)
-
-            for ground_truth_filepath, processed_file_filepath in zip(ground_truth_files, processed_files):
-                station_name = os.path.basename(os.path.dirname(ground_truth_filepath))
-                is_correct = _is_parquet_files_identical(ground_truth_filepath, processed_file_filepath)
-                if not is_correct:
-                    raise Exception(
-                        f"Reader validation has failed for data_source '{data_source}', campaign_name '{campaign_name}'"
-                        f" and station_name '{station_name}'"
-                    )
+    check_failed = False
+    for data_source, campaign_name, station_name in list_stations_info:
+        try:
+            _check_station_reader_results(
+                base_dir=TEST_BASE_DIR,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+            )
+        except Exception:
+            check_failed = True
+        if check_failed:
+            break
 
     # Remove Processed directory if exists
     if os.path.exists(os.path.join(TEST_BASE_DIR, "Processed")):
-        try:
-            shutil.rmtree(os.path.join(TEST_BASE_DIR, "Processed"))
-        except Exception:
-            pass
+        shutil.rmtree(os.path.join(TEST_BASE_DIR, "Processed"))
