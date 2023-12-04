@@ -21,7 +21,7 @@ import sys
 import click
 
 from disdrodb.data_transfer.download_data import click_download_archive_options, click_download_options
-from disdrodb.utils.scripts import click_base_dir_option
+from disdrodb.utils.scripts import click_base_dir_option, parse_base_dir, parse_arg_to_list
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -38,8 +38,7 @@ def disdrodb_download_archive(
     force: bool = False,
 ):
     from disdrodb.data_transfer.download_data import download_archive
-    from disdrodb.utils.scripts import parse_arg_to_list
-
+    base_dir = parse_base_dir(base_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)

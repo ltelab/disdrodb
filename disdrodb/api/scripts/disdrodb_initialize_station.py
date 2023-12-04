@@ -18,7 +18,7 @@ import sys
 
 import click
 
-from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments
+from disdrodb.utils.scripts import click_base_dir_option, click_station_arguments, parse_base_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -56,8 +56,9 @@ def disdrodb_initialize_station(
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
-    from disdrodb.l0.routines import create_initial_station_structure
-
+    from disdrodb.api.create_directories import create_initial_station_structure
+    base_dir = parse_base_dir(base_dir)
+    
     create_initial_station_structure(
         base_dir=base_dir,
         data_source=data_source,

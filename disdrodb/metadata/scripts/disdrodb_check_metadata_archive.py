@@ -19,7 +19,7 @@ import sys
 
 import click
 
-from disdrodb.utils.scripts import click_base_dir_option
+from disdrodb.utils.scripts import click_base_dir_option, parse_base_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -31,5 +31,6 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 )
 def disdrodb_check_metadata_archive(base_dir=None, raise_error=True):
     from disdrodb.metadata.checks import check_archive_metadata_compliance
-
+    
+    base_dir = parse_base_dir(base_dir)
     check_archive_metadata_compliance(base_dir=base_dir, raise_error=raise_error)
