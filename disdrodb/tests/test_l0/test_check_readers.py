@@ -30,8 +30,6 @@ from disdrodb.l0.l0_processing import run_l0a_station
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.directories import list_files
 
-TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
-
 
 def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
     """Check if two L0B netCDF files are identical.
@@ -78,14 +76,14 @@ def _check_station_reader_results(
     station_name,
 ):
     raw_dir = define_campaign_dir(
-        base_dir=TEST_BASE_DIR,
+        base_dir=base_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
     )
 
     run_l0a_station(
-        base_dir=TEST_BASE_DIR,
+        base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -96,7 +94,7 @@ def _check_station_reader_results(
     )
 
     metadata = read_station_metadata(
-        base_dir=TEST_BASE_DIR,
+        base_dir=base_dir,
         product="L0A",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -114,7 +112,7 @@ def _check_station_reader_results(
 
     ground_truth_station_dir = os.path.join(raw_dir, "ground_truth", station_name)
     processed_station_dir = define_station_dir(
-        base_dir=TEST_BASE_DIR,
+        base_dir=base_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -139,7 +137,7 @@ def _check_station_reader_results(
             raise ValueError(f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'")
 
 
-def test_check_all_readers() -> None:
+def test_check_all_readers(tmp_path) -> None:
     """Test all readers that have data samples and ground truth.
 
     Raises
@@ -147,32 +145,23 @@ def test_check_all_readers() -> None:
     Exception
         If the reader validation has failed.
     """
+    TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+
+    test_base_dir = tmp_path / "DISDRODB"
+    shutil.copytree(TEST_BASE_DIR, test_base_dir)
 
     list_stations_info = available_stations(
         product="RAW",
         data_sources=None,
         campaign_names=None,
         return_tuple=True,
-        base_dir=TEST_BASE_DIR,
+        base_dir=test_base_dir,
     )
 
-    check_failed = False
     for data_source, campaign_name, station_name in list_stations_info:
-        try:
-            _check_station_reader_results(
-                base_dir=TEST_BASE_DIR,
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-            )
-        except Exception:
-            check_failed = True
-        if check_failed:
-            break
-
-    # Remove Processed directory if exists
-    if os.path.exists(os.path.join(TEST_BASE_DIR, "Processed")):
-        shutil.rmtree(os.path.join(TEST_BASE_DIR, "Processed"))
-
-    if check_failed:
-        raise ValueError(f"The DISDRODB Readers Check failed on {data_source} {campaign_name} {station_name}")
+        _check_station_reader_results(
+            base_dir=test_base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )

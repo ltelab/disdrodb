@@ -543,8 +543,10 @@ def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
 
     for var in ds.data_vars:
         chunks = encoding_dict[var].pop("chunksizes")
+        dims = list(ds[var].dims)
+        chunks_dict = dict(zip(dims, chunks))
         if chunks is not None:
-            ds[var] = ds[var].chunk(chunks)
+            ds[var] = ds[var].chunk(chunks_dict)
     return ds
 
 

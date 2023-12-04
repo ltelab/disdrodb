@@ -169,7 +169,7 @@ def _define_creators_list(metadata):
         for name, identifier, affiliation in zip(list_names, list_identifier, list_affiliation):
             creator_dict = {}
             creator_dict["name"] = name.strip()
-            creator_dict["identifier"] = identifier.strip()
+            creator_dict["orcid"] = identifier.strip()
             creator_dict["affiliation"] = affiliation.strip()
             list_creator_dict.append(creator_dict)
     except Exception:
@@ -183,11 +183,18 @@ def _define_zenodo_metadata(metadata):
     campaign_name = metadata["campaign_name"]
     station_name = metadata["station_name"]
     name = f"{data_source} {campaign_name} {station_name}"
+    description = f"Disdrometer measurements of the {name} station. "
+    description += "This dataset is part of the DISDRODB project. "
+    description += "Station metadata are available at "
+    description += f"https://github.com/ltelab/disdrodb-data/blob/main/DISDRODB/Raw/{data_source}/{campaign_name}/metadata/{station_name}.yml . "  # noqa
+    description += "The software to easily process and standardize the raw data into netCDF files is available at "
+    description += "https://github.com/ltelab/disdrodb ."
+
     zenodo_metadata = {
         "metadata": {
             "title": f"{name} disdrometer station data",
             "upload_type": "dataset",
-            "description": f"Disdrometer measurements of the {name} station",
+            "description": description,
             "creators": _define_creators_list(metadata),
         }
     }

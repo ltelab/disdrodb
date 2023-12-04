@@ -87,8 +87,8 @@ class Test_Define_Creators_List:
             "institution": "University A,  University B",
         }
         expected_result = [
-            {"name": "John Doe", "identifier": "http://example.com/john", "affiliation": "University A"},
-            {"name": "Jane Smith", "identifier": "http://example.com/jane", "affiliation": "University B"},
+            {"name": "John Doe", "orcid": "http://example.com/john", "affiliation": "University A"},
+            {"name": "Jane Smith", "orcid": "http://example.com/jane", "affiliation": "University B"},
         ]
 
         assert _define_creators_list(metadata) == expected_result
@@ -101,9 +101,9 @@ class Test_Define_Creators_List:
             "institution": "University A",
         }
         metadata[key] = ""
-        key_value_mapping = {"authors": "name", "authors_url": "identifier", "institution": "affiliation"}
+        key_value_mapping = {"authors": "name", "authors_url": "orcid", "institution": "affiliation"}
         expected_result = [
-            {"name": "John Doe", "identifier": "http://example.com/john", "affiliation": "University A"},
+            {"name": "John Doe", "orcid": "http://example.com/john", "affiliation": "University A"},
         ]
         expected_result[0][key_value_mapping[key]] = ""
         assert _define_creators_list(metadata) == expected_result
@@ -115,7 +115,7 @@ class Test_Define_Creators_List:
             "institution": "",
         }
         expected_result = [
-            {"name": "", "identifier": "", "affiliation": ""},
+            {"name": "", "orcid": "", "affiliation": ""},
         ]
         assert _define_creators_list(metadata) == expected_result
 
@@ -126,8 +126,8 @@ class Test_Define_Creators_List:
             "institution": "University A",
         }
         expected_result = [
-            {"name": "John Doe", "identifier": "http://example.com/john", "affiliation": "University A"},
-            {"name": "Jane Smith", "identifier": "http://example.com/jane", "affiliation": "University A"},
+            {"name": "John Doe", "orcid": "http://example.com/john", "affiliation": "University A"},
+            {"name": "Jane Smith", "orcid": "http://example.com/jane", "affiliation": "University A"},
         ]
 
         assert _define_creators_list(metadata) == expected_result
@@ -139,8 +139,8 @@ class Test_Define_Creators_List:
             "institution": "University A",
         }
         expected_result = [
-            {"name": "John Doe", "identifier": "", "affiliation": "University A"},
-            {"name": "Jane Smith", "identifier": "", "affiliation": "University A"},
+            {"name": "John Doe", "orcid": "", "affiliation": "University A"},
+            {"name": "Jane Smith", "orcid": "", "affiliation": "University A"},
         ]
         assert _define_creators_list(metadata) == expected_result
 
@@ -151,9 +151,9 @@ class Test_Define_Creators_List:
             "institution": "University A, University B",
         }
         expected_result = [
-            {"name": "John Doe", "identifier": "", "affiliation": ""},
-            {"name": "Jane Smith", "identifier": "", "affiliation": ""},
-            {"name": "Scooby Doo", "identifier": "", "affiliation": ""},
+            {"name": "John Doe", "orcid": "", "affiliation": ""},
+            {"name": "Jane Smith", "orcid": "", "affiliation": ""},
+            {"name": "Scooby Doo", "orcid": "", "affiliation": ""},
         ]
         assert _define_creators_list(metadata) == expected_result
 
