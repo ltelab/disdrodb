@@ -7,7 +7,7 @@ name = "disdrodb"
 authors = [
 	{name = "Gionata Ghiggi"},
 ]
-description = "This package provides tools to homogenize, process, and analyze global disdrometer data."
+description = "disdrodb provides tools to download, standardize, share and analyze global disdrometer data."
 readme = "README.md"
 keywords = ["python", "disdrometer","parsivel", "drop size distribution"]
 classifiers = [
