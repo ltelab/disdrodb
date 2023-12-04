@@ -1,4 +1,8 @@
 prune .github
 prune data
 prune docs
+prune tutorials
+prune ci 
 prune disdrodb/tests
+
+
