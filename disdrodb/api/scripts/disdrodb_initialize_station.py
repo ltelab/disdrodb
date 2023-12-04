@@ -57,8 +57,9 @@ def disdrodb_initialize_station(
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     from disdrodb.api.create_directories import create_initial_station_structure
+
     base_dir = parse_base_dir(base_dir)
-    
+
     create_initial_station_structure(
         base_dir=base_dir,
         data_source=data_source,

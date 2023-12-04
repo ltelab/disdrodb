@@ -22,7 +22,6 @@ import os
 import pytest
 from click.testing import CliRunner
 
-from disdrodb.api.scripts.disdrodb_initialize_station import disdrodb_initialize_station
 from disdrodb.api.create_directories import (
     _check_campaign_name_consistency,
     _check_data_source_consistency,
@@ -41,6 +40,7 @@ from disdrodb.api.path import (
     define_metadata_filepath,
     define_station_dir,
 )
+from disdrodb.api.scripts.disdrodb_initialize_station import disdrodb_initialize_station
 from disdrodb.tests.conftest import (
     create_fake_issue_file,
     create_fake_metadata_directory,
@@ -330,14 +330,14 @@ def test_create_initial_station_structure_cmd(tmp_path):
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     station_name = "station_name"
-    
-    # Invoke command in the terminal 
+
+    # Invoke command in the terminal
     runner = CliRunner()
     runner.invoke(
         disdrodb_initialize_station,
         [data_source, campaign_name, station_name, "--base_dir", str(base_dir)],
-    )   
-    
+    )
+
     # Check metadata and issue files have been created
     metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,

@@ -41,7 +41,7 @@ def disdrodb_upload_station(
     force: bool = False,
 ):
     from disdrodb.data_transfer.upload_data import upload_station
-    
+
     base_dir = parse_base_dir(base_dir)
     upload_station(
         base_dir=base_dir,
