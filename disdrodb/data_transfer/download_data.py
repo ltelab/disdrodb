@@ -20,7 +20,7 @@
 
 import os
 import shutil
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import click
 import pooch
@@ -97,9 +97,9 @@ def click_download_options(function: object):
 
 
 def download_archive(
-    data_sources: Optional[Union[str, List[str]]] = None,
-    campaign_names: Optional[Union[str, List[str]]] = None,
-    station_names: Optional[Union[str, List[str]]] = None,
+    data_sources: Optional[Union[str, list[str]]] = None,
+    campaign_names: Optional[Union[str, list[str]]] = None,
+    station_names: Optional[Union[str, list[str]]] = None,
     force: bool = False,
     base_dir: Optional[str] = None,
 ):
@@ -222,7 +222,7 @@ def _has_disdrodb_data_url(metadata_filepath):
     return _is_valid_disdrodb_data_url(disdrodb_data_url)
 
 
-def _select_metadata_with_remote_data_url(metadata_filepaths: List[str]) -> List[str]:
+def _select_metadata_with_remote_data_url(metadata_filepaths: list[str]) -> list[str]:
     """Select metadata files that have a remote data url specified."""
     return [fpath for fpath in metadata_filepaths if _has_disdrodb_data_url(fpath)]
 

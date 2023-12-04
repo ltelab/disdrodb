@@ -5,7 +5,6 @@ Created on Thu Nov  2 15:39:01 2023
 @author: ghiggi
 """
 import os
-from typing import Dict
 
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
@@ -66,7 +65,7 @@ def define_disdrodb_configs(base_dir: str = None, zenodo_token: str = None, zeno
     return
 
 
-def read_disdrodb_configs() -> Dict[str, str]:
+def read_disdrodb_configs() -> dict[str, str]:
     """
     Reads the DISDRODB configuration file and returns a dictionary with the configuration settings.
 

@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Check DISDRODB L0 configuration files."""
 import os
-from typing import Dict, Union
+from typing import Union
 
 import pytest
 import yaml
@@ -30,7 +30,7 @@ from disdrodb.utils.directories import list_files
 CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
 
 
-def read_yaml_file(filepath: str) -> Dict:
+def read_yaml_file(filepath: str) -> dict:
     """Read a YAML file and return a dictionary.
 
     Parameters

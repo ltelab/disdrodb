@@ -19,7 +19,6 @@
 """DISDRODB netCDF utility."""
 
 import logging
-from typing import Tuple
 
 import numpy as np
 import pandas as pd
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 ####---------------------------------------------------------------------------.
-def _sort_datasets_by_dim(list_ds: list, filepaths: str, dim: str = "time") -> Tuple[list, list]:
+def _sort_datasets_by_dim(list_ds: list, filepaths: str, dim: str = "time") -> tuple[list, list]:
     """Sort a list of xarray.Dataset and corresponding file paths by the starting value of a specified dimension.
 
     Parameters
@@ -55,7 +54,7 @@ def _sort_datasets_by_dim(list_ds: list, filepaths: str, dim: str = "time") -> T
     return sorted_list_ds, sorted_filepaths
 
 
-def _get_dim_values_index(list_ds: list, dim: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def _get_dim_values_index(list_ds: list, dim: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Get list and dataset indices associated to the dimension values."""
     dim_values = np.concatenate([ds[dim].values for ds in list_ds])
     list_index = np.concatenate([np.ones(len(ds[dim])) * i for i, ds in enumerate(list_ds)])
@@ -129,7 +128,7 @@ def _get_bad_info_dict(
     list_index: np.ndarray,
     dim_values: np.ndarray,
     ds_index: np.ndarray,
-) -> Tuple[dict, dict]:
+) -> tuple[dict, dict]:
     """Return two dictionaries mapping, for each dataset, the bad values and indices to remove.
 
     Parameters

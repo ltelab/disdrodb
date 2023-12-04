@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Routines to upload data to the DISDRODB Decentralized Data Archive."""
 
-from typing import List, Optional
+from typing import Optional
 
 import click
 
@@ -95,7 +95,7 @@ def _check_if_upload(metadata_filepath: str, force: bool):
             raise ValueError(f"'force' is False and {metadata_filepath} has already a 'disdrodb_data_url' specified.")
 
 
-def _filter_already_uploaded(metadata_filepaths: List[str], force: bool) -> List[str]:
+def _filter_already_uploaded(metadata_filepaths: list[str], force: bool) -> list[str]:
     """Filter metadata files that already have a remote url specified."""
     filtered = []
     for metadata_filepath in metadata_filepaths:
