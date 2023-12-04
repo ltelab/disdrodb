@@ -45,9 +45,13 @@ def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
     # Open files
     ds1 = xr.open_dataset(file1)
     ds2 = xr.open_dataset(file2)
+
     # Remove attributes that depends on processing time
-    ds1.attrs.pop("disdrodb_processing_date", None)
-    ds2.attrs.pop("disdrodb_processing_date", None)
+    attrs_to_remove = ["disdrodb_processing_date", "disdrodb_software_version"]
+    for key in attrs_to_remove:
+        ds1.attrs.pop(key, None)
+        ds2.attrs.pop(key, None)
+
     # Assert equality
     xr.testing.assert_identical(ds1, ds2)
 
@@ -134,8 +138,9 @@ def _check_station_reader_results(
         try:
             check_identical_files(ground_truth_filepath, processed_filepath)
         except Exception as e:
-            raise ValueError(f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'. "
-                             f"Error is: {e}")
+            raise ValueError(
+                f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'. Error is: {e}"
+            )
 
 
 def test_check_all_readers(tmp_path) -> None:
