@@ -10,9 +10,6 @@ authors = [
 description = "This package provides tools to homogenize, process, and analyze global disdrometer data."
 readme = "README.md"
 keywords = ["python", "disdrometer","parsivel", "drop size distribution"]
-homepage = "https://github.com/ltelab/disdrodb"
-repository = "https://github.com/ltelab/disdrodb"
-documentation = "https://disdrodb.readthedocs.io"
 classifiers = [
 	"Development Status :: 1 - Planning",
 	"Intended Audience :: Developers",
@@ -53,6 +50,14 @@ dev = [
 	"pytest-mock",
 	"requests-mock",
 ]
+
+[project.urls]
+homepage = "https://github.com/ltelab/disdrodb"
+repository = "https://github.com/ltelab/disdrodb"
+source = "https://github.com/ltelab/disdrodb"
+tracker = "https://github.com/ltelab/disdrodb/issues"
+documentation = "https://disdrodb.readthedocs.io"
+changelog = "https://github.com/ltelab/disdrodb/CHANGELOG.md"
 
 [tool.setuptools_scm]
 write_to = "disdrodb/_version.py"
