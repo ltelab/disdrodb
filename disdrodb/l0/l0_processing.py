@@ -281,7 +281,12 @@ def _generate_l0b_from_nc(
         filename=filename,
         parallel=parallel,
     )
-    logger_filepath = logger.handlers[0].baseFilename
+
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        logger_filepath = logger.handlers[0].baseFilename
+    else:
+        # LogCaptureHandler of pytest does not have baseFilename attribute
+        logger_filepath = None
 
     ##------------------------------------------------------------------------.
     # Log start processing
