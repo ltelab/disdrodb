@@ -20,7 +20,6 @@
 
 import json
 import os
-from typing import Tuple
 
 import requests
 
@@ -52,7 +51,7 @@ def _check_http_response(
     raise ValueError(error_message)
 
 
-def _create_zenodo_deposition(sandbox) -> Tuple[int, str]:
+def _create_zenodo_deposition(sandbox) -> tuple[int, str]:
     """Create a new Zenodo deposition and get the deposit information.
 
     At every function call, the deposit_id and bucket url will change !

@@ -19,7 +19,7 @@
 """Check configuration files."""
 
 import os
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import numpy as np
 from pydantic import BaseModel, ValidationError, field_validator, model_validator
@@ -134,7 +134,7 @@ class L0BEncodingSchema(BaseModel):
     shuffle: bool
     fletcher32: bool
     _FillValue: Optional[Union[int, float]]
-    chunksizes: Optional[Union[int, List[int]]]
+    chunksizes: Optional[Union[int, list[int]]]
 
     # if contiguous=False, chunksizes specified, otherwise should be not !
     @model_validator(mode="before")
@@ -212,10 +212,10 @@ class RawDataFormatSchema(BaseModel):
     n_characters: Optional[int]
     n_decimals: Optional[int]
     n_naturals: Optional[int]
-    data_range: Optional[List[float]]
+    data_range: Optional[list[float]]
     nan_flags: Optional[Union[int, str]] = None
-    valid_values: Optional[List[float]] = None
-    dimension_order: Optional[List[str]] = None
+    valid_values: Optional[list[float]] = None
+    dimension_order: Optional[list[str]] = None
     n_values: Optional[int] = None
     field_number: Optional[str] = None
 
