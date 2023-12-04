@@ -127,7 +127,7 @@ def _check_station_reader_results(
     n_groud_truth = len(ground_truth_files)
     n_processed = len(processed_files)
     if n_groud_truth != n_processed:
-        raise ValueError(f"{n_groud_truth} ground truth files but only {n_processed} are prfoduced.")
+        raise ValueError(f"{n_groud_truth} ground truth files but only {n_processed} are produced.")
 
     # Compare equality of files
     for ground_truth_filepath, processed_filepath in zip(ground_truth_files, processed_files):

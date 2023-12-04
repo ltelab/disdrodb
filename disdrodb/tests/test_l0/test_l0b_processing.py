@@ -96,17 +96,15 @@ def define_test_dummy_configs():
 @pytest.mark.parametrize("create_test_config_files", [define_test_dummy_configs()], indirect=True)
 def test_create_l0b_from_l0a(create_test_config_files):
     # Create a sample DataFrame
-    df = pd.DataFrame(
-        {
-            "time": pd.date_range("2022-01-01", periods=10, freq="H"),
-            "raw_drop_concentration": np.random.rand(10),
-            "raw_drop_average_velocity": np.random.rand(10),
-            "raw_drop_number": np.random.rand(10),
-            "latitude": np.random.rand(10),
-            "longitude": np.random.rand(10),
-            "altitude": np.random.rand(10),
-        }
-    )
+    df = pd.DataFrame({
+        "time": pd.date_range("2022-01-01", periods=10, freq="H"),
+        "raw_drop_concentration": np.random.rand(10),
+        "raw_drop_average_velocity": np.random.rand(10),
+        "raw_drop_number": np.random.rand(10),
+        "latitude": np.random.rand(10),
+        "longitude": np.random.rand(10),
+        "altitude": np.random.rand(10),
+    })
     # Create a sample attrs dictionary
     attrs = {
         "sensor_name": "test",
@@ -154,13 +152,11 @@ def test_create_l0b_from_l0a(create_test_config_files):
 
 def test_add_dataset_crs_coords():
     # Create example dataset
-    ds = xr.Dataset(
-        {
-            "var1": xr.DataArray([1, 2, 3], dims="time"),
-            "lat": xr.DataArray([0, 1, 2], dims="time"),
-            "lon": xr.DataArray([0, 1, 2], dims="time"),
-        }
-    )
+    ds = xr.Dataset({
+        "var1": xr.DataArray([1, 2, 3], dims="time"),
+        "lat": xr.DataArray([0, 1, 2], dims="time"),
+        "lon": xr.DataArray([0, 1, 2], dims="time"),
+    })
 
     # Call the function and check the output
     ds_out = add_dataset_crs_coords(ds)
@@ -186,13 +182,11 @@ def test_set_attrs_dict():
 
 def test__set_coordinate_attributes():
     # Create example dataset
-    ds = xr.Dataset(
-        {
-            "var1": xr.DataArray([1, 2, 3], dims="time"),
-            "lat": xr.DataArray([0, 1, 2], dims="time"),
-            "lon": xr.DataArray([0, 1, 2], dims="time"),
-        }
-    )
+    ds = xr.Dataset({
+        "var1": xr.DataArray([1, 2, 3], dims="time"),
+        "lat": xr.DataArray([0, 1, 2], dims="time"),
+        "lon": xr.DataArray([0, 1, 2], dims="time"),
+    })
     ds.lat.attrs["units"] = "degrees_north"
     ds.lon.attrs["units"] = "degrees_east"
 

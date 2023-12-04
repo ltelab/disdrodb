@@ -244,14 +244,12 @@ class Test_Print_Df_With_Any_Nan_Rows:
     """Test test_print_df_with_any_nan_rows."""
 
     def test_df_with_nan_and_none_values(self, capfd):
-        df = pd.DataFrame(
-            {
-                "A": [1, 2, None, 4],
-                "B": ["a", "b", None, "d"],
-                "C": [1, 2, np.nan, 4],
-                "D": [1, 2, 3, 4],
-            }
-        )
+        df = pd.DataFrame({
+            "A": [1, 2, None, 4],
+            "B": ["a", "b", None, "d"],
+            "C": [1, 2, np.nan, 4],
+            "D": [1, 2, 3, 4],
+        })
         print_df_with_any_nan_rows(df)
         out, _ = capfd.readouterr()
         assert "Column 0 ( A ):\n      [nan]" in out
@@ -332,12 +330,10 @@ class Test_Has_Constant_Character:
 
 def test_infer_column_names(capfd):
     sensor_name = "OTT_Parsivel"
-    df = pd.DataFrame(
-        {
-            "0": [123.345, 123.345],  # same number of character
-            "1": [12.3456, 1.345],  # not same number characters
-        }
-    )
+    df = pd.DataFrame({
+        "0": [123.345, 123.345],  # same number of character
+        "1": [12.3456, 1.345],  # not same number characters
+    })
     dict_possible_columns = infer_column_names(df=df, sensor_name=sensor_name, row_idx=0)
     assert dict_possible_columns[0] == ["rainfall_amount_absolute_32bit"]
     out, _ = capfd.readouterr()
