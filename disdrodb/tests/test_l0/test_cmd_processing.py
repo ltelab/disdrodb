@@ -205,8 +205,9 @@ def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
             assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) > 0
 
 
+@pytest.mark.parametrize("parallel", [True, False])
 @pytest.mark.parametrize("verbose", [True, False])
-def test_disdrodb_run_l0_nc_station(tmp_path, verbose):
+def test_disdrodb_run_l0_nc_station(tmp_path, verbose, parallel):
     """Test the disdrodb_run_l0_station process correctly raw netCDF files."""
 
     BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
@@ -220,7 +221,17 @@ def test_disdrodb_run_l0_nc_station(tmp_path, verbose):
     runner = CliRunner()
     runner.invoke(
         disdrodb_run_l0_station,
-        [DATA_SOURCE, CAMPAIGN_NAME, STATION_NAME, "--base_dir", test_base_dir, "--verbose", verbose],
+        [
+            DATA_SOURCE,
+            CAMPAIGN_NAME,
+            STATION_NAME,
+            "--base_dir",
+            test_base_dir,
+            "--verbose",
+            verbose,
+            "--parallel",
+            parallel,
+        ],
     )
 
     station_dir = define_station_dir(
