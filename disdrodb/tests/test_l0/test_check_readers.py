@@ -133,8 +133,9 @@ def _check_station_reader_results(
     for ground_truth_filepath, processed_filepath in zip(ground_truth_files, processed_files):
         try:
             check_identical_files(ground_truth_filepath, processed_filepath)
-        except Exception:
-            raise ValueError(f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'")
+        except Exception as e:
+            raise ValueError(f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'. "
+                             f"Error is: {e}")
 
 
 def test_check_all_readers(tmp_path) -> None:
