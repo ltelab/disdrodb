@@ -32,6 +32,6 @@ jobs:
         run: |
           pip install -e .
 
-      - name: Test with pytest
+      - name: Test the package with pytest
         run: |
           pytest
