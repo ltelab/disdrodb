@@ -2,7 +2,5 @@ prune .github
 prune data
 prune docs
 prune tutorials
-prune ci 
+prune ci
 prune disdrodb/tests
-
-
