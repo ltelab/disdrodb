@@ -82,7 +82,7 @@ def _check_metadata_values(metadata):
 
 
 def _check_metadata_campaign_name(metadata, expected_name):
-    """Check metadata campaign_name."""
+    """Check metadata ``campaign_name``."""
     if "campaign_name" not in metadata:
         raise ValueError("The metadata file does not contain the 'campaign_name' key.")
     campaign_name = metadata["campaign_name"]
@@ -96,7 +96,7 @@ def _check_metadata_campaign_name(metadata, expected_name):
 
 
 def _check_metadata_data_source(metadata, expected_name):
-    """Check metadata data_source."""
+    """Check metadata ``data_source``."""
     if "data_source" not in metadata:
         raise ValueError("The metadata file does not contain the 'data_source' key.")
     data_source = metadata["data_source"]
@@ -110,9 +110,10 @@ def _check_metadata_data_source(metadata, expected_name):
 
 
 def _check_metadata_station_name(metadata, expected_name):
-    """Check metadata station name.
+    """Check metadata ``station_name``.
 
-    This function does not check that data are available for the station!"""
+    This function does not check that data are available for the station!
+    """
     if "station_name" not in metadata:
         raise ValueError("The metadata file does not contain the 'station_name' key.")
     station_name = metadata["station_name"]
@@ -212,7 +213,7 @@ def identify_missing_metadata_coords(metadata_filepaths: str) -> None:
     Raises
     ------
     TypeError
-        Error if latitude or longitude coordinates are not present or are wrongly formatted.
+        Error if ``latitude`` or ``longitude`` coordinates are not present or are wrongly formatted.
 
     """
     for filepath in metadata_filepaths:
@@ -248,18 +249,18 @@ def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list
 
 
 def check_archive_metadata_keys(base_dir: str = None) -> bool:
-    """Check that all metadata files have valid keys
+    """Check that all metadata files have valid keys.
 
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``
+        If ``None`` (the default), the disdrodb config key ``base_dir`` is used.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     is_valid = True
     base_dir = get_base_dir(base_dir)
@@ -289,18 +290,18 @@ def check_archive_metadata_keys(base_dir: str = None) -> bool:
 
 
 def check_archive_metadata_campaign_name(base_dir: str = None) -> bool:
-    """Check metadata campaign_name.
+    """Check metadata ``campaign_name``.
 
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     is_valid = True
     base_dir = get_base_dir(base_dir)
@@ -329,18 +330,18 @@ def check_archive_metadata_campaign_name(base_dir: str = None) -> bool:
 
 
 def check_archive_metadata_data_source(base_dir: str = None) -> bool:
-    """Check metadata data_source.
+    """Check metadata ``data_source``.
 
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     is_valid = True
     base_dir = get_base_dir(base_dir)
@@ -369,18 +370,18 @@ def check_archive_metadata_data_source(base_dir: str = None) -> bool:
 
 
 def check_archive_metadata_sensor_name(base_dir: str = None) -> bool:
-    """Check metadata sensor name.
+    """Check metadata ``sensor_name``.
 
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     is_valid = True
     base_dir = get_base_dir(base_dir)
@@ -409,18 +410,18 @@ def check_archive_metadata_sensor_name(base_dir: str = None) -> bool:
 
 
 def check_archive_metadata_station_name(base_dir: str = None) -> bool:
-    """Check metadata station name.
+    """Check metadata ``station_name``.
 
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     is_valid = True
     base_dir = get_base_dir(base_dir)
@@ -449,18 +450,18 @@ def check_archive_metadata_station_name(base_dir: str = None) -> bool:
 
 
 def check_archive_metadata_reader(base_dir: str = None) -> bool:
-    """Check if the reader key is available and there is the associated reader.
+    """Check if the ``reader`` key is available and there is the associated reader.
 
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     from disdrodb.l0.l0_reader import _check_metadata_reader
 
@@ -496,16 +497,16 @@ def check_archive_metadata_compliance(base_dir: str = None, raise_error=False):
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
     raise_error: bool (optional)
         Whether to raise an error and interrupt the archive check if a
-        metadata is not compliant. The default is False.
+        metadata is not compliant. The default is ``False``.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     is_valid = True
     base_dir = get_base_dir(base_dir)
@@ -542,13 +543,13 @@ def check_archive_metadata_geolocation(base_dir: str = None):
     Parameters
     ----------
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
     bool
-        If the check succeeds, the result is True, and if it fails, the result is False.
+        If the check succeeds, the result is ``True``, otherwise ``False``.
     """
     is_valid = True
     base_dir = get_base_dir(base_dir)

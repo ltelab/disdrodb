@@ -287,7 +287,7 @@ def retrieve_l0b_arrays(
 
 
 def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
-    """Convert variables with object dtype to string.
+    """Convert variables with ``object`` dtype to ``string``.
 
     Parameters
     ----------
@@ -306,7 +306,7 @@ def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
 
 
 def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
-    """Set attributes to each xr.Dataset variable.
+    """Set attributes to each ``xr.Dataset`` variable.
 
     Parameters
     ----------
@@ -440,8 +440,7 @@ def create_l0b_from_l0a(
     attrs : dict
         Station metadata.
     verbose : bool, optional
-        Whether to verbose the processing.
-        The default is False.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -599,8 +598,8 @@ def write_l0b(ds: xr.Dataset, filepath: str, force=False) -> None:
         Name of the sensor.
     force : bool, optional
         Whether to overwrite existing data.
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories. This is the default.
+        If ``True``, overwrite existing data into destination directories.
+        If ``False``, raise an error if there are already data into destination directories. This is the default.
     """
     # Create station directory if does not exist
     create_directory(os.path.dirname(filepath))

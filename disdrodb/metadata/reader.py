@@ -41,7 +41,7 @@ def read_station_metadata(data_source, campaign_name, station_name, base_dir=Non
         If not specified, the path specified in the DISDRODB active configuration will be used.
     product : str, optional
         The DISDRODB product in which to search for the metadata file.
-        The default is "RAW".
+        The default is ``"RAW"``.
 
     Returns
     -------

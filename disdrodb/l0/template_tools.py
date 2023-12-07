@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Experimental code to help the implementation of DISDRODB L0 readers."""
+"""Useful tools helping in the implementation of the DISDRODB L0 readers."""
 
 from typing import Union
 
@@ -68,17 +68,12 @@ def _check_columns_indices(column_indices, n_columns):
 
 
 def print_df_column_names(df: pd.DataFrame) -> None:
-    """Print dataframe columns names
+    """Print dataframe columns names.
 
     Parameters
     ----------
     df : dataframe
-        The dataframe
-
-    Returns
-    -------
-    None
-        Nothing
+        The dataframe.
     """
     for i, column in enumerate(df.columns):
         print(" - Column", i, ":", column)
@@ -130,11 +125,11 @@ def print_df_first_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: bool
     Parameters
     ----------
     df : pd.DataFrame
-        Input dataframe
+        Input dataframe.
     n : int, optional
-        Number of row, by default 5
+        Number of row. The default is 5.
     column_names : bool , optional
-        If true columns name are printed, by default True
+        If true columns name are printed, by default ``True``.
     """
     columns = list(df.columns)
     for i in range(len(df.columns)):
@@ -148,16 +143,11 @@ def print_df_random_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: boo
     Parameters
     ----------
     df : dataframe
-        The dataframe
+        The dataframe.
     n : int, optional
-        The number of row to print, by default 5
+        The number of row to print. The default is 5.
     print_column_names : bool, optional
-        If true, print the column names. The default is True.
-
-    Returns
-    -------
-    None
-        Nothing
+        If true, print the column names. The default is ``True``.
     """
     columns = list(df.columns)
     df_sample = df.sample(n=n)
@@ -192,9 +182,9 @@ def print_df_summary_stats(
     df : pd.DataFrame
         Input dataframe
     column_indices : Union[int,slice,list], optional
-        Column indices. If None, select all columns.
+        Column indices. If ``None``, select all columns.
     print_column_names : bool, optional
-        If true, print the column names. The default is True.
+        If ``True``, print the column names. The default is ``True``.
 
     Raises
     ------
@@ -233,9 +223,9 @@ def print_df_columns_unique_values(
     df : pd.DataFrame
         Input dataframe
     column_indices : Union[int,slice,list], optional
-        Column indices. If None, select all columns.
+        Column indices. If ``None``, select all columns.
     column_names : bool, optional
-        If true, print the column names. The default is True.
+        If ``True``, print the column names. The default is ``True``.
 
     """
     column_indices, columns = _get_selected_column_names(df, column_indices)
@@ -261,9 +251,9 @@ def get_df_columns_unique_values_dict(
     df : pd.DataFrame
         Input dataframe
     column_indices : Union[int,slice,list], optional
-        Column indices. If None, select all columns.
+        Column indices. If ``None``, select all columns.
     column_names : bool, optional
-        If true, the dictionary key are the column names. The default is True.
+        If ``True``, the dictionary key are the column names. The default is ``True``.
 
     """
     column_indices, columns = _get_selected_column_names(df, column_indices)
@@ -288,13 +278,13 @@ def str_is_number(string: str) -> bool:
 
     Parameters
     ----------
-    string : Input string
+    string : Input string.
 
 
     Returns
     -------
     bool
-        True if float.
+        ``True`` if float.
     """
 
     try:
@@ -305,17 +295,17 @@ def str_is_number(string: str) -> bool:
 
 
 def str_is_integer(string: str) -> bool:
-    """Check if a string represent an integer
+    """Check if a string represent an integer.
 
     Parameters
     ----------
-    string : Input string
+    string : Input string.
 
 
     Returns
     -------
     bool
-        True if integer.
+        ``True`` if integer.
     """
     try:
         int(string)
@@ -325,12 +315,12 @@ def str_is_integer(string: str) -> bool:
 
 
 def str_has_decimal_digits(string: str) -> bool:
-    """Check if a string has decimals
+    """Check if a string has decimals.
 
     Parameters
     ----------
     string :
-        Input string
+        Input string.
 
 
     Returns
@@ -345,17 +335,17 @@ def str_has_decimal_digits(string: str) -> bool:
 
 
 def get_decimal_ndigits(string: str) -> int:
-    """Get the decimal number of digit.
+    """Get the number of decimal digits.
 
     Parameters
     ----------
     string : str
-        Input string
+        Input string.
 
     Returns
     -------
     int
-        The number of digit.
+        The number of decimal digits.
     """
     if str_has_decimal_digits(string):
         return len(string.split(".")[1])
@@ -364,17 +354,17 @@ def get_decimal_ndigits(string: str) -> int:
 
 
 def get_natural_ndigits(string: str) -> int:
-    """Get the natural number of digit.
+    """Get the number of natural digits.
 
     Parameters
     ----------
     string : str
-        Input string
+        Input string.
 
     Returns
     -------
     int
-        The number of digit.
+        The number of natural digits.
     """
     if str_is_integer(string):
         return len(string.replace("-", ""))
@@ -385,7 +375,7 @@ def get_natural_ndigits(string: str) -> int:
 
 
 def get_ndigits(string: str) -> int:
-    """Get the number of digit.
+    """Get the number of total numeric digits.
 
     Parameters
     ----------
@@ -395,7 +385,7 @@ def get_ndigits(string: str) -> int:
     Returns
     -------
     int
-        Number of digit
+        The number of total digits.
     """
 
     if not str_is_number(string):
@@ -408,34 +398,34 @@ def get_ndigits(string: str) -> int:
 
 
 def get_nchar(string: str) -> int:
-    """Get the number of character.
+    """Get the number of characters.
 
     Parameters
     ----------
     string : str
-        Input string
+        Input string.
 
     Returns
     -------
     int
-        Number of character
+        The number of characters.
     """
     return len(string)
 
 
 def _has_constant_characters(arr: np.array) -> bool:
-    """Check if the content of an array has a constant number of characters
+    """Check if the content of an array has a constant number of characters.
 
     Parameters
     ----------
     arr : numpy.ndarray
         The array to analyse.
-        It convert numeric array to unicode before analyzing !
+        It converts numeric array to unicode before analyzing !
 
     Returns
     -------
     boolean
-        True if the number of character is constant.
+        ``True`` if the number of characters is constant.
         Empty array are considered constant !
 
     """
@@ -447,14 +437,14 @@ def _has_constant_characters(arr: np.array) -> bool:
 
 
 def _get_possible_keys(dict_options: dict, desired_value: str) -> set:
-    """Get the possible keys from the input values
+    """Get the possible keys from the input values.
 
     Parameters
     ----------
     dict_options : dict
-        Input dictionary
+        Input dictionary.
     desired_value : str
-        Input value
+        Input value.
 
     Returns
     -------
@@ -471,19 +461,19 @@ def _get_possible_keys(dict_options: dict, desired_value: str) -> set:
 
 
 def _search_possible_columns(string: str, sensor_name: str) -> list:
-    """Define possible column
+    """Define possible columns.
 
     Parameters
     ----------
     string : str
-        Inpur string
+        Input string.
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        list of possible columns
+        List of possible columns.
     """
     dict_digits = get_field_ndigits_dict(sensor_name)
     dict_nchar_digits = get_field_nchar_dict(sensor_name)
@@ -509,12 +499,13 @@ def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
 
     Parameters
     ----------
-    df : numpy.ndarray
-        The array to analyse
+    df : pd.DataFrame
+        The dataframe to analyse.
     sensor_name : str
-        name of the sensor
+        name of the sensor.
     row_idx : int, optional
-        The row ID of the array, by default 1
+        The row index of the dataframe to use to infer the column names.
+        The default row index is 1.
 
     Returns
     -------

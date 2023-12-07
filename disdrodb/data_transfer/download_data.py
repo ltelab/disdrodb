@@ -103,29 +103,29 @@ def download_archive(
     force: bool = False,
     base_dir: Optional[str] = None,
 ):
-    """Get all YAML files that contain the 'disdrodb_data_url' key
+    """Get all YAML files that contain the ``disdrodb_data_url`` key
     and download the data locally.
 
     Parameters
     ----------
     data_sources : str or list of str, optional
         Data source name (eg : EPFL).
-        If not provided (None), all data sources will be downloaded.
-        The default is data_source=None.
+        If not provided (``None``), all data sources will be downloaded.
+        The default is ``data_source=None``.
     campaign_names : str or list of str, optional
         Campaign name (eg :  EPFL_ROOF_2012).
-        If not provided (None), all campaigns will be downloaded.
-        The default is campaign_name=None.
+        If not provided (``None``), all campaigns will be downloaded.
+        The default is ``campaign_name=None``.
     station_names : str or list of str, optional
         Station name.
-        If not provided (None), all stations will be downloaded.
-        The default is station_name=None.
+        If not provided (``None``), all stations will be downloaded.
+        The default is ``station_name=None``.
     force : bool, optional
-        If True, overwrite the already existing raw data file.
-        The default is False.
+        If ``True``, overwrite the already existing raw data file.
+        The default is ``False``.
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
     """
     # Retrieve the requested metadata
     base_dir = get_base_dir(base_dir)
@@ -187,11 +187,11 @@ def download_station(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     force: bool, optional
-        If True, overwrite the already existing raw data file.
-        The default is False.
+        If ``True``, overwrite the already existing raw data file.
+        The default is ``False``.
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
     """
     print(f"Start download of {data_source} {campaign_name} {station_name} station data")
     # Define metadata_filepath
@@ -242,7 +242,7 @@ def _download_station_data(metadata_filepath: str, force: bool = False) -> None:
     metadata_filepaths : str
         Metadata file path.
     force : bool, optional
-        force download, by default False
+        If ``True``, delete existing files and redownload it. The default is ``False``.
 
     """
     disdrodb_data_url, station_dir = _get_station_url_and_dir_path(metadata_filepath)
@@ -296,7 +296,7 @@ def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
     dst_dir : str
         Local directory where to download the file (DISDRODB station data directory).
     force : bool, optional
-        Overwrite the raw data file if already existing, by default False.
+        Overwrite the raw data file if already existing. The default is ``False``.
 
     Returns
     -------

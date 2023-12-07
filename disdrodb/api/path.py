@@ -40,22 +40,24 @@ def get_disdrodb_path(
 ):
     """Return the directory in the DISDRODB infrastructure.
 
-    If data_source and campaign_name are not specified it return the product directory.
-    If data_source is specified, it returns the data_source directory.
-    If campaign_source is specified, it returns the campaign_name directory.
+    If ``data_source`` and ``campaign_name`` are not specified it return the product directory.
+
+    If ``data_source`` is specified, it returns the ``data_source`` directory.
+
+    If ``campaign_source`` is specified, it returns the ``campaign_name`` directory.
 
     Parameters
     ----------
     base_dir : str
         The disdrodb base directory
     product : str
-        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
     data_source : str, optional
-        The data source. Must be specified if campaign_name is specified.
+        The data source. Must be specified if ``campaign_name`` is specified.
     campaign_name : str, optional
-        The campaign_name.
+        The campaign name.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default True.
+        Whether to check if the directory exists. By default ``True``.
 
     Returns
     -------
@@ -92,16 +94,16 @@ def define_campaign_dir(
     Parameters
     ----------
     product : str
-        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
     data_source : str
-        The data source. Must be specified if campaign_name is specified.
+        The data source. Must be specified if ``campaign_name`` is specified.
     campaign_name : str
-        The campaign_name.
+        The campaign name.
     base_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default False.
+        Whether to check if the directory exists. By default ``False``.
 
     Returns
     -------
@@ -132,7 +134,7 @@ def define_station_dir(
     Parameters
     ----------
     product : str
-        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
     data_source : str
         The data source.
     campaign_name : str
@@ -143,7 +145,7 @@ def define_station_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default False.
+        Whether to check if the directory exists. By default ``False``.
 
     Returns
     -------
@@ -179,7 +181,7 @@ def define_metadata_dir(
     Parameters
     ----------
     product : str
-        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
+        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
     data_source : str
         The data source.
     campaign_name : str
@@ -188,7 +190,7 @@ def define_metadata_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default False.
+        Whether to check if the directory exists. By default ``False``.
 
     Returns
     -------
@@ -227,7 +229,7 @@ def define_issue_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default False.
+        Whether to check if the directory exists. By default ``False``.
 
     Returns
     -------
@@ -272,7 +274,7 @@ def define_metadata_filepath(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default False.
+        Whether to check if the directory exists. By default ``False``.
 
     Returns
     -------
@@ -315,7 +317,7 @@ def define_issue_filepath(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default False.
+        Whether to check if the directory exists. By default ``False``.
 
     Returns
     -------
@@ -483,8 +485,8 @@ def define_l0b_filepath(ds: xr.Dataset, processed_dir: str, station_name: str, l
     station_name : str
         ID of the station
     l0b_concat : bool
-        If False, the file is specified inside the station directory.
-        If True, the file is specified outside the station directory.
+        If ``False``, the file is specified inside the station directory.
+        If ``True``, the file is specified outside the station directory.
 
     Returns
     -------

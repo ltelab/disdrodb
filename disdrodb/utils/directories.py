@@ -28,6 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def ensure_string_path(path, msg, accepth_pathlib=False):
+    """Ensure that the path is a string."""
     if accepth_pathlib:
         valid_types = (str, pathlib.PurePath)
     else:
@@ -47,6 +48,7 @@ def _recursive_glob(dir_path, glob_pattern):
 
 
 def list_paths(dir_path, glob_pattern, recursive=False):
+    """Return a list of filepaths and directory paths."""
     if not recursive:
         return glob.glob(os.path.join(dir_path, glob_pattern))
     else:
@@ -78,7 +80,7 @@ def count_directories(dir_path, glob_pattern, recursive=False):
 
 
 def check_directory_exists(dir_path):
-    """Check if the directory exist."""
+    """Check if the directory exists."""
     if not os.path.exists(dir_path):
         raise ValueError(f"{dir_path} directory does not exist.")
     if not os.path.isdir(dir_path):
@@ -99,7 +101,7 @@ def create_directory(path: str, exist_ok=True) -> None:
 
 
 def create_required_directory(dir_path, dir_name):
-    """Create directory <dir_name> inside the <dir_path> directory."""
+    """Create directory ``dir_name`` inside the ``dir_path`` directory."""
     try:
         new_dir = os.path.join(dir_path, dir_name)
         os.makedirs(new_dir, exist_ok=True)
@@ -112,7 +114,7 @@ def create_required_directory(dir_path, dir_name):
 def is_empty_directory(path):
     """Check if a directory path is empty.
 
-    Return False if path is a file or non-empty directory.
+    Return ``False`` if path is a file or non-empty directory.
     If the path does not exist, raise an error.
     """
     if not os.path.exists(path):
@@ -128,7 +130,7 @@ def is_empty_directory(path):
 
 
 def _remove_file_or_directories(path):
-    """Return the file/directory or subdirectories tree of 'path'.
+    """Return the file/directory or subdirectories tree of ``path``.
 
     Use this function with caution.
     """
@@ -148,9 +150,9 @@ def _remove_file_or_directories(path):
 
 
 def remove_if_exists(path: str, force: bool = False) -> None:
-    """Remove file or directory if exists and force=True.
+    """Remove file or directory if exists and ``force=True``.
 
-    If force=False --> Raise error
+    If ``force=False`` --> Raise error
     """
     # If the path does not exist, do nothing
     if not os.path.exists(path):
@@ -190,9 +192,9 @@ def remove_path_trailing_slash(path: str) -> str:
     Removes a trailing slash or backslash from a file path if it exists.
 
     This function ensures that the provided file path is normalized by removing
-    any trailing directory separator characters ('/' or '\\'). This is useful for
-    maintaining consistency in path strings and for preparing paths for operations
-    that may not expect a trailing slash.
+    any trailing directory separator characters (``'/'`` or ``'\\'``).
+    This is useful for maintaining consistency in path strings and for
+    preparing paths for operations that may not expect a trailing slash.
 
     Parameters
     ----------

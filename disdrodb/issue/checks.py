@@ -28,7 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def _is_numpy_array_string(arr):
-    """Check if the numpy array contains strings
+    """Check if the numpy array contains strings.
 
     Parameters
     ----------
@@ -41,7 +41,7 @@ def _is_numpy_array_string(arr):
 
 
 def _is_numpy_array_datetime(arr):
-    """Check if the numpy array contains datetime64
+    """Check if the numpy array contains datetime64.
 
     Parameters
     ----------
@@ -64,7 +64,7 @@ def _check_timestep_datetime_accuracy(timesteps, unit="s"):
     timesteps : numpy array
         Numpy array to check.
     unit : str, optional
-        Unit, by default "s"
+        Unit, by default "s".
 
     Returns
     -------
@@ -201,7 +201,7 @@ def _get_issue_time_periods(issue_dict):
 
 
 def check_issue_dict(issue_dict):
-    """Check validity of the issue dictionary"""
+    """Check validity of the issue dictionary."""
     # Check is empty
     if len(issue_dict) == 0:
         return issue_dict

@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 def _check_valid_range(df, dict_data_range, verbose=False):
     """Check valid value range of dataframe columns.
 
-    It assumes the dict_data_range values are list [min_val, max_val]
+    It assumes the ``dict_data_range`` values are list ``[min_val, max_val]``.
     """
     list_wrong_columns = []
     for column in df.columns:
@@ -63,7 +63,7 @@ def _check_valid_range(df, dict_data_range, verbose=False):
 def _check_valid_values(df, dict_valid_values, verbose=False):
     """Check valid values of dataframe columns.
 
-    It assumes the dict_valid_values values are list [...].
+    It assumes the ``dict_valid_values`` values are lists.
     """
     list_msg = []
     list_wrong_columns = []
@@ -98,7 +98,7 @@ def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, verbose: boo
     Raises
     ------
     ValueError
-        Error if the raw_drop_number field is missing.
+        Error if the ``raw_drop_number`` field is missing.
     """
     from disdrodb.l0.standards import get_raw_array_nvalues
 
@@ -133,7 +133,8 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     Raises
     ------
     ValueError
-        Error if some columns do not meet the DISDRODB standards or if the 'time' column is missing in the dataframe.
+        Error if some columns do not meet the DISDRODB standards or if the ``'time'``
+        column is missing in the dataframe.
 
     """
 
@@ -173,7 +174,7 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
         Name of the sensor.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is True.
+        The default is ``True``.
 
     Raises
     ------
@@ -218,6 +219,5 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
 
 
 def check_l0b_standards(x: str) -> None:
-    # TODO:
     # - Check for realistic values after having removed the flags !!!!
     pass

@@ -59,7 +59,7 @@ logger = logging.getLogger(__name__)
 
 #### DISDRODB Products directories
 def _check_data_source_consistency(raw_dir: str, processed_dir: str) -> str:
-    """Check that 'raw_dir' and 'processed_dir' have same data_source.
+    """Check that ``raw_dir`` and ``processed_dir`` have same ``data_source``.
 
     Parameters
     ----------
@@ -71,12 +71,12 @@ def _check_data_source_consistency(raw_dir: str, processed_dir: str) -> str:
     Returns
     -------
     str
-        data_source in capital letter.
+        ``data_source`` in capital letter.
 
     Raises
     ------
     ValueError
-        Error if the data_source of the two directory paths does not match.
+        Error if the ``data_source`` of the two directory paths does not match.
     """
     raw_data_source = infer_data_source_from_path(raw_dir)
     processed_data_source = infer_data_source_from_path(processed_dir)
@@ -88,7 +88,7 @@ def _check_data_source_consistency(raw_dir: str, processed_dir: str) -> str:
 
 
 def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
-    """Check that 'raw_dir' and 'processed_dir' have same campaign_name.
+    """Check that ``raw_dir`` and ``processed_dir`` have same campaign_name.
 
     Parameters
     ----------
@@ -100,12 +100,12 @@ def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
     Returns
     -------
     str
-        Campaign name in capital letter.
+        ``campaign_name`` in capital letter.
 
     Raises
     ------
     ValueError
-        Error if the campaign_name of the two directory paths does not match.
+        Error if the ``campaign_name`` of the two directory paths does not match.
     """
     raw_campaign_name = infer_campaign_name_from_path(raw_dir)
     processed_campaign_name = infer_campaign_name_from_path(processed_dir)
@@ -119,7 +119,7 @@ def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
 def _copy_station_metadata(
     data_source: str, campaign_name: str, station_name: str, base_dir: str = None, check_validity: bool = False
 ) -> None:
-    """Copy the station YAML file from the raw_dir/metadata into processed_dir/metadata
+    """Copy the station YAML file from the ``raw_dir/metadata`` into ``processed_dir/metadata``.
 
     Parameters
     ----------
@@ -163,12 +163,12 @@ def _check_pre_existing_station_data(
 ):
     """Check for pre-existing station data.
 
-    - If force=True, remove all data inside the station directory.
-    - If force=False, raise error.
-
-    NOTE: force=False behaviour could be changed to enable updating of missing files.
-         This would require also adding code to check whether a downstream file already exist.
+    - If ``force=True``, remove all data inside the station directory.
+    - If ``force=False``, raise error.
     """
+    # NOTE: ``force=False`` behaviour could be changed to enable updating of missing files.
+    # This would require also adding code to check whether a downstream file already exist.
+
     # Check if there are available data
     available_data = has_available_station_files(
         product=product,
@@ -211,8 +211,11 @@ def create_l0_directory_structure(
 ):
     """Create directory structure for the first L0 DISDRODB product.
 
-    If the input data are raw text files --> product = "L0A"    (run_l0a)
-    If the input data are raw netCDF files --> product = "L0B"  (run_l0b_nc)
+    If the input data are raw text files, use ``product = "L0A"``
+    If the input data are raw netCDF files, use ``product = "L0B"``
+
+    ``product = "L0A"`` will call ``run_l0a``.
+    ``product = "L0B"`` will call ``run_l0b_nc``.
     """
     # Check inputs
     raw_dir = check_raw_dir(raw_dir=raw_dir, station_name=station_name)
@@ -315,7 +318,7 @@ def _create_station_directories(
     product="RAW",
     base_dir=None,
 ):
-    """Create the /metadata, /issue and /data/<station_name> directories of a station."""
+    """Create the ``/metadata``, ``/issue`` and ``/data/<station_name>`` directories of a station."""
     # Create directory structure
     _ = create_station_directory(
         base_dir=base_dir,

@@ -32,7 +32,7 @@ def get_dataframe_start_end_time(df: pd.DataFrame):
     Returns
     -------
     tuple
-        (starting_time, ending_time)
+        (``starting_time``, ``ending_time``)
 
     """
 

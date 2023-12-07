@@ -67,7 +67,7 @@ def check_url(url: str) -> bool:
     Returns
     -------
     bool
-        True if url well formatted, False if not well formatted.
+        ``True`` if url well formatted, ``False`` if not well formatted.
     """
     regex = r"^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$"  # noqa: E501
 
@@ -87,14 +87,14 @@ def check_path_is_a_directory(dir_path, path_name=""):
 
 
 def check_directories_inside(dir_path):
-    """Check there are directories inside the specified dir_path."""
+    """Check there are directories inside the specified ``dir_path``."""
     dir_paths = os.listdir(dir_path)
     if len(dir_paths) == 0:
         raise ValueError(f"There are not directories within {dir_path}")
 
 
 def check_base_dir(base_dir: str):
-    """Raise an error if the path does not end with "DISDRODB"."""
+    """Raise an error if the path does not end with ``DISDRODB``."""
     base_dir = str(base_dir)  # convert Pathlib to string
     if not base_dir.endswith("DISDRODB"):
         raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
@@ -114,7 +114,7 @@ def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
     Raises
     ------
     TypeError
-        Error if `sensor_name` is not a string.
+        Error if ``sensor_name`` is not a string.
     ValueError
         Error if the input sensor name has not been found in the list of available sensors.
     """
@@ -177,7 +177,7 @@ def check_station_dir(product, data_source, campaign_name, station_name, base_di
 
 
 def has_available_station_files(product, data_source, campaign_name, station_name, base_dir=None):
-    """Return True if data are available for the given product and station."""
+    """Return ``True`` if data are available for the given product and station."""
     station_dir = check_station_dir(
         product=product,
         base_dir=base_dir,
@@ -295,7 +295,7 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
 
 
 def check_is_within_raw_directory(path):
-    """Check the path is within the DISDRODB 'Raw' directory."""
+    """Check the path is within the DISDRODB ``Raw`` directory."""
     components = infer_disdrodb_tree_path_components(path)
     if components[1] != "Raw":
         msg = f"{path} is not within the 'Raw' directory."
@@ -304,7 +304,7 @@ def check_is_within_raw_directory(path):
 
 
 def check_is_within_processed_directory(path):
-    """Check the path is within the DISDRODB 'Processed' directory."""
+    """Check the path is within the DISDRODB ``Processed`` directory."""
     components = infer_disdrodb_tree_path_components(path)
     if components[1] != "Processed":
         msg = f"{path} is not within the 'Processed' directory."
@@ -315,9 +315,9 @@ def check_is_within_processed_directory(path):
 def check_valid_campaign_dir(campaign_dir):
     """Check the validity of a campaign directory path.
 
-    Used to check validity of 'raw_dir' and 'processed_dir'.
+    Used to check validity of ``raw_dir`` and ``processed_dir``.
 
-    The path must represents this path */DISDRODB/<Raw or Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>
+    The path must be ``*/DISDRODB/<Raw/Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>``
     """
     last_component = os.path.basename(campaign_dir)
     tree_components = infer_disdrodb_tree_path_components(campaign_dir)
@@ -347,11 +347,16 @@ def check_raw_dir(raw_dir: str, station_name: str) -> None:
     """Check validity of raw_dir content.
 
     Steps:
-    1. Check that 'raw_dir' is a valid directory path
-    2. Check that 'raw_dir' follows the expect directory structure
-    3. Check that each station_name directory contains data
-    4. Check that for each station_name the mandatory metadata.yml is specified.
-    5. Check that for each station_name the mandatory issue.yml is specified.
+
+        1. Check that ``raw_dir`` is a valid directory path
+
+        2. Check that ``raw_dir`` follows the expect directory structure
+
+        3. Check that each ``station_name`` directory contains data
+
+        4. Check that for each station_name the mandatory ``metadata.yml`` is specified.
+
+        5. Check that for each station_name the mandatory ``issue.yml`` is specified.
 
     Parameters
     ----------
@@ -361,7 +366,7 @@ def check_raw_dir(raw_dir: str, station_name: str) -> None:
         Station name.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is False.
+        The default is ``False``.
 
     """
     # Ensure valid path format
@@ -415,12 +420,12 @@ def check_raw_dir(raw_dir: str, station_name: str) -> None:
 
 
 def check_processed_dir(processed_dir):
-    """Check input, format and validity of the 'processed_dir' directory path.
+    """Check input, format and validity of the ``processed_dir`` directory path.
 
     Parameters
     ----------
     processed_dir : str
-        Path to the campaign directory in the 'DISDRODB/Processed directory tree
+        Path to the campaign directory in the ``DISDRODB/Processed`` directory tree
 
     Returns
     -------

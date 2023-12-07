@@ -40,20 +40,20 @@ def get_list_metadata(
     data_sources : str or list of str
         Name of data source(s) of interest.
         The name(s) must be UPPER CASE.
-        The default is None
+        The default is ``None``.
     campaign_names : str or list of str
         Name of the campaign(s) of interest.
         The name(s) must be UPPER CASE.
-        The default is None
+        The default is ``None``.
     station_names : str or list of str
         Station names of interest.
-        The default is None
+        The default is ``None``.
     with_stations_data : bool
-        If True, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
-        The default is True
+        If ``True``, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
+        The default is ``True``.
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
@@ -87,21 +87,21 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
     ----------
     base_dir : str
         Base directory of DISDRODB
-        Format: <...>/DISDRODB
+        Format: ``<...>/DISDRODB``.
     data_sources : str or list of str
         Name of data source(s) of interest.
         The name(s) must be UPPER CASE.
-        The default is None
+        The default is ``None``.
     campaign_names : str or list of str
         Name of the campaign(s) of interest.
         The name(s) must be UPPER CASE.
-        The default is None
+        The default is ``None``.
     station_names : str or list of str
         Station names of interest.
-        The default is None
+        The default is ``None``.
     with_stations_data : bool
-        If True, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
-        The default is True
+        If ``True``, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
+        The default is ``True``.
 
     Returns
     -------
@@ -150,18 +150,18 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     ----------
     base_dir : str
         Base directory of DISDRODB
-        Format: <...>/DISDRODB
+        Format: ``<...>/DISDRODB``.
     data_sources : str or list of str
         Name of data source(s) of interest.
         The name(s) must be UPPER CASE.
-        The default is None
+        The default is ``None``.
     campaign_names : str or list of str
         Name of the campaign(s) of interest.
         The name(s) must be UPPER CASE.
-        The default is None
+        The default is ``None``.
     station_names : str or list of str
         Station names of interest.
-        The default is None
+        The default is ``None``.
 
     Returns
     -------

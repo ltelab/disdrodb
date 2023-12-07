@@ -105,7 +105,7 @@ def _check_variable_consistency(sensor_name: str) -> None:
 
 
 class SchemaValidationException(Exception):
-    """Exception raised when schema validation fails"""
+    """Exception raised when schema validation fails."""
 
 
 def _schema_error(object_to_validate: Union[str, list], schema: BaseModel, message) -> bool:
@@ -114,9 +114,9 @@ def _schema_error(object_to_validate: Union[str, list], schema: BaseModel, messa
     Parameters
     ----------
     object_to_validate : Union[str,list]
-        Object to validate
+        Object to validate.
     schema : BaseModel
-        Base model
+        Base model.
 
     """
 
@@ -165,7 +165,7 @@ class L0BEncodingSchema(BaseModel):
 
 
 def check_l0b_encoding(sensor_name: str) -> None:
-    """Check l0b_encodings.yml file based on the schema defined in the class L0BEncodingSchema.
+    """Check ``l0b_encodings.yml`` file based on the schema defined in the class ``L0BEncodingSchema``.
 
     Parameters
     ----------
@@ -185,7 +185,7 @@ def check_l0b_encoding(sensor_name: str) -> None:
 
 
 def check_l0a_encoding(sensor_name: str) -> None:
-    """Check l0a_encodings.yml file.
+    """Check ``l0a_encodings.yml`` file.
 
     Parameters
     ----------
@@ -228,7 +228,7 @@ class RawDataFormatSchema(BaseModel):
 
 
 def _check_raw_data_format(sensor_name: str) -> None:
-    """check raw_data_format.yml file based on the schema defined in the class RawDataFormatSchema.
+    """check ``raw_data_format.yml`` file based on the schema defined in the class ``RawDataFormatSchema``.
 
     Parameters
     ----------
@@ -247,7 +247,7 @@ def _check_raw_data_format(sensor_name: str) -> None:
 
 
 def _check_cf_attributes(sensor_name: str) -> None:
-    """Check that the l0b_cf_attrs.yml description, long_name and units values are strings.
+    """Check that the ``l0b_cf_attrs.yml`` description, long_name and units values are strings.
 
     Parameters
     ----------
@@ -344,7 +344,7 @@ def _check_raw_array(sensor_name: str) -> None:
 
 
 def check_sensor_configs(sensor_name: str) -> None:
-    """check sensor configs.
+    """Check validity of sensor configuration YAML files.
 
     Parameters
     ----------
@@ -362,6 +362,6 @@ def check_sensor_configs(sensor_name: str) -> None:
 
 
 def check_all_sensors_configs() -> None:
-    """Check all sensors configs."""
+    """Check all sensors configuration YAML files."""
     for sensor_name in available_sensor_names(product="L0A"):
         check_sensor_configs(sensor_name=sensor_name)

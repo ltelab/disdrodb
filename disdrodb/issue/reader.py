@@ -31,13 +31,11 @@ class NoDatesSafeLoader(yaml.SafeLoader):
     @classmethod
     def remove_implicit_resolver(cls, tag_to_remove):
         """
-        Remove implicit resolvers for a particular tag
+        Remove implicit resolvers for a particular tag.
 
         Takes care not to modify resolvers in super classes.
 
-        We want to load datetimes as strings, not dates, because we
-        go on to serialise as json which doesn't have the advanced types
-        of yaml, and leads to incompatibilities down the track.
+        We want to load datetimes as strings, not dates.
         """
         if "yaml_implicit_resolvers" not in cls.__dict__:
             cls.yaml_implicit_resolvers = cls.yaml_implicit_resolvers.copy()
@@ -92,10 +90,7 @@ def read_station_issue(data_source, campaign_name, station_name, base_dir=None):
         The name of the station.
     base_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    product : str, optional
-        The DISDRODB product in which to search for the metadata file.
-        The default is "RAW".
+        If not specified, the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------

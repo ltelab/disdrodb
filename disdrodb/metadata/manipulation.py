@@ -40,7 +40,7 @@ def add_missing_metadata_keys(metadata):
 
 
 def sort_metadata_dictionary(metadata):
-    """Sort the keys of the metadata dictionary by valid_metadata_keys list order."""
+    """Sort the keys of the metadata dictionary by ``valid_metadata_keys`` list order."""
     from disdrodb.metadata.standards import get_valid_metadata_keys
 
     list_metadata_keys = get_valid_metadata_keys()

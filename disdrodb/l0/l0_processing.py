@@ -73,7 +73,7 @@ logger = logging.getLogger(__name__)
 
 
 def _delayed_based_on_kwargs(function):
-    """Decorator to make the function delayed if its `parallel` argument is True."""
+    """Decorator to make the function delayed if its ``parallel`` argument is ``True``."""
 
     @functools.wraps(function)
     def wrapper(*args, **kwargs):
@@ -803,7 +803,7 @@ def run_l0b_from_nc(
 def run_l0b_concat(processed_dir, station_name, verbose=False):
     """Concatenate all L0B netCDF files into a single netCDF file.
 
-    The single netCDF file is saved at <processed_dir>/L0B.
+    The single netCDF file is saved at ``<processed_dir>/L0B``.
     """
     from disdrodb.l0.l0b_processing import write_l0b
     from disdrodb.utils.netcdf import xr_concat_datasets

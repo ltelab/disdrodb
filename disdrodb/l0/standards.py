@@ -156,7 +156,7 @@ def get_valid_values_dict(sensor_name: str) -> dict:
 def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
     """Get number of digits on the left side of the comma from the instrument default string standards.
 
-    Example: 123,45 -> 123 --> 3 natural digits
+    Example: 123,45 -> 123 --> 3 natural digits.
 
     Parameters
     ----------
@@ -177,7 +177,8 @@ def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
 def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
     """Get number of digits on the right side of the comma from the instrument default string standards.
 
-    Example: 123,45 -> 45 --> 2 decimal digits
+    Example: 123,45 -> 45 --> 2 decimal digits.
+
     Parameters
     ----------
     sensor_name : dict
@@ -365,15 +366,15 @@ def set_disdrodb_attrs(ds, product: str):
 
     Parameters
     ----------
-    ds : xarray dataset
+    ds : xarray dataset.
         Dataset
     product: str
-        DISDRODB product
+        DISDRODB product.
 
     Returns
     -------
     xarray dataset
-        Dataset
+        Dataset.
     """
     # Add dataset conventions
     ds.attrs["Conventions"] = CONVENTIONS
@@ -407,7 +408,7 @@ def set_disdrodb_attrs(ds, product: str):
 
 
 def get_diameter_bins_dict(sensor_name: str) -> dict:
-    """Get dictionary with sensor_name diameter bins information.
+    """Get dictionary with ``sensor_name`` diameter bins information.
 
     Parameters
     ----------
@@ -417,7 +418,7 @@ def get_diameter_bins_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        sensor_name diameter bins information
+        Sensor diameter bins information.
     """
     d = read_config_file(sensor_name=sensor_name, product="L0A", filename="bins_diameter.yml")
     return d
@@ -429,12 +430,12 @@ def get_diameter_bin_center(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        Diameter bin center
+        Diameter bin center.
     """
     diameter_dict = get_diameter_bins_dict(sensor_name)
     diameter_bin_center = list(diameter_dict["center"].values())
@@ -447,12 +448,12 @@ def get_diameter_bin_lower(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        Diameter bin lower bound
+        Diameter bin lower bound.
     """
     diameter_dict = get_diameter_bins_dict(sensor_name)
     lower_bounds = [v[0] for v in diameter_dict["bounds"].values()]
@@ -465,12 +466,12 @@ def get_diameter_bin_upper(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        Diameter bin upper bound
+        Diameter bin upper bound.
     """
     diameter_dict = get_diameter_bins_dict(sensor_name)
     upper_bounds = [v[1] for v in diameter_dict["bounds"].values()]
@@ -483,12 +484,12 @@ def get_diameter_bin_width(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        Diameter bin width
+        Diameter bin width.
     """
     diameter_dict = get_diameter_bins_dict(sensor_name)
     diameter_bin_width = list(diameter_dict["width"].values())
@@ -496,7 +497,7 @@ def get_diameter_bin_width(sensor_name: str) -> list:
 
 
 def get_velocity_bins_dict(sensor_name: str) -> dict:
-    """Get velocity with sensor_name diameter bins information.
+    """Get velocity with ``sensor_name`` diameter bins information.
 
     Parameters
     ----------
@@ -506,7 +507,7 @@ def get_velocity_bins_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Sensor_name diameter bins information
+        Sensor velocity bins information.
     """
     d = read_config_file(sensor_name=sensor_name, product="L0A", filename="bins_velocity.yml")
     return d
@@ -518,12 +519,12 @@ def get_velocity_bin_center(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        Velocity bin center
+        Velocity bin center.
     """
     velocity_dict = get_velocity_bins_dict(sensor_name)
     if velocity_dict is not None:
@@ -539,7 +540,7 @@ def get_velocity_bin_lower(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
@@ -560,12 +561,12 @@ def get_velocity_bin_upper(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        Velocity bin upper bound
+        Velocity bin upper bound.
     """
 
     velocity_dict = get_velocity_bins_dict(sensor_name)
@@ -582,12 +583,12 @@ def get_velocity_bin_width(sensor_name: str) -> list:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     list
-        Velocity bin width
+        Velocity bin width.
     """
 
     velocity_dict = get_velocity_bins_dict(sensor_name)
@@ -609,7 +610,7 @@ def get_bin_coords_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        Dictionary with coordinate arrays.
+        Dictionary with coordinates arrays.
     """
 
     check_sensor_name(sensor_name=sensor_name)
@@ -683,7 +684,7 @@ def get_l0a_dtype(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        L0A dtype
+        Dictionary with the L0A dtype.
     """
 
     # Note: This function could extract the info from l0a_encodings in future.
@@ -692,7 +693,7 @@ def get_l0a_dtype(sensor_name: str) -> dict:
 
 
 def get_l0a_encodings_dict(sensor_name: str) -> dict:
-    """Get a dictionary containing the L0A encodings
+    """Get a dictionary containing the L0A encodings.
 
     Parameters
     ----------
@@ -702,7 +703,7 @@ def get_l0a_encodings_dict(sensor_name: str) -> dict:
     Returns
     -------
     dict
-        L0A encodings
+        L0A encodings.
     """
 
     # - l0a_encodings.yml currently specify only the dtype. This could be expanded in the future.
@@ -775,12 +776,12 @@ def get_l0b_encodings_dict(sensor_name: str) -> dict:
 
 
 def get_time_encoding() -> dict:
-    """Create time encoding
+    """Create time encoding.
 
     Returns
     -------
     dict
-        Time encoding
+        Time encoding.
     """
     encoding = {}
     encoding["units"] = EPOCH
@@ -831,12 +832,12 @@ def get_raw_array_dims_order(sensor_name: str) -> dict:
     Parameters
     ----------
     sensor_name : str
-        Name of the sensor
+        Name of the sensor.
 
     Returns
     -------
     dict
-        Dimension order dictionary
+        Dimension order dictionary.
 
     """
     # Retrieve data format dictionary

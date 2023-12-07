@@ -38,19 +38,19 @@ from disdrodb.issue.checks import (
 def test__is_numpy_array_string():
     # Test string array
     arr = np.array(["foo", "bar"], dtype=np.str_)
-    assert _is_numpy_array_string(arr) is True
+    assert _is_numpy_array_string(arr)
 
     # Test unicode array
     arr = np.array(["foo", "bar"], dtype=np.unicode_)
-    assert _is_numpy_array_string(arr) is True
+    assert _is_numpy_array_string(arr)
 
     # Test nonstring array
     arr = np.array([1, 2, 3])
-    assert _is_numpy_array_string(arr) is False
+    assert not _is_numpy_array_string(arr)
 
     # Test mixed type array
     arr = np.array(["foo", 1, 2.0], dtype=np.object_)
-    assert _is_numpy_array_string(arr) is False
+    assert not _is_numpy_array_string(arr)
 
 
 ####--------------------------------------------------------------------------.
@@ -59,10 +59,10 @@ def test__is_numpy_array_string():
 
 def test__is_numpy_array_datetime():
     arr = np.array(["2022-01-01", "2022-01-02"], dtype="datetime64")
-    assert _is_numpy_array_datetime(arr) is True
+    assert _is_numpy_array_datetime(arr)
 
     arr = np.array([1, 2, 3])
-    assert _is_numpy_array_datetime(arr) is False
+    assert not _is_numpy_array_datetime(arr)
 
 
 def test_check_timesteps():

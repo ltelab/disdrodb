@@ -94,9 +94,65 @@ Step 1: Fork and download the DISDRODB Metadata Archive
    If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__
    or ask in the `disdrodb slack channel <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
 
+
 .. _step2:
 
-Step 2: Define the DISDRODB base directory
+Step 2: Install disdrodb in editable mode
+-------------------------------------------
+
+But first, let's fork and install the `disdrodb python package  <https://github.com/ltelab/disdrodb>`__ in editable mode,
+so that you will be able to share the reader you are going to develop with the community.
+
+To do so, follow the steps below:
+
+1. Go to the `disdrodb python package repository <https://github.com/ltelab/disdrodb>`__, fork the repository on your GitHub account and then clone the forked repository:
+
+   .. code:: bash
+
+      git clone https://github.com/<your_username>/disdrodb.git
+
+2. Go inside the ``disdrodb`` directory where you have cloned the repository
+
+3. Create a new branch where you will develop the reader for your data:
+
+   .. code:: bash
+
+      git checkout -b "reader-<data_source>-<campaign_name>"
+
+
+4. Set the remote upstream branch:
+
+   .. code:: bash
+
+      git push --set-upstream origin "reader-<data_source>-<campaign_name>"
+
+5. Every time you will now ``git add *`` and ``git commit -m <describe-your-change>`` your changes, you will be able to push them to your forked repository with:
+
+   .. code:: bash
+
+      git push
+
+
+6. When you want to show your changes to the DISDRODB maintainers, you will need to open a Pull Request.
+   To do so, go to the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, open the Pull Request and ask for a review.
+
+   For more information on GitHub Pull Requests, read the
+   `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
+
+   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__
+   or ask in the `disdrodb slack channel <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
+
+
+7. Finally, install the disdrodb python package in editable mode using:
+
+   .. code:: bash
+
+      pip install -e .
+
+
+.. _step3:
+
+Step 3: Define the DISDRODB base directory
 --------------------------------------------
 
 Here we define the local DISDRODB archive base directory.
@@ -113,9 +169,9 @@ On Windows, the DISDRODB base directory will have a path ending by ``"\DISDRODB"
     disdrodb.define_configs(base_dir=base_dir)
 
 
-.. _step3:
+.. _step4:
 
-Step 3: Add metadata
+Step 4: Add metadata
 -----------------------
 
 Now let's create the directory structure and the defaults metadata files for the stations you wish to contribute.
@@ -177,68 +233,14 @@ When you are done with the editing of the metadata files, please run the followi
 
 The only error you should temporary get is the one related to the missing value of the ``reader`` key !
 
-.. _step4:
+.. _step5:
 
-Step 4: Add the raw data
+Step 5: Add the raw data
 --------------------------
 
 It's now time to move the raw data of each station into the corresponding ``disdrodb-data/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>/data/<STATION_NAME>`` directory.
 
 Once done, you are mostly ready for the next step: implementing the DISDRODB reader for your data.
-
-.. _step5:
-
-Step 5: Install disdrodb in editable mode
--------------------------------------------
-
-But first, let's fork and install the `disdrodb python package  <https://github.com/ltelab/disdrodb>`__ in editable mode,
-so that you will be able to share the reader you are going to develop with the community.
-
-To do so, follow the steps below:
-
-1. Go to the `disdrodb python package repository <https://github.com/ltelab/disdrodb>`__, fork the repository on your GitHub account and then clone the forked repository:
-
-   .. code:: bash
-
-      git clone https://github.com/<your_username>/disdrodb.git
-
-2. Go inside the ``disdrodb`` directory where you have cloned the repository
-
-3. Create a new branch where you will develop the reader for your data:
-
-   .. code:: bash
-
-      git checkout -b "reader-<data_source>-<campaign_name>"
-
-
-4. Set the remote upstream branch:
-
-   .. code:: bash
-
-      git push --set-upstream origin "reader-<data_source>-<campaign_name>"
-
-5. Every time you will now ``git add *`` and ``git commit -m <describe-your-change>`` your changes, you will be able to push them to your forked repository with:
-
-   .. code:: bash
-
-      git push
-
-
-6. When you want to show your changes to the DISDRODB maintainers, you will need to open a Pull Request.
-   To do so, go to the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, open the Pull Request and ask for a review.
-
-   For more information on GitHub Pull Requests, read the
-   `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
-
-   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__
-   or ask in the `disdrodb slack channel <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
-
-
-7. Finally, install the disdrodb python package in editable mode using:
-
-   .. code:: bash
-
-      pip install -e .
 
 
 .. _step6:
@@ -468,6 +470,29 @@ Otherwise, you need to investigate the reported errors, improve the readers and 
 Often, the errors arise from raw text files which are empty or corrupted. In such case, simply remove or sanitize the files.
 
 Reiterate between `Step 4 <#step4>`_  and `Step 5 <#step5>`_ till the DISDRODB L0 processing does not raise errors :)
+
+Before proceeding, we recommend compressing your raw text files using gzip to significantly reduce their size.
+This method can often reduce file sizes by up to 100 times, greatly enhancing the efficiency of subsequent data uploads and user downloads.
+Below, we offer a utility designed to compress each raw file associated to a specific station:
+
+.. code-block:: python
+
+    from disdrodb.utils.compression import compress_station_files
+
+    base_dir = "<path_to>/disdrodb-data/DISDRODB"
+    data_source = "<your_data_source>"
+    campaign_name = "<your_campaign>"
+    station_name = "<your_station_name>"
+    compress_station_files(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        method="gzip",
+    )
+
+After compressing the raw files, remember to update the reader `glob_patterns` to include the new file extension (i.e. .gz)
+and rerun the DISDRODB L0 processing to check that everything works fine.
 
 If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, do it now so
 that the DISDRODB maintainers can review your code and help you with the final steps !

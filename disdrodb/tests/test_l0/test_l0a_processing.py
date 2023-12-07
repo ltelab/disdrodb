@@ -531,7 +531,7 @@ def test_read_raw_file(tmp_path):
     )
 
     # Check that an empty dataframe is returned
-    assert r.empty is True
+    assert r.empty
 
 
 def test_check_df_sanitizer_fun():

@@ -46,7 +46,7 @@ logger = logging.getLogger(__name__)
 
 
 def _check_dict_names_validity(dict_names, sensor_name):
-    """Check dict_names dictionary values validity."""
+    """Check ``dict_names`` dictionary values validity."""
     valid_names = get_valid_names(sensor_name)
     keys = np.array(list(dict_names.keys()))
     values = np.array(list(dict_names.values()))
@@ -62,7 +62,7 @@ def _check_dict_names_validity(dict_names, sensor_name):
 
 
 def _get_dict_names_variables(dict_names, sensor_name):
-    """Get DISDRODB variables specified in dict_names."""
+    """Get DISDRODB variables specified in ``dict_names``."""
     possible_variables = get_valid_variable_names(sensor_name)
     dictionary_names = list(dict_names.values())
     variables = [name for name in dictionary_names if name in possible_variables]
@@ -78,7 +78,7 @@ def _get_missing_variables(ds, dict_names, sensor_name):
 
 
 def rename_dataset(ds, dict_names):
-    """Rename Dataset variables, coordinates and dimensions."""
+    """Rename xr.Dataset variables, coordinates and dimensions."""
     # Get dataset variables, coordinates and dimensions of the dataset
     ds_vars = list(ds.data_vars)
     ds_dims = list(ds.dims)
@@ -101,7 +101,7 @@ def rename_dataset(ds, dict_names):
 
 
 def subset_dataset(ds, dict_names, sensor_name):
-    """Subset Dataset with expected variables."""
+    """Subset xr.Dataset with expected variables."""
     # Get valid variable names
     possible_variables = get_valid_variable_names(sensor_name)
     # Get variables availables in the dict_names and dataset
@@ -118,7 +118,7 @@ def subset_dataset(ds, dict_names, sensor_name):
 
 
 def add_dataset_missing_variables(ds, missing_vars, sensor_name):
-    """Add missing Dataset variables as nan DataArrays."""
+    """Add missing xr.Dataset variables as ``np.nan`` xr.DataArrays."""
     from disdrodb.l0.standards import get_variables_dimension
 
     # Get dimension of each variables
@@ -140,8 +140,8 @@ def add_dataset_missing_variables(ds, missing_vars, sensor_name):
 def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     """This function preprocess raw netCDF to improve compatibility with DISDRODB standards.
 
-    This function checks validity of the dict_names, rename and subset the data accordingly.
-    If some variables specified in the dict_names are missing, it adds a NaN DataArray !
+    This function checks validity of the ``dict_names``, rename and subset the data accordingly.
+    If some variables specified in the ``dict_names`` are missing, it adds a ``np.nan`` xr.DataArray !
 
     Parameters
     ----------
@@ -156,7 +156,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     Returns
     -------
     ds : xr.Dataset
-        xarray Dataset with DISDRODB-compliant variable naming conventions.
+        xarray Dataset with variables compliant to DISDRODB conventions.
 
     """
     # Check variable_dict has valid values
@@ -183,7 +183,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
 
 
 def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
-    """Set values corresponding to nan_flags to np.nan.
+    """Set values corresponding to ``nan_flags`` to ``np.nan``.
 
     This function must be used in a reader, if necessary.
 
@@ -192,12 +192,14 @@ def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
     df : xr.Dataset
         Input xarray dataset
     dict_nan_flags : dict
-        Dictionary with nan flags value to set as np.nan
+        Dictionary with nan flags value to set as ``np.nan``.
+    verbose : bool
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
     xr.Dataset
-        Dataset without nan_flags values.
+        Dataset without ``nan_flags`` values.
     """
     # Loop over the needed variable, and replace nan_flags values with np.nan
     for var, nan_flags in dict_nan_flags.items():
@@ -216,7 +218,7 @@ def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
 
 
 def replace_nan_flags(ds, sensor_name, verbose):
-    """Set values corresponding to nan_flags to np.nan.
+    """Set values corresponding to ``nan_flags`` to ``np.nan``.
 
     Parameters
     ----------
@@ -230,7 +232,7 @@ def replace_nan_flags(ds, sensor_name, verbose):
     Returns
     -------
     xr.Dataset
-        Dataset without nan_flags values.
+        Dataset without ``nan_flags`` values.
     """
     # Get dictionary of nan flags
     dict_nan_flags = get_nan_flags_dict(sensor_name)
@@ -240,7 +242,7 @@ def replace_nan_flags(ds, sensor_name, verbose):
 
 
 def set_nan_outside_data_range(ds, sensor_name, verbose):
-    """Set values outside the data range as np.nan.
+    """Set values outside the data range as ``np.nan``.
 
     Parameters
     ----------
@@ -278,7 +280,7 @@ def set_nan_outside_data_range(ds, sensor_name, verbose):
 
 
 def set_nan_invalid_values(ds, sensor_name, verbose):
-    """Set invalid (class) values to np.nan.
+    """Set invalid (class) values to ``np.nan``.
 
     Parameters
     ----------
@@ -321,12 +323,12 @@ def create_l0b_from_raw_nc(
     verbose,
     attrs,
 ):
-    """Convert a raw xr.Dataset into a DISDRODB L0B netCDF.
+    """Convert a raw ``xr.Dataset`` into a DISDRODB L0B netCDF.
 
     Parameters
     ----------
     ds : xr.Dataset
-        xr.Dataset
+        Raw xarray dataset
     dict_names : dict
         Dictionary mapping raw netCDF variables/coordinates/dimension names
         to DISDRODB standards.

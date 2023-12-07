@@ -91,6 +91,7 @@ def _get_version_from_filepath(filepath):
 
 
 def get_version_from_filepaths(filepaths):
+    """Return the DISDROB product version of the specified files"""
     if isinstance(filepaths, str):
         filepaths = [filepaths]
     list_version = [_get_version_from_filepath(filepath) for filepath in filepaths]
@@ -98,31 +99,37 @@ def get_version_from_filepaths(filepaths):
 
 
 def get_campaign_name_from_filepaths(filepaths):
+    """Return the DISDROB campaign name of the specified files"""
     list_id = get_key_from_filepaths(filepaths, key="campaign_name")
     return list_id
 
 
 def get_station_name_from_filepaths(filepaths):
+    """Return the DISDROB station name of the specified files"""
     list_id = get_key_from_filepaths(filepaths, key="station_name")
     return list_id
 
 
 def get_product_from_filepaths(filepaths):
+    """Return the DISDROB product name of the specified files"""
     list_id = get_key_from_filepaths(filepaths, key="product")
     return list_id
 
 
 def get_start_time_from_filepaths(filepaths):
+    """Return the start time of the specified files"""
     list_start_time = get_key_from_filepaths(filepaths, key="start_time")
     return list_start_time
 
 
 def get_end_time_from_filepaths(filepaths):
+    """Return the end time of the specified files"""
     list_end_time = get_key_from_filepaths(filepaths, key="end_time")
     return list_end_time
 
 
 def get_start_end_time_from_filepaths(filepaths):
+    """Return the start and end time of the specified files"""
     list_start_time = get_key_from_filepaths(filepaths, key="start_time")
     list_end_time = get_key_from_filepaths(filepaths, key="end_time")
     return np.array(list_start_time), np.array(list_end_time)
@@ -135,18 +142,18 @@ def get_start_end_time_from_filepaths(filepaths):
 
 
 def infer_disdrodb_tree_path_components(path: str) -> list:
-    """Return a list with the component of the disdrodb_path.
+    """Return a list with the component of the ``disdrodb_path``.
 
     Parameters
     ----------
     path : str
-        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
 
     Returns
     -------
     list
         Path element of the DISDRODB archive.
-        Format: [<base_dir>, <Raw or Processed>, <DATA_SOURCE>, <CAMPAIGN_NAME>, ...]
+        Format: [``base_dir``, ``<Raw or Processed>``, ``data_source`, ``campaign_name``, ...]
     """
     # Retrieve path elements (os-specific)
     p = Path(path)
@@ -167,18 +174,18 @@ def infer_disdrodb_tree_path_components(path: str) -> list:
 
 
 def infer_path_info_dict(path: str) -> dict:
-    """Return a dictionary with the base_dir, data_source and campaign_name of the disdrodb_path.
+    """Return a dictionary with the ``base_dir``, ``data_source`` and ``campaign_name`` of the disdrodb_path.
 
     Parameters
     ----------
     path : str
-        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
 
     Returns
     -------
     list
         Dictionary with the path element of the DISDRODB archive.
-        Valid keys: "base_dir", "data_source", "campaign_name"
+        Valid keys: ``"base_dir"``, ``"data_source"``, ``"campaign_name"``
     """
     components = infer_disdrodb_tree_path_components(path=path)
     if len(components) <= 3:
@@ -193,18 +200,18 @@ def infer_path_info_dict(path: str) -> dict:
 def infer_disdrodb_tree_path(path: str) -> str:
     """Return the directory tree path from the base_dir directory.
 
-    Current assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+    Current assumption: no ``data_source``, ``campaign_name``, ``station_name`` or file contain the word DISDRODB!
 
     Parameters
     ----------
     path : str
-        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
 
     Returns
     -------
     str
         Path inside the DISDRODB archive.
-        Format: DISDRODB/<Raw or Processed>/<DATA_SOURCE>/...
+        Format: ``DISDRODB/<Raw or Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>/...``
     """
     components = infer_disdrodb_tree_path_components(path=path)
     tree_filepath = os.path.join("DISDRODB", *components[1:])
@@ -219,7 +226,7 @@ def infer_base_dir_from_path(path: str) -> str:
     Parameters
     ----------
     path : str
-        `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
 
     Returns
     -------
@@ -232,12 +239,12 @@ def infer_base_dir_from_path(path: str) -> str:
 def infer_campaign_name_from_path(path: str) -> str:
     """Return the campaign name from a file or directory path.
 
-    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+    Assumption: no ``data_source``, ``campaign_name``, ``station_name`` or file contain the word DISDRODB!
 
     Parameters
     ----------
     path : str
-       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+       ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
 
     Returns
     -------
@@ -254,12 +261,12 @@ def infer_campaign_name_from_path(path: str) -> str:
 def infer_data_source_from_path(path: str) -> str:
     """Return the data_source from a file or directory path.
 
-    Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
+    Assumption: no ``data_source``, ``campaign_name``, ``station_name`` or file contain the word DISDRODB!
 
     Parameters
     ----------
     path : str
-       `path` can be a campaign_dir ('raw_dir' or 'processed_dir'), or a DISDRODB file path.
+       ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
 
     Returns
     -------

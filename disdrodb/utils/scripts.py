@@ -36,9 +36,9 @@ def _execute_cmd(cmd, raise_error=False):
 
 def _parse_empty_string_and_none(args):
     """Utility to parse argument passed from the command line.
-    If args = '' --> None
-    If args = 'None' --> None
-    Otherwise return args
+    If ``args = ''``, returns None.
+    If ``args = 'None'`` returns None.
+    Otherwise return ``args``.
     """
     # If '', set to 'None'
     args = None if args == "" else args
@@ -52,10 +52,10 @@ def _parse_empty_string_and_none(args):
 def parse_arg_to_list(args):
     """Utility to pass list to command line scripts.
 
-    If args = '' --> None
-    If args = 'None' --> None
-    If args = 'variable' --> [variable]
-    If args = 'variable1 variable2' --> [variable1, variable2]
+    If ``args = ''`` returns ``None``.
+    If ``args = 'None'`` returns ``None``.
+    If ``args = 'variable'`` returns ``[variable]``.
+    If ``args = 'variable1 variable2'`` returns ``[variable1, variable2]``.
     """
     # If '' or 'None' --> Set to None
     args = _parse_empty_string_and_none(args)
@@ -70,8 +70,8 @@ def parse_arg_to_list(args):
 
 def parse_base_dir(base_dir):
     """Utility to parse base_dir provided by command line.
-    If base_dir = 'None' --> None
-    If base_dir = '' --> None
+    If ``base_dir = 'None'`` returns ``None``.
+    If ``base_dir = ''`` returns ``None``.
     """
     # If '', set to 'None'
     return _parse_empty_string_and_none(base_dir)

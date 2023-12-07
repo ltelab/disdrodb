@@ -33,8 +33,8 @@ def define_disdrodb_configs(base_dir: str = None, zenodo_token: str = None, zeno
 
     Notes
     -----
-    This function write or update the DISDRODB config YAML file
-    The DISDRODB config YAML file is located in the user's home directory at ~/.config_disdrodb.yml
+    This function write or update the DISDRODB config YAML file.
+    The DISDRODB config YAML file is located in the user's home directory at ``~/.config_disdrodb.yml``.
     The configuration file is used to run the various DISDRODB operations.
 
     """
@@ -78,12 +78,12 @@ def read_disdrodb_configs() -> Dict[str, str]:
     Raises
     ------
     ValueError
-        If the configuration file has not been defined yet. Use `disdrodb.define_configs()` to
+        If the configuration file has not been defined yet. Use ``disdrodb.define_configs()`` to
         specify the configuration file path and settings.
 
     Notes
     -----
-    This function reads the YAML configuration file located at ~/.config_disdrodb.yml.
+    This function reads the YAML configuration file located at ``~/.config_disdrodb.yml``.
     """
     # Define path where .config_disdrodb.yaml file should be located
     filepath = _define_config_filepath()
@@ -107,7 +107,7 @@ def get_base_dir(base_dir=None):
 
 
 def get_zenodo_token(sandbox: bool):
-    """Return the Zenodo Access Token."""
+    """Return the Zenodo access token."""
     import disdrodb
 
     if sandbox:

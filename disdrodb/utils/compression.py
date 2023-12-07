@@ -38,15 +38,15 @@ COMPRESSION_OPTIONS = {
 
 
 def unzip_file(filepath: str, dest_path: str) -> None:
-    """Unzip a file into a directory
+    """Unzip a file into a directory.
 
     Parameters
 
     ----------
     filepath : str
-        Path of the file to unzip
+        Path of the file to unzip.
     dest_path : str
-        Path of the destination directory
+        Path of the destination directory.
     """
 
     with zipfile.ZipFile(filepath, "r") as zip_ref:
@@ -59,12 +59,12 @@ def _zip_dir(dir_path: str) -> str:
     Parameters
     ----------
     dir_path : str
-        Path of the directory to zip
+        Path of the directory to zip.
 
     Returns
     -------
     str
-        Path of the zip archive
+        Path of the zip archive.
     """
 
     output_path_without_extension = os.path.join(tempfile.gettempdir(), os.path.basename(dir_path))
@@ -110,12 +110,12 @@ def compress_station_files(
     station_name : str
         Station name of interest.
     method : str
-        Compression method. "zip", "gzip" or "bzip2".
+        Compression method. ``"zip"``, ``"gzip"`` or ``"bzip2"``.
     skip : bool
         Whether to raise an error if a file is already compressed.
-        If True, it does not raise an error and try to compress the other files.
-        If False, it raise an error and stop the compression routine.
-        THe default is True.
+        If ``True``, it does not raise an error and try to compress the other files.
+        If ``False``, it raise an error and stop the compression routine.
+        THe default is ``True``.
     """
     if method not in COMPRESSION_OPTIONS:
         raise ValueError(f"Invalid compression method {method}. Valid methods are {list(COMPRESSION_OPTIONS.keys())}")
@@ -151,11 +151,11 @@ def _compress_file(filepath: str, method: str, skip: bool) -> str:
     filepath : str
         Path of the file to compress.
     method : str
-        Compression method. None, "zip", "gzip" or "bzip2".
+        Compression method. ``None``, ``"zip"``, ``"gzip"`` or ``"bzip2"``.
     skip : bool
         Whether to raise an error if a file is already compressed.
-        If True, it does not raise an error return the input filepath.
-        If False, it raise an error.
+        If ``True``, it does not raise an error return the input filepath.
+        If ``False``, it raise an error.
 
     Returns
     -------
@@ -200,7 +200,7 @@ def _check_file_compression(filepath: str) -> Optional[str]:
     Returns
     -------
     Optional[str]
-        Compression method. None, "zip", "gzip" or "bzip2".
+        Compression method. ``None``, ``"zip"``, ``"gzip"`` or ``"bzip2"``.
 
     """
     magic_dict = {

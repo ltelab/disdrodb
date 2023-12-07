@@ -283,7 +283,7 @@ def available_stations(
     return_tuple=True,
     base_dir=None,
 ):
-    """Return stations for which data are available."""
+    """Return stations for which data are available on disk."""
     base_dir = get_base_dir(base_dir)
     # Checks
     product = check_product(product)

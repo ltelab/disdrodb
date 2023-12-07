@@ -77,7 +77,7 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is False.
+        The default is ``False``.
     """
     if verbose:
         print(" - " + msg)
@@ -95,7 +95,7 @@ def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is False.
+        The default is ``False``.
     """
     if verbose:
         print(" - " + msg)
@@ -113,7 +113,7 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is False.
+        The default is ``False``.
     """
     if verbose:
         print(" - " + msg)
@@ -131,7 +131,7 @@ def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is False.
+        The default is ``False``.
     """
     if verbose:
         print(" - " + msg)
@@ -195,7 +195,7 @@ def define_summary_log(list_logs):
 
     Assume logs to be located at:
 
-        /DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>/logs/<product>/<station_name>/*.log
+        ``/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>/logs/<product>/<station_name>/*.log``
 
     """
     # LogCaptureHandler of pytest does not have baseFilename attribute, so it returns None

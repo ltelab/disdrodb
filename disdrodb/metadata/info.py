@@ -38,12 +38,12 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, base_dir
     key : str
         Metadata key.
     return_tuple : bool, optional
-       If True, returns a tuple of values with station, campaign and data source name.
-       If False, returns a list of values without station, campaign and data source name.
-       The default is True.
+       If ``True``, returns a tuple (``data_source``,``campaign_name``,``station_name``, ``key_value``)
+       If ``False``, returns a list of the key values.
+       The default is ``True``.
     base_dir : str (optional)
-       Base directory of DISDRODB. Format: <...>/DISDRODB
-       If None (the default), the disdrodb config variable 'dir' is used.
+       Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+       If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------

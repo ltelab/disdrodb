@@ -59,10 +59,10 @@ def write_issue(filepath: str, timesteps: list = None, time_periods: list = None
         Filepath of the issue YAML to write.
     timesteps : list, optional
         List of timesteps (to be dropped in L0 processing).
-        The default is None.
+        The default is ``None``..
     time_periods : list, optional
         A list of time periods (to be dropped in L0 processing).
-        The default is None.
+        The default is ``None``..
     """
     # Preprocess timesteps and time_periods (to plain list of strings)
     if timesteps is not None:
@@ -109,7 +109,7 @@ def create_station_issue(data_source, campaign_name, station_name, base_dir=None
         The name of the station.
     base_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
+        If not specified, the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     """
     # Define issue filepath

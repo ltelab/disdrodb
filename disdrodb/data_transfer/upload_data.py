@@ -143,13 +143,14 @@ def upload_station(
         The name of the station.
     base_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
     platform: str, optional
-        Name of the remote platform.
-        The default platform is "sandbox.zenodo"
+        Name of the remote data storage platform.
+        The default platform is ``"sandbox.zenodo"`` (for testing purposes).
+        Switch to ``"zenodo"`` for final data dissemination.
     force: bool, optional
-        If True, upload the data and overwrite the disdrodb_data_url.
-        The default is force=False.
+        If ``True``, upload the data and overwrite the ``disdrodb_data_url``.
+        The default is ``force=False``.
 
     """
     _check_valid_platform(platform)
@@ -187,30 +188,30 @@ def upload_archive(
     ----------
     platform: str, optional
         Name of the remote platform.
-        If not provided (None), the default platform is Zenodo.
-        The default is platform=None.
+        The default platform is ``"sandbox.zenodo"`` (for testing purposes).
+        Switch to ``"zenodo"`` for final data dissemination.
     force: bool, optional
-        If True, upload even if data already exists on another remote location.
-        The default is force=False.
+        If ``True``, upload even if data already exists on another remote location.
+        The default is ``force=False``.
     base_dir : str (optional)
-        Base directory of DISDRODB. Format: <...>/DISDRODB
-        If None (the default), the disdrodb config variable 'dir' is used.
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
 
     Other Parameters
     ----------------
 
     data_sources: str or list of str, optional
         Data source name (eg: EPFL).
-        If not provided (None), all data sources will be uploaded.
-        The default is data_source=None.
+        If not provided (``None``), all data sources will be uploaded.
+        The default is ``data_source=None``.
     campaign_names: str or list of str, optional
         Campaign name (eg:  EPFL_ROOF_2012).
-        If not provided (None), all campaigns will be uploaded.
-        The default is campaign_name=None.
+        If not provided (``None``), all campaigns will be uploaded.
+        The default is ``campaign_name=None``.
     station_names: str or list of str, optional
         Station name.
-        If not provided (None), all stations will be uploaded.
-        The default is station_name=None.
+        If not provided (``None``), all stations will be uploaded.
+        The default is ``station_name=None``.
     """
     _check_valid_platform(platform)
 

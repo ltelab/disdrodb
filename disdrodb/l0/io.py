@@ -102,7 +102,7 @@ def _get_available_filepaths(raw_dir, station_name, glob_patterns):
 
 
 def _filter_filepaths(filepaths, debugging_mode):
-    """Filter out filepaths if debugging_mode=True."""
+    """Filter out filepaths if ``debugging_mode=True``."""
     if debugging_mode:
         max_files = min(3, len(filepaths))
         filepaths = filepaths[0:max_files]
@@ -125,10 +125,10 @@ def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debug
         ID of the station
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is False.
+        The default is ``False``.
     debugging_mode : bool, optional
-        If True, it select maximum 3 files for debugging purposes.
-        The default is False.
+        If ``True``, it select maximum 3 files for debugging purposes.
+        The default is ``False``.
 
     Returns
     -------
@@ -160,12 +160,12 @@ def get_l0a_filepaths(processed_dir, station_name, debugging_mode=False):
     ----------
     processed_dir : str
         Directory of the campaign where to search for the L0A files.
-        Format <..>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>
+        Format: ``<..>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
     station_name : str
         ID of the station
     debugging_mode : bool, optional
-        If True, it select maximum 3 files for debugging purposes.
-        The default is False.
+        If ``True``, it select maximum 3 files for debugging purposes.
+        The default is ``False``.
 
     Returns
     -------
@@ -215,15 +215,15 @@ def read_l0a_dataframe(
     Parameters
     ----------
     filepaths : str or list
-        Either a list or a single filepath .
+        Either a list or a single filepath.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is False.
+        The default is ``False``.
     debugging_mode : bool
-        If True, it reduces the amount of data to process.
-        If filepaths is a list, it reads only the first 3 files
+        If ``True``, it reduces the amount of data to process.
+        If filepaths is a list, it reads only the first 3 files.
         For each file it select only the first 100 rows.
-        The default is False.
+        The default is ``False``.
 
     Returns
     -------

@@ -100,7 +100,7 @@ def read_raw_file(
     column_names : list
         Column names.
     reader_kwargs : dict
-        Pandas pd.read_csv arguments.
+        Pandas ``pd.read_csv`` arguments.
 
     Returns
     -------
@@ -129,7 +129,7 @@ def read_raw_file(
 
 
 def _check_df_sanitizer_fun(df_sanitizer_fun):
-    """Check the argument of df_sanitizer_fun is only df."""
+    """Check that ``df`` is the only argument of ``df_sanitizer_fun``."""
     if df_sanitizer_fun is None:
         return None
     if not callable(df_sanitizer_fun):
@@ -155,14 +155,14 @@ def _check_matching_column_number(df, column_names, verbose=False):
 
 
 def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
-    """Remove dataframe rows where the "time" is NaT.
+    """Remove dataframe rows where the ``"time"`` is ``NaT``.
 
     Parameters
     ----------
     df : pd.DataFrame
         Input dataframe.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -196,7 +196,7 @@ def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
     df : pd.DataFrame
         Input dataframe.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -231,7 +231,7 @@ def drop_timesteps(df, timesteps):
 
 
 def drop_time_periods(df, time_periods):
-    """Drop problematic time_period."""
+    """Drop problematic time periods."""
     for time_period in time_periods:
         if len(df) > 0:
             start_time = time_period[0]
@@ -254,7 +254,9 @@ def remove_issue_timesteps(df, issue_dict, verbose=False):
     df : pd.DataFrame
         Input dataframe.
     issue_dict : dict
-        Issue dictionary
+        Issue dictionary.
+    verbose : bool
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -287,7 +289,7 @@ def remove_issue_timesteps(df, issue_dict, verbose=False):
 
 
 def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
-    """Convert 'object' dataframe columns into DISDRODB L0A dtype standards.
+    """Convert ``'object'`` dataframe columns into DISDRODB L0A dtype standards.
 
     Parameters
     ----------
@@ -296,7 +298,7 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -327,7 +329,7 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False
 
 
 def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
-    """Coerce corrupted values in dataframe numeric columns to np.nan.
+    """Coerce corrupted values in dataframe numeric columns to ``np.nan``.
 
     Parameters
     ----------
@@ -336,7 +338,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: 
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -369,7 +371,7 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str, verbose: bool = Fals
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -456,8 +458,8 @@ def remove_corrupted_rows(df):
     return df
 
 
-def replace_nan_flags(df, sensor_name, verbose):
-    """Set values corresponding to nan_flags to np.nan.
+def replace_nan_flags(df, sensor_name, verbose=False):
+    """Set values corresponding to ``nan_flags`` to ``np.nan``.
 
     Parameters
     ----------
@@ -466,7 +468,7 @@ def replace_nan_flags(df, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -491,8 +493,8 @@ def replace_nan_flags(df, sensor_name, verbose):
     return df
 
 
-def set_nan_outside_data_range(df, sensor_name, verbose):
-    """Set values outside the data range as np.nan.
+def set_nan_outside_data_range(df, sensor_name, verbose=False):
+    """Set values outside the data range as ``np.nan``.
 
     Parameters
     ----------
@@ -501,7 +503,7 @@ def set_nan_outside_data_range(df, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -530,8 +532,8 @@ def set_nan_outside_data_range(df, sensor_name, verbose):
     return df
 
 
-def set_nan_invalid_values(df, sensor_name, verbose):
-    """Set invalid (class) values to np.nan.
+def set_nan_invalid_values(df, sensor_name, verbose=False):
+    """Set invalid (class) values to ``np.nan``.
 
     Parameters
     ----------
@@ -540,7 +542,7 @@ def set_nan_invalid_values(df, sensor_name, verbose):
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -584,21 +586,20 @@ def process_raw_file(
     column_names : list
         Columns names.
     reader_kwargs : dict
-         Pandas `read_csv` arguments.
+         Pandas ``read_csv`` arguments.
     df_sanitizer_fun : object, optional
         Sanitizer function to format the datafame.
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
-        The default is True
+        Whether to verbose the processing. The default is ``True``.
     issue_dict : dict
         Issue dictionary providing information on timesteps to remove.
-        The default is an empty dictionary {}.
-        Valid issue_dict key are 'timesteps' and 'time_periods'.
+        The default is an empty dictionary ``{}``.
+        Valid issue_dict key are ``'timesteps'`` and ``'time_periods'``.
         Valid issue_dict values are list of datetime64 values (with second accuracy).
-        To correctly format and check the validity of the issue_dict, use
-        the disdrodb.l0.issue.check_issue_dict function.
+        To correctly format and check the validity of the ``issue_dict``, use
+        the ``disdrodb.l0.issue.check_issue_dict`` function.
 
     Returns
     -------
@@ -689,11 +690,10 @@ def write_l0a(
         Output file path.
     force : bool, optional
         Whether to overwrite existing data.
-        If True, overwrite existing data into destination directories.
-        If False, raise an error if there are already data into destination directories. This is the default.
+        If ``True``, overwrite existing data into destination directories.
+        If ``False``, raise an error if there are already data into destination directories. This is the default.
     verbose : bool, optional
-        Whether to verbose the processing.
-        The default is False.
+        Whether to verbose the processing. The default is ``False``.
 
     Raises
     ------
@@ -748,8 +748,8 @@ def concatenate_dataframe(list_df: list, verbose: bool = False) -> pd.DataFrame:
     list_df : list
         List of dataframes.
     verbose : bool, optional
-        If True, print messages.
-        If False, no print.
+        If ``True``, print messages.
+        If ``False``, no print.
 
     Returns
     -------
@@ -812,11 +812,11 @@ def read_raw_files(
     column_names : list
         Columns names.
     reader_kwargs : dict
-         Pandas `read_csv` arguments.
+         Pandas ``read_csv`` arguments.
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing.
+        Whether to verbose the processing. The default is ``False``.
     df_sanitizer_fun : object, optional
         Sanitizer function to format the datafame.
 

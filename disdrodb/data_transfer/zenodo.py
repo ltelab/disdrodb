@@ -60,8 +60,8 @@ def _create_zenodo_deposition(sandbox) -> Tuple[int, str]:
     Parameters
     ----------
     sandbox : bool
-        If True, create the deposit on Zenodo Sandbox for testing purposes.
-        If False, create the deposit on Zenodo.
+        If ``True``, create the deposit on Zenodo Sandbox for testing purposes.
+        If ``False``, create the deposit on Zenodo.
 
     Returns
     -------
@@ -224,7 +224,8 @@ def upload_station_to_zenodo(metadata_filepath: str, sandbox: bool = True) -> st
     metadata_filepath: str
         Metadata file path.
     sandbox: bool
-        If True, upload to Zenodo Sandbox for testing purposes.
+        If ``True``, upload to Zenodo Sandbox (for testing purposes).
+        If ``False``, upload to Zenodo.
     """
     # Zip station data
     print(" - Zipping station data")

@@ -50,15 +50,15 @@ def test_check_path():
 
 def test_check_url():
     # Test with valid URLs
-    assert check_url("https://www.example.com") is True
-    assert check_url("http://example.com/path/to/file.html?param=value") is True
-    assert check_url("www.example.com") is True
-    assert check_url("example.com") is True
+    assert check_url("https://www.example.com")
+    assert check_url("http://example.com/path/to/file.html?param=value")
+    assert check_url("www.example.com")
+    assert check_url("example.com")
 
     # Test with invalid URLs
-    assert check_url("ftp://example.com") is False
-    assert check_url("htp://example.com") is False
-    assert check_url("http://example.com/path with spaces") is False
+    assert not check_url("ftp://example.com")
+    assert not check_url("htp://example.com")
+    assert not check_url("http://example.com/path with spaces")
 
 
 def test_check_base_dir():

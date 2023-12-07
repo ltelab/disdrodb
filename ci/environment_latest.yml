@@ -9,7 +9,6 @@ dependencies:
   - donfig
   - requests
   - trollsift
-  - h5py
   - netcdf4
   - pyarrow
   - pandas

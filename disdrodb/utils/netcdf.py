@@ -41,7 +41,7 @@ def _sort_datasets_by_dim(list_ds: list, filepaths: str, dim: str = "time") -> T
     list_ds : list
         List of xarray Dataset.
     dim : str, optional
-        Dimension name. The default is "time".
+        Dimension name. The default is ``"time"``.
 
     Returns
     -------
@@ -87,11 +87,11 @@ def _get_duplicated_indices(x, keep="first"):
     x :  np.array
         Array of values.
     keep : str, optional
-        The value to keep, either 'first', 'last' or False.
+        The value to keep, either ``'first'``, ``'last'`` or ``False``.
         The default is 'first'.
-        ‘first’ : Mark duplicates as True except for the first occurrence.
-        ‘last’ : Mark duplicates as True except for the last occurrence.
-        False : Mark all duplicates as True.
+        ``‘first’`` : Mark duplicates as ``True`` except for the first occurrence.
+        ``‘last’`` : Mark duplicates as ``True`` except for the last occurrence.
+        ``False`` : Mark all duplicates as ``True``.
 
     Returns
     -------
@@ -137,9 +137,9 @@ def _get_bad_info_dict(
     idx_to_remove : np.ndarray
         Indices to be removed to ensure monotonic dimension.
     list_index : np.ndarray
-        Indices corresponding to the file in the `list_ds` parameter.
+        Indices corresponding to the file in the ``list_ds`` parameter.
     ds_index : np.ndarray
-        Indices corresponding to the dataset dimension index in the `list_ds` parameter.
+        Indices corresponding to the dataset dimension index in the ``list_ds`` parameter.
 
     Returns
     -------
@@ -201,7 +201,7 @@ def ensure_unique_dimension_values(list_ds: list, filepaths: str, dim: str = "ti
         List of netCDFs file paths.
     dim : str, optional
         Dimension name.
-        The default is "time".
+        The default is ``"time"``.
 
     Returns
     -------
@@ -264,7 +264,7 @@ def ensure_monotonic_dimension(list_ds: list, filepaths: str, dim: str = "time",
         List of netCDFs file paths.
     dim : str, optional
         Dimension name.
-        The default is "time".
+        The default is ``"time"``.
 
     Returns
     -------

@@ -34,7 +34,7 @@ def get_dataset_start_end_time(ds: xr.Dataset):
     Returns
     -------
     tuple
-        (starting_time, ending_time)
+        (``starting_time``, ``ending_time``)
 
     """
     starting_time = ds["time"].values[0]
@@ -49,20 +49,18 @@ def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, 
     Parameters
     ----------
     ds : xr.Dataset
-        DESCRIPTION.
-    time_dim : TYPE, optional
-        DESCRIPTION. The default is "time".
+        xarray Dataset.
+    time_dim : str, optional
+        The time dimension in the xr.Dataset. The default is ``"time"``.
     freq : str
-        The `freq` string to pass to pd.date_range to define the new time coordinates.
-        Examples: freq="2min"
-    time_dim : TYPE, optional
-        The time dimension in the xr.Dataset. The default is "time".
-    method : TYPE, optional
+        The ``freq`` string to pass to pd.date_range to define the new time coordinates.
+        Examples: ``freq="2min"``.
+    method : str, optional
         Method to use for filling missing timesteps.
-        If None, fill with fill_value. The default is None.
+        If ``None``, fill with ``fill_value``. The default is ``None``.
         For other possible methods, see https://docs.xarray.dev/en/stable/generated/xarray.Dataset.reindex.html
     fill_value : float, optional
-        Fill value to fill missing timesteps. The default is dtypes.NA.
+        Fill value to fill missing timesteps. The default is ``dtypes.NA``.
 
     Returns
     -------

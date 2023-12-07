@@ -27,7 +27,6 @@ dependencies = [
 	"requests",
 	"PyYAML",
 	"trollsift",
-	"h5py",
 	"netCDF4",
 	"pyarrow",
 	"pandas",
