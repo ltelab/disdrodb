@@ -100,10 +100,9 @@ Step 1: Fork and download the DISDRODB Metadata Archive
 Step 2: Install disdrodb in editable mode
 -------------------------------------------
 
-But first, let's fork and install the `disdrodb python package  <https://github.com/ltelab/disdrodb>`__ in editable mode,
-so that you will be able to share the reader you are going to develop with the community.
+In order to contribute a reader to disdrodb, it is necessary that you follow the steps detailed here below
+to install your local version of the `disdrodb python package  <https://github.com/ltelab/disdrodb>`__ in editable mode.
 
-To do so, follow the steps below:
 
 1. Go to the `disdrodb python package repository <https://github.com/ltelab/disdrodb>`__, fork the repository on your GitHub account and then clone the forked repository:
 
