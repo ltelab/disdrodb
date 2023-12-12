@@ -137,7 +137,7 @@ def compress_station_files(
     for filepath in filepaths:
         _ = _compress_file(filepath, method, skip=skip)
 
-    print("All files of {data_source} {campaign_name} {station_name} have been compressed.")
+    print(f"All files of {data_source} {campaign_name} {station_name} have been compressed.")
     print("Please now remember to update the glob_pattern of the reader ¨!")
 
 
