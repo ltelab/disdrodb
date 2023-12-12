@@ -302,7 +302,7 @@ def run_disdrodb_l0_station(
     # L0 archive options
     l0a_processing: bool = True,
     l0b_processing: bool = True,
-    l0b_concat: bool = True,
+    l0b_concat: bool = False,
     remove_l0a: bool = False,
     remove_l0b: bool = False,
     # Processing options
