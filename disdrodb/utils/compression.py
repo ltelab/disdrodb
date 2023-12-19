@@ -115,7 +115,7 @@ def compress_station_files(
         Whether to raise an error if a file is already compressed.
         If ``True``, it does not raise an error and try to compress the other files.
         If ``False``, it raise an error and stop the compression routine.
-        THe default is ``True``.
+        The default is ``True``.
     """
     if method not in COMPRESSION_OPTIONS:
         raise ValueError(f"Invalid compression method {method}. Valid methods are {list(COMPRESSION_OPTIONS.keys())}")

@@ -74,7 +74,7 @@ def disdrodb_run_l0_station(
         The default is True.\n
     l0b_processing : bool \n
         Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.\n
-        he default is True.\n
+        The default is True.\n
     l0b_concat : bool \n
         Whether to concatenate all raw files into a single L0B netCDF file.\n
         If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.\n
