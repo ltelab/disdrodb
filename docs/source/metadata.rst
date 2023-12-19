@@ -6,7 +6,7 @@ Metadata
 The metadata for each station are defined in a YAML file.
 The metadata YAML file expects a standardized set of keys.
 
-There are 7 metadata keys for which is mandatory to specify the value :
+There are 7 metadata keys for which it is mandatory to specify the value :
 
 * the ``data_source`` must be the same as the data_source where the metadata are located.
 * the ``campaign_name`` must be the same as the campaign_name where the metadata are located.

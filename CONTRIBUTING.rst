@@ -76,7 +76,7 @@ This can be done by running   ``black .``,  ``ruff check .`` or ``codespell`` .
 
 
 
-The can also be done with  ``pre-commit run --all-files``. This is recommended since it
+This can also be done with  ``pre-commit run --all-files``. This is recommended since it
 indicates if the commit contained any formatting errors (that are automatically corrected).
 
 
@@ -109,7 +109,7 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 1. Fork the repository
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Once you have set the development environment (see `Set up the development environment`_), the next step is creating
+Once you have set the development environment (see `Set up the development environment`_), the next step is to create
 your local copy of the repository, where you will commit your
 modifications. The steps to follow are:
 
@@ -173,7 +173,7 @@ and it is automatically detected by `black` (see above).
 
 **Docstrings**
 
-Every module, function, or class must have a docstring that describe its
+Every module, function, or class must have a docstring that describes its
 purpose and how to use it. The docstrings follows the conventions
 described in the `PEP 257 <https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings>`__
 and the `Numpy’s docstrings
@@ -301,7 +301,7 @@ To run `Codespell` locally :
 	To maintain consistency, make sure to stick to the version and the rule configuration defined in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file. This version will be used in the CI.
 
 
-In the table below, some CI tool are mentioned for your information, but does not need to be installed on your computer.
+In the table below, some CI tools are mentioned for your information, but does not need to be installed on your computer.
 They are automatically run when you push your changes to the main repository via a GitHub Pull Request.
 
 
@@ -368,7 +368,7 @@ To create a new reader test, simply add a small, single-station dataset and the 
 
 
 
-A single test will run all readers with data that has been placed in the above-mentioned structure.
+A single test will run all readers with data that have been placed in the above-mentioned structure.
 The raw data will be processed, and the resulting Apache Parquet files (L0A) will be compared to the ground truth.
 
 The reader test succeeds if both files (ground truth and transformation of the raw file) are similar.
@@ -440,12 +440,10 @@ a Pull Request (PR) to the DISDRODB main branch.
 Code review checklist
 ---------------------
 
--  Ask to people to review your code:
+-  Ask two people to review your code:
 
-   -  a person who knows the domain well and can spot bugs in the
-      business logic;
-   -  an expert in the technologies you are using who can help you
-      improve the code quality.
+   -  a person who knows the domain well and can spot bugs in the business logic;
+   -  an expert in the technologies you are using who can help you improve the code quality.
 
 -  When you are done with the changes after a code review, do another  self review of the code and write a comment to notify the reviewer,
    that the Pull Request is ready for another iteration.

@@ -48,7 +48,7 @@ Once you added a new sensor configuration, check the validity with the following
     sensor_name = "OTT_Parsivel"  # Change with your sensor_name
     check_sensor_configs(sensor_name)
 
-Here below we details further information related to each of the configuration
+Here below we detail further information related to each of the configuration
 YAML files.
 
 
@@ -91,19 +91,19 @@ During the DISDRODB L0 processing:
 * the ``nan_flags`` values, if specified, will be converted to ``NaN``
 
 The ``n_digits``, ``n_characters``, ``n_decimals`` and ``n_naturals`` information
-is used to infer the raw files header when this is unknown.
+is used to infer the raw files header when it is unknown.
 See usage of the ``infer_column_names`` function in the
 `reader_preparation.ipynb <https://github.com/ltelab/disdrodb/tree/main/tutorial>`_ Jupyter Notebook.
 
-For the variables which values do not depend only from the time dimension, it is necessary
+For the variables which values do not depend only on the time dimension, it is necessary
 to specify 2 additional keys: ``n_values`` and ``dimension_order``
 
-The ``n_values`` key corresponds to the total number of the array variable values.
+The ``n_values`` key corresponds to the total number of variable values in the array.
 For example, for the precipitation spectrum of the OTT Parsivel sensor,
 characterized by 32 diameter and 32 velocity bins, ``n_values = 1024`` (32*32).
 
 The ``dimension_order`` controls how the precipitation spectrum counts logged by the
-sensor has to be reshaped into a 2D matrix.
+sensor have to be reshaped into a 2D matrix.
 
 For example, the OTT Parsivel logs the precipitation spectrum by first providing
 the drop count in each bin diameters for the velocity bin 1, then for velocity bin 2 and so on.
@@ -132,21 +132,21 @@ for more information.
 DISDRODB L0A encodings
 -----------------------
 
-The ``l0a_encodings.yml`` file lists the variables that are allow to be saved into the
+The ``l0a_encodings.yml`` file lists the variables that are allowed to be saved into the
 DISDRODB L0A Apache Parquet format.
-The file also specified the type (i.e. integer/floating precision/string)
+The file also specifies the type (i.e. integer/floating precision/string)
 each variable is saved in the Apache Parquet binary format.
 In addition to the specified variables, also the following variables are allowed
 to be saved into the DISDRODB L0A files:
 
-* the ``time`` column (in UTC format)
+* the ``time`` column (in UTC)
 * the ``latitude`` and ``longitude`` columns if the disdrometer station is mobile.
 
 
 DISDRODB L0B encodings
 -----------------------
 
-The ``l0b_encodings.yml`` file lists the variables that are allow to be saved into the
+The ``l0b_encodings.yml`` file lists the variables that are allowed to be saved into the
 DISDRODB L0B netCDF4 format.
 
 For each variable, you need to specify the compression options, the data type,

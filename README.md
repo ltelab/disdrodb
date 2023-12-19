@@ -110,7 +110,7 @@ DISDRODB can be installed from PyPI with pip:
 ## 💭 Feedback and Contributing Guidelines
 
 If you aim to contribute your data or discuss the future development of DISDRODB,
-we highly suggest to join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA)
+we highly recommend to join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA)
 
 Feel free to also open a [GitHub Issue](https://github.com/ltelab/disdrodb/issues) or a
 [GitHub Discussion](https://github.com/ltelab/disdrodb/discussions) specific to your questions or ideas.
