@@ -53,7 +53,7 @@ def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, 
     time_dim : str, optional
         The time dimension in the xr.Dataset. The default is ``"time"``.
     freq : str
-        The ``freq`` string to pass to pd.date_range to define the new time coordinates.
+        The ``freq`` string to pass to ``pd.date_range`` to define the new time coordinates.
         Examples: ``freq="2min"``.
     method : str, optional
         Method to use for filling missing timesteps.

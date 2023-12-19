@@ -189,11 +189,11 @@ def _define_station_problem_log_file(list_logs, problem_filepath):
 def define_summary_log(list_logs):
     """Define a station summary and a problems log file from the list of input logs.
 
-    The summary log select only logged lines with root, WARNING and ERROR keywords.
-    The problems log file select only logged lines with the ERROR keyword.
+    The summary log select only logged lines with ``root``, ``WARNING`` and ``ERROR`` keywords.
+    The problems log file select only logged lines with the ``ERROR`` keyword.
     The two log files are saved in the parent directory of the input list_logs.
 
-    Assume logs to be located at:
+    The function assume that the files logs are located at:
 
         ``/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>/logs/<product>/<station_name>/*.log``
 

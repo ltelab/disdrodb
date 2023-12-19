@@ -83,10 +83,6 @@ def archive_station_data(metadata_filepath: str) -> str:
     metadata_filepath: str
         Metadata file path.
 
-    Returns
-    -------
-    station_zip_filepath
-        Filepath of the zip file containing the station's data.
     """
     station_data_path = metadata_filepath.replace("metadata", "data")
     station_data_path = os.path.splitext(station_data_path)[0]  # remove trailing ".yml"

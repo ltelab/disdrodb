@@ -152,7 +152,7 @@ def _remove_file_or_directories(path):
 def remove_if_exists(path: str, force: bool = False) -> None:
     """Remove file or directory if exists and ``force=True``.
 
-    If ``force=False`` --> Raise error
+    If ``force=False``, it raises an error.
     """
     # If the path does not exist, do nothing
     if not os.path.exists(path):
