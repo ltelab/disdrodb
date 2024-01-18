@@ -56,7 +56,7 @@ repository = "https://github.com/ltelab/disdrodb"
 source = "https://github.com/ltelab/disdrodb"
 tracker = "https://github.com/ltelab/disdrodb/issues"
 documentation = "https://disdrodb.readthedocs.io"
-changelog = "https://github.com/ltelab/disdrodb/CHANGELOG.md"
+changelog = "https://github.com/ltelab/disdrodb/blob/main/CHANGELOG.md"
 
 [tool.setuptools_scm]
 write_to = "disdrodb/_version.py"

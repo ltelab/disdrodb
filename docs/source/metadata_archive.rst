@@ -52,7 +52,7 @@ To update the DISDRODB Metadata Archive follow these steps:
 
    .. code:: bash
 
-      export DISDRODB_BASE_DIR="<path_to_the>/disdrodb-data/DISDRODB"
+      export DISDRODB_BASE_DIR="<path_to>/disdrodb-data/DISDRODB"
       disdrodb_check_metadata_archive
 
    .. note::

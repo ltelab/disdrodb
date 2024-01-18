@@ -42,7 +42,7 @@ In the in the disdrodb software, the readers are organized by data source.
 You can have a preliminary look on how the readers looks like by exploring
 the `DISDRODB.l0.readers directory <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_
 
-The function ``available_readers`` returns a dictionary with all readers currently available within DISDRODB.
+The function ``available_readers`` returns a dictionary with all readers available within DISDRODB.
 By specifying the ``data_sources`` argument, only the readers for the specified data sources are returned.
 
 .. code-block:: python
