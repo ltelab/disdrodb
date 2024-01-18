@@ -3,12 +3,9 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to DISDRODB's documentation!  
-=======================================
+Welcome to DISDRODB !
+======================
 
-.. image:: /static/logo.png
-   :width: 100%
-   :align: center
 
 Motivation
 ===========
@@ -29,18 +26,18 @@ However, only a small fraction of those data is easily accessible.
 Data are stored in disparate formats with poor documentation, making them difficult to share, analyse, compare and reuse.
 Additionally, very limited software exists or is publicly available for DSD processing.
 
-In response to these challenges, the disdrodb Python package provides a
+In response to these challenges, the **disdrodb** software provides a
 set of tools to download, process and archive disdrometer data
 following the best open science practices.
 
 The goal of the DISDRODB initiative is to:
 
-- create a decentralized archive of disdrometer data from all around the world
-- promote the exchange of data across the scientific community
-- document the available data and the type of disdrometer sensors
-- provide a common framework to process disdrometer data
-- develop a set of scientific products to study the DSD variability at various spatio-temporal scales
-- create a community to develop, share and improve algorithms
+- create a decentralized archive of disdrometer data from all around the world,
+- promote the exchange of data across the scientific community,
+- document the available data and type of disdrometer sensors,
+- provide a common framework to process disdrometer data,
+- develop a set of scientific products to study the DSD spatio-temporal variability at global scale,
+- create a community to develop, share and improve DSD models and algorithms.
 
 
 Software
@@ -48,9 +45,9 @@ Software
 
 The software currently enable to:
 
-- download the raw disdrometer data from stations included in the DISDRODB Decentralized Data Archive
-- upload raw disdrometer data from the user to the DISDRODB Decentralized Data Archive
-- read the raw measurements and convert more than 400 disdrometer stations into a standard NetCDF format (DISDRODB L0 product)
+- download the raw disdrometer data from stations included in the DISDRODB Decentralized Data Archive,
+- upload raw disdrometer data from the user to the DISDRODB Decentralized Data Archive,
+- read the raw measurements of more than 400 disdrometer stations and save them into a standard NetCDF format (DISDRODB L0 product).
 
 The disdrodb software is able to process data from various disdrometer sensors and manufacturers, and is designed to be easily extended to new ones.
 Currently, disdrodb enables to process data acquired from:
@@ -63,17 +60,16 @@ Currently, disdrodb enables to process data acquired from:
 Data Archive
 ==============
 
-The DISDRODB Decentralized Data Archive is a collection of disdrometer data from all around the world.
+The DISDRODB Decentralized Data Archive collects disdrometer data from all around the world.
 
-The data are stored in remote data repositories, and are easily accessible through the disdrodb software.
+The data are stored in remote data repositories but are easily accessible through the disdrodb software.
 
 The metadata of each stations are stored in a `centralized repository hosted on GitHub <https://github.com/ltelab/disdrodb-data>`__.
 
-The available disdrometer stations are depicted in the figure below.
+The currently available disdrometer stations are depicted in the figure below.
 
 .. image:: /static/map_stations.png
    :width: 100%
-   :alt: Location of the disdrometer stations included in the DISDRODB Decentralized Data Archive
    :align: center
 
 
@@ -86,7 +82,7 @@ We are currently planning the development of the DISDRODB L1 product,
 featuring quality-checked disdrometer data, along with a suite of scientific-research-oriented DISDRODB L2 products.
 
 Your ideas, algorithms, data, and expertise could significantly shape the future of DISDRODB products,
-and we would absolutely love for you to be part of this collaborative project.
+and we would be happy to have you part of this collaborative project.
 
 If you are eager to contribute or simply curious about what we do, please do not hesitate to reach out.
 
