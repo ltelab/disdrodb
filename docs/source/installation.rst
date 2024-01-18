@@ -17,18 +17,18 @@ We recommend users and contributors to first set up a `Virtual Environment <#vir
 Virtual Environment Creation
 ===============================
 
-While not mandatory, utilizing a virtual environment when installing DISDRODB is recommended. 
+While not mandatory, utilizing a virtual environment when installing DISDRODB is recommended.
 
 Using a virtual environment for installing packages provides isolation of dependencies,
 easier package management, easier maintenance, improved security, and improved development workflow.
 
-Here below we provide two options to set up a virtual environment, 
-using `venv <https://docs.python.org/3/library/venv.html>`__ 
+Here below we provide two options to set up a virtual environment,
+using `venv <https://docs.python.org/3/library/venv.html>`__
 or `conda <https://docs.conda.io/en/latest/>`__ (recommended).
 
 **With conda:**
 
-* Install `miniconda <https://docs.conda.io/en/latest/miniconda.html>`__ 
+* Install `miniconda <https://docs.conda.io/en/latest/miniconda.html>`__
   or `anaconda <https://docs.anaconda.com/anaconda/install/>`__
   if you don't have it already installed.
 
@@ -66,7 +66,7 @@ or `conda <https://docs.conda.io/en/latest/>`__ (recommended).
 Installation for standard users
 ==================================
 
-The latest disdrodb stable version is available 
+The latest disdrodb stable version is available
 on the `Python Packaging Index (PyPI) <https://pypi.org/project/disdrodb/>`__
 and on the `conda-forge channel <https://anaconda.org/conda-forge/disdrodb>`__.
 
@@ -100,7 +100,7 @@ Here below we provide the steps to install the package in editable mode.
 Clone the repository from GitHub
 ......................................
 
-According to the `contributors guidelines <https://disdrodb.readthedocs.io/en/latest/contributors_guidelines.html>`__, 
+According to the `contributors guidelines <https://disdrodb.readthedocs.io/en/latest/contributors_guidelines.html>`__,
 you should first
 `create a fork into your personal GitHub account <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo>__`.
 

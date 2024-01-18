@@ -29,7 +29,7 @@ the preprocessing, analysis and visualization of disdrometer data.
 The software enable to:
 
 - download the raw disdrometer data from stations included in the DISDRODB Decentralized Data Archive
-  
+
 - upload raw data of new disdrometer stations to the DISDRODB Decentralized Data Archive
 
 - read the raw measurements of more than 400 disdrometer stations and convert them into a standard NetCDF format (DISDRODB L0 product)
@@ -87,7 +87,7 @@ To download all data stored into the DISDRODB Decentralized Data Archive, you ju
 
 ```
 
-If you aims to download data from a specific data source (i.e. EPFL), type: 
+If you aims to download data from a specific data source (i.e. EPFL), type:
 
 ```bash
 
@@ -95,7 +95,7 @@ If you aims to download data from a specific data source (i.e. EPFL), type:
 
 ```
 
-Type `disdrodb_download_archive --help` to see further options. 
+Type `disdrodb_download_archive --help` to see further options.
 
 ### 💫 Transform the raw data to standardized netCDF files.
 
@@ -107,16 +107,16 @@ If you want to convert all stations raw data into standardized netCDF4 files, ru
 
 ```
 
-Type `disdrodb_run_l0 --help` to see further options. 
+Type `disdrodb_run_l0 --help` to see further options.
 
 ### 📖 Explore the DISDRODB documentation
 
 To discover all download and processing options, or how to contribute your own data to DISDRODB,
 please read the software documentation available at [https://disdrodb.readthedocs.io/en/latest/](https://disdrodb.readthedocs.io/en/latest/).
 
-### 🗄️ Explore the DISDRODB Metadata Archive 
+### 🗄️ Explore the DISDRODB Metadata Archive
 
-The DISDRODB Metadata Archive collecting and tracking information of the available DISDRODB stations 
+The DISDRODB Metadata Archive collecting and tracking information of the available DISDRODB stations
 is hosted on GitHub at [https://github.com/ltelab/disdrodb-data](https://github.com/ltelab/disdrodb-data)
 
 ## 🛠️ Installation
