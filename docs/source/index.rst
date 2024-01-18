@@ -3,11 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to disdrodb's documentation!
+Welcome to DISDRODB's documentation!  
 =======================================
 
-DISDRODB: A global database of raindrop size distribution observations
-
+.. image:: /static/logo.png
+   :width: 100%
+   :align: center
 
 Motivation
 ===========
