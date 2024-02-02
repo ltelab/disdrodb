@@ -29,7 +29,7 @@ Given a version number in the MAJOR.MINOR.PATCH (eg., X.Y.Z) format, here are th
 Breaking vs. non-breaking changes
 -----------------------------------
 
-Since DISRODB is used by a broad ecosystem of both API consumers and implementers, it needs a strict definition of what changes are “non-breaking” and are therefore allowed in MINOR and PATCH releases.
+Since DISDRODB is used by a broad ecosystem of both API consumers and implementers, it needs a strict definition of what changes are “non-breaking” and are therefore allowed in MINOR and PATCH releases.
 
 In the DISDRODB specifications, a breaking change is any change that requires either consumers or implementers to modify their code for it to continue to function correctly.
 
