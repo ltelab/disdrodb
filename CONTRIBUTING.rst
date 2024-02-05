@@ -5,7 +5,7 @@ Hi! Thanks for taking the time to contribute to DISDRODB.
 
 You can contribute in many ways:
 
-- Join the `discussions <https://github.com/ltelab/disdrodb/discussions>`__
+- Join the `GitHub discussions <https://github.com/ltelab/disdrodb/discussions>`__
 - Report software `issues <#issue-reporting-guidelines>`__
 - Help us developing new readers
 - Add new data to the DISDRODB Decentralized Data Archive
@@ -20,76 +20,60 @@ We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-fl
 So all code changes happen through Pull Requests (PRs).
 
 
-Before adding your contribution, please make sure to take a moment and read through the following documnents :
-
-- `Code of Conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__
-- `Contributing environment setup <#contributing-environment-setup>`__
-- `Contributing process <#contributing-process>`__
-- `Code review checklist <#code-review-checklist>`__
-
-
-Issue Reporting
------------------
-
--  Always use one of the available `GitHub Issue
-   Templates <https://github.com/ltelab/disdrodb/issues/new/choose>`__
--  If you do not find the required GitHub Issue Template, please ask for a new template.
-
-
-Setup the contributor environment
------------------------------------
-
 **First Time Contributors ?**
 
-Please follow the following steps to install your developing environment :
+Before adding your contribution, please take a moment to read through the following sections:
 
--  Set up the development environment
--  Install pre-commit hooks
+- The :ref:`Installation for contributors <installation_contributor>` help you to set up the developing environment and the pre-commit hooks.
+- The section `Contributing process <#contributing-process>`__ provides you with a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
+- The `Code review checklist <#code-review-checklist>`__ enable to speed up the code review process.
+- The `Code of conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__ details the expected behavior of all contributors.
 
-Set up the development environment
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Initiating a discussion about your ideas or proposed implementations is a vital step before starting your contribution !
+Engaging with the community early on can provide valuable insights, ensure alignment with the project's goals, and prevent potential overlap with existing work.
+Here are some guidelines to facilitate this process:
 
-You will need python to set up the development environment.
-See `the installation guide <https://disdrodb.readthedocs.io/en/latest/installation.html>`__ for further explanations.
+1. Start with a conversation
 
-Install pre-commit hooks
-~~~~~~~~~~~~~~~~~~~~~~~~
+   Before start coding, open a `GitHub discussion <https://github.com/ltelab/disdrodb/discussions>`__, a `GitHub Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ or
+   just start a discussion in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
+   These channels of communication provides an opportunity to gather feedback, understand the project's current state, and improve your contributions.
 
-After setting up your development environment, install the git pre-commit hook by executing the following command in the repository’s root:
+2. Seek guidance and suggestions
 
-::
+   Utilize the community's expertise. Experienced contributors and maintainers can offer guidance, suggest best practices, and help you navigate any complexities you might encounter.
 
-   pre-commit install
+3. Collaborate on the approach
 
+   Discussing your implementation strategy allows for a collaborative approach to problem-solving.
+   It ensures that your contribution is in line with the project's design principles and technical direction.
 
-The pre-commit hooks are scripts executed automatically in every commit
-to identify simple code quality issues. When an issue is identified
-(the pre-commit script exits with non-zero status), the hook aborts the
-commit and prints the error. Currently, DISDRODB only tests that the
-code to be committed complies with `black`'s format style, the `ruff` linter and the `codespell` spelling checker.
+By following these steps, you not only enhance the quality and relevance of your contribution but also become an integral part of the project's collaborative ecosystem.
 
-In case that the commit is aborted, you only need to run the precommit hook again.
-This can be done by running   ``black .``,  ``ruff check .`` or ``codespell`` .
-
-.. note::
-	To maintain consistency, please use version and configuration defined into `.pre-commit-config.yaml`.
+If you have any questions, please do not hesitate to ask in the `GitHub discussions <https://github.com/ltelab/disdrodb/discussions>`__ or in the
+`Slack workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
 
 
+Issue Reporting Guidelines
+-----------------------------
 
-This can also be done with  ``pre-commit run --all-files``. This is recommended since it
-indicates if the commit contained any formatting errors (that are automatically corrected).
+For a structured and efficient issue reporting process, please adhere to the following guidelines:
 
+1. Utilize GitHub Issue Templates
 
-More info on pre-commit and CI tools are provided in the Code quality and testing section
-`Code quality and testing section <https://disdrodb.readthedocs.io/en/latest/contributors_guidelines.html#code-quality-control>`__
+Make use of the predefined GitHub Issue Templates available in the repository to report an issue.
+This ensures that all necessary details are provided, facilitating quicker and more effective responses.
+Access the `GitHub Issue Templates here <https://github.com/ltelab/disdrodb/issues/new/choose>`__.
 
+2. Requesting New Templates
+
+If none of the available templates seem appropriate for the issue you are facing, do not hesitate to request a new template.
+This helps us improve and cater to a wider range of issues. Simply open a general issue and specify the need for a new template,
+providing details about what the new template should cover.
 
 
 Contributing process
 -----------------------
-
-**How to contribute ?**
-
 
 Here is a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
 
@@ -104,28 +88,16 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 .. image:: /static/collaborative_process.png
 
 
+1. Fork the repository and install the development environment
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+If you do not have a GitHub account yet, please create one `here <https://github.com/join>`__.
+If you do not have yet Git installed on your computer, please install it following `these instructions <https://github.com/git-guides/install-git>`__.
+Then, please follow the guidelines in the :ref:`Installation for contributors <installation_contributor>` section
+to create the local copy of the disdrodb repository, set up the developing environment and the pre-commit hooks.
 
-1. Fork the repository
-~~~~~~~~~~~~~~~~~~~~~~~
-
-Once you have set the development environment (see `Set up the development environment`_), the next step is to create
-your local copy of the repository, where you will commit your
-modifications. The steps to follow are:
-
-1. Set up Git on your computer
-
-2. Create a GitHub account (if you do not have one)
-
-3. Fork the repository in your GitHub.
-
-4. Clone a local copy of your fork. For example:
-
-::
-
-   git clone https://github.com/<your-account>/disdrodb.git
-
-Done! Now you have a local copy of the disdrodb repository.
+Once you have have a local copy of the disdrodb repository on your machine, you are ready to
+contribute to the project!
 
 2. Create a new branch
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -225,14 +197,16 @@ You should configure VS code as follow :
 The convention we adopt for our docstrings is the numpydoc string convention.
 
 
-Code quality control
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. _code_quality_control:
 
+4. Code quality control
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To maintain a high code quality, `Black`, `Ruff` and `codespell` are defined in the
-`.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file.
-These tools are run for every Pull Request on GitHub and can also be run locally.
+Pre-commit hooks are automated scripts that run during each commit to detect basic code quality issues.
+If a hook identifies an issue (signified by the pre-commit script exiting with a non-zero status), it halts the commit process and displays the error messages.
 
+Currently, DISDRODB tests that the code to be committed complies with `black's  <https://github.com/psf/black>`__ format style,
+the `ruff <https://github.com/charliermarsh/ruff>`__ linter and the `codespell <https://github.com/codespell-project/codespell>`__ spelling checker.
 
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+
 |  Tool                                                                                         | Aim                                                              | pre-commit | CI/CD |
@@ -244,66 +218,17 @@ These tools are run for every Pull Request on GitHub and can also be run locally
 | `Codespell  <https://github.com/codespell-project/codespell>`__                               | Spelling checker                                                 | 👍         | 👍    |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+
 
+The software version of pre-commit hooks is defined into the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`__ file.
 
+If a commit is blocked due to these checks, you can manually correct the issues by running locally the appropriate tool: ``black .`` for Black, ``ruff check .`` for Ruff, or ``codespell`` for Codespell.
+Alternatively, you can use the ``pre-commit run --all-files`` command to attempt automatic corrections of all formatting errors across all files.
 
-**pre-commit**
+The Continuous Integration (CI) tools integrated within GitHub employ the same pre-commit hooks to consistently uphold code quality for every Pull Request.
 
-To run pre-commit (black + Ruff) locally :
+In addition to the pre-commit hooks, the Continuous Integration (CI) setup on GitHub incorporates an extended suite of tools.
+These tools, which are not installable on a local setup, perform advanced code quality analyses and reviews after each update to a Pull Request.
 
-.. code-block:: bash
-
-   pre-commit run --all-files
-
-
-This is recommended since it indicates if the commit contained any formatting errors (that are automatically corrected).
-
-
-
-**Black**
-
-To run `Black` locally :
-
-.. code-block:: bash
-
-	black .
-
-
-
-.. note::
-	To maintain consistency, make sure to stick to the version defined in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file. This version will be used in the CI.
-
-
-
-**Ruff**
-
-To run `Ruff` locally :
-
-.. code-block:: bash
-
-	ruff check .
-
-
-.. note::
-	To maintain consistency, make sure to stick to the version and the rule configuration defined in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file. This version will be used in the CI.
-
-
-
-**Codespell**
-
-To run `Codespell` locally :
-
-.. code-block:: bash
-
-	codespell
-
-
-.. note::
-	To maintain consistency, make sure to stick to the version and the rule configuration defined in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`_ file. This version will be used in the CI.
-
-
-In the table below, some CI tools are mentioned for your information, but does not need to be installed on your computer.
-They are automatically run when you push your changes to the main repository via a GitHub Pull Request.
-
+Refer to the table below for a comprehensive summary of all CI tools employed to assess the code quality of a Pull Request.
 
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 | Tool                                               | Aim                                                                                                                               |
@@ -318,62 +243,18 @@ They are automatically run when you push your changes to the main repository via
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 
 
+5. Code testing with pytest
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-4. Code testing
-~~~~~~~~~~~~~~~~
+DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. Every code change must be tested !
 
+The tests are organized within the ``/disdrodb/tests`` directory and are structured to comprehensively assess various aspects of the code.
 
-Every code change must be tested !
+These tests are integral to the development process and are automatically triggered on GitHub upon any new commits or updates to a Pull Request.
+The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage using multiple versions of Python,
+multiple operating systems, and multiple versions of dependency libraries. This is done to ensure that the code works in a variety of environments.
 
-
-
-
-**Pytest**
-
-DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package.
-
-
-
-The tests located in the ``/disdrodb/tests`` directory are used to test various functions of the code and are automatically run
-when changes are pushed to the main repository through a GitHub Pull Request.
-
-.. code-block:: bash
-
-	pytest disdrodb/tests
-
-
-
-
-To create a new reader test, simply add a small, single-station dataset and the associated files (issue, metadata), and expected data, in the following manner:
-
-| 📁 disdrodb
-| ├── 📁 tests
-|     	├── 📁 data
-|           ├── 📁 check_readers
-|     	      ├── 📁 DISDRODB
-|     		      ├── 📁 Raw
-|     			      ├── 📁 `<DATA_SOURCE>` : e.g. GPM, ARM, EPFL, ...
-|     				      ├── 📁 `<CAMPAIGN_NAME>` : e.g. PARSIVEL_2007
-|     				         ├── 📁 data
-|     				            ├── 📁 `<station_name>`.\*
-|     				         ├── 📁 issue
-|     				            ├── 📁 `<station_name>`.yml
-|     				         ├── 📁 metadata
-|     				            ├── 📁 `<station_name>`.yml
-|     				         ├── 📁 ground_truth
-|     				            ├── 📁 `<station_name>`.\*
-
-
-
-
-A single test will run all readers with data that have been placed in the above-mentioned structure.
-The raw data will be processed, and the resulting Apache Parquet files (L0A) will be compared to the ground truth.
-
-The reader test succeeds if both files (ground truth and transformation of the raw file) are similar.
-
-
-The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage. The following tools are used:
-
+The following tools are used:
 
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
 |  Tool                                                                                         | Aim                                                              |
@@ -388,8 +269,39 @@ The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage.
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
 
 
+For contributors interested in running the tests locally:
 
-5. Push your changes to your fork repository
+1. Ensure you have the :ref:`development environment <installation_standard>` correctly set up.
+2. Navigate to the disdrodb root directory.
+3. Execute the following command to run the entire test suite:
+
+.. code-block:: bash
+
+	pytest
+
+For more focused testing or during specific feature development, you may run subsets of tests.
+This can be done by specifying either a sub-directory or a particular test module.
+
+Run tests in a specific sub-directory:
+
+.. code-block:: bash
+
+    pytest disdrodb/tests/<test_subdirectory>/
+
+Run a particular test module:
+
+.. code-block:: bash
+
+    pytest disdrodb/tests/<test_subdirectory>/test_<module_name>.py
+
+These options provide flexibility, allowing you to efficiently target and validate specific components of the disdrodb software.
+
+.. note::
+   Each test module must be prefixed with ``test_`` to be recognized and selected by pytest.
+   This naming pattern is a standard convention in pytest and helps in the automatic discovery of test files.
+
+
+6. Push your changes to your fork repository
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 During this process, pre-commit hooks will be run. Your commit will be
@@ -397,7 +309,7 @@ allowed only if quality requirements are fulfilled.
 
 If you encounter errors, Black and Ruff can be run using the following command:
 
-::
+.. code-block:: bash
 
    pre-commit run --all-files
 
@@ -406,7 +318,7 @@ The goal is to increase readability and ease of contribution.
 
 
 
-6. Create a new Pull Request in GitHub.
+7. Create a new Pull Request in GitHub.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Once your code has been uploaded into your DISDRODB fork, you can create

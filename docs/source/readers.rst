@@ -1,3 +1,5 @@
+.. _disdrodb_readers:
+
 =================
 DISDRODB Readers
 =================
@@ -62,6 +64,8 @@ The dictionary has the following structure:
         "<DataSourceN>": [<ReaderNameY>, <ReaderNameZ>],
     }
 
+
+.. _reader_structure:
 
 Reader structure
 ------------------
@@ -239,7 +243,7 @@ How to develop a new reader
 -----------------------------
 
 Please refers to the dedicated subsection in
-`How to Contribute New Data  <https://disdrodb.readthedocs.io/en/latest/contribute_data.html#implement-the-reader-for-your-data>`_.
+:ref:`How to Contribute New Data  <step7>`.
 
 The following page provide read-only access to the DISDRODB reader preparation Jupyter Notebook tutorial:
 

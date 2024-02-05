@@ -92,7 +92,7 @@ Step 1: Fork and download the DISDRODB Metadata Archive
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
    If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__
-   or ask in the `disdrodb slack channel <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
+   or ask in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
 
 
 .. _step2:
@@ -139,7 +139,7 @@ to install your local version of the `disdrodb python package  <https://github.c
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
    If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__
-   or ask in the `disdrodb slack channel <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
+   or ask in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
 
 
 7. Finally, install the disdrodb python package in editable mode using:
@@ -201,7 +201,7 @@ of the stations you wish to contribute.
 The metadata YAML file contains information of the station (e.g. type of raw data, type of device, geolocation, ...) which is
 required for the correct processing and integration of the station into the DISDRODB archive.
 
-The list and description of the metadata keys is available in the `Metadata <https://disdrodb.readthedocs.io/en/latest/metadata.html>`_ section.
+The list and description of the metadata keys is available in the :ref:`Metadata <metadata>` section.
 
 There are 7 metadata keys for which it is mandatory to specify the value:
 
@@ -210,7 +210,7 @@ There are 7 metadata keys for which it is mandatory to specify the value:
 * the ``station_name`` must be the same as the name of the metadata YAML file without the .yml extension
 * the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_names()``.
   If the sensor which produced your data is not within the available sensors, you first need to add the sensor
-  configurations. For this task, read the section `Add new sensor configs <https://disdrodb.readthedocs.io/en/latest/sensor_configs.html>`_
+  configurations. For this task, read the section :ref:`Add new sensor configs <sensor_configurations>`
 * the ``raw_data_format`` must be either ``'txt'`` or ``'netcdf'``. ``'txt'`` if the source data are text/ASCII files. ``'netcdf'`` if source data are netCDFs.
 * the ``platform_type`` must be either ``'fixed'`` or ``'mobile'``. If ``'mobile'``, the DISDRODB L0 processing accepts latitude, longitude and altitude coordinates to vary with time.
 * the ``reader`` name is essential to enable to select the correct reader when processing the station.
@@ -329,7 +329,7 @@ Step 7: Implement the reader
 Once the DISDRODB directory structure, the raw data and the metadata are set up, you are ready to implement the DISDRODB reader of your data.
 
 However, before actually implementing it, we highly recommend to first read the
-`DISDRODB reader structure <https://disdrodb.readthedocs.io/en/latest/readers.html#reader-structure>`_ section.
+:ref:`DISDRODB reader structure <reader_structure>` section.
 
 To facilitate the task of developing the reader, we provide a `step-by-step tutorial <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_
 which will guide you to the definition of the 4 relevant DISDRODB reader components:
@@ -351,13 +351,13 @@ However, before starting adapting the Jupyter Notebook to your own data, we reco
 with the sample lightweight dataset provided within the disdrodb package.
 
 Note that this step-by-step tutorial is also accessible in read-only mode in the `Reader preparation tutorial <https://disdrodb.readthedocs.io/en/latest/reader_preparation.html>`_ subsection
-of the `DISDRODB reader documentation <https://disdrodb.readthedocs.io/en/latest/readers.html>`_.
+of the :ref:`DISDRODB reader documentation <disdrodb_readers>`.
 
 -------------------------------------------------------------------------------
 
 If you want to run the ``reader_preparation.ipynb`` Jupyter Notebook proceed as follow:
 
-1. Enter your project virtual environment or conda environment. Please, refer to the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`_ section if needed.
+1. Enter your project virtual environment or conda environment. Please, refer to the :ref:`Installation for contributors <installation_contributor>` section if needed.
 
 2. Navigate to the ``disdrodb/tutorials`` directory.
 
@@ -427,7 +427,7 @@ For example, to process all stations of the EPFL_2008 campaign, you would run:
 
 .. note::
 
-   For more details and options related to DISDRODB L0 processing, read the section `Run DISDRODB L0 Processing <https://disdrodb.readthedocs.io/en/latest/l0_processing.html>`_.
+   For more details and options related to DISDRODB L0 processing, read the section :ref:`Run DISDRODB L0 Processing <l0_processing>`.
 
 
 The DISDRODB L0 processing generates the DISDRODB `Processed` directories tree illustrated here below.
@@ -536,15 +536,15 @@ You should place you data and config files under the following directory tree:
 
 
 The ``/data`` directory must contain your raw data files, while the ``/ground_truth`` directory must contain the corresponding ground truth files.
-
-Once the reader is run with the raw data, the output files are compared to the ground truth files. If the files are identical, the reader is considered valid.
+If the raw data are text files, the ground truth files must be Apache Parquet (DISDRODB L0A) files generated by the DISDRODB L0 processing of the raw data.
+If the raw data are netCDF files, the ground truth files must be netCDF (DISDRODB L0B) files generated by the DISDRODB L0 processing of the raw data.
 
 If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__
-and in the `Github DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, do it now so
+and in the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, do it now so
 that the DISDRODB maintainers can review your code and help you with the final steps !
 
 .. note::
-   To open a Pull Request in the `Github DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, you need to  ``git push`` the changes
+   To open a Pull Request in the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, you need to  ``git push`` the changes
    of your local ``disdrodb-data`` directory.
 
 .. note::

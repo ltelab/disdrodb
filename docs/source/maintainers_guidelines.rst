@@ -72,8 +72,8 @@ styled with `Book Theme <https://sphinx-book-theme.readthedocs.io/en/stable/inde
 All documentation source files are neatly organized in the ``docs/`` directory within the project's repository.
 
 
-Local documentation generation
---------------------------------
+Documentation generation
+---------------------------
 
 To build the documentation locally, follow the next three steps.
 
@@ -112,14 +112,15 @@ To build the documentation locally, follow the next three steps.
 
 	.. note:: It's important to review the output of the command. Look out for warnings or errors and address them to ensure the documentation is accurate and complete.
 
-	By following these steps, you should have a local version of the DISDRODB documentation
-	in the ``docs/build/html/`` directory, ready for review or deployment!
+By following these steps, you should have a local version of the DISDRODB documentation
+in the ``docs/build/html/`` directory, ready for review or deployment!
 
 
-Automatic documentation deployment
-------------------------------------
+Documentation deployment
+--------------------------
 
-A webhook is defined in the GitHub repository to trigger the publication process to `ReadTheDocs <https://about.readthedocs.com/?ref=readthedocs.com>`__.
+A webhook is defined in the GitHub repository to trigger automatically the publication process to `ReadTheDocs <https://about.readthedocs.com/?ref=readthedocs.com>`__
+after each Pull Request.
 
 This webhook is linked to the DISDRODB core developer.
 

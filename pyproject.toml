@@ -32,7 +32,7 @@ dependencies = [
 	"pandas",
 	"dask[distributed]",
 	"xarray",
-	"setuptools",
+
 ]
 dynamic = ["version"]
 
@@ -45,6 +45,9 @@ dev = [
 	"pytest-cov",
 	"pytest-mock",
 	"requests-mock",
+	"setuptools",
+	"build",
+	"twine",
 ]
 
 [project.urls]

@@ -1,3 +1,5 @@
+.. _sensor_configurations:
+
 =========================
 Sensor configurations
 =========================

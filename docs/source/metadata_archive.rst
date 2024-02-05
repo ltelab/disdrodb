@@ -1,3 +1,5 @@
+.. _metadata_archive:
+
 ==========================
 DISDRODB Metadata Archive
 ==========================
@@ -66,7 +68,7 @@ To update the DISDRODB Metadata Archive follow these steps:
       git commit -m "Add/update metadata for <data_source> <campaign_name>"
       git push origin <branch_name>
 
-6. Go to the `Github DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, open the Pull Request and wait for a maintainer to accept it!
+6. Go to the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, open the Pull Request and wait for a maintainer to accept it!
    For more information on GitHub Pull Requests, read the
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
