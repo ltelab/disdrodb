@@ -45,9 +45,9 @@ Examples of non-breaking changes include :
 - Fix a bug.
 - Adding the configuration files to process a new sensor.
 - Adding a new DISDRODB L0 reader.
-- Adding new functionalities to the DISDRODB API that don’t affect the behavior of the API directly.
+- Adding new functionalities to the DISDRODB API that do not affect the behavior of the API directly.
 - Updating the documentation.
-- Internal function refactoring that doesn’t affect the behavior of the software directly.
+- Internal function refactoring that does not affect the behavior of the software directly.
 
 
 One implication of this policy is that clients should be prepared to ignore the presence of unexpected fields in responses and unexpected values for enums. This is necessary to preserve compatibility between PATCH versions within the same MINOR version range, since optional fields and enum values can be added as non-breaking changes.
@@ -63,38 +63,67 @@ The `LTE <https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of supp
 Refer to the list of Recommended Releases to see current releases and more details.
 
 
-
-
 Documentation pipeline
 ========================
 
-DISDRODB’s documentation is built using Sphinx. All documentation lives in the ``docs/`` directory of the project repository.
+DISDRODB's documentation is built using the powerful `Sphinx <https://www.sphinx-doc.org/en/master/>`_ framework,
+styled with `Book Theme <https://sphinx-book-theme.readthedocs.io/en/stable/index.html>`_.
+
+All documentation source files are neatly organized in the ``docs/`` directory within the project's repository.
 
 
-Manual documentation creation
------------------------------
+Local documentation generation
+--------------------------------
 
-After editing the source files, the documentation can be generated locally:
+To build the documentation locally, follow the next three steps.
+
+1. Set up the python environment for building the documentation
+
+	The python packages required to build the documentation are listed in the `requirements.txt <https://github.com/ltelab/disdrodb/blob/main/docs/requirements.txt>`_ file.
+
+	For an efficient setup, we recommend creating a dedicated virtual environment.
+	Navigate to the ``docs/`` directory and execute the following command.
+	This will create a new environment and install the required packages and
+	`pandoc <https://pandoc.org/>`_, a versatile document conversion tool:
+
+	.. code-block:: bash
+
+		conda create -f environment.yaml
+
+2. Activate the virtual environment
+
+	Once the environment is ready, activate it using:
+
+	.. code-block:: bash
+
+		conda activate build-doc-disdrodb
+
+3. Generate the documentation
+
+	With the environment set and activated, you're ready to generate the documentation.
+	Execute:
+
+	.. code-block:: bash
+
+		make clean html
+
+	This command will build the HTML version of the documentation.
+	It first cleans previous builds (``make clean``) and then generates fresh documentation (``html``).
+
+	.. note:: It's important to review the output of the command. Look out for warnings or errors and address them to ensure the documentation is accurate and complete.
+
+	By following these steps, you should have a local version of the DISDRODB documentation
+	in the ``docs/build/html/`` directory, ready for review or deployment!
 
 
-.. code-block:: bash
+Automatic documentation deployment
+------------------------------------
 
-	cd docs
-	make html
-
-
-The output of the previous command should be checked for warnings and errors. If the code is changed (new functions or classes), then the DISDRODB documentation files located in ``docs/source/api`` are automatically regenerated when building the documentation using the command above.
-
-
-Automatic (GitHub) documentation creation
-------------------------------------------
-
-
-One webhook is defined in the repository to trigger the publication process to readthedoc.io.
+A webhook is defined in the GitHub repository to trigger the publication process to `ReadTheDocs <https://about.readthedocs.com/?ref=readthedocs.com>`__.
 
 This webhook is linked to the DISDRODB core developer.
 
-.. image:: /static/documentation_pipepline.png
+.. image:: /static/documentation_pipeline.png
 
 Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.
 
@@ -104,9 +133,9 @@ Package releases pipeline
 
 One  `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is defined to trigger the packaging and the upload on `pypi.org <https://pypi.org/project/disdrodb/>`_.
 
-.. image:: /static/package_pipepline.png
+.. image:: /static/package_pipeline.png
 
-The `PyPi <https://pypi.org/>`__ project is shared between the core contributors.
+The `PyPI <https://pypi.org/>`__ project is shared between the core contributors.
 
 
 
@@ -145,15 +174,13 @@ Currently, on each Pull Request, GitHub Actions are configured as follow:
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 | `Coverage   <https://coverage.readthedocs.io/>`__                                                  | Measure the code coverage of the project's unit tests            |                                                                                              |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
-| `CodeCov    <https://about.codecov.io/>`__                                                         | Uses the "coverage" package to generate a code coverage report.  | `disdrodb  <https://app.codecov.io/gh/ltelab/disdrodb>`__                                    |
+| `CodeCov    <https://about.codecov.io/>`__                                                         | Uses Coverage to track and analyze code coverage over time.      | `disdrodb  <https://app.codecov.io/gh/ltelab/disdrodb>`__                                    |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
-| `Coveralls    <https://coveralls.io/>`__                                                           | Uses the "coverage" to track the quality of your code over time. | `disdrodb  <https://coveralls.io/github/ltelab/disdrodb>`__                                  |
+| `Coveralls    <https://coveralls.io/>`__                                                           | Uses Coverage to track and analyze code coverage over time.      | `disdrodb  <https://coveralls.io/github/ltelab/disdrodb>`__                                  |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 | `CodeBeat      <https://codebeat.co/>`__                                                           | Automated code review and analysis tools                         | `disdrodb <https://codebeat.co/projects/github-com-ltelab-disdrodb-main/security_issues>`__  |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 | `CodeScene <https://codescene.com/>`__                                                             | Automated code review and analysis tools                         | `disdrodb <https://codescene.io/projects/36773>`__                                           |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 | `CodeFactor <https://www.codefactor.io/>`__                                                        | Automated code review and analysis tools                         | `disdrodb <https://www.codefactor.io/repository/github/ltelab/disdrodb>`__                   |
-+----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
-| `Snyk Code <https://snyk.io/product/snyk-code/>`__                                                 | Automated code security checks                                   | `disdrodb <https://app.snyk.io/org/ghiggi/project/57219345-56bd-4fbb-b6eb-2a8d955f9924>`__   |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+

@@ -316,8 +316,6 @@ They are automatically run when you push your changes to the main repository via
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 | `CodeFactor <https://www.codefactor.io/>`__        | Automated code review and analysis tools                                                                                          |
 +----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
-| `Snyk Code <https://snyk.io/product/snyk-code/>`__ | Automated code security checks                                                                                                    |
-+----------------------------------------------------+-----------------------------------------------------------------------------------------------------------------------------------+
 
 
 
@@ -384,9 +382,9 @@ The Continuous Integration (CI) on GitHub runs tests and analyzes code coverage.
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
 | `Coverage <https://coverage.readthedocs.io/>`__                                               | Measure the code coverage of the project's unit tests            |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
-| `CodeCov    <https://about.codecov.io/>`__                                                    | Uses the "coverage" package to generate a code coverage report.  |
+| `CodeCov    <https://about.codecov.io/>`__                                                    | Uses Coverage to track and analyze code coverage over time.      |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
-| `Coveralls    <https://coveralls.io/>`__                                                      | Uses the "coverage" to track the quality of your code over time. |
+| `Coveralls    <https://coveralls.io/>`__                                                      | Uses Coverage to track and analyze code coverage over time.      |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+
 
 

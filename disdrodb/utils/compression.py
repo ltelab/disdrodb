@@ -41,7 +41,6 @@ def unzip_file(filepath: str, dest_path: str) -> None:
     """Unzip a file into a directory.
 
     Parameters
-
     ----------
     filepath : str
         Path of the file to unzip.

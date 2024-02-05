@@ -1,0 +1,9 @@
+name: build-doc-disdrodb
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.9
+  - pandoc
+  - pip
+  - pip:
+      - -r requirements.txt
