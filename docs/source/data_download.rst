@@ -12,7 +12,12 @@ to the remote data repositiores where the DISDRODB stations are stored.
 Download the official DISDRODB Metadata Archive
 -----------------------------------------------
 
-First travel to the directory where you want to store the DISDRODB Data Archive with :code:`cd <the_root_directory>`
+First travel to the directory where you want to store the DISDRODB Data Archive with:
+
+.. code:: bash
+
+   cd <the_root_directory>
+
 
 Then clone the DISDRODB Metadata Archive repository with:
 

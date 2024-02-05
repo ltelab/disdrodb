@@ -35,7 +35,7 @@ Here are some guidelines to facilitate this process:
 
 1. Start with a conversation
 
-   Before start coding, open a `GitHub discussion <https://github.com/ltelab/disdrodb/discussions>`__, a `GitHub Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ or
+   Before start coding, open a `GitHub Discussion <https://github.com/ltelab/disdrodb/discussions>`__, a `GitHub Feature Request Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ or
    just start a discussion in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
    These channels of communication provides an opportunity to gather feedback, understand the project's current state, and improve your contributions.
 
@@ -50,26 +50,21 @@ Here are some guidelines to facilitate this process:
 
 By following these steps, you not only enhance the quality and relevance of your contribution but also become an integral part of the project's collaborative ecosystem.
 
-If you have any questions, please do not hesitate to ask in the `GitHub discussions <https://github.com/ltelab/disdrodb/discussions>`__ or in the
-`Slack workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
+If you have any questions, please do not hesitate to ask in the `GitHub Discussions <https://github.com/ltelab/disdrodb/discussions>`__ or in the
+`DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
 
 
 Issue Reporting Guidelines
 -----------------------------
 
-For a structured and efficient issue reporting process, please adhere to the following guidelines:
+To facilitate and enhance the issue reporting process, it is important to utilize the predefined GitHub Issue Templates.
+These templates are designed to ensure you provide all the essential information in your report, allowing for a faster and more effective response from the maintainers.
+You can access and use these templates by visiting the `GitHub Issue Templates page here <https://github.com/ltelab/disdrodb/issues/new/choose>`__.
 
-1. Utilize GitHub Issue Templates
-
-Make use of the predefined GitHub Issue Templates available in the repository to report an issue.
-This ensures that all necessary details are provided, facilitating quicker and more effective responses.
-Access the `GitHub Issue Templates here <https://github.com/ltelab/disdrodb/issues/new/choose>`__.
-
-2. Requesting New Templates
-
-If none of the available templates seem appropriate for the issue you are facing, do not hesitate to request a new template.
-This helps us improve and cater to a wider range of issues. Simply open a general issue and specify the need for a new template,
-providing details about what the new template should cover.
+However, if you find that the existing templates don't quite match the specifics of the issue you're encountering, please feel free to suggest a new template.
+Your feedback is invaluable in refining our processes and ensuring we address a broader spectrum of concerns.
+To do this, simply create a general issue in the repository, clearly stating that you're requesting a new template and include detailed suggestions about what this new template should entail.
+This proactive approach helps us continuously evolve and better serve the needs of the project and its contributors.
 
 
 Contributing process
@@ -99,6 +94,7 @@ to create the local copy of the disdrodb repository, set up the developing envir
 Once you have have a local copy of the disdrodb repository on your machine, you are ready to
 contribute to the project!
 
+
 2. Create a new branch
 ~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -109,8 +105,7 @@ Core Contributors are developers that actively work and maintain the repository.
 They are the only ones who accept Pull Requests and push commits directly to the DISDRODB repository.
 
 For more information on how to create and work with branches, see
-`“Branches in a
-Nutshell” <https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell>`__
+`“Branches in a Nutshell” <https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell>`__
 in the Git documentation.
 
 Please define the name of your branch based on the scope of the contribution. Try to strictly stick to the following guidelines:
@@ -132,24 +127,23 @@ Please define the name of your branch based on the scope of the contribution. Tr
 3. Work on your changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+When you are working on your changes, please stick with the repository's coding style and documentation rules.
+
+**Code Style**
 
 We follow the `PEP 8 <https://pep8.org/>`__ style guide for python code.
 Another relevant style guide can be found in the `The Hitchhiker's Guide to Python <https://docs.python-guide.org/writing/style/>`__.
 
 To ensure a minimal style consistency, we use `black <https://black.readthedocs.io/en/stable/>`__ to auto-format the source code.
 The `black` configuration used in the DISDRODB project is
-defined in the `pyproject.toml <https://github.com/ltelab/disdrodb/blob/main/pyproject.toml>`__ ,
-and it is automatically detected by `black` (see above).
+defined in the `pyproject.toml <https://github.com/ltelab/disdrodb/blob/main/pyproject.toml>`__.
 
 
+**Code Documentation**
 
-**Docstrings**
-
-Every module, function, or class must have a docstring that describes its
-purpose and how to use it. The docstrings follows the conventions
-described in the `PEP 257 <https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings>`__
-and the `Numpy’s docstrings
-format <https://numpydoc.readthedocs.io/en/latest/format.html>`__.
+Every module, function, or class must have a docstring that describes its purpose and how to use it.
+The docstrings follows the conventions described in the `PEP 257 <https://www.python.org/dev/peps/pep-0257/#multi-line-docstrings>`__
+and the `Numpy's docstrings format <https://numpydoc.readthedocs.io/en/latest/format.html>`__.
 
 Here is a summary of the most important rules:
 
@@ -218,7 +212,9 @@ the `ruff <https://github.com/charliermarsh/ruff>`__ linter and the `codespell <
 | `Codespell  <https://github.com/codespell-project/codespell>`__                               | Spelling checker                                                 | 👍         | 👍    |
 +-----------------------------------------------------------------------------------------------+------------------------------------------------------------------+------------+-------+
 
-The software version of pre-commit hooks is defined into the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`__ file.
+The versions of the software used in the pre-commit hooks is specified in the `.pre-commit-config.yaml <https://github.com/ltelab/disdrodb/blob/main/.pre-commit-config.yaml>`__ file.
+This file serves as a configuration guide, ensuring that the hooks are executed with the correct versions of each tool, thereby maintaining consistency and reliability in the code quality checks.
+
 
 If a commit is blocked due to these checks, you can manually correct the issues by running locally the appropriate tool: ``black .`` for Black, ``ruff check .`` for Ruff, or ``codespell`` for Codespell.
 Alternatively, you can use the ``pre-commit run --all-files`` command to attempt automatic corrections of all formatting errors across all files.
@@ -307,64 +303,44 @@ These options provide flexibility, allowing you to efficiently target and valida
 During this process, pre-commit hooks will be run. Your commit will be
 allowed only if quality requirements are fulfilled.
 
-If you encounter errors, Black and Ruff can be run using the following command:
+If you encounter errors, you can attempt to fix the formatting errors with the following command:
 
 .. code-block:: bash
 
    pre-commit run --all-files
 
-We follow a `commit message convention <https://www.conventionalcommits.org/en/v1.0.0/>`__, to have consistent git messages.
-The goal is to increase readability and ease of contribution.
-
-
 
 7. Create a new Pull Request in GitHub.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Once your code has been uploaded into your DISDRODB fork, you can create
-a Pull Request (PR) to the DISDRODB main branch.
+Once your code has been uploaded into your DISDRODB fork, you can create a Pull Request (PR) to the DISDRODB main branch.
 
-**Recommendation for the Pull Request**
+Recommendation for the Pull Requests:
 
--  Add screenshots or GIFs for any UI changes. This will help the person reviewing your code to understand what you have changed and how it
-   works.
-
--  Please use the pertinent template for the Pull Request, and fill it out accurately.
--  It is OK to have multiple small commits as you work on the PR - GitHub  will automatically squash it before merging.
+-  Please fill it out accurately the Pull Request template.
+-  It is perfectly fine to make many small commits as you work on a Pull Request. GitHub will automatically squash all the commits before merging the Pull Request.
 -  If adding a new feature:
 
-   -  Add accompanying test case.
-   -  Provide a convincing reason to add this feature. Ideally, you should open a suggestion issue first and have it approved before working on it.
-   -  Optionally, you can also present your issue in the repository `Discussions <https://github.com/ltelab/disdrodb/discussions>`__.
+   -  Provide a convincing reason to add the new feature. Ideally, propose your idea through a `Feature Request Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ and obtain approval before starting work on it. Alternatively, you can present your ideas in the `GitHub Discussions <https://github.com/ltelab/disdrodb/discussions>`__ or in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
+   -  Implement unit tests to verify the functionality of the new feature. This ensures that your addition works as intended and maintains the quality of the codebase.
 
 -  If fixing bug:
 
-   -  If you are resolving a special issue, add ``(fix #xxxx)`` in your PR title for a better release log. For example: ``Update L0 encoding compression (fix #3899)``.
-   -  Provide a detailed description of the bug in the PR.
-   -  Add appropriate test coverage if applicable.
+   -  Provide a comprehensive description of the bug within your Pull Request. This aids reviewers in understanding the issue and the impact of your fix.
+   -  If your Pull Request addresses a specific issue, add ``(fix #xxxx)`` in your PR title to link the PR to the issue and enhance the clarity of release logs. For example, the title of a PR fixing issue ``#3899`` would be ``<your PR title> (fix #3899)``.
+   -  If applicable, ensure that your fix includes appropriate tests. Adding tests for your bug fix helps prevent future regressions and maintains the stability of the software.
 
-
-
-.. _section-1:
 
 Code review checklist
 ---------------------
 
--  Ask two people to review your code:
-
-   -  a person who knows the domain well and can spot bugs in the business logic;
-   -  an expert in the technologies you are using who can help you improve the code quality.
-
--  When you are done with the changes after a code review, do another  self review of the code and write a comment to notify the reviewer,
+-  Once your Pull Request is ready, ask the maintainers to review your code.
+-  When you are done with the changes suggested by the reviewers, do another  self review of the code and write a comment to notify the reviewer,
    that the Pull Request is ready for another iteration.
 -  Resolve all the review comments, making sure they are all addressed before another review iteration.
--  Make sure you do not have similar issues anywhere else in your Pull Request.
 -  If you are not going to follow a code review recommendations, please add a comment explaining why you think the reviewer suggestion is not relevant.
 -  Avoid writing comment like “done” of “fixed” on each code review comment.
    Reviewers assume you will do all suggested changes, unless you have a reason not to do some of them.
--  Sometimes it is okay to postpone changes — in this case you will need to add a ticket number to the Pull Request and to the code itself.
-
-.. _section-2:
 
 
 Credits

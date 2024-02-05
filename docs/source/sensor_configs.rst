@@ -95,7 +95,7 @@ During the DISDRODB L0 processing:
 The ``n_digits``, ``n_characters``, ``n_decimals`` and ``n_naturals`` information
 is used to infer the raw files header when it is unknown.
 See usage of the ``infer_column_names`` function in the
-`reader_preparation.ipynb <https://github.com/ltelab/disdrodb/tree/main/tutorial>`_ Jupyter Notebook.
+`reader_preparation.ipynb <https://github.com/ltelab/disdrodb/blob/main/tutorials/reader_preparation.ipynb>`_ Jupyter Notebook.
 
 For the variables which values do not depend only on the time dimension, it is necessary
 to specify 2 additional keys: ``n_values`` and ``dimension_order``
