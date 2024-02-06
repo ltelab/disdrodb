@@ -4,7 +4,7 @@
 DISDRODB Metadata Archive
 ==========================
 
-The DISDRODB metadata repository is hosted on GitHub and serves as a central hub for tracking available stations,
+The `DISDRODB metadata repository <https://github.com/ltelab/disdrodb-data>`__ is hosted on GitHub and serves as a central hub for tracking available stations,
 the potential malfunctioning of the sensors, and to list the URLs of the remote data repositories where the raw disdrometer data are stored.
 The GitHub platform facilitates community collaboration to continuously enhance station metadata using best open-source practices.
 This approach also enables recursive data quality improvements, while keeping the DISDRODB product chain transparent and fully reproducible.
