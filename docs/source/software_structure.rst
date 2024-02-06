@@ -82,12 +82,10 @@ The current software structure is described below:
 | 📁 tutorials
 | 📜 .gitignore
 | 📜 .pre-commit-config.yaml
+| 📜 .readthedocs.yml
+| 📜 pyproject.toml
+| 📜 MANIFEST.in
 | 📜 CODE_OF_CONDUCT.md
 | 📜 CONTRIBUTING.rst
-| 📜 environment.yml
 | 📜 LICENSE
-| 📜 MANIFEST.in
-| 📜 pyproject.toml
 | 📜 README.md
-| 📜 readthedocs.yml
-| 📜 requirements.txt

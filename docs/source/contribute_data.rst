@@ -37,17 +37,17 @@ The name you adopt for the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` will be use
 
 Here below we provide a detailed description of the steps to follow to contribute your data to DISDRODB:
 
-* `Step 1 <#step1>`_: Fork and download the DISDRODB Metadata Archive
-* `Step 2 <#step2>`_: Define the local DISDRODB Data Archive base directory
-* `Step 3 <#step3>`_: Add metadata in the local DISDRODB Data Archive
-* `Step 4 <#step4>`_: Add the raw data in the local DISDRODB Data Archive
-* `Step 5 <#step5>`_: Fork and install the disdrodb python package in editable mode
-* `Step 6 <#step6>`_: Define the reader name and add a prototype reader to the disdrodb python package
-* `Step 7 <#step7>`_: Implement the reader for your data
-* `Step 8 <#step8>`_: Test the reader by running the DISDRODB L0 processing
-* `Step 9 <#step9>`_: Add reader testing files to the disdrodb python package
-* `Step 10 <#step10>`_: Upload your raw data on Zenodo and link it to the DISDRODB Decentralized Data Archive
-* `Step 11 <#step11>`_: Test the download and DISDRODB L0 processing of the stations you just contributed
+* :ref:`Step 1 <step1>`: Fork and download the DISDRODB Metadata Archive
+* :ref:`Step 2 <step2>`: Define the local DISDRODB Data Archive base directory
+* :ref:`Step 3 <step3>`: Add metadata in the local DISDRODB Data Archive
+* :ref:`Step 4 <step4>`: Add the raw data in the local DISDRODB Data Archive
+* :ref:`Step 5 <step5>`: Fork and install the disdrodb python package in editable mode
+* :ref:`Step 6 <step6>`: Define the reader name and add a prototype reader to the disdrodb python package
+* :ref:`Step 7 <step7>`: Implement the reader for your data
+* :ref:`Step 8 <step8>`: Test the reader by running the DISDRODB L0 processing
+* :ref:`Step 9 <step9>`: Add reader testing files to the disdrodb python package
+* :ref:`Step 10 <step10>`: Upload your raw data on Zenodo and link it to the DISDRODB Decentralized Data Archive
+* :ref:`Step 11 <step11>`: Test the download and DISDRODB L0 processing of the stations you just contributed
 
 Before going down the road, please also have a look at the `Contributors Guidelines <contributors_guidelines.html>`_.
 
@@ -218,7 +218,7 @@ There are 7 metadata keys for which it is mandatory to specify the value:
 Please take care of the following points when editing the metadata files:
 
 *  Do not eliminate metadata keys for which no information is available !
-*  You will define the ``reader`` name in `Step 6 <#step6>`_ along with the implementation of the reader
+*  You will define the ``reader`` name in :ref:`Step 6 <step6>` along with the implementation of the reader
 *  The station metadata YAML file must keep the name of the station (i.e. ``<station_name>.yml``)
 *  For each ``<station_name>`` directory in the ``/data`` directory there must be an equally named ``<station_name>.yml`` file in the ``/metadata`` directory.
 
@@ -342,7 +342,7 @@ which will guide you to the definition of the 4 relevant DISDRODB reader compone
 
 * The ``df_sanitizer_fun()`` function defining the processing to apply on the read dataframe in order for the dataframe to match the DISDRODB standards. The dataframe which is returned by the ``df_sanitizer_fun`` must have only columns compliant with the DISDRODB standards !
 
-When this 4 components are correctly defined, they can be transcribed into the reader you defined in `Step 6 <#step6>`_ and you are ready
+When this 4 components are correctly defined, they can be transcribed into the reader you defined in :ref:`Step 6 <step6>` and you are ready
 to test if the reader works properly and enables to process the raw data.
 
 We strongly suggest to copy the ``reader_preparation.ipynb`` Jupyter Notebook from the
@@ -468,7 +468,7 @@ it means that the reader you implemented worked correctly, and no errors were ra
 Otherwise, you need to investigate the reported errors, improve the readers and rerun the DISDRODB L0 processing.
 Often, the errors arise from raw text files which are empty or corrupted. In such case, simply remove or sanitize the files.
 
-Reiterate between `Step 4 <#step4>`_  and `Step 5 <#step5>`_ till the DISDRODB L0 processing does not raise errors :)
+Reiterate between :ref:`Step 4 <step4>`  and :ref:`Step 5 <step5>` till the DISDRODB L0 processing does not raise errors :)
 
 Before proceeding, we recommend compressing your raw text files using gzip to significantly reduce their size.
 This method can often reduce file sizes by up to 100 times, greatly enhancing the efficiency of subsequent data uploads and user downloads.
@@ -567,7 +567,7 @@ If you aim to upload the data of a single station, run:
 
 If ``--platform zenodo.sandbox`` is specified, you are actually uploading the data in the
 `Zenodo Sandbox <https://sandbox.zenodo.org/ testing environment>`_.
-It's good practice to first upload the station there, to check that everything works fine (see `Step 11 <#step11>`_ below),
+It's good practice to first upload the station there, to check that everything works fine (see :ref:`Step 11 <step11>` below),
 and then upload the data in the production environment using ``--platform zenodo``
 
 In order to upload the data to Zenodo, you need to specify the Zenodo tokens into the DISDRODB configuration file with:
@@ -629,7 +629,7 @@ when uploading data to the official Zenodo repository !
    your remote data repository of choice !
 
 .. note::
-   Please consider to compress (i.e. with gz) each raw file to reduce the file size ! See `Step 8 <#step8>`_.
+   Please consider to compress (i.e. with gz) each raw file to reduce the file size ! See :ref:`Step 8 <step8>`.
 
 
 .. _step11:

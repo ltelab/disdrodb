@@ -41,7 +41,7 @@ dev = [
 	"jupyter",
 	"pre-commit",
 	"pytest",
-	"pydantic",
+	"pydantic>=2.0.0", # requirement? l0/check_configs
 	"pytest-cov",
 	"pytest-mock",
 	"requests-mock",

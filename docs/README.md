@@ -13,11 +13,11 @@ To build the documentation locally, follow the next three steps.
 
 **1. Set up the python environment for building the documentation**
 
-  The python packages required to build the documentation are listed in the [requirements.txt ](https://github.com/ltelab/disdrodb/blob/main/docs/requirements.txt) file.
+  The python packages required to build the documentation are listed in the [environment.yaml](https://github.com/ltelab/disdrodb/blob/main/docs/environment.yaml) file.
 
   For an efficient setup, we recommend creating a dedicated virtual environment.
   Navigate to the `docs/` directory and execute the following command.
-  This will also install [pandoc](https://pandoc.org/), a versatile document conversion tool:
+  This will create a new environment and install the required packages.
 
   ```
   conda create -f environment.yaml

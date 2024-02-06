@@ -11,7 +11,7 @@ We define here two types of installation:
 
 - `Installation for contributors`_: for contributors who want to enrich the project (eg. add a new reader).
 
-We recommend users and contributors to first set up a `Virtual Environment <#virtual_environment>`_ where to install DISDRODB.
+We recommend users and contributors to first set up a virtual environment where to install DISDRODB.
 
 
 .. _virtual_environment:

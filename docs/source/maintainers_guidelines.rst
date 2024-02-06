@@ -49,9 +49,6 @@ Examples of non-breaking changes include :
 - Internal function refactoring that does not affect the behavior of the software directly.
 
 
-One implication of this policy is that clients should be prepared to ignore the presence of unexpected fields in responses and unexpected values for enums. This is necessary to preserve compatibility between PATCH versions within the same MINOR version range, since optional fields and enum values can be added as non-breaking changes.
-
-
 Ongoing version support
 -----------------------------------
 
@@ -78,12 +75,11 @@ To build the documentation locally, follow the next three steps.
 
 1. Set up the python environment for building the documentation
 
-	The python packages required to build the documentation are listed in the `requirements.txt <https://github.com/ltelab/disdrodb/blob/main/docs/requirements.txt>`_ file.
+	The python packages required to build the documentation are listed in the `environment.yaml <https://github.com/ltelab/disdrodb/blob/main/docs/environment.yaml>`_ file.
 
 	For an efficient setup, we recommend creating a dedicated virtual environment.
 	Navigate to the ``docs/`` directory and execute the following command.
-	This will create a new environment and install the required packages and
-	`pandoc <https://pandoc.org/>`_, a versatile document conversion tool:
+	This will create a new environment and install the required packages:
 
 	.. code-block:: bash
 
