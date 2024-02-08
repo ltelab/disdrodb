@@ -143,7 +143,7 @@ Install the disdrodb package in editable mode by executing the following command
 
 .. code-block:: bash
 
-	pip install -e ".[dev]
+	pip install -e ".[dev]"
 
 
 Install pre-commit code quality checks

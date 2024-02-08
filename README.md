@@ -50,9 +50,7 @@ Let's start by travel to the directory where you want to store the DISDRODB Data
 Then clone the DISDRODB Metadata Archive repository with:
 
 ```bash
-
-   git clone https://github.com/ltelab/disdrodb-data.git
-
+git clone https://github.com/ltelab/disdrodb-data.git
 ```
 
 This will create a directory called ``disdrodb-data``, which is ready to be filled with data from the DISDRODB Decentralized Data Archive.
@@ -62,19 +60,15 @@ But before starting to download some data, we need to specify the location of th
 You can specify once forever the default DISDRODB Local Archive directory by running in python:
 
 ```python
-
-   import disdrodb
-   base_dir = "<path_to>/disdrodb-data/DISDRODB>"
-   disdrodb.define_configs(base_dir=base_dir)
-
+import disdrodb
+base_dir = "<path_to>/disdrodb-data/DISDRODB>"
+disdrodb.define_configs(base_dir=base_dir)
 ```
 
 or set up the (temporary) environment variable `DISDRODB_BASE_DIR` in your terminal with:
 
 ```bash
-
-   export DISDRODB_BASE_DIR="<path_to>/disdrodb-data/DISDRODB>"
-
+export DISDRODB_BASE_DIR="<path_to>/disdrodb-data/DISDRODB>"
 ```
 
 ### 📥 Download the DISDRODB raw data
@@ -82,17 +76,13 @@ or set up the (temporary) environment variable `DISDRODB_BASE_DIR` in your termi
 To download all data stored into the DISDRODB Decentralized Data Archive, you just have to run the following command:
 
 ```bash
-
-   disdrodb_download_archive
-
+disdrodb_download_archive
 ```
 
 If you aims to download data from a specific data source (i.e. EPFL), type:
 
 ```bash
-
-   disdrodb_download_archive --data-sources EPFL
-
+disdrodb_download_archive --data-sources EPFL
 ```
 
 Type `disdrodb_download_archive --help` to see further options.
@@ -102,9 +92,7 @@ Type `disdrodb_download_archive --help` to see further options.
 If you want to convert all stations raw data into standardized netCDF4 files, run the following command in the terminal:
 
 ```bash
-
-   disdrodb_run_l0
-
+disdrodb_run_l0
 ```
 
 Type `disdrodb_run_l0 --help` to see further options.
@@ -124,9 +112,7 @@ is hosted on GitHub at [https://github.com/ltelab/disdrodb-data](https://github.
 DISDRODB can be installed from PyPI with pip:
 
   ```bash
-
   pip install disdrodb
-
   ```
 
 ## 💭 Feedback and Contributing Guidelines

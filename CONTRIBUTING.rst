@@ -24,7 +24,7 @@ So all code changes happen through Pull Requests (PRs).
 
 Before adding your contribution, please take a moment to read through the following sections:
 
-- The :ref:`Installation for contributors <installation_contributor>` help you to set up the developing environment and the pre-commit hooks.
+- The `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ help you to set up the developing environment and the pre-commit hooks.
 - The section `Contributing process <#contributing-process>`__ provides you with a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
 - The `Code review checklist <#code-review-checklist>`__ enable to speed up the code review process.
 - The `Code of conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__ details the expected behavior of all contributors.
@@ -80,7 +80,7 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 6. Create a new Pull Request in GitHub.
 
 
-.. image:: /static/collaborative_process.png
+.. image:: https://github.com/ltelab/disdrodb/blob/main/docs/source/static/collaborative_process.png?raw=true
 
 
 1. Fork the repository and install the development environment
@@ -88,7 +88,7 @@ Here is a brief overview of the steps that each DISDRODB developer must follow t
 
 If you do not have a GitHub account yet, please create one `here <https://github.com/join>`__.
 If you do not have yet Git installed on your computer, please install it following `these instructions <https://github.com/git-guides/install-git>`__.
-Then, please follow the guidelines in the :ref:`Installation for contributors <installation_contributor>` section
+Then, please follow the guidelines in the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ section
 to create the local copy of the disdrodb repository, set up the developing environment and the pre-commit hooks.
 
 Once you have have a local copy of the disdrodb repository on your machine, you are ready to
@@ -184,9 +184,9 @@ extension to automatically create such preformatted docstring.
 
 You should configure VS code as follow :
 
-
-.. image:: /static/vs_code_settings.png
-
+.. image:: https://github.com/ltelab/disdrodb/blob/main/docs/source/static/vs_code_settings.png?raw=true
+   :alt: VS Code Settings
+   :align: center
 
 The convention we adopt for our docstrings is the numpydoc string convention.
 
@@ -267,7 +267,7 @@ The following tools are used:
 
 For contributors interested in running the tests locally:
 
-1. Ensure you have the :ref:`development environment <installation_standard>` correctly set up.
+1. Ensure you have the `development environment <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ correctly set up.
 2. Navigate to the disdrodb root directory.
 3. Execute the following command to run the entire test suite:
 
