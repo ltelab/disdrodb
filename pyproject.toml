@@ -48,6 +48,7 @@ dev = [
 	"setuptools",
 	"build",
 	"twine",
+	"loghub",
 ]
 
 [project.urls]
