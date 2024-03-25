@@ -85,13 +85,15 @@ def test_replace_nan_flags(create_test_config_files):
         Function that creates and removes the dummy config file.
     """
     # Mock xarray Dataset
-    ds = xr.Dataset({
-        "key_1": xr.DataArray([0, 1, 2, 3, 4]),
-        "key_2": xr.DataArray([1, -9999, 2, 3, 89]),
-        "key_3": xr.DataArray([1.0, -9999.0, 2.0, 3.0, 89.0]),
-        "key_4": xr.DataArray([1, -9999, -8888, 2, 3]),
-        "key_not_in_dict": xr.DataArray([10, 20, 30, 40, 50]),
-    })
+    ds = xr.Dataset(
+        {
+            "key_1": xr.DataArray([0, 1, 2, 3, 4]),
+            "key_2": xr.DataArray([1, -9999, 2, 3, 89]),
+            "key_3": xr.DataArray([1.0, -9999.0, 2.0, 3.0, 89.0]),
+            "key_4": xr.DataArray([1, -9999, -8888, 2, 3]),
+            "key_not_in_dict": xr.DataArray([10, 20, 30, 40, 50]),
+        }
+    )
 
     # Call the replace_nan_flags function
     result_ds = replace_nan_flags(ds, sensor_name=TEST_SENSOR_NAME, verbose=True)
@@ -108,13 +110,15 @@ def test_replace_nan_flags(create_test_config_files):
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_set_nan_outside_data_range(create_test_config_files):
-    ds = xr.Dataset({
-        "key_1": xr.DataArray([0, 1, 2, 3, 4]),
-        "key_2": xr.DataArray([9, 10, 50, 51, 30]),
-        "key_3": xr.DataArray([-11, -10, 0, 10, 11]),
-        "key_4": xr.DataArray([99, 100, 150, 200, 201]),
-        "key_not_in_dict": xr.DataArray([0, 1, 2, 3, 4]),
-    })
+    ds = xr.Dataset(
+        {
+            "key_1": xr.DataArray([0, 1, 2, 3, 4]),
+            "key_2": xr.DataArray([9, 10, 50, 51, 30]),
+            "key_3": xr.DataArray([-11, -10, 0, 10, 11]),
+            "key_4": xr.DataArray([99, 100, 150, 200, 201]),
+            "key_not_in_dict": xr.DataArray([0, 1, 2, 3, 4]),
+        }
+    )
 
     result_ds = set_nan_outside_data_range(ds, TEST_SENSOR_NAME, verbose=True)
 
@@ -131,13 +135,15 @@ def test_set_nan_outside_data_range(create_test_config_files):
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_set_nan_invalid_values(create_test_config_files):
-    ds = xr.Dataset({
-        "key_1": xr.DataArray([0, 1, 2, 3, 4]),
-        "key_2": xr.DataArray([9, 10, 20, 30, 40]),
-        "key_3": xr.DataArray([0, 0.1, 0.2, 0.3, 1.0]),
-        "key_4": xr.DataArray([0, 0, 0, 1, 1]),
-        "key_not_in_dict": xr.DataArray([0, 1, 2, 3, 4]),
-    })
+    ds = xr.Dataset(
+        {
+            "key_1": xr.DataArray([0, 1, 2, 3, 4]),
+            "key_2": xr.DataArray([9, 10, 20, 30, 40]),
+            "key_3": xr.DataArray([0, 0.1, 0.2, 0.3, 1.0]),
+            "key_4": xr.DataArray([0, 0, 0, 1, 1]),
+            "key_not_in_dict": xr.DataArray([0, 1, 2, 3, 4]),
+        }
+    )
 
     result_ds = set_nan_invalid_values(ds, TEST_SENSOR_NAME, verbose=True)
 
@@ -159,12 +165,14 @@ def test_replace_custom_nan_flags():
     dict_nan_flags = {"key_1": [-999], "key_2": [-9999, -8888], "key_3": [0]}
 
     # Mock xarray Dataset
-    ds = xr.Dataset({
-        "key_1": xr.DataArray([1, -999, 2, 3, 4]),
-        "key_2": xr.DataArray([1, -9999, -8888, 2, 3]),
-        "key_3": xr.DataArray([0, 1, 0, 2, 3]),
-        "key_not_in_flags": xr.DataArray([10, 20, 30, 40, 50]),
-    })
+    ds = xr.Dataset(
+        {
+            "key_1": xr.DataArray([1, -999, 2, 3, 4]),
+            "key_2": xr.DataArray([1, -9999, -8888, 2, 3]),
+            "key_3": xr.DataArray([0, 1, 0, 2, 3]),
+            "key_not_in_flags": xr.DataArray([10, 20, 30, 40, 50]),
+        }
+    )
 
     # Call the replace_custom_nan_flags function
     result_ds = replace_custom_nan_flags(ds, dict_nan_flags=dict_nan_flags)
@@ -253,12 +261,14 @@ def test_rename_dataset():
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_subset_dataset(create_test_config_files):
     # Define xarray Dataset with extra variables (assumed to be renamed)
-    ds = xr.Dataset({
-        "var1": xr.DataArray([1, 2, 3]),
-        "var2": xr.DataArray([4, 5, 6]),
-        "var3": xr.DataArray([7, 8, 9]),
-        "var_not_needed": xr.DataArray([10, 11, 12]),
-    })
+    ds = xr.Dataset(
+        {
+            "var1": xr.DataArray([1, 2, 3]),
+            "var2": xr.DataArray([4, 5, 6]),
+            "var3": xr.DataArray([7, 8, 9]),
+            "var_not_needed": xr.DataArray([10, 11, 12]),
+        }
+    )
 
     # Define dict_names mapping
     # - Key are used to rename (the values are used for subsetting)
@@ -277,10 +287,12 @@ def test_subset_dataset(create_test_config_files):
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_get_missing_variables(create_test_config_files):
     # Define xarray Dataset with some variables (assumed to be renamed and subsetted)
-    ds = xr.Dataset({
-        "var1": xr.DataArray([1, 2, 3]),
-        "var2": xr.DataArray([4, 5, 6]),
-    })
+    ds = xr.Dataset(
+        {
+            "var1": xr.DataArray([1, 2, 3]),
+            "var2": xr.DataArray([4, 5, 6]),
+        }
+    )
 
     # Define dict_names mapping
     # - Key are used to rename (the values are used for subsetting)
