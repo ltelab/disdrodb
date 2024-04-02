@@ -281,7 +281,7 @@ def _check_metadata_reader(metadata):
     if "/" not in reader_reference:
         raise ValueError(
             f"The reader '{reader_reference}' reported in the metadata is not valid. Must have"
-            " '<DATA_SOURCE>/<READER_NAME>' pattern."
+            " '<DATA_SOURCE>/<READER_NAME>' pattern.",
         )
     # - Get the reader_reference component list
     reader_components = reader_reference.split("/")
@@ -335,7 +335,7 @@ def get_station_reader_function(data_source, campaign_name, station_name, base_d
     if "reader" not in metadata:
         raise ValueError(
             "The `reader` key is not available in the metadata of the"
-            f" {data_source} {campaign_name} {station_name} station."
+            f" {data_source} {campaign_name} {station_name} station.",
         )
 
     # ------------------------------------------------------------------------.

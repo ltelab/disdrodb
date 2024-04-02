@@ -315,7 +315,7 @@ def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
         else:
             raise ValueError(
                 f"There are already raw files within {dst_dir}. Download is suspended. "
-                "Use force=True to force the download and overwrite existing raw files."
+                "Use force=True to force the download and overwrite existing raw files.",
             )
 
     os.makedirs(dst_dir, exist_ok=True)

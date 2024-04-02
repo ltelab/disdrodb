@@ -597,10 +597,10 @@ def test_read_raw_files():
 
     # Create a test dataframe
     df1 = pd.DataFrame(
-        {"time": pd.date_range(start="2022-01-01", end="2022-01-02", freq="H"), "value": np.random.rand(25)}
+        {"time": pd.date_range(start="2022-01-01", end="2022-01-02", freq="H"), "value": np.random.rand(25)},
     )
     df2 = pd.DataFrame(
-        {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="H"), "value": np.random.rand(25)}
+        {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="H"), "value": np.random.rand(25)},
     )
     df_list = [df1, df2]
 

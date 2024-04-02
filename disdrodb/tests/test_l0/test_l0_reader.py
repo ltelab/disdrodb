@@ -73,7 +73,8 @@ def test_check_metadata_reader():
 
     # Test when "reader" key is made of three components
     with pytest.raises(
-        ValueError, match="Expecting the reader reference to be composed of <DATA_SOURCE>/<READER_NAME>."
+        ValueError,
+        match="Expecting the reader reference to be composed of <DATA_SOURCE>/<READER_NAME>.",
     ):
         _check_metadata_reader({"reader": "ONE/TWO/THREE"})
 

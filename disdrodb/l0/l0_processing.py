@@ -480,7 +480,7 @@ def run_l0a(
                 force=force,
                 verbose=verbose,
                 parallel=parallel,
-            )
+            ),
         )
     if parallel:
         list_logs = dask.compute(*list_tasks)
@@ -611,7 +611,7 @@ def run_l0b(
                     verbose=verbose,
                     debugging_mode=debugging_mode,
                     parallel=parallel,
-                )
+                ),
             )
     else:
         bag = db.from_sequence(filepaths, npartitions=len(filepaths))
@@ -770,7 +770,7 @@ def run_l0b_from_nc(
                     force=force,
                     verbose=verbose,
                     parallel=parallel,
-                )
+                ),
             )
     else:
         bag = db.from_sequence(filepaths, npartitions=len(filepaths))

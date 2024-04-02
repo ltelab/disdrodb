@@ -90,7 +90,12 @@ def archive_station_data(metadata_filepath: str) -> str:
 
 
 def compress_station_files(
-    base_dir: str, data_source: str, campaign_name: str, station_name: str, method: str = "gzip", skip: bool = True
+    base_dir: str,
+    data_source: str,
+    campaign_name: str,
+    station_name: str,
+    method: str = "gzip",
+    skip: bool = True,
 ) -> None:
     """Compress each raw file of a station.
 

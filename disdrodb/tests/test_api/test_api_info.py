@@ -58,7 +58,7 @@ START_TIME = datetime.datetime.strptime(FILE_INFO["start_time"], "%Y%m%d%H%M%S")
 END_TIME = datetime.datetime.strptime(FILE_INFO["end_time"], "%Y%m%d%H%M%S")
 VALID_FNAME = (
     "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:s}.e{end_time:s}.{version:s}.{data_format:s}".format(
-        **FILE_INFO
+        **FILE_INFO,
     )
 )
 INVALID_FNAME = "invalid_filename.txt"

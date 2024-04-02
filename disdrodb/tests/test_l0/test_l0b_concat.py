@@ -169,7 +169,10 @@ def test_run_l0b_concat(tmp_path):
     station_name = "test_station"
 
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
     # Define fake L0B directory structure
     station_dir = create_fake_station_dir(
@@ -255,7 +258,10 @@ def test_run_l0b_concat_station(tmp_path):
 
     # Assert the presence of 2 concatenated netcdf files (one for each station)
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     assert count_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False) == 1
@@ -336,7 +342,10 @@ def test_run_disdrodb_l0b_concat(tmp_path):
 
     # Assert the presence of 2 concatenated netcdf files (one for each station)
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0B", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0B",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     assert count_files(os.path.join(processed_dir, "L0B"), glob_pattern="*.nc", recursive=False) == 2

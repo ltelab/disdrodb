@@ -100,7 +100,7 @@ def test_replace_nan_flags(create_test_config_files):
     assert result_ds["key_1"].equals(ds["key_1"]), "Key 1 should remain unchanged"
     assert result_ds["key_2"].equals(xr.DataArray([1, np.nan, 2, 3, 89])), "Key 2 nan flags not replaced correctly"
     assert result_ds["key_3"].equals(
-        xr.DataArray([1.0, np.nan, 2.0, 3.0, 89.0])
+        xr.DataArray([1.0, np.nan, 2.0, 3.0, 89.0]),
     ), "Key 3 float values not processed correctly"
     assert result_ds["key_4"].equals(xr.DataArray([1, np.nan, np.nan, 2, 3])), "Key 4 nan flags not replaced correctly"
     assert result_ds["key_not_in_dict"].equals(ds["key_not_in_dict"]), "Unrelated keys should remain unchanged"
@@ -120,10 +120,10 @@ def test_set_nan_outside_data_range(create_test_config_files):
 
     assert result_ds["key_1"].equals(ds["key_1"]), "Key 1 should remain unchanged"
     assert result_ds["key_2"].equals(
-        xr.DataArray([np.nan, 10, 50, np.nan, 30])
+        xr.DataArray([np.nan, 10, 50, np.nan, 30]),
     ), "Key 2 data range not applied correctly"
     assert result_ds["key_3"].equals(
-        xr.DataArray([np.nan, -10, 0, 10, np.nan])
+        xr.DataArray([np.nan, -10, 0, 10, np.nan]),
     ), "Key 3 data range not applied correctly"
     assert result_ds["key_4"].equals(ds["key_4"]), "If data_range for key4 is None, data should remain unchanged"
     assert result_ds["key_not_in_dict"].equals(ds["key_not_in_dict"]), "Unrelated keys should remain unchanged"
@@ -143,13 +143,13 @@ def test_set_nan_invalid_values(create_test_config_files):
 
     assert result_ds["key_1"].equals(ds["key_1"]), "Key 1 should remain unchanged"
     assert result_ds["key_2"].equals(
-        xr.DataArray([np.nan, np.nan, np.nan, np.nan, np.nan])
+        xr.DataArray([np.nan, np.nan, np.nan, np.nan, np.nan]),
     ), "Key 2 valid values not applied correctly"
     assert result_ds["key_3"].equals(
-        xr.DataArray([0.0, np.nan, np.nan, np.nan, 1.0])
+        xr.DataArray([0.0, np.nan, np.nan, np.nan, 1.0]),
     ), "Key 3 float values not processed correctly"
     assert result_ds["key_4"].equals(
-        xr.DataArray([0, 0, 0, 1, 1])
+        xr.DataArray([0, 0, 0, 1, 1]),
     ), "Key 4 should not have been modified. Only valid values are present."
     assert result_ds["key_not_in_dict"].equals(ds["key_not_in_dict"]), "Unrelated keys should remain unchanged"
 

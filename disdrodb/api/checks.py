@@ -207,7 +207,11 @@ def check_station_has_data(product, data_source, campaign_name, station_name, ba
 def check_metadata_dir(product, data_source, campaign_name, base_dir=None):
     """Check existence of the metadata directory. If does not exists, raise an error."""
     metadata_dir = define_metadata_dir(
-        product=product, base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, check_exists=False
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
     )
     if not os.path.exists(metadata_dir) and os.path.isdir(metadata_dir):
         msg = f"The metadata directory does not exist at {metadata_dir}."
@@ -253,7 +257,10 @@ def check_metadata_file(product, data_source, campaign_name, station_name, base_
 def check_issue_dir(data_source, campaign_name, base_dir=None):
     """Check existence of the issue directory. If does not exists, raise an error."""
     issue_dir = define_issue_dir(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, check_exists=False
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
     )
     if not os.path.exists(issue_dir) and os.path.isdir(issue_dir):
         msg = "The issue directory does not exist at {issue_dir}."

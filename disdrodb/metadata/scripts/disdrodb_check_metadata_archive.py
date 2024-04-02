@@ -27,7 +27,11 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_base_dir_option
 @click.option(
-    "--raise_error", type=bool, show_default=True, default=True, help="Whether to raise error of finish the check"
+    "--raise_error",
+    type=bool,
+    show_default=True,
+    default=True,
+    help="Whether to raise error of finish the check",
 )
 def disdrodb_check_metadata_archive(base_dir=None, raise_error=True):
     from disdrodb.metadata.checks import check_archive_metadata_compliance

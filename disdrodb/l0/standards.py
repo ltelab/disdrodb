@@ -716,7 +716,7 @@ def _check_contiguous_chunksize_agrees(encoding_dict, var):
     contiguous = encoding_dict[var].get("contiguous", False)
     if isinstance(chunksizes, list) and len(chunksizes) >= 1 and contiguous:
         raise ValueError(
-            f"Invalid encodings for variable {var}. 'chunksizes' are specified but 'contiguous' is set to True !"
+            f"Invalid encodings for variable {var}. 'chunksizes' are specified but 'contiguous' is set to True !",
         )
 
 

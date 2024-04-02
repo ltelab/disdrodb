@@ -52,7 +52,11 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, base_dir
     """
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     list_info = []
     for filepath in list_metadata_paths:

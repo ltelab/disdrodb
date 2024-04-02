@@ -117,7 +117,11 @@ def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
 
 
 def _copy_station_metadata(
-    data_source: str, campaign_name: str, station_name: str, base_dir: str = None, check_validity: bool = False
+    data_source: str,
+    campaign_name: str,
+    station_name: str,
+    base_dir: str = None,
+    check_validity: bool = False,
 ) -> None:
     """Copy the station YAML file from the ``raw_dir/metadata`` into ``processed_dir/metadata``.
 
@@ -159,7 +163,12 @@ def _copy_station_metadata(
 
 
 def _check_pre_existing_station_data(
-    data_source: str, campaign_name: str, station_name: str, product: str, base_dir=None, force=False
+    data_source: str,
+    campaign_name: str,
+    station_name: str,
+    product: str,
+    base_dir=None,
+    force=False,
 ):
     """Check for pre-existing station data.
 
@@ -328,7 +337,10 @@ def _create_station_directories(
         station_name=station_name,
     )
     _ = create_metadata_directory(
-        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     if product.upper() == "RAW":
@@ -400,7 +412,7 @@ def create_initial_station_structure(
         raise ValueError(
             f"A metadata file already exists at {metadata_filepath}. "
             "The station is already part of the DISDRODB Archive or "
-            "or you already initialized the directory structure for the station !"
+            "or you already initialized the directory structure for the station !",
         )
 
     # Create directory structure (/metadata, /issue and /data/<station_name>)
@@ -429,7 +441,10 @@ def create_initial_station_structure(
 
     # Report location of the campaign directory
     campaign_dir = define_campaign_dir(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, product="RAW"
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        product="RAW",
     )
     print(f"Initial station directory structure created at: {campaign_dir}")
 
@@ -479,7 +494,10 @@ def create_test_archive(test_base_dir, data_source, campaign_name, station_name,
         base_dir=base_dir,
     )
     dst_issue_fpath = define_issue_filepath(
-        data_source=data_source, campaign_name=campaign_name, station_name=station_name, base_dir=test_base_dir
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=test_base_dir,
     )
     copy_file(src_issue_fpath, dst_issue_fpath)
     copy_file(src_metadata_fpath, dst_metadata_fpath)

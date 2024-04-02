@@ -84,7 +84,10 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
         station_name=station_name,
     )
     _ = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     # Define token name
@@ -148,7 +151,10 @@ def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
         station_name=station_name,
     )
     _ = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     # Check it raise error if invalid platform
@@ -195,7 +201,10 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
     )
 
     _ = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     # Define token name
@@ -254,7 +263,10 @@ def test_upload_archive_do_not_stop(tmp_path, requests_mock, mocker, platform):
     )
 
     _ = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     mocker.patch("disdrodb.data_transfer.upload_data.upload_station", side_effect=Exception("Whatever error occurred"))

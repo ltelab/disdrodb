@@ -294,10 +294,16 @@ def _check_bin_consistency(sensor_name: str) -> None:
     if all(arr.size > 1 for arr in [velocity_bin_center, velocity_bin_lower, velocity_bin_upper, velocity_bin_width]):
         np.testing.assert_allclose(velocity_bin_upper - velocity_bin_lower, velocity_bin_width, atol=1e-3, rtol=1e-4)
         np.testing.assert_allclose(
-            velocity_bin_lower + velocity_bin_width / 2, velocity_bin_center, atol=1e-3, rtol=1e-4
+            velocity_bin_lower + velocity_bin_width / 2,
+            velocity_bin_center,
+            atol=1e-3,
+            rtol=1e-4,
         )
         np.testing.assert_allclose(
-            velocity_bin_upper - velocity_bin_width / 2, velocity_bin_center, atol=1e-3, rtol=1e-4
+            velocity_bin_upper - velocity_bin_width / 2,
+            velocity_bin_center,
+            atol=1e-3,
+            rtol=1e-4,
         )
 
 

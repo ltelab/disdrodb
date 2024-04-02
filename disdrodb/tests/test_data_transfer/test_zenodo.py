@@ -174,7 +174,8 @@ def test_if_upload_raise_error_remove_zip_file(tmp_path, mocker):
     # Mock stuffs
     mocker.patch("disdrodb.utils.compression._zip_dir", return_value=station_zip_fpath)
     mocker.patch(
-        "disdrodb.data_transfer.zenodo._upload_file_to_zenodo", side_effect=Exception("Whatever error occurred")
+        "disdrodb.data_transfer.zenodo._upload_file_to_zenodo",
+        side_effect=Exception("Whatever error occurred"),
     )
 
     # Test it remove the file if something fail

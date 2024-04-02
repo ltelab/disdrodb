@@ -49,7 +49,7 @@ def define_test_dummy_configs():
             "n_naturals": 4,
             "data_range": [0, 9999.999],
             "nan_flags": None,
-        }
+        },
     }
     bins_velocity_dict = {
         "center": {0: 0.05, 1: 0.15, 2: 0.25, 3: 0.35, 4: 0.45},
@@ -354,7 +354,10 @@ def test__reshape_raw_spectrum():
         dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
         dims_order = dims_order_dict["raw_drop_number"]
         arr, dims = l0b_processing._reshape_raw_spectrum(
-            arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
+            arr=arr,
+            dims_order=dims_order,
+            dims_size_dict=dims_size_dict,
+            n_timesteps=1,
         )
         # Create DataArray and enforce same dimension order as da_expected_spectrum
         da = xr.DataArray(data=arr, dims=dims)
@@ -371,7 +374,10 @@ def test__reshape_raw_spectrum():
     dims_size_dict["diameter_bin_center"] = 20
     with pytest.raises(ValueError):
         l0b_processing._reshape_raw_spectrum(
-            arr=arr, dims_order=dims_order, dims_size_dict=dims_size_dict, n_timesteps=1
+            arr=arr,
+            dims_order=dims_order,
+            dims_size_dict=dims_size_dict,
+            n_timesteps=1,
         )
 
 

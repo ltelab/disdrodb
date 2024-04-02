@@ -92,29 +92,140 @@ disdrodb_run_l0="disdrodb.l0.scripts.disdrodb_run_l0:disdrodb_run_l0"
 [tool.pytest.ini_options]
 addopts = "--cov --cov-report term-missing --cov-report xml --cov-report lcov:lcov.info"
 
-[tool.ruff]
-select = ["F",
-	  "E",
-	  "I",
-	  "Q",
-	  "W",
-	  "UP",
-	  # "SIM",
-	  # "PTH",
-	  # "RET",
-	 ]
-ignore = ["E722"]
-line-length = 120
-# Allow autofix for all enabled rules (when `--fix`) is provided.
-fixable = ["A", "B", "C", "D", "E", "F", "G", "I", "N", "Q", "S", "T", "W", "ANN", "ARG", "BLE", "COM", "DJ", "DTZ", "EM", "ERA", "EXE", "FBT", "ICN", "INP", "ISC", "NPY", "PD", "PGH", "PIE", "PL", "PT", "PTH", "PYI", "RET", "RSE", "RUF", "SIM", "SLF", "TCH", "TID", "TRY", "UP", "YTT"]
-unfixable = []
-
 [tool.black]
 line-length = 120
 preview = true
 
+[tool.ruff]
+
+line-length = 120
+indent-width = 4
+
+# Addional file to be formatted by ruff (in addition to *py)
+extend-include = ["*.ipynb"]
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "docs",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.format]
+
+# Enable reformatting of code snippets in docstrings.
+docstring-code-format = true
+
+[tool.ruff.lint]
+
+select = [
+	# pydocstyle
+    # "D",
+    # Pyflakes
+    "F",
+    # pycodestyle
+    "E",
+    "W",
+    # isort
+    "I",
+    # pyupgrade
+    "UP",
+    # flake8-quotes
+    "Q",
+    # flake8-bugbear
+    # "B",
+    # flake8-return
+    # "RET",
+    # flake8-unused-arguments
+    # "ARG",
+    # flake8-raise
+    # "RSE",
+    # flake8-pytest-style
+    # "PT",
+    # flake8-simplify
+    # "SIM",
+    # Perflint
+    # "PERF",
+    # pandas-vet
+    # "PD",
+    # pylint
+    # "PL",
+    # flake8-commas
+    "COM",
+    # flake8-slots
+    "SLOT",
+    # flake8-comprehensions
+    # "C4",
+    # Ruff custom rules
+    # "RUF"
+
+    #---------------------
+    #### Future rules ####
+    # flake8-use-pathlib
+    # "PTH",
+    # NumPy-specific rules  (for 2.0)
+    # "NPY",
+    # refurb
+    # "FURB", # require preview
+]
+ignore = [
+    "E722",
+    "PT011", # pytest raised error must be checked if match the expected error msg
+    "PERF203",
+    "B904",
+
+    # Docstyle Rules
+    "D404", # Docstring can't start with "This"
+    "D401", # First sentence must be in imperative mood
+
+    # Complexity rules
+    "PLR0913",
+    "PLR2004",
+    "PLR0912",
+    "PLR0915",
+]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.ruff.lint.per-file-ignores]
+
+# Ignore `E402` (import violations) in all Jupyter Notebooks.
+"*.ipynb" = ["E402"]
+
+# Rules to ignore in test files
+"test_*.py" = [
+    "ARG",  # avoid problems with fixtures
+    "D100", "D101","D102", "D103", "D104", "D105",  # Missing docstrings
+]
+"setup.py" = ["D100"]
+"*__init__.py" = ["D104"]
+
+
 [tool.codespell]
-    ignore-words-list = "nd,mis,thi"
+ignore-words-list = "nd,mis,thi"
 
 [tool.coverage.run]
 omit = [

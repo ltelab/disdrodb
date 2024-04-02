@@ -139,7 +139,7 @@ def _check_station_reader_results(
             check_identical_files(ground_truth_filepath, processed_filepath)
         except Exception as e:
             raise ValueError(
-                f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'. Error is: {e}"
+                f"Reader validation has failed for '{data_source}' '{campaign_name}' '{station_name}'. Error is: {e}",
             )
 
 
