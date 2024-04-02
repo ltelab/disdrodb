@@ -68,7 +68,7 @@ INVALID_KEY = "nonexistent_key"
 # valid_filepath = VALID_FNAME
 
 
-@pytest.fixture
+@pytest.fixture()
 def valid_filepath(tmp_path):
     # Create a valid filepath for testing
     filepath = tmp_path / VALID_FNAME
@@ -76,7 +76,7 @@ def valid_filepath(tmp_path):
     return str(filepath)
 
 
-@pytest.fixture
+@pytest.fixture()
 def invalid_filepath(tmp_path):
     # Create an invalid filepath for testing
     filepath = tmp_path / INVALID_FNAME
