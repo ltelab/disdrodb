@@ -36,8 +36,8 @@ def create_test_dataset():
 
 def test_get_dataset_start_end_time():
     ds = create_test_dataset()
-    expected_start_time = ds["time"].values[0]
-    expected_end_time = ds["time"].values[-1]
+    expected_start_time = ds["time"].to_numpy()[0]
+    expected_end_time = ds["time"].to_numpy()[-1]
 
     start_time, end_time = get_dataset_start_end_time(ds)
 
@@ -63,8 +63,8 @@ def test_regularize_dataset():
 
     # Check new time dimension coordinates
     expected_times = pd.date_range("2020-01-01", periods=7, freq=desired_freq)
-    assert np.array_equal(ds_regularized["time"].values, expected_times)
+    assert np.array_equal(ds_regularized["time"].to_numpy(), expected_times)
 
     # Get time index which were infilled
-    new_indices = np.where(np.isin(expected_times, ds["time"].values, invert=True))[0]
+    new_indices = np.where(np.isin(expected_times, ds["time"].to_numpy(), invert=True))[0]
     assert np.all(ds_regularized.isel(time=new_indices)["data"].data == fill_value)

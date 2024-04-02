@@ -109,7 +109,7 @@ def print_df_with_any_nan_rows(df: pd.DataFrame) -> None:
     df : pd.DataFrame
         Input dataframe.
     """
-    df_bool_is_nan = df.isnull()
+    df_bool_is_nan = df.isna()
     idx_nan_rows = df_bool_is_nan.any(axis=1)
     df_nan_rows = df.loc[idx_nan_rows]
     if df_nan_rows.size != 0:
@@ -133,7 +133,7 @@ def print_df_first_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: bool
     columns = list(df.columns)
     for i in range(len(df.columns)):
         _print_column_index(i, column_name=columns[i], print_column_names=print_column_names)
-        _print_value(df.iloc[0 : (n + 1), i].values)
+        _print_value(df.iloc[0 : (n + 1), i].to_numpy())
 
 
 def print_df_random_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: bool = True) -> None:
@@ -151,7 +151,7 @@ def print_df_random_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: boo
     columns = list(df.columns)
     df_sample = df.sample(n=n)
     for i in range(len(df_sample.columns)):
-        row_content = df_sample.iloc[0 : (n + 1), i].values
+        row_content = df_sample.iloc[0 : (n + 1), i].to_numpy()
         _print_column_index(i, column_name=columns[i], print_column_names=print_column_names)
         _print_value(row_content)
 

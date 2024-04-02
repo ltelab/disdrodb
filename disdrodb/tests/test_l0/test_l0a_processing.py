@@ -212,7 +212,7 @@ def test_coerce_corrupted_values_to_nan(create_test_config_files):
     # Test with a wrong dataframe
     df = pd.DataFrame({"key_4": ["text"]})
     df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME)
-    assert pd.isnull(df_out["key_4"][0])
+    assert pd.isna(df_out["key_4"][0])
 
 
 def test_remove_issue_timesteps():
@@ -362,7 +362,7 @@ def test_remove_rows_with_missing_time():
     df = pd.DataFrame({"time": time})
 
     # Add Nat value to a single rows of the time column
-    df.at[0, "time"] = np.datetime64("NaT")
+    df.loc[0, "time"] = np.datetime64("NaT")
     # Test it remove the invalid timestep
     valid_df = remove_rows_with_missing_time(df)
     assert len(valid_df) == n_rows - 1
@@ -405,7 +405,7 @@ def test_remove_duplicated_timesteps():
     df = pd.DataFrame({"time": time})
 
     # Add duplicated timestep value
-    df.at[0, "time"] = df["time"][1]
+    df.loc[0, "time"] = df["time"][1]
 
     # Test it removes the duplicated timesteps
     valid_df = remove_duplicated_timesteps(df=df)

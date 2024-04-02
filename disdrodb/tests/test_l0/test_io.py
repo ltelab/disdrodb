@@ -189,8 +189,8 @@ def test_read_l0a_dataframe(tmp_path):
     df_written = read_l0a_dataframe(filepaths, verbose=False)
 
     # Create lists
-    df_concatenate_list = df_concatenate.values.tolist()
-    df_written_list = df_written.values.tolist()
+    df_concatenate_list = df_concatenate.to_numpy().tolist()
+    df_written_list = df_written.to_numpy().tolist()
 
     # Compare lists
     comparison = df_written_list == df_concatenate_list
