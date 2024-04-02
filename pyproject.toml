@@ -151,7 +151,7 @@ select = [
     # flake8-quotes
     "Q",
     # flake8-bugbear
-    # "B",
+    "B",
     # flake8-return
     "RET",
     # flake8-unused-arguments
