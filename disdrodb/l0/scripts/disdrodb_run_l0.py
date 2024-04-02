@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Script to run the DISDRODB L0 processing."""
 import sys
 from typing import Optional
 
@@ -61,7 +62,6 @@ def disdrodb_run_l0(
 
     Parameters
     ----------
-
     base_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB

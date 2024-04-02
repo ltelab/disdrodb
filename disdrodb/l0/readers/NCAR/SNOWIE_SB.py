@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Created on Fri Feb 17 19:08:17 2023
+Created on Fri Feb 17 19:08:17 2023.
 
 @author: ghiggi
 """
@@ -37,6 +37,7 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
+    """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = ["TO_PARSE"]

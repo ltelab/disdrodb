@@ -709,7 +709,6 @@ def run_l0b_from_nc(
         Default is ``False``.
 
     """
-
     # ------------------------------------------------------------------------.
     # Start L0A processing
     if verbose:

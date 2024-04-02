@@ -83,7 +83,6 @@ def click_download_options(function: object):
     function : object
         Function.
     """
-
     function = click.option(
         "-f",
         "--force",
@@ -103,8 +102,7 @@ def download_archive(
     force: bool = False,
     base_dir: Optional[str] = None,
 ):
-    """Get all YAML files that contain the ``disdrodb_data_url`` key
-    and download the data locally.
+    """Download DISDRODB stations with the ``disdrodb_data_url`` in the metadata.
 
     Parameters
     ----------

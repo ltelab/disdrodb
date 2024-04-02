@@ -281,7 +281,7 @@ def available_stations(
 ):
     """Return stations for which data are available on disk."""
     base_dir = get_base_dir(base_dir)
-    # Checks
+    # Checks arguments
     product = check_product(product)
     data_sources = _check_data_sources(
         base_dir=base_dir,
@@ -293,11 +293,6 @@ def available_stations(
         product=product,
         campaign_names=campaign_names,
     )
-    # Format arguments to list
-    if isinstance(data_sources, str):
-        data_sources = [data_sources]
-    if isinstance(campaign_names, str):
-        campaign_names = [campaign_names]
 
     # If data_source is None, first retrieve all stations
     if data_sources is None:
@@ -309,13 +304,16 @@ def available_stations(
             data_sources=data_sources,
             product=product,
         )
-
     # Then, if campaign_name is not None, subset by campaign_name
     if campaign_names is not None:
         list_info = [info for info in list_info if info[1] in campaign_names]
 
     if return_tuple:
         return list_info
+
+    # TODO:
+    # - Filter by station names !
+    # - Add check_station_names
 
     # TODO: ENSURE THAT NO DUPLICATED STATION NAMES ?
     list_stations = [info[2] for info in list_info]

@@ -36,7 +36,7 @@ def _get_readers_directory() -> str:
 
 
 def _get_readers_data_sources() -> list:
-    """Returns the readers data sources available at ``disdrodb.l0.readers``"""
+    """Returns the readers data sources available at ``disdrodb.l0.readers``."""
     # Readers directory path
     reader_dir = _get_readers_directory()
 
@@ -50,7 +50,7 @@ def _get_readers_data_sources() -> list:
 
 
 def _get_readers_data_sources_path() -> list:
-    """Returns the list of readers data sources directory paths within ``disdrodb.l0.readers``"""
+    """Returns the list of readers data sources directory paths within ``disdrodb.l0.readers``."""
     # Readers directory path
     reader_dir = _get_readers_directory()
 
@@ -109,7 +109,6 @@ def _check_reader_data_source(reader_data_source: str) -> str:
     ValueError
         Error if the data source name provided is not a directory within the ``disdrodb.l0.readers`` directory.
     """
-
     # List available readers data sources
     available_reader_data_sources = _get_readers_data_sources()
     # If not valid data_source, raise error
@@ -307,7 +306,7 @@ def get_reader_function_from_metadata_key(reader_data_source_name):
 
 
 def _get_reader_from_metadata(metadata):
-    """Retrieve the reader function from the metadata key ``reader``
+    """Retrieve the reader function from the metadata key ``reader``.
 
     The convention for metadata reader key: ``<data_source/reader_name>`` in ``disdrodb.l0.readers``.
     """

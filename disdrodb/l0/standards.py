@@ -59,7 +59,6 @@ def get_data_format_dict(sensor_name: str) -> dict:
     dict
         Data format of each sensor variable.
     """
-
     return read_config_file(sensor_name=sensor_name, product="L0A", filename="raw_data_format.yml")
 
 
@@ -76,7 +75,6 @@ def get_sensor_logged_variables(sensor_name: str) -> list:
     list
         List of the variables logged by the sensor.
     """
-
     return list(get_data_format_dict(sensor_name).keys())
 
 
@@ -94,7 +92,6 @@ def get_data_range_dict(sensor_name: str) -> dict:
         Dictionary with the expected data value range for each data field.
         It excludes variables without specified data_range key.
     """
-
     data_format_dict = get_data_format_dict(sensor_name)
     dict_data_range = {}
     for k in data_format_dict:
@@ -118,7 +115,6 @@ def get_nan_flags_dict(sensor_name: str) -> dict:
         Dictionary with the expected nan_flags list for each data field.
         It excludes variables without specified nan_flags key.
     """
-
     data_format_dict = get_data_format_dict(sensor_name)
     dict_nan_flags = {}
     for k in data_format_dict:
@@ -168,7 +164,6 @@ def get_field_ndigits_natural_dict(sensor_name: str) -> dict:
     dict
         Dictionary with the expected number of natural digits for each data field.
     """
-
     data_dict = get_data_format_dict(sensor_name)
     d = {k: v["n_naturals"] for k, v in data_dict.items()}
     return d
@@ -189,7 +184,6 @@ def get_field_ndigits_decimals_dict(sensor_name: dict) -> dict:
     dict
         Dictionary with the expected number of decimal digits for each data field.
     """
-
     data_dict = get_data_format_dict(sensor_name)
     d = {k: v["n_decimals"] for k, v in data_dict.items()}
     return d
@@ -205,12 +199,12 @@ def get_field_ndigits_dict(sensor_name: str) -> dict:
     ----------
     sensor_name : str
         Name of the sensor.
+
     Returns
     -------
     dict
         Dictionary with the expected number of digits for each data field.
     """
-
     data_dict = get_data_format_dict(sensor_name)
     d = {k: v["n_digits"] for k, v in data_dict.items()}
     return d
@@ -232,7 +226,6 @@ def get_field_nchar_dict(sensor_name: str) -> dict:
     dict
         Dictionary with the expected number of characters for each data field.
     """
-
     data_dict = get_data_format_dict(sensor_name)
     d = {k: v["n_characters"] for k, v in data_dict.items()}
     return d
@@ -568,7 +561,6 @@ def get_velocity_bin_upper(sensor_name: str) -> list:
     list
         Velocity bin upper bound.
     """
-
     velocity_dict = get_velocity_bins_dict(sensor_name)
     if velocity_dict is not None:
         upper_bounds = [v[1] for v in velocity_dict["bounds"].values()]
@@ -590,7 +582,6 @@ def get_velocity_bin_width(sensor_name: str) -> list:
     list
         Velocity bin width.
     """
-
     velocity_dict = get_velocity_bins_dict(sensor_name)
     if velocity_dict is not None:
         velocity_bin_width = list(velocity_dict["width"].values())
@@ -612,7 +603,6 @@ def get_bin_coords_dict(sensor_name: str) -> dict:
     dict
         Dictionary with coordinates arrays.
     """
-
     check_sensor_name(sensor_name=sensor_name)
     coords = {}
     # Retrieve diameter coords
@@ -683,7 +673,6 @@ def get_l0a_dtype(sensor_name: str) -> dict:
     dict
         Dictionary with the L0A dtype.
     """
-
     # Note: This function could extract the info from l0a_encodings in future.
     d = read_config_file(sensor_name=sensor_name, product="L0A", filename="l0a_encodings.yml")
     return d
@@ -702,7 +691,6 @@ def get_l0a_encodings_dict(sensor_name: str) -> dict:
     dict
         L0A encodings.
     """
-
     # - l0a_encodings.yml currently specify only the dtype. This could be expanded in the future.
     d = read_config_file(sensor_name=sensor_name, product="L0A", filename="l0a_encodings.yml")
     return d
@@ -822,7 +810,8 @@ def get_raw_array_dims_order(sensor_name: str) -> dict:
     The order of dimension specified for raw_drop_number controls the
     reshaping of the precipitation raw spectrum.
 
-    Examples:
+    Examples
+    --------
         OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
         --> dimension_order = ["velocity_bin_center", "diameter_bin_center"]
         Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]

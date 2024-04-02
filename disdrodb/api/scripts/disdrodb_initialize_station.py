@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Script to initialize the DISDRODB station directory structure."""
 import sys
 from typing import Optional
 
@@ -38,7 +39,7 @@ def disdrodb_initialize_station(
     # Processing options
     base_dir: Optional[str] = None,
 ):
-    """Initialize the DISDRODB directory structure for a station.
+    r"""Initialize the DISDRODB directory structure for a station.
 
     It adds the relevant directories and the default issue and metadata YAML files..
 

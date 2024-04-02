@@ -41,6 +41,33 @@ def disdrodb_upload_station(
     base_dir: Optional[str] = None,
     force: bool = False,
 ):
+    """
+    Upload data from a single DISDRODB station on a remote repository.
+
+    This function also automatically update the disdrodb_data url in the metadata file.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    platform: str, optional
+        Name of the remote data storage platform.
+        The default platform is ``"sandbox.zenodo"`` (for testing purposes).
+        Switch to ``"zenodo"`` for final data dissemination.
+    force: bool, optional
+        If ``True``, upload the data and overwrite the ``disdrodb_data_url``.
+        The default is ``force=False``.
+
+    """
     from disdrodb.data_transfer.upload_data import upload_station
 
     base_dir = parse_base_dir(base_dir)

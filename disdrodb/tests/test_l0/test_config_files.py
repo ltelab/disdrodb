@@ -64,7 +64,6 @@ def is_dict(obj) -> bool:
     result: bool
         True if object is a dictionary, False if not.
     """
-
     return isinstance(obj, dict)
 
 
@@ -86,7 +85,6 @@ def is_sorted_int_keys(obj: list) -> bool:
     result: bool
         True if list contains only sorted integers keys, False if not.
     """
-
     if isinstance(obj, list):
         if len(obj) == 0:
             return True
@@ -151,7 +149,6 @@ def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseMod
     result: bool
         True is schema correct, False is wrong.
     """
-
     try:
         schema(**schema_to_validate)
         return True

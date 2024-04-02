@@ -119,7 +119,6 @@ def _schema_error(object_to_validate: Union[str, list], schema: BaseModel, messa
         Base model.
 
     """
-
     try:
         schema(**object_to_validate)
     except ValidationError as e:
@@ -127,6 +126,8 @@ def _schema_error(object_to_validate: Union[str, list], schema: BaseModel, messa
 
 
 class L0BEncodingSchema(BaseModel):
+    """Pydantic model for DISDRODB L0B encodings."""
+
     contiguous: bool
     dtype: str
     zlib: bool
@@ -139,6 +140,7 @@ class L0BEncodingSchema(BaseModel):
     # if contiguous=False, chunksizes specified, otherwise should be not !
     @model_validator(mode="before")
     def check_chunksizes_and_zlib(cls, values):
+        """Check the chunksizes validity."""
         contiguous = values.get("contiguous")
         chunksizes = values.get("chunksizes")
         if not contiguous and not chunksizes:
@@ -148,6 +150,7 @@ class L0BEncodingSchema(BaseModel):
     # if contiguous = True, then zlib must be set to False
     @model_validator(mode="before")
     def check_contiguous_and_zlib(cls, values):
+        """Check the the compression value validity."""
         contiguous = values.get("contiguous")
         zlib = values.get("zlib")
         if contiguous and zlib:
@@ -157,6 +160,7 @@ class L0BEncodingSchema(BaseModel):
     # if contiguous = True, then fletcher32 must be set to False
     @model_validator(mode="before")
     def check_contiguous_and_fletcher32(cls, values):
+        """Check the fletcher value validity."""
         contiguous = values.get("contiguous")
         fletcher32 = values.get("fletcher32")
         if contiguous and fletcher32:
@@ -172,7 +176,6 @@ def check_l0b_encoding(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-
     data = read_config_file(sensor_name, product="L0A", filename="l0b_encodings.yml")
 
     # check that the second level of the dictionary match the schema
@@ -208,6 +211,8 @@ def check_l0a_encoding(sensor_name: str) -> None:
 
 
 class RawDataFormatSchema(BaseModel):
+    """Pydantic model for the DISDRODB Raw Data Format YAML files."""
+
     n_digits: Optional[int]
     n_characters: Optional[int]
     n_decimals: Optional[int]
@@ -221,6 +226,7 @@ class RawDataFormatSchema(BaseModel):
 
     @field_validator("data_range")
     def check_list_length(cls, value):
+        """Check the data_range validity."""
         if value:
             if len(value) != 2:
                 raise ValueError(f"data_range must have exactly 2 keys, {len(value)} element have been provided.")
@@ -229,7 +235,7 @@ class RawDataFormatSchema(BaseModel):
 
 
 def _check_raw_data_format(sensor_name: str) -> None:
-    """check ``raw_data_format.yml`` file based on the schema defined in the class ``RawDataFormatSchema``.
+    """Check ``raw_data_format.yml`` file based on the schema defined in the class ``RawDataFormatSchema``.
 
     Parameters
     ----------
@@ -272,7 +278,6 @@ def _check_bin_consistency(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-
     diameter_bin_lower = np.array(get_diameter_bin_lower(sensor_name))
     diameter_bin_upper = np.array(get_diameter_bin_upper(sensor_name))
     diameter_bin_center = np.array(get_diameter_bin_center(sensor_name))

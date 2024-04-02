@@ -91,7 +91,7 @@ def _get_version_from_filepath(filepath):
 
 
 def get_version_from_filepaths(filepaths):
-    """Return the DISDROB product version of the specified files"""
+    """Return the DISDROB product version of the specified files."""
     if isinstance(filepaths, str):
         filepaths = [filepaths]
     list_version = [_get_version_from_filepath(filepath) for filepath in filepaths]
@@ -99,37 +99,37 @@ def get_version_from_filepaths(filepaths):
 
 
 def get_campaign_name_from_filepaths(filepaths):
-    """Return the DISDROB campaign name of the specified files"""
+    """Return the DISDROB campaign name of the specified files."""
     list_id = get_key_from_filepaths(filepaths, key="campaign_name")
     return list_id
 
 
 def get_station_name_from_filepaths(filepaths):
-    """Return the DISDROB station name of the specified files"""
+    """Return the DISDROB station name of the specified files."""
     list_id = get_key_from_filepaths(filepaths, key="station_name")
     return list_id
 
 
 def get_product_from_filepaths(filepaths):
-    """Return the DISDROB product name of the specified files"""
+    """Return the DISDROB product name of the specified files."""
     list_id = get_key_from_filepaths(filepaths, key="product")
     return list_id
 
 
 def get_start_time_from_filepaths(filepaths):
-    """Return the start time of the specified files"""
+    """Return the start time of the specified files."""
     list_start_time = get_key_from_filepaths(filepaths, key="start_time")
     return list_start_time
 
 
 def get_end_time_from_filepaths(filepaths):
-    """Return the end time of the specified files"""
+    """Return the end time of the specified files."""
     list_end_time = get_key_from_filepaths(filepaths, key="end_time")
     return list_end_time
 
 
 def get_start_end_time_from_filepaths(filepaths):
-    """Return the start and end time of the specified files"""
+    """Return the start and end time of the specified files."""
     list_start_time = get_key_from_filepaths(filepaths, key="start_time")
     list_end_time = get_key_from_filepaths(filepaths, key="end_time")
     return np.array(list_start_time), np.array(list_end_time)

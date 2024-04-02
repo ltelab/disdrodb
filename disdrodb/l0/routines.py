@@ -107,6 +107,7 @@ def click_l0_processing_options(function: object):
 
 
 def click_remove_l0a_option(function: object):
+    """Click command line argument for ``remove_l0a``."""
     function = click.option(
         "--remove_l0a",
         type=bool,
@@ -363,7 +364,6 @@ def run_disdrodb_l0_station(
         Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
         If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
     """
-
     # ---------------------------------------------------------------------.
     t_i = time.time()
     msg = f"L0 processing of station {station_name} has started."

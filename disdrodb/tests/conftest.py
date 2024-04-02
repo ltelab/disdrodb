@@ -169,7 +169,6 @@ def create_test_config_files(request):  # noqa PT004
         for the configuration files to be created.
 
     """
-
     config_dicts = request.param
     for filename, dictionary in config_dicts.items():
         config_dir = os.path.join(__root_path__, "disdrodb", "l0", "configs")

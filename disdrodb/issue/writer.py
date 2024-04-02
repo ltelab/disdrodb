@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 def _write_issue_docs(f):
-    """Provide template for issue.yml"""
+    """Provide template for issue.yml."""
     f.write("""# This file is used to store timesteps/time periods with wrong/corrupted observation.
 # The specified timesteps are dropped during the L0 processing.
 # The time format used is the isoformat : YYYY-mm-dd HH:MM:SS.

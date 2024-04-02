@@ -231,7 +231,6 @@ def read_l0a_dataframe(
         L0A Dataframe.
 
     """
-
     from disdrodb.l0.l0a_processing import concatenate_dataframe
 
     # ----------------------------------------

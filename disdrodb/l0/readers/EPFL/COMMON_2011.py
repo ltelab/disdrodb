@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for COMMON 2011 campaign."""
 from disdrodb.l0 import run_l0a
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 
@@ -30,6 +31,7 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
+    """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = [

@@ -136,7 +136,6 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
         column is missing in the dataframe.
 
     """
-
     # Get valid columns
     dtype_dict = get_l0a_dtype(sensor_name)
     valid_columns = list(dtype_dict)
@@ -217,6 +216,7 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
 
 
 def check_l0b_standards(x: str) -> None:
+    """Check L0B standards."""
     # - Check for realistic values after having removed the flags !!!!
     x = "noqa"  # noqa F841
     pass

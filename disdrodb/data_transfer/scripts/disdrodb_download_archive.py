@@ -38,6 +38,29 @@ def disdrodb_download_archive(
     base_dir: Optional[str] = None,
     force: bool = False,
 ):
+    """Download DISDRODB stations with the ``disdrodb_data_url`` in the metadata.
+
+    Parameters
+    ----------
+    data_sources : str or list of str, optional
+        Data source name (eg : EPFL).
+        If not provided (``None``), all data sources will be downloaded.
+        The default is ``data_source=None``.
+    campaign_names : str or list of str, optional
+        Campaign name (eg :  EPFL_ROOF_2012).
+        If not provided (``None``), all campaigns will be downloaded.
+        The default is ``campaign_name=None``.
+    station_names : str or list of str, optional
+        Station name.
+        If not provided (``None``), all stations will be downloaded.
+        The default is ``station_name=None``.
+    force : bool, optional
+        If ``True``, overwrite the already existing raw data file.
+        The default is ``False``.
+    base_dir : str (optional)
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
+    """
     from disdrodb.data_transfer.download_data import download_archive
 
     base_dir = parse_base_dir(base_dir)

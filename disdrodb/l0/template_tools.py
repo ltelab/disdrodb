@@ -102,7 +102,7 @@ def _print_value(value):
 
 
 def print_df_with_any_nan_rows(df: pd.DataFrame) -> None:
-    """Print empty rows
+    """Print empty rows.
 
     Parameters
     ----------
@@ -137,7 +137,7 @@ def print_df_first_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: bool
 
 
 def print_df_random_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: bool = True) -> None:
-    """Print the content of the dataframe by column, randomly chosen
+    """Print the content of the dataframe by column, randomly chosen.
 
     Parameters
     ----------
@@ -215,7 +215,7 @@ def print_df_columns_unique_values(
     column_indices: Optional[Union[int, slice, list]] = None,
     print_column_names: bool = True,
 ) -> None:
-    """Print columns' unique values
+    """Print columns' unique values.
 
     Parameters
     ----------
@@ -243,7 +243,7 @@ def get_df_columns_unique_values_dict(
     column_indices: Optional[Union[int, slice, list]] = None,
     column_names: bool = True,
 ):
-    """Create a dictionary {column: unique values}
+    """Create a dictionary {column: unique values}.
 
     Parameters
     ----------
@@ -282,7 +282,6 @@ def str_is_number(string: str) -> bool:
     bool
         ``True`` if float.
     """
-
     try:
         float(string)
         return True
@@ -380,7 +379,6 @@ def get_ndigits(string: str) -> int:
     int
         The number of total digits.
     """
-
     if not str_is_number(string):
         return 0
     string = string.replace("-", "")
@@ -443,7 +441,6 @@ def _get_possible_keys(dict_options: dict, desired_value: str) -> set:
     set
         Keys that the value matches the desired input value.
     """
-
     list_key_match = []
     for k, v in dict_options.items():
         if v == desired_value:
@@ -542,7 +539,6 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
     TypeError
         Error if some columns do not meet the DISDRODB standards.
     """
-
     if not isinstance(column_names, list):
         raise TypeError("'column_names' must be a list of strings.")
     # Get valid columns

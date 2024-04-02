@@ -47,7 +47,6 @@ def unzip_file(filepath: str, dest_path: str) -> None:
     dest_path : str
         Path of the destination directory.
     """
-
     with zipfile.ZipFile(filepath, "r") as zip_ref:
         zip_ref.extractall(dest_path)
 
@@ -65,7 +64,6 @@ def _zip_dir(dir_path: str) -> str:
     str
         Path of the zip archive.
     """
-
     output_path_without_extension = os.path.join(tempfile.gettempdir(), os.path.basename(dir_path))
     output_path = output_path_without_extension + ".zip"
     shutil.make_archive(output_path_without_extension, "zip", dir_path)
@@ -228,7 +226,6 @@ def _compress_file_zip(filepath: str, compressed_filepath: str) -> None:
         Path of the compressed file.
 
     """
-
     with zipfile.ZipFile(compressed_filepath, "w", compression=zipfile.ZIP_DEFLATED) as zipf:
         zipf.write(filepath, os.path.basename(filepath))
 
@@ -245,7 +242,6 @@ def _compress_file_gzip(filepath: str, compressed_filepath: str) -> None:
         Path of the compressed file.
 
     """
-
     with open(filepath, "rb") as f_in, gzip.open(compressed_filepath, "wb") as f_out:
         f_out.writelines(f_in)
 
@@ -262,6 +258,5 @@ def _compress_file_bzip2(filepath: str, compressed_filepath: str) -> None:
         Path of the compressed file.
 
     """
-
     with open(filepath, "rb") as f_in, bz2.open(compressed_filepath, "wb") as f_out:
         f_out.writelines(f_in)

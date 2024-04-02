@@ -28,6 +28,8 @@ logger = logging.getLogger(__name__)
 
 
 class NoDatesSafeLoader(yaml.SafeLoader):
+    """A YAML loader that does not parse dates."""
+
     @classmethod
     def remove_implicit_resolver(cls, tag_to_remove):
         """
@@ -47,7 +49,7 @@ class NoDatesSafeLoader(yaml.SafeLoader):
 
 
 def _load_yaml_without_date_parsing(filepath):
-    "Read a YAML file without converting automatically date string to datetime."
+    """Read a YAML file without converting automatically date string to datetime."""
     NoDatesSafeLoader.remove_implicit_resolver("tag:yaml.org,2002:timestamp")
     with open(filepath) as f:
         dictionary = yaml.load(f, Loader=NoDatesSafeLoader)

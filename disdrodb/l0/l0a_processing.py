@@ -303,7 +303,6 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     pd.DataFrame
         Dataframe with corrected columns types.
     """
-
     # Cast dataframe to dtypes
     dtype_dict = get_l0a_dtype(sensor_name)
     # Ensure time column is saved with seconds resolution
@@ -698,7 +697,6 @@ def write_l0a(
     NotImplementedError
         The input dataframe can not be processed.
     """
-
     # -------------------------------------------------------------------------.
     # Create station directory if does not exist
     create_directory(os.path.dirname(filepath))
@@ -826,7 +824,6 @@ def read_raw_files(
         Input parameters can not be used or the raw file can not be processed.
 
     """
-
     # ------------------------------------------------------.
     # Check input list
     if isinstance(filepaths, str):

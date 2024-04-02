@@ -85,7 +85,7 @@ def invalid_filepath(tmp_path):
 
 
 def test_infer_disdrodb_tree_path_components():
-    """Test retrieve correct disdrodb path components"""
+    """Test retrieve correct disdrodb path components."""
     base_dir = os.path.join("whatever_path", "DISDRODB")
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
