@@ -44,43 +44,43 @@ from disdrodb.utils.yaml import read_yaml, write_yaml
 
 def test_check_metadata_geolocation():
     # Test missing longitude and latitude
+    metadata = {"platform_type": "fixed"}
     with pytest.raises(ValueError):
-        metadata = {"platform_type": "fixed"}
         check_metadata_geolocation(metadata)
 
     # Test non-numeric longitude
+    metadata = {"longitude": "not_a_number", "latitude": 20, "platform_type": "fixed"}
     with pytest.raises(TypeError):
-        metadata = {"longitude": "not_a_number", "latitude": 20, "platform_type": "fixed"}
         check_metadata_geolocation(metadata)
 
     # Test non-numeric latitude
+    metadata = {"longitude": 10, "latitude": "not_a_number", "platform_type": "fixed"}
     with pytest.raises(TypeError):
-        metadata = {"longitude": 10, "latitude": "not_a_number", "platform_type": "fixed"}
         check_metadata_geolocation(metadata)
 
     # Test mobile platform with wrong coordinates
+    metadata = {"longitude": 10, "latitude": 20, "platform_type": "mobile"}
     with pytest.raises(ValueError):
-        metadata = {"longitude": 10, "latitude": 20, "platform_type": "mobile"}
         check_metadata_geolocation(metadata)
 
     # Test fixed platform with missing latitude
+    metadata = {"longitude": 10, "latitude": -9999, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        metadata = {"longitude": 10, "latitude": -9999, "platform_type": "fixed"}
         check_metadata_geolocation(metadata)
 
     # Test fixed platform with missing longitude
+    metadata = {"longitude": -9999, "latitude": 20, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        metadata = {"longitude": -9999, "latitude": 20, "platform_type": "fixed"}
         check_metadata_geolocation(metadata)
 
     # Test invalid longitude value
+    metadata = {"longitude": 200, "latitude": 20, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        metadata = {"longitude": 200, "latitude": 20, "platform_type": "fixed"}
         check_metadata_geolocation(metadata)
 
     # Test invalid latitude value
+    metadata = {"longitude": 10, "latitude": -100, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        metadata = {"longitude": 10, "latitude": -100, "platform_type": "fixed"}
         check_metadata_geolocation(metadata)
 
     # Test valid metadata

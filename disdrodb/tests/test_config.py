@@ -95,7 +95,7 @@ def test_get_base_dir():
     assert get_base_dir() == "another_test_dir/DISDRODB"
 
 
-@pytest.mark.parametrize("sandbox,expected_token", [(False, "my_zenodo_token"), (True, "my_sandbox_zenodo_token")])
+@pytest.mark.parametrize(("sandbox", "expected_token"), [(False, "my_zenodo_token"), (True, "my_sandbox_zenodo_token")])
 def test_get_zenodo_token(sandbox, expected_token):
     import disdrodb
     from disdrodb.configs import get_zenodo_token

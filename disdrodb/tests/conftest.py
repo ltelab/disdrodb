@@ -182,6 +182,6 @@ def create_test_config_files(request):
         write_yaml(dictionary, test_filepath)
 
     yield
-    
+
     os.remove(test_filepath)
     shutil.rmtree(test_dir)
