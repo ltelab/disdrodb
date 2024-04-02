@@ -73,8 +73,7 @@ def check_url(url: str) -> bool:
 
     if re.match(regex, url):
         return True
-    else:
-        return False
+    return False
 
 
 def check_path_is_a_directory(dir_path, path_name=""):

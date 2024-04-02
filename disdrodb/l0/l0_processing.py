@@ -567,7 +567,7 @@ def run_l0b(
 
     # Skip run_l0b processing if the raw data are netCDFs
     if attrs["raw_data_format"] == "netcdf":
-        return None
+        return
 
     # -----------------------------------------------------------------.
     # Start L0B processing
@@ -635,7 +635,7 @@ def run_l0b(
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
         msg = f"L0B processing of station_name {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
-    return None
+    return
 
 
 def run_l0b_from_nc(

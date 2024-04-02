@@ -141,7 +141,7 @@ def download_archive(
     metadata_filepaths = _select_metadata_with_remote_data_url(metadata_filepaths)
     if len(metadata_filepaths) == 0:
         print("No available remote data to download.")
-        return None
+        return
 
     # Try to download the data
     # - It will download data only if the disdrodb_data_url is specified !
@@ -211,8 +211,7 @@ def _is_valid_disdrodb_data_url(disdrodb_data_url):
     """Check if it is a valid disdrodb_data_url."""
     if isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 10:
         return True
-    else:
-        return False
+    return False
 
 
 def _has_disdrodb_data_url(metadata_filepath):

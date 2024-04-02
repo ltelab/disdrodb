@@ -131,7 +131,7 @@ def read_raw_file(
 def _check_df_sanitizer_fun(df_sanitizer_fun):
     """Check that ``df`` is the only argument of ``df_sanitizer_fun``."""
     if df_sanitizer_fun is None:
-        return None
+        return
     if not callable(df_sanitizer_fun):
         raise ValueError("'df_sanitizer_fun' must be a function.")
     if not np.all(np.isin(inspect.getfullargspec(df_sanitizer_fun).args, ["df"])):
@@ -488,7 +488,7 @@ def replace_nan_flags(df, sensor_name, verbose=False):
             if n_nan_flags_values > 0:
                 msg = f"In variable {var}, {n_nan_flags_values} values were nan_flags and were replaced to np.nan."
                 log_info(logger=logger, msg=msg, verbose=verbose)
-                df[var][is_a_nan_flag] = np.nan
+                df.loc[is_a_nan_flag, var] = np.nan
     # Return dataframe
     return df
 

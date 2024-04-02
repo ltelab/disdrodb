@@ -329,8 +329,7 @@ def str_has_decimal_digits(string: str) -> bool:
     """
     if len(string.split(".")) == 2:
         return True
-    else:
-        return False
+    return False
 
 
 def get_decimal_ndigits(string: str) -> int:
@@ -348,8 +347,7 @@ def get_decimal_ndigits(string: str) -> int:
     """
     if str_has_decimal_digits(string):
         return len(string.split(".")[1])
-    else:
-        return 0
+    return 0
 
 
 def get_natural_ndigits(string: str) -> int:
@@ -369,8 +367,7 @@ def get_natural_ndigits(string: str) -> int:
         return len(string.replace("-", ""))
     if str_has_decimal_digits(string):
         return len(string.split(".")[0].replace("-", ""))
-    else:
-        return 0
+    return 0
 
 
 def get_ndigits(string: str) -> int:
@@ -392,8 +389,7 @@ def get_ndigits(string: str) -> int:
     string = string.replace("-", "")
     if str_has_decimal_digits(string):
         return len(string) - 1  # remove .
-    else:
-        return len(string)
+    return len(string)
 
 
 def get_nchar(string: str) -> int:

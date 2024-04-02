@@ -90,10 +90,8 @@ def is_sorted_int_keys(obj: list) -> bool:
     if isinstance(obj, list):
         if len(obj) == 0:
             return True
-        else:
-            return all(isinstance(x, int) for x in obj) and obj == sorted(obj)
-    else:
-        return False
+        return all(isinstance(x, int) for x in obj) and obj == sorted(obj)
+    return False
 
 
 def is_numeric_list(obj: list) -> bool:
@@ -112,10 +110,8 @@ def is_numeric_list(obj: list) -> bool:
     if isinstance(obj, list):
         if len(obj) == 0:
             return True
-        else:
-            return all(isinstance(x, (int, float)) for x in obj)
-    else:
-        return False
+        return all(isinstance(x, (int, float)) for x in obj)
+    return False
 
 
 def is_string_list(obj: list) -> bool:
@@ -134,10 +130,8 @@ def is_string_list(obj: list) -> bool:
     if isinstance(obj, list):
         if len(obj) == 0:
             return True
-        else:
-            return all(isinstance(x, str) for x in obj)
-    else:
-        return False
+        return all(isinstance(x, str) for x in obj)
+    return False
 
 
 def validate_schema_pytest(schema_to_validate: Union[str, list], schema: BaseModel) -> bool:

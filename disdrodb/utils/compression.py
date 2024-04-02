@@ -169,8 +169,7 @@ def _compress_file(filepath: str, method: str, skip: bool) -> str:
         if skip:
             print(f"File {filepath} is already compressed. Skipping.")
             return filepath
-        else:
-            raise ValueError(f"File {filepath} is already compressed !")
+        raise ValueError(f"File {filepath} is already compressed !")
 
     extension = COMPRESSION_OPTIONS[method]
     archive_name = os.path.basename(filepath) + extension

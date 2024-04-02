@@ -153,7 +153,7 @@ select = [
     # flake8-bugbear
     # "B",
     # flake8-return
-    # "RET",
+    "RET",
     # flake8-unused-arguments
     # "ARG",
     # flake8-raise
@@ -192,6 +192,7 @@ ignore = [
     "PERF203",
 	"PLW2901",
     "B904",
+	"RET504",
 
     # Docstyle Rules
     "D404", # Docstring can't start with "This"

@@ -169,12 +169,10 @@ def _check_lonlat_type(longitude, latitude):
 def _check_lonlat_validity(longitude, latitude):
     if longitude == -9999 or latitude == -9999:
         raise ValueError("Missing lat lon coordinates (-9999).")
-    elif longitude > 180 or longitude < -180:
+    if longitude > 180 or longitude < -180:
         raise ValueError("Invalid longitude (outside [-180, 180])")
-    elif latitude > 90 or latitude < -90:
+    if latitude > 90 or latitude < -90:
         raise ValueError("Invalid latitude (outside [-90, 90])")
-    else:
-        pass
 
 
 def check_metadata_geolocation(metadata) -> None:
@@ -550,8 +548,7 @@ def check_archive_metadata_compliance(base_dir: Optional[str] = None, raise_erro
             msg = msg + f"The error is: {e}."
             if raise_error:
                 raise ValueError(msg)
-            else:
-                print(msg)
+            print(msg)
 
     return is_valid
 

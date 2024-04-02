@@ -51,8 +51,7 @@ def list_paths(dir_path, glob_pattern, recursive=False):
     """Return a list of filepaths and directory paths."""
     if not recursive:
         return glob.glob(os.path.join(dir_path, glob_pattern))
-    else:
-        return _recursive_glob(dir_path, glob_pattern)
+    return _recursive_glob(dir_path, glob_pattern)
 
 
 def list_files(dir_path, glob_pattern, recursive=False):
@@ -125,8 +124,7 @@ def is_empty_directory(path):
     paths = os.listdir(path)
     if len(paths) == 0:
         return True
-    else:
-        return False
+    return False
 
 
 def _remove_file_or_directories(path):
@@ -155,7 +153,7 @@ def remove_if_exists(path: str, force: bool = False) -> None:
     """
     # If the path does not exist, do nothing
     if not os.path.exists(path):
-        return None
+        return
 
     # If the path exists and force=False, raise Error
     if not force:

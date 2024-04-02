@@ -597,10 +597,10 @@ def test_read_raw_files():
 
     # Create a test dataframe
     df1 = pd.DataFrame(
-        {"time": pd.date_range(start="2022-01-01", end="2022-01-02", freq="H"), "value": np.random.rand(25)},
+        {"time": pd.date_range(start="2022-01-01", end="2022-01-02", freq="h"), "value": np.random.rand(25)},
     )
     df2 = pd.DataFrame(
-        {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="H"), "value": np.random.rand(25)},
+        {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="h"), "value": np.random.rand(25)},
     )
     df_list = [df1, df2]
 
@@ -620,8 +620,9 @@ def test_read_raw_files():
     def mock_process_raw_file(filepath, column_names, reader_kwargs, df_sanitizer_fun, sensor_name, verbose):
         if filepath == "test_file1.csv":
             return df1
-        elif filepath == "test_file2.csv":
+        if filepath == "test_file2.csv":
             return df2
+        return None
 
     # Monkey patch the function
     l0a_processing.process_raw_file = mock_process_raw_file
