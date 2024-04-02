@@ -258,7 +258,7 @@ def _check_reader_arguments(reader):
     import inspect
 
     signature = inspect.signature(reader)
-    reader_arguments = sorted(list(signature.parameters.keys()))
+    reader_arguments = sorted(signature.parameters.keys())
     expected_arguments = sorted(_get_expected_reader_arguments())
     if reader_arguments != expected_arguments:
         raise ValueError(f"The reader must be defined with the following arguments: {expected_arguments}")

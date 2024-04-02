@@ -134,7 +134,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
         "diameter_bin_center",
     ]
     assert set(ds.variables) == set(expected_variables)
-    assert set(ds.dims) == set(["diameter_bin_center", "time", "velocity_bin_center", "crs"])
+    assert set(ds.dims) == {"diameter_bin_center", "time", "velocity_bin_center", "crs"}
 
     # Check that the geolocation coordinates have been properly set
     assert np.allclose(ds.latitude.values, df.latitude.values)
