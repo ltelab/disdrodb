@@ -159,7 +159,7 @@ def test__read_l0a(tmp_path):
 
 
 def test_read_l0a_dataframe(tmp_path):
-    filepaths = list()
+    filepaths = []
 
     for i in [0, 1]:
         # create dummy dataframe

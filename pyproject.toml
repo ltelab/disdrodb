@@ -173,7 +173,7 @@ select = [
     # flake8-slots
     "SLOT",
     # flake8-comprehensions
-    # "C4",
+    "C4",
     # Ruff custom rules
     # "RUF"
 
