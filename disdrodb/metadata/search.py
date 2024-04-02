@@ -204,7 +204,6 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
 
     # Get metadata filepaths
     if isinstance(station_names, list):
-
         metadata_filepaths = [
             define_metadata_filepath(
                 product="Raw",
@@ -228,7 +227,6 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
                 check_exists=False,
             )
             for data_source, campaign_name, station_name in list_info
-            if station_name in station_names
         ]
 
     # If no stations available, raise an error

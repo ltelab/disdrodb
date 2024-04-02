@@ -314,6 +314,7 @@ def available_stations(
     # TODO:
     # - Filter by station names !
     # - Add check_station_names
+    # - Simplify available_stations
 
     # TODO: ENSURE THAT NO DUPLICATED STATION NAMES ?
     list_stations = [info[2] for info in list_info]
