@@ -46,7 +46,7 @@ from disdrodb.l0.template_tools import (
 
 
 @pytest.mark.parametrize(
-    "test_input, expected",
+    ("test_input", "expected"),
     [
         ("123.456", True),
         ("123", True),
@@ -208,7 +208,7 @@ class Test_Print_Df_Summary_Stats:
         assert "Column 0 ( A ):" in out
         assert "Column 1 ( B ):" in out
 
-    @pytest.mark.parametrize("column_indices", ([0, 1], slice(0, 2)))
+    @pytest.mark.parametrize("column_indices", [[0, 1], slice(0, 2)])
     def test_print_specific_columns(self, capfd, column_indices):
         df = pd.DataFrame({"A": [1, 2, 3], "B": [4, 5, 6], "C": [7, 8, 9]})
         print_df_summary_stats(df, column_indices=column_indices)

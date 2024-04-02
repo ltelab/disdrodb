@@ -90,18 +90,18 @@ def test_check_timesteps():
         check_timesteps(123)
 
     # Test invalid datetime input
+    timesteps = np.array(["2022-01-01", "2022-01-02"], dtype="datetime64[D]")
     with pytest.raises(ValueError):
-        timesteps = np.array(["2022-01-01", "2022-01-02"], dtype="datetime64[D]")
         check_timesteps(timesteps)
 
     # Test invalid list of string (wrong temporal resolution)
+    timesteps = ["2022-01-01 01:00", "2022-01-01 02:00"]
     with pytest.raises(ValueError):
-        timesteps = ["2022-01-01 01:00", "2022-01-01 02:00"]
         check_timesteps(timesteps)
 
     # Test invalid list of string (wrong time format)
+    timesteps = ["2022-15-01 01:00:00", "2022-15-01 02:00:00"]
     with pytest.raises(ValueError):
-        timesteps = ["2022-15-01 01:00:00", "2022-15-01 02:00:00"]
         check_timesteps(timesteps)
 
 

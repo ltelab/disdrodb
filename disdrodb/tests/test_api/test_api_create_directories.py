@@ -148,10 +148,13 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     )
 
     # Test product, metadata and station directories have been created
-    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
-    assert os.path.exists(dst_metadata_dir) and os.path.isdir(dst_metadata_dir)
+    assert os.path.exists(dst_station_dir)
+    assert os.path.isdir(dst_station_dir)
+    assert os.path.exists(dst_metadata_dir)
+    assert os.path.isdir(dst_metadata_dir)
     # Test it copied the metadata from RAW
-    assert os.path.exists(dst_metadata_filepath) and os.path.isfile(dst_metadata_filepath)
+    assert os.path.exists(dst_metadata_filepath)
+    assert os.path.isfile(dst_metadata_filepath)
     os.remove(dst_metadata_filepath)
 
     # Test raise error if already data in L0A (if force=False)
@@ -182,9 +185,12 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
         station_name=station_name,
     )
     assert not os.path.exists(product_filepath)
-    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
-    assert os.path.exists(dst_metadata_dir) and os.path.isdir(dst_metadata_dir)
-    assert os.path.exists(dst_metadata_filepath) and os.path.isfile(dst_metadata_filepath)
+    assert os.path.exists(dst_station_dir)
+    assert os.path.isdir(dst_station_dir)
+    assert os.path.exists(dst_metadata_dir)
+    assert os.path.isdir(dst_metadata_dir)
+    assert os.path.exists(dst_metadata_filepath)
+    assert os.path.isfile(dst_metadata_filepath)
 
 
 def test_create_directory_structure(tmp_path, mocker):
@@ -253,7 +259,8 @@ def test_create_directory_structure(tmp_path, mocker):
 
     # Test product directory has been created
     dst_station_dir = os.path.join(processed_dir, dst_product)
-    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
+    assert os.path.exists(dst_station_dir)
+    assert os.path.isdir(dst_station_dir)
 
     # Test raise error if already data in dst_product (if force=False)
     dst_product_file_filepath = create_fake_raw_data_file(
@@ -281,7 +288,8 @@ def test_create_directory_structure(tmp_path, mocker):
         station_name=station_name,
     )
     assert not os.path.exists(dst_product_file_filepath)
-    assert os.path.exists(dst_station_dir) and os.path.isdir(dst_station_dir)
+    assert os.path.exists(dst_station_dir)
+    assert os.path.isdir(dst_station_dir)
 
     # Test raise error if bad station_name
     with pytest.raises(ValueError):
