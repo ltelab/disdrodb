@@ -142,7 +142,7 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
     return list(set(metadata_filepaths))
 
 
-def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=None, station_names=None):
+def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=None):
     """
     Get the list of metadata filepaths that have corresponding data in the DISDRODB raw archive.
 
@@ -158,9 +158,6 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     campaign_names : str or list of str
         Name of the campaign(s) of interest.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
-    station_names : str or list of str
-        Station names of interest.
         The default is ``None``.
 
     Returns

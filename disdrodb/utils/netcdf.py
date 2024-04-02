@@ -401,7 +401,7 @@ def _concatenate_datasets(list_ds, dim="time", verbose=False):
         msg = "Start concatenating with xr.concat."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
-        ds = xr.concat(list_ds, dim="time", coords="minimal", compat="override")
+        ds = xr.concat(list_ds, dim=dim, coords="minimal", compat="override")
 
         msg = "Concatenation with xr.concat has been successful."
         log_info(logger=logger, msg=msg, verbose=verbose)
