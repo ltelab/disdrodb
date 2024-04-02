@@ -31,6 +31,9 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
+    """Reader."""
+    ##------------------------------------------------------------------------.
+    # Define dictionary mapping dataset variables to select and rename
     dict_names = {
         ## Dimensions
         "particle_diameter": "diameter_bin_center",

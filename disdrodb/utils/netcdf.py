@@ -169,7 +169,6 @@ def _remove_dataset_bad_values(list_ds, filepaths, dict_ds_bad_idx, dim):
 
     Returns
     -------
-
     list_ds : list
         List of xarray Dataset without bad values.
     """
@@ -434,7 +433,6 @@ def xr_concat_datasets(filepaths: str, verbose=False) -> xr.Dataset:
         Error if the merging/concatenation operations can not be achieved.
 
     """
-
     # --------------------------------------.
     # Open xr.Dataset lazily in parallel using dask delayed
     list_ds = get_list_ds(filepaths)

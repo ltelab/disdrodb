@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Script to run the DISDRODB L0A processing."""
 import sys
 from typing import Optional
 
@@ -54,7 +55,6 @@ def disdrodb_run_l0a(
 
     Parameters
     ----------
-
     data_sources : str
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.

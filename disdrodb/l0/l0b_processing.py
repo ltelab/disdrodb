@@ -111,7 +111,6 @@ def _format_string_array(string: str, n_values: int) -> np.array:
     np.array
         array of float
     """
-
     split_str = infer_split_str(string)
     values = np.array(string.strip(split_str).split(split_str))
 
@@ -157,7 +156,8 @@ def _reshape_raw_spectrum(
     dims_order : list
         The order of dimension in the raw spectrum.
 
-        Examples:
+    Examples
+    --------
         - OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
         --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
         - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
@@ -214,7 +214,6 @@ def retrieve_l0b_arrays(
         Dictionary with data arrays.
 
     """
-
     msg = " - Retrieval of L0B data arrays started."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
@@ -358,7 +357,7 @@ def _set_dataset_attrs(ds, sensor_name):
 
 
 def add_dataset_crs_coords(ds):
-    "Add the CRS coordinate to the xr.Dataset"
+    """Add the CRS coordinate to the xr.Dataset."""
     # TODO: define CF-compliant CRS !
     # - CF compliant
     # - wkt
@@ -536,7 +535,6 @@ def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
     xr.Dataset
         Output xarray dataset
     """
-
     for var in ds.data_vars:
         chunks = encoding_dict[var].pop("chunksizes")
         dims = list(ds[var].dims)

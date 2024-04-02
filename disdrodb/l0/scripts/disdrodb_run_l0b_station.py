@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Script to run the DISDRODB L0B station processing."""
 import sys
 from typing import Optional
 
@@ -54,7 +55,6 @@ def disdrodb_run_l0b_station(
 
     Parameters
     ----------
-
     data_source : str
         Institution name (when campaign data spans more than 1 country),
         or country (when all campaigns (or sensor networks) are inside a given country).

@@ -36,6 +36,7 @@ def _execute_cmd(cmd, raise_error=False):
 
 def _parse_empty_string_and_none(args):
     """Utility to parse argument passed from the command line.
+
     If ``args = ''``, returns None.
     If ``args = 'None'`` returns None.
     Otherwise return ``args``.
@@ -69,6 +70,7 @@ def parse_arg_to_list(args):
 
 def parse_base_dir(base_dir):
     """Utility to parse base_dir provided by command line.
+
     If ``base_dir = 'None'`` returns ``None``.
     If ``base_dir = ''`` returns ``None``.
     """
@@ -91,6 +93,13 @@ def click_station_arguments(function: object):
 
 
 def click_base_dir_option(function: object):
+    """Click command line argument for DISDRODB ``base_dir``.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
     function = click.option(
         "--base_dir",
         type=str,

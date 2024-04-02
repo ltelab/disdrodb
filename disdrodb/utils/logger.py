@@ -48,7 +48,7 @@ def create_file_logger(processed_dir, product, station_name, filename, parallel)
 
 
 def close_logger(logger: logger) -> None:
-    """Close the logger
+    """Close the logger.
 
     Parameters
     ----------

@@ -14,9 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-##################################################
-## Wrapper to concat L0B files by command lines ##
-##################################################
+"""Script to concatenate the DISDRODB L0B files."""
 import sys
 from typing import Optional
 
@@ -51,7 +49,6 @@ def disdrodb_run_l0b_concat(
 
     Parameters
     ----------
-
     data_sources : str
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.

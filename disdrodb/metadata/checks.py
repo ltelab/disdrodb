@@ -70,7 +70,7 @@ def _check_metadata_keys(metadata):
 
 
 def _check_metadata_values(metadata):
-    """Check validity of metadata values
+    """Check validity of metadata values.
 
     If null is specified in the YAML files (or None in the dict) raise error.
     """
@@ -222,7 +222,6 @@ def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list
     keys : Union[str,list]
         Attributes to verify the presence.
     """
-
     if isinstance(keys, str):
         keys = [keys]
 

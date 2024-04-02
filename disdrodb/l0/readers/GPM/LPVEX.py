@@ -30,6 +30,7 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
+    """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define column names
     column_names = ["time", "unknown", "raw_drop_number"]

@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Script to run the DISDRODB L0 station processing."""
 import sys
 from typing import Optional
 
@@ -58,7 +59,7 @@ def disdrodb_run_l0_station(
     debugging_mode: bool = False,
     base_dir: Optional[str] = None,
 ):
-    """Run the L0 processing of a specific DISDRODB station from the terminal.
+    r"""Run the L0 processing of a specific DISDRODB station from the terminal.
 
     Parameters \n
     ---------- \n

@@ -30,6 +30,7 @@ def reader(
     parallel=False,
     debugging_mode=False,
 ):
+    """Reader."""
     ##------------------------------------------------------------------------.
     #### - Define column names
     # These are the variables included in the datasets:

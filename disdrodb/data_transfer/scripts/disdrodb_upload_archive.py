@@ -41,6 +41,36 @@ def disdrodb_upload_archive(
     platform: Optional[str] = None,
     force: bool = False,
 ):
+    """Find all stations containing local data and upload them to a remote repository.
+
+    Parameters
+    ----------
+    platform: str, optional
+        Name of the remote platform.
+        The default platform is ``"sandbox.zenodo"`` (for testing purposes).
+        Switch to ``"zenodo"`` for final data dissemination.
+    force: bool, optional
+        If ``True``, upload even if data already exists on another remote location.
+        The default is ``force=False``.
+    base_dir : str (optional)
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+
+    Other Parameters
+    ----------------
+    data_sources: str or list of str, optional
+        Data source name (eg: EPFL).
+        If not provided (``None``), all data sources will be uploaded.
+        The default is ``data_source=None``.
+    campaign_names: str or list of str, optional
+        Campaign name (eg:  EPFL_ROOF_2012).
+        If not provided (``None``), all campaigns will be uploaded.
+        The default is ``campaign_name=None``.
+    station_names: str or list of str, optional
+        Station name.
+        If not provided (``None``), all stations will be uploaded.
+        The default is ``station_name=None``.
+    """
     from disdrodb.data_transfer.upload_data import upload_archive
 
     base_dir = parse_base_dir(base_dir)

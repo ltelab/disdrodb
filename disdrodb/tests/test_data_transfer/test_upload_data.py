@@ -35,7 +35,6 @@ DEPOSIT_ID = 123456
 
 def test_wrong_http_response(requests_mock):
     """Test wrong response from Zenodo API."""
-
     requests_mock.post("https://sandbox.zenodo.org/api/deposit/depositions", json={}, status_code=404)
     with pytest.raises(ValueError):
         _create_zenodo_deposition(sandbox=True)

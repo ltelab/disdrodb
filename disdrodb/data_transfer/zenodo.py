@@ -34,7 +34,6 @@ def _check_http_response(
     task_description: str,
 ) -> None:
     """Check the Zenodo HTTP request response status code and raise an error if not the expected one."""
-
     if response.status_code == expected_status_code:
         return
 
@@ -95,7 +94,6 @@ def _define_disdrodb_data_url(zenodo_host, deposit_id, filename):
 
 def _upload_file_to_zenodo(filepath: str, metadata_filepath: str, sandbox: bool) -> None:
     """Upload a file to a Zenodo bucket."""
-
     # Read metadata
     metadata = read_yaml(metadata_filepath)
     data_source = metadata["data_source"]

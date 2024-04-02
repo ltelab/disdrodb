@@ -35,7 +35,6 @@ def get_dataframe_start_end_time(df: pd.DataFrame):
         (``starting_time``, ``ending_time``)
 
     """
-
     starting_time = df["time"].iloc[0]
     ending_time = df["time"].iloc[-1]
     return (starting_time, ending_time)

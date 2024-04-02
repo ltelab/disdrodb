@@ -182,7 +182,7 @@ def copy_file(src_filepath, dst_filepath):
 
 
 def remove_path_trailing_slash(path: str) -> str:
-    """
+    r"""
     Removes a trailing slash or backslash from a file path if it exists.
 
     This function ensures that the provided file path is normalized by removing

@@ -129,7 +129,7 @@ def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
 
 
 def check_campaign_name(campaign_name):
-    """Check the campaign name is upper case !"""
+    """Check the campaign name is upper case !."""
     upper_campaign_name = campaign_name.upper()
     if campaign_name != upper_campaign_name:
         msg = f"The campaign directory name {campaign_name} must be defined uppercase: {upper_campaign_name}"
@@ -138,7 +138,7 @@ def check_campaign_name(campaign_name):
 
 
 def check_data_source(data_source):
-    """Check the data_source name is upper case !"""
+    """Check the data_source name is upper case !."""
     upper_data_source = data_source.upper()
     if data_source != upper_data_source:
         msg = f"The data source directory name {data_source} must be defined uppercase: {upper_data_source}"

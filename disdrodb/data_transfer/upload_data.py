@@ -29,6 +29,7 @@ from disdrodb.utils.yaml import read_yaml
 
 
 def click_upload_options(function: object):
+    """Click command arguments for DISDRODB data upload."""
     function = click.option(
         "--platform",
         type=click.Choice(["zenodo", "sandbox.zenodo"], case_sensitive=False),
@@ -199,7 +200,6 @@ def upload_archive(
 
     Other Parameters
     ----------------
-
     data_sources: str or list of str, optional
         Data source name (eg: EPFL).
         If not provided (``None``), all data sources will be uploaded.

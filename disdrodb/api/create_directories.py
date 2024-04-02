@@ -376,6 +376,7 @@ def create_station_directory(base_dir, product, data_source, campaign_name, stat
 
 
 def create_issue_directory(base_dir, data_source, campaign_name):
+    """Create issue directory."""
     issue_dir = define_issue_dir(
         base_dir=base_dir,
         data_source=data_source,

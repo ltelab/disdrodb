@@ -208,7 +208,6 @@ def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
 @pytest.mark.parametrize("verbose", [True, False])
 def test_disdrodb_run_l0_nc_station(tmp_path, verbose, parallel):
     """Test the disdrodb_run_l0_station process correctly raw netCDF files."""
-
     BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
     DATA_SOURCE = "UK"
     CAMPAIGN_NAME = "DIVEN"

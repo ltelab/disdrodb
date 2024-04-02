@@ -162,6 +162,7 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     station_names : str or list of str
         Station names of interest.
         The default is ``None``.
+
     Returns
     -------
     metadata_filepaths: list
@@ -177,7 +178,6 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
         product="RAW",
         data_sources=data_sources,
         campaign_names=campaign_names,
-        station_names=station_names,
     )
 
     # If no stations available, raise an error
