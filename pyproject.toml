@@ -167,7 +167,7 @@ select = [
     # pandas-vet
     # "PD",
     # pylint
-    # "PL",
+    "PL",
     # flake8-commas
     "COM",
     # flake8-slots
@@ -190,6 +190,7 @@ ignore = [
     "E722",
     "PT011", # pytest raised error must be checked if match the expected error msg
     "PERF203",
+	"PLW2901",
     "B904",
 
     # Docstyle Rules

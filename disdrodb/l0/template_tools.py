@@ -77,7 +77,6 @@ def print_df_column_names(df: pd.DataFrame) -> None:
     """
     for i, column in enumerate(df.columns):
         print(" - Column", i, ":", column)
-    return None
 
 
 def print_valid_l0_column_names(sensor_name: str) -> None:

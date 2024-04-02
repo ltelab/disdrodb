@@ -129,4 +129,3 @@ def disdrodb_run_l0a_station(
     # Close the cluster
     if parallel:
         cluster.close()
-    return None

@@ -145,4 +145,3 @@ def disdrodb_run_l0(
         debugging_mode=debugging_mode,
         parallel=parallel,
     )
-    return None

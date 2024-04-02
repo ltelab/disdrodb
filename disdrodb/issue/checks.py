@@ -37,7 +37,7 @@ def _is_numpy_array_string(arr):
     """
 
     dtype = arr.dtype.type
-    return dtype == np.str_ or dtype == np.unicode_
+    return dtype in (np.str_, np.unicode_)
 
 
 def _is_numpy_array_datetime(arr):
@@ -159,7 +159,6 @@ def _check_time_period_nested_list_format(time_periods):
             msg = "Every time period of time_periods must be a list of length 2."
             log_error(logger, msg=msg, verbose=False)
             raise ValueError(msg)
-    return None
 
 
 def check_time_periods(time_periods):

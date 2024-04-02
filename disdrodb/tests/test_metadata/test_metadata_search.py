@@ -76,7 +76,7 @@ def test__get_list_all_metadata(tmp_path):
         campaign_names=campaign_name,
     )
 
-    assert expected_result == expected_result
+    assert result == expected_result
 
 
 def test__get_list_metadata_with_data(tmp_path):

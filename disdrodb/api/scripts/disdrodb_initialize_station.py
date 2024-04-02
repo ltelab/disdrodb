@@ -67,4 +67,3 @@ def disdrodb_initialize_station(
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    return None

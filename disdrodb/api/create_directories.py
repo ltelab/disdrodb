@@ -160,7 +160,6 @@ def _copy_station_metadata(
         src_filepath=raw_metadata_filepath,
         dst_filepath=processed_metadata_filepath,
     )
-    return None
 
 
 def _check_pre_existing_station_data(

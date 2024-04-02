@@ -67,7 +67,6 @@ def define_disdrodb_configs(
     write_yaml(config_dict, filepath, sort_keys=False)
 
     print(f"The DISDRODB config file has been {action_msg} successfully!")
-    return
 
 
 def read_disdrodb_configs() -> dict[str, str]:

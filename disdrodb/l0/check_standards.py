@@ -117,7 +117,6 @@ def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, verbose: boo
     if len(missing_vars) > 0:
         msg = f"The following raw array variable are missing: {missing_vars}"
         log_info(logger=logger, msg=msg, verbose=verbose)
-    return None
 
 
 def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
@@ -160,7 +159,6 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     # --------------------------------------------
-    return None
 
 
 def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True) -> None:

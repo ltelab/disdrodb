@@ -114,5 +114,3 @@ def disdrodb_run_l0b(
         parallel=parallel,
         remove_l0a=remove_l0a,
     )
-
-    return None
