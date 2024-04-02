@@ -82,7 +82,7 @@ def _check_timestep_datetime_accuracy(timesteps, unit="s"):
     return timesteps
 
 
-def _check_timestep_string_second_accuracy(timesteps, n=19):
+def _check_timestep_string_second_accuracy(timesteps):
     """Check the timesteps string are provided with second accuracy.
 
     Note: it assumes the YYYY-mm-dd HH:MM:SS format

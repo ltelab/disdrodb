@@ -339,7 +339,7 @@ def _set_attrs_dict(ds, attrs_dict):
 
 def _set_coordinate_attributes(ds):
     # Get attributes dictionary
-    attrs_dict = get_coords_attrs_dict(ds)
+    attrs_dict = get_coords_attrs_dict()
     # Set attributes
     ds = _set_attrs_dict(ds, attrs_dict)
     return ds

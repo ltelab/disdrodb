@@ -56,7 +56,7 @@ def _check_valid_range(df, dict_data_range, verbose=False):
 
     if len(list_wrong_columns) > 0:
         msg = f"Columns {list_wrong_columns} has values outside the expected data range."
-        log_error(logger=logger, msg=msg, verbose=False)
+        log_error(logger=logger, msg=msg, verbose=verbose)
         raise ValueError(msg)
 
 
@@ -81,7 +81,7 @@ def _check_valid_values(df, dict_valid_values, verbose=False):
 
     if len(list_wrong_columns) > 0:
         msg = "\n".join(list_msg)
-        log_error(logger=logger, msg=msg, verbose=False)
+        log_error(logger=logger, msg=msg, verbose=verbose)
         raise ValueError(f"Columns {list_wrong_columns} have invalid values.")
 
 
@@ -109,7 +109,7 @@ def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, verbose: boo
     # Check that raw_drop_number is present
     if "raw_drop_number" not in df.columns:
         msg = "The 'raw_drop_number' column is not present in the dataframe."
-        log_error(logger=logger, msg=msg, verbose=False)
+        log_error(logger=logger, msg=msg, verbose=verbose)
         raise ValueError(msg)
 
     # Report additional raw arrays that are missing
@@ -218,4 +218,5 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
 
 def check_l0b_standards(x: str) -> None:
     # - Check for realistic values after having removed the flags !!!!
+    x = "noqa"  # noqa F841
     pass

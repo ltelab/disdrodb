@@ -205,13 +205,13 @@ def test_strip_string_spaces(create_test_config_files):
 def test_coerce_corrupted_values_to_nan(create_test_config_files):
     # Test with a valid dataframe
     df = pd.DataFrame({"key_4": ["1"]})
-    df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME, verbose=False)
+    df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME)
 
     assert df.equals(df_out)
 
     # Test with a wrong dataframe
     df = pd.DataFrame({"key_4": ["text"]})
-    df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME, verbose=False)
+    df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME)
     assert pd.isnull(df_out["key_4"][0])
 
 
@@ -343,7 +343,7 @@ def test_cast_column_dtypes():
     })
     # Call the function
     sensor_name = "OTT_Parsivel"
-    df_out = cast_column_dtypes(df, sensor_name, verbose=False)
+    df_out = cast_column_dtypes(df, sensor_name)
     # Check that the output dataframe has the correct column types
     assert str(df_out["time"].dtype) == "datetime64[s]"
     assert str(df_out["station_number"].dtype) == "object"
@@ -352,7 +352,7 @@ def test_cast_column_dtypes():
     # Assert raise error if can not cast
     df["altitude"] = "text"
     with pytest.raises(ValueError):
-        cast_column_dtypes(df, sensor_name, verbose=False)
+        cast_column_dtypes(df, sensor_name)
 
 
 def test_remove_rows_with_missing_time():

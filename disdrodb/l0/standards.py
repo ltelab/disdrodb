@@ -263,7 +263,7 @@ def get_l0b_cf_attrs_dict(sensor_name: str) -> dict:
 #### Coordinates attributes
 
 
-def get_coords_attrs_dict(ds):
+def get_coords_attrs_dict():
     """Return dictionary with DISDRODB coordinates attributes."""
     attrs_dict = {}
     # Define diameter attributes

@@ -216,7 +216,6 @@ def create_l0_directory_structure(
     station_name,
     force,
     product,
-    verbose=False,
 ):
     """Create directory structure for the first L0 DISDRODB product.
 

@@ -138,7 +138,7 @@ def _check_df_sanitizer_fun(df_sanitizer_fun):
         raise ValueError("The `df_sanitizer_fun` must have only `df` as input argument!")
 
 
-def _check_not_empty_dataframe(df, verbose=False):
+def _check_not_empty_dataframe(df):
     if len(df.index) == 0:
         msg = " - The file is empty and has been skipped."
         log_error(logger=logger, msg=msg, verbose=False)
@@ -288,7 +288,7 @@ def remove_issue_timesteps(df, issue_dict, verbose=False):
     return df
 
 
-def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
+def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     """Convert ``'object'`` dataframe columns into DISDRODB L0A dtype standards.
 
     Parameters
@@ -297,8 +297,6 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False
         Input dataframe.
     sensor_name : str
         Name of the sensor.
-    verbose : bool
-        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -328,7 +326,7 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str, verbose: bool = False
     return df
 
 
-def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
+def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     """Coerce corrupted values in dataframe numeric columns to ``np.nan``.
 
     Parameters
@@ -337,8 +335,6 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: 
         Input dataframe.
     sensor_name : str
         Name of the sensor.
-    verbose : bool
-        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -361,7 +357,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str, verbose: 
     return df
 
 
-def strip_string_spaces(df: pd.DataFrame, sensor_name: str, verbose: bool = False) -> pd.DataFrame:
+def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     """Strip leading/trailing spaces from dataframe string columns.
 
     Parameters
@@ -370,8 +366,6 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str, verbose: bool = Fals
         Input dataframe.
     sensor_name : str
         Name of the sensor.
-    verbose : bool
-        Whether to verbose the processing. The default is ``False``.
 
     Returns
     -------
@@ -392,7 +386,7 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str, verbose: bool = Fals
             try:
                 df[column] = df[column].str.strip()
             except AttributeError:
-                msg = f"AttributeError: The column {column} is not a string/object dtype."
+                msg = f"The column {column} is not a string/object dtype."
                 log_error(logger=logger, msg=msg, verbose=False)
                 raise AttributeError(msg)
     return df
@@ -618,7 +612,7 @@ def process_raw_file(
     )
 
     # - Check if file empty
-    _check_not_empty_dataframe(df=df, verbose=verbose)
+    _check_not_empty_dataframe(df=df)
 
     # - Check dataframe column number matches columns_names
     _check_matching_column_number(df, column_names, verbose=False)
@@ -637,10 +631,10 @@ def process_raw_file(
     df = remove_issue_timesteps(df, issue_dict=issue_dict, verbose=verbose)
 
     # - Coerce numeric columns corrupted values to np.nan
-    df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name, verbose=verbose)
+    df = coerce_corrupted_values_to_nan(df, sensor_name=sensor_name)
 
     # - Strip trailing/leading space from string columns
-    df = strip_string_spaces(df, sensor_name=sensor_name, verbose=verbose)
+    df = strip_string_spaces(df, sensor_name=sensor_name)
 
     # - Strip first and last delimiter from the raw arrays
     df = strip_delimiter_from_raw_arrays(df)
@@ -649,7 +643,7 @@ def process_raw_file(
     df = remove_corrupted_rows(df)
 
     # - Cast dataframe to dtypes
-    df = cast_column_dtypes(df, sensor_name=sensor_name, verbose=verbose)
+    df = cast_column_dtypes(df, sensor_name=sensor_name)
 
     # - Replace nan flags values with np.nans
     df = replace_nan_flags(df, sensor_name=sensor_name, verbose=verbose)
@@ -729,7 +723,7 @@ def write_l0a(
             row_group_size=row_group_size,
         )
         msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {filepath}."
-        log_info(logger=logger, msg=msg, verbose=False)
+        log_info(logger=logger, msg=msg, verbose=verbose)
     except Exception as e:
         msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
         log_error(logger=logger, msg=msg, verbose=False)

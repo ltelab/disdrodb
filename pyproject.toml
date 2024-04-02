@@ -155,7 +155,7 @@ select = [
     # flake8-return
     "RET",
     # flake8-unused-arguments
-    # "ARG",
+    "ARG",
     # flake8-raise
     "RSE",
     # flake8-pytest-style

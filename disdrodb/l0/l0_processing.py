@@ -438,7 +438,6 @@ def run_l0a(
         product="L0A",
         station_name=station_name,
         force=force,
-        verbose=verbose,
     )
 
     # -------------------------------------------------------------------------.
@@ -726,7 +725,6 @@ def run_l0b_from_nc(
         product="L0B",
         station_name=station_name,
         force=force,
-        verbose=verbose,
     )
 
     # -------------------------------------------------------------------------.
