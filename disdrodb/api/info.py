@@ -169,7 +169,7 @@ def infer_disdrodb_tree_path_components(path: str) -> list:
     base_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
     tree_components = list_path_elements[right_most_occurrence + 1 :]
     # Return components
-    components = [base_dir] + tree_components
+    components = [base_dir, *tree_components]
     return components
 
 

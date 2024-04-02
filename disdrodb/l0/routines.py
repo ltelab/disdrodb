@@ -21,6 +21,7 @@
 import datetime
 import logging
 import time
+from typing import Optional
 
 import click
 
@@ -197,7 +198,7 @@ def run_disdrodb_l0a_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Run the L0A processing of a station calling the disdrodb_l0a_station in the terminal."""
     # Define command
@@ -234,7 +235,7 @@ def run_disdrodb_l0b_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
     remove_l0a: bool = False,
 ):
     """Run the L0B processing of a station calling disdrodb_run_l0b_station in the terminal."""
@@ -310,7 +311,7 @@ def run_disdrodb_l0_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -468,7 +469,7 @@ def run_disdrodb_l0(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Run the L0 processing of DISDRODB stations.
 
@@ -580,7 +581,7 @@ def run_disdrodb_l0a(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Run the L0A processing of DISDRODB stations.
 
@@ -649,7 +650,7 @@ def run_disdrodb_l0b(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
     remove_l0a: bool = False,
 ):
     """Run the L0B processing of DISDRODB stations.

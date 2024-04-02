@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 import sys
+from typing import Optional
 
 import click
 
@@ -55,7 +56,7 @@ def disdrodb_run_l0_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 

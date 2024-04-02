@@ -33,7 +33,7 @@ __all__ = [
     "download_station",
 ]
 
-__root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))  # noqa
+__root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 # Get version
 try:

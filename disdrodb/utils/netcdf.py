@@ -88,8 +88,8 @@ def _get_duplicated_indices(x, keep="first"):
     keep : str, optional
         The value to keep, either ``'first'``, ``'last'`` or ``False``.
         The default is 'first'.
-        ``‘first’`` : Mark duplicates as ``True`` except for the first occurrence.
-        ``‘last’`` : Mark duplicates as ``True`` except for the last occurrence.
+        ``'first'`` : Mark duplicates as ``True`` except for the first occurrence.
+        ``'last'`` : Mark duplicates as ``True`` except for the last occurrence.
         ``False`` : Mark all duplicates as ``True``.
 
     Returns

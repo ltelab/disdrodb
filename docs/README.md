@@ -1,6 +1,6 @@
 # DISDRODB documentation
 
-DISDRODB’s documentation is built using the powerful [Sphinx](https://www.sphinx-doc.org/en/master/) framework,
+DISDRODB's documentation is built using the powerful [Sphinx](https://www.sphinx-doc.org/en/master/) framework,
 styled with [Book Theme](https://sphinx-book-theme.readthedocs.io/en/stable/index.html).
 
 All documentation source files are neatly organized in the `docs/` directory within the project's repository.

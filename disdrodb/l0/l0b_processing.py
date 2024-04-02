@@ -185,7 +185,7 @@ def _reshape_raw_spectrum(
         Impossible to reshape the raw_spectrum matrix
     """
     # Define output dimensions
-    dims = ["time"] + dims_order
+    dims = ["time", *dims_order]
     # Retrieve reshaping dimensions as function of dimension order
     reshape_dims = [n_timesteps] + [dims_size_dict[dim] for dim in dims_order]
     try:
@@ -269,7 +269,7 @@ def retrieve_l0b_arrays(
             )
         else:
             # Otherwise just define the dimensions of the array
-            dims = ["time"] + dims_order
+            dims = ["time", *dims_order]
 
         # Define dictionary to pass to xr.Dataset
         dict_data[key] = (dims, arr)

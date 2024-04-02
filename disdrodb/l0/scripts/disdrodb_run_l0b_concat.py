@@ -18,6 +18,7 @@
 ## Wrapper to concat L0B files by command lines ##
 ##################################################
 import sys
+from typing import Optional
 
 import click
 
@@ -35,12 +36,12 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_l0b_concat_options
 @click_base_dir_option
 def disdrodb_run_l0b_concat(
-    data_sources: str = None,
-    campaign_names: str = None,
-    station_names: str = None,
+    data_sources: Optional[str] = None,
+    campaign_names: Optional[str] = None,
+    station_names: Optional[str] = None,
     remove_l0b: bool = False,
     verbose: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Run the L0B concatenation of available DISDRODB stations.
 

@@ -55,9 +55,9 @@ def reader(
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "gzip"
     # - Strings to recognize as NA/NaN and replace with standard NA flags
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
-    #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
+    #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
+    #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
+    #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
     reader_kwargs["na_values"] = [
         "na",
         "",

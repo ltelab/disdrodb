@@ -18,6 +18,7 @@
 ## Wrapper to concat L0B files by command lines ##
 ##################################################
 import sys
+from typing import Optional
 
 import click
 
@@ -43,7 +44,7 @@ def disdrodb_run_l0b_concat_station(
     # L0B concat options
     remove_l0b=False,
     verbose=True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Concatenation all L0B files of a specific DISDRODB station into a single netCDF.
 

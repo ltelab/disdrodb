@@ -19,6 +19,7 @@
 """Routines to download station data from the DISDRODB Decentralized Data Archive."""
 
 import sys
+from typing import Optional
 
 import click
 
@@ -36,7 +37,7 @@ def disdrodb_download_station(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
     force: bool = False,
 ):
     from disdrodb.data_transfer.download_data import download_station

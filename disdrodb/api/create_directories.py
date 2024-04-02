@@ -24,6 +24,7 @@
 import logging
 import os
 import shutil
+from typing import Optional
 
 from disdrodb.api.checks import (
     check_metadata_file,
@@ -120,7 +121,7 @@ def _copy_station_metadata(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
     check_validity: bool = False,
 ) -> None:
     """Copy the station YAML file from the ``raw_dir/metadata`` into ``processed_dir/metadata``.

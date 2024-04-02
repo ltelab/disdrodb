@@ -175,7 +175,7 @@ select = [
     # flake8-comprehensions
     "C4",
     # Ruff custom rules
-    # "RUF"
+    "RUF"
 
     #---------------------
     #### Future rules ####

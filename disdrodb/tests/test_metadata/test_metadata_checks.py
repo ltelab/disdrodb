@@ -274,7 +274,7 @@ def test_check_archive_metadata_reader(tmp_path):
     list_readers = available_readers()
 
     # Test 1 : Correct reader metadata key
-    data_source = list(list_readers.keys())[0]
+    data_source = next(iter(list_readers.keys()))
     reader_name = list_readers[data_source][0]
     metadata_dict = {"reader": f"{data_source}/{reader_name}"}
     _ = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict, data_source=data_source)

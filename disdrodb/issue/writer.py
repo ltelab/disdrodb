@@ -20,6 +20,7 @@
 
 import logging
 import os
+from typing import Optional
 
 import yaml
 
@@ -50,7 +51,7 @@ def _write_issue_docs(f):
     return None
 
 
-def write_issue(filepath: str, timesteps: list = None, time_periods: list = None) -> None:
+def write_issue(filepath: str, timesteps: Optional[list] = None, time_periods: Optional[list] = None) -> None:
     """Write the issue YAML file.
 
     Parameters

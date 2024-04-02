@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 import sys
+from typing import Optional
 
 import click
 
@@ -35,7 +36,7 @@ def disdrodb_initialize_station(
     campaign_name: str,
     station_name: str,
     # Processing options
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Initialize the DISDRODB directory structure for a station.
 
