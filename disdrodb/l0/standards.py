@@ -907,7 +907,7 @@ def get_valid_dimension_names(sensor_name):
     list_dimensions = list(dims_dict.values())  # for each array variable
     list_dimensions = [item for sublist in list_dimensions for item in sublist]
     valid_dims = np.unique(list_dimensions).tolist()
-    dimensions = ["time"] + valid_dims
+    dimensions = ["time", *valid_dims]
     return dimensions
 
 

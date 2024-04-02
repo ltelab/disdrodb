@@ -74,9 +74,9 @@ def reader(
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
     # - Strings to recognize as NA/NaN and replace with standard NA flags
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
-    #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
+    #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
+    #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
+    #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
     reader_kwargs["na_values"] = ["na", "", "error", "NA"]
     ##------------------------------------------------------------------------.
     #### - Define dataframe sanitizer function for L0 processing

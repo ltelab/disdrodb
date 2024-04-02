@@ -19,6 +19,7 @@
 """Routines to upload station data to the DISDRODB Decentralized Data Archive."""
 
 import sys
+from typing import Optional
 
 import click
 
@@ -36,8 +37,8 @@ def disdrodb_upload_station(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    platform: str = None,
-    base_dir: str = None,
+    platform: Optional[str] = None,
+    base_dir: Optional[str] = None,
     force: bool = False,
 ):
     from disdrodb.data_transfer.upload_data import upload_station

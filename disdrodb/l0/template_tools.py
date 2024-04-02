@@ -18,7 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Useful tools helping in the implementation of the DISDRODB L0 readers."""
 
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import pandas as pd
@@ -172,7 +172,7 @@ def _print_df_summary(df, indices, columns, print_column_names):
 
 def print_df_summary_stats(
     df: pd.DataFrame,
-    column_indices: Union[int, slice, list] = None,
+    column_indices: Optional[Union[int, slice, list]] = None,
     print_column_names: bool = True,
 ):
     """Create a columns statistics summary.
@@ -213,7 +213,7 @@ def print_df_summary_stats(
 
 def print_df_columns_unique_values(
     df: pd.DataFrame,
-    column_indices: Union[int, slice, list] = None,
+    column_indices: Optional[Union[int, slice, list]] = None,
     print_column_names: bool = True,
 ) -> None:
     """Print columns' unique values
@@ -241,7 +241,7 @@ def print_df_columns_unique_values(
 
 def get_df_columns_unique_values_dict(
     df: pd.DataFrame,
-    column_indices: Union[int, slice, list] = None,
+    column_indices: Optional[Union[int, slice, list]] = None,
     column_names: bool = True,
 ):
     """Create a dictionary {column: unique values}
@@ -556,7 +556,7 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
     # Get valid columns
     dtype_dict = get_l0a_dtype(sensor_name)
     valid_columns = list(dtype_dict)
-    valid_columns = valid_columns + ["time"]
+    valid_columns = [*valid_columns, "time"]
     # --------------------------------------------
     # Create name sets
     column_names = set(column_names)

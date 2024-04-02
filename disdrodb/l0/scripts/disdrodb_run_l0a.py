@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 import sys
+from typing import Optional
 
 import click
 
@@ -34,15 +35,15 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_base_dir_option
 def disdrodb_run_l0a(
     # L0 disdrodb stations options
-    data_sources: str = None,
-    campaign_names: str = None,
-    station_names: str = None,
+    data_sources: Optional[str] = None,
+    campaign_names: Optional[str] = None,
+    station_names: Optional[str] = None,
     # Processing options
     force: bool = False,
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """
     Run the L0A processing of DISDRODB stations.

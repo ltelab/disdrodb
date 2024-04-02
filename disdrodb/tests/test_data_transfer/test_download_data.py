@@ -30,7 +30,9 @@ from disdrodb.data_transfer.download_data import (
 )
 from disdrodb.tests.conftest import create_fake_metadata_file, create_fake_raw_data_file
 
-TEST_ZIP_FPATH = "https://raw.githubusercontent.com/ltelab/disdrodb/main/disdrodb/tests/data/test_data_download/station_files.zip"  # noqa
+TEST_ZIP_FPATH = (
+    "https://raw.githubusercontent.com/ltelab/disdrodb/main/disdrodb/tests/data/test_data_download/station_files.zip"
+)
 
 
 def test_download_file_from_url(tmp_path):

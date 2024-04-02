@@ -19,6 +19,7 @@
 """Routines to upload data to the DISDRODB Decentralized Data Archive."""
 
 import sys
+from typing import Optional
 
 import click
 
@@ -33,11 +34,11 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_upload_options
 @click_base_dir_option
 def disdrodb_upload_archive(
-    base_dir: str = None,
-    data_sources: str = None,
-    campaign_names: str = None,
-    station_names: str = None,
-    platform: str = None,
+    base_dir: Optional[str] = None,
+    data_sources: Optional[str] = None,
+    campaign_names: Optional[str] = None,
+    station_names: Optional[str] = None,
+    platform: Optional[str] = None,
     force: bool = False,
 ):
     from disdrodb.data_transfer.upload_data import upload_archive

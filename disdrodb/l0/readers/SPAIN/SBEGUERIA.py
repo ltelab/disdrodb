@@ -43,32 +43,32 @@ def reader(
     # Type		    disdrometer type 								(factor: Thi, Par)
     # Mast		    mast ID											(factor: 1, 2)
     # NP_meas		number of particles detected					(-)
-    # R_meas		rainfall intensity, as outputted by the device	mm h−1
-    # Z_meas		radar reflectivity, as outputted by the device	dB mm6 m−3
-    # E_meas		erosivity, as outputted by the device			J m−2 mm−1
+    # R_meas		rainfall intensity, as outputted by the device	mm h-1
+    # Z_meas		radar reflectivity, as outputted by the device	dB mm6 m-3
+    # E_meas		erosivity, as outputted by the device			J m-2 mm-1
     # Pcum_meas	    cumulative rainfall amount						mm
-    # Ecum_meas	    cumulative kinetic energy						J m−2 mm−1
+    # Ecum_meas	    cumulative kinetic energy						J m-2 mm-1
     # NP			number of particles detected					(-)
-    # ND			particle density								m−3 mm−1
-    # R			    rainfall intensity								mm h−1
+    # ND			particle density								m-3 mm-1
+    # R			    rainfall intensity								mm h-1
     # P		     	rainfall amount									mm
-    # Z		    	radar reflectivity								dB mm6 m−3
-    # M		    	water content									gm−3
-    # E		        kinetic energy									J m−2 mm−1
+    # Z		    	radar reflectivity								dB mm6 m-3
+    # M		    	water content									gm-3
+    # E		        kinetic energy									J m-2 mm-1
     # Pcum	    	cumulative rainfall amount						mm
-    # Ecum	    	cumulative kinetic energy						J m−2 mm−1
-    # D10			drop diameter’s 10th percentile					mm
-    # D25			drop diameter’s 25th percentile					mm
-    # D50			drop diameter’s 50th percentile					mm
-    # D75			drop diameter’s 75th percentile					mm
-    # D90			drop diameter’s 90th percentile					mm
+    # Ecum	    	cumulative kinetic energy						J m-2 mm-1
+    # D10			drop diameter's 10th percentile					mm
+    # D25			drop diameter's 25th percentile					mm
+    # D50			drop diameter's 50th percentile					mm
+    # D75			drop diameter's 75th percentile					mm
+    # D90			drop diameter's 90th percentile					mm
     # Dm			mean drop diameter								mm
-    # V10			drop velocity’s 10th percentile					m s−1
-    # V25			drop velocity’s 25th percentile					m s−1
-    # V50			drop velocity’s 50th percentile					m s−1
-    # V75			drop velocity’s 75th percentile					m s−1
-    # V90			drop velocity’s 90th percentile					m s−1
-    # Vm			mean drop velocity								m s−1
+    # V10			drop velocity's 10th percentile					m s-1
+    # V25			drop velocity's 25th percentile					m s-1
+    # V50			drop velocity's 50th percentile					m s-1
+    # V75			drop velocity's 75th percentile					m s-1
+    # V90			drop velocity's 90th percentile					m s-1
+    # Vm			mean drop velocity								m s-1
 
     column_names = [
         "time",
@@ -117,9 +117,9 @@ def reader(
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
     # - Strings to recognize as NA/NaN and replace with standard NA flags
-    #   - Already included: ‘#N/A’, ‘#N/A N/A’, ‘#NA’, ‘-1.#IND’, ‘-1.#QNAN’,
-    #                       ‘-NaN’, ‘-nan’, ‘1.#IND’, ‘1.#QNAN’, ‘<NA>’, ‘N/A’,
-    #                       ‘NA’, ‘NULL’, ‘NaN’, ‘n/a’, ‘nan’, ‘null’
+    #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
+    #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
+    #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
     reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]  # Cast all to string
 
     ##------------------------------------------------------------------------.

@@ -26,7 +26,9 @@ from disdrodb.data_transfer.scripts.disdrodb_upload_archive import disdrodb_uplo
 from disdrodb.data_transfer.scripts.disdrodb_upload_station import disdrodb_upload_station
 from disdrodb.tests.conftest import create_fake_metadata_file
 
-TEST_ZIP_FPATH = "https://raw.githubusercontent.com/ltelab/disdrodb/main/disdrodb/tests/data/test_data_download/station_files.zip"  # noqa
+TEST_ZIP_FPATH = (
+    "https://raw.githubusercontent.com/ltelab/disdrodb/main/disdrodb/tests/data/test_data_download/station_files.zip"
+)
 
 
 def test_disdrodb_upload_station(tmp_path):

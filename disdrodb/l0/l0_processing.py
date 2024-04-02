@@ -24,6 +24,7 @@ import logging
 import os
 import shutil
 import time
+from typing import Optional
 
 import dask
 import dask.bag as db
@@ -873,7 +874,7 @@ def run_l0a_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """
     Run the L0A processing of a specific DISDRODB station when invoked from the terminal.
@@ -955,7 +956,7 @@ def run_l0b_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     remove_l0a: bool = False,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """
     Run the L0B processing of a specific DISDRODB station when invoked from the terminal.
@@ -1033,7 +1034,7 @@ def run_l0b_concat_station(
     # L0B concat options
     remove_l0b=False,
     verbose=True,
-    base_dir: str = None,
+    base_dir: Optional[str] = None,
 ):
     """Define the L0B file concatenation of a station.
 

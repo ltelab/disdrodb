@@ -141,7 +141,7 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     # Get valid columns
     dtype_dict = get_l0a_dtype(sensor_name)
     valid_columns = list(dtype_dict)
-    valid_columns = valid_columns + ["time", "latitude", "longitude"]
+    valid_columns = [*valid_columns, "time", "latitude", "longitude"]
     valid_columns = set(valid_columns)
     # Get dataframe column names
     df_columns = list(df.columns)

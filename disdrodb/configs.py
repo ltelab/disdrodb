@@ -5,6 +5,7 @@ Created on Thu Nov  2 15:39:01 2023
 @author: ghiggi
 """
 import os
+from typing import Optional
 
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
@@ -17,7 +18,11 @@ def _define_config_filepath():
     return filepath
 
 
-def define_disdrodb_configs(base_dir: str = None, zenodo_token: str = None, zenodo_sandbox_token: str = None):
+def define_disdrodb_configs(
+    base_dir: Optional[str] = None,
+    zenodo_token: Optional[str] = None,
+    zenodo_sandbox_token: Optional[str] = None,
+):
     """
     Defines the DISDRODB configuration file with the given credentials and base directory.
 

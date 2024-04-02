@@ -17,6 +17,7 @@
 """Wrapper to download stations from the DISDRODB Decentralized Data Archive."""
 
 import sys
+from typing import Optional
 
 import click
 
@@ -31,10 +32,10 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_base_dir_option
 @click_download_options
 def disdrodb_download_archive(
-    data_sources: str = None,
-    campaign_names: str = None,
-    station_names: str = None,
-    base_dir: str = None,
+    data_sources: Optional[str] = None,
+    campaign_names: Optional[str] = None,
+    station_names: Optional[str] = None,
+    base_dir: Optional[str] = None,
     force: bool = False,
 ):
     from disdrodb.data_transfer.download_data import download_archive
