@@ -58,11 +58,17 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
     raw_dir = define_campaign_dir(
-        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     dst_metadata_dir = define_metadata_dir(
@@ -194,7 +200,10 @@ def test_create_directory_structure(tmp_path, mocker):
     metadata_dict["reader"] = "GPM/IFLOODS"
 
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product=start_product, data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product=start_product,
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     # Test raise error without data
@@ -413,18 +422,27 @@ def test_check_campaign_name_consistency(tmp_path):
     data_source = "DATA_SOURCE"
 
     raw_dir = define_campaign_dir(
-        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     # Test when consistent
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0A",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
     assert _check_campaign_name_consistency(raw_dir, processed_dir) == campaign_name
 
     # Test when is not consistent
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name="ANOTHER_CAMPAIGN_NAME"
+        base_dir=base_dir,
+        product="L0A",
+        data_source=data_source,
+        campaign_name="ANOTHER_CAMPAIGN_NAME",
     )
     with pytest.raises(ValueError):
         _check_campaign_name_consistency(raw_dir, processed_dir)
@@ -435,19 +453,28 @@ def test_check_data_source_consistency(tmp_path):
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     raw_dir = define_campaign_dir(
-        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     # Test when consistent
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0A",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     assert _check_data_source_consistency(raw_dir, processed_dir) == data_source
 
     # Test when is not consistent
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0A", data_source="ANOTHER_DATA_SOURCE", campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0A",
+        data_source="ANOTHER_DATA_SOURCE",
+        campaign_name=campaign_name,
     )
     with pytest.raises(ValueError):
         _check_data_source_consistency(raw_dir, processed_dir)
@@ -470,13 +497,19 @@ def test_copy_station_metadata(tmp_path):
 
     # Create fake metadata directory in RAW
     _ = create_fake_metadata_directory(
-        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     # Test raise error if no data
     with pytest.raises(ValueError):
         _copy_station_metadata(
-            base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
         )
 
     # Create fake metadata file
@@ -491,15 +524,24 @@ def test_copy_station_metadata(tmp_path):
     # Test raise error if no destination metadata directory
     with pytest.raises(ValueError):
         _copy_station_metadata(
-            base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
         )
 
     # Copy metadata
     _ = create_metadata_directory(
-        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0A",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
     _copy_station_metadata(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     # Ensure metadata file has been copied

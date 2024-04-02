@@ -75,7 +75,10 @@ def test_define_l0a_filepath(tmp_path):
 
     # Set paths
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     # Create dataframe
@@ -109,7 +112,10 @@ def test_define_l0b_filepath(tmp_path):
 
     # Set paths
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product=product, data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     # Create xarray object

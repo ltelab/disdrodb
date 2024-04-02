@@ -53,7 +53,10 @@ def test_get_raw_filepaths(tmp_path):
 
     glob_pattern = "*.txt"
     raw_dir = define_campaign_dir(
-        base_dir=base_dir, product="RAW", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="RAW",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
     # Add fake data files
     for filename in ["file1.txt", "file2.txt"]:
@@ -100,7 +103,10 @@ def test_get_l0a_filepaths(tmp_path):
     station_name = "STATION_NAME"
 
     processed_dir = define_campaign_dir(
-        base_dir=base_dir, product="L0A", data_source=data_source, campaign_name=campaign_name
+        base_dir=base_dir,
+        product="L0A",
+        data_source=data_source,
+        campaign_name=campaign_name,
     )
 
     # Test that the function raises an error if no files presenet

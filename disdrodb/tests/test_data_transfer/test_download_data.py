@@ -161,7 +161,10 @@ def test_download_station(tmp_path, force):
         station_name=station_name,
     )
     raw_file_filepath = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
     # Check download_station raise error if existing data and force=False
     if not force:
@@ -214,7 +217,10 @@ def test_download_archive(tmp_path, force, existing_data):
 
     if existing_data:
         raw_file_filepath = create_fake_raw_data_file(
-            base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
         )
 
     # Check download_archive does not raise error if existing data and force=False

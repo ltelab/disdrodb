@@ -90,7 +90,7 @@ def _check_metadata_campaign_name(metadata, expected_name):
         raise ValueError("The 'campaign_name' key in the metadata is empty.")
     if campaign_name != expected_name:
         raise ValueError(
-            f"The campaign_name in the metadata is '{campaign_name}' but the campaign directory is '{expected_name}'"
+            f"The campaign_name in the metadata is '{campaign_name}' but the campaign directory is '{expected_name}'",
         )
     return None
 
@@ -104,7 +104,7 @@ def _check_metadata_data_source(metadata, expected_name):
         raise ValueError("The 'data_source' key in the metadata is empty.")
     if data_source != expected_name:
         raise ValueError(
-            f"The data_source in the metadata is '{data_source}' but the data_source directory is '{expected_name}'"
+            f"The data_source in the metadata is '{data_source}' but the data_source directory is '{expected_name}'",
         )
     return None
 
@@ -123,7 +123,8 @@ def _check_metadata_station_name(metadata, expected_name):
         raise ValueError("The 'station_name' key in the metadata is empty.")
     if station_name != expected_name:
         raise ValueError(
-            f"The station_name in the metadata is '{station_name}' but the metadata file is named '{expected_name}.yml'"
+            f"The station_name in the metadata is '{station_name}' but the metadata file is named"
+            f" '{expected_name}.yml'",
         )
     return None
 
@@ -265,7 +266,11 @@ def check_archive_metadata_keys(base_dir: str = None) -> bool:
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -306,7 +311,11 @@ def check_archive_metadata_campaign_name(base_dir: str = None) -> bool:
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -346,7 +355,11 @@ def check_archive_metadata_data_source(base_dir: str = None) -> bool:
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -386,7 +399,11 @@ def check_archive_metadata_sensor_name(base_dir: str = None) -> bool:
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -426,7 +443,11 @@ def check_archive_metadata_station_name(base_dir: str = None) -> bool:
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -468,7 +489,11 @@ def check_archive_metadata_reader(base_dir: str = None) -> bool:
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -511,7 +536,11 @@ def check_archive_metadata_compliance(base_dir: str = None, raise_error=False):
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -554,7 +583,11 @@ def check_archive_metadata_geolocation(base_dir: str = None):
     is_valid = True
     base_dir = get_base_dir(base_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir, data_sources=None, campaign_names=None, station_names=None, with_stations_data=False
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)

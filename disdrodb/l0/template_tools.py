@@ -522,7 +522,7 @@ def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
         if not _has_constant_characters(arr):
             print(
                 f"ATTENTION: Column {i} values have non-unique number of characters. "
-                f"Selecting row {row_idx} to infer possible columns."
+                f"Selecting row {row_idx} to infer possible columns.",
             )
 
         # Subset a single string

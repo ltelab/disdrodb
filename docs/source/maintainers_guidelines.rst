@@ -59,7 +59,7 @@ We strongly recommend adopting the latest release of DISDRODB into production wi
 The `LTE <https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of support or maintenance.
 
 
-Documentation 
+Documentation
 ===============
 
 DISDRODB's documentation is built using the powerful `Sphinx <https://www.sphinx-doc.org/en/master/>`_ framework,
@@ -125,7 +125,7 @@ Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.
 
 
 Package release
-================== 
+==================
 
 A `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is configured to automate the packaging and uploading process
 to `PyPI <https://pypi.org/project/disdrodb/>`_.
@@ -175,7 +175,7 @@ On GitHub, edit the release description to add the list of changes from the ``CH
 
 
 Reviewing process
-==================== 
+====================
 
 
 The main branch is protected and requires at least one review before merging.
@@ -190,14 +190,14 @@ The review process is the following:
 
 
 
-Continuous integration 
+Continuous integration
 =======================
 
 Continuous Integration (CI) is a crucial practice in modern software development, ensuring that code changes are regularly integrated into the main codebase.
 With CI, each commit or pull request triggers an automated process that verifies the integrity of the codebase, runs tests,
 and performs various checks to catch issues early in the development lifecycle.
 
-The table below summarizes the software tools utilized in our CI pipeline, descibes their respective aims and project pages.
+The table below summarizes the software tools utilized in our CI pipeline, describes their respective aims and project pages.
 
 
 

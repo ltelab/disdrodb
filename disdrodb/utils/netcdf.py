@@ -247,7 +247,10 @@ def ensure_unique_dimension_values(list_ds: list, filepaths: str, dim: str = "ti
 
         # Remove duplicated values
         list_ds, filepaths = _remove_dataset_bad_values(
-            list_ds=list_ds, filepaths=filepaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
+            list_ds=list_ds,
+            filepaths=filepaths,
+            dict_ds_bad_idx=dict_ds_bad_idx,
+            dim=dim,
         )
     return list_ds, filepaths
 
@@ -311,7 +314,10 @@ def ensure_monotonic_dimension(list_ds: list, filepaths: str, dim: str = "time",
 
         # Remove duplicated values
         list_ds, filepaths = _remove_dataset_bad_values(
-            list_ds=list_ds, filepaths=filepaths, dict_ds_bad_idx=dict_ds_bad_idx, dim=dim
+            list_ds=list_ds,
+            filepaths=filepaths,
+            dict_ds_bad_idx=dict_ds_bad_idx,
+            dim=dim,
         )
         # Iterative check
         list_ds, filepaths = ensure_monotonic_dimension(list_ds=list_ds, filepaths=filepaths, dim=dim)
@@ -436,7 +442,10 @@ def xr_concat_datasets(filepaths: str, verbose=False) -> xr.Dataset:
     # --------------------------------------.
     # Ensure time dimension contains no duplicated values
     list_ds, filepaths = ensure_unique_dimension_values(
-        list_ds=list_ds, filepaths=filepaths, dim="time", verbose=verbose
+        list_ds=list_ds,
+        filepaths=filepaths,
+        dim="time",
+        verbose=verbose,
     )
 
     # Ensure time dimension is monotonic increasingly

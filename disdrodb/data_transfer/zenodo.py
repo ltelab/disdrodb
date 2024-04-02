@@ -195,7 +195,7 @@ def _define_zenodo_metadata(metadata):
             "upload_type": "dataset",
             "description": description,
             "creators": _define_creators_list(metadata),
-        }
+        },
     }
     return zenodo_metadata
 
@@ -235,7 +235,9 @@ def upload_station_to_zenodo(metadata_filepath: str, sandbox: bool = True) -> st
     print(" - Uploading station data")
     try:
         disdrodb_data_url = _upload_file_to_zenodo(
-            filepath=station_zip_filepath, metadata_filepath=metadata_filepath, sandbox=sandbox
+            filepath=station_zip_filepath,
+            metadata_filepath=metadata_filepath,
+            sandbox=sandbox,
         )
         os.remove(station_zip_filepath)
     except Exception as e:

@@ -99,7 +99,10 @@ def test__get_list_metadata_with_data(tmp_path):
         station_name=station_name,
     )
     _ = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     expected_result.append(metadata_filepath)
@@ -133,7 +136,10 @@ def test__get_list_metadata_with_data(tmp_path):
 
     # Test 3 : two metadata files + two data files
     _ = create_fake_raw_data_file(
-        base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
     expected_result.append(metadata_filepath)
 
