@@ -177,7 +177,7 @@ def test_read_l0a_dataframe(tmp_path):
         list_df.append(df)
 
     # Create concatenate dataframe
-    df_concatenate = pd.concat((list_df[0], list_df, list_df[0]), axis=0, ignore_index=True)
+    df_concatenate = pd.concat(list_df, axis=0, ignore_index=True)
 
     # Drop duplicated values
     df_concatenate = df_concatenate.drop_duplicates(subset="time")
