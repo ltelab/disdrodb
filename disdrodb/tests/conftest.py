@@ -45,7 +45,7 @@ def create_fake_station_dir(
 def create_fake_metadata_file(
     base_dir,
     product="RAW",
-    metadata_dict={},
+    metadata_dict=None,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
     station_name="station_name",
@@ -54,6 +54,8 @@ def create_fake_metadata_file(
     from disdrodb.metadata.writer import get_default_metadata_dict
 
     # Define metadata filepath
+    if metadata_dict is None:
+        metadata_dict = {}
     metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         product=product,
@@ -86,7 +88,7 @@ def create_fake_metadata_file(
 
 def create_fake_issue_file(
     base_dir,
-    issue_dict={},
+    issue_dict=None,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
     station_name="station_name",
@@ -95,6 +97,8 @@ def create_fake_issue_file(
     from disdrodb.issue.writer import write_issue
 
     # Define issue filepath
+    if issue_dict is None:
+        issue_dict = {}
     issue_filepath = define_issue_filepath(
         base_dir=base_dir,
         data_source=data_source,

@@ -575,7 +575,7 @@ def process_raw_file(
     df_sanitizer_fun,
     sensor_name,
     verbose=True,
-    issue_dict={},
+    issue_dict=None,
 ):
     """Read and parse a raw text files into a L0A dataframe.
 
@@ -606,6 +606,8 @@ def process_raw_file(
     pd.DataFrame
         Dataframe
     """
+    if issue_dict is None:
+        issue_dict = {}
     _check_df_sanitizer_fun(df_sanitizer_fun)
 
     # Read the data

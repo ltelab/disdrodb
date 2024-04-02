@@ -105,7 +105,7 @@ def _generate_l0a(
     force,
     verbose,
     parallel,
-    issue_dict={},
+    issue_dict=None,
 ):
     """Generate L0A file from raw file."""
     from disdrodb.l0.l0a_processing import (
@@ -115,6 +115,8 @@ def _generate_l0a(
 
     ##------------------------------------------------------------------------.
     # Create file logger
+    if issue_dict is None:
+        issue_dict = {}
     filename = os.path.basename(filepath)
     logger = create_file_logger(
         processed_dir=processed_dir,
