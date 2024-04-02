@@ -192,7 +192,7 @@ def test__get_readers_data_sources_path():
 def test__get_available_readers_dict():
     # Check that at least the EPFL institution is included in the list of readers
     function_return = l0_reader._get_available_readers_dict()
-    assert "EPFL" in function_return.keys()
+    assert "EPFL" in function_return
 
 
 def test_check_reader_data_source():

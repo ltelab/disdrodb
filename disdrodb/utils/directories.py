@@ -29,10 +29,7 @@ logger = logging.getLogger(__name__)
 
 def ensure_string_path(path, msg, accepth_pathlib=False):
     """Ensure that the path is a string."""
-    if accepth_pathlib:
-        valid_types = (str, pathlib.PurePath)
-    else:
-        valid_types = str
+    valid_types = (str, pathlib.PurePath) if accepth_pathlib else str
     if not isinstance(path, valid_types):
         raise TypeError(msg)
     return str(path)

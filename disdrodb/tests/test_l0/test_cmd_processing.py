@@ -200,9 +200,8 @@ def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
             assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) > 0
 
     # If not L0B concat, do not remove L0B also if remove_l0b is specified !
-    if not l0b_concat:
-        if remove_l0b:
-            assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) > 0
+    if not l0b_concat and remove_l0b:
+        assert count_files(l0b_station_dir, glob_pattern="*.nc", recursive=True) > 0
 
 
 @pytest.mark.parametrize("parallel", [True, False])

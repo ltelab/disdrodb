@@ -80,9 +80,8 @@ def test_get_base_dir():
     assert get_base_dir(base_dir="test/DISDRODB") == "test/DISDRODB"
 
     # Check that if no config YAML file specified (base_dir=None), raise error
-    with disdrodb.config.set({"base_dir": None}):
-        with pytest.raises(ValueError):
-            get_base_dir()
+    with disdrodb.config.set({"base_dir": None}), pytest.raises(ValueError):
+        get_base_dir()
 
     # Set base_dir in the donfig config and check it return it !
     disdrodb.config.set({"base_dir": "another_test_dir/DISDRODB"})

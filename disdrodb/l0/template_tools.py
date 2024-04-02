@@ -259,10 +259,7 @@ def get_df_columns_unique_values_dict(
     # Create dictionary
     d = {}
     for i, column in zip(column_indices, columns):
-        if column_names:
-            key = column
-        else:
-            key = "Column " + str(i)
+        key = column if column_names else "Column " + str(i)
         d[key] = sorted(df[column].unique().tolist())
     # Return
     return d

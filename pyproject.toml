@@ -161,7 +161,7 @@ select = [
     # flake8-pytest-style
     # "PT",
     # flake8-simplify
-    # "SIM",
+    "SIM",
     # Perflint
     "PERF",
     # pandas-vet

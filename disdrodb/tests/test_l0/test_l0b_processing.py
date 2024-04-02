@@ -510,7 +510,7 @@ def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
 
     # Test that the chunk sizes in the returned dictionary are smaller than or equal to the corresponding array shapes
     # in the dataset
-    for var in result.keys():
+    for var in result:
         assert tuple(result[var]["chunksizes"]) <= ds[var].shape
 
     result = l0b_processing.sanitize_encodings_dict(encoding_dict_2, ds)
@@ -522,7 +522,7 @@ def test_sanitize_encodings_dict(encoding_dict_1, encoding_dict_2, ds):
 
     # Test that the chunk sizes in the returned dictionary are smaller than or equal to the corresponding array shapes
     # in the dataset
-    for var in result.keys():
+    for var in result:
         assert tuple(result[var]["chunksizes"]) <= ds[var].shape
 
 

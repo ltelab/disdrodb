@@ -77,7 +77,7 @@ def reader(
         df_time = pd.to_datetime(df["time"], format="%Y%m%d-%H%M%S", errors="coerce")
 
         # - Strip values from start and end of the string
-        df["TO_BE_PARSED"] = df["TO_BE_PARSED"].str.lstrip("b'").str.rstrip("'").str.rstrip("\\r\\n'") # noqa: B005
+        df["TO_BE_PARSED"] = df["TO_BE_PARSED"].str.lstrip("b'").str.rstrip("'").str.rstrip("\\r\\n'")  # noqa: B005
 
         # - Split the column 'TO_BE_PARSED'
         df_to_parse = df["TO_BE_PARSED"].str.split(";", expand=True, n=99)

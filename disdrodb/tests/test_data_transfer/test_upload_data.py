@@ -91,10 +91,7 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
     )
 
     # Define token name
-    if platform == "sandbox.zenodo":
-        token_key = "zenodo_sandbox_token"
-    else:
-        token_key = "zenodo_token"
+    token_key = "zenodo_sandbox_token" if platform == "sandbox.zenodo" else "zenodo_token"
 
     with disdrodb.config.set({token_key: "test_access_token"}):
         mock_zenodo_api(requests_mock, zenodo_host=platform)
@@ -208,10 +205,7 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
     )
 
     # Define token name
-    if platform == "sandbox.zenodo":
-        token_key = "zenodo_sandbox_token"
-    else:
-        token_key = "zenodo_token"
+    token_key = "zenodo_sandbox_token" if platform == "sandbox.zenodo" else "zenodo_token"
 
     # Upload data
     with disdrodb.config.set({token_key: "test_access_token"}):

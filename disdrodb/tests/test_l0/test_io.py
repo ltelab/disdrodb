@@ -160,7 +160,7 @@ def test__read_l0a(tmp_path):
 
 def test_read_l0a_dataframe(tmp_path):
     filepaths = []
-
+    list_df = []
     for i in [0, 1]:
         # create dummy dataframe
         data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
@@ -174,15 +174,14 @@ def test_read_l0a_dataframe(tmp_path):
         )
         df.to_parquet(filepath, compression="gzip")
         filepaths.append(filepath)
+        list_df.append(df)
 
-        # create concatenate dataframe
-        if i == 0:
-            df_concatenate = df
-        else:
-            df_concatenate = pd.concat([df, df_concatenate], axis=0, ignore_index=True)
+    # Create concatenate dataframe
+    df_concatenate = pd.concat((list_df[0], list_df, list_df[0]), axis=0, ignore_index=True)
 
     # Drop duplicated values
     df_concatenate = df_concatenate.drop_duplicates(subset="time")
+
     # Sort by increasing time
     df_concatenate = df_concatenate.sort_values(by="time")
 

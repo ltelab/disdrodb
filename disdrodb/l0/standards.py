@@ -97,7 +97,7 @@ def get_data_range_dict(sensor_name: str) -> dict:
 
     data_format_dict = get_data_format_dict(sensor_name)
     dict_data_range = {}
-    for k in data_format_dict.keys():
+    for k in data_format_dict:
         data_range = data_format_dict[k].get("data_range", None)
         if data_range is not None:
             dict_data_range[k] = data_range
@@ -121,7 +121,7 @@ def get_nan_flags_dict(sensor_name: str) -> dict:
 
     data_format_dict = get_data_format_dict(sensor_name)
     dict_nan_flags = {}
-    for k in data_format_dict.keys():
+    for k in data_format_dict:
         nan_flags = data_format_dict[k].get("nan_flags", None)
         if nan_flags is not None:
             dict_nan_flags[k] = _ensure_list_value(nan_flags)
@@ -144,7 +144,7 @@ def get_valid_values_dict(sensor_name: str) -> dict:
     """
     data_format_dict = get_data_format_dict(sensor_name)
     dict_valid_values = {}
-    for k in data_format_dict.keys():
+    for k in data_format_dict:
         valid_values = data_format_dict[k].get("valid_values", None)
         if valid_values is not None:
             dict_valid_values[k] = _ensure_list_value(valid_values)
@@ -662,10 +662,7 @@ def get_n_velocity_bins(sensor_name):
     """Get the number of velocity bins."""
     # Retrieve number of bins
     velocity_dict = get_velocity_bins_dict(sensor_name)
-    if velocity_dict is None:
-        n_velocity_bins = 0
-    else:
-        n_velocity_bins = len(velocity_dict["center"])
+    n_velocity_bins = 0 if velocity_dict is None else len(velocity_dict["center"])
     return n_velocity_bins
 
 
@@ -721,10 +718,12 @@ def _check_contiguous_chunksize_agrees(encoding_dict, var):
 
 
 def _if_no_chunksizes_set_contiguous(encoding_dict, var):
-    if isinstance(encoding_dict[var].get("chunksizes", None), type(None)):
-        if not encoding_dict[var].get("contiguous", False):
-            encoding_dict[var]["contiguous"] = True
-            print(f"Set contiguous=True for variable {var} because chunksizes=None")
+    if isinstance(encoding_dict[var].get("chunksizes", None), type(None)) and not encoding_dict[var].get(
+        "contiguous",
+        False,
+    ):
+        encoding_dict[var]["contiguous"] = True
+        print(f"Set contiguous=True for variable {var} because chunksizes=None")
     return encoding_dict
 
 
@@ -747,7 +746,7 @@ def _ensure_valid_chunksizes(encoding_dict, var):
 
 
 def _ensure_valid_netcdf_encoding_dict(encoding_dict):
-    for var in encoding_dict.keys():
+    for var in encoding_dict:
         _check_contiguous_chunksize_agrees(encoding_dict, var)
         # Ensure valid arguments for contiguous (unchunked) arrays
         encoding_dict = _if_no_chunksizes_set_contiguous(encoding_dict, var)

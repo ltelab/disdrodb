@@ -68,9 +68,8 @@ def get_disdrodb_path(
 
     # Check base_dir validity
     base_dir = check_base_dir(base_dir)
-    if len(campaign_name) > 0:
-        if len(data_source) == 0:
-            raise ValueError("If campaign_name is specified, data_source must be specified.")
+    if len(campaign_name) > 0 and len(data_source) == 0:
+        raise ValueError("If campaign_name is specified, data_source must be specified.")
 
     # Get directory
     if product.upper() == "RAW":
