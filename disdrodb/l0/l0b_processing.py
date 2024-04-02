@@ -78,10 +78,7 @@ def infer_split_str(string: str) -> str:
         idx_delimiter = np.argmax(counts)
         # If don't find the delimiter, set to None
         # --> The array will not be split, and then raise an error later on
-        if counts[idx_delimiter] == 0:
-            split_str = None
-        else:
-            split_str = valid_delims[idx_delimiter]
+        split_str = None if counts[idx_delimiter] == 0 else valid_delims[idx_delimiter]
     else:
         split_str = None  # ''.split(None) output []
     return split_str
@@ -334,7 +331,7 @@ def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
 
 
 def _set_attrs_dict(ds, attrs_dict):
-    for var in attrs_dict.keys():
+    for var in attrs_dict:
         if var in ds:
             ds[var].attrs.update(attrs_dict[var])
     return ds

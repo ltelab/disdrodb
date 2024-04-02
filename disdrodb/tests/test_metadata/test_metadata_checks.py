@@ -321,9 +321,7 @@ def test_check_archive_metadata_geolocation(tmp_path, latlon_value, platform_typ
         metadata_dict=metadata_dict,
     )
     is_valid = check_archive_metadata_geolocation(base_dir)
-    if platform_type == "mobile" and latlon_value == -9999:
-        assert is_valid
-    elif platform_type != "mobile" and latlon_value == 0:
+    if platform_type == "mobile" and latlon_value == -9999 or platform_type != "mobile" and latlon_value == 0:
         assert is_valid
     else:
         assert not is_valid

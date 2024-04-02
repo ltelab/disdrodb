@@ -35,10 +35,9 @@ def create_file_logger(processed_dir, product, station_name, filename, parallel)
     logger_filepath = os.path.join(logs_dir, logger_filename)
 
     # Set logger
-    if parallel:
-        logger = logging.getLogger(filename)  # does not log submodules logs
-    else:
-        logger = logging.getLogger()  # root logger
+    # - getLogger() # root logger
+    # - getLogger(filename) does not log submodules logs
+    logger = logging.getLogger(filename) if parallel else logging.getLogger()
 
     handler = logging.FileHandler(logger_filepath, mode="w")
     format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

@@ -325,7 +325,7 @@ def _check_raw_array(sensor_name: str) -> None:
 
     # Get keys in raw_data_format where the value is "dimension_order"
     dict_keys_with_dimension_order = {
-        key: value.get("dimension_order") for key, value in raw_data_format.items() if "dimension_order" in value.keys()
+        key: value.get("dimension_order") for key, value in raw_data_format.items() if "dimension_order" in value
     }
 
     l0b_encodings = read_config_file(sensor_name, product="L0A", filename="l0b_encodings.yml")
@@ -339,11 +339,11 @@ def _check_raw_array(sensor_name: str) -> None:
     # Get chunksizes in l0b_encoding.yml and check that if len > 1, has dimension_order key in raw_data_format
     list_attributes_l0b_encodings = [
         i
-        for i in l0b_encodings.keys()
+        for i in l0b_encodings
         if isinstance(l0b_encodings.get(i).get("chunksizes"), list) and len(l0b_encodings.get(i).get("chunksizes")) > 1
     ]
     list_attributes_from_raw_data_format = [
-        i for i in raw_data_format.keys() if raw_data_format.get(i).get("dimension_order") is not None
+        i for i in raw_data_format if raw_data_format.get(i).get("dimension_order") is not None
     ]
 
     if not sorted(list_attributes_l0b_encodings) == sorted(list_attributes_from_raw_data_format):

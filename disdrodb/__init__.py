@@ -1,3 +1,4 @@
+import contextlib
 import os
 from importlib.metadata import PackageNotFoundError, version
 
@@ -36,8 +37,5 @@ __all__ = [
 __root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 # Get version
-try:
+with contextlib.suppress(PackageNotFoundError):
     __version__ = version("disdrodb")
-except PackageNotFoundError:
-    # package is not installed
-    pass

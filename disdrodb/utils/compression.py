@@ -246,9 +246,8 @@ def _compress_file_gzip(filepath: str, compressed_filepath: str) -> None:
 
     """
 
-    with open(filepath, "rb") as f_in:
-        with gzip.open(compressed_filepath, "wb") as f_out:
-            f_out.writelines(f_in)
+    with open(filepath, "rb") as f_in, gzip.open(compressed_filepath, "wb") as f_out:
+        f_out.writelines(f_in)
 
 
 def _compress_file_bzip2(filepath: str, compressed_filepath: str) -> None:
@@ -264,6 +263,5 @@ def _compress_file_bzip2(filepath: str, compressed_filepath: str) -> None:
 
     """
 
-    with open(filepath, "rb") as f_in:
-        with bz2.open(compressed_filepath, "wb") as f_out:
-            f_out.writelines(f_in)
+    with open(filepath, "rb") as f_in, bz2.open(compressed_filepath, "wb") as f_out:
+        f_out.writelines(f_in)

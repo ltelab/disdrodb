@@ -75,7 +75,7 @@ def _check_timestep_datetime_accuracy(timesteps, unit="s"):
     ------
     ValueError
     """
-    if not timesteps.dtype == f"<M8[{unit}]":
+    if timesteps.dtype != f"<M8[{unit}]":
         msg = f"The timesteps does not have datetime64 {unit} accuracy."
         log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)

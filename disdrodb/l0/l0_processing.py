@@ -126,11 +126,9 @@ def _generate_l0a(
         parallel=parallel,
     )
 
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger_filepath = logger.handlers[0].baseFilename
-    else:
-        # LogCaptureHandler of pytest does not have baseFilename attribute
-        logger_filepath = None
+    # Define logger filepath
+    # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None
+    logger_filepath = logger.handlers[0].baseFilename if not os.environ.get("PYTEST_CURRENT_TEST") else None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -208,11 +206,9 @@ def _generate_l0b(
         filename=filename,
         parallel=parallel,
     )
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger_filepath = logger.handlers[0].baseFilename
-    else:
-        # LogCaptureHandler of pytest does not have baseFilename attribute
-        logger_filepath = None
+    # Define logger filepath
+    # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None
+    logger_filepath = logger.handlers[0].baseFilename if not os.environ.get("PYTEST_CURRENT_TEST") else None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -285,11 +281,9 @@ def _generate_l0b_from_nc(
         parallel=parallel,
     )
 
-    if not os.environ.get("PYTEST_CURRENT_TEST"):
-        logger_filepath = logger.handlers[0].baseFilename
-    else:
-        # LogCaptureHandler of pytest does not have baseFilename attribute
-        logger_filepath = None
+    # Define logger filepath
+    # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None
+    logger_filepath = logger.handlers[0].baseFilename if not os.environ.get("PYTEST_CURRENT_TEST") else None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -484,10 +478,7 @@ def run_l0a(
         )
         for filepath in filepaths
     ]
-    if parallel:
-        list_logs = dask.compute(*list_tasks)
-    else:
-        list_logs = list_tasks
+    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
     # -----------------------------------------------------------------.
     # Define L0A summary logs
     define_summary_log(list_logs)

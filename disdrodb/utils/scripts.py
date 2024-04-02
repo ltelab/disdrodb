@@ -43,9 +43,8 @@ def _parse_empty_string_and_none(args):
     # If '', set to 'None'
     args = None if args == "" else args
     # - If multiple arguments, split by space
-    if isinstance(args, str):
-        if args == "None":
-            args = None
+    if isinstance(args, str) and args == "None":
+        args = None
     return args
 
 
