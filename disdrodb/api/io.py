@@ -89,18 +89,16 @@ def _get_campaign_stations(base_dir, product, data_source, campaign_name):
 def _get_campaigns_stations(base_dir, product, data_source, campaign_names):
     if isinstance(campaign_names, str):
         campaign_names = [campaign_names]
-    list_available_stations = []
-    for campaign_name in campaign_names:
-        # Get list of available stations
-        stations_names = _get_campaign_stations(
+    list_available_stations = [
+        (data_source, campaign_name, station_name)
+        for campaign_name in campaign_names
+        for station_name in _get_campaign_stations(
             base_dir=base_dir,
             product=product,
             data_source=data_source,
             campaign_name=campaign_name,
         )
-        for station_name in stations_names:
-            list_available_stations.append((data_source, campaign_name, station_name))
-
+    ]
     # Return all available stations for the asked campaigns (and specific data source)
     return list_available_stations
 
@@ -135,16 +133,15 @@ def _get_data_source_stations(base_dir, product, data_source):
 def _get_data_sources_stations(base_dir, product, data_sources):
     if isinstance(data_sources, str):
         data_sources = [data_sources]
-    list_available_stations = []
-    for data_source in data_sources:
-        list_available = _get_data_source_stations(
+    list_available_stations = [
+        station_name
+        for data_source in data_sources
+        for station_name in _get_data_source_stations(
             base_dir=base_dir,
             product=product,
             data_source=data_source,
         )
-        for station_name in list_available:
-            list_available_stations.append(station_name)
-
+    ]
     # Return all available stations
     return list_available_stations
 

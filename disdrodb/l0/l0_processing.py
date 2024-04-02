@@ -465,24 +465,23 @@ def run_l0a(
     # Generate L0A files
     # - Loop over the files and save the L0A Apache Parquet files.
     # - If parallel=True, it does that in parallel using dask.delayed
-    list_tasks = []
-    for filepath in filepaths:
-        list_tasks.append(
-            _generate_l0a(
-                filepath=filepath,
-                processed_dir=processed_dir,
-                station_name=station_name,
-                # L0A reader argument
-                column_names=column_names,
-                reader_kwargs=reader_kwargs,
-                df_sanitizer_fun=df_sanitizer_fun,
-                issue_dict=issue_dict,
-                # Processing options
-                force=force,
-                verbose=verbose,
-                parallel=parallel,
-            ),
+    list_tasks = [
+        _generate_l0a(
+            filepath=filepath,
+            processed_dir=processed_dir,
+            station_name=station_name,
+            # L0A reader argument
+            column_names=column_names,
+            reader_kwargs=reader_kwargs,
+            df_sanitizer_fun=df_sanitizer_fun,
+            issue_dict=issue_dict,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            parallel=parallel,
         )
+        for filepath in filepaths
+    ]
     if parallel:
         list_logs = dask.compute(*list_tasks)
     else:
@@ -600,19 +599,19 @@ def run_l0b(
     #   Settings npartitions=len(filepaths) enable to wait prior task on a core
     #   finish before starting a new one.
     if not parallel:
-        list_logs = []
-        for filepath in filepaths:
-            list_logs.append(
-                _generate_l0b(
-                    filepath=filepath,
-                    processed_dir=processed_dir,
-                    station_name=station_name,
-                    force=force,
-                    verbose=verbose,
-                    debugging_mode=debugging_mode,
-                    parallel=parallel,
-                ),
+        list_logs = [
+            _generate_l0b(
+                filepath=filepath,
+                processed_dir=processed_dir,
+                station_name=station_name,
+                force=force,
+                verbose=verbose,
+                debugging_mode=debugging_mode,
+                parallel=parallel,
             )
+            for filepath in filepaths
+        ]
+
     else:
         bag = db.from_sequence(filepaths, npartitions=len(filepaths))
         list_logs = bag.map(
@@ -756,22 +755,21 @@ def run_l0b_from_nc(
     #   Settings npartitions=len(filepaths) enable to wait prior task on a core
     #   finish before starting a new one.
     if not parallel:
-        list_logs = []
-        for filepath in filepaths:
-            list_logs.append(
-                _generate_l0b_from_nc(
-                    filepath=filepath,
-                    processed_dir=processed_dir,
-                    station_name=station_name,
-                    # Reader arguments
-                    dict_names=dict_names,
-                    ds_sanitizer_fun=ds_sanitizer_fun,
-                    # Processing options
-                    force=force,
-                    verbose=verbose,
-                    parallel=parallel,
-                ),
+        list_logs = [
+            _generate_l0b_from_nc(
+                filepath=filepath,
+                processed_dir=processed_dir,
+                station_name=station_name,
+                # Reader arguments
+                dict_names=dict_names,
+                ds_sanitizer_fun=ds_sanitizer_fun,
+                # Processing options
+                force=force,
+                verbose=verbose,
+                parallel=parallel,
             )
+            for filepath in filepaths
+        ]
     else:
         bag = db.from_sequence(filepaths, npartitions=len(filepaths))
         list_logs = bag.map(
