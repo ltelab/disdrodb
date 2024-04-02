@@ -225,6 +225,7 @@ class RawDataFormatSchema(BaseModel):
             if len(value) != 2:
                 raise ValueError(f"data_range must have exactly 2 keys, {len(value)} element have been provided.")
             return value
+        return None
 
 
 def _check_raw_data_format(sensor_name: str) -> None:

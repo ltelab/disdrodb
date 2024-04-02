@@ -127,7 +127,7 @@ def add_dataset_missing_variables(ds, missing_vars, sensor_name):
         # Get variable dimension
         dims = var_dims_dict[var]
         # Retrieve expected shape
-        expected_shape = [ds.dims[dim] for dim in dims]
+        expected_shape = [ds.sizes[dim] for dim in dims]
         # Create DataArray
         arr = np.zeros(expected_shape) * np.nan
         da = xr.DataArray(arr, dims=dims)

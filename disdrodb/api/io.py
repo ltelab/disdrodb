@@ -270,10 +270,9 @@ def available_campaigns(product, data_sources=None, return_tuple=True, base_dir=
         campaigns = [info[1] for info in list_available_stations]
         campaigns = np.unique(campaigns).tolist()
         return campaigns
-    else:
-        data_source_campaigns = [(info[0], info[1]) for info in list_available_stations]
-        data_source_campaigns = list(set(data_source_campaigns))
-        return data_source_campaigns
+    data_source_campaigns = [(info[0], info[1]) for info in list_available_stations]
+    data_source_campaigns = list(set(data_source_campaigns))
+    return data_source_campaigns
 
 
 def available_stations(
@@ -320,7 +319,7 @@ def available_stations(
 
     if return_tuple:
         return list_info
-    else:
-        # TODO: ENSURE THAT NO DUPLICATED STATION NAMES ?
-        list_stations = [info[2] for info in list_info]
-        return list_stations
+
+    # TODO: ENSURE THAT NO DUPLICATED STATION NAMES ?
+    list_stations = [info[2] for info in list_info]
+    return list_stations

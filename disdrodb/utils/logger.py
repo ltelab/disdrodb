@@ -200,7 +200,7 @@ def define_summary_log(list_logs):
     """
     # LogCaptureHandler of pytest does not have baseFilename attribute, so it returns None
     if list_logs[0] is None:
-        return None
+        return
 
     station_name, logs_dir = _get_logs_dir(list_logs)
 

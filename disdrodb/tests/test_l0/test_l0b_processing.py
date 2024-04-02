@@ -97,7 +97,7 @@ def define_test_dummy_configs():
 def test_create_l0b_from_l0a(create_test_config_files):
     # Create a sample DataFrame
     df = pd.DataFrame({
-        "time": pd.date_range("2022-01-01", periods=10, freq="H"),
+        "time": pd.date_range("2022-01-01", periods=10, freq="h"),
         "raw_drop_concentration": np.random.rand(10),
         "raw_drop_average_velocity": np.random.rand(10),
         "raw_drop_number": np.random.rand(10),
