@@ -69,10 +69,7 @@ def write_issue(filepath: str, timesteps: Optional[list] = None, time_periods: O
         timesteps = timesteps.astype(str).tolist()
 
     if time_periods is not None:
-        new_periods = []
-        for time_period in time_periods:
-            new_periods.append(time_period.astype(str).tolist())
-        time_periods = new_periods
+        time_periods = [time_period.astype(str).tolist() for time_period in time_periods]
 
     # Write the issue YAML file
     logger.info(f"Creating issue YAML file at {filepath}")

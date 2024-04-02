@@ -107,10 +107,7 @@ def subset_dataset(ds, dict_names, sensor_name):
     dataset_variables = list(ds.data_vars)
     dictionary_names = list(dict_names.values())
     # Get subset variables
-    subset_variables = []
-    for var in dataset_variables:
-        if var in dictionary_names and var in possible_variables:
-            subset_variables.append(var)
+    subset_variables = [var for var in dataset_variables if var in dictionary_names and var in possible_variables]
     # Subset the dataset
     ds = ds[subset_variables]
     return ds

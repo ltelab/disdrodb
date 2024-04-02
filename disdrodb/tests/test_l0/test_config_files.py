@@ -220,7 +220,7 @@ def test_bins_format(yaml_filepath: str) -> None:
                 assert is_numeric_list(list_of_nested_values)
             # Check that 'bounds' is a list
             if first_level_key in ["bounds"]:
-                for _, second_level_value in first_level_value.items():
+                for second_level_value in first_level_value.values():
                     assert is_numeric_list(second_level_value)
 
         # Check bound and width equals length
