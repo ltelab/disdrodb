@@ -262,7 +262,6 @@ def _check_reader_arguments(reader):
     expected_arguments = sorted(_get_expected_reader_arguments())
     if reader_arguments != expected_arguments:
         raise ValueError(f"The reader must be defined with the following arguments: {expected_arguments}")
-    return None
 
 
 ####--------------------------------------------------------------------------.
@@ -294,8 +293,6 @@ def _check_metadata_reader(metadata):
 
     # - Check the reader is available
     _check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
-
-    return None
 
 
 def get_reader_function_from_metadata_key(reader_data_source_name):
@@ -440,7 +437,6 @@ def check_available_readers():
                 _check_reader_arguments(reader)
             except Exception as e:
                 raise ValueError(f"Invalid reader for {reader_data_source}/{reader_name}.py. The error is {e}")
-    return None
 
 
 ####--------------------------------------------------------------------------.

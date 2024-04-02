@@ -99,4 +99,3 @@ def create_station_metadata(data_source, campaign_name, station_name, base_dir=N
     write_yaml(metadata, filepath=metadata_filepath, sort_keys=False)
 
     print(f"An empty default metadata YAML file for station {station_name} has been created .")
-    return None

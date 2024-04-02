@@ -222,7 +222,6 @@ def run_disdrodb_l0a_station(
     ])
     # Execute command
     _execute_cmd(cmd)
-    return None
 
 
 def run_disdrodb_l0b_station(
@@ -262,7 +261,6 @@ def run_disdrodb_l0b_station(
     ])
     # Execute command
     _execute_cmd(cmd)
-    return None
 
 
 def run_disdrodb_l0b_concat_station(
@@ -420,7 +418,6 @@ def run_disdrodb_l0_station(
     timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
     msg = f"L0 processing of stations {station_name} completed in {timedelta_str}"
     log_info(logger, msg, verbose)
-    return None
 
 
 ####---------------------------------------------------------------------------.

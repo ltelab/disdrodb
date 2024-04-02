@@ -58,7 +58,6 @@ def _check_dict_names_validity(dict_names, sensor_name):
         msg = f"The following dict_names values are not valid: {invalid_dict}"
         log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
-    return None
 
 
 def _get_dict_names_variables(dict_names, sensor_name):

@@ -146,7 +146,6 @@ def _remove_file_or_directories(path):
     else:
         shutil.rmtree(path)
         logger.info(f"Deleted directories within {path}")
-    return None
 
 
 def remove_if_exists(path: str, force: bool = False) -> None:

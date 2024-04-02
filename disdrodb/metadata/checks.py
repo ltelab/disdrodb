@@ -67,7 +67,6 @@ def _check_metadata_keys(metadata):
     missing_keys = get_metadata_missing_keys(metadata)
     if len(missing_keys) > 0:
         raise ValueError(f"Missing metadata keys: {missing_keys}")
-    return None
 
 
 def _check_metadata_values(metadata):
@@ -78,7 +77,6 @@ def _check_metadata_values(metadata):
     for key, value in metadata.items():
         if isinstance(value, type(None)):
             raise ValueError(f"The metadata key {key} has None or null value. Use '' instead.")
-    return None
 
 
 def _check_metadata_campaign_name(metadata, expected_name):
@@ -92,7 +90,6 @@ def _check_metadata_campaign_name(metadata, expected_name):
         raise ValueError(
             f"The campaign_name in the metadata is '{campaign_name}' but the campaign directory is '{expected_name}'",
         )
-    return None
 
 
 def _check_metadata_data_source(metadata, expected_name):
@@ -106,7 +103,6 @@ def _check_metadata_data_source(metadata, expected_name):
         raise ValueError(
             f"The data_source in the metadata is '{data_source}' but the data_source directory is '{expected_name}'",
         )
-    return None
 
 
 def _check_metadata_station_name(metadata, expected_name):
@@ -126,7 +122,6 @@ def _check_metadata_station_name(metadata, expected_name):
             f"The station_name in the metadata is '{station_name}' but the metadata file is named"
             f" '{expected_name}.yml'",
         )
-    return None
 
 
 def _check_metadata_sensor_name(metadata):
@@ -134,7 +129,6 @@ def _check_metadata_sensor_name(metadata):
 
     sensor_name = metadata["sensor_name"]
     check_sensor_name(sensor_name=sensor_name)
-    return None
 
 
 def check_metadata_compliance(data_source, campaign_name, station_name, base_dir=None, product="RAW"):
@@ -155,7 +149,6 @@ def check_metadata_compliance(data_source, campaign_name, station_name, base_dir
     _check_metadata_station_name(metadata, expected_name=station_name)
     _check_metadata_sensor_name(metadata)
     _check_metadata_reader(metadata)
-    return None
 
 
 #### --------------------------------------------------------------------------.
@@ -200,7 +193,6 @@ def check_metadata_geolocation(metadata) -> None:
     # - If fixed platform
     else:
         _check_lonlat_validity(longitude=longitude, latitude=latitude)
-    return None
 
 
 def identify_missing_metadata_coords(metadata_filepaths: str) -> None:
@@ -220,7 +212,6 @@ def identify_missing_metadata_coords(metadata_filepaths: str) -> None:
     for filepath in metadata_filepaths:
         metadata = read_yaml(filepath)
         check_metadata_geolocation(metadata)
-    return None
 
 
 def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list]) -> None:
@@ -242,7 +233,6 @@ def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list
             metadata = read_yaml(filepath)
             if len(str(metadata.get(key, ""))) == 0:  # ensure is string to avoid error
                 print(f"Empty {key} at: ", filepath)
-    return None
 
 
 #### --------------------------------------------------------------------------.

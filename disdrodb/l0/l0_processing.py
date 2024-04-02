@@ -497,7 +497,6 @@ def run_l0a(
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
         msg = f"L0A processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
-    return None
 
 
 def run_l0b(
@@ -798,7 +797,6 @@ def run_l0b_from_nc(
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
         msg = f"L0B processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
-    return None
 
 
 def run_l0b_concat(processed_dir, station_name, verbose=False):
@@ -857,7 +855,6 @@ def run_l0b_concat(processed_dir, station_name, verbose=False):
     close_logger(logger)
 
     # Return the dataset
-    return None
 
 
 ####--------------------------------------------------------------------------.

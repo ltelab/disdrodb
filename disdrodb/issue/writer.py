@@ -48,7 +48,6 @@ def _write_issue_docs(f):
 # - ['2018-08-01 15:44:30', '2018-08-01 15:59:31']
 # - ['2018-08-02 12:44:30', '2018-08-02 12:59:31'] \n
 """)
-    return None
 
 
 def write_issue(filepath: str, timesteps: Optional[list] = None, time_periods: Optional[list] = None) -> None:
@@ -90,7 +89,6 @@ def write_issue(filepath: str, timesteps: Optional[list] = None, time_periods: O
         if time_periods is not None:
             time_periods_dict = {"time_periods": time_periods}
             yaml.dump(time_periods_dict, f, default_flow_style=None)
-    return None
 
 
 def create_station_issue(data_source, campaign_name, station_name, base_dir=None):
@@ -129,4 +127,3 @@ def create_station_issue(data_source, campaign_name, station_name, base_dir=None
     # Write issue file
     write_issue(filepath=issue_filepath)
     print(f"An empty issue YAML file for station {station_name} has been created .")
-    return None
