@@ -1,7 +1,7 @@
 .. _sensor_configurations:
 
 =========================
-Sensor configurations
+Sensor Configurations
 =========================
 
 DISDRODB tailor the processing of the disdrometer measurements according

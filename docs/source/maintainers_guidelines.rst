@@ -49,36 +49,6 @@ Examples of non-breaking changes include :
 - Internal function refactoring that does not affect the behavior of the software directly.
 
 
-Release process
----------------
-
-Before releasing a new version, the ``CHANGELOG.md`` file should be updated. Run
-
-.. code-block:: bash
-
-    make changelog X.Y.Z
-
-to update the ``CHANGELOG.md`` file with the list of issues and pull requests that have been closed since the last release.
-Manually add a description to the release if necessary.
-
-Then, commit the new ``CHANGELOG.md`` file.
-
-.. code-block:: bash
-
-    git add CHANGELOG.md
-    git commit -m "update CHANGELOG.md for version X.Y.Z"
-    git push
-
-Create a new tag to trigger the release process.
-
-.. code-block:: bash
-
-    git tag -a vX.Y.Z -m "Version X.Y.Z"
-    git push --tags
-
-On GitHub, edit the release description to add the list of changes from the ``CHANGELOG.md`` file.
-
-
 Ongoing version support
 -----------------------------------
 
@@ -89,8 +59,8 @@ We strongly recommend adopting the latest release of DISDRODB into production wi
 The `LTE <https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of support or maintenance.
 
 
-Documentation pipeline
-========================
+Documentation 
+===============
 
 DISDRODB's documentation is built using the powerful `Sphinx <https://www.sphinx-doc.org/en/master/>`_ framework,
 styled with `Book Theme <https://sphinx-book-theme.readthedocs.io/en/stable/index.html>`_.
@@ -149,24 +119,63 @@ after each Pull Request.
 
 This webhook is linked to the DISDRODB core developer.
 
-.. image:: /static/documentation_pipeline.png
+.. image:: /static/documentation_release.png
 
 Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.
 
 
-Package releases pipeline
-============================
+Package release
+================== 
 
-One  `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is defined to trigger the packaging and the upload on `pypi.org <https://pypi.org/project/disdrodb/>`_.
+A `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is configured to automate the packaging and uploading process
+to `PyPI <https://pypi.org/project/disdrodb/>`_.
+This action, detailed `here <https://github.com/ltelab/disdrodb/blob/main/.github/workflows/release_to_pypi.yml>`_,
+triggers the packaging workflow depicted in the following image:
 
-.. image:: /static/package_pipeline.png
+One  `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is defined to trigger the packaging and the
+upload on `pypi.org <https://pypi.org/project/disdrodb/>`_.
 
-The `PyPI <https://pypi.org/>`__ project is shared between the core contributors.
+.. image:: /static/package_release.png
 
+Upon the release of the package on PyPI, a conda-forge bot attempts to automatically update the
+`conda-forge recipe <https://github.com/conda-forge/disdrodb-feedstock/>`__.
+Once the conda-forge recipe is updated, a new conda-forge package is released.
+
+The PyPI project and the conda-forge recipes are collaboratively maintained by core contributors of the project.
+
+
+Release process
+----------------
+
+Before releasing a new version, the ``CHANGELOG.md`` file should be updated. Run
+
+.. code-block:: bash
+
+    make changelog X.Y.Z
+
+to update the ``CHANGELOG.md`` file with the list of issues and pull requests that have been closed since the last release.
+Manually add a description to the release if necessary.
+
+Then, commit the new ``CHANGELOG.md`` file.
+
+.. code-block:: bash
+
+    git add CHANGELOG.md
+    git commit -m "update CHANGELOG.md for version X.Y.Z"
+    git push
+
+Create a new tag to trigger the release process.
+
+.. code-block:: bash
+
+    git tag -a vX.Y.Z -m "Version X.Y.Z"
+    git push --tags
+
+On GitHub, edit the release description to add the list of changes from the ``CHANGELOG.md`` file.
 
 
 Reviewing process
-============================
+==================== 
 
 
 The main branch is protected and requires at least one review before merging.
@@ -181,10 +190,15 @@ The review process is the following:
 
 
 
-Continuous integration (CI) testing tools
-===========================================
+Continuous integration 
+=======================
 
-Currently, on each Pull Request, GitHub Actions are configured as follow:
+Continuous Integration (CI) is a crucial practice in modern software development, ensuring that code changes are regularly integrated into the main codebase.
+With CI, each commit or pull request triggers an automated process that verifies the integrity of the codebase, runs tests,
+and performs various checks to catch issues early in the development lifecycle.
+
+The table below summarizes the software tools utilized in our CI pipeline, descibes their respective aims and project pages.
+
 
 
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
