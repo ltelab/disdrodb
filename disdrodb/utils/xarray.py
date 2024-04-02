@@ -37,8 +37,8 @@ def get_dataset_start_end_time(ds: xr.Dataset):
         (``starting_time``, ``ending_time``)
 
     """
-    starting_time = ds["time"].values[0]
-    ending_time = ds["time"].values[-1]
+    starting_time = ds["time"].to_numpy()[0]
+    ending_time = ds["time"].to_numpy()[-1]
     return (starting_time, ending_time)
 
 
@@ -68,8 +68,8 @@ def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, 
         Regularized dataset.
 
     """
-    start = ds[time_dim].values[0]
-    end = ds[time_dim].values[-1]
+    start = ds[time_dim].to_numpy()[0]
+    end = ds[time_dim].to_numpy()[-1]
     new_time_index = pd.date_range(start=pd.to_datetime(start), end=pd.to_datetime(end), freq=freq)
 
     # Regularize dataset and fill with NA values

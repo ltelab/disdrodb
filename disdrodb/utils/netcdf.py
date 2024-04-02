@@ -47,7 +47,7 @@ def _sort_datasets_by_dim(list_ds: list, filepaths: str, dim: str = "time") -> t
     tuple
         Tuple of sorted list of xarray datasets and sorted list of file paths.
     """
-    start_values = [ds[dim].values[0] for ds in list_ds]
+    start_values = [ds[dim].to_numpy()[0] for ds in list_ds]
     sorted_idx = np.argsort(start_values)
     sorted_list_ds = [list_ds[i] for i in sorted_idx]
     sorted_filepaths = [filepaths[i] for i in sorted_idx]
@@ -56,7 +56,7 @@ def _sort_datasets_by_dim(list_ds: list, filepaths: str, dim: str = "time") -> t
 
 def _get_dim_values_index(list_ds: list, dim: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Get list and dataset indices associated to the dimension values."""
-    dim_values = np.concatenate([ds[dim].values for ds in list_ds])
+    dim_values = np.concatenate([ds[dim].to_numpy() for ds in list_ds])
     list_index = np.concatenate([np.ones(len(ds[dim])) * i for i, ds in enumerate(list_ds)])
     list_index = list_index.astype(int)
     ds_index = np.concatenate([np.arange(0, len(ds[dim])) for i, ds in enumerate(list_ds)])

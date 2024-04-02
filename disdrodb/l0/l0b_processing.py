@@ -393,12 +393,12 @@ def _define_dataset_variables(df, sensor_name, verbose):
         # longitude and latitude too for moving sensors
     ]
     aux_columns = df.columns[np.isin(df.columns, valid_core_fields, invert=True)]
-    aux_data_vars = {column: (["time"], df[column].values) for column in aux_columns}
+    aux_data_vars = {column: (["time"], df[column].to_numpy()) for column in aux_columns}
     data_vars.update(aux_data_vars)
 
     # Add key "time"
     # - Is dropped in _define_coordinates !
-    data_vars["time"] = df["time"].values
+    data_vars["time"] = df["time"].to_numpy()
 
     return data_vars
 

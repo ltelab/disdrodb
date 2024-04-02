@@ -137,9 +137,9 @@ def test_create_l0b_from_l0a(create_test_config_files):
     assert set(ds.dims) == {"diameter_bin_center", "time", "velocity_bin_center", "crs"}
 
     # Check that the geolocation coordinates have been properly set
-    assert np.allclose(ds.latitude.values, df.latitude.values)
-    assert np.allclose(ds.longitude.values, df.longitude.values)
-    assert np.allclose(ds.altitude.values, df.altitude.values)
+    assert np.allclose(ds["latitude"].to_numpy(), df["latitude"].to_numpy())
+    assert np.allclose(ds["longitude"].to_numpy(), df["longitude"].to_numpy())
+    assert np.allclose(ds["altitude"].to_numpy(), df["altitude"].to_numpy())
 
     # Check that the dataset has a CRS coordinate
     assert "crs" in ds.coords
@@ -161,14 +161,14 @@ def test_add_dataset_crs_coords():
     # Call the function and check the output
     ds_out = add_dataset_crs_coords(ds)
     assert "crs" in ds_out.coords
-    assert ds_out.crs.values == "WGS84"
+    assert ds_out["crs"].to_numpy() == "WGS84"
 
 
 def test_set_attrs_dict():
     ds = xr.Dataset({"var1": xr.DataArray([1, 2, 3], dims="time")})
     attrs_dict = {"var1": {"attr1": "value1"}}
     ds = _set_attrs_dict(ds, attrs_dict)
-    assert ds.var1.attrs["attr1"] == "value1"
+    assert ds["var1"].attrs["attr1"] == "value1"
 
     attrs_dict = {"var2": {"attr1": "value1"}}
     ds = _set_attrs_dict(ds, attrs_dict)
@@ -176,7 +176,7 @@ def test_set_attrs_dict():
 
     attrs_dict = {"var1": {"attr1": "value1"}, "var2": {"attr2": "value2"}}
     ds = _set_attrs_dict(ds, attrs_dict)
-    assert ds.var1.attrs["attr1"] == "value1"
+    assert ds["var1"].attrs["attr1"] == "value1"
     assert "var2" not in ds
 
 
@@ -192,11 +192,11 @@ def test__set_coordinate_attributes():
 
     # Call the function and check the output
     ds_out = _set_coordinate_attributes(ds)
-    assert "units" in ds_out.lat.attrs
-    assert ds_out.lat.attrs["units"] == "degrees_north"
-    assert "units" in ds_out.lon.attrs
-    assert ds_out.lon.attrs["units"] == "degrees_east"
-    assert "units" not in ds_out.var1.attrs
+    assert "units" in ds_out["lat"].attrs
+    assert ds_out["lat"].attrs["units"] == "degrees_north"
+    assert "units" in ds_out["lon"].attrs
+    assert ds_out["lon"].attrs["units"] == "degrees_east"
+    assert "units" not in ds_out["var1"].attrs
 
 
 def test__set_variable_attributes(mocker):

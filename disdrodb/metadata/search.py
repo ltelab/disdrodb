@@ -142,7 +142,7 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
     return list(set(metadata_filepaths))
 
 
-def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=None):
+def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=None, station_names=None):
     """
     Get the list of metadata filepaths that have corresponding data in the DISDRODB raw archive.
 
@@ -159,7 +159,9 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
         Name of the campaign(s) of interest.
         The name(s) must be UPPER CASE.
         The default is ``None``.
-
+    station_names : str or list of str
+        Station names of interest.
+        The default is ``None``.
     Returns
     -------
     metadata_filepaths: list
@@ -168,37 +170,68 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     """
     from disdrodb.api.io import available_stations
 
-    # Check inputs
-    if isinstance(data_sources, str):
-        data_sources = [data_sources]
-    if isinstance(campaign_names, str):
-        campaign_names = [campaign_names]
-
-    # Retrieve information of requested stations
+    # Retrieve information of all stations
     # --> (data_source, campaign_name, station_name)
-
     list_info = available_stations(
         base_dir=base_dir,
         product="RAW",
         data_sources=data_sources,
         campaign_names=campaign_names,
+        station_names=station_names,
     )
 
     # If no stations available, raise an error
     if len(list_info) == 0:
         raise ValueError("No stations are available !")
 
-    # Get metadata filepaths
-    metadata_filepaths = [
-        define_metadata_filepath(
-            product="Raw",
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            base_dir=base_dir,
-            check_exists=False,
-        )
-        for data_source, campaign_name, station_name in list_info
-    ]
+    if isinstance(station_names, str):
+        station_names = [station_names]
 
+    ### This solution is slow !
+    # if isinstance(station_names, type(None)):
+    #   station_names = [station_name for _, _, station_name in list_info]
+    # metadata_filepaths = [
+    #     define_metadata_filepath(
+    #         product="Raw",
+    #         data_source=data_source,
+    #         campaign_name=campaign_name,
+    #         station_name=station_name,
+    #         base_dir=base_dir,
+    #         check_exists=False,
+    #     )
+    #     for data_source, campaign_name, station_name in list_info if station_name in station_names
+    # ]
+
+    # Get metadata filepaths
+    if isinstance(station_names, list):
+
+        metadata_filepaths = [
+            define_metadata_filepath(
+                product="Raw",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                base_dir=base_dir,
+                check_exists=False,
+            )
+            for data_source, campaign_name, station_name in list_info
+            if station_name in station_names
+        ]
+    else:
+        metadata_filepaths = [
+            define_metadata_filepath(
+                product="Raw",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                base_dir=base_dir,
+                check_exists=False,
+            )
+            for data_source, campaign_name, station_name in list_info
+            if station_name in station_names
+        ]
+
+    # If no stations available, raise an error
+    if len(metadata_filepaths) == 0:
+        raise ValueError("No stations are available !")
     return metadata_filepaths

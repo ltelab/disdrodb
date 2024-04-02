@@ -86,14 +86,14 @@ def test_xr_concat_datasets(tmp_path):
     # Check with file in correct orders
     filepaths = [filepath1, filepath2]
     ds = xr_concat_datasets(filepaths)
-    time_values = ds["time"].values
+    time_values = ds["time"].to_numpy()
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), np.concatenate((time_data_1, time_data_2)).astype(float))
 
     # Check with file in reverse orders
     filepaths = [filepath2, filepath1]
     ds = xr_concat_datasets(filepaths)
-    time_values = ds["time"].values
+    time_values = ds["time"].to_numpy()
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), np.concatenate((time_data_1, time_data_2)).astype(float))
 
@@ -114,21 +114,21 @@ def test_xr_concat_completely_overlapped_datasets(tmp_path):
     # Check with file in correct orders
     filepaths = [filepath1, filepath2]
     ds = xr_concat_datasets(filepaths)
-    time_values = ds["time"].values
+    time_values = ds["time"].to_numpy()
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), time_data_1.astype(float))
 
     # Check with file in reverse orders
     filepaths = [filepath2, filepath1]
     ds = xr_concat_datasets(filepaths)
-    time_values = ds["time"].values
+    time_values = ds["time"].to_numpy()
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), time_data_1.astype(float))
 
     # Check if completely overlapped but reversed order
     filepaths = [filepath2, filepath3]
     ds = xr_concat_datasets(filepaths)
-    time_values = ds["time"].values
+    time_values = ds["time"].to_numpy()
     assert len(time_values) == 3
     np.testing.assert_allclose(time_values.astype(float), time_data_2.astype(float))
 
@@ -149,14 +149,14 @@ def test_xr_concat_completely_partial_overlapped_datasets(tmp_path):
     # Check with file in correct orders
     filepaths = [filepath1, filepath2]
     ds = xr_concat_datasets(filepaths)
-    time_values = ds["time"].values
+    time_values = ds["time"].to_numpy()
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), unique_time_data.astype(float))
 
     # Check with file in reverse orders
     filepaths = [filepath2, filepath1]
     ds = xr_concat_datasets(filepaths)
-    time_values = ds["time"].values
+    time_values = ds["time"].to_numpy()
     assert len(time_values) == 6
     np.testing.assert_allclose(time_values.astype(float), unique_time_data.astype(float))
 
@@ -210,7 +210,7 @@ def test_run_l0b_concat(tmp_path):
 
     # Read concatenated netCDF file
     ds = xr.open_dataset(list_concatenated_files[0])
-    assert len(ds["time"].values) == 6
+    assert len(ds["time"].to_numpy()) == 6
 
 
 def test_run_l0b_concat_station(tmp_path):

@@ -165,7 +165,7 @@ select = [
     # Perflint
     "PERF",
     # pandas-vet
-    # "PD",
+    "PD",
     # pylint
     "PL",
     # flake8-commas
@@ -193,7 +193,7 @@ ignore = [
 	"PLW2901",
     "B904",
 	"RET504",
-
+    "PD901",
     # Docstyle Rules
     "D404", # Docstring can't start with "This"
     "D401", # First sentence must be in imperative mood
