@@ -159,7 +159,7 @@ select = [
     # flake8-raise
     "RSE",
     # flake8-pytest-style
-    # "PT",
+    "PT",
     # flake8-simplify
     "SIM",
     # Perflint

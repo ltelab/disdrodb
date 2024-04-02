@@ -151,7 +151,7 @@ def create_fake_raw_data_file(
     return str(filepath)
 
 
-@pytest.fixture
+@pytest.fixture()
 def create_test_config_files(request):
     """Create the specified config files into a temporary "test" directory.
 
@@ -182,5 +182,6 @@ def create_test_config_files(request):
         write_yaml(dictionary, test_filepath)
 
     yield
+    
     os.remove(test_filepath)
     shutil.rmtree(test_dir)

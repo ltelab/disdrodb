@@ -468,7 +468,7 @@ def test__convert_object_variables_to_string():
     assert ds["b"].dtype == "float"
 
 
-@pytest.fixture
+@pytest.fixture()
 def encoding_dict_1():
     # create a test encoding dictionary
     return {
@@ -478,7 +478,7 @@ def encoding_dict_1():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def encoding_dict_2():
     # create a test encoding dictionary
     return {
@@ -488,7 +488,7 @@ def encoding_dict_2():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def ds():
     # create a test xr.Dataset
     data = {
