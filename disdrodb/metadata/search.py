@@ -139,7 +139,7 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
             metadata_path = os.path.join(base_path, "**", "metadata", "*.yml")
             metadata_filepaths += glob.glob(metadata_path, recursive=True)
 
-    return list(set(metadata_filepaths))
+    return sorted(set(metadata_filepaths))
 
 
 def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=None, station_names=None):
@@ -232,4 +232,4 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     # If no stations available, raise an error
     if len(metadata_filepaths) == 0:
         raise ValueError("No stations are available !")
-    return metadata_filepaths
+    return sorted(metadata_filepaths)

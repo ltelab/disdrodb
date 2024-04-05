@@ -63,7 +63,10 @@ changelog = "https://github.com/ltelab/disdrodb/blob/main/CHANGELOG.md"
 write_to = "disdrodb/_version.py"
 
 [tool.setuptools]
-packages = ["disdrodb"]
+license-files = ["LICENSE"]
+
+[tool.setuptools.packages.find]
+include = ["disdrodb*"]
 
 [project.scripts]
 # Initialization
