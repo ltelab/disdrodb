@@ -192,7 +192,7 @@ def _check_data_sources(base_dir, product, data_sources):
     idx_invalid = np.where(np.isin(data_sources, list_dir, invert=True))[0]
     if len(idx_invalid) > 0:
         invalid_data_sources = data_sources[idx_invalid].tolist()
-        raise ValueError(f"These data sources are invalid: {invalid_data_sources}.")
+        raise ValueError(f"These data sources does not exist: {invalid_data_sources}.")
     # Return data_sources list
     data_sources = data_sources.tolist()
     return data_sources
@@ -223,7 +223,7 @@ def _check_campaign_names(base_dir, product, campaign_names):
     idx_invalid = np.where(np.isin(campaign_names, list_campaign_names, invert=True))[0]
     if len(idx_invalid) > 0:
         invalid_campaign_names = campaign_names[idx_invalid].tolist()
-        raise ValueError(f"These campaign names are invalid: {invalid_campaign_names}.")
+        raise ValueError(f"These campaign names does not exist: {invalid_campaign_names}.")
     # Return campaign_names list
     campaign_names = campaign_names.tolist()
     return campaign_names
@@ -276,6 +276,7 @@ def available_stations(
     product,
     data_sources=None,
     campaign_names=None,
+    station_names=None,
     return_tuple=True,
     base_dir=None,
 ):
@@ -293,6 +294,8 @@ def available_stations(
         product=product,
         campaign_names=campaign_names,
     )
+    if isinstance(station_names, str):
+        station_names = [station_names]
 
     # If data_source is None, first retrieve all stations
     if data_sources is None:
@@ -304,18 +307,18 @@ def available_stations(
             data_sources=data_sources,
             product=product,
         )
-    # Then, if campaign_name is not None, subset by campaign_name
+    # If campaign_names is not None, subset by campaign_names
     if campaign_names is not None:
         list_info = [info for info in list_info if info[1] in campaign_names]
 
+    # If station_names is not None, subset by station_names
+    if station_names is not None:
+        list_info = [info for info in list_info if info[2] in station_names]
+
+    # Return list with the tuple (data_source, campaign_name, station_name)
     if return_tuple:
         return list_info
 
-    # TODO:
-    # - Filter by station names !
-    # - Add check_station_names
-    # - Simplify available_stations
-
-    # TODO: ENSURE THAT NO DUPLICATED STATION NAMES ?
+    # - Return list with the name of the available stations
     list_stations = [info[2] for info in list_info]
     return list_stations
