@@ -336,11 +336,13 @@ def test_is_not_corrupted():
 
 def test_cast_column_dtypes():
     # Create a test dataframe with object columns
-    df = pd.DataFrame({
-        "time": ["2022-01-01 00:00:00", "2022-01-01 00:05:00", "2022-01-01 00:10:00"],
-        "station_number": "station_number",
-        "altitude": "8849",
-    })
+    df = pd.DataFrame(
+        {
+            "time": ["2022-01-01 00:00:00", "2022-01-01 00:05:00", "2022-01-01 00:10:00"],
+            "station_number": "station_number",
+            "altitude": "8849",
+        },
+    )
     # Call the function
     sensor_name = "OTT_Parsivel"
     df_out = cast_column_dtypes(df, sensor_name)
