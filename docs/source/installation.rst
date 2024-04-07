@@ -128,7 +128,7 @@ You can create a conda environment (i.e. with python 3.11) with:
 	conda create --name disdrodb-dev-py311 python=3.11 --no-default-packages
 	conda activate disdrodb-dev-py311
 
-Install the disdrodb package dependencies
+Install the package dependencies
 ............................................
 
 .. code-block:: bash
@@ -136,7 +136,7 @@ Install the disdrodb package dependencies
 	conda install --only-deps disdrodb
 
 
-Install the disdrodb package in editable mode
+Install the package in editable mode
 ................................................
 
 Install the disdrodb package in editable mode by executing the following command in the disdrodb repository's root:
@@ -146,7 +146,7 @@ Install the disdrodb package in editable mode by executing the following command
 	pip install -e ".[dev]"
 
 
-Install pre-commit code quality checks
+Install code quality checks
 ..............................................
 
 Install the pre-commit hook by executing the following command in the disdrodb repository's root:

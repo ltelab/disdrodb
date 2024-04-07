@@ -6,14 +6,14 @@ Maintainers Guidelines
 The section is dedicated to the DISDRODB core developers (maintainers).
 
 
-List of the core contributors
+Core contributors
 =================================
 
 * Current Release Manager : Ghiggi Gionata
 * Testing Team : Ghiggi Gionata
 
 
-Versions guidelines
+Versions Guidelines
 ========================
 
 DISDRODB uses `Semantic <https://semver.org/>`_ Versioning. Each release is associated with a git tag of the form X.Y.Z.
@@ -68,7 +68,7 @@ styled with `Book Theme <https://sphinx-book-theme.readthedocs.io/en/stable/inde
 All documentation source files are neatly organized in the ``docs/`` directory within the project's repository.
 
 
-Documentation generation
+Documentation Generation
 ---------------------------
 
 To build the documentation locally, follow the next three steps.
@@ -111,7 +111,7 @@ By following these steps, you should have a local version of the DISDRODB docume
 in the ``docs/build/html/`` directory, ready for review or deployment!
 
 
-Documentation deployment
+Documentation Deployment
 --------------------------
 
 A webhook is defined in the GitHub repository to trigger automatically the publication process to `ReadTheDocs <https://about.readthedocs.com/?ref=readthedocs.com>`__
@@ -124,7 +124,7 @@ This webhook is linked to the DISDRODB core developer.
 Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.
 
 
-Package release
+Package Release
 ==================
 
 A `GitHub Action <https://github.com/ltelab/disdrodb/actions>`_ is configured to automate the packaging and uploading process
@@ -144,7 +144,7 @@ Once the conda-forge recipe is updated, a new conda-forge package is released.
 The PyPI project and the conda-forge recipes are collaboratively maintained by core contributors of the project.
 
 
-Release process
+Release Process
 ----------------
 
 Before releasing a new version, the ``CHANGELOG.md`` file should be updated. Run
@@ -174,7 +174,7 @@ Create a new tag to trigger the release process.
 On GitHub, edit the release description to add the list of changes from the ``CHANGELOG.md`` file.
 
 
-Reviewing process
+Reviewing Process
 ====================
 
 
@@ -190,7 +190,7 @@ The review process is the following:
 
 
 
-Continuous integration
+Continuous Integration
 =======================
 
 Continuous Integration (CI) is a crucial practice in modern software development, ensuring that code changes are regularly integrated into the main codebase.
@@ -218,9 +218,11 @@ The table below summarizes the software tools utilized in our CI pipeline, descr
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 | `Coveralls    <https://coveralls.io/>`__                                                           | Uses Coverage to track and analyze code coverage over time.      | `disdrodb  <https://coveralls.io/github/ltelab/disdrodb>`__                                  |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
-| `CodeBeat      <https://codebeat.co/>`__                                                           | Automated code review and analysis tools                         | `disdrodb <https://codebeat.co/projects/github-com-ltelab-disdrodb-main/security_issues>`__  |
+| `CodeBeat      <https://codebeat.co/>`__                                                           | Automated code review and analysis tools                         | `disdrodb <https://codebeat.co/projects/github-com-ltelab-disdrodb-main>`__                  |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 | `CodeScene <https://codescene.com/>`__                                                             | Automated code review and analysis tools                         | `disdrodb <https://codescene.io/projects/36773>`__                                           |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 | `CodeFactor <https://www.codefactor.io/>`__                                                        | Automated code review and analysis tools                         | `disdrodb <https://www.codefactor.io/repository/github/ltelab/disdrodb>`__                   |
++----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
+| `Codacy      <https://www.codacy.com/>`__                                                          | Automated code review and analysis tools                         | `disdrodb <https://app.codacy.com/gh/ltelab/disdrodb/dashboard>`__                           |
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
