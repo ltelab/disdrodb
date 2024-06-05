@@ -211,7 +211,7 @@ def print_df_summary_stats(
 
 
 def print_df_columns_unique_values(
-    df: pandas.DataFrame,
+    df: pd.DataFrame,
     column_indices: Optional[Union[int, slice, list]] = None,
     print_column_names: bool = True,
 ) -> None:
