@@ -28,7 +28,7 @@ def get_dataset_start_end_time(ds: xr.Dataset):
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input dataset
 
     Returns
@@ -48,7 +48,7 @@ def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, 
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         xarray Dataset.
     time_dim : str, optional
         The time dimension in the xr.Dataset. The default is ``"time"``.
@@ -64,7 +64,7 @@ def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, 
 
     Returns
     -------
-    ds_reindexed : xr.Dataset
+    ds_reindexed  : xarray.Dataset
         Regularized dataset.
 
     """

@@ -203,7 +203,7 @@ def retrieve_l0b_arrays(
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe
     sensor_name : str
         Name of the sensor
@@ -287,7 +287,7 @@ def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input dataset.
 
     Returns
@@ -306,7 +306,7 @@ def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input dataset.
     sensor_name : str
         Name of the sensor.
@@ -431,7 +431,7 @@ def create_l0b_from_l0a(
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         DISDRODB L0A dataframe.
     attrs : dict
         Station metadata.
@@ -503,7 +503,7 @@ def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
     ----------
     encoding_dict : dict
         Dictionary containing the encoding to write DISDRODB L0B netCDFs.
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input dataset.
 
     Returns
@@ -525,7 +525,7 @@ def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input xarray dataset
     encoding_dict : dict
         Dictionary containing the encoding to write the xarray dataset as a netCDF.
@@ -549,7 +549,7 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input xarray dataset.
     sensor_name : str
         Name of the sensor.
@@ -585,7 +585,7 @@ def write_l0b(ds: xr.Dataset, filepath: str, force=False) -> None:
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input xarray dataset.
     filepath : str
         Output file path.

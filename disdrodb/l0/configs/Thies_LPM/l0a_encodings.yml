@@ -1,79 +1,79 @@
-device_address: 'float32' #  'uint8'
-weather_code_synop_4677_5min: 'float32' # 'uint8'
-weather_code_synop_4680_5min : 'float32' # 'uint8'
-weather_code_metar_4678_5min : 'str'
-precipitation_rate_5min  : 'float32'
-weather_code_synop_4677: 'float32' # 'uint8'
-weather_code_synop_4680: 'float32' # 'uint8'
-weather_code_metar_4678: 'str'
-precipitation_rate: 'float32'
-rainfall_rate: 'float32'
-snowfall_rate: 'float32'
-precipitation_accumulated: 'float32'
-mor_visibility: 'float32' # 'uint16'
-reflectivity: 'float32'
-quality_index: 'float32' # 'uint8'
-max_hail_diameter: 'float32'
-laser_status: 'float32' # 'uint8'
-static_signal: 'float32' # 'uint8'
-laser_temperature_analog_status: 'float32' # 'uint8'
-laser_temperature_digital_status: 'float32' # 'uint8'
-laser_current_analog_status: 'float32' # 'uint8'
-laser_current_digital_status: 'float32' # 'uint8'
-sensor_voltage_supply_status: 'float32' # 'uint8'
-current_heating_pane_transmitter_head_status: 'float32' # 'uint8'
-current_heating_pane_receiver_head_status: 'float32' # 'uint8'
-temperature_sensor_status: 'float32' # 'uint8'
-current_heating_voltage_supply_status: 'float32' # 'uint8'
-current_heating_house_status: 'float32' # 'uint8'
-current_heating_heads_status: 'float32' # 'uint8'
-current_heating_carriers_status: 'float32' # 'uint8'
-control_output_laser_power_status: 'float32' # 'uint8'
-reserve_status: 'float32' # 'uint8'
-temperature_interior : 'float32' # 'uint16'
-laser_temperature: 'float32' # 'uint16'
-laser_current_average: 'float32' # 'uint16'
-control_voltage: 'float32'
-optical_control_voltage_output: 'float32'
-sensor_voltage_supply : 'str'
-current_heating_pane_transmitter_head : 'str'
-current_heating_pane_receiver_head: 'str'
-temperature_ambient: 'float32'
-current_heating_voltage_supply: 'str'
-current_heating_house: 'str'
-current_heating_heads: 'str'
-current_heating_carriers: 'str'
-number_particles: 'float32' # 'uint16'
-number_particles_internal_data: 'float32'
-number_particles_min_speed: 'float32' # 'uint16'
-number_particles_min_speed_internal_data: 'float32'
-number_particles_max_speed: 'float32' # 'uint16'
-number_particles_max_speed_internal_data: 'float32'
-number_particles_min_diameter: 'float32' # 'uint16'
-number_particles_min_diameter_internal_data: 'float32'
-number_particles_no_hydrometeor: 'float32' # 'uint16'
-number_particles_no_hydrometeor_internal_data: 'float32'
-number_particles_unknown_classification: 'float32' # 'uint16'
-number_particles_unknown_classification_internal_data: 'float32'
-number_particles_class_1: 'float32' #  'uint16'
-number_particles_class_1_internal_data: 'float32'
-number_particles_class_2: 'float32' # 'uint16'
-number_particles_class_2_internal_data: 'float32'
-number_particles_class_3: 'float32' # 'uint16'
-number_particles_class_3_internal_data: 'float32'
-number_particles_class_4: 'float32' # 'uint16'
-number_particles_class_4_internal_data: 'float32'
-number_particles_class_5: 'float32' # 'uint16'
-number_particles_class_5_internal_data: 'float32'
-number_particles_class_6: 'float32' # 'uint16'
-number_particles_class_6_internal_data: 'float32'
-number_particles_class_7: 'float32' # 'uint16'
-number_particles_class_7_internal_data: 'float32'
-number_particles_class_8: 'float32' # 'uint16'
-number_particles_class_8_internal_data: 'float32'
-number_particles_class_9: 'float32' # 'uint16'
-number_particles_class_9_internal_data: 'float32'
-raw_drop_number: 'str'
+device_address: "float32" #  'uint8'
+weather_code_synop_4677_5min: "float32" # 'uint8'
+weather_code_synop_4680_5min: "float32" # 'uint8'
+weather_code_metar_4678_5min: "str"
+precipitation_rate_5min: "float32"
+weather_code_synop_4677: "float32" # 'uint8'
+weather_code_synop_4680: "float32" # 'uint8'
+weather_code_metar_4678: "str"
+precipitation_rate: "float32"
+rainfall_rate: "float32"
+snowfall_rate: "float32"
+precipitation_accumulated: "float32"
+mor_visibility: "float32" # 'uint16'
+reflectivity: "float32"
+quality_index: "float32" # 'uint8'
+max_hail_diameter: "float32"
+laser_status: "float32" # 'uint8'
+static_signal: "float32" # 'uint8'
+laser_temperature_analog_status: "float32" # 'uint8'
+laser_temperature_digital_status: "float32" # 'uint8'
+laser_current_analog_status: "float32" # 'uint8'
+laser_current_digital_status: "float32" # 'uint8'
+sensor_voltage_supply_status: "float32" # 'uint8'
+current_heating_pane_transmitter_head_status: "float32" # 'uint8'
+current_heating_pane_receiver_head_status: "float32" # 'uint8'
+temperature_sensor_status: "float32" # 'uint8'
+current_heating_voltage_supply_status: "float32" # 'uint8'
+current_heating_house_status: "float32" # 'uint8'
+current_heating_heads_status: "float32" # 'uint8'
+current_heating_carriers_status: "float32" # 'uint8'
+control_output_laser_power_status: "float32" # 'uint8'
+reserve_status: "float32" # 'uint8'
+temperature_interior: "float32" # 'uint16'
+laser_temperature: "float32" # 'uint16'
+laser_current_average: "float32" # 'uint16'
+control_voltage: "float32"
+optical_control_voltage_output: "float32"
+sensor_voltage_supply: "str"
+current_heating_pane_transmitter_head: "str"
+current_heating_pane_receiver_head: "str"
+temperature_ambient: "float32"
+current_heating_voltage_supply: "str"
+current_heating_house: "str"
+current_heating_heads: "str"
+current_heating_carriers: "str"
+number_particles: "float32" # 'uint16'
+number_particles_internal_data: "float32"
+number_particles_min_speed: "float32" # 'uint16'
+number_particles_min_speed_internal_data: "float32"
+number_particles_max_speed: "float32" # 'uint16'
+number_particles_max_speed_internal_data: "float32"
+number_particles_min_diameter: "float32" # 'uint16'
+number_particles_min_diameter_internal_data: "float32"
+number_particles_no_hydrometeor: "float32" # 'uint16'
+number_particles_no_hydrometeor_internal_data: "float32"
+number_particles_unknown_classification: "float32" # 'uint16'
+number_particles_unknown_classification_internal_data: "float32"
+number_particles_class_1: "float32" #  'uint16'
+number_particles_class_1_internal_data: "float32"
+number_particles_class_2: "float32" # 'uint16'
+number_particles_class_2_internal_data: "float32"
+number_particles_class_3: "float32" # 'uint16'
+number_particles_class_3_internal_data: "float32"
+number_particles_class_4: "float32" # 'uint16'
+number_particles_class_4_internal_data: "float32"
+number_particles_class_5: "float32" # 'uint16'
+number_particles_class_5_internal_data: "float32"
+number_particles_class_6: "float32" # 'uint16'
+number_particles_class_6_internal_data: "float32"
+number_particles_class_7: "float32" # 'uint16'
+number_particles_class_7_internal_data: "float32"
+number_particles_class_8: "float32" # 'uint16'
+number_particles_class_8_internal_data: "float32"
+number_particles_class_9: "float32" # 'uint16'
+number_particles_class_9_internal_data: "float32"
+raw_drop_number: "str"
 # '521': air_temperature
 # '522': relative_humidity
 # '523': wind_speed

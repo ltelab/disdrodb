@@ -90,7 +90,7 @@ def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, verbose: boo
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Dataframe
     sensor_name : str
         Name of the sensor.
@@ -124,7 +124,7 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -165,7 +165,7 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         L0A dataframe.
     sensor_name : str
         Name of the sensor.

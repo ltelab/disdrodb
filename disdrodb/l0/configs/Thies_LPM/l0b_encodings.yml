@@ -690,6 +690,6 @@ raw_drop_number:
   contiguous: false
   _FillValue: 65535
   chunksizes:
-  - 5000
-  - 22 # diameter
-  - 20 # velocity
+    - 5000
+    - 22 # diameter
+    - 20 # velocity

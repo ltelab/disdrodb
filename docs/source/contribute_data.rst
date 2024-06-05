@@ -32,7 +32,7 @@ The name you adopt for the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` will be use
 
    * Avoid the usage of dash ( - ) and dots ( . ) to separate words. Use the underscore ( _ ) instead!
 
-   * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. `EPFL_2009`)
+   * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. *EPFL_2009*)
 
 
 Here below we provide a detailed description of the steps to follow to contribute your data to DISDRODB:
@@ -430,7 +430,7 @@ For example, to process all stations of the EPFL_2008 campaign, you would run:
    For more details and options related to DISDRODB L0 processing, read the section :ref:`Run DISDRODB L0 Processing <l0_processing>`.
 
 
-The DISDRODB L0 processing generates the DISDRODB `Processed` directories tree illustrated here below.
+The DISDRODB L0 processing generates the DISDRODB *Processed* directories tree illustrated here below.
 
 | 📁 DISDRODB
 | ├── 📁 Processed
@@ -490,7 +490,7 @@ Below, we offer a utility designed to compress each raw file associated to a spe
         method="gzip",
     )
 
-After compressing the raw files, remember to update the reader `glob_patterns` to include the new file extension (i.e. .gz)
+After compressing the raw files, remember to update the reader *glob_patterns* to include the new file extension (i.e. .gz)
 and rerun the DISDRODB L0 processing to check that everything works fine.
 
 If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, do it now so

@@ -13,6 +13,8 @@
 import os
 import shutil
 import sys
+import inspect
+import disdrodb
 
 # sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../.."))
@@ -28,11 +30,11 @@ author = "LTE - Environmental Remote Sensing Lab - EPFL"
 
 # Copy tutorial notebook
 root_path = os.path.dirname(os.path.dirname(os.getcwd()))
-
-in_path = os.path.join(root_path, "tutorials", "reader_preparation.ipynb")
-out_path = os.path.join(os.getcwd(), "reader_preparation.ipynb")
-
-shutil.copyfile(in_path, out_path)
+filenames = ["reader_preparation.ipynb"]
+for filename in filenames:
+    in_path = os.path.join(root_path, "tutorials", filename)
+    out_path = os.path.join(os.getcwd(), "tutorials", filename)
+    shutil.copyfile(in_path, out_path)
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,13 +43,64 @@ shutil.copyfile(in_path, out_path)
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx.ext.coverage",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.coverage",
+    "sphinx.ext.linkcode",
+    # "sphinx_design",
+    # "sphinx_gallery.gen_gallery",
+    # "sphinx.ext.autosectionlabel",
+    "sphinx_mdinclude",
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
-    "sphinx.ext.viewcode",
-    # "sphinx.ext.autosectionlabel",
+    "sphinx.ext.autosummary",
+    # "myst_parser",
     "nbsphinx",
-    "sphinx_mdinclude",
 ]
+
+# Set up mapping for other projects' docs
+intersphinx_mapping = {
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "dask": ("https://docs.dask.org/en/stable/", None),
+    "pydantic": ("https://docs.pydantic.dev/latest/", None),
+}
+always_document_param_types = True
+
+# Warn when a reference is not found in docstrings
+nitpicky = True
+nitpick_ignore = [
+    ("py:class", "optional"),
+    ("py:class", "array-like"),
+    ("py:class", "file-like object"),
+    # For traitlets docstrings
+    ("py:class", "All"),
+    ("py:class", "t.Any"),
+    ("py:class", "t.Iterable"),
+    ("py:class", "sorted"),
+    ("py:class", "dictionary"),
+]
+nitpick_ignore_regex = [
+    ("py:class", r".*[cC]allable"),
+]
+
+# The suffix of source filenames.
+source_suffix = [".rst", ".md"]
+
+# For a class, combine class and __init__ docstrings
+autoclass_content = "both"
+
+# Napoleon settings
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "sphinx"
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,6 +130,7 @@ html_theme_options = {
     "use_download_button": True,
     # "use_sidenotes": True,
     "show_toc_level": 2,
+    "navigation_with_keys": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -95,8 +149,65 @@ def run_apidoc(_):
 
     module_dir = os.path.join(cur_dir, "..", "..", "disdrodb")
     output_dir = os.path.join(cur_dir, "api")
-    main(["-f", "-o", output_dir, module_dir])
+    exclude = [os.path.join(module_dir, "tests")]
+    main(["-f", "-o", output_dir, module_dir, *exclude])
 
 
 def setup(app):
     app.connect("builder-inited", run_apidoc)
+
+
+# Function to resolve source code links for `linkcode`
+# adapted from NumPy, Pandas implementations
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object
+    """
+    if domain != "py":
+        return None
+
+    modname = info["module"]
+    fullname = info["fullname"]
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split("."):
+        try:
+            obj = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(inspect.unwrap(obj))
+    except TypeError:
+        try:  # property
+            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
+        except (AttributeError, TypeError):
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+    except TypeError:
+        try:  # property
+            source, lineno = inspect.getsourcelines(obj.fget)
+        except (AttributeError, TypeError):
+            lineno = None
+    except OSError:
+        lineno = None
+
+    if lineno:
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
+    else:
+        linespec = ""
+
+    fn = os.path.relpath(fn, start=os.path.dirname(disdrodb.__file__))
+
+    if "+" in disdrodb.__version__:
+        return f"https://github.com/ltelab/disdrodb/blob/main/disdrodb/{fn}{linespec}"
+    else:
+        return f"https://github.com/ltelab/disdrodb/blob/" f"v{disdrodb.__version__}/disdrodb/{fn}{linespec}"

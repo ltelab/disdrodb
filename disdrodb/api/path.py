@@ -396,7 +396,7 @@ def define_l0a_filename(df, processed_dir, station_name: str) -> str:
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         L0A DataFrame
     processed_dir : str
         Path of the processed directory
@@ -425,7 +425,7 @@ def define_l0b_filename(ds, processed_dir, station_name: str) -> str:
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         L0B xarray Dataset
     processed_dir : str
         Path of the processed directory
@@ -454,7 +454,7 @@ def define_l0a_filepath(df: pd.DataFrame, processed_dir: str, station_name: str)
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         L0A DataFrame.
     processed_dir : str
         Path of the processed directory.
@@ -477,7 +477,7 @@ def define_l0b_filepath(ds: xr.Dataset, processed_dir: str, station_name: str, l
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         L0B xarray Dataset.
     processed_dir : str
         Path of the processed directory.

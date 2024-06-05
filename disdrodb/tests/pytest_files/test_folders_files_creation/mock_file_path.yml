@@ -1,0 +1,21 @@
+# This file is used to store timesteps/time periods with wrong/corrupted observation.
+# The specified timesteps are dropped during the L0 processing.
+# The time format used is the isoformat : YYYY-mm-dd HH:MM:SS.
+# The 'timesteps' key enable to specify the list of timesteps to be discarded.
+# The 'time_period' key enable to specify the time periods to be dropped.
+# Example:
+#
+# timesteps:
+# - 2018-12-07 14:15:00
+# - 2018-12-07 14:17:00
+# - 2018-12-07 14:19:00
+# - 2018-12-07 14:25:00
+# time_period:
+# - ['2018-08-01 12:00:00', '2018-08-01 14:00:00']
+# - ['2018-08-01 15:44:30', '2018-08-01 15:59:31']
+# - ['2018-08-02 12:44:30', '2018-08-02 12:59:31']
+
+timesteps:
+  - "2018-12-07 14:15:00"
+time_periods:
+  - ["2018-08-01 12:00:00", "2018-08-01 14:00:00"]

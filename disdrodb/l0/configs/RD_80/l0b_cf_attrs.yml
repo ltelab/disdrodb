@@ -1,7 +1,7 @@
 sensor_status:
   description: Sensor status
   long_name: Sensor status
-  units: ''
+  units: ""
 interval:
   description: Time interval between measurement
   long_name: Time interval between measurement
@@ -61,4 +61,4 @@ ND:
 raw_drop_number:
   description: Drop counts per diameter
   long_name: Drop counts per diameter
-  units: ''
+  units: ""

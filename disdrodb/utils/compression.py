@@ -46,6 +46,7 @@ def unzip_file(filepath: str, dest_path: str) -> None:
         Path of the file to unzip.
     dest_path : str
         Path of the destination directory.
+
     """
     with zipfile.ZipFile(filepath, "r") as zip_ref:
         zip_ref.extractall(dest_path)

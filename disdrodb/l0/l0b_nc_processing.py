@@ -141,7 +141,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Raw netCDF to be converted to DISDRODB standards.
     dict_names : dict
         Dictionary mapping raw netCDF variables/coordinates/dimension names
@@ -151,7 +151,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
 
     Returns
     -------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         xarray Dataset with variables compliant to DISDRODB conventions.
 
     """
@@ -185,7 +185,7 @@ def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
 
     Parameters
     ----------
-    df : xr.Dataset
+    df  : xarray.Dataset
         Input xarray dataset
     dict_nan_flags : dict
         Dictionary with nan flags value to set as ``np.nan``.
@@ -218,7 +218,7 @@ def replace_nan_flags(ds, sensor_name, verbose):
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input xarray dataset
     dict_nan_flags : dict
         Dictionary with nan flags value to set as np.nan
@@ -242,7 +242,7 @@ def set_nan_outside_data_range(ds, sensor_name, verbose):
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input xarray dataset
     sensor_name : str
         Name of the sensor.
@@ -280,7 +280,7 @@ def set_nan_invalid_values(ds, sensor_name, verbose):
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Input xarray dataset
     sensor_name : str
         Name of the sensor.
@@ -323,7 +323,7 @@ def create_l0b_from_raw_nc(
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds  : xarray.Dataset
         Raw xarray dataset
     dict_names : dict
         Dictionary mapping raw netCDF variables/coordinates/dimension names

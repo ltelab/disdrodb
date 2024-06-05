@@ -251,4 +251,4 @@ The following page provide read-only access to the DISDRODB reader preparation J
 .. toctree::
    :maxdepth: 1
 
-   reader_preparation
+   tutorials/reader_preparation
