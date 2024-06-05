@@ -67,7 +67,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
     "dask": ("https://docs.dask.org/en/stable/", None),
-    "pydantic": ("https://docs.pydantic.dev/latest/", None)
+    "pydantic": ("https://docs.pydantic.dev/latest/", None),
 }
 always_document_param_types = True
 
@@ -83,7 +83,6 @@ nitpick_ignore = [
     ("py:class", "t.Iterable"),
     ("py:class", "sorted"),
     ("py:class", "dictionary"),
-    
 ]
 nitpick_ignore_regex = [
     ("py:class", r".*[cC]allable"),
