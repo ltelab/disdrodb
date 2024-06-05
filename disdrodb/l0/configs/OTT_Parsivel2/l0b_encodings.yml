@@ -307,8 +307,8 @@ raw_drop_concentration:
   fletcher32: false
   contiguous: false
   chunksizes:
-  - 5000
-  - 32
+    - 5000
+    - 32
 raw_drop_average_velocity:
   dtype: float32
   zlib: true
@@ -317,8 +317,8 @@ raw_drop_average_velocity:
   fletcher32: false
   contiguous: false
   chunksizes:
-  - 5000
-  - 32
+    - 5000
+    - 32
 raw_drop_number:
   dtype: uint16
   zlib: true
@@ -328,6 +328,6 @@ raw_drop_number:
   contiguous: false
   _FillValue: 65535
   chunksizes:
-  - 5000
-  - 32
-  - 32
+    - 5000
+    - 32
+    - 32

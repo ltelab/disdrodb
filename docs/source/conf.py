@@ -28,11 +28,11 @@ author = "LTE - Environmental Remote Sensing Lab - EPFL"
 
 # Copy tutorial notebook
 root_path = os.path.dirname(os.path.dirname(os.getcwd()))
-
-in_path = os.path.join(root_path, "tutorials", "reader_preparation.ipynb")
-out_path = os.path.join(os.getcwd(), "reader_preparation.ipynb")
-
-shutil.copyfile(in_path, out_path)
+filenames = ["reader_preparation.ipynb"]
+for filename in filenames:
+    in_path = os.path.join(root_path, "tutorials", filename)
+    out_path = os.path.join(os.getcwd(), "tutorials", filename)
+    shutil.copyfile(in_path, out_path)
 
 
 # -- General configuration ---------------------------------------------------
@@ -41,13 +41,62 @@ shutil.copyfile(in_path, out_path)
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    "sphinx.ext.coverage",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.coverage",
+    "sphinx.ext.linkcode",
+    # "sphinx_design",
+    # "sphinx_gallery.gen_gallery",
+    # "sphinx.ext.autosectionlabel",
+    "sphinx_mdinclude",
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
-    "sphinx.ext.viewcode",
-    # "sphinx.ext.autosectionlabel",
+    "sphinx.ext.autosummary",
+    # "myst_parser",
     "nbsphinx",
-    "sphinx_mdinclude",
+    "sphinxcontrib.youtube",
 ]
+
+# Set up mapping for other projects' docs
+intersphinx_mapping = {
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
+    "dask": ("https://docs.dask.org/en/stable/", None),
+}
+always_document_param_types = True
+
+# Warn when a reference is not found in docstrings
+nitpicky = True
+nitpick_ignore = [
+    ("py:class", "optional"),
+    ("py:class", "array-like"),
+    ("py:class", "file-like object"),
+    # For traitlets docstrings
+    ("py:class", "All"),
+    ("py:class", "t.Any"),
+    ("py:class", "t.Iterable"),
+]
+nitpick_ignore_regex = [
+    ("py:class", r".*[cC]allable"),
+]
+
+# The suffix of source filenames.
+source_suffix = [".rst", ".md"]
+
+# For a class, combine class and __init__ docstrings
+autoclass_content = "both"
+
+# Napoleon settings
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_include_init_with_doc = False
+
+# The name of the Pygments (syntax highlighting) style to use.
+pygments_style = "sphinx"
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -77,6 +126,7 @@ html_theme_options = {
     "use_download_button": True,
     # "use_sidenotes": True,
     "show_toc_level": 2,
+    "navigation_with_keys": False,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

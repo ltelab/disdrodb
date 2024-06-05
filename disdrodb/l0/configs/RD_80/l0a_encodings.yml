@@ -1,16 +1,16 @@
-sensor_status: 'float32' #  'int8'
-interval: 'float32' #  'uint8'
-RI: 'float32'
-RA: 'float32'
-RAT: 'float32'
-W: 'float32'
-Wg: 'float32'
-Z: 'float32'
-ZdB: 'float32'
-EK: 'float32'
-EF: 'float32'
-N0: 'float32'
-slope: 'float32'
-Dmax: 'float32'
-ND: 'str'
-raw_drop_number: 'str'
+sensor_status: "float32" #  'int8'
+interval: "float32" #  'uint8'
+RI: "float32"
+RA: "float32"
+RAT: "float32"
+W: "float32"
+Wg: "float32"
+Z: "float32"
+ZdB: "float32"
+EK: "float32"
+EF: "float32"
+N0: "float32"
+slope: "float32"
+Dmax: "float32"
+ND: "str"
+raw_drop_number: "str"

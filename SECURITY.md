@@ -7,10 +7,10 @@ guarantee that releases before 1.0 will see security updates except for the most
 release. After 1.0, you can expect more stability in the interfaces and security fixes to be
 backported more regularly.
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 0.x.x (latest)   | :white_check_mark: |
-| < 0.0.17   | :x:                |
+| Version        | Supported          |
+| -------------- | ------------------ |
+| 0.x.x (latest) | :white_check_mark: |
+| \< 0.0.17      | :x:                |
 
 ## Unsafe YAML Loading
 

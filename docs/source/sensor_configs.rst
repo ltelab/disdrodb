@@ -28,7 +28,7 @@ For each sensor, the following list of configuration YAML files are required:
 |   📁 disdrodb/
 |   ├── 📁 l0 : Contains the software to produce the DISDRODB L0 products
 |       ├── 📁 configs : Contains the specifications of various types of disdrometers
-|           ├── 📁 `<sensor_name>` : e.g. OTT_Parsivel, OTT_Parsivel2, Thies_LPM, RD_80
+|           ├── 📁 *<sensor_name>* : e.g. OTT_Parsivel, OTT_Parsivel2, Thies_LPM, RD_80
 |               ├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
 |               ├── 📜 bins_diameter.yml : Information related to sensor diameter bins
 |               ├── 📜 bins_velocity.yml : Information related to sensor velocity bins

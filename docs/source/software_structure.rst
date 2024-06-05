@@ -39,12 +39,12 @@ The current software structure is described below:
 |     ├── 📜 zenodo.py
 | ├── 📁 l0
 |     ├── 📁 configs
-|     	├── 📁 `<sensor_name>`
+|     	├── 📁 *<sensor_name>*
 |     		├── 📜 \*.yml
 |     ├── 📁 manuals
 |       ├── 📜 \*.pdf
 |     ├── 📁 readers
-|     	├── 📁 `<DATA_SOURCE>`
+|     	├── 📁 *<DATA_SOURCE>*
 |           ├── 📜 \<READER_NAME>.py
 |     ├── 📁 scripts
 |         ├── 📜 disdrodb_run_l0_station.py

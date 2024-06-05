@@ -5,7 +5,7 @@ time:
   n_naturals: null
   data_range: null
   nan_flags: null
-  field_number: '02'
+  field_number: "02"
 date:
   n_digits: null
   n_characters: null
@@ -13,7 +13,7 @@ date:
   n_naturals: null
   data_range: null
   nan_flags: null
-  field_number: '01'
+  field_number: "01"
 sensor_status:
   n_digits: null
   n_characters: null
@@ -22,139 +22,139 @@ sensor_status:
   data_range: null
   nan_flags: null
   valid_values:
-  - 0
-  - 1
-  field_number: '03'
+    - 0
+    - 1
+  field_number: "03"
 interval:
   n_digits: 4
   n_characters: 4
   n_decimals: 4
   n_naturals: 0
   data_range:
-  - 0
-  - 9999
+    - 0
+    - 9999
   nan_flags: null
-  field_number: '04'
+  field_number: "04"
 RI:
   n_digits: 7
   n_characters: 8
   n_decimals: 4
   n_naturals: 3
   data_range:
-  - 0
-  - 999.9999
+    - 0
+    - 999.9999
   nan_flags: null
-  field_number: '25'
+  field_number: "25"
 RA:
   n_digits: 5
   n_characters: 6
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - 0
-  - 9.9999
+    - 0
+    - 9.9999
   nan_flags: null
-  field_number: '26'
+  field_number: "26"
 RAT:
   n_digits: 5
   n_characters: 6
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - 0
-  - 9.9999
+    - 0
+    - 9.9999
   nan_flags: null
-  field_number: '27'
+  field_number: "27"
 W:
   n_digits: 5
   n_characters: 6
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - 0
-  - 9.9999
+    - 0
+    - 9.9999
   nan_flags: null
-  field_number: '28'
+  field_number: "28"
 Wg:
   n_digits: 5
   n_characters: 6
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - 0
-  - 9.9999
+    - 0
+    - 9.9999
   nan_flags: null
-  field_number: '29'
+  field_number: "29"
 Z:
   n_digits: 6
   n_characters: 1
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - -99.9999
-  - 99.9999
+    - -99.9999
+    - 99.9999
   nan_flags: -Inf
-  field_number: '30'
+  field_number: "30"
 ZdB:
   n_digits: 6
   n_characters: 1
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - -99.9999
-  - 99.9999
+    - -99.9999
+    - 99.9999
   nan_flags: -Inf
-  field_number: '31'
+  field_number: "31"
 EF:
   n_digits: 7
   n_characters: 8
   n_decimals: 4
   n_naturals: 4
   data_range:
-  - 0
-  - 9999.999
+    - 0
+    - 9999.999
   nan_flags: null
-  field_number: '33'
+  field_number: "33"
 EK:
   n_digits: 7
   n_characters: 8
   n_decimals: 4
   n_naturals: 4
   data_range:
-  - 0
-  - 9999.999
+    - 0
+    - 9999.999
   nan_flags: null
-  field_number: '32'
+  field_number: "32"
 N0:
   n_digits: 8
   n_characters: 9
   n_decimals: 4
   n_naturals: 4
   data_range:
-  - 0
-  - 9999.9999
+    - 0
+    - 9999.9999
   nan_flags: null
-  field_number: '34'
+  field_number: "34"
 slope:
   n_digits: 8
   n_characters: 9
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - 0
-  - 9.9999
+    - 0
+    - 9.9999
   nan_flags: null
-  field_number: '35'
+  field_number: "35"
 Dmax:
   n_digits: 8
   n_characters: 9
   n_decimals: 4
   n_naturals: 1
   data_range:
-  - 0
-  - 9.9999
+    - 0
+    - 9.9999
   nan_flags: null
-  field_number: '37'
+  field_number: "37"
 raw_drop_number:
   n_digits: 0
   n_characters: null
@@ -163,7 +163,7 @@ raw_drop_number:
   data_range: null
   nan_flags: null
   dimension_order:
-  - diameter_bin_center
+    - diameter_bin_center
   n_values: 20
   field_number: null
 ND:
@@ -174,6 +174,6 @@ ND:
   data_range: null
   nan_flags: null
   dimension_order:
-  - diameter_bin_center
+    - diameter_bin_center
   n_values: 20
-  field_number: '36'
+  field_number: "36"

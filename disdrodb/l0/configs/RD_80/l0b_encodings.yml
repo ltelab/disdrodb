@@ -1,127 +1,127 @@
 sensor_status:
-    dtype: uint8
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
-    _FillValue: 255
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
 interval:
-    dtype: uint8
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
-    _FillValue: 255
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
 RI:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 RA:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 RAT:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 W:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 Wg:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 Z:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 ZdB:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 EK:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 EF:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 N0:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 slope:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 Dmax:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes: 5000
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
 ND:
-    dtype: float32
-    zlib: true
-    complevel: 3
-    shuffle: true
-    fletcher32: false
-    contiguous: false
-    chunksizes:
-      - 5000
-      - 20
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes:
+    - 5000
+    - 20
 raw_drop_number:
   dtype: uint16
   zlib: true
@@ -131,5 +131,5 @@ raw_drop_number:
   contiguous: false
   _FillValue: 65535
   chunksizes:
-  - 5000
-  - 20
+    - 5000
+    - 20

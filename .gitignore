@@ -44,6 +44,10 @@ share/python-wheels/
 MANIFEST
 _version.py
 
+# Ignore specific files and directories
+docs/source/tutorials/
+docs/build/
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -160,12 +164,3 @@ cython_debug/
 train_interactive.py
 tmp_fig.py
 log.txt
-
-# Ignore specific files
-docs\source\reader_preparation.ipynb
-\docs\source\reader_preparation.ipynb
-/docs/source/csv/*.csv
-
-# Ignore specific directories
-/disdrodb/tests/temp/
-disdrodb-dev

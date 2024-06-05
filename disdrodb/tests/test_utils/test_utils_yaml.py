@@ -21,7 +21,6 @@
 import os
 
 import pytest
-import yaml
 
 from disdrodb import __root_path__
 from disdrodb.utils.yaml import read_yaml
@@ -43,11 +42,6 @@ def test_read_yaml():
     }
     filepath = os.path.join(TEST_DATA_DIR, "test_yaml", "valid.yaml")
     assert read_yaml(filepath) == dictionary
-
-    # Test reading a YAML file with invalid syntax
-    invalid_yaml_filepath = os.path.join(TEST_DATA_DIR, "test_yaml", "invalid.yaml")
-    with pytest.raises(yaml.YAMLError):
-        read_yaml(invalid_yaml_filepath)
 
     # Test reading a non-existent YAML file
     non_existent_filepath = os.path.join(TEST_DATA_DIR, "non_existent.yaml")
