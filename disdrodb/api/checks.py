@@ -323,7 +323,7 @@ def check_valid_campaign_dir(campaign_dir):
 
     Used to check validity of ``raw_dir`` and ``processed_dir``.
 
-    The path must be ``*/DISDRODB/<Raw/Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>``
+    The path must be ``/DISDRODB/<Raw/Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
     """
     last_component = os.path.basename(campaign_dir)
     tree_components = infer_disdrodb_tree_path_components(campaign_dir)

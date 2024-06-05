@@ -26,7 +26,7 @@ def get_dataframe_start_end_time(df: pd.DataFrame):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe
 
     Returns

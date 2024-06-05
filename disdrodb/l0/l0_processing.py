@@ -385,38 +385,29 @@ def run_l0a(
         The path should have the following structure: ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         For testing purposes, this function exceptionally accepts also a directory path simply ending
         with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
-
     station_name : str
-    The name of the station.
-
+        The name of the station.
     glob_patterns : str
         Glob pattern to search for data files in ``<raw_dir>/data/<station_name>``.
-
     column_names : list
         Column names of the raw text file.
-
     reader_kwargs : dict
         Arguments for Pandas ``read_csv`` function to open the text file.
-
     df_sanitizer_fun : callable, optional
         Sanitizer function to format the DataFrame into DISDRODB L0A standard.
         Default is ``None``.
-
     parallel : bool, optional
         If ``True``, process the files simultaneously in multiple processes.
         The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
         If ``False``, process the files sequentially in a single process.
         Default is ``False``.
-
     verbose : bool, optional
         If ``True``, print detailed processing information to the terminal.
         Default is ``False``.
-
     force : bool, optional
         If ``True``, overwrite existing data in destination directories.
         If ``False``, raise an error if data already exists in destination directories.
         Default is ``False``.
-
     debugging_mode : bool, optional
         If ``True``, reduce the amount of data to process.
         Processes only the first 100 rows of 3 raw data files.
@@ -519,25 +510,20 @@ def run_l0b(
         - The ``<CAMPAIGN_NAME>`` must semantically match between:
             - the ``raw_dir`` and ``processed_dir`` directory paths;
             - with the key ``campaign_name`` within the metadata YAML files.
-
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
         The path should have the following structure: ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
         For testing purposes, this function exceptionally accepts also a directory path simply ending
         with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
-
     station_name : str
         The name of the station.
-
     force : bool, optional
         If ``True``, overwrite existing data in destination directories.
         If ``False``, raise an error if data already exists in destination directories.
         Default is ``False``.
-
     verbose : bool, optional
         If ``True``, print detailed processing information to the terminal.
         Default is ``True``.
-
     parallel : bool, optional
         If ``True``, process the files simultaneously in multiple processes.
         The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
@@ -545,7 +531,6 @@ def run_l0b(
         Also, ensure to set the ``HDF5_USE_FILE_LOCKING`` environment variable to ``False``.
         If ``False``, process the files sequentially in a single process.
         Default is ``False``.
-
     debugging_mode : bool, optional
         If ``True``, reduce the amount of data to process.
         Only the first 3 raw data files will be processed.

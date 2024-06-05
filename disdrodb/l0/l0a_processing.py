@@ -159,7 +159,7 @@ def remove_rows_with_missing_time(df: pd.DataFrame, verbose: bool = False):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     verbose : bool
         Whether to verbose the processing. The default is ``False``.
@@ -193,7 +193,7 @@ def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     verbose : bool
         Whether to verbose the processing. The default is ``False``.
@@ -251,7 +251,7 @@ def remove_issue_timesteps(df, issue_dict, verbose=False):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     issue_dict : dict
         Issue dictionary.
@@ -293,7 +293,7 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -330,7 +330,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -361,7 +361,7 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -456,7 +456,7 @@ def replace_nan_flags(df, sensor_name, verbose=False):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -491,7 +491,7 @@ def set_nan_outside_data_range(df, sensor_name, verbose=False):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -530,7 +530,7 @@ def set_nan_invalid_values(df, sensor_name, verbose=False):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     sensor_name : str
         Name of the sensor.
@@ -679,7 +679,7 @@ def write_l0a(
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     filepath : str
         Output file path.

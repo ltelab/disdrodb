@@ -72,7 +72,7 @@ def print_df_column_names(df: pd.DataFrame) -> None:
 
     Parameters
     ----------
-    df : dataframe
+    df : pandas.DataFrame
         The dataframe.
     """
     for i, column in enumerate(df.columns):
@@ -106,7 +106,7 @@ def print_df_with_any_nan_rows(df: pd.DataFrame) -> None:
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     """
     df_bool_is_nan = df.isna()
@@ -123,7 +123,7 @@ def print_df_first_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: bool
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe.
     n : int, optional
         Number of row. The default is 5.
@@ -178,7 +178,7 @@ def print_df_summary_stats(
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe
     column_indices : Union[int,slice,list], optional
         Column indices. If ``None``, select all columns.
@@ -211,7 +211,7 @@ def print_df_summary_stats(
 
 
 def print_df_columns_unique_values(
-    df: pd.DataFrame,
+    df: pandas.DataFrame,
     column_indices: Optional[Union[int, slice, list]] = None,
     print_column_names: bool = True,
 ) -> None:
@@ -219,7 +219,7 @@ def print_df_columns_unique_values(
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe
     column_indices : Union[int,slice,list], optional
         Column indices. If ``None``, select all columns.
@@ -247,7 +247,7 @@ def get_df_columns_unique_values_dict(
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         Input dataframe
     column_indices : Union[int,slice,list], optional
         Column indices. If ``None``, select all columns.
@@ -274,7 +274,8 @@ def str_is_number(string: str) -> bool:
 
     Parameters
     ----------
-    string : Input string.
+    string : str
+        Input string.
 
 
     Returns
@@ -294,7 +295,8 @@ def str_is_integer(string: str) -> bool:
 
     Parameters
     ----------
-    string : Input string.
+    string : str
+        Input string.
 
 
     Returns
@@ -314,7 +316,7 @@ def str_has_decimal_digits(string: str) -> bool:
 
     Parameters
     ----------
-    string :
+    string : str
         Input string.
 
 
@@ -488,7 +490,7 @@ def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
 
     Parameters
     ----------
-    df : pd.DataFrame
+    df : pandas.DataFrame
         The dataframe to analyse.
     sensor_name : str
         name of the sensor.

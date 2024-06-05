@@ -41,11 +41,12 @@ def unzip_file(filepath: str, dest_path: str) -> None:
     """Unzip a file into a directory.
 
     Parameters
-    ----------
+    -----------
     filepath : str
         Path of the file to unzip.
     dest_path : str
         Path of the destination directory.
+    
     """
     with zipfile.ZipFile(filepath, "r") as zip_ref:
         zip_ref.extractall(dest_path)
@@ -55,7 +56,7 @@ def _zip_dir(dir_path: str) -> str:
     """Zip a directory into a file located in the same directory.
 
     Parameters
-    ----------
+    -----------
     dir_path : str
         Path of the directory to zip.
 

@@ -13,6 +13,8 @@
 import os
 import shutil
 import sys
+import inspect
+import disdrodb
 
 # sys.path.insert(0, os.path.abspath(".."))
 sys.path.insert(0, os.path.abspath("../.."))
@@ -55,7 +57,6 @@ extensions = [
     "sphinx.ext.autosummary",
     # "myst_parser",
     "nbsphinx",
-    "sphinxcontrib.youtube",
 ]
 
 # Set up mapping for other projects' docs
@@ -66,6 +67,7 @@ intersphinx_mapping = {
     "python": ("https://docs.python.org/3/", None),
     "xarray": ("https://docs.xarray.dev/en/stable/", None),
     "dask": ("https://docs.dask.org/en/stable/", None),
+    "pydantic": ("https://docs.pydantic.dev/latest/", None)
 }
 always_document_param_types = True
 
@@ -79,6 +81,9 @@ nitpick_ignore = [
     ("py:class", "All"),
     ("py:class", "t.Any"),
     ("py:class", "t.Iterable"),
+    ("py:class", "sorted"),
+    ("py:class", "dictionary"),
+    
 ]
 nitpick_ignore_regex = [
     ("py:class", r".*[cC]allable"),
@@ -145,8 +150,65 @@ def run_apidoc(_):
 
     module_dir = os.path.join(cur_dir, "..", "..", "disdrodb")
     output_dir = os.path.join(cur_dir, "api")
-    main(["-f", "-o", output_dir, module_dir])
+    exclude = [os.path.join(module_dir, "tests")]
+    main(["-f", "-o", output_dir, module_dir, *exclude])
 
 
 def setup(app):
     app.connect("builder-inited", run_apidoc)
+
+
+# Function to resolve source code links for `linkcode`
+# adapted from NumPy, Pandas implementations
+def linkcode_resolve(domain, info):
+    """
+    Determine the URL corresponding to Python object
+    """
+    if domain != "py":
+        return None
+
+    modname = info["module"]
+    fullname = info["fullname"]
+
+    submod = sys.modules.get(modname)
+    if submod is None:
+        return None
+
+    obj = submod
+    for part in fullname.split("."):
+        try:
+            obj = getattr(obj, part)
+        except AttributeError:
+            return None
+
+    try:
+        fn = inspect.getsourcefile(inspect.unwrap(obj))
+    except TypeError:
+        try:  # property
+            fn = inspect.getsourcefile(inspect.unwrap(obj.fget))
+        except (AttributeError, TypeError):
+            fn = None
+    if not fn:
+        return None
+
+    try:
+        source, lineno = inspect.getsourcelines(obj)
+    except TypeError:
+        try:  # property
+            source, lineno = inspect.getsourcelines(obj.fget)
+        except (AttributeError, TypeError):
+            lineno = None
+    except OSError:
+        lineno = None
+
+    if lineno:
+        linespec = f"#L{lineno}-L{lineno + len(source) - 1}"
+    else:
+        linespec = ""
+
+    fn = os.path.relpath(fn, start=os.path.dirname(disdrodb.__file__))
+
+    if "+" in disdrodb.__version__:
+        return f"https://github.com/ltelab/disdrodb/blob/main/disdrodb/{fn}{linespec}"
+    else:
+        return f"https://github.com/ltelab/disdrodb/blob/" f"v{disdrodb.__version__}/disdrodb/{fn}{linespec}"

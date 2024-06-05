@@ -52,7 +52,7 @@ def close_logger(logger: logger) -> None:
 
     Parameters
     ----------
-    logger : logger
+    logger : logging.Logger
         Logger object.
     """
     handlers = logger.handlers[:]
@@ -70,7 +70,7 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
 
     Parameters
     ----------
-    logger : logger
+    logger : logging.Logger
         Log object.
     msg : str
         Message.
@@ -88,7 +88,7 @@ def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
 
     Parameters
     ----------
-    logger : logger
+    logger : logging.Logger
         Log object.
     msg : str
         Message.
@@ -106,7 +106,7 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
 
     Parameters
     ----------
-    logger : logger
+    logger : logging.Logger
         Log object.
     msg : str
         Message.
@@ -124,7 +124,7 @@ def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
 
     Parameters
     ----------
-    logger : logger
+    logger : logging.Logger
         Log object.
     msg : str
         Message.
@@ -190,11 +190,11 @@ def define_summary_log(list_logs):
 
     The summary log select only logged lines with ``root``, ``WARNING`` and ``ERROR`` keywords.
     The problems log file select only logged lines with the ``ERROR`` keyword.
-    The two log files are saved in the parent directory of the input list_logs.
+    The two log files are saved in the parent directory of the input ``list_logs``.
 
     The function assume that the files logs are located at:
 
-        ``/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>/logs/<product>/<station_name>/*.log``
+        ``/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>/logs/<product>/<station_name>/<filename>.log``
 
     """
     # LogCaptureHandler of pytest does not have baseFilename attribute, so it returns None

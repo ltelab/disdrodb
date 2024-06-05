@@ -93,7 +93,7 @@ def read_config_file(sensor_name: str, product: str, filename: str) -> dict:
     return dictionary
 
 
-def available_sensor_names(product: str = "L0A") -> sorted:
+def available_sensor_names(product: str = "L0A") -> list:
     """Get available names of sensors.
 
     Returns
