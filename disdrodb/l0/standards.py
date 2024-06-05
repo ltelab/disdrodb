@@ -359,7 +359,7 @@ def set_disdrodb_attrs(ds, product: str):
 
     Parameters
     ----------
-    ds : xarray dataset.
+    ds : xarray.Dataset
         Dataset
     product: str
         DISDRODB product.

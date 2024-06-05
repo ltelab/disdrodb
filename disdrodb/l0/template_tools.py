@@ -141,7 +141,7 @@ def print_df_random_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: boo
 
     Parameters
     ----------
-    df : dataframe
+    df : pandas.DataFrame
         The dataframe.
     n : int, optional
         The number of row to print. The default is 5.
