@@ -120,54 +120,6 @@ def define_campaign_dir(
     return str(campaign_dir)
 
 
-def define_station_dir(
-    product,
-    data_source,
-    campaign_name,
-    station_name,
-    base_dir=None,
-    check_exists=False,
-):
-    """Return the station data directory in the DISDRODB infrastructure.
-
-    Parameters
-    ----------
-    product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
-    data_source : str
-        The data source.
-    campaign_name : str
-        The campaign name.
-    station_name : str
-        The station name.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
-
-    Returns
-    -------
-    station_dir : str
-        Station data directory path
-    """
-    base_dir = get_base_dir(base_dir)
-    campaign_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exists=check_exists,
-    )
-    if product.upper() == "RAW":
-        station_dir = os.path.join(campaign_dir, "data", station_name)
-    else:
-        station_dir = os.path.join(campaign_dir, product, station_name)
-    if check_exists:
-        check_directory_exists(station_dir)
-    return str(station_dir)
-
-
 def define_metadata_dir(
     product,
     data_source,
@@ -353,6 +305,113 @@ def define_config_dir(product):
 #### Directory/Filepaths L0A and L0B products
 
 
+def define_data_dir(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    check_exists=False,
+):
+    """Return the station data directory in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    station_name : str
+        The station name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default ``False``.
+
+    Returns
+    -------
+    station_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    campaign_dir = get_disdrodb_path(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=check_exists,
+    )
+    if product.upper() == "RAW":
+        station_dir = os.path.join(campaign_dir, "data", station_name)
+    else:
+        station_dir = os.path.join(campaign_dir, product, station_name)
+    if check_exists:
+        check_directory_exists(station_dir)
+    return str(station_dir)
+
+
+def define_product_dir(campaign_dir: str, product: str) -> str:
+    # - Raw: <campaign>/data/<...>
+    # - Processed: <campaign>/L0A/L0B>
+    # TODO: IN FUTURE with station_name --> campaign_dir/station_name/product ! ()
+    if product.upper() == "RAW":
+        product_dir = os.path.join(campaign_dir, "data")
+    else:
+        product_dir = os.path.join(campaign_dir, product)
+    return product_dir
+
+
+def define_station_dir(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    check_exists=False,
+):  # TODO: IN FUTURE without product --> campaign_dir/station_name/product !
+    """Return the station data directory in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    station_name : str
+        The station name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default ``False``.
+
+    Returns
+    -------
+    station_dir : str
+        Station data directory path
+    """
+    base_dir = get_base_dir(base_dir)
+    campaign_dir = get_disdrodb_path(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=check_exists,
+    )
+    if product.upper() == "RAW":
+        station_dir = os.path.join(campaign_dir, "data", station_name)
+    else:
+        station_dir = os.path.join(campaign_dir, product, station_name)
+    if check_exists:
+        check_directory_exists(station_dir)
+    return str(station_dir)
+
+
 def define_l0a_station_dir(processed_dir: str, station_name: str) -> str:
     """Define L0A directory.
 
@@ -388,6 +447,25 @@ def define_l0b_station_dir(processed_dir: str, station_name: str) -> str:
         Path of the L0B directory
     """
     station_dir = os.path.join(processed_dir, "L0B", station_name)
+    return station_dir
+
+
+def define_l1_station_dir(processed_dir: str, station_name: str) -> str:
+    """Define L1 directory.
+
+    Parameters
+    ----------
+    processed_dir : str
+        Path of the processed directory
+    station_name : int
+        Name of the station
+
+    Returns
+    -------
+    str
+        Path of the L1 directory
+    """
+    station_dir = os.path.join(processed_dir, "L1", station_name)
     return station_dir
 
 
@@ -503,3 +581,107 @@ def define_l0b_filepath(ds: xr.Dataset, processed_dir: str, station_name: str, l
 
 
 ####--------------------------------------------------------------------------.
+
+
+def define_l1_filename(ds, processed_dir, station_name: str) -> str:
+    """Define L1 file name.
+
+    Parameters
+    ----------
+    ds  : xarray.Dataset
+        L1 xarray Dataset
+    processed_dir : str
+        Path of the processed directory
+    station_name : str
+        Name of the station
+
+    Returns
+    -------
+    str
+        L0B file name.
+    """
+    from disdrodb.l0.standards import PRODUCT_VERSION
+    from disdrodb.utils.xarray import get_dataset_start_end_time
+
+    starting_time, ending_time = get_dataset_start_end_time(ds)
+    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
+    version = PRODUCT_VERSION
+    filename = f"L1.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    return filename
+
+
+def define_l2e_filename(ds, processed_dir, station_name: str) -> str:
+    """Define L2 file name.
+
+    Parameters
+    ----------
+    ds  : xarray.Dataset
+        L1 xarray Dataset
+    processed_dir : str
+        Path of the processed directory
+    station_name : str
+        Name of the station
+
+    Returns
+    -------
+    str
+        L0B file name.
+    """
+    from disdrodb.l0.standards import PRODUCT_VERSION
+    from disdrodb.utils.xarray import get_dataset_start_end_time
+
+    starting_time, ending_time = get_dataset_start_end_time(ds)
+    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
+    version = PRODUCT_VERSION
+    filename = f"L2E.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    return filename
+
+
+def define_l1_filepath(ds: xr.Dataset, processed_dir: str, station_name: str) -> str:
+    """Define L1 file path.
+
+    Parameters
+    ----------
+    ds  : xarray.Dataset
+        L1 xarray Dataset.
+    processed_dir : str
+        Path of the processed directory.
+    station_name : str
+        ID of the station
+
+    Returns
+    -------
+    str
+        L0B file path.
+    """
+    station_dir = define_l1_station_dir(processed_dir, station_name)
+    filename = define_l1_filename(ds, processed_dir, station_name)
+    filepath = os.path.join(station_dir, filename)
+    return filepath
+
+
+def define_l2e_filepath(ds: xr.Dataset, processed_dir: str, station_name: str) -> str:
+    """Define L1 file path.
+
+    Parameters
+    ----------
+    ds  : xarray.Dataset
+        L1 xarray Dataset.
+    processed_dir : str
+        Path of the processed directory.
+    station_name : str
+        ID of the station
+
+    Returns
+    -------
+    str
+        L0B file path.
+    """
+    station_dir = os.path.join(processed_dir, "L2E", station_name)
+    filename = define_l2e_filename(ds, processed_dir, station_name)
+    filepath = os.path.join(station_dir, filename)
+    return filepath

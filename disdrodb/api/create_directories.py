@@ -272,17 +272,15 @@ def create_l0_directory_structure(
 
 def create_directory_structure(processed_dir, product, station_name, force):
     """Create directory structure for L0B and higher DISDRODB products."""
+    from disdrodb.api.io import get_required_product
+
     # Check inputs
     check_product(product)
     processed_dir = check_processed_dir(processed_dir=processed_dir)
-
     base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(processed_dir)
 
     # Determine required product
-    if product == "L0B":
-        required_product = "L0A"
-    else:
-        raise NotImplementedError("product {product} not yet implemented.")
+    required_product = get_required_product(product)
 
     # Check station is available in the previous product level
     check_station_has_data(

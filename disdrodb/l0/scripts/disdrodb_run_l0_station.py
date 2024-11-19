@@ -22,10 +22,10 @@ import click
 
 from disdrodb.l0.routines import (
     click_l0_archive_options,
-    click_l0_processing_options,
 )
 from disdrodb.utils.scripts import (
     click_base_dir_option,
+    click_processing_options,
     click_station_arguments,
     parse_base_dir,
 )
@@ -38,7 +38,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 @click.command()
 @click_station_arguments
-@click_l0_processing_options
+@click_processing_options
 @click_l0_archive_options
 @click_base_dir_option
 def disdrodb_run_l0_station(

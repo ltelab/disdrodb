@@ -167,7 +167,7 @@ def log_environment(tmp_path):
 
 def test_create_file_logger_paralle_false(log_environment):
     processed_dir, product, station_name, filename = log_environment
-    logger = create_file_logger(str(processed_dir), product, station_name, filename, parallel=False)
+    logger, logger_filepath = create_file_logger(str(processed_dir), product, station_name, filename, parallel=False)
 
     assert isinstance(logger, logging.Logger)
 
@@ -193,6 +193,6 @@ def test_create_file_logger_paralle_false(log_environment):
 
 def test_close_logger(log_environment):
     processed_dir, product, station_name, filename = log_environment
-    logger = create_file_logger(str(processed_dir), product, station_name, filename, parallel=False)
+    logger, logger_filepath = create_file_logger(str(processed_dir), product, station_name, filename, parallel=False)
     close_logger(logger)
     assert not logger.handlers

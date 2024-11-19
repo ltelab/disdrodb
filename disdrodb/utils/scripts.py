@@ -108,3 +108,71 @@ def click_base_dir_option(function: object):
         help="DISDRODB base directory",
     )(function)
     return function
+
+
+def click_stations_options(function: object):
+    """Click command line options for DISDRODB archive L0 processing.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.option(
+        "--data_sources",
+        type=str,
+        show_default=True,
+        default="",
+        help="DISDRODB data sources to process",
+    )(function)
+    function = click.option(
+        "--campaign_names",
+        type=str,
+        show_default=True,
+        default="",
+        help="DISDRODB campaign names to process",
+    )(function)
+    function = click.option(
+        "--station_names",
+        type=str,
+        show_default=True,
+        default="",
+        help="DISDRODB station names to process",
+    )(function)
+    return function
+
+
+def click_processing_options(function: object):
+    """Click command line default parameters for L0 processing options.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.option(
+        "-p",
+        "--parallel",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="Process files in parallel",
+    )(function)
+    function = click.option(
+        "-d",
+        "--debugging_mode",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="Switch to debugging mode",
+    )(function)
+    function = click.option("-v", "--verbose", type=bool, show_default=True, default=True, help="Verbose")(function)
+    function = click.option(
+        "-f",
+        "--force",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="Force overwriting",
+    )(function)
+    return function

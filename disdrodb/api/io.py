@@ -19,23 +19,103 @@
 """Routines tot extract information from the DISDRODB infrastructure."""
 
 import os
+from typing import Optional
 
 import numpy as np
 
 from disdrodb.api.checks import check_product
-from disdrodb.api.path import get_disdrodb_path
+from disdrodb.api.path import define_data_dir, define_product_dir, get_disdrodb_path
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import count_files, list_directories, list_files
 
 
+def get_required_product(product):
+    # Check input
+    check_product(product)
+    # Determine required product
+    requirement_dict = {
+        "L0B": "L0A",
+        "L0C": "L0B",
+        "L1": "L0B",  # TODO L1C in future
+        "L2E": "L1",
+        "L2M": "L2E",
+        "L2S": "L2M",  # TODO adapt
+    }
+    required_product = requirement_dict[product]
+    return required_product
+
+
+def _filter_filepaths(filepaths, debugging_mode):
+    """Filter out filepaths if ``debugging_mode=True``."""
+    if debugging_mode:
+        max_files = min(3, len(filepaths))
+        filepaths = filepaths[0:max_files]
+    return filepaths
+
+
+def get_filepaths(
+    data_source,
+    campaign_name,
+    station_name,
+    product,
+    debugging_mode: bool = False,
+    base_dir: Optional[str] = None,
+):
+    """Retrieve DISDRODB product files for a give station.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    station_name : str
+        ID of the station
+    debugging_mode : bool, optional
+        If ``True``, it select maximum 3 files for debugging purposes.
+        The default is ``False``.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    Returns
+    -------
+    filepaths : list
+        List of file paths.
+
+    """
+    # Retrieve data directory
+    data_dir = define_data_dir(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=product,
+    )
+    # Define glob pattern
+    glob_pattern = "*.parquet" if product == "L0A" else "*.nc"
+
+    # Retrieve files
+    filepaths = list_files(data_dir, glob_pattern=glob_pattern, recursive=True)
+
+    # Filter out filepaths if debugging_mode=True
+    filepaths = _filter_filepaths(filepaths, debugging_mode=debugging_mode)
+
+    # If no file available, raise error
+    if len(filepaths) == 0:
+        msg = f"No {product} files are available in {data_dir}. Run {product} processing first."
+        raise ValueError(msg)
+
+    return filepaths
+
+
 def _get_list_stations_dirs(product, campaign_dir):
     # Get directory where data are stored
-    # - Raw: <campaign>/data/<...>
-    # - Processed: <campaign>/L0A/L0B>
-    if product.upper() == "RAW":
-        product_dir = os.path.join(campaign_dir, "data")
-    else:
-        product_dir = os.path.join(campaign_dir, product)
+    product_dir = define_product_dir(campaign_dir=campaign_dir, product=product)
     # Check if the data directory exists
     # - For a fresh disdrodb-data cloned repo, no "data" directories
     if not os.path.exists(product_dir):

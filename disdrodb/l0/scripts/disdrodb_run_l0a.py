@@ -21,18 +21,20 @@ from typing import Optional
 
 import click
 
-from disdrodb.l0.routines import (
-    click_l0_processing_options,
-    click_l0_stations_options,
+from disdrodb.utils.scripts import (
+    click_base_dir_option,
+    click_processing_options,
+    click_stations_options,
+    parse_arg_to_list,
+    parse_base_dir,
 )
-from disdrodb.utils.scripts import click_base_dir_option, parse_arg_to_list, parse_base_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click_l0_stations_options
-@click_l0_processing_options
+@click_stations_options
+@click_processing_options
 @click_base_dir_option
 def disdrodb_run_l0a(
     # L0 disdrodb stations options

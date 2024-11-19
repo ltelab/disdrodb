@@ -379,6 +379,28 @@ def set_disdrodb_attrs(ds, product: str):
     else:
         ds.attrs["featureType"] = "trajectory"
 
+    # Update DISDRODDB attributes
+    ds = update_disdrodb_attrs(ds=ds, product=product)
+    return ds
+
+
+def update_disdrodb_attrs(ds, product: str):
+    """Add DISDRODB processing information to the netCDF global attributes.
+
+    It assumes stations metadata are already added the dataset.
+
+    Parameters
+    ----------
+    ds : xarray dataset.
+        Dataset
+    product: str
+        DISDRODB product.
+
+    Returns
+    -------
+    xarray dataset
+        Dataset.
+    """
     # Add time_coverage_start and time_coverage_end
     ds.attrs["time_coverage_start"] = str(ds["time"].data[0])
     ds.attrs["time_coverage_end"] = str(ds["time"].data[-1])
@@ -392,7 +414,6 @@ def set_disdrodb_attrs(ds, product: str):
     ds.attrs["disdrodb_product_version"] = PRODUCT_VERSION
     ds.attrs["disdrodb_software_version"] = SOFTWARE_VERSION
     ds.attrs["disdrodb_product"] = product
-
     return ds
 
 

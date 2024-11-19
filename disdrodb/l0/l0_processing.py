@@ -19,7 +19,6 @@
 """Implement DISDRODB L0 processing."""
 
 import datetime
-import functools
 import logging
 import os
 import shutil
@@ -55,6 +54,7 @@ from disdrodb.l0.io import (
 )
 from disdrodb.l0.l0_reader import get_station_reader_function
 from disdrodb.metadata import read_station_metadata
+from disdrodb.utils.decorator import delayed_if_parallel
 from disdrodb.utils.directories import list_files
 
 # Logger
@@ -73,28 +73,7 @@ logger = logging.getLogger(__name__)
 #### Creation of L0A and L0B Single Station File
 
 
-def _delayed_based_on_kwargs(function):
-    """Decorator to make the function delayed if its ``parallel`` argument is ``True``."""
-
-    @functools.wraps(function)
-    def wrapper(*args, **kwargs):
-        # Check if it must be a delayed function
-        parallel = kwargs.get("parallel")
-        # If parallel is True
-        if parallel:
-            # Enforce verbose to be False
-            kwargs["verbose"] = False
-            # Define the delayed task
-            result = dask.delayed(function)(*args, **kwargs)
-        else:
-            # Else run the function
-            result = function(*args, **kwargs)
-        return result
-
-    return wrapper
-
-
-@_delayed_based_on_kwargs
+@delayed_if_parallel
 def _generate_l0a(
     filepath,
     processed_dir,
@@ -118,17 +97,13 @@ def _generate_l0a(
     if issue_dict is None:
         issue_dict = {}
     filename = os.path.basename(filepath)
-    logger = create_file_logger(
+    logger, logger_filepath = create_file_logger(
         processed_dir=processed_dir,
         product="L0A",
         station_name=station_name,
         filename=filename,
         parallel=parallel,
     )
-
-    # Define logger filepath
-    # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None
-    logger_filepath = logger.handlers[0].baseFilename if not os.environ.get("PYTEST_CURRENT_TEST") else None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -199,16 +174,13 @@ def _generate_l0b(
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
-    logger = create_file_logger(
+    logger, logger_filepath = create_file_logger(
         processed_dir=processed_dir,
         product="L0B",
         station_name=station_name,
         filename=filename,
         parallel=parallel,
     )
-    # Define logger filepath
-    # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None
-    logger_filepath = logger.handlers[0].baseFilename if not os.environ.get("PYTEST_CURRENT_TEST") else None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -273,17 +245,13 @@ def _generate_l0b_from_nc(
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
-    logger = create_file_logger(
+    logger, logger_filepath = create_file_logger(
         processed_dir=processed_dir,
         product="L0B",
         station_name=station_name,
         filename=filename,
         parallel=parallel,
     )
-
-    # Define logger filepath
-    # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None
-    logger_filepath = logger.handlers[0].baseFilename if not os.environ.get("PYTEST_CURRENT_TEST") else None
 
     ##------------------------------------------------------------------------.
     # Log start processing
@@ -782,7 +750,7 @@ def run_l0b_concat(processed_dir, station_name, verbose=False):
 
     # Create logger
     filename = f"concatenatation_{station_name}"
-    logger = create_file_logger(
+    logger, logger_filepath = create_file_logger(
         processed_dir=processed_dir,
         product="L0B",
         station_name="",  # locate outside the station directory

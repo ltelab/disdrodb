@@ -150,7 +150,7 @@ def check_product(product):
     """Check DISDRODB product."""
     if not isinstance(product, str):
         raise TypeError("`product` must be a string.")
-    valid_products = ["RAW", "L0A", "L0B"]
+    valid_products = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M", "L2S"]
     if product.upper() not in valid_products:
         msg = f"Valid `products` are {valid_products}."
         logger.error(msg)

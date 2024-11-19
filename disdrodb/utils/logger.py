@@ -44,7 +44,11 @@ def create_file_logger(processed_dir, product, station_name, filename, parallel)
     handler.setFormatter(logging.Formatter(format_type))
     logger.addHandler(handler)
     logger.setLevel(logging.DEBUG)
-    return logger
+
+    # Define logger filepath
+    # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None
+    logger_filepath = logger.handlers[0].baseFilename if not os.environ.get("PYTEST_CURRENT_TEST") else None
+    return logger, logger_filepath
 
 
 def close_logger(logger: logger) -> None:
