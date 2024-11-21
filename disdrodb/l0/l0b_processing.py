@@ -32,17 +32,19 @@ from disdrodb.l0.check_standards import (
 from disdrodb.l0.standards import (
     # get_valid_coordinates_names,
     get_bin_coords_dict,
-    get_coords_attrs_dict,
     get_data_range_dict,
     get_dims_size_dict,
     get_l0b_cf_attrs_dict,
     get_l0b_encodings_dict,
     get_raw_array_dims_order,
     get_raw_array_nvalues,
-    get_time_encoding,
+)
+from disdrodb.utils.attrs import (
+    set_coordinate_attributes,
     set_disdrodb_attrs,
 )
 from disdrodb.utils.directories import create_directory, remove_if_exists
+from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.logger import (
     # log_warning,
     # log_debug,
@@ -329,28 +331,13 @@ def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     return ds
 
 
-def _set_attrs_dict(ds, attrs_dict):
-    for var in attrs_dict:
-        if var in ds:
-            ds[var].attrs.update(attrs_dict[var])
-    return ds
-
-
-def _set_coordinate_attributes(ds):
-    # Get attributes dictionary
-    attrs_dict = get_coords_attrs_dict()
-    # Set attributes
-    ds = _set_attrs_dict(ds, attrs_dict)
-    return ds
-
-
 def _set_dataset_attrs(ds, sensor_name):
     """Set variable and coordinates attributes."""
     # - Add netCDF variable attributes
     # --> Attributes: long_name, units, descriptions, valid_min, valid_max
     ds = _set_variable_attributes(ds=ds, sensor_name=sensor_name)
     # - Add netCDF coordinate attributes
-    ds = _set_coordinate_attributes(ds=ds)
+    ds = set_coordinate_attributes(ds=ds)
     #  - Set DISDRODB global attributes
     ds = set_disdrodb_attrs(ds=ds, product="L0B")
     return ds
@@ -479,6 +466,9 @@ def create_l0b_from_l0a(
 
 def finalize_dataset(ds, sensor_name):
     """Finalize DISDRODB L0B Dataset."""
+    # Ensure sorted by time
+    ds = ds.sortby("time")
+
     # Add dataset CRS coordinate
     ds = add_dataset_crs_coords(ds)
 
@@ -496,56 +486,8 @@ def finalize_dataset(ds, sensor_name):
     return ds
 
 
-def sanitize_encodings_dict(encoding_dict: dict, ds: xr.Dataset) -> dict:
-    """Ensure chunk size to be smaller than the array shape.
-
-    Parameters
-    ----------
-    encoding_dict : dict
-        Dictionary containing the encoding to write DISDRODB L0B netCDFs.
-    ds  : xarray.Dataset
-        Input dataset.
-
-    Returns
-    -------
-    dict
-        Encoding dictionary.
-    """
-    for var in ds.data_vars:
-        shape = ds[var].shape
-        chunks = encoding_dict[var]["chunksizes"]
-        if chunks is not None:
-            chunks = [shape[i] if chunks[i] > shape[i] else chunks[i] for i in range(len(chunks))]
-            encoding_dict[var]["chunksizes"] = chunks
-    return encoding_dict
-
-
-def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
-    """Coerce the dataset arrays to have the chunk size specified in the encoding dictionary.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        Input xarray dataset
-    encoding_dict : dict
-        Dictionary containing the encoding to write the xarray dataset as a netCDF.
-
-    Returns
-    -------
-    xr.Dataset
-        Output xarray dataset
-    """
-    for var in ds.data_vars:
-        chunks = encoding_dict[var].pop("chunksizes")
-        dims = list(ds[var].dims)
-        chunks_dict = dict(zip(dims, chunks))
-        if chunks is not None:
-            ds[var] = ds[var].chunk(chunks_dict)
-    return ds
-
-
-def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
-    """Apply the encodings to the xarray Dataset.
+def set_l0b_encodings(ds: xr.Dataset, sensor_name: str):
+    """Apply the L0B encodings to the xarray Dataset.
 
     Parameters
     ----------
@@ -559,24 +501,8 @@ def set_encodings(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     xr.Dataset
         Output xarray dataset.
     """
-    # Get encoding dictionary
     encoding_dict = get_l0b_encodings_dict(sensor_name)
-    encoding_dict = {k: encoding_dict[k] for k in ds.data_vars}
-
-    # Ensure chunksize smaller than the array shape
-    encoding_dict = sanitize_encodings_dict(encoding_dict, ds)
-
-    # Rechunk variables for fast writing !
-    # - This pop the chunksize argument from the encoding dict !
-    ds = rechunk_dataset(ds, encoding_dict)
-
-    # Set time encoding
-    ds["time"].encoding.update(get_time_encoding())
-
-    # Set the variable encodings
-    for var in ds.data_vars:
-        ds[var].encoding.update(encoding_dict[var])
-
+    ds = set_encodings(ds=ds, encoding_dict=encoding_dict)
     return ds
 
 
@@ -608,7 +534,7 @@ def write_l0b(ds: xr.Dataset, filepath: str, force=False) -> None:
     sensor_name = ds.attrs.get("sensor_name")
 
     # Set encodings
-    ds = set_encodings(ds=ds, sensor_name=sensor_name)
+    ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
 
     # Write netcdf
     ds.to_netcdf(filepath, engine="netcdf4")

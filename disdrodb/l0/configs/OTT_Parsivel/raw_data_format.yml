@@ -294,7 +294,7 @@ raw_drop_average_velocity:
   data_range: null
   nan_flags: null
   dimension_order:
-    - velocity_bin_center
+    - diameter_bin_center
   n_values: 32
   field_number: "91"
 raw_drop_number:

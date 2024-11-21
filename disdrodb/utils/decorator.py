@@ -17,8 +17,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB decorators."""
-import dask 
-import functools 
+import functools
+
+import dask
 
 
 def delayed_if_parallel(function):
@@ -51,7 +52,7 @@ def single_threaded_if_parallel(function):
         parallel = kwargs.get("parallel")
         # If parallel is True
         if parallel:
-            # Call function with single thread 
+            # Call function with single thread
             # with dask.config.set(scheduler='single-threaded'):
             with dask.config.set(scheduler="synchronous"):
                 result = function(*args, **kwargs)

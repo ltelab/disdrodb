@@ -28,8 +28,17 @@ from trollsift import Parser
 ########################
 #### FNAME PATTERNS ####
 ########################
-DISDRODB_FNAME_PATTERN = (
+DISDRODB_FNAME_L0_PATTERN = (
     "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    ".{version:s}.{data_format:s}"
+)
+DISDRODB_FNAME_L2E_PATTERN = (
+    "{product:s}.{accumulation_acronym}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    ".{version:s}.{data_format:s}"
+)
+
+DISDRODB_FNAME_L2M_PATTERN = (
+    "{product:s}_{subproduct:s}.{accumulation_acronym}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
 
@@ -41,9 +50,17 @@ DISDRODB_FNAME_PATTERN = (
 
 def _parse_filename(filename):
     """Parse the filename with trollsift."""
-    # Retrieve information from filename
-    p = Parser(DISDRODB_FNAME_PATTERN)
-    info_dict = p.parse(filename)
+    if filename.startswith("L0") or filename.startswith("L1"):
+        p = Parser(DISDRODB_FNAME_L0_PATTERN)
+        info_dict = p.parse(filename)
+    elif filename.startswith("L2E"):
+        p = Parser(DISDRODB_FNAME_L2E_PATTERN)
+        info_dict = p.parse(filename)
+    elif filename.startswith("L2M"):
+        p = Parser(DISDRODB_FNAME_L2M_PATTERN)
+        info_dict = p.parse(filename)
+    else:
+        raise ValueError("Not a DISDRODB product file.")
     return info_dict
 
 
@@ -132,7 +149,7 @@ def get_start_end_time_from_filepaths(filepaths):
     """Return the start and end time of the specified files."""
     list_start_time = get_key_from_filepaths(filepaths, key="start_time")
     list_end_time = get_key_from_filepaths(filepaths, key="end_time")
-    return np.array(list_start_time), np.array(list_end_time)
+    return np.array(list_start_time).astype("M8[s]"), np.array(list_end_time).astype("M8[s]")
 
 
 ####--------------------------------------------------------------------------.

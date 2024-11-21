@@ -37,11 +37,14 @@ from disdrodb.api.create_directories import (
     create_l0_directory_structure,
 )
 from disdrodb.api.info import infer_path_info_dict
+from disdrodb.api.io import get_filepaths, get_required_product
 from disdrodb.api.path import (
     define_campaign_dir,
+    define_data_dir,
     define_l0a_filepath,
     define_l0b_filepath,
     define_l0b_station_dir,
+    define_l0c_filename,
     define_station_dir,
     get_disdrodb_path,
 )
@@ -53,8 +56,13 @@ from disdrodb.l0.io import (
     read_l0a_dataframe,
 )
 from disdrodb.l0.l0_reader import get_station_reader_function
+from disdrodb.l0.l0b_processing import set_l0b_encodings
+from disdrodb.l0.l0c_processing import (
+    create_daily_file,
+    get_files_per_days,
+)
 from disdrodb.metadata import read_station_metadata
-from disdrodb.utils.decorator import delayed_if_parallel
+from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
 from disdrodb.utils.directories import list_files
 
 # Logger
@@ -66,6 +74,7 @@ from disdrodb.utils.logger import (
     log_info,
     log_warning,
 )
+from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
 
@@ -307,6 +316,84 @@ def _generate_l0b_from_nc(
     return logger_filepath
 
 
+@delayed_if_parallel
+@single_threaded_if_parallel
+def _generate_l0c(
+    day,
+    filepaths,
+    data_dir,
+    processed_dir,  # TODO: REMOVE IN FUTURE
+    campaign_name,
+    station_name,
+    # Processing options
+    force,
+    verbose,
+    parallel,  # this is used only to initialize the correct logger !
+):
+    # -----------------------------------------------------------------.
+    # Define product name
+    product = "L0C"
+
+    # -----------------------------------------------------------------.
+    # Create file logger
+    # TODO: AVOID USE OF processed_dir
+    logger, logger_filepath = create_file_logger(
+        processed_dir=processed_dir,
+        product=product,
+        station_name=station_name,
+        filename=day,
+        parallel=parallel,
+    )
+
+    ##------------------------------------------------------------------------.
+    # Log start processing
+    msg = f"{product} processing for {day} has started."
+    log_info(logger, msg, verbose=verbose)
+
+    ##------------------------------------------------------------------------.
+    ### Core computation
+    try:
+        # Produce L0C dataset
+        ds = create_daily_file(day=day, filepaths=filepaths)
+
+        # Write L0C netCDF4 dataset
+        if ds["time"].size > 1:
+
+            # Get sensor name from dataset
+            sensor_name = ds.attrs.get("sensor_name")
+
+            # Set encodings
+            ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
+
+            # Define filepath
+            filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
+            filepath = os.path.join(data_dir, filename)
+
+            # Write to disk
+            write_product(ds, product=product, filepath=filepath, force=force)
+
+        ##--------------------------------------------------------------------.
+        # Clean environment
+        del ds
+
+        # Log end processing
+        msg = f"{product} processing for {day} has ended."
+        log_info(logger, msg, verbose=verbose)
+
+    ##--------------------------------------------------------------------.
+    # Otherwise log the error
+    except Exception as e:
+        error_type = str(type(e).__name__)
+        msg = f"{error_type}: {e}"
+        log_error(logger, msg, verbose=verbose)
+
+    # Close the file logger
+    close_logger(logger)
+
+    # Return the logger file path
+    return logger_filepath
+
+
 ####------------------------------------------------------------------------.
 #### Creation of L0A and L0B Single Station Files
 
@@ -463,21 +550,6 @@ def run_l0b(
 
     Parameters
     ----------
-    raw_dir : str
-        The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure: ``<...>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
-        Inside the ``raw_dir`` directory, it is required to adopt the following structure::
-
-            - ``/data/<station_name>/<raw_files>``
-            - ``/metadata/<station_name>.yml``
-
-        **Important points:**
-
-        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subdirectory.
-        - The ``campaign_name`` are expected to be UPPER CASE.
-        - The ``<CAMPAIGN_NAME>`` must semantically match between:
-            - the ``raw_dir`` and ``processed_dir`` directory paths;
-            - with the key ``campaign_name`` within the metadata YAML files.
     processed_dir : str
         The desired directory path for the processed DISDRODB L0A and L0B products.
         The path should have the following structure: ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
@@ -505,6 +577,7 @@ def run_l0b(
         Default is ``False``.
 
     """
+    # TODO: to be moved within run_l0b_station
     # -----------------------------------------------------------------.
     # Retrieve metadata
     attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
@@ -1025,6 +1098,148 @@ def run_l0b_concat_station(
         log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
         shutil.rmtree(station_dir)
         log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
+
+
+def run_l0c_station(
+    # Station arguments
+    data_source,
+    campaign_name,
+    station_name,
+    # Processing options
+    force: bool = False,
+    verbose: bool = True,
+    parallel: bool = True,
+    debugging_mode: bool = False,
+    base_dir: Optional[str] = None,
+):
+    """
+    Run the L0C processing of a specific DISDRODB station when invoked from the terminal.
+
+    This routine merge files together to generate daily files.
+    Duplicated timesteps are automatically dropped if their variable values coincides,
+    otherwise an error is raised.
+
+    This function is intended to be called through the ``disdrodb_run_l0c_station``
+    command-line interface.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    force : bool, optional
+        If ``True``, existing data in the destination directories will be overwritten.
+        If ``False`` (default), an error will be raised if data already exists in the destination directories.
+    verbose : bool, optional
+        If ``True`` (default), detailed processing information will be printed to the terminal.
+        If ``False``, less information will be displayed.
+    parallel : bool, optional
+        If ``True``, files will be processed in multiple processes simultaneously,
+        with each process using a single thread to avoid issues with the HDF/netCDF library.
+        If ``False`` (default), files will be processed sequentially in a single process,
+        and multi-threading will be automatically exploited to speed up I/O tasks.
+    debugging_mode : bool, optional
+        If ``True``, the amount of data processed will be reduced.
+        Only the first 3 files will be processed. By default, ``False``.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    """
+    # TODO: implement remove_l0b argument!
+
+    # Define product
+    product = "L0C"
+
+    # Define campaign processed dir
+    base_dir = get_base_dir(base_dir)
+
+    # Define output directory
+    data_dir = define_data_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # ------------------------------------------------------------------------.
+    # Start processing
+    if verbose:
+        t_i = time.time()
+        msg = f"{product} processing of station {station_name} has started."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+    # ------------------------------------------------------------------------.
+    # Create directory structure
+    # TODO: refactor to avoid processed_dir
+    processed_dir = get_disdrodb_path(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
+    )
+    create_directory_structure(
+        processed_dir=processed_dir,
+        product=product,
+        station_name=station_name,
+        force=force,
+    )
+
+    # -------------------------------------------------------------------------.
+    # List files to process
+    required_product = get_required_product(product)
+    filepaths = get_filepaths(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=required_product,
+        # Processing options
+        debugging_mode=debugging_mode,
+    )
+
+    # -------------------------------------------------------------------------.
+    # Retrieve dictionary with the required files for each day.
+    dict_days_files = get_files_per_days(filepaths)
+
+    # -----------------------------------------------------------------.
+    # Generate L0C files
+    # - Loop over the L0 netCDF files and generate L1 files.
+    # - If parallel=True, it does that in parallel using dask.delayed
+    list_tasks = [
+        _generate_l0c(
+            day=day,
+            filepaths=filepaths,
+            processed_dir=processed_dir,  # TODO: REMOVE IN FUTURE
+            data_dir=data_dir,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Processing options
+            force=force,
+            verbose=verbose,
+            parallel=parallel,
+        )
+        for day, filepaths in dict_days_files.items()
+    ]
+    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+
+    # -----------------------------------------------------------------.
+    # Define summary logs
+    define_summary_log(list_logs)
+
+    # ---------------------------------------------------------------------.
+    # End processing
+    if verbose:
+        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        msg = f"{product} processing of station {station_name} completed in {timedelta_str}"
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
 
 ####---------------------------------------------------------------------------.

@@ -275,5 +275,5 @@ def test_get_end_time_from_filepaths(valid_filepath):
 
 def test_get_start_end_time_from_filepaths(valid_filepath):
     start_time, end_time = get_start_end_time_from_filepaths(valid_filepath)
-    assert np.array_equal(start_time, np.array([START_TIME]))
-    assert np.array_equal(end_time, np.array([END_TIME]))
+    assert np.array_equal(start_time, np.array([START_TIME]).astype("M8[s]"))
+    assert np.array_equal(end_time, np.array([END_TIME]).astype("M8[s]"))

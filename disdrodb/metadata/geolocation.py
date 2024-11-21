@@ -17,41 +17,43 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Metadata tools to verify/complete geolocation information."""
-import requests
 import time
+
 import numpy as np
+import requests
 
 
 def infer_altitude(latitude, longitude, dem="aster30m"):
-    """Infer station altitude using ASTER DEM at 30m resolution. 
-    We use OpenTopoData API. 
-    
+    """Infer station altitude using ASTER DEM at 30m resolution.
+    We use OpenTopoData API.
+
     Please note:
     - Max 1000 calls per day
     - Max 100 locations per request.
     - Max 1 call per second
-    
-    Alternative global DEM: 
+
+    Alternative global DEM:
     dem = "srtm30"
     dem = "mapzen"
     dem = "aster30m"
-    
+
     https://www.opentopodata.org/api/
-    
+
     """
     import requests
+
     url = f"https://api.opentopodata.org/v1/{dem}?locations={latitude},{longitude}"
     r = requests.get(url)
 
     data = r.json()
     if data["status"] == "OK":
-        elevation = data['results'][0]['elevation']
-    else: 
+        elevation = data["results"][0]["elevation"]
+    else:
         raise ValueError("Altitude retrieval failed.")
     return elevation
 
 
-def infer_altitudes(lats, lons, dem='aster30m'):    
+def infer_altitudes(lats, lons, dem="aster30m"):
     # Check that lats and lons have the same length
     if len(lats) != len(lons):
         raise ValueError("Latitude and longitude arrays must have the same length.")
@@ -65,16 +67,16 @@ def infer_altitudes(lats, lons, dem='aster30m'):
 
     # Loop over the coordinates in blocks of max_locations
     for i in range(0, total_coords, max_locations):
-        
-        # Wait 2 seconds before another API request 
+
+        # Wait 2 seconds before another API request
         time.sleep(2)
-        
+
         # Get the block of coordinates
-        block_lats = lats[i:i + max_locations]
-        block_lons = lons[i:i + max_locations]
+        block_lats = lats[i : i + max_locations]
+        block_lons = lons[i : i + max_locations]
 
         # Create the list_coords string in the format "lat1,lon1|lat2,lon2|..."
-        list_coords = '|'.join([f"{lat},{lon}" for lat, lon in zip(block_lats, block_lons)])
+        list_coords = "|".join([f"{lat},{lon}" for lat, lon in zip(block_lats, block_lons)])
 
         # Define API URL
         url = f"https://api.opentopodata.org/v1/{dem}?locations={list_coords}&interpolation=nearest"
@@ -85,7 +87,7 @@ def infer_altitudes(lats, lons, dem='aster30m'):
 
         # Parse info
         if data.get("status") == "OK":
-            elevations.extend([result['elevation'] for result in data['results']])
+            elevations.extend([result["elevation"] for result in data["results"]])
         else:
             raise ValueError(f"Altitude retrieval failed for block starting at index {i}.")
     elevations = np.array(elevations).astype(float)

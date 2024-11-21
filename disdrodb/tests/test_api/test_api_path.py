@@ -60,7 +60,7 @@ def test_define_l0b_station_dir(processed_folder):
 
 
 def test_define_l0a_filepath(tmp_path):
-    from disdrodb.l0.standards import PRODUCT_VERSION
+    from disdrodb import PRODUCT_VERSION
 
     # Set variables
     product = "L0A"
@@ -96,7 +96,7 @@ def test_define_l0a_filepath(tmp_path):
 
 
 def test_define_l0b_filepath(tmp_path):
-    from disdrodb.l0.standards import PRODUCT_VERSION
+    from disdrodb import PRODUCT_VERSION
 
     # Set variables
 

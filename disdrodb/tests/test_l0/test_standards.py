@@ -33,7 +33,6 @@ from disdrodb.l0.standards import (
     get_l0a_encodings_dict,
     get_n_velocity_bins,
     get_nan_flags_dict,
-    get_time_encoding,
     get_valid_coordinates_names,
     get_valid_dimension_names,
     get_valid_names,
@@ -103,10 +102,6 @@ def test_get_valid_coordinates_names(sensor_name):
 @pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
 def test_get_valid_names(sensor_name):
     assert isinstance(get_valid_names(sensor_name), list)
-
-
-def test_get_time_encoding():
-    assert isinstance(get_time_encoding(), dict)
 
 
 def test_get_n_velocity_bins():

@@ -36,7 +36,7 @@ def get_required_product(product):
     requirement_dict = {
         "L0B": "L0A",
         "L0C": "L0B",
-        "L1": "L0B",  # TODO L1C in future
+        "L1": "L0C",
         "L2E": "L1",
         "L2M": "L2E",
         "L2S": "L2M",  # TODO adapt
@@ -58,6 +58,9 @@ def get_filepaths(
     campaign_name,
     station_name,
     product,
+    distribution=None,
+    sample_interval=None,
+    rolling=None,
     debugging_mode: bool = False,
     base_dir: Optional[str] = None,
 ):
@@ -73,8 +76,17 @@ def get_filepaths(
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    station_name : str
-        ID of the station
+    product : str
+        The name DISDRODB product.
+    sample_interval : int, optional
+        The sampling interval in seconds of the product.
+        It must be specified only for product L2E and L2M !
+    rolling : bool, optional
+        Whether the dataset has been resampled by aggregating or rolling.
+        It must be specified only for product L2E and L2M !
+    distribution : str
+        The model of the statistical distribution for the DSD.
+        It must be specified only for product L2M !
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
         The default is ``False``.
@@ -95,7 +107,13 @@ def get_filepaths(
         campaign_name=campaign_name,
         station_name=station_name,
         product=product,
+        # Option for L2E and L2M
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Options for L2M
+        distribution=distribution,
     )
+
     # Define glob pattern
     glob_pattern = "*.parquet" if product == "L0A" else "*.nc"
 
@@ -109,6 +127,9 @@ def get_filepaths(
     if len(filepaths) == 0:
         msg = f"No {product} files are available in {data_dir}. Run {product} processing first."
         raise ValueError(msg)
+
+    # Sort filepaths
+    filepaths = sorted(filepaths)
 
     return filepaths
 

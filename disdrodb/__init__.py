@@ -1,4 +1,5 @@
 import contextlib
+import importlib
 import os
 from importlib.metadata import PackageNotFoundError, version
 
@@ -17,6 +18,11 @@ from disdrodb.metadata.checks import (
     check_archive_metadata_compliance,
     check_archive_metadata_geolocation,
 )
+
+PRODUCT_VERSION = "V0"
+SOFTWARE_VERSION = "V" + importlib.metadata.version("disdrodb")
+CONVENTIONS = "CF-1.10, ACDD-1.3"
+
 
 __all__ = [
     "define_configs",

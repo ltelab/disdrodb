@@ -19,15 +19,15 @@
 """DISDRODB product writers."""
 
 import os
-# import datetime 
-import xarray as xr 
-from disdrodb.utils.directories import (
-    remove_if_exists, create_directory
-)
-from disdrodb.l0.standards import update_disdrodb_attrs # TODO: MAYBE MOVE HERE !
+
+# import datetime
+import xarray as xr
+
+from disdrodb.utils.attrs import set_disdrodb_attrs
+from disdrodb.utils.directories import create_directory, remove_if_exists
 
 
-def write_product(ds: xr.Dataset, filepath: str, product: str=None, force=False) -> None:
+def write_product(ds: xr.Dataset, filepath: str, product: str = None, force=False) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
@@ -48,12 +48,9 @@ def write_product(ds: xr.Dataset, filepath: str, product: str=None, force=False)
     # - If force=True --> Remove it
     # - If force=False --> Raise error
     remove_if_exists(filepath, force=force)
-    
-    # Update attributes 
-    ds = update_disdrodb_attrs(ds, product=product)
-    
-    # Set encodings
-    # ds = set_encodings(ds=ds, product=product) # TODO
+
+    # Update attributes
+    ds = set_disdrodb_attrs(ds, product=product)
 
     # Write netcdf
     ds.to_netcdf(filepath, engine="netcdf4")
