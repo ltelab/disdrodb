@@ -305,6 +305,17 @@ def define_config_dir(product):
 #### Directory/Filepaths L0A and L0B products
 
 
+def check_sample_interval(sample_interval):
+    if not isinstance(sample_interval, int):
+        raise ValueError("sample_interval must be an integer.")
+
+
+def check_distribution(distribution):
+    valid_distributions = ["gamma", "normalized_gamma", "lognormal", "exponential"]
+    if distribution not in valid_distributions:
+        raise ValueError(f"Invalid distribution {distribution}. Valid values are {valid_distributions}")
+
+
 def define_data_dir(
     product,
     data_source,
@@ -359,12 +370,12 @@ def define_data_dir(
     if product.upper() in ["RAW", "L0A", "L0B", "L0C", "L1"]:
         data_dir = station_dir
     elif product == "L2E":
-        # TODO: check sample interval specified !
+        check_sample_interval(sample_interval)
         sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
         data_dir = os.path.join(station_dir, sample_interval_acronym)
     elif product == "L2M":
-        # TODO: check sample interval specified !
-        # TODO: check distribution specified !
+        check_sample_interval(sample_interval)
+        check_distribution(distribution)
         sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
         distribution_acronym = get_distribution_acronym(distribution)
         data_dir = os.path.join(station_dir, distribution_acronym, sample_interval_acronym)

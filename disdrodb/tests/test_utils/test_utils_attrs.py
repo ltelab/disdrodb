@@ -18,8 +18,8 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB netCDF4 attributes utilities."""
 import xarray as xr
-from disdrodb.utils.attrs import set_attrs, set_coordinate_attributes
 
+from disdrodb.utils.attrs import set_attrs, set_coordinate_attributes
 
 
 def test_set_attrs():
@@ -36,8 +36,8 @@ def test_set_attrs():
     ds = set_attrs(ds, attrs_dict)
     assert ds["var1"].attrs["attr1"] == "value1"
     assert "var2" not in ds
-    
-    
+
+
 def test_set_coordinate_attributes():
     # Create example dataset
     ds = xr.Dataset(

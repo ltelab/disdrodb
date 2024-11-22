@@ -17,10 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB netCDF4 encoding utilities."""
-import pytest
 import numpy as np
+import pytest
 import xarray as xr
-from disdrodb.utils.encoding import rechunk_dataset, sanitize_encodings_dict, get_time_encoding
+
+from disdrodb.utils.encoding import get_time_encoding, rechunk_dataset, sanitize_encodings_dict
 
 
 def test_rechunk_dataset():
@@ -39,8 +40,7 @@ def test_rechunk_dataset():
     ds_rechunked = rechunk_dataset(ds, encoding_dict)
     assert ds_rechunked["a"].chunks == ((1, 1), (2, 1))
     assert ds_rechunked["b"].chunks == ((2,), (1, 1, 1))
-    
-    
+
 
 @pytest.fixture()
 def encoding_dict_1():

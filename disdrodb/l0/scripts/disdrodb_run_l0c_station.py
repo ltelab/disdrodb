@@ -17,7 +17,9 @@
 """Script to run the DISDRODB L0C station processing."""
 import sys
 from typing import Optional
+
 import click
+
 from disdrodb.utils.scripts import (
     click_base_dir_option,
     click_processing_options,

@@ -16,12 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB netCDF4 attributes utilities.""" 
+"""DISDRODB netCDF4 attributes utilities."""
 import datetime
-from disdrodb import PRODUCT_VERSION, SOFTWARE_VERSION, CONVENTIONS
+
+from disdrodb import CONVENTIONS, PRODUCT_VERSION, SOFTWARE_VERSION
 
 ####---------------------------------------------------------------------.
 #### Variable attributes
+
 
 def set_attrs(ds, attrs_dict):
     """Set attributes to the variables of the xr.Dataset."""
@@ -30,8 +32,9 @@ def set_attrs(ds, attrs_dict):
             ds[var].attrs.update(attrs_dict[var])
     return ds
 
+
 ####---------------------------------------------------------------------.
-#### Coordinates attributes 
+#### Coordinates attributes
 
 
 def get_coords_attrs_dict():

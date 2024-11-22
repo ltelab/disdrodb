@@ -16,9 +16,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB netCDF4 encoding utilities.""" 
-import xarray as xr 
-
+"""DISDRODB netCDF4 encoding utilities."""
+import xarray as xr
 
 EPOCH = "seconds since 1970-01-01 00:00:00"
 
