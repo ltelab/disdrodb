@@ -25,7 +25,7 @@ sensor_status:
     - 0
     - 1
   field_number: "03"
-interval:
+sample_interval:
   n_digits: 4
   n_characters: 4
   n_decimals: 4

@@ -45,7 +45,7 @@ def get_required_product(product):
     return required_product
 
 
-def _filter_filepaths(filepaths, debugging_mode):
+def filter_filepaths(filepaths, debugging_mode):
     """Filter out filepaths if ``debugging_mode=True``."""
     if debugging_mode:
         max_files = min(3, len(filepaths))
@@ -121,7 +121,7 @@ def get_filepaths(
     filepaths = list_files(data_dir, glob_pattern=glob_pattern, recursive=True)
 
     # Filter out filepaths if debugging_mode=True
-    filepaths = _filter_filepaths(filepaths, debugging_mode=debugging_mode)
+    filepaths = filter_filepaths(filepaths, debugging_mode=debugging_mode)
 
     # If no file available, raise error
     if len(filepaths) == 0:

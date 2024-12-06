@@ -371,42 +371,17 @@ def _define_dataset_variables(df, sensor_name, verbose):
         raise ValueError("No raw fields available.")
 
     # Define other disdrometer 'auxiliary' variables varying over time dimension
+    # - Includes time
+    # - Includes longitude and latitude for moving sensors
     valid_core_fields = [
         "raw_drop_concentration",
         "raw_drop_average_velocity",
         "raw_drop_number",
-        "time",
-        # longitude and latitude too for moving sensors
     ]
     aux_columns = df.columns[np.isin(df.columns, valid_core_fields, invert=True)]
     aux_data_vars = {column: (["time"], df[column].to_numpy()) for column in aux_columns}
     data_vars.update(aux_data_vars)
-
-    # Add key "time"
-    # - Is dropped in _define_coordinates !
-    data_vars["time"] = df["time"].to_numpy()
-
     return data_vars
-
-
-def _define_coordinates(data_vars, attrs, sensor_name):
-    """Define DISDRODB L0B netCDF coordinates."""
-    # Note: attrs and data_vars are modified in place !
-
-    # - Diameter and velocity
-    coords = get_bin_coords_dict(sensor_name=sensor_name)
-
-    # - Geolocation + Time
-    geolocation_vars = ["time", "latitude", "longitude", "altitude"]
-    for var in geolocation_vars:
-        if var in data_vars:
-            coords[var] = data_vars[var]
-            _ = data_vars.pop(var)
-            _ = attrs.pop(var, None)
-        else:
-            coords[var] = attrs[var]
-            _ = attrs.pop(var)
-    return coords
 
 
 def create_l0b_from_l0a(
@@ -438,25 +413,13 @@ def create_l0b_from_l0a(
     # Retrieve sensor name
     attrs = attrs.copy()
     sensor_name = attrs["sensor_name"]
-    # -----------------------------------------------------------.
+
     # Define Dataset variables and coordinates
     data_vars = _define_dataset_variables(df, sensor_name=sensor_name, verbose=verbose)
 
-    # -----------------------------------------------------------.
-    # Define coordinates for xarray Dataset
-    # - attrs and data_vars are modified in place !
-    coords = _define_coordinates(data_vars, attrs=attrs, sensor_name=sensor_name)
-
-    # -----------------------------------------------------------
     # Create xarray Dataset
-    ds = xr.Dataset(
-        data_vars=data_vars,
-        coords=coords,
-        attrs=attrs,
-    )
-    ds = finalize_dataset(ds, sensor_name=sensor_name)
-
-    # -----------------------------------------------------------
+    ds = xr.Dataset(data_vars=data_vars)
+    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=attrs)
     return ds
 
 
@@ -464,10 +427,41 @@ def create_l0b_from_l0a(
 #### L0B netCDF4 Writer
 
 
-def finalize_dataset(ds, sensor_name):
+def set_geolocation_coordinates(ds, attrs):
+    # Assumption
+    # - If coordinate is present in L0A, overrides the one specified in the attributes
+    # - If a station is fixed, discard the coordinates in the DISDRODB reader !
+
+    # Assign geolocation coordinates to dataset
+    coords = ["latitude", "longitude", "altitude"]
+    for coord in coords:
+        # If coordinate not present, add it from dictionary
+        if coord not in ds:
+            ds = ds.assign_coords({coord: attrs.pop(coord, np.nan)})
+        # Else if set coordinates the variable in the dataset (present in the raw data)
+        else:
+            ds = ds.set_coords(coord)
+            _ = attrs.pop(coord, None)
+
+    # Set -9999 flag value to np.nan
+    for coord in coords:
+        ds[coord] = xr.where(ds[coord] == -9999, np.nan, ds[coord])
+
+    # Set attributes without geolocation coordinates
+    ds.attrs = attrs
+    return ds
+
+
+def finalize_dataset(ds, sensor_name, attrs):
     """Finalize DISDRODB L0B Dataset."""
     # Ensure sorted by time
     ds = ds.sortby("time")
+
+    # Set diameter and velocity bin coordinates
+    ds = ds.assign_coords(get_bin_coords_dict(sensor_name=sensor_name))
+
+    # Set geolocation coordinates and attributes
+    ds = set_geolocation_coordinates(ds, attrs=attrs)
 
     # Add dataset CRS coordinate
     ds = add_dataset_crs_coords(ds)

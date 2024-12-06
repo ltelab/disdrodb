@@ -200,7 +200,7 @@ def infer_path_info_dict(path: str) -> dict:
 
     Returns
     -------
-    list
+    dict
         Dictionary with the path element of the DISDRODB archive.
         Valid keys: ``"base_dir"``, ``"data_source"``, ``"campaign_name"``
     """
@@ -212,6 +212,24 @@ def infer_path_info_dict(path: str) -> dict:
     path_dict["data_source"] = components[2]
     path_dict["campaign_name"] = components[3]
     return path_dict
+
+
+def infer_path_info_tuple(path: str) -> tuple:
+    """Return a tuple with the ``base_dir``, ``data_source`` and ``campaign_name`` of the disdrodb_path.
+
+    Parameters
+    ----------
+    path : str
+        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+
+    Returns
+    -------
+    tuple
+        Dictionary with the path element of the DISDRODB archive.
+        Valid keys: ``"base_dir"``, ``"data_source"``, ``"campaign_name"``
+    """
+    path_dict = infer_path_info_dict(path)
+    return path_dict["base_dir"], path_dict["data_source"], path_dict["campaign_name"]
 
 
 def infer_disdrodb_tree_path(path: str) -> str:

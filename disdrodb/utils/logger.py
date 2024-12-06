@@ -24,10 +24,9 @@ import re
 from asyncio.log import logger
 
 
-def create_file_logger(processed_dir, product, station_name, filename, parallel):
-    """Create file logger."""
+def create_logger_file(logs_dir, filename, parallel):
+    """Create logger file."""
     # Create logs directory
-    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
     os.makedirs(logs_dir, exist_ok=True)
 
     # Define logger filepath
@@ -51,7 +50,7 @@ def create_file_logger(processed_dir, product, station_name, filename, parallel)
     return logger, logger_filepath
 
 
-def close_logger(logger: logger) -> None:
+def close_logger(logger) -> None:
     """Close the logger.
 
     Parameters
@@ -167,18 +166,30 @@ def _define_station_summary_log_file(list_logs, summary_filepath):
 def _define_station_problem_log_file(list_logs, problem_filepath):
     # - Copy the log of files with warnings and error
     list_keywords = ["ERROR"]  # "WARNING"
+    list_patterns = ["ValueError: Less than 5 timesteps available for day"]
     re_keyword = re.compile("|".join(list_keywords))
+    # Compile patterns to ignore, escaping any special regex characters
+    if list_patterns:
+        re_patterns = re.compile("|".join(map(re.escape, list_patterns)))
+    else:
+        re_patterns = None
+    # Initialize problem log file
     any_problem = False
     with open(problem_filepath, "w") as output_file:
+        # Loop over log files and collect problems
         for log_filepath in list_logs:
             log_with_problem = False
             # Check if an error is reported
             with open(log_filepath) as input_file:
                 for line in input_file:
                     if re_keyword.search(line):
-                        log_with_problem = True
-                        any_problem = True
-                        break
+                        # If the line matches an ignore pattern, skip it
+                        if re_patterns and re_patterns.search(line):
+                            continue
+                        else:
+                            log_with_problem = True
+                            any_problem = True
+                            break
             # If it is reported, copy the log file in the logs_problem file
             if log_with_problem:
                 with open(log_filepath) as input_file:

@@ -569,7 +569,7 @@ def test_write_l0a(tmp_path):
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")
-    df["time"] = pd.Timestamp.now()
+    df["time"] = pd.Timestamp.now().to_numpy().astype("M8[ns]")  # open by default as [ns]. Now() returns as [us]
 
     # Write parquet file
     filepath = os.path.join(tmp_path, "fake_data_sample.parquet")

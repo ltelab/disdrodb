@@ -38,7 +38,7 @@ def reader(
         "date",
         "time",
         "sensor_status",
-        "interval",
+        "sample_interval",
         "n1",
         "n2",
         "n3",

@@ -100,7 +100,7 @@ def create_daily_file(day, filepaths):
     start_day = np.array(day).astype("M8[D]")
     end_day = start_day + np.array(1, dtype="m8[D]") - np.array(1, dtype="m8[s]")  # avoid 00:00 of next day !
 
-    # Add tolerance for searching timesteps before and after 00:00 to account for unprecise logging time
+    # Add tolerance for searching timesteps before and after 00:00 to account for imprecise logging time
     # - Example: timestep 23:58 that should be 00.00 goes into the next day ...
     start_day_tol = start_day - np.array(60, dtype="m8[s]")
     end_day_tol = end_day + np.array(60, dtype="m8[s]")
@@ -123,11 +123,11 @@ def create_daily_file(day, filepaths):
         raise ValueError(f"Less than 5 timesteps available for day {day}.")
 
     # Identify time integration
-    sample_interval = infer_sample_interval(ds, verbose=False)
+    sample_interval = infer_sample_interval(ds, verbose=True, robust=False)
     ds = add_sample_interval(ds, sample_interval=sample_interval)
 
     # Regularize timesteps (for trailing seconds)
-    ds = regularize_timesteps(ds, sample_interval=sample_interval)
+    ds = regularize_timesteps(ds, sample_interval=sample_interval, robust=False, add_quality_flag=True)
 
     # Slice for requested day
     ds = ds.sel({"time": slice(start_day, end_day)})

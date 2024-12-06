@@ -92,7 +92,7 @@ def _check_station_reader_results(
         campaign_name=campaign_name,
         station_name=station_name,
         force=True,
-        verbose=False,
+        verbose=True,
         debugging_mode=False,
         parallel=False,
     )
@@ -164,6 +164,8 @@ def test_check_all_readers(tmp_path) -> None:
         base_dir=test_base_dir,
     )
 
+    # data_source, campaign_name, station_name = list_stations_info[0]
+    # data_source, campaign_name, station_name = list_stations_info[1]
     for data_source, campaign_name, station_name in list_stations_info:
         _check_station_reader_results(
             base_dir=test_base_dir,

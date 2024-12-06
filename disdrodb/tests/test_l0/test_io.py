@@ -23,11 +23,11 @@ import os
 import pandas as pd
 import pytest
 
+from disdrodb.api.io import get_filepaths
 from disdrodb.api.path import define_campaign_dir
 from disdrodb.l0.io import (
     _check_glob_pattern,
     _read_l0a,
-    get_l0a_filepaths,
     get_raw_filepaths,
     read_l0a_dataframe,
 )
@@ -102,18 +102,14 @@ def test_get_l0a_filepaths(tmp_path):
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
 
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="L0A",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
     # Test that the function raises an error if no files presenet
     with pytest.raises(ValueError):
-        get_l0a_filepaths(
-            processed_dir=processed_dir,
+        _ = get_filepaths(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
             station_name=station_name,
+            product="L0A",
         )
 
     # Add fake data files
@@ -128,15 +124,24 @@ def test_get_l0a_filepaths(tmp_path):
         )
 
     # Test that the function returns the correct number of files in debugging mode
-    filepaths = get_l0a_filepaths(
-        processed_dir=processed_dir,
+    filepaths = get_filepaths(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
         station_name=station_name,
+        product="L0A",
         debugging_mode=True,
     )
     assert len(filepaths) == 2  # max(2, 3)
 
     # Test that the function returns the correct number of files in normal mode
-    filepaths = get_l0a_filepaths(processed_dir=processed_dir, station_name=station_name)
+    filepaths = get_filepaths(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="L0A",
+    )
     assert len(filepaths) == 2
 
 

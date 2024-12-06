@@ -33,25 +33,25 @@ from disdrodb.api.checks import check_sensor_name
 
 # Directory
 from disdrodb.api.create_directories import (
-    create_directory_structure,
     create_l0_directory_structure,
+    create_product_directory,
 )
-from disdrodb.api.info import infer_path_info_dict
+from disdrodb.api.info import infer_path_info_tuple
 from disdrodb.api.io import get_filepaths, get_required_product
 from disdrodb.api.path import (
     define_campaign_dir,
-    define_data_dir,
     define_l0a_filepath,
+    define_l0b_filename,
     define_l0b_filepath,
     define_l0b_station_dir,
     define_l0c_filename,
+    define_logs_dir,
     define_station_dir,
     get_disdrodb_path,
 )
 from disdrodb.configs import get_base_dir
 from disdrodb.issue import read_station_issue
 from disdrodb.l0.io import (
-    get_l0a_filepaths,
     get_raw_filepaths,
     read_l0a_dataframe,
 )
@@ -68,7 +68,7 @@ from disdrodb.utils.directories import list_files
 # Logger
 from disdrodb.utils.logger import (
     close_logger,
-    create_file_logger,
+    create_logger_file,
     define_summary_log,
     log_error,
     log_info,
@@ -101,27 +101,34 @@ def _generate_l0a(
         write_l0a,
     )
 
+    product = "L0A"
     ##------------------------------------------------------------------------.
     # Create file logger
     if issue_dict is None:
         issue_dict = {}
     filename = os.path.basename(filepath)
-    logger, logger_filepath = create_file_logger(
-        processed_dir=processed_dir,
-        product="L0A",
-        station_name=station_name,
+    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
+    logger, logger_filepath = create_logger_file(
+        logs_dir=logs_dir,
         filename=filename,
         parallel=parallel,
     )
 
     ##------------------------------------------------------------------------.
     # Log start processing
-    msg = f"L0A processing of {filename} has started."
+    msg = f"{product} processing of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     # Retrieve metadata
-    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
+    base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
+    attrs = read_station_metadata(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -150,7 +157,7 @@ def _generate_l0a(
         del df
 
         # Log end processing
-        msg = f"L0A processing of {filename} has ended."
+        msg = f"{product} processing of {filename} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Otherwise log the error
@@ -168,8 +175,11 @@ def _generate_l0a(
 
 def _generate_l0b(
     filepath,
-    processed_dir,  # retrievable from filepath
-    station_name,  # retrievable from filepath
+    data_dir,
+    logs_dir,
+    metadata,
+    station_name,
+    campaign_name,
     force,
     verbose,
     debugging_mode,
@@ -180,28 +190,26 @@ def _generate_l0b(
         write_l0b,
     )
 
+    # Define product
+    product = "L0B"
+
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
-    logger, logger_filepath = create_file_logger(
-        processed_dir=processed_dir,
-        product="L0B",
-        station_name=station_name,
+    logger, logger_filepath = create_logger_file(
+        logs_dir=logs_dir,
         filename=filename,
         parallel=parallel,
     )
 
     ##------------------------------------------------------------------------.
     # Log start processing
-    msg = f"L0B processing of {filename} has started."
+    msg = f"{product} processing of {filename} has started."
     log_info(logger, msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
-    # Retrieve metadata
-    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
-
     # Retrieve sensor name
-    sensor_name = attrs["sensor_name"]
+    sensor_name = metadata["sensor_name"]
     check_sensor_name(sensor_name)
 
     ##------------------------------------------------------------------------.
@@ -210,11 +218,12 @@ def _generate_l0b(
         df = read_l0a_dataframe(filepath, verbose=verbose, debugging_mode=debugging_mode)
         # -----------------------------------------------------------------.
         # Create xarray Dataset
-        ds = create_l0b_from_l0a(df=df, attrs=attrs, verbose=verbose)
+        ds = create_l0b_from_l0a(df=df, attrs=metadata, verbose=verbose)
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        filepath = define_l0b_filepath(ds, processed_dir, station_name)
+        filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
+        filepath = os.path.join(data_dir, filename)
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -222,7 +231,7 @@ def _generate_l0b(
         del ds, df
 
         # Log end processing
-        msg = f"L0B processing of {filename} has ended."
+        msg = f"{product} processing of {filename} has ended."
         log_info(logger, msg, verbose=verbose)
 
     # Otherwise log the error
@@ -252,24 +261,36 @@ def _generate_l0b_from_nc(
     from disdrodb.l0.l0b_processing import write_l0b
 
     # -----------------------------------------------------------------.
+    # Define product name
+    product = "L0B"
+
+    # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
-    logger, logger_filepath = create_file_logger(
-        processed_dir=processed_dir,
-        product="L0B",
-        station_name=station_name,
+    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
+    logger, logger_filepath = create_logger_file(
+        logs_dir=logs_dir,
         filename=filename,
         parallel=parallel,
     )
 
     ##------------------------------------------------------------------------.
     # Log start processing
-    msg = f"L0B processing of {filename} has started."
+    msg = f"{product} processing of {filename} has started."
     log_info(logger, msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
+    # Retrieve info
+    base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
+
     # Retrieve metadata
-    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
+    attrs = read_station_metadata(
+        product="L0A",
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
     # Retrieve sensor name
     sensor_name = attrs["sensor_name"]
@@ -292,7 +313,7 @@ def _generate_l0b_from_nc(
         )
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        filepath = define_l0b_filepath(ds, processed_dir, station_name)
+        filepath = define_l0b_filepath(ds, processed_dir, campaign_name=campaign_name, station_name=station_name)
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -322,7 +343,7 @@ def _generate_l0c(
     day,
     filepaths,
     data_dir,
-    processed_dir,  # TODO: REMOVE IN FUTURE
+    logs_dir,
     campaign_name,
     station_name,
     # Processing options
@@ -336,11 +357,8 @@ def _generate_l0c(
 
     # -----------------------------------------------------------------.
     # Create file logger
-    # TODO: AVOID USE OF processed_dir
-    logger, logger_filepath = create_file_logger(
-        processed_dir=processed_dir,
-        product=product,
-        station_name=station_name,
+    logger, logger_filepath = create_logger_file(
+        logs_dir=logs_dir,
         filename=day,
         parallel=parallel,
     )
@@ -500,7 +518,13 @@ def run_l0a(
 
     # -----------------------------------------------------------------.
     # Read issue YAML file
-    issue_dict = read_station_issue(station_name=station_name, **infer_path_info_dict(raw_dir))
+    base_dir, data_source, campaign_name = infer_path_info_tuple(raw_dir)
+    issue_dict = read_station_issue(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
     # -----------------------------------------------------------------.
     # Generate L0A files
@@ -534,125 +558,6 @@ def run_l0a(
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
         msg = f"L0A processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
-
-
-def run_l0b(
-    processed_dir,
-    station_name,
-    # Processing options
-    parallel,
-    force,
-    verbose,
-    debugging_mode,
-):
-    """
-    Run the L0B processing for a specific DISDRODB station.
-
-    Parameters
-    ----------
-    processed_dir : str
-        The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure: ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
-        For testing purposes, this function exceptionally accepts also a directory path simply ending
-        with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
-    station_name : str
-        The name of the station.
-    force : bool, optional
-        If ``True``, overwrite existing data in destination directories.
-        If ``False``, raise an error if data already exists in destination directories.
-        Default is ``False``.
-    verbose : bool, optional
-        If ``True``, print detailed processing information to the terminal.
-        Default is ``True``.
-    parallel : bool, optional
-        If ``True``, process the files simultaneously in multiple processes.
-        The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
-        Ensure that the ``threads_per_worker`` (number of thread per process) is set to 1 to avoid HDF errors.
-        Also, ensure to set the ``HDF5_USE_FILE_LOCKING`` environment variable to ``False``.
-        If ``False``, process the files sequentially in a single process.
-        Default is ``False``.
-    debugging_mode : bool, optional
-        If ``True``, reduce the amount of data to process.
-        Only the first 3 raw data files will be processed.
-        Default is ``False``.
-
-    """
-    # TODO: to be moved within run_l0b_station
-    # -----------------------------------------------------------------.
-    # Retrieve metadata
-    attrs = read_station_metadata(station_name=station_name, product="L0A", **infer_path_info_dict(processed_dir))
-
-    # Skip run_l0b processing if the raw data are netCDFs
-    if attrs["raw_data_format"] == "netcdf":
-        return
-
-    # -----------------------------------------------------------------.
-    # Start L0B processing
-    if verbose:
-        t_i = time.time()
-        msg = f"L0B processing of station_name {station_name} has started."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-
-    # -------------------------------------------------------------------------.
-    # Create directory structure
-    create_directory_structure(
-        processed_dir=processed_dir,
-        product="L0B",
-        station_name=station_name,
-        force=force,
-    )
-
-    ##----------------------------------------------------------------.
-    # Get L0A files for the station
-    filepaths = get_l0a_filepaths(
-        processed_dir=processed_dir,
-        station_name=station_name,
-        debugging_mode=debugging_mode,
-    )
-
-    # -----------------------------------------------------------------.
-    # Generate L0B files
-    # Loop over the L0A files and save the L0B netCDF files.
-    # - If parallel=True, it does that in parallel using dask.bag
-    #   Settings npartitions=len(filepaths) enable to wait prior task on a core
-    #   finish before starting a new one.
-    if not parallel:
-        list_logs = [
-            _generate_l0b(
-                filepath=filepath,
-                processed_dir=processed_dir,
-                station_name=station_name,
-                force=force,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-                parallel=parallel,
-            )
-            for filepath in filepaths
-        ]
-
-    else:
-        bag = db.from_sequence(filepaths, npartitions=len(filepaths))
-        list_logs = bag.map(
-            _generate_l0b,
-            processed_dir=processed_dir,
-            station_name=station_name,
-            force=force,
-            verbose=verbose,
-            debugging_mode=debugging_mode,
-            parallel=parallel,
-        ).compute()
-
-    # -----------------------------------------------------------------.
-    # Define L0B summary logs
-    define_summary_log(list_logs)
-
-    # -----------------------------------------------------------------.
-    # End L0B processing
-    if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
-        msg = f"L0B processing of station_name {station_name} completed in {timedelta_str}"
-        log_info(logger=logger, msg=msg, verbose=verbose)
-    return
 
 
 def run_l0b_from_nc(
@@ -823,13 +728,15 @@ def run_l0b_concat(processed_dir, station_name, verbose=False):
 
     # Create logger
     filename = f"concatenatation_{station_name}"
-    logger, logger_filepath = create_file_logger(
-        processed_dir=processed_dir,
-        product="L0B",
-        station_name="",  # locate outside the station directory
+    logs_dir = os.path.join(processed_dir, "logs", "L0B")  # locate outside station directory
+    logger, logger_filepath = create_logger_file(
+        logs_dir=logs_dir,
         filename=filename,
         parallel=False,
     )
+
+    # Retrieve info
+    base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
 
     # -------------------------------------------------------------------------.
     # Retrieve L0B files
@@ -855,7 +762,13 @@ def run_l0b_concat(processed_dir, station_name, verbose=False):
 
     # -------------------------------------------------------------------------.
     # Define the filepath of the concatenated L0B netCDF
-    single_nc_filepath = define_l0b_filepath(ds, processed_dir, station_name, l0b_concat=True)
+    single_nc_filepath = define_l0b_filepath(
+        ds,
+        processed_dir,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        l0b_concat=True,
+    )
     force = True  # TODO add as argument
     write_l0b(ds, filepath=single_nc_filepath, force=force)
 
@@ -1004,37 +917,150 @@ def run_l0b_station(
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
     """
-    # Define campaign processed dir
+    # Define product name
+    product = "L0B"
+
+    # Retrieve DISDRODB base directory
     base_dir = get_base_dir(base_dir)
-    processed_dir = get_disdrodb_path(
+
+    # -----------------------------------------------------------------.
+    # Retrieve metadata
+    metadata = read_station_metadata(
         base_dir=base_dir,
-        product="L0B",
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exists=False,
-    )
-    # Run L0B
-    run_l0b(
-        processed_dir=processed_dir,
         station_name=station_name,
-        # Processing options
-        force=force,
-        verbose=verbose,
-        debugging_mode=debugging_mode,
-        parallel=parallel,
     )
 
+    # Skip run_l0b processing if the raw data are netCDFs
+    if metadata["raw_data_format"] == "netcdf":
+        return
+
+    # -----------------------------------------------------------------.
+    # Start L0B processing
+    if verbose:
+        t_i = time.time()
+        msg = f"{product} processing of station_name {station_name} has started."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+    # Define logs directory
+    logs_dir = define_logs_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # -------------------------------------------------------------------------.
+    # Create product directory
+    data_dir = create_product_directory(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=product,
+        force=force,
+    )
+
+    ##----------------------------------------------------------------.
+    # Get L0A files for the station
+    required_product = get_required_product(product)
+    filepaths = get_filepaths(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=required_product,
+        debugging_mode=debugging_mode,
+    )
+
+    ##----------------------------------------------------------------.
+    # Generate L0B files
+    # Loop over the L0A files and save the L0B netCDF files.
+    # - If parallel=True, it does that in parallel using dask.bag
+    #   Settings npartitions=len(filepaths) enable to wait prior task on a core
+    #   finish before starting a new one.
+    if not parallel:
+        list_logs = [
+            _generate_l0b(
+                filepath=filepath,
+                data_dir=data_dir,
+                logs_dir=logs_dir,
+                metadata=metadata,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                force=force,
+                verbose=verbose,
+                debugging_mode=debugging_mode,
+                parallel=parallel,
+            )
+            for filepath in filepaths
+        ]
+
+    else:
+        bag = db.from_sequence(filepaths, npartitions=len(filepaths))
+        list_logs = bag.map(
+            _generate_l0b,
+            data_dir=data_dir,
+            logs_dir=logs_dir,
+            metadata=metadata,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        ).compute()
+
+    # -----------------------------------------------------------------.
+    # Define L0B summary logs
+    define_summary_log(list_logs)
+
+    # -----------------------------------------------------------------.
+    # End L0B processing
+    if verbose:
+        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        msg = f"{product} processing of station_name {station_name} completed in {timedelta_str}"
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+    # -----------------------------------------------------------------.
+    # Option to remove L0A
     if remove_l0a:
-        station_dir = define_station_dir(
+        delete_station_product(
             base_dir=base_dir,
             product="L0A",
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
+            logger=logger,
+            verbose=verbose,
         )
-        log_info(logger=logger, msg="Removal of single L0A files started.", verbose=verbose)
-        shutil.rmtree(station_dir)
-        log_info(logger=logger, msg="Removal of single L0A files ended.", verbose=verbose)
+
+
+def delete_station_product(
+    base_dir,
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    logger=None,
+    verbose=True,
+):
+    if product.upper() == "RAW":
+        raise ValueError("Removal of 'RAW' files is not allowed.")
+    station_dir = define_station_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    if logger is not None:
+        log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
+    shutil.rmtree(station_dir)
+    if logger is not None:
+        log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)
 
 
 def run_l0b_concat_station(
@@ -1156,11 +1182,11 @@ def run_l0c_station(
     # Define product
     product = "L0C"
 
-    # Define campaign processed dir
+    # Define base directory
     base_dir = get_base_dir(base_dir)
 
-    # Define output directory
-    data_dir = define_data_dir(
+    # Define logs directory
+    logs_dir = define_logs_dir(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
@@ -1176,19 +1202,13 @@ def run_l0c_station(
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     # ------------------------------------------------------------------------.
-    # Create directory structure
-    # TODO: refactor to avoid processed_dir
-    processed_dir = get_disdrodb_path(
+    # Create product directory
+    data_dir = create_product_directory(
         base_dir=base_dir,
-        product=product,
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exists=False,
-    )
-    create_directory_structure(
-        processed_dir=processed_dir,
-        product=product,
         station_name=station_name,
+        product=product,
         force=force,
     )
 
@@ -1217,8 +1237,8 @@ def run_l0c_station(
         _generate_l0c(
             day=day,
             filepaths=filepaths,
-            processed_dir=processed_dir,  # TODO: REMOVE IN FUTURE
             data_dir=data_dir,
+            logs_dir=logs_dir,
             campaign_name=campaign_name,
             station_name=station_name,
             # Processing options

@@ -1,5 +1,5 @@
 sensor_status: "float32" #  'int8'
-interval: "float32" #  'uint8'
+sample_interval: "float32" #  'uint8'
 RI: "float32"
 RA: "float32"
 RAT: "float32"

@@ -24,7 +24,7 @@ import pytest
 
 from disdrodb.utils.logger import (
     close_logger,
-    create_file_logger,
+    create_logger_file,
     define_summary_log,
     log_debug,
     log_error,
@@ -165,9 +165,10 @@ def log_environment(tmp_path):
     return processed_dir, product, station_name, filename
 
 
-def test_create_file_logger_paralle_false(log_environment):
+def test_create_logger_file_paralle_false(log_environment):
     processed_dir, product, station_name, filename = log_environment
-    logger, logger_filepath = create_file_logger(str(processed_dir), product, station_name, filename, parallel=False)
+    logs_dir = os.path.join(str(processed_dir), "logs", product, station_name)
+    logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
 
     assert isinstance(logger, logging.Logger)
 
@@ -193,6 +194,7 @@ def test_create_file_logger_paralle_false(log_environment):
 
 def test_close_logger(log_environment):
     processed_dir, product, station_name, filename = log_environment
-    logger, logger_filepath = create_file_logger(str(processed_dir), product, station_name, filename, parallel=False)
+    logs_dir = os.path.join(str(processed_dir), "logs", product, station_name)
+    logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
     close_logger(logger)
     assert not logger.handlers

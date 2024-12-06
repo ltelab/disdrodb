@@ -26,15 +26,16 @@ from disdrodb.api.create_directories import (
     _check_campaign_name_consistency,
     _check_data_source_consistency,
     _copy_station_metadata,
-    create_directory_structure,
     create_initial_station_structure,
     create_issue_directory,
     create_l0_directory_structure,
     create_metadata_directory,
+    create_product_directory,
     create_test_archive,
 )
 from disdrodb.api.path import (
     define_campaign_dir,
+    define_data_dir,
     define_issue_filepath,
     define_metadata_dir,
     define_metadata_filepath,
@@ -193,7 +194,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     assert os.path.isfile(dst_metadata_filepath)
 
 
-def test_create_directory_structure(tmp_path, mocker):
+def test_create_product_directory(tmp_path):
     start_product = "L0A"
     dst_product = "L0B"
     # Define station info
@@ -205,20 +206,15 @@ def test_create_directory_structure(tmp_path, mocker):
     metadata_dict["sensor_name"] = "OTT_Parsivel"
     metadata_dict["reader"] = "GPM/IFLOODS"
 
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product=start_product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
     # Test raise error without data
     with pytest.raises(ValueError):
-        create_directory_structure(
+        _ = create_product_directory(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product=dst_product,
             force=False,
-            processed_dir=processed_dir,
-            station_name=station_name,
         )
 
     # Add fake file
@@ -232,11 +228,13 @@ def test_create_directory_structure(tmp_path, mocker):
 
     # Test raise error without metadata file
     with pytest.raises(ValueError):
-        create_directory_structure(
+        _ = create_product_directory(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product=dst_product,
             force=False,
-            processed_dir=processed_dir,
-            station_name=station_name,
         )
 
     # Add metadata
@@ -249,18 +247,27 @@ def test_create_directory_structure(tmp_path, mocker):
         metadata_dict=metadata_dict,
     )
 
-    # Execute create_directory_structure
-    create_directory_structure(
-        processed_dir=processed_dir,
-        product=dst_product,
+    # Execute create_product_directory
+    data_dir = create_product_directory(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
         station_name=station_name,
+        product=dst_product,
         force=False,
     )
 
-    # Test product directory has been created
-    dst_station_dir = os.path.join(processed_dir, dst_product)
-    assert os.path.exists(dst_station_dir)
-    assert os.path.isdir(dst_station_dir)
+    # Test product data directory has been created
+    expected_data_dir = define_data_dir(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=dst_product,
+    )
+    assert expected_data_dir == data_dir
+    assert os.path.exists(data_dir)
+    assert os.path.isdir(data_dir)
 
     # Test raise error if already data in dst_product (if force=False)
     dst_product_file_filepath = create_fake_raw_data_file(
@@ -272,32 +279,39 @@ def test_create_directory_structure(tmp_path, mocker):
     )
 
     with pytest.raises(ValueError):
-        create_directory_structure(
+        _ = create_product_directory(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product=dst_product,
             force=False,
-            processed_dir=processed_dir,
-            station_name=station_name,
         )
     assert os.path.exists(dst_product_file_filepath)
 
     # Test delete file if already data in L0A (if force=True)
-    create_directory_structure(
+    data_dir = create_product_directory(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
         product=dst_product,
         force=True,
-        processed_dir=processed_dir,
-        station_name=station_name,
     )
+    assert expected_data_dir == data_dir
     assert not os.path.exists(dst_product_file_filepath)
-    assert os.path.exists(dst_station_dir)
-    assert os.path.isdir(dst_station_dir)
+    assert os.path.exists(data_dir)
+    assert os.path.isdir(data_dir)
 
     # Test raise error if bad station_name
     with pytest.raises(ValueError):
-        create_directory_structure(
+        _ = create_product_directory(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="INEXISTENT_STATION",
             product=dst_product,
             force=False,
-            processed_dir=processed_dir,
-            station_name="INEXISTENT_STATION",
         )
 
 

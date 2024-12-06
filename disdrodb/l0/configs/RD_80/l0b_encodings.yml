@@ -7,7 +7,7 @@ sensor_status:
   contiguous: false
   chunksizes: 5000
   _FillValue: 255
-interval:
+sample_interval:
   dtype: uint8
   zlib: true
   complevel: 3

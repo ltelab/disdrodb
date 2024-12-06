@@ -2,7 +2,7 @@ sensor_status:
   description: Sensor status
   long_name: Sensor status
   units: ""
-interval:
+sample_interval:
   description: Time interval between measurement
   long_name: Time interval between measurement
   units: s

@@ -128,7 +128,7 @@ def test_define_l0b_filepath(tmp_path):
     )
 
     # Test the function
-    res = define_l0b_filepath(ds, processed_dir, station_name)
+    res = define_l0b_filepath(ds, processed_dir, campaign_name, station_name)
 
     # Define expected results
     expected_name = (

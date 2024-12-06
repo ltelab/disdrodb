@@ -23,7 +23,7 @@ from typing import Union
 
 import pandas as pd
 
-from disdrodb.api.path import define_l0a_station_dir
+from disdrodb.api.io import filter_filepaths
 from disdrodb.utils.directories import list_files
 from disdrodb.utils.logger import log_info
 
@@ -101,14 +101,6 @@ def _get_available_filepaths(raw_dir, station_name, glob_patterns):
     return filepaths
 
 
-def _filter_filepaths(filepaths, debugging_mode):
-    """Filter out filepaths if ``debugging_mode=True``."""
-    if debugging_mode:
-        max_files = min(3, len(filepaths))
-        filepaths = filepaths[0:max_files]
-    return filepaths
-
-
 def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debugging_mode=False):
     """Get the list of files from a directory based on input parameters.
 
@@ -141,7 +133,7 @@ def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debug
     filepaths = _get_available_filepaths(raw_dir=raw_dir, station_name=station_name, glob_patterns=glob_patterns)
 
     # Filter out filepaths if debugging_mode=True
-    filepaths = _filter_filepaths(filepaths, debugging_mode)
+    filepaths = filter_filepaths(filepaths, debugging_mode)
 
     # Log number of files to process
     n_files = len(filepaths)
@@ -150,40 +142,6 @@ def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debug
     log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Return file list
-    return filepaths
-
-
-def get_l0a_filepaths(processed_dir, station_name, debugging_mode=False):
-    """Retrieve L0A files for a give station.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Directory of the campaign where to search for the L0A files.
-        Format: ``<..>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
-    station_name : str
-        ID of the station
-    debugging_mode : bool, optional
-        If ``True``, it select maximum 3 files for debugging purposes.
-        The default is ``False``.
-
-    Returns
-    -------
-    filepaths : list
-        List of L0A file paths.
-
-    """
-    station_dir = define_l0a_station_dir(processed_dir, station_name)
-    filepaths = list_files(station_dir, glob_pattern="*.parquet", recursive=True)
-
-    # Filter out filepaths if debugging_mode=True
-    filepaths = _filter_filepaths(filepaths, debugging_mode=debugging_mode)
-
-    # If no file available, raise error
-    if len(filepaths) == 0:
-        msg = f"No L0A Apache Parquet file is available in {station_dir}. Run L0A processing first."
-        raise ValueError(msg)
-
     return filepaths
 
 
