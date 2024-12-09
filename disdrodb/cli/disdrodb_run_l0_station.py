@@ -23,7 +23,7 @@ import click
 from disdrodb.l0.routines import (
     click_l0_archive_options,
 )
-from disdrodb.utils.scripts import (
+from disdrodb.utils.cli import (
     click_base_dir_option,
     click_processing_options,
     click_station_arguments,

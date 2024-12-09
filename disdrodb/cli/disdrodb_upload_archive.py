@@ -24,7 +24,7 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.upload_data import click_upload_archive_options, click_upload_options
-from disdrodb.utils.scripts import click_base_dir_option, parse_arg_to_list, parse_base_dir
+from disdrodb.utils.cli import click_base_dir_option, parse_arg_to_list, parse_base_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 

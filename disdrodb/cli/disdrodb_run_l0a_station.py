@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -15,100 +14,119 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Script to run the DISDRODB L0A processing."""
+"""Script to run the DISDRODB L0A station processing."""
 import sys
 from typing import Optional
 
 import click
 
-from disdrodb.utils.scripts import (
+from disdrodb.utils.cli import (
     click_base_dir_option,
     click_processing_options,
-    click_stations_options,
-    parse_arg_to_list,
+    click_station_arguments,
     parse_base_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
+# -------------------------------------------------------------------------.
+# Click Command Line Interface decorator
+
 
 @click.command()
-@click_stations_options
+@click_station_arguments
 @click_processing_options
 @click_base_dir_option
-def disdrodb_run_l0a(
-    # L0 disdrodb stations options
-    data_sources: Optional[str] = None,
-    campaign_names: Optional[str] = None,
-    station_names: Optional[str] = None,
+def disdrodb_run_l0a_station(
+    # Station arguments
+    data_source: str,
+    campaign_name: str,
+    station_name: str,
     # Processing options
     force: bool = False,
-    verbose: bool = True,
+    verbose: bool = False,
     parallel: bool = True,
     debugging_mode: bool = False,
     base_dir: Optional[str] = None,
 ):
     """
-    Run the L0A processing of DISDRODB stations.
-
-    This function allows to launch the processing of many DISDRODB stations with a single command.
-    From the list of all available DISDRODB stations, it runs the processing
-    of the stations matching the provided data_sources, campaign_names and station_names.
+    Run the L0A processing of a specific DISDRODB station from the terminal.
 
     Parameters
     ----------
-    data_sources : str
-        Name of data source(s) to process.
-        The name(s) must be UPPER CASE.
-        If campaign_names and station are not specified, process all stations.
-        To specify multiple data sources, write i.e.: --data_sources 'GPM EPFL NCAR'
-    campaign_names : str
-        Name of the campaign(s) to process.
-        The name(s) must be UPPER CASE.
-        To specify multiple campaigns, write i.e.: --campaign_names 'IPEX IMPACTS'
-    station_names : str
-        Station names.
-        To specify multiple stations, write i.e.: --station_names 'station1 station2'
+    data_source : str
+        Institution name (when campaign data spans more than 1 country),
+        or country (when all campaigns (or sensor networks) are inside a given country).
+        Must be UPPER CASE.
+    campaign_name : str
+        Campaign name. Must be UPPER CASE.
+    station_name : str
+        Station name
     force : bool
         If True, overwrite existing data into destination directories.
         If False, raise an error if there are already data into destination directories.
         The default is False.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is False.
+        The default is True.
     parallel : bool
         If True, the files are processed simultaneously in multiple processes.
         Each process will use a single thread.
         By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0a
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0a_station
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        It processes just the first 3 raw data files for each station.
+        It processes just the first 3 raw data files.
         The default is False.
     base_dir : str
-        Base directory of DISDRODB
+        Base directory of DISDRODB.
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.routines import run_disdrodb_l0a
+    import os
 
-    # Parse data_sources, campaign_names and station arguments
+    import dask
+    from dask.distributed import Client, LocalCluster
+
+    from disdrodb.l0.l0_processing import run_l0a_station
+
     base_dir = parse_base_dir(base_dir)
-    data_sources = parse_arg_to_list(data_sources)
-    campaign_names = parse_arg_to_list(campaign_names)
-    station_names = parse_arg_to_list(station_names)
 
-    # Run processing
-    run_disdrodb_l0a(
-        base_dir=base_dir,
-        data_sources=data_sources,
-        campaign_names=campaign_names,
-        station_names=station_names,
+    # -------------------------------------------------------------------------.
+    # If parallel=True, set the dask environment
+    if parallel:
+        # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
+        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
+        # Retrieve the number of process to run
+        available_workers = os.cpu_count() - 2  # if not set, all CPUs
+        num_workers = dask.config.get("num_workers", available_workers)
+        # Create dask.distributed local cluster
+        cluster = LocalCluster(
+            n_workers=num_workers,
+            threads_per_worker=1,
+            processes=True,
+            # memory_limit='8GB',
+            # silence_logs=False,
+        )
+        Client(cluster)
+    # -------------------------------------------------------------------------.
+
+    run_l0a_station(
+        # Station arguments
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
         # Processing options
         force=force,
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        base_dir=base_dir,
     )
+
+    # -------------------------------------------------------------------------.
+    # Close the cluster
+    if parallel:
+        cluster.close()

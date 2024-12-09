@@ -26,12 +26,12 @@ from typing import Optional
 import click
 
 from disdrodb.api.io import get_required_product
+from disdrodb.utils.cli import _execute_cmd
 from disdrodb.utils.logger import (
     # log_warning,
     # log_error,
     log_info,
 )
-from disdrodb.utils.scripts import _execute_cmd
 
 logger = logging.getLogger(__name__)
 

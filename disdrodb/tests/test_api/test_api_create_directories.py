@@ -41,7 +41,7 @@ from disdrodb.api.path import (
     define_metadata_filepath,
     define_station_dir,
 )
-from disdrodb.api.scripts.disdrodb_initialize_station import disdrodb_initialize_station
+from disdrodb.cli.disdrodb_initialize_station import disdrodb_initialize_station
 from disdrodb.tests.conftest import (
     create_fake_issue_file,
     create_fake_metadata_directory,

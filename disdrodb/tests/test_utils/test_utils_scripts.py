@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Test DISDRODB scripts utility."""
+"""Test DISDRODB command-line interface scripts utilities."""
 
-from disdrodb.utils.scripts import parse_arg_to_list, parse_base_dir
+from disdrodb.utils.cli import parse_arg_to_list, parse_base_dir
 
 
 def test_parse_arg_to_list_empty_string():

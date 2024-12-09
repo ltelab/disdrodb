@@ -14,13 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Script to run the DISDRODB L0A station processing."""
+"""Script to run the DISDRODB L0B station processing."""
 import sys
 from typing import Optional
 
 import click
 
-from disdrodb.utils.scripts import (
+from disdrodb.l0.routines import click_remove_l0a_option
+from disdrodb.utils.cli import (
     click_base_dir_option,
     click_processing_options,
     click_station_arguments,
@@ -36,21 +37,22 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_processing_options
+@click_remove_l0a_option
 @click_base_dir_option
-def disdrodb_run_l0a_station(
+def disdrodb_run_l0b_station(
     # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
     # Processing options
     force: bool = False,
-    verbose: bool = False,
+    verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    remove_l0a: bool = False,
     base_dir: Optional[str] = None,
 ):
-    """
-    Run the L0A processing of a specific DISDRODB station from the terminal.
+    """Run the L0B processing of a specific DISDRODB station from the terminal.
 
     Parameters
     ----------
@@ -71,17 +73,17 @@ def disdrodb_run_l0a_station(
         The default is True.
     parallel : bool
         If True, the files are processed simultaneously in multiple processes.
-        Each process will use a single thread.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
         By default, the number of process is defined with os.cpu_count().
-        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0a_station
+        However, you can customize it by typing: DASK_NUM_WORKERS=4 disdrodb_run_l0b_station
         If False, the files are processed sequentially in a single process.
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        It processes just the first 3 raw data files.
+        It processes just the first 100 rows of 3 L0A files.
         The default is False.
     base_dir : str
-        Base directory of DISDRODB.
+        Base directory of DISDRODB
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
@@ -90,7 +92,7 @@ def disdrodb_run_l0a_station(
     import dask
     from dask.distributed import Client, LocalCluster
 
-    from disdrodb.l0.l0_processing import run_l0a_station
+    from disdrodb.l0.l0_processing import run_l0b_station
 
     base_dir = parse_base_dir(base_dir)
 
@@ -111,9 +113,9 @@ def disdrodb_run_l0a_station(
             # silence_logs=False,
         )
         Client(cluster)
-    # -------------------------------------------------------------------------.
 
-    run_l0a_station(
+    # -------------------------------------------------------------------------.
+    run_l0b_station(
         # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,
@@ -123,6 +125,7 @@ def disdrodb_run_l0a_station(
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        remove_l0a=remove_l0a,
         base_dir=base_dir,
     )
 

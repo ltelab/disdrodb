@@ -26,6 +26,12 @@ from click.testing import CliRunner
 
 from disdrodb import __root_path__
 from disdrodb.api.path import define_data_dir
+from disdrodb.cli.disdrodb_run_l0 import disdrodb_run_l0
+from disdrodb.cli.disdrodb_run_l0_station import disdrodb_run_l0_station
+from disdrodb.cli.disdrodb_run_l0a import disdrodb_run_l0a
+from disdrodb.cli.disdrodb_run_l0a_station import disdrodb_run_l0a_station
+from disdrodb.cli.disdrodb_run_l0b import disdrodb_run_l0b
+from disdrodb.cli.disdrodb_run_l0b_station import disdrodb_run_l0b_station
 from disdrodb.l0.routines import (
     run_disdrodb_l0_station,
     run_disdrodb_l0a,
@@ -33,12 +39,6 @@ from disdrodb.l0.routines import (
     run_disdrodb_l0b,
     run_disdrodb_l0b_station,
 )
-from disdrodb.l0.scripts.disdrodb_run_l0 import disdrodb_run_l0
-from disdrodb.l0.scripts.disdrodb_run_l0_station import disdrodb_run_l0_station
-from disdrodb.l0.scripts.disdrodb_run_l0a import disdrodb_run_l0a
-from disdrodb.l0.scripts.disdrodb_run_l0a_station import disdrodb_run_l0a_station
-from disdrodb.l0.scripts.disdrodb_run_l0b import disdrodb_run_l0b
-from disdrodb.l0.scripts.disdrodb_run_l0b_station import disdrodb_run_l0b_station
 from disdrodb.utils.directories import count_files
 
 BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")

@@ -19,7 +19,7 @@ import sys
 
 import click
 
-from disdrodb.utils.scripts import click_base_dir_option, parse_base_dir
+from disdrodb.utils.cli import click_base_dir_option, parse_base_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 

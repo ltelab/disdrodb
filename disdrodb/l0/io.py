@@ -114,7 +114,7 @@ def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debug
         Directory of the campaign where to search for files.
         Format <..>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>
     station_name : str
-        ID of the station
+        Name of the station.
     verbose : bool, optional
         Whether to verbose the processing.
         The default is ``False``.

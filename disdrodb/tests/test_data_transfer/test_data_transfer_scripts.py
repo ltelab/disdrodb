@@ -20,10 +20,10 @@
 
 from click.testing import CliRunner
 
-from disdrodb.data_transfer.scripts.disdrodb_download_archive import disdrodb_download_archive
-from disdrodb.data_transfer.scripts.disdrodb_download_station import disdrodb_download_station
-from disdrodb.data_transfer.scripts.disdrodb_upload_archive import disdrodb_upload_archive
-from disdrodb.data_transfer.scripts.disdrodb_upload_station import disdrodb_upload_station
+from disdrodb.cli.disdrodb_download_archive import disdrodb_download_archive
+from disdrodb.cli.disdrodb_download_station import disdrodb_download_station
+from disdrodb.cli.disdrodb_upload_archive import disdrodb_upload_archive
+from disdrodb.cli.disdrodb_upload_station import disdrodb_upload_station
 from disdrodb.tests.conftest import create_fake_metadata_file
 
 TEST_ZIP_FPATH = (

@@ -15,7 +15,6 @@ The current software structure is described below:
 |       ├── 📜 io.py
 |       ├── 📜 path.py
 | ├── 📁 metadata
-|     ├── 📁 scripts
 |         ├── 📜 disdrodb_check_metadata_archive.py
 |     ├── 📜 checks.py
 |     ├── 📜 info.py

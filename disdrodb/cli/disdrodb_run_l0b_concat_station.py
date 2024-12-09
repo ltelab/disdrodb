@@ -24,7 +24,7 @@ from typing import Optional
 import click
 
 from disdrodb.l0.routines import click_l0b_concat_options
-from disdrodb.utils.scripts import (
+from disdrodb.utils.cli import (
     click_base_dir_option,
     click_station_arguments,
     parse_base_dir,
