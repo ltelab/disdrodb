@@ -151,7 +151,7 @@ def create_fake_raw_data_file(
     return str(filepath)
 
 
-@pytest.fixture()
+@pytest.fixture
 def create_test_config_files(request):  # noqa PT004
     """Create the specified config files into a temporary "test" directory.
 

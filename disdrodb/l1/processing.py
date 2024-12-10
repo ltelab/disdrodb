@@ -18,8 +18,6 @@
 
 
 import xarray as xr
-from disdrodb.utils.attrs import set_attrs
-from disdrodb.utils.encoding import set_encodings
 
 from disdrodb.l1.encoding_attrs import get_attrs_dict, get_encoding_dict
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
@@ -27,6 +25,8 @@ from disdrodb.l1.filters import define_spectrum_mask, filter_diameter_bins, filt
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity, get_min_max_diameter  # TODO: maybe move out of L2
+from disdrodb.utils.attrs import set_attrs
+from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.time import infer_sample_interval, regularize_timesteps
 
 

@@ -116,7 +116,7 @@ def test_define_summary_log_when_no_problems(tmp_path):
     assert not os.path.exists(problem_log_path)
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_logger():
     logger = logging.getLogger("test_logger")
     logger.setLevel(logging.DEBUG)  # Capture all log levels
@@ -155,7 +155,7 @@ def test_log_error(caplog, test_logger, capfd):
     assert " - Error message" in out
 
 
-@pytest.fixture()
+@pytest.fixture
 def log_environment(tmp_path):
     processed_dir = tmp_path / "processed"
     os.makedirs(processed_dir, exist_ok=True)

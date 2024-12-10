@@ -38,18 +38,6 @@ from disdrodb.api.path import (
     define_logs_dir,
     get_sample_interval_acronym,
 )
-from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
-
-# Logger
-from disdrodb.utils.logger import (
-    close_logger,
-    create_logger_file,
-    define_summary_log,
-    log_error,
-    log_info,
-)
-from disdrodb.utils.writer import write_product
-
 from disdrodb.l1.resampling import (
     regularize_dataset,
     resample_dataset,
@@ -62,6 +50,17 @@ from disdrodb.l2.processing import (
     generate_l2_radar,
 )
 from disdrodb.l2.processing_options import get_l2_processing_options, get_resampling_information
+from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
+
+# Logger
+from disdrodb.utils.logger import (
+    close_logger,
+    create_logger_file,
+    define_summary_log,
+    log_error,
+    log_info,
+)
+from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
 

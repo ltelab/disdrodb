@@ -37,6 +37,7 @@ from disdrodb.api.path import (
     define_logs_dir,
 )
 from disdrodb.configs import get_base_dir
+from disdrodb.l1.processing import generate_l1
 from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
@@ -48,8 +49,6 @@ from disdrodb.utils.logger import (
     log_info,
 )
 from disdrodb.utils.writer import write_product
-
-from disdrodb.l1.processing import generate_l1
 
 logger = logging.getLogger(__name__)
 

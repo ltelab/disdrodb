@@ -70,10 +70,7 @@ def check_url(url: str) -> bool:
         ``True`` if url well formatted, ``False`` if not well formatted.
     """
     regex = r"^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$"  # noqa: E501
-
-    if re.match(regex, url):
-        return True
-    return False
+    return re.match(regex, url)
 
 
 def check_path_is_a_directory(dir_path, path_name=""):

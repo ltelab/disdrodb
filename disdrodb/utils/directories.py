@@ -116,9 +116,7 @@ def is_empty_directory(path):
         return False
 
     paths = os.listdir(path)
-    if len(paths) == 0:
-        return True
-    return False
+    return len(paths) == 0
 
 
 def _remove_file_or_directories(path):

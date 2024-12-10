@@ -325,9 +325,7 @@ def str_has_decimal_digits(string: str) -> bool:
     bool
         True if string has digits.
     """
-    if len(string.split(".")) == 2:
-        return True
-    return False
+    return len(string.split(".")) == 2
 
 
 def get_decimal_ndigits(string: str) -> int:

@@ -18,8 +18,6 @@
 
 import numpy as np
 import xarray as xr
-from disdrodb.utils.attrs import set_attrs
-from disdrodb.utils.encoding import set_encodings
 
 from disdrodb.l1.encoding_attrs import get_attrs_dict, get_encoding_dict
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
@@ -46,9 +44,11 @@ from disdrodb.l2.empirical_dsd import (
     get_std_volume_drop_diameter,
     get_total_number_concentration,
 )
-from disdrodb.psd.fitting import compute_gof_stats
 from disdrodb.psd import create_psd, estimate_model_parameters
+from disdrodb.psd.fitting import compute_gof_stats
 from disdrodb.scattering import get_radar_parameters
+from disdrodb.utils.attrs import set_attrs
+from disdrodb.utils.encoding import set_encodings
 
 
 def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05):
@@ -430,7 +430,7 @@ def generate_l2_empirical(ds, ds_env=None):
     drop_volume = drop_counts * get_drop_volume(diameter)  # (np.pi/6 * diameter**3 * drop_counts)
     drop_total_volume = drop_volume.sum(dim="diameter_bin_center")
     drop_relative_volume_ratio = drop_volume / drop_total_volume
-    
+
     # Compute kinetic energy variables
     # --> TODO: implement from_dsd (using drop_concentration!)
     min_drop_kinetic_energy, max_drop_kinetic_energy = get_min_max_drop_kinetic_energy(
@@ -457,8 +457,8 @@ def generate_l2_empirical(ds, ds_env=None):
         rain_accumulation=rain_accumulation,
         water_density=water_density,
     )
-    
-    #----------------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------------
     # Compute integral parameters
     ds_l2 = compute_integral_parameters(
         drop_number_concentration=drop_number_concentration,
@@ -490,10 +490,9 @@ def generate_l2_empirical(ds, ds_env=None):
     ds_l2["KEmax"] = max_drop_kinetic_energy
     ds_l2["E"] = rainfall_kinetic_energy
     ds_l2["KE"] = kinetic_energy_density_flux
-    
+
     # ----------------------------------------------------------------------------
-   
-    
+
     # ----------------------------------------------------------------------------.
     # Remove timesteps where rain rate is 0
     ds_l2 = ds_l2.isel(time=ds_l2["R"] > 0)
@@ -679,12 +678,7 @@ def generate_l2_model(
 #### L2 Radar Parameters
 
 
-def generate_l2_radar(ds,  
-                      radar_band=None,
-                      canting_angle_std=7,
-                      diameter_max=8,
-                      axis_ratio="Thurai2007",
-                      parallel=True):
+def generate_l2_radar(ds, radar_band=None, canting_angle_std=7, diameter_max=8, axis_ratio="Thurai2007", parallel=True):
     """Simulate polarimetric radar variables from empirical drop number concentration or the estimated PSD.
 
     Parameters
@@ -718,7 +712,7 @@ def generate_l2_radar(ds,
         axis_ratio=axis_ratio,
         parallel=parallel,
     )
-    
+
     #### ----------------------------------------------------------------------------.
     #### Add encodings and attributes
     # Add variables attributes
@@ -731,5 +725,3 @@ def generate_l2_radar(ds,
 
     # Return dataset
     return ds_radar
-     
-     

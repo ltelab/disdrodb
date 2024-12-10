@@ -19,6 +19,7 @@ import sys
 from typing import Optional
 
 import click
+
 from disdrodb.utils.cli import (
     click_base_dir_option,
     click_processing_options,

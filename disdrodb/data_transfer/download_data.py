@@ -207,9 +207,7 @@ def download_station(
 
 def _is_valid_disdrodb_data_url(disdrodb_data_url):
     """Check if it is a valid disdrodb_data_url."""
-    if isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 10:
-        return True
-    return False
+    return isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 10
 
 
 def _has_disdrodb_data_url(metadata_filepath):
