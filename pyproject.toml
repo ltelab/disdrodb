@@ -90,9 +90,6 @@ disdrodb_run_l0c="disdrodb.cli.disdrodb_run_l0c:disdrodb_run_l0c"
 # L0
 disdrodb_run_l0_station="disdrodb.cli.disdrodb_run_l0_station:disdrodb_run_l0_station"
 disdrodb_run_l0="disdrodb.cli.disdrodb_run_l0:disdrodb_run_l0"
-# L0B concatenation
-disdrodb_run_l0b_concat_station="disdrodb.cli.disdrodb_run_l0b_concat_station:disdrodb_run_l0b_concat_station"
-disdrodb_run_l0b_concat="disdrodb.cli.disdrodb_run_l0b_concat:disdrodb_run_l0b_concat"
 
 
 

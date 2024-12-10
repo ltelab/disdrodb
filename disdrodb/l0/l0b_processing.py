@@ -428,6 +428,7 @@ def create_l0b_from_l0a(
 
 
 def set_geolocation_coordinates(ds, attrs):
+    """Add geolocation coordinates to dataset."""
     # Assumption
     # - If coordinate is present in L0A, overrides the one specified in the attributes
     # - If a station is fixed, discard the coordinates in the DISDRODB reader !

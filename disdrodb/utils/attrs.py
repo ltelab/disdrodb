@@ -130,6 +130,7 @@ def get_coords_attrs_dict():
 
 
 def set_coordinate_attributes(ds):
+    """Set coordinates attributes."""
     # Get attributes dictionary
     attrs_dict = get_coords_attrs_dict()
     # Set attributes

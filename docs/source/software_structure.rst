@@ -52,8 +52,6 @@ The current software structure is described below:
 |         ├── 📜 disdrodb_run_l0a_station.py
 |         ├── 📜 disdrodb_run_l0b.py
 |         ├── 📜 disdrodb_run_l0b_station.py
-|         ├── 📜 disdrodb_run_l0b_concat.py
-|         ├── 📜 disdrodb_run_l0b_concat_station.py
 |     ├── 📜 check_configs.py
 |     ├── 📜 check_standards.py
 |     ├── 📜 io.py

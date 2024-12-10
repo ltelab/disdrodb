@@ -32,7 +32,7 @@ from disdrodb.cli.disdrodb_run_l0a import disdrodb_run_l0a
 from disdrodb.cli.disdrodb_run_l0a_station import disdrodb_run_l0a_station
 from disdrodb.cli.disdrodb_run_l0b import disdrodb_run_l0b
 from disdrodb.cli.disdrodb_run_l0b_station import disdrodb_run_l0b_station
-from disdrodb.l0.routines import (
+from disdrodb.routines import (
     run_disdrodb_l0_station,
     run_disdrodb_l0a,
     run_disdrodb_l0a_station,
@@ -443,8 +443,7 @@ def test_disdrodb_run_l0b(tmp_path, cli):
 
 @pytest.mark.parametrize("remove_l0a", [True, False])
 @pytest.mark.parametrize("remove_l0b", [True, False])
-@pytest.mark.parametrize("l0b_concat", [True, False])
-def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
+def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b):
     """Test the disdrodb_run_l0b command."""
     test_base_dir = tmp_path / "DISDRODB"
     shutil.copytree(BASE_DIR, test_base_dir)
@@ -462,8 +461,6 @@ def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
             remove_l0a,
             "--remove_l0b",
             remove_l0b,
-            "--l0b_concat",
-            l0b_concat,
         ],
     )
 
@@ -482,18 +479,21 @@ def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b, l0b_concat):
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
     )
+    l0c_data_dir = define_data_dir(
+        base_dir=test_base_dir,
+        product="L0C",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
     if remove_l0a:
         assert count_files(l0a_data_dir, glob_pattern="*.parquet", recursive=True) == 0
-
-    if not remove_l0a:
+    else:
         assert count_files(l0a_data_dir, glob_pattern="*.parquet", recursive=True) > 0
 
-    if l0b_concat:
-        if remove_l0b:
-            assert count_files(l0b_data_dir, glob_pattern="*.nc", recursive=True) == 0
-        else:
-            assert count_files(l0b_data_dir, glob_pattern="*.nc", recursive=True) > 0
-
-    # If not L0B concat, do not remove L0B also if remove_l0b is specified !
-    if not l0b_concat and remove_l0b:
+    if remove_l0b:
+        assert count_files(l0b_data_dir, glob_pattern="*.nc", recursive=True) == 0
+    else:
         assert count_files(l0b_data_dir, glob_pattern="*.nc", recursive=True) > 0
+
+    assert count_files(l0c_data_dir, glob_pattern="*.nc", recursive=True) > 0

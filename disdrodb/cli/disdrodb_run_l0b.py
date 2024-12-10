@@ -21,12 +21,10 @@ from typing import Optional
 
 import click
 
-from disdrodb.l0.routines import (
-    click_remove_l0a_option,
-)
 from disdrodb.utils.cli import (
     click_base_dir_option,
     click_processing_options,
+    click_remove_l0a_option,
     click_stations_options,
     parse_arg_to_list,
     parse_base_dir,
@@ -97,7 +95,7 @@ def disdrodb_run_l0b(
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.routines import run_disdrodb_l0b
+    from disdrodb.routines import run_disdrodb_l0b
 
     # Parse data_sources, campaign_names and station arguments
     base_dir = parse_base_dir(base_dir)

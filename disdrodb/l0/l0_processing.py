@@ -21,7 +21,6 @@
 import datetime
 import logging
 import os
-import shutil
 import time
 from typing import Optional
 
@@ -37,18 +36,16 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import infer_path_info_tuple
-from disdrodb.api.io import get_filepaths, get_required_product
+from disdrodb.api.io import get_filepaths, get_required_product, remove_product
 from disdrodb.api.path import (
     define_campaign_dir,
-    define_l0a_filepath,
+    define_l0a_filename,
     define_l0b_filename,
-    define_l0b_filepath,
-    define_l0b_station_dir,
     define_l0c_filename,
     define_logs_dir,
-    define_station_dir,
-    get_disdrodb_path,
 )
+
+# get_disdrodb_path,
 from disdrodb.configs import get_base_dir
 from disdrodb.issue import read_station_issue
 from disdrodb.l0.io import (
@@ -63,7 +60,6 @@ from disdrodb.l0.l0c_processing import (
 )
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
-from disdrodb.utils.directories import list_files
 
 # Logger
 from disdrodb.utils.logger import (
@@ -72,8 +68,9 @@ from disdrodb.utils.logger import (
     define_summary_log,
     log_error,
     log_info,
-    log_warning,
 )
+
+# log_warning,
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
@@ -85,15 +82,21 @@ logger = logging.getLogger(__name__)
 @delayed_if_parallel
 def _generate_l0a(
     filepath,
-    processed_dir,
-    station_name,  # retrievable from filepath
+    data_dir,
+    logs_dir,
+    campaign_name,
+    station_name,
+    # Reader arguments
     column_names,
     reader_kwargs,
     df_sanitizer_fun,
+    # Processing info
+    sensor_name,
+    issue_dict,
+    # Processing options
     force,
     verbose,
     parallel,
-    issue_dict=None,
 ):
     """Generate L0A file from raw file."""
     from disdrodb.l0.l0a_processing import (
@@ -101,13 +104,12 @@ def _generate_l0a(
         write_l0a,
     )
 
+    # Define product
     product = "L0A"
+
     ##------------------------------------------------------------------------.
     # Create file logger
-    if issue_dict is None:
-        issue_dict = {}
     filename = os.path.basename(filepath)
-    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
         filename=filename,
@@ -118,21 +120,6 @@ def _generate_l0a(
     # Log start processing
     msg = f"{product} processing of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
-
-    ##------------------------------------------------------------------------.
-    # Retrieve metadata
-    base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
-    attrs = read_station_metadata(
-        product=product,
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
-    # Retrieve sensor name
-    sensor_name = attrs["sensor_name"]
-    check_sensor_name(sensor_name)
 
     ##------------------------------------------------------------------------.
     try:
@@ -149,7 +136,8 @@ def _generate_l0a(
 
         ##--------------------------------------------------------------------.
         #### - Write to Parquet
-        filepath = define_l0a_filepath(df=df, processed_dir=processed_dir, station_name=station_name)
+        filename = define_l0a_filename(df=df, campaign_name=campaign_name, station_name=station_name)
+        filepath = os.path.join(data_dir, filename)
         write_l0a(df=df, filepath=filepath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
@@ -177,13 +165,15 @@ def _generate_l0b(
     filepath,
     data_dir,
     logs_dir,
-    metadata,
-    station_name,
     campaign_name,
+    station_name,
+    # Processing info
+    metadata,
+    # Processing options
     force,
     verbose,
-    debugging_mode,
     parallel,
+    debugging_mode,
 ):
     from disdrodb.l0.l0b_processing import (
         create_l0b_from_l0a,
@@ -249,10 +239,16 @@ def _generate_l0b(
 
 def _generate_l0b_from_nc(
     filepath,
-    processed_dir,
-    station_name,  # retrievable from filepath
+    data_dir,
+    logs_dir,
+    campaign_name,
+    station_name,
+    # Processing info
+    metadata,
+    # Reader arguments
     dict_names,
     ds_sanitizer_fun,
+    # Processing options
     force,
     verbose,
     parallel,
@@ -267,7 +263,6 @@ def _generate_l0b_from_nc(
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
-    logs_dir = os.path.join(processed_dir, "logs", product, station_name)
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
         filename=filename,
@@ -280,20 +275,8 @@ def _generate_l0b_from_nc(
     log_info(logger, msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
-    # Retrieve info
-    base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
-
-    # Retrieve metadata
-    attrs = read_station_metadata(
-        product="L0A",
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
     # Retrieve sensor name
-    sensor_name = attrs["sensor_name"]
+    sensor_name = metadata["sensor_name"]
     check_sensor_name(sensor_name)
 
     ##------------------------------------------------------------------------.
@@ -309,11 +292,12 @@ def _generate_l0b_from_nc(
             ds_sanitizer_fun=ds_sanitizer_fun,
             sensor_name=sensor_name,
             verbose=verbose,
-            attrs=attrs,
+            attrs=metadata,
         )
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
-        filepath = define_l0b_filepath(ds, processed_dir, campaign_name=campaign_name, station_name=station_name)
+        filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
+        filepath = os.path.join(data_dir, filename)
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -487,19 +471,22 @@ def run_l0a(
         Default is ``False``.
 
     """
+    # Define product name
+    product = "L0A"
+
     # ------------------------------------------------------------------------.
     # Start L0A processing
     if verbose:
         t_i = time.time()
-        msg = f"L0A processing of station {station_name} has started."
+        msg = f"{product} processing of station {station_name} has started."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     # ------------------------------------------------------------------------.
     # Create directory structure
-    create_l0_directory_structure(
+    data_dir = create_l0_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        product="L0A",
+        product=product,
         station_name=station_name,
         force=force,
     )
@@ -516,15 +503,40 @@ def run_l0a(
         debugging_mode=debugging_mode,
     )
 
+    # -------------------------------------------------------------------------.
+    # Retrieve DISDRODB path components
+    base_dir, data_source, campaign_name = infer_path_info_tuple(raw_dir)
+
+    # -------------------------------------------------------------------------.
+    # Define logs directory
+    logs_dir = define_logs_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
     # -----------------------------------------------------------------.
     # Read issue YAML file
-    base_dir, data_source, campaign_name = infer_path_info_tuple(raw_dir)
     issue_dict = read_station_issue(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
+
+    ##------------------------------------------------------------------------.
+    # Read metadata
+    metadata = read_station_metadata(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    # Retrieve sensor name
+    sensor_name = metadata["sensor_name"]
+    check_sensor_name(sensor_name)
 
     # -----------------------------------------------------------------.
     # Generate L0A files
@@ -533,12 +545,16 @@ def run_l0a(
     list_tasks = [
         _generate_l0a(
             filepath=filepath,
-            processed_dir=processed_dir,
+            data_dir=data_dir,
+            logs_dir=logs_dir,
+            campaign_name=campaign_name,
             station_name=station_name,
-            # L0A reader argument
+            # Reader argument
             column_names=column_names,
             reader_kwargs=reader_kwargs,
             df_sanitizer_fun=df_sanitizer_fun,
+            # Processing info
+            sensor_name=sensor_name,
             issue_dict=issue_dict,
             # Processing options
             force=force,
@@ -640,8 +656,11 @@ def run_l0b_from_nc(
         Default is ``False``.
 
     """
+    # Define product name
+    product = "L0B"
+
     # ------------------------------------------------------------------------.
-    # Start L0A processing
+    # Start L0B NC processing
     if verbose:
         t_i = time.time()
         msg = f"L0B processing of station {station_name} has started."
@@ -649,12 +668,34 @@ def run_l0b_from_nc(
 
     # ------------------------------------------------------------------------.
     # Create directory structure
-    create_l0_directory_structure(
+    data_dir = create_l0_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
-        product="L0B",
+        product=product,
         station_name=station_name,
         force=force,
+    )
+
+    # -------------------------------------------------------------------------.
+    # Retrieve DISDRODB path components
+    base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
+
+    # Define logs directory
+    logs_dir = define_logs_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # -----------------------------------------------------------------.
+    # Retrieve metadata
+    metadata = read_station_metadata(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
     )
 
     # -------------------------------------------------------------------------.
@@ -679,8 +720,12 @@ def run_l0b_from_nc(
         list_logs = [
             _generate_l0b_from_nc(
                 filepath=filepath,
-                processed_dir=processed_dir,
+                data_dir=data_dir,
+                logs_dir=logs_dir,
+                campaign_name=campaign_name,
                 station_name=station_name,
+                # Processing info
+                metadata=metadata,
                 # Reader arguments
                 dict_names=dict_names,
                 ds_sanitizer_fun=ds_sanitizer_fun,
@@ -695,8 +740,12 @@ def run_l0b_from_nc(
         bag = db.from_sequence(filepaths, npartitions=len(filepaths))
         list_logs = bag.map(
             _generate_l0b_from_nc,
-            processed_dir=processed_dir,
+            data_dir=data_dir,
+            logs_dir=logs_dir,
+            campaign_name=campaign_name,
             station_name=station_name,
+            # Processing info
+            metadata=metadata,
             # Reader arguments
             dict_names=dict_names,
             ds_sanitizer_fun=ds_sanitizer_fun,
@@ -716,72 +765,6 @@ def run_l0b_from_nc(
         timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
         msg = f"L0B processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
-
-
-def run_l0b_concat(processed_dir, station_name, verbose=False):
-    """Concatenate all L0B netCDF files into a single netCDF file.
-
-    The single netCDF file is saved at ``<processed_dir>/L0B``.
-    """
-    from disdrodb.l0.l0b_processing import write_l0b
-    from disdrodb.utils.netcdf import xr_concat_datasets
-
-    # Create logger
-    filename = f"concatenatation_{station_name}"
-    logs_dir = os.path.join(processed_dir, "logs", "L0B")  # locate outside station directory
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=filename,
-        parallel=False,
-    )
-
-    # Retrieve info
-    base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
-
-    # -------------------------------------------------------------------------.
-    # Retrieve L0B files
-    station_dir = define_l0b_station_dir(processed_dir, station_name)
-    filepaths = list_files(station_dir, glob_pattern="*.nc", recursive=True)
-    filepaths = sorted(filepaths)
-
-    # -------------------------------------------------------------------------.
-    # Check there are at least two files
-    n_files = len(filepaths)
-    if n_files == 0:
-        msg = f"No L0B file is available for concatenation in {station_dir}."
-        log_error(logger=logger, msg=msg, verbose=False)
-        raise ValueError(msg)
-
-    if n_files == 1:
-        msg = f"Only a single file is available for concatenation in {station_dir}."
-        log_warning(logger=logger, msg=msg, verbose=verbose)
-
-    # -------------------------------------------------------------------------.
-    # Concatenate the files
-    ds = xr_concat_datasets(filepaths)
-
-    # -------------------------------------------------------------------------.
-    # Define the filepath of the concatenated L0B netCDF
-    single_nc_filepath = define_l0b_filepath(
-        ds,
-        processed_dir,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        l0b_concat=True,
-    )
-    force = True  # TODO add as argument
-    write_l0b(ds, filepath=single_nc_filepath, force=force)
-
-    # -------------------------------------------------------------------------.
-    # Close file and delete
-    ds.close()
-    del ds
-
-    # -------------------------------------------------------------------------.
-    # Close the file logger
-    close_logger(logger)
-
-    # Return the dataset
 
 
 ####--------------------------------------------------------------------------.
@@ -855,8 +838,8 @@ def run_l0a_station(
         campaign_name=campaign_name,
     )
     # Run L0A processing
-    # --> The reader call the run_l0a within the custom defined reader function
-    # --> For the special case of raw netCDF data, it calls the run_l0b_from_nc function
+    # --> The reader calls the run_l0a or the run_l0b_from_nc if the raw data are
+    # text files or netCDF files respectively.
     reader(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
@@ -874,12 +857,13 @@ def run_l0b_station(
     data_source,
     campaign_name,
     station_name,
+    # L0B processing options
+    remove_l0a: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    remove_l0a: bool = False,
     base_dir: Optional[str] = None,
 ):
     """
@@ -911,7 +895,9 @@ def run_l0b_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 100 rows of 3 L0A files will be processed. By default, ``False``.
+        Only the first 100 rows of 3 L0A files will be processed. The default is ``False``.
+    remove_l0a: bool, optional
+        Whether to remove the processed L0A files. The default is ``False``.
     base_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
@@ -933,6 +919,7 @@ def run_l0b_station(
     )
 
     # Skip run_l0b processing if the raw data are netCDFs
+    # - L0B produced when running L0A ...
     if metadata["raw_data_format"] == "netcdf":
         return
 
@@ -1027,7 +1014,7 @@ def run_l0b_station(
     # -----------------------------------------------------------------.
     # Option to remove L0A
     if remove_l0a:
-        delete_station_product(
+        remove_product(
             base_dir=base_dir,
             product="L0A",
             data_source=data_source,
@@ -1038,99 +1025,13 @@ def run_l0b_station(
         )
 
 
-def delete_station_product(
-    base_dir,
-    product,
-    data_source,
-    campaign_name,
-    station_name,
-    logger=None,
-    verbose=True,
-):
-    if product.upper() == "RAW":
-        raise ValueError("Removal of 'RAW' files is not allowed.")
-    station_dir = define_station_dir(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    if logger is not None:
-        log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
-    shutil.rmtree(station_dir)
-    if logger is not None:
-        log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)
-
-
-def run_l0b_concat_station(
-    # Station arguments
-    data_source,
-    campaign_name,
-    station_name,
-    # L0B concat options
-    remove_l0b=False,
-    verbose=True,
-    base_dir: Optional[str] = None,
-):
-    """Define the L0B file concatenation of a station.
-
-    This function is intended to be called through the ``disdrodb_run_l0b_concat station``
-    command-line interface.
-
-    Parameters
-    ----------
-    data_source : str
-        The name of the institution (for campaigns spanning multiple countries) or
-        the name of the country (for campaigns or sensor networks within a single country).
-        Must be provided in UPPER CASE.
-    campaign_name : str
-        The name of the campaign. Must be provided in UPPER CASE.
-    station_name : str
-        The name of the station.
-    verbose : bool, optional
-        If ``True`` (default), detailed processing information will be printed to the terminal.
-        If ``False``, less information will be displayed.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-
-    """
-    # Retrieve processed_dir
-    base_dir = get_base_dir(base_dir)
-    processed_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product="L0B",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exists=True,
-    )
-
-    # Run concatenation
-    run_l0b_concat(
-        processed_dir=processed_dir,
-        station_name=station_name,
-        verbose=verbose,
-    )
-
-    if remove_l0b:
-        station_dir = define_station_dir(
-            base_dir=base_dir,
-            product="L0B",
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-        )
-        log_info(logger=logger, msg="Removal of single L0B files started.", verbose=verbose)
-        shutil.rmtree(station_dir)
-        log_info(logger=logger, msg="Removal of single L0B files ended.", verbose=verbose)
-
-
 def run_l0c_station(
     # Station arguments
     data_source,
     campaign_name,
     station_name,
+    # L0C processing options
+    remove_l0b: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = True,
@@ -1172,13 +1073,13 @@ def run_l0c_station(
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
         Only the first 3 files will be processed. By default, ``False``.
+    remove_l0b: bool, optional
+        Whether to remove the processed L0B files. The default is ``False``.
     base_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
     """
-    # TODO: implement remove_l0b argument!
-
     # Define product
     product = "L0C"
 
@@ -1261,5 +1162,15 @@ def run_l0c_station(
         msg = f"{product} processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
 
-
-####---------------------------------------------------------------------------.
+    # -----------------------------------------------------------------.
+    # Option to remove L0B
+    if remove_l0b:
+        remove_product(
+            base_dir=base_dir,
+            product="L0B",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            logger=logger,
+            verbose=verbose,
+        )

@@ -169,10 +169,7 @@ def _define_station_problem_log_file(list_logs, problem_filepath):
     list_patterns = ["ValueError: Less than 5 timesteps available for day"]
     re_keyword = re.compile("|".join(list_keywords))
     # Compile patterns to ignore, escaping any special regex characters
-    if list_patterns:
-        re_patterns = re.compile("|".join(map(re.escape, list_patterns)))
-    else:
-        re_patterns = None
+    re_patterns = re.compile("|".join(map(re.escape, list_patterns))) if list_patterns else None
     # Initialize problem log file
     any_problem = False
     with open(problem_filepath, "w") as output_file:
@@ -186,10 +183,9 @@ def _define_station_problem_log_file(list_logs, problem_filepath):
                         # If the line matches an ignore pattern, skip it
                         if re_patterns and re_patterns.search(line):
                             continue
-                        else:
-                            log_with_problem = True
-                            any_problem = True
-                            break
+                        log_with_problem = True
+                        any_problem = True
+                        break
             # If it is reported, copy the log file in the logs_problem file
             if log_with_problem:
                 with open(log_filepath) as input_file:

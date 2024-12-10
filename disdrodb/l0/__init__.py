@@ -3,7 +3,7 @@ from disdrodb.l0.l0_processing import (
     run_l0b_from_nc,
 )
 from disdrodb.l0.l0_reader import available_readers
-from disdrodb.l0.routines import (
+from disdrodb.routines import (
     run_disdrodb_l0,
     run_disdrodb_l0_station,
     run_disdrodb_l0a,

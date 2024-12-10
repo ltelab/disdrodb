@@ -140,7 +140,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
         )
 
     # Execute create_l0_directory_structure
-    create_l0_directory_structure(
+    data_dir = create_l0_directory_structure(
         product=product,
         force=False,
         raw_dir=raw_dir,
@@ -149,6 +149,8 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     )
 
     # Test product, metadata and station directories have been created
+    assert os.path.exists(data_dir)
+    assert os.path.isdir(data_dir)
     assert os.path.exists(dst_station_dir)
     assert os.path.isdir(dst_station_dir)
     assert os.path.exists(dst_metadata_dir)
@@ -178,7 +180,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     assert os.path.exists(product_filepath)
 
     # Test delete file if already data in L0A (if force=True)
-    create_l0_directory_structure(
+    data_dir = create_l0_directory_structure(
         product=product,
         force=True,
         raw_dir=raw_dir,
@@ -186,6 +188,8 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
         station_name=station_name,
     )
     assert not os.path.exists(product_filepath)
+    assert os.path.exists(data_dir)
+    assert os.path.isdir(data_dir)
     assert os.path.exists(dst_station_dir)
     assert os.path.isdir(dst_station_dir)
     assert os.path.exists(dst_metadata_dir)

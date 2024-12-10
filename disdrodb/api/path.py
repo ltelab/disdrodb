@@ -21,9 +21,7 @@
 import os
 
 import pandas as pd
-import xarray as xr
 
-from disdrodb.api.info import infer_campaign_name_from_path
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import check_directory_exists
 
@@ -306,17 +304,20 @@ def define_config_dir(product):
 
 
 def check_sample_interval(sample_interval):
+    """Check sample_interval argument validity."""
     if not isinstance(sample_interval, int):
         raise ValueError("'sample_interval' must be an integer.")
 
 
 def check_distribution(distribution):
+    """Check distribution argument validity."""
     valid_distributions = ["gamma", "normalized_gamma", "lognormal", "exponential"]
     if distribution not in valid_distributions:
         raise ValueError(f"Invalid 'distribution' {distribution}. Valid values are {valid_distributions}")
 
 
 def check_rolling(rolling):
+    """Check rolling argument validity."""
     if not isinstance(rolling, bool):
         raise ValueError("'rolling' must be a boolean.")
 
@@ -352,20 +353,19 @@ def define_product_dir_tree(
         return ""
     if product.upper() in ["L0A", "L0B", "L0C", "L1"]:
         return product
-    elif product == "L2E":
+    if product == "L2E":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
         return os.path.join(product, sample_interval_acronym)
-    elif product == "L2M":
+    if product == "L2M":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         check_distribution(distribution)
         sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
         distribution_acronym = get_distribution_acronym(distribution)
         return os.path.join(product, distribution_acronym, sample_interval_acronym)
-    else:
-        raise ValueError("TODO")  # CHECK Product on top !`
+    raise ValueError(f"The product {product} is not defined.")
 
 
 def define_station_dir_new(
@@ -603,9 +603,10 @@ def define_data_dir(
 
 
 def define_product_dir(campaign_dir: str, product: str) -> str:
+    """Define product directory."""
+    # TODO: this currently only works for L0A and L0B. Should be removed !
     # - Raw: <campaign>/data/<...>
     # - Processed: <campaign>/L0A/L0B>
-    # TODO: IN FUTURE with station_name --> campaign_dir/station_name/product ! ()
     if product.upper() == "RAW":
         product_dir = os.path.join(campaign_dir, "data")
     else:
@@ -661,74 +662,21 @@ def define_station_dir(
     return str(station_dir)
 
 
-def define_l0a_station_dir(processed_dir: str, station_name: str) -> str:
-    """Define L0A directory.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    station_name : str
-        Name of the station
-
-    Returns
-    -------
-    str
-        L0A directory path.
-    """
-    station_dir = os.path.join(processed_dir, "L0A", station_name)
-    return station_dir
+####--------------------------------------------------------------------------.
+#### Filenames for DISDRODB products
 
 
-def define_l0b_station_dir(processed_dir: str, station_name: str) -> str:
-    """Define L0B directory.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    station_name : int
-        Name of the station
-
-    Returns
-    -------
-    str
-        Path of the L0B directory
-    """
-    station_dir = os.path.join(processed_dir, "L0B", station_name)
-    return station_dir
-
-
-def define_l1_station_dir(processed_dir: str, station_name: str) -> str:
-    """Define L1 directory.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path of the processed directory
-    station_name : int
-        Name of the station
-
-    Returns
-    -------
-    str
-        Path of the L1 directory
-    """
-    station_dir = os.path.join(processed_dir, "L1", station_name)
-    return station_dir
-
-
-def define_l0a_filename(df, processed_dir, station_name: str) -> str:
+def define_l0a_filename(df, campaign_name: str, station_name: str) -> str:
     """Define L0A file name.
 
     Parameters
     ----------
     df : pandas.DataFrame
-        L0A DataFrame
-    processed_dir : str
-        Path of the processed directory
+        L0A DataFrame.
+    campaign_name : str
+        Name of the campaign.
     station_name : str
-        Name of the station
+        Name of the station.
 
     Returns
     -------
@@ -741,7 +689,6 @@ def define_l0a_filename(df, processed_dir, station_name: str) -> str:
     starting_time, ending_time = get_dataframe_start_end_time(df)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
-    campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
     version = PRODUCT_VERSION
     filename = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return filename
@@ -753,11 +700,11 @@ def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
     Parameters
     ----------
     ds  : xarray.Dataset
-        L0B xarray Dataset
-    processed_dir : str
-        Path of the processed directory
+        L0B xarray Dataset.
+    campaign_name : str
+        Name of the campaign.
     station_name : str
-        Name of the station
+        Name of the station.
 
     Returns
     -------
@@ -803,70 +750,8 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     return filename
 
 
-def define_l0a_filepath(df: pd.DataFrame, processed_dir: str, station_name: str) -> str:
-    """Define L0A file path.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        L0A DataFrame.
-    processed_dir : str
-        Path of the processed directory.
-    station_name : str
-        Name of the station.
-
-    Returns
-    -------
-    str
-        L0A file path.
-    """
-    filename = define_l0a_filename(df=df, processed_dir=processed_dir, station_name=station_name)
-    station_dir = define_l0a_station_dir(processed_dir=processed_dir, station_name=station_name)
-    filepath = os.path.join(station_dir, filename)
-    return filepath
-
-
-def define_l0b_filepath(
-    ds: xr.Dataset,
-    processed_dir: str,
-    campaign_name: str,
-    station_name: str,
-    l0b_concat=False,
-) -> str:
-    """Define L0B file path.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        L0B xarray Dataset.
-    processed_dir : str
-        Path of the processed directory.
-    station_name : str
-        ID of the station
-    l0b_concat : bool
-        If ``False``, the file is specified inside the station directory.
-        If ``True``, the file is specified outside the station directory.
-
-    Returns
-    -------
-    str
-        L0B file path.
-    """
-    station_dir = define_l0b_station_dir(processed_dir, station_name)
-    filename = define_l0b_filename(ds, campaign_name=campaign_name, station_name=station_name)
-    if l0b_concat:
-        product_dir = os.path.dirname(station_dir)
-        filepath = os.path.join(product_dir, filename)
-    else:
-        filepath = os.path.join(station_dir, filename)
-    return filepath
-
-
-####--------------------------------------------------------------------------.
-#### Directory/Filepaths for L1 and L2 products
-
-
 def get_distribution_acronym(distribution):
+    """Define DISDRODB L2M distribution acronym."""
     acronym_dict = {
         "lognorm": "LOGNORM",
         "normalized_gamma": "NGAMMA",
@@ -1003,111 +888,8 @@ def define_l2m_filename(
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
-    filename = f"L2M_{distribution_acronym}.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    filename = (
+        f"L2M_{distribution_acronym}.{sample_interval_acronym}.{campaign_name}."
+        + f"{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    )
     return filename
-
-
-def define_l1_filepath(ds: xr.Dataset, processed_dir: str, station_name: str) -> str:
-    """Define L1 file path.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        L1 xarray Dataset.
-    processed_dir : str
-        Path of the processed directory.
-    station_name : str
-        ID of the station
-
-    Returns
-    -------
-    str
-        L1 file path.
-    """
-    data_dir = define_l1_station_dir(processed_dir, station_name)
-    campaign_name = infer_campaign_name_from_path(processed_dir).replace(".", "-")
-    filename = define_l1_filename(ds, campaign_name=campaign_name, station_name=station_name)
-    filepath = os.path.join(data_dir, filename)
-    return filepath
-
-
-# def define_l2e_filepath(ds: xr.Dataset,
-#                         processed_dir: str,
-#                         station_name: str,
-#                         sample_interval: int,
-#                         rolling: bool) -> str:
-#     """Define L2E file path.
-
-#     Parameters
-#     ----------
-#     ds  : xarray.Dataset
-#         L1 xarray Dataset.
-#     processed_dir : str
-#         Path of the processed directory.
-#     station_name : str
-#         ID of the station
-
-#     Returns
-#     -------
-#     str
-#         L2E file path.
-#     """
-
-#     data_dir = define_data_dir(
-#         product="L2E",
-#         data_source=data_source,
-#         campaign_name=campaign_name,
-#         sample_interval=sample_interval,
-#         rolling=rolling,
-#         base_dir=base_dir,
-#     )
-#     filename = define_l2e_filename(ds,
-#                                    campaign_name=campaign_name,
-#                                    station_name=station_name,
-#                                    sample_interval=sample_interval,
-#                                    rolling=rolling)
-#     filepath = os.path.join(data_dir, filename)
-#     return filepath
-
-
-# def define_l2m_filepath(ds: xr.Dataset,
-#                         processed_dir: str,
-#                         station_name: str,
-#                         distribution: str,
-#                         sample_interval: int,
-#                         rolling: bool) -> str:
-#     """Define L2M file path.
-
-#     Parameters
-#     ----------
-#     ds  : xarray.Dataset
-#         L2E xarray Dataset.
-#     processed_dir : str
-#         Path of the processed directory.
-#     station_name : str
-#         ID of the station
-
-#     Returns
-#     -------
-#     str
-#         L2M file path.
-#     """
-#     data_dir = define_data_dir(
-#         product="L2M",
-#         base_dir=base_dir,
-#         product=product,
-#         data_source=data_source,
-#         campaign_name=campaign_name,
-#         distribution=distribution,
-#         sample_interval=sample_interval,
-#         rolling=rolling,
-#         base_dir=base_dir,
-#     )
-#     filename = define_l2m_filename(ds,
-#                                    campaign_name=campaign_name,
-#                                    station_name=station_name,
-#                                    distribution=distribution,
-#                                    sample_interval=sample_interval,
-#                                    rolling=rolling)
-#     filepath = os.path.join(data_dir, filename)
-#     return filepath

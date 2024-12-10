@@ -164,6 +164,7 @@ def _copy_station_metadata(
 
 
 def ensure_empty_data_dir(data_dir, force):
+    """Remove the content of the data_dir directory."""
     # If force=True, remove all the directory content
     if force:
         shutil.rmtree(data_dir)
@@ -248,6 +249,8 @@ def create_l0_directory_structure(
     # - If force=False, raise an error
     if available_data:
         ensure_empty_data_dir(data_dir, force=force)
+
+    return data_dir
 
 
 def create_product_directory(

@@ -20,10 +20,10 @@ from typing import Optional
 
 import click
 
-from disdrodb.l0.routines import click_remove_l0a_option
 from disdrodb.utils.cli import (
     click_base_dir_option,
     click_processing_options,
+    click_remove_l0a_option,
     click_station_arguments,
     parse_base_dir,
 )

@@ -55,7 +55,7 @@ Example :
     # L0 processing settings
     l0a_processing = True
     l0b_processing = True
-    l0b_concat = True
+    l0c_processing = True
     remove_l0a = False
     remove_l0b = False
 
@@ -74,7 +74,7 @@ Example :
         # L0 processing settings
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
-        l0b_concat=l0b_concat,
+        l0c_processing=l0c_processing,
         remove_l0a=remove_l0a,
         remove_l0b=remove_l0b,
         # L0 processing options
@@ -151,7 +151,7 @@ Example :
     # L0 processing settings
     l0a_processing = True
     l0b_processing = True
-    l0b_concat = False
+    l0c_processing = True
     remove_l0a = False
     remove_l0b = False
     # L0 processing options
@@ -168,7 +168,7 @@ Example :
         # L0 processing settings
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
-        l0b_concat=l0b_concat,
+        l0c_processing=l0c_processing,
         remove_l0a=remove_l0a,
         remove_l0b=remove_l0b,
         # L0 processing options

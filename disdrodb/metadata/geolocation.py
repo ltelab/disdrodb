@@ -24,21 +24,41 @@ import requests
 
 
 def infer_altitude(latitude, longitude, dem="aster30m"):
-    """Infer station altitude using ASTER DEM at 30m resolution.
-    We use OpenTopoData API.
+    """Infer station altitude using a Digital Elevation Model (DEM).
 
-    Please note:
-    - Max 1000 calls per day
-    - Max 100 locations per request.
-    - Max 1 call per second
+    This function uses the OpenTopoData API to infer the altitude of a given
+    location specified by latitude and longitude.
+    By default, it uses the ASTER DEM at 30m resolution.
 
-    Alternative global DEM:
-    dem = "srtm30"
-    dem = "mapzen"
-    dem = "aster30m"
+    Parameters
+    ----------
+    latitude : float
+        The latitude of the location for which to infer the altitude.
+    longitude : float
+        The longitude of the location for which to infer the altitude.
+    dem : str, optional
+        The DEM to use for altitude inference. Options are "aster30m" (default),
+        "srtm30", and "mapzen".
 
+    Returns
+    -------
+    elevation : float
+        The inferred altitude of the specified location.
+
+    Raises
+    ------
+    ValueError
+        If the altitude retrieval fails.
+
+    Notes
+    -----
+    - The OpenTopoData API has a limit of 1000 calls per day.
+    - Each request can include up to 100 locations.
+    - The API allows a maximum of 1 call per second.
+
+    References
+    ----------
     https://www.opentopodata.org/api/
-
     """
     import requests
 
@@ -54,6 +74,38 @@ def infer_altitude(latitude, longitude, dem="aster30m"):
 
 
 def infer_altitudes(lats, lons, dem="aster30m"):
+    """
+    Infer altitude of a given location using OpenTopoData API.
+
+    Parameters
+    ----------
+    lats : list or array-like
+        List or array of latitude coordinates.
+    lons : list or array-like
+        List or array of longitude coordinates.
+    dem : str, optional
+        Digital Elevation Model (DEM) to use for altitude inference.
+        The default DEM is "aster30m".
+
+    Returns
+    -------
+    elevations : numpy.ndarray
+        Array of inferred altitudes corresponding to the input coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the latitude and longitude arrays do not have the same length.
+        If altitude retrieval fails for any block of coordinates.
+
+    Notes
+    -----
+    - The OpenTopoData API has a limit of 1000 calls per day.
+    - Each request can include up to 100 locations.
+    - The API allows a maximum of 1 call per second.
+    - The API requests are made in blocks of up to 100 coordinates,
+    with a 2-second delay between requests.
+    """
     # Check that lats and lons have the same length
     if len(lats) != len(lons):
         raise ValueError("Latitude and longitude arrays must have the same length.")

@@ -19,6 +19,7 @@
 """Routines tot extract information from the DISDRODB infrastructure."""
 
 import os
+import shutil
 from typing import Optional
 
 import numpy as np
@@ -27,19 +28,23 @@ from disdrodb.api.checks import check_product
 from disdrodb.api.path import define_data_dir, define_product_dir, get_disdrodb_path
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import count_files, list_directories, list_files
+from disdrodb.utils.logger import (
+    log_info,
+)
 
 
 def get_required_product(product):
+    """Determine the required product for input product processing."""
     # Check input
     check_product(product)
     # Determine required product
     requirement_dict = {
+        "L0A": "RAW",
         "L0B": "L0A",
         "L0C": "L0B",
         "L1": "L0C",
         "L2E": "L1",
         "L2M": "L2E",
-        "L2S": "L2M",  # TODO adapt
     }
     required_product = requirement_dict[product]
     return required_product
@@ -379,9 +384,13 @@ def available_stations(
     campaign_names=None,
     station_names=None,
     return_tuple=True,
+    raise_error_if_empty=False,
     base_dir=None,
 ):
-    """Return stations for which data are available on disk."""
+    """Return stations for which data are available on disk.
+
+    Raise an error if no stations are available.
+    """
     base_dir = get_base_dir(base_dir)
     # Checks arguments
     product = check_product(product)
@@ -398,24 +407,41 @@ def available_stations(
     if isinstance(station_names, str):
         station_names = [station_names]
 
-    # If data_source is None, first retrieve all stations
+    # If data_source is None, retrieve all stations
     if data_sources is None:
         list_info = _get_stations(base_dir=base_dir, product=product)
-    # Otherwise retrieve all stations for the specified data sources
+    ###-----------------------------------------------.
+    ### Filter by data_sources
     else:
         list_info = _get_data_sources_stations(
             base_dir=base_dir,
             data_sources=data_sources,
             product=product,
         )
+    # If no stations available, raise an error
+    if raise_error_if_empty and len(list_info) == 0:
+        raise ValueError("No stations available given the provided `data_sources` {data_sources}.")
+
+    ###-----------------------------------------------.
+    ### Filter by campaign_names
     # If campaign_names is not None, subset by campaign_names
     if campaign_names is not None:
         list_info = [info for info in list_info if info[1] in campaign_names]
 
+    # If no stations available, raise an error
+    if raise_error_if_empty and len(list_info) == 0:
+        raise ValueError("No stations available given the provided `campaign_names` {campaign_names}.")
+
+    ###-----------------------------------------------.
+    ### Filter by station_names
     # If station_names is not None, subset by station_names
     if station_names is not None:
         list_info = [info for info in list_info if info[2] in station_names]
+    # If no stations available, raise an error
+    if raise_error_if_empty and len(list_info) == 0:
+        raise ValueError("No stations available given the provided `station_names` {station_names}.")
 
+    ###-----------------------------------------------.
     # Return list with the tuple (data_source, campaign_name, station_name)
     if return_tuple:
         return list_info
@@ -423,3 +449,33 @@ def available_stations(
     # - Return list with the name of the available stations
     list_stations = [info[2] for info in list_info]
     return list_stations
+
+
+####----------------------------------------------------------------------------------
+#### DISDRODB Removal Functions
+
+
+def remove_product(
+    base_dir,
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    logger=None,
+    verbose=True,
+):
+    """Remove all product files of a specific station."""
+    if product.upper() == "RAW":
+        raise ValueError("Removal of 'RAW' files is not allowed.")
+    data_dir = define_data_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    if logger is not None:
+        log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
+    shutil.rmtree(data_dir)
+    if logger is not None:
+        log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)

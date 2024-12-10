@@ -20,14 +20,13 @@
 
 import os
 
-# import datetime
 import xarray as xr
 
 from disdrodb.utils.attrs import set_disdrodb_attrs
 from disdrodb.utils.directories import create_directory, remove_if_exists
 
 
-def write_product(ds: xr.Dataset, filepath: str, product: str = None, force=False) -> None:
+def write_product(ds: xr.Dataset, filepath: str, product: str, force: bool = False) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
@@ -36,6 +35,8 @@ def write_product(ds: xr.Dataset, filepath: str, product: str = None, force=Fals
         Input xarray dataset.
     filepath : str
         Output file path.
+    product: str
+        DISDRODB product name.
     force : bool, optional
         Whether to overwrite existing data.
         If ``True``, overwrite existing data into destination directories.

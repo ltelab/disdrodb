@@ -20,11 +20,9 @@ from typing import Optional
 
 import click
 
-from disdrodb.l0.routines import (
-    click_l0_archive_options,
-)
 from disdrodb.utils.cli import (
     click_base_dir_option,
+    click_l0_archive_options,
     click_processing_options,
     click_station_arguments,
     parse_base_dir,
@@ -49,7 +47,7 @@ def disdrodb_run_l0_station(
     # L0 archive options
     l0a_processing: bool = True,
     l0b_processing: bool = True,
-    l0b_concat: bool = True,
+    l0c_processing: bool = True,
     remove_l0a: bool = False,
     remove_l0b: bool = False,
     # Processing options
@@ -77,18 +75,15 @@ def disdrodb_run_l0_station(
     l0b_processing : bool \n
         Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.\n
         The default is True.\n
-    l0b_concat : bool \n
-        Whether to concatenate all raw files into a single L0B netCDF file.\n
-        If l0b_concat=True, all raw files will be saved into a single L0B netCDF file.\n
-        If l0b_concat=False, each raw file will be converted into the corresponding L0B netCDF file.\n
-        The default is False.\n
+    l0c_processing : bool
+        Whether to launch processing to generate L0C netCDF4 file(s) from L0C data.
+        The default is True.
     remove_l0a : bool \n
         Whether to keep the L0A files after having generated the L0B netCDF products.\n
         The default is False.\n
-    remove_l0b : bool \n
-         Whether to remove the L0B files after having concatenated all L0B netCDF files.\n
-         It takes places only if l0b_concat=True\n
-         The default is False.\n
+    remove_l0b : bool
+         Whether to remove the L0B files after having produced L0C netCDF files.
+        The default is False.
     force : bool \n
         If True, overwrite existing data into destination directories.\n
         If False, raise an error if there are already data into destination directories.\n
@@ -113,7 +108,7 @@ def disdrodb_run_l0_station(
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
-    from disdrodb.l0.routines import run_disdrodb_l0_station
+    from disdrodb.routines import run_disdrodb_l0_station
 
     base_dir = parse_base_dir(base_dir)
 
@@ -125,7 +120,7 @@ def disdrodb_run_l0_station(
         # L0 archive options
         l0a_processing=l0a_processing,
         l0b_processing=l0b_processing,
-        l0b_concat=l0b_concat,
+        l0c_processing=l0c_processing,
         remove_l0a=remove_l0a,
         remove_l0b=remove_l0b,
         # Processing options

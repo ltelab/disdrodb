@@ -176,3 +176,76 @@ def click_processing_options(function: object):
         help="Force overwriting",
     )(function)
     return function
+
+
+def click_remove_l0a_option(function: object):
+    """Click command line argument for ``remove_l0a``."""
+    function = click.option(
+        "--remove_l0a",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="If true, remove the L0A files once the L0B processing is terminated.",
+    )(function)
+    return function
+
+
+def click_remove_l0b_option(function: object):
+    """Click command line argument for ``remove_l0b``."""
+    function = click.option(
+        "--remove_l0b",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="If true, remove the L0B files once the L0C processing is terminated.",
+    )(function)
+    return function
+
+
+def click_l0_archive_options(function: object):
+    """Click command line arguments for L0 processing archiving of a station.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.option(
+        "--remove_l0b",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="If true, remove all source L0B files once L0B concatenation is terminated.",
+    )(function)
+    function = click.option(
+        "--remove_l0a",
+        type=bool,
+        show_default=True,
+        default=False,
+        help="If true, remove the L0A files once the L0B processing is terminated.",
+    )(function)
+    function = click.option(
+        "-l0c",
+        "--l0c_processing",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Perform L0C processing.",
+    )(function)
+    function = click.option(
+        "-l0b",
+        "--l0b_processing",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Perform L0B processing.",
+    )(function)
+    function = click.option(
+        "-l0a",
+        "--l0a_processing",
+        type=bool,
+        show_default=True,
+        default=True,
+        help="Perform L0A processing.",
+    )(function)
+    return function

@@ -23,6 +23,7 @@ import click
 from disdrodb.utils.cli import (
     click_base_dir_option,
     click_processing_options,
+    click_remove_l0b_option,
     click_station_arguments,
     parse_base_dir,
 )
@@ -36,12 +37,15 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_processing_options
+@click_remove_l0b_option
 @click_base_dir_option
 def disdrodb_run_l0c_station(
     # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
+    # L0C processing options
+    remove_l0b: bool = False,
     # Processing options
     force: bool = False,
     verbose: bool = True,
@@ -79,6 +83,8 @@ def disdrodb_run_l0c_station(
         If True, it reduces the amount of data to process.
         It processes just the first 100 rows of 3 L0A files.
         The default is False.
+    remove_l0b: bool, optional
+        Whether to remove the processed L0B files. The default is ``False``.
     base_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB
@@ -117,6 +123,8 @@ def disdrodb_run_l0c_station(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        # L0C processing options
+        remove_l0b=remove_l0b,
         # Processing options
         force=force,
         verbose=verbose,
