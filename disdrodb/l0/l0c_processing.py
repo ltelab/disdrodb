@@ -23,10 +23,10 @@ import logging
 import numpy as np
 import pandas as pd
 import xarray as xr
-from mydsd.l1.resampling import add_sample_interval
-from mydsd.utils.time import infer_sample_interval, regularize_timesteps
 
 from disdrodb.api.info import get_start_end_time_from_filepaths
+from disdrodb.l1.resampling import add_sample_interval
+from disdrodb.utils.time import infer_sample_interval, regularize_timesteps
 
 logger = logging.getLogger(__name__)
 

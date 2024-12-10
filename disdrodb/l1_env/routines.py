@@ -14,4 +14,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB Utils Module."""
+"""Core functions for DISDRODB ENV production."""
+
+import xarray as xr
+
+
+def get_default_environment_dataset():
+    """Define defaults values for the ENV dataset."""
+    ds_env = xr.Dataset()
+    ds_env["sea_level_air_pressure"] = 101_325
+    ds_env["gas_constant_dry_air"] = 287.04
+    ds_env["lapse_rate"] = 0.0065
+    ds_env["relative_humidity"] = 0.95
+    ds_env["temperature"] = 20 + 273.15
+    return ds_env
+
+
+def load_env_dataset(ds):
+    """Load the ENV dataset."""
+    # TODO - Retrieve relative_humidity and temperature from L1-ENV
+    ds_env = get_default_environment_dataset()
+    ds_env = ds_env.assign_coords({"altitude": ds["altitude"], "latitude": ds["latitude"]})
+    return ds_env

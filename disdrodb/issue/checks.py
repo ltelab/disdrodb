@@ -35,8 +35,7 @@ def _is_numpy_array_string(arr):
     arr : numpy array
         Numpy array to check.
     """
-    dtype = arr.dtype.type
-    return dtype in (np.str_, np.unicode_)
+    return np.issubdtype(arr.dtype, np.str_)
 
 
 def _is_numpy_array_datetime(arr):
@@ -52,7 +51,7 @@ def _is_numpy_array_datetime(arr):
     numpy array
         Numpy array checked.
     """
-    return arr.dtype.type == np.datetime64
+    return np.issubdtype(arr.dtype, np.datetime64)
 
 
 def _check_timestep_datetime_accuracy(timesteps, unit="s"):

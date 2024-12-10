@@ -90,7 +90,15 @@ disdrodb_run_l0c="disdrodb.cli.disdrodb_run_l0c:disdrodb_run_l0c"
 # L0
 disdrodb_run_l0_station="disdrodb.cli.disdrodb_run_l0_station:disdrodb_run_l0_station"
 disdrodb_run_l0="disdrodb.cli.disdrodb_run_l0:disdrodb_run_l0"
-
+# L1
+disdrodb_run_l1_station="disdrodb.cli.disdrodb_run_l1_station:disdrodb_run_l1_station"
+disdrodb_run_l1="disdrodb.cli.disdrodb_run_l1_station:disdrodb_run_l1_station"
+# L2E
+disdrodb_run_l2e_station="disdrodb.cli.disdrodb_run_l2e_station:disdrodb_run_l2e_station"
+disdrodb_run_l2e="disdrodb.cli.disdrodb_run_l2e_station:disdrodb_run_l2e_station"
+# L2M
+disdrodb_run_l2m_station="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
+disdrodb_run_l2m="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
 
 
 

@@ -1,0 +1,363 @@
+# -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2023 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
+"""This module contains utilities related to the processing of temporal dataset."""
+from typing import Optional
+
+import numpy as np
+import pandas as pd
+import xarray as xr
+from xarray.core import dtypes
+
+
+def get_dataset_start_end_time(ds: xr.Dataset, time_dim="time"):
+    """Retrieves dataset starting and ending time.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset
+    time_dim: str
+        Name of the time dimension.
+        The default is "time".
+
+    Returns
+    -------
+    tuple
+        (``starting_time``, ``ending_time``)
+
+    """
+    starting_time = ds[time_dim].to_numpy()[0]
+    ending_time = ds[time_dim].to_numpy()[-1]
+    return (starting_time, ending_time)
+
+
+def _define_fill_value(ds, fill_value):
+    fill_value = {}
+    for var in ds.data_vars:
+        if np.issubdtype(ds[var].dtype, np.floating):
+            fill_value[var] = dtypes.NA
+        elif np.issubdtype(ds[var].dtype, np.integer):
+            if "_FillValue" in ds[var].attrs:
+                fill_value[var] = ds[var].attrs["_FillValue"]
+            else:
+                fill_value[var] = np.iinfo(ds[var].dtype).max
+    return fill_value
+
+
+def _check_time_sorted(ds, time_dim):
+    time_diff = np.diff(ds[time_dim].data.astype(int))
+    if np.any(time_diff == 0):
+        raise ValueError(f"In the {time_dim} dimension there are duplicated timesteps !")
+    if not np.all(time_diff > 0):
+        print(f"The {time_dim} dimension was not sorted. Sorting it now !")
+        ds = ds.sortby(time_dim)
+    return ds
+
+
+def regularize_dataset(
+    ds: xr.Dataset,
+    freq: str,
+    time_dim: str = "time",
+    method: Optional[str] = None,
+    fill_value=None,
+):
+    """Regularize a dataset across time dimension with uniform resolution.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        xarray Dataset.
+    time_dim : str, optional
+        The time dimension in the xarray.Dataset. The default is ``"time"``.
+    freq : str
+        The ``freq`` string to pass to `pd.date_range()` to define the new time coordinates.
+        Examples: ``freq="2min"``.
+    method : str, optional
+        Method to use for filling missing timesteps.
+        If ``None``, fill with ``fill_value``. The default is ``None``.
+        For other possible methods, see xarray.Dataset.reindex()`.
+    fill_value : (float, dict), optional
+        Fill value to fill missing timesteps.
+        If not specified, for float variables it uses ``dtypes.NA`` while for
+        for integers variables it uses the maximum allowed integer value or,
+        in case of undecoded variables, the ``_FillValue`` DataArray attribute..
+
+    Returns
+    -------
+    ds_reindexed : xarray.Dataset
+        Regularized dataset.
+
+    """
+    ds = _check_time_sorted(ds, time_dim=time_dim)
+    start_time, end_time = get_dataset_start_end_time(ds, time_dim=time_dim)
+    new_time_index = pd.date_range(
+        start=pd.to_datetime(start_time),
+        end=pd.to_datetime(end_time),
+        freq=freq,
+    )
+
+    # Define fill_value dictionary
+    if fill_value is None:
+        fill_value = _define_fill_value(ds, fill_value)
+
+    # Regularize dataset and fill with NA values
+    ds = ds.reindex(
+        {time_dim: new_time_index},
+        method=method,  # do not fill gaps
+        # tolerance=tolerance,  # mismatch in seconds
+        fill_value=fill_value,
+    )
+    return ds
+
+
+def ensure_sorted_by_time(ds):
+    """Ensure a dataset is sorted by time."""
+    # Check sorted by time and sort if necessary
+    is_sorted = np.all(ds["time"].data[:-1] <= ds["time"].data[1:])
+    if not is_sorted:
+        ds = ds.sortby("time")
+    return ds
+
+
+def infer_sample_interval(ds, verbose=False, robust=False):
+    """Infer the sample interval of a dataset."""
+    # Check sorted by time and sort if necessary
+    ds = ensure_sorted_by_time(ds)
+
+    # Calculate number of timesteps
+    n_timesteps = len(ds["time"].data)
+
+    # Calculate time differences in seconds
+    deltadt = np.diff(ds["time"].data).astype("timedelta64[s]").astype(int)
+
+    # Round each delta to the nearest multiple of 5 (because the smallest possible sample interval is 10 s)
+    # Example: for sample_interval = 10, deltat values like 8, 9, 11, 12 become 10 ...
+    # Example: for sample_interval = 10, deltat values like 6, 7 or 13, 14 become respectively 5 and 15 ...
+    # Example: for sample_interval = 30, deltat values like 28,29,30,31,32 deltat  become 30 ...
+    # Example: for sample_interval = 30, deltat values like 26, 27 or 33, 34 become respectively 25 and 35 ...
+    # --> Need other rounding after having identified the most frequent sample interval to coerce such values to 30
+    min_sample_interval = 10
+    min_half_sample_interval = min_sample_interval / 2
+    deltadt = np.round(deltadt / min_half_sample_interval) * min_half_sample_interval
+
+    # Identify unique time intervals and their occurrences
+    unique_deltas, counts = np.unique(deltadt, return_counts=True)
+
+    # Determine the most frequent time interval (mode)
+    most_frequent_delta_idx = np.argmax(counts)
+    sample_interval = unique_deltas[most_frequent_delta_idx]
+
+    # Reround deltadt once knowing the sample interval
+    # - If sample interval is 10: all values between 6 and 14 are rounded to 10, below 6 to 0, above 14 to 20
+    # - If sample interval is 30: all values between 16 and 44 are rounded to 30, below 16 to 0, above 44 to 20
+    deltadt = np.round(deltadt / sample_interval) * sample_interval
+
+    # Identify unique time intervals and their occurrences
+    unique_deltas, counts = np.unique(deltadt, return_counts=True)
+    fractions = np.round(counts / len(deltadt) * 100, 2)
+
+    # Identify the minimum delta (except 0)
+    min_delta = unique_deltas[unique_deltas != 0].min()
+
+    # Determine the most frequent time interval (mode)
+    most_frequent_delta_idx = np.argmax(counts)
+    sample_interval = unique_deltas[most_frequent_delta_idx]
+    sample_interval_fraction = fractions[most_frequent_delta_idx]
+
+    # Inform about irregular sampling
+    unexpected_intervals = unique_deltas[unique_deltas != sample_interval]
+    unexpected_intervals_counts = counts[unique_deltas != sample_interval]
+    unexpected_intervals_fractions = fractions[unique_deltas != sample_interval]
+    if verbose and len(unexpected_intervals) > 0:
+        print("Warning: Irregular timesteps detected.")
+        for interval, count, fraction in zip(
+            unexpected_intervals,
+            unexpected_intervals_counts,
+            unexpected_intervals_fractions,
+        ):
+            print(f"  Interval: {interval} seconds, Occurrence: {count}, Frequency: {fraction} %")
+
+    # Perform checks
+    # - Raise error if negative or zero time intervals are presents
+    # - If robust = False, still return the estimated sample_interval
+    if robust and np.any(deltadt == 0):
+        raise ValueError("Likely presence of duplicated timesteps.")
+
+    # - Raise error if estimated sample interval has frequency less than 80 %
+    # TODO: this currently allow to catch up sensors that logs data only when rainy !
+    # --> HPICONET often below 50 %
+    sample_interval_fraction_threshold = 50
+    msg = (
+        f"The most frequent sampling interval ({sample_interval} s) "
+        + f"has a frequency lower than {sample_interval_fraction_threshold}%: {sample_interval_fraction} %. "
+        + f"Total number of timesteps: {n_timesteps}."
+    )
+    if sample_interval_fraction < sample_interval_fraction_threshold:
+        raise ValueError(msg)
+    if verbose and sample_interval_fraction < sample_interval_fraction_threshold:
+        print(msg)
+
+    # - Raise error if an unexpected interval has frequency larger than 20 percent
+    frequent_unexpected_intervals = unexpected_intervals[unexpected_intervals_fractions > 20]
+    if len(frequent_unexpected_intervals) != 0:
+        frequent_unexpected_intervals_str = ", ".join(
+            f"{interval} seconds" for interval in frequent_unexpected_intervals
+        )
+        msg = (
+            "The following unexpected intervals have a frequency "
+            + f"greater than 20%: {frequent_unexpected_intervals_str} %."
+            + f"Total number of timesteps: {n_timesteps}."
+        )
+        raise ValueError(msg)
+
+    # - Raise error if the most frequent interval is not the smallest
+    if sample_interval != min_delta:
+        raise ValueError(
+            f"The most frequent sampling interval ({sample_interval} seconds) "
+            f"is not the smallest interval ({min_delta} seconds). "
+            "Inconsistent sampling intervals in the dataset !",
+        )
+
+    return int(sample_interval)
+
+
+def get_problematic_timestep_indices(timesteps, sample_interval):
+    """Identify timesteps with missing previous or following timesteps."""
+    previous_time = timesteps - pd.Timedelta(seconds=sample_interval)
+    next_time = timesteps + pd.Timedelta(seconds=sample_interval)
+    idx_previous_missing = np.where(~np.isin(previous_time, timesteps))[0][1:]
+    idx_next_missing = np.where(~np.isin(next_time, timesteps))[0][:-1]
+    idx_isolated_missing = np.intersect1d(idx_previous_missing, idx_next_missing)
+    idx_previous_missing = idx_previous_missing[np.isin(idx_previous_missing, idx_isolated_missing, invert=True)]
+    idx_next_missing = idx_next_missing[np.isin(idx_next_missing, idx_isolated_missing, invert=True)]
+    return idx_previous_missing, idx_next_missing, idx_isolated_missing
+
+
+def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=True):
+    """Ensure timesteps match with the sample_interval."""
+    # Check sorted by time and sort if necessary
+    ds = ensure_sorted_by_time(ds)
+
+    # Convert time to pandas.DatetimeIndex for easier manipulation
+    times = pd.to_datetime(ds["time"].values)
+
+    # Determine the start and end times
+    start_time = times[0].floor(f"{sample_interval}S")
+    end_time = times[-1].ceil(f"{sample_interval}S")
+
+    # Create the expected time grid
+    expected_times = pd.date_range(start=start_time, end=end_time, freq=f"{sample_interval}S")
+
+    # Convert to numpy arrays
+    times = times.to_numpy(dtype="M8[s]")
+    expected_times = expected_times.to_numpy(dtype="M8[s]")
+
+    # Map original times to the nearest expected times
+    # Calculate the difference between original times and expected times
+    time_deltas = np.abs(times - expected_times[:, None]).astype(int)
+
+    # Find the index of the closest expected time for each original time
+    nearest_indices = np.argmin(time_deltas, axis=0)
+    adjusted_times = expected_times[nearest_indices]
+
+    # Check for duplicates in adjusted times
+    unique_times, counts = np.unique(adjusted_times, return_counts=True)
+    duplicates = unique_times[counts > 1]
+
+    # Initialize time quality flag
+    # - 0 when ok or just rounded to closest 00
+    # - 1 if previous timestep is missing
+    # - 2 if next timestep is missing
+    # - 3 if previous and next timestep is missing
+    # - 4 if solved duplicated timesteps
+    # - 5 if needed to drop duplicated timesteps and select the last
+    flag_previous_missing = 1
+    flag_next_missing = 2
+    flag_isolated_timestep = 3
+    flag_solved_duplicated_timestep = 4
+    flag_dropped_duplicated_timestep = 5
+    qc_flag = np.zeros(adjusted_times.shape)
+
+    # Initialize list with the duplicated timesteps index to drop
+    # - We drop the first occurrence because is likely the shortest interval
+    idx_to_drop = []
+
+    # Attempt to resolve for duplicates
+    if duplicates.size > 0:
+        # Handle duplicates
+        for dup_time in duplicates:
+            # Indices of duplicates
+            dup_indices = np.where(adjusted_times == dup_time)[0]
+            n_duplicates = len(dup_indices)
+            # Define previous and following timestep
+            prev_time = dup_time - pd.Timedelta(seconds=sample_interval)
+            next_time = dup_time + pd.Timedelta(seconds=sample_interval)
+            # Try to find missing slots before and after
+            # - If more than 3 duplicates, impossible to solve !
+            count_solved = 0
+            # If the previous timestep is available, set that one
+            if n_duplicates == 2:
+                if prev_time not in adjusted_times:
+                    adjusted_times[dup_indices[0]] = prev_time
+                    qc_flag[dup_indices[0]] = 1
+                    count_solved += 1
+                elif next_time not in adjusted_times:
+                    adjusted_times[dup_indices[-1]] = next_time
+                    qc_flag[dup_indices[-1]] = flag_solved_duplicated_timestep
+                    count_solved += 1
+                else:
+                    pass
+            elif n_duplicates == 3:
+                if prev_time not in adjusted_times:
+                    adjusted_times[dup_indices[0]] = prev_time
+                    qc_flag[dup_indices[0]] = flag_dropped_duplicated_timestep
+                    count_solved += 1
+                if next_time not in adjusted_times:
+                    adjusted_times[dup_indices[-1]] = next_time
+                    qc_flag[dup_indices[-1]] = 1
+                    count_solved += 1
+            if count_solved != n_duplicates - 1:
+                idx_to_drop = np.append(idx_to_drop, dup_indices[0:-1])
+                qc_flag[dup_indices[-1]] = 2
+                msg = f"Cannot resolve {n_duplicates} duplicated timesteps around {dup_time}."
+                if robust:
+                    raise ValueError(msg)
+                print(msg)
+
+    # Update the time coordinate (Convert to ns for xarray compatibility)
+    ds = ds.assign_coords({"time": adjusted_times.astype("datetime64[ns]")})
+
+    # Update quality flag values for next and previous timestep is missing
+    if add_quality_flag:
+        idx_previous_missing, idx_next_missing, idx_isolated_missing = get_problematic_timestep_indices(
+            adjusted_times,
+            sample_interval,
+        )
+        qc_flag[idx_previous_missing] = np.maximum(qc_flag[idx_previous_missing], flag_previous_missing)
+        qc_flag[idx_next_missing] = np.maximum(qc_flag[idx_next_missing], flag_next_missing)
+        qc_flag[idx_isolated_missing] = np.maximum(qc_flag[idx_isolated_missing], flag_isolated_timestep)
+        # Assign time quality flag
+        ds["qc_time"] = xr.DataArray(qc_flag, dims="time")
+
+    # Drop duplicated timesteps
+    if len(idx_to_drop) > 0:
+        idx_to_drop = idx_to_drop.astype(int)
+        idx_valid_timesteps = np.arange(0, ds["time"].size)
+        idx_valid_timesteps = np.delete(idx_valid_timesteps, idx_to_drop)
+        ds = ds.isel(time=idx_valid_timesteps)
+    # Return dataset
+    return ds

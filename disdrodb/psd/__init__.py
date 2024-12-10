@@ -14,4 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB Utils Module."""
+"""Implement PSD model and fitting routines."""
+
+
+from disdrodb.psd.fitting import available_distributions, estimate_model_parameters
+from disdrodb.psd.models import (
+    ExponentialPSD,
+    GammaPSD,
+    LognormalPSD,
+    NormalizedGammaPSD,
+    available_psd_models,
+    create_psd,
+)
+
+__all__ = [
+    "available_psd_models",
+    "available_distributions",
+    "create_psd",
+    "LognormalPSD",
+    "ExponentialPSD",
+    "GammaPSD",
+    "NormalizedGammaPSD",
+    "GammaPSD",
+    "estimate_model_parameters",
+]

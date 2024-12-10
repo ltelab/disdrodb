@@ -702,3 +702,387 @@ def run_disdrodb_l0(
 
 
 ####---------------------------------------------------------------------------.
+
+
+def run_disdrodb_l1_station(
+    # Station arguments
+    data_source,
+    campaign_name,
+    station_name,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    base_dir: Optional[str] = None,
+):
+    """Run the L1 processing of a station calling the disdrodb_l1_station in the terminal."""
+    # Define command
+    cmd = " ".join(
+        [
+            "disdrodb_run_l1_station",
+            # Station arguments
+            data_source,
+            campaign_name,
+            station_name,
+            # Processing options
+            "--force",
+            str(force),
+            "--verbose",
+            str(verbose),
+            "--debugging_mode",
+            str(debugging_mode),
+            "--parallel",
+            str(parallel),
+            "--base_dir",
+            str(base_dir),
+        ],
+    )
+    # Execute command
+    _execute_cmd(cmd)
+
+
+def run_disdrodb_l2e_station(
+    # Station arguments
+    data_source,
+    campaign_name,
+    station_name,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    base_dir: Optional[str] = None,
+):
+    """Run the L2E processing of a station calling the disdrodb_l1_station in the terminal."""
+    # Define command
+    cmd = " ".join(
+        [
+            "disdrodb_run_l2e_station",
+            # Station arguments
+            data_source,
+            campaign_name,
+            station_name,
+            # Processing options
+            "--force",
+            str(force),
+            "--verbose",
+            str(verbose),
+            "--debugging_mode",
+            str(debugging_mode),
+            "--parallel",
+            str(parallel),
+            "--base_dir",
+            str(base_dir),
+        ],
+    )
+    # Execute command
+    _execute_cmd(cmd)
+
+
+def run_disdrodb_l2m_station(
+    # Station arguments
+    data_source,
+    campaign_name,
+    station_name,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    base_dir: Optional[str] = None,
+):
+    """Run the L2M processing of a station calling the disdrodb_l2m_station in the terminal."""
+    # Define command
+    cmd = " ".join(
+        [
+            "disdrodb_run_l2m_station",
+            # Station arguments
+            data_source,
+            campaign_name,
+            station_name,
+            # Processing options
+            "--force",
+            str(force),
+            "--verbose",
+            str(verbose),
+            "--debugging_mode",
+            str(debugging_mode),
+            "--parallel",
+            str(parallel),
+            "--base_dir",
+            str(base_dir),
+        ],
+    )
+    # Execute command
+    _execute_cmd(cmd)
+
+
+def run_disdrodb_l1(
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    base_dir: Optional[str] = None,
+):
+    """Run the L1 processing of DISDRODB stations.
+
+    This function allows to launch the processing of many DISDRODB stations with a single command.
+    From the list of all available DISDRODB stations, it runs the processing of the
+    stations matching the provided data_sources, campaign_names and station_names.
+
+    Parameters
+    ----------
+    data_sources : list
+        Name of data source(s) to process.
+        The name(s) must be UPPER CASE.
+        If campaign_names and station are not specified, process all stations.
+        The default is ``None``.
+    campaign_names : list
+        Name of the campaign(s) to process.
+        The name(s) must be UPPER CASE.
+        The default is ``None``.
+    station_names : list
+        Station names to process.
+        The default is ``None``.
+    force : bool
+        If ``True``, overwrite existing data into destination directories.
+        If ``False``, raise an error if there are already data into destination directories.
+        The default is ``False``.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is ``False``.
+    parallel : bool
+        If ``True``, the files are processed simultaneously in multiple processes.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        By default, the number of process is defined with ``os.cpu_count()``.
+        If ``False``, the files are processed sequentially in a single process.
+        If ``False``, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If ``True``, it reduces the amount of data to process.
+        For L1B, it processes just 3 L0B files.
+        The default is ``False``.
+    base_dir : str (optional)
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    """
+    from disdrodb.api.io import available_stations, get_required_product
+    from disdrodb.l0.routines import _check_available_stations, _filter_list_info  # TODO: MOVE IN SOME OTHER MODULE
+
+    product = "L1"  # TODO: this wrapper can be generalized to all products ?)
+    required_product = get_required_product(product)
+
+    # Get list of available stations
+    list_info = available_stations(
+        base_dir=base_dir,
+        product=required_product,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+    )
+    _check_available_stations(list_info)
+    list_info = _filter_list_info(list_info, station_names)
+
+    # Print message
+    n_stations = len(list_info)
+    print(f"{product} processing of {n_stations} stations started.")
+
+    # Loop over stations
+    for data_source, campaign_name, station_name in list_info:
+        print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
+        # Run processing
+        run_disdrodb_l1_station(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Process options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+        print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
+
+
+def run_disdrodb_l2e(
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    base_dir: Optional[str] = None,
+):
+    """Run the L2E processing of DISDRODB stations.
+
+    This function allows to launch the processing of many DISDRODB stations with a single command.
+    From the list of all available DISDRODB stations, it runs the processing of the
+    stations matching the provided data_sources, campaign_names and station_names.
+
+    Parameters
+    ----------
+    data_sources : list
+        Name of data source(s) to process.
+        The name(s) must be UPPER CASE.
+        If campaign_names and station are not specified, process all stations.
+        The default is ``None``.
+    campaign_names : list
+        Name of the campaign(s) to process.
+        The name(s) must be UPPER CASE.
+        The default is ``None``.
+    station_names : list
+        Station names to process.
+        The default is ``None``.
+    force : bool
+        If ``True``, overwrite existing data into destination directories.
+        If ``False``, raise an error if there are already data into destination directories.
+        The default is ``False``.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is ``False``.
+    parallel : bool
+        If ``True``, the files are processed simultaneously in multiple processes.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        By default, the number of process is defined with ``os.cpu_count()``.
+        If ``False``, the files are processed sequentially in a single process.
+        If ``False``, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If ``True``, it reduces the amount of data to process.
+        For L2E, it processes just 3 L1 files.
+        The default is ``False``.
+    base_dir : str (optional)
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    """
+    from disdrodb.api.io import available_stations, get_required_product
+    from disdrodb.l0.routines import _check_available_stations, _filter_list_info  # TODO: MOVE IN SOME OTHER MODULE
+
+    product = "L2E"  # TODO: this wrapper can be generalized to all products ?)
+    required_product = get_required_product(product)
+
+    # Get list of available stations
+    list_info = available_stations(
+        base_dir=base_dir,
+        product=required_product,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+    )
+    _check_available_stations(list_info)
+    list_info = _filter_list_info(list_info, station_names)
+
+    # Print message
+    n_stations = len(list_info)
+    print(f"{product} processing of {n_stations} stations started.")
+
+    # Loop over stations
+    for data_source, campaign_name, station_name in list_info:
+        print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
+        # Run processing
+        run_disdrodb_l2e_station(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Process options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+        print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
+
+
+def run_disdrodb_l2m(
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    # Processing options
+    force: bool = False,
+    verbose: bool = False,
+    debugging_mode: bool = False,
+    parallel: bool = True,
+    base_dir: Optional[str] = None,
+):
+    """Run the L2M processing of DISDRODB stations.
+
+    This function allows to launch the processing of many DISDRODB stations with a single command.
+    From the list of all available DISDRODB stations, it runs the processing of the
+    stations matching the provided data_sources, campaign_names and station_names.
+
+    Parameters
+    ----------
+    data_sources : list
+        Name of data source(s) to process.
+        The name(s) must be UPPER CASE.
+        If campaign_names and station are not specified, process all stations.
+        The default is ``None``.
+    campaign_names : list
+        Name of the campaign(s) to process.
+        The name(s) must be UPPER CASE.
+        The default is ``None``.
+    station_names : list
+        Station names to process.
+        The default is ``None``.
+    force : bool
+        If ``True``, overwrite existing data into destination directories.
+        If ``False``, raise an error if there are already data into destination directories.
+        The default is ``False``.
+    verbose : bool
+        Whether to print detailed processing information into terminal.
+        The default is ``False``.
+    parallel : bool
+        If ``True``, the files are processed simultaneously in multiple processes.
+        Each process will use a single thread to avoid issues with the HDF/netCDF library.
+        By default, the number of process is defined with ``os.cpu_count()``.
+        If ``False``, the files are processed sequentially in a single process.
+        If ``False``, multi-threading is automatically exploited to speed up I/0 tasks.
+    debugging_mode : bool
+        If ``True``, it reduces the amount of data to process.
+        For L2MB, it processes just 3 L0B files.
+        The default is ``False``.
+    base_dir : str (optional)
+        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    """
+    from disdrodb.api.io import available_stations, get_required_product
+    from disdrodb.l0.routines import _check_available_stations, _filter_list_info  # TODO: MOVE IN SOME OTHER MODULE
+
+    product = "L2M"  # TODO: this wrapper can be generalized to all products ?)
+    required_product = get_required_product(product)
+
+    # Get list of available stations
+    list_info = available_stations(
+        base_dir=base_dir,
+        product=required_product,
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+    )
+    _check_available_stations(list_info)
+    list_info = _filter_list_info(list_info, station_names)
+
+    # Print message
+    n_stations = len(list_info)
+    print(f"{product} processing of {n_stations} stations started.")
+
+    # Loop over stations
+    for data_source, campaign_name, station_name in list_info:
+        print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
+        # Run processing
+        run_disdrodb_l2m_station(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Process options
+            force=force,
+            verbose=verbose,
+            debugging_mode=debugging_mode,
+            parallel=parallel,
+        )
+        print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
