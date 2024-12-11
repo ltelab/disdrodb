@@ -14,13 +14,13 @@ config = {
         },
         # PSD models fitting options
         "psd_models": {
-            # 'gamma': {
-            #     'probability_method': 'cdf',
-            #     'likelihood': 'multinomial',
-            #     'truncated_likelihood': True,
-            #     'optimizer': 'Nelder-Mead',
-            #     "add_gof_metrics": True
-            # },
+            "gamma": {
+                "probability_method": "cdf",
+                "likelihood": "multinomial",
+                "truncated_likelihood": True,
+                "optimizer": "Nelder-Mead",
+                "add_gof_metrics": True,
+            },
             "normalized_gamma": {
                 "optimizer": "Nelder-Mead",
                 "order": 2,

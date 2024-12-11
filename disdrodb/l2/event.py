@@ -24,6 +24,7 @@ import pandas as pd
 import xarray as xr
 
 from disdrodb.api.info import get_start_end_time_from_filepaths
+from disdrodb.utils.time import ensure_sorted_by_time
 
 
 @dask.delayed
@@ -54,7 +55,7 @@ def identify_events(filepaths, parallel):
     if len(set(sample_intervals)) > 1:
         raise ValueError("Sample intervals are not constant across files.")
     # Sort dataset by time
-    ds = ds.sortby("time")
+    ds = ensure_sorted_by_time(ds)
     # Select events
     # TODO:
     minimum_n_drops = 5

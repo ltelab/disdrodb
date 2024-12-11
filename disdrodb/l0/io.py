@@ -201,14 +201,20 @@ def read_l0a_dataframe(
     if isinstance(filepaths, str):
         filepaths = [filepaths]
     # ---------------------------------------------------
-    # - If debugging_mode=True, it reads only the first 3 filepaths
+    # If debugging_mode=True, it reads only the first 3 filepaths
     if debugging_mode:
         filepaths = filepaths[0:3]  # select first 3 filepaths
 
-    # - Define the list of dataframe
+    # ---------------------------------------------------
+    # Define the list of dataframe
     list_df = [_read_l0a(filepath, verbose=verbose, debugging_mode=debugging_mode) for filepath in filepaths]
-    # - Concatenate dataframe
+
+    # Concatenate dataframe
     df = concatenate_dataframe(list_df, verbose=verbose)
+
+    # Ensure time is in nanoseconds
+    df["time"] = df["time"].astype("M8[ns]")
+
     # ---------------------------------------------------
     # Return dataframe
     return df

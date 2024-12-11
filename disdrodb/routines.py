@@ -22,11 +22,6 @@ from typing import Optional
 
 from disdrodb.api.io import available_stations, get_required_product
 from disdrodb.utils.cli import _execute_cmd
-from disdrodb.utils.logger import (
-    # log_warning,
-    # log_error,
-    log_info,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -514,8 +509,7 @@ def run_disdrodb_l0_station(
     """
     # ---------------------------------------------------------------------.
     t_i = time.time()
-    msg = f"L0 processing of station {station_name} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
+    print(f"L0 processing of station {station_name} has started.")
 
     # ------------------------------------------------------------------.
     # L0A processing
@@ -571,8 +565,7 @@ def run_disdrodb_l0_station(
     # -------------------------------------------------------------------------.
     # End of L0 processing for all stations
     timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
-    msg = f"L0 processing of stations {station_name} completed in {timedelta_str}"
-    log_info(logger, msg, verbose)
+    print(f"L0 processing of stations {station_name} completed in {timedelta_str}")
 
 
 ####---------------------------------------------------------------------------.

@@ -51,6 +51,7 @@ from disdrodb.utils.logger import (
     log_error,
     log_info,
 )
+from disdrodb.utils.time import ensure_sorted_by_time
 
 logger = logging.getLogger(__name__)
 
@@ -456,7 +457,7 @@ def set_geolocation_coordinates(ds, attrs):
 def finalize_dataset(ds, sensor_name, attrs):
     """Finalize DISDRODB L0B Dataset."""
     # Ensure sorted by time
-    ds = ds.sortby("time")
+    ds = ensure_sorted_by_time(ds)
 
     # Set diameter and velocity bin coordinates
     ds = ds.assign_coords(get_bin_coords_dict(sensor_name=sensor_name))

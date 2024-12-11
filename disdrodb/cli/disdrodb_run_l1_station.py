@@ -102,6 +102,8 @@ def disdrodb_run_l1_station(
         # Retrieve the number of process to run
         available_workers = os.cpu_count() - 2  # if not set, all CPUs
         num_workers = dask.config.get("num_workers", available_workers)
+        # Silence dask warnings
+        dask.config.set({"logging.distributed": "error"})
         # Create dask.distributed local cluster
         cluster = LocalCluster(
             n_workers=num_workers,

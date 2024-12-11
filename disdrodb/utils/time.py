@@ -15,12 +15,17 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """This module contains utilities related to the processing of temporal dataset."""
+import logging
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 import xarray as xr
 from xarray.core import dtypes
+
+from disdrodb.utils.logger import log_info
+
+logger = logging.getLogger(__name__)
 
 
 def get_dataset_start_end_time(ds: xr.Dataset, time_dim="time"):
@@ -183,13 +188,15 @@ def infer_sample_interval(ds, verbose=False, robust=False):
     unexpected_intervals_counts = counts[unique_deltas != sample_interval]
     unexpected_intervals_fractions = fractions[unique_deltas != sample_interval]
     if verbose and len(unexpected_intervals) > 0:
-        print("Warning: Irregular timesteps detected.")
+        msg = "Irregular timesteps detected."
+        log_info(logger=logger, msg=msg, verbose=verbose)
         for interval, count, fraction in zip(
             unexpected_intervals,
             unexpected_intervals_counts,
             unexpected_intervals_fractions,
         ):
-            print(f"  Interval: {interval} seconds, Occurrence: {count}, Frequency: {fraction} %")
+            msg = f"  Interval: {interval} seconds, Occurrence: {count}, Frequency: {fraction} %"
+            log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Perform checks
     # - Raise error if negative or zero time intervals are presents
@@ -256,11 +263,11 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
     times = pd.to_datetime(ds["time"].values)
 
     # Determine the start and end times
-    start_time = times[0].floor(f"{sample_interval}S")
-    end_time = times[-1].ceil(f"{sample_interval}S")
+    start_time = times[0].floor(f"{sample_interval}s")
+    end_time = times[-1].ceil(f"{sample_interval}s")
 
     # Create the expected time grid
-    expected_times = pd.date_range(start=start_time, end=end_time, freq=f"{sample_interval}S")
+    expected_times = pd.date_range(start=start_time, end=end_time, freq=f"{sample_interval}s")
 
     # Convert to numpy arrays
     times = times.to_numpy(dtype="M8[s]")

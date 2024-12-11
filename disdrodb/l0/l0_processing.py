@@ -80,6 +80,7 @@ logger = logging.getLogger(__name__)
 
 
 @delayed_if_parallel
+@single_threaded_if_parallel
 def _generate_l0a(
     filepath,
     data_dir,
@@ -161,6 +162,8 @@ def _generate_l0a(
     return logger_filepath
 
 
+@delayed_if_parallel
+@single_threaded_if_parallel
 def _generate_l0b(
     filepath,
     data_dir,
@@ -968,27 +971,11 @@ def run_l0b_station(
     # - If parallel=True, it does that in parallel using dask.bag
     #   Settings npartitions=len(filepaths) enable to wait prior task on a core
     #   finish before starting a new one.
-    if not parallel:
-        list_logs = [
-            _generate_l0b(
-                filepath=filepath,
-                data_dir=data_dir,
-                logs_dir=logs_dir,
-                metadata=metadata,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                force=force,
-                verbose=verbose,
-                debugging_mode=debugging_mode,
-                parallel=parallel,
-            )
-            for filepath in filepaths
-        ]
-
-    else:
-        bag = db.from_sequence(filepaths, npartitions=len(filepaths))
-        list_logs = bag.map(
-            _generate_l0b,
+    # BUG: If debugging_mode=True and parallel=True a subtle bug can currently occur when
+    #   two processes with a subsetted L0A files want to create the same L0B files !
+    list_tasks = [
+        _generate_l0b(
+            filepath=filepath,
             data_dir=data_dir,
             logs_dir=logs_dir,
             metadata=metadata,
@@ -998,7 +985,41 @@ def run_l0b_station(
             verbose=verbose,
             debugging_mode=debugging_mode,
             parallel=parallel,
-        ).compute()
+        )
+        for filepath in filepaths
+    ]
+    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+    # if not parallel:
+    #     list_logs = [
+    #         _generate_l0b(
+    #             filepath=filepath,
+    #             data_dir=data_dir,
+    #             logs_dir=logs_dir,
+    #             metadata=metadata,
+    #             campaign_name=campaign_name,
+    #             station_name=station_name,
+    #             force=force,
+    #             verbose=verbose,
+    #             debugging_mode=debugging_mode,
+    #             parallel=parallel,
+    #         )
+    #         for filepath in filepaths
+    #     ]
+
+    # else:
+    #     bag = db.from_sequence(filepaths, npartitions=len(filepaths))
+    #     list_logs = bag.map(
+    #         _generate_l0b,
+    #         data_dir=data_dir,
+    #         logs_dir=logs_dir,
+    #         metadata=metadata,
+    #         campaign_name=campaign_name,
+    #         station_name=station_name,
+    #         force=force,
+    #         verbose=verbose,
+    #         debugging_mode=debugging_mode,
+    #         parallel=parallel,
+    #     ).compute()
 
     # -----------------------------------------------------------------.
     # Define L0B summary logs
