@@ -29,15 +29,16 @@ import xarray as xr
 
 # Directory
 from disdrodb.api.create_directories import (
+    create_logs_directory,
     create_product_directory,
 )
 from disdrodb.api.io import get_filepaths, get_required_product
 from disdrodb.api.path import (
     define_l2e_filename,
     define_l2m_filename,
-    define_logs_dir,
     get_sample_interval_acronym,
 )
+from disdrodb.configs import get_base_dir
 from disdrodb.l1.resampling import (
     regularize_dataset,
     resample_dataset,
@@ -56,7 +57,7 @@ from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_par
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
-    define_summary_log,
+    create_product_logs,
     log_error,
     log_info,
 )
@@ -240,6 +241,9 @@ def run_l2e_station(
     # Define product
     product = "L2E"
 
+    # Define base directory
+    base_dir = get_base_dir(base_dir)
+
     # ------------------------------------------------------------------------.
     # Start processing
     if verbose:
@@ -317,7 +321,7 @@ def run_l2e_station(
         )
 
         # Define logs directory
-        logs_dir = define_logs_dir(
+        logs_dir = create_logs_directory(
             product=product,
             base_dir=base_dir,
             data_source=data_source,
@@ -363,7 +367,18 @@ def run_l2e_station(
 
         # -----------------------------------------------------------------.
         # Define product summary logs
-        define_summary_log(list_logs)
+        create_product_logs(
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            base_dir=base_dir,
+            # Product options
+            sample_interval=sample_interval,
+            rolling=rolling,
+            # Logs list
+            list_logs=list_logs,
+        )
 
     # ---------------------------------------------------------------------.
     # End product processing
@@ -521,6 +536,9 @@ def run_l2m_station(
     # Define product
     product = "L2M"
 
+    # Define base directory
+    base_dir = get_base_dir(base_dir)
+
     # ------------------------------------------------------------------------.
     # Start processing
     if verbose:
@@ -616,7 +634,7 @@ def run_l2m_station(
             )
 
             # Define logs directory
-            logs_dir = define_logs_dir(
+            logs_dir = create_logs_directory(
                 product=product,
                 base_dir=base_dir,
                 data_source=data_source,
@@ -659,7 +677,19 @@ def run_l2m_station(
 
             # -----------------------------------------------------------------.
             # Define L2M summary logs
-            define_summary_log(list_logs)
+            create_product_logs(
+                product=product,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                base_dir=base_dir,
+                # Product options
+                distribution=distribution,
+                sample_interval=sample_interval,
+                rolling=rolling,
+                # Logs list
+                list_logs=list_logs,
+            )
 
     # ---------------------------------------------------------------------.
     # End L2M processing

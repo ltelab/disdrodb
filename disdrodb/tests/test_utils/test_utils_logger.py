@@ -22,10 +22,11 @@ import os
 
 import pytest
 
+from disdrodb.api.path import define_campaign_dir, define_logs_dir
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
-    define_summary_log,
+    create_product_logs,
     log_debug,
     log_error,
     log_info,
@@ -40,20 +41,42 @@ def create_dummy_log_file(filepath, contents):
     return filepath
 
 
-def test_define_summary_log(tmp_path):
+def test_create_product_logs(tmp_path):
+    test_base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
-    logs_dir = tmp_path / "PRODUCT" / "logs"
-    logs_dir.mkdir(parents=True)
+    product = "L0A"
 
-    logs_station_dir = logs_dir / station_name
-    logs_station_dir.mkdir(parents=True, exist_ok=True)
+    # Define directory where logs files are saved
+    logs_dir = define_logs_dir(
+        product=product,
+        base_dir=test_base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    os.makedirs(logs_dir, exist_ok=True)
 
-    log1_fpath = logs_station_dir / "log1.log"
-    log2_fpath = logs_station_dir / "log2.log"
+    # Define paths of logs files
+    log1_fpath = os.path.join(logs_dir, "log1.log")
+    log2_fpath = os.path.join(logs_dir, "log2.log")
 
-    summary_log_path = logs_dir / f"logs_summary_{station_name}.log"
-    problem_log_path = logs_dir / f"logs_problem_{station_name}.log"
+    # Define /summary and /problem directory
+    campaign_dir = define_campaign_dir(
+        base_dir=test_base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+    logs_summary_dir = os.path.join(campaign_dir, "logs", "summary")
+    logs_problem_dir = os.path.join(campaign_dir, "logs", "problems")
 
+    # Define summary and problem filepath
+    summary_log_path = os.path.join(logs_summary_dir, f"SUMMARY.{product}.{campaign_name}.{station_name}.log")
+    problem_log_path = os.path.join(logs_problem_dir, f"PROBLEMS.{product}.{campaign_name}.{station_name}.log")
+
+    ####-------------------------------------.
     # Create dummy log files
     log_contents1 = (
         "INFO: DUMMY MESSAGE \nProcess has started \nWARNING: Potential issue detected \nNOTHING TO SUMMARIZE \n"
@@ -65,15 +88,25 @@ def test_define_summary_log(tmp_path):
 
     # Call the function with the list of log files
     list_logs = [str(log_file1), str(log_file2)]
-    define_summary_log(list_logs)
+    create_product_logs(
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=test_base_dir,
+        # Logs list
+        list_logs=list_logs,
+    )
 
     # Check summary log file
     with open(str(summary_log_path)) as f:
         summary_contents = f.read()
-    assert "WARNING: Potential issue detected" in summary_contents
-    assert "ERROR: Critical failure occurred" in summary_contents
+
     assert "Process has started" in summary_contents
     assert "Process has ended" in summary_contents
+    assert "WARNING: Potential issue detected" in summary_contents
+    assert "ERROR: Critical failure occurred" in summary_contents
+
     assert "INFO: DUMMY MESSAGE" not in summary_contents
     assert "NOTHING TO SUMMARIZE" not in summary_contents
 
@@ -91,26 +124,57 @@ def test_define_summary_log(tmp_path):
 
 def test_define_summary_log_when_no_problems(tmp_path):
     """Test that not problem log file is created if no errors occurs."""
+    test_base_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
-    logs_dir = tmp_path / "PRODUCT" / "logs"
-    logs_dir.mkdir(parents=True)
+    product = "L0A"
 
-    logs_station_dir = logs_dir / station_name
-    logs_station_dir.mkdir(parents=True, exist_ok=True)
+    # Define directory where logs files are saved
+    logs_dir = define_logs_dir(
+        product=product,
+        base_dir=test_base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    os.makedirs(logs_dir, exist_ok=True)
 
-    log1_fpath = logs_station_dir / "log1.log"
-    log2_fpath = logs_station_dir / "log2.log"
+    # Define paths of logs files
+    log1_fpath = os.path.join(logs_dir, "log1.log")
+    log2_fpath = os.path.join(logs_dir, "log2.log")
 
-    summary_log_path = logs_dir / f"logs_summary_{station_name}.log"
-    problem_log_path = logs_dir / f"logs_problem_{station_name}.log"
+    # Define /summary and /problem directory
+    campaign_dir = define_campaign_dir(
+        base_dir=test_base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+    logs_summary_dir = os.path.join(campaign_dir, "logs", "summary")
+    logs_problem_dir = os.path.join(campaign_dir, "logs", "problems")
 
+    # Define summary and problem filepath
+    summary_log_path = os.path.join(logs_summary_dir, f"SUMMARY.{product}.{campaign_name}.{station_name}.log")
+    problem_log_path = os.path.join(logs_problem_dir, f"PROBLEMS.{product}.{campaign_name}.{station_name}.log")
+
+    ####-------------------------------------.
     # Check that if no problems, the problems log is not created
     log_contents1 = "INFO: DUMMY MESSAGE \nProcess has started \n Process has ended  \n"
     log_contents2 = "INFO: DUMMY MESSAGE \nProcess has started \n Process has ended  \n"
     log_file1 = create_dummy_log_file(log1_fpath, log_contents1)
     log_file2 = create_dummy_log_file(log2_fpath, log_contents2)
-    list_logs = [str(log_file1), str(log_file2)]
-    define_summary_log(list_logs)
+    list_logs = [str(log_file1), str(log_file2)]  # noqa
+
+    # List logs direc
+    create_product_logs(
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=test_base_dir,
+        list_logs=None,  # search for logs based on inputs
+    )
 
     assert os.path.exists(summary_log_path)
     assert not os.path.exists(problem_log_path)

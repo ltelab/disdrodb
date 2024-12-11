@@ -23,6 +23,8 @@ import os
 import re
 from asyncio.log import logger
 
+from disdrodb.api.path import define_campaign_dir, define_filename, define_logs_dir
+
 
 def create_logger_file(logs_dir, filename, parallel):
     """Create logger file."""
@@ -140,12 +142,8 @@ def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
     logger.error(msg)
 
 
-def _get_logs_dir(list_logs):
-    list_logs = sorted(list_logs)
-    station_logs_dir = os.path.dirname(list_logs[0])
-    station_name = station_logs_dir.split(os.path.sep)[-1]
-    logs_dir = os.path.dirname(station_logs_dir)
-    return station_name, logs_dir
+####---------------------------------------------------------------------------.
+#### SUMMARY LOGS
 
 
 def _define_station_summary_log_file(list_logs, summary_filepath):
@@ -172,6 +170,8 @@ def _define_station_problem_log_file(list_logs, problem_filepath):
     re_patterns = re.compile("|".join(map(re.escape, list_patterns))) if list_patterns else None
     # Initialize problem log file
     any_problem = False
+    n_files = len(list_logs)
+    n_files_with_problems = 0
     with open(problem_filepath, "w") as output_file:
         # Loop over log files and collect problems
         for log_filepath in list_logs:
@@ -184,6 +184,7 @@ def _define_station_problem_log_file(list_logs, problem_filepath):
                         if re_patterns and re_patterns.search(line):
                             continue
                         log_with_problem = True
+                        n_files_with_problems += 1
                         any_problem = True
                         break
             # If it is reported, copy the log file in the logs_problem file
@@ -191,34 +192,153 @@ def _define_station_problem_log_file(list_logs, problem_filepath):
                 with open(log_filepath) as input_file:
                     output_file.write(input_file.read())
 
+        # Add number of files with problems
+        msg = f"SUMMARY: {n_files_with_problems} of {n_files} files had problems."
+        output_file.write(msg)
+
     # If no problems occurred, remove the logs_problem_<station_name>.log file
     if not any_problem:
         os.remove(problem_filepath)
 
 
-def define_summary_log(list_logs):
-    """Define a station summary and a problems log file from the list of input logs.
+def create_product_logs(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    # Product options
+    sample_interval=None,
+    rolling=None,
+    distribution=None,
+    # Logs list
+    list_logs=None,  # If none, list it !
+):
+    """Create station summary and station problems log files.
 
-    The summary log select only logged lines with ``root``, ``WARNING`` and ``ERROR`` keywords.
-    The problems log file select only logged lines with the ``ERROR`` keyword.
-    The two log files are saved in the parent directory of the input ``list_logs``.
+    The summary log selects only logged lines with ``root``, ``WARNING``, and ``ERROR`` keywords.
+    The problems log file selects only logged lines with the ``ERROR`` keyword.
 
-    The function assume that the files logs are located at:
+    The logs directory structure is the follow:
+    /logs
+    - /files/<product_acronym>/<station> (same structure as data ... a log for each processed file)
+    - /summary
+      -->  SUMMARY.<PRODUCT_ACRONYM>.<CAMPAIGN_NAME>.<STATION_NAME>.log
+    - /problems
+      -->  PROBLEMS.<PRODUCT_ACRONYM>.<CAMPAIGN_NAME>.<STATION_NAME>.log
 
-        ``/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>/logs/<product>/<station_name>/<filename>.log``
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product.
+    data_source : str
+        The data source name.
+    campaign_name : str
+        The campaign name.
+    station_name : str
+        The station name.
+    base_dir : str, optional
+        The base directory path. Default is None.
+    sample_interval : str, optional
+        The sample interval for L2E option. Default is None.
+    rolling : str, optional
+        The rolling option for L2E. Default is None.
+    distribution : str, optional
+        The distribution type for L2M option. Default is None.
+    list_logs : list, optional
+        List of log file paths. If None, the function will list the log files.
+
+    Returns
+    -------
+    None
 
     """
+    from disdrodb.utils.directories import list_files
+
+    # --------------------------------------------------------.
+    # Search for logs file
+    if list_logs is None:
+        # Define product logs directory within /files/....
+        logs_dir = define_logs_dir(
+            product=product,
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Option for L2E
+            sample_interval=sample_interval,
+            rolling=rolling,
+            # Option for L2M
+            distribution=distribution,
+        )
+        list_logs = list_files(logs_dir, glob_pattern="*", recursive=True)
+
+    # --------------------------------------------------------.
     # LogCaptureHandler of pytest does not have baseFilename attribute, so it returns None
     if list_logs[0] is None:
         return
 
-    station_name, logs_dir = _get_logs_dir(list_logs)
+    # --------------------------------------------------------.
+    # Define /summary and /problem directory
+    campaign_dir = define_campaign_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
+    logs_summary_dir = os.path.join(campaign_dir, "logs", "summary")
+    logs_problem_dir = os.path.join(campaign_dir, "logs", "problems")
 
+    os.makedirs(logs_summary_dir, exist_ok=True)
+    os.makedirs(logs_problem_dir, exist_ok=True)
+
+    # --------------------------------------------------------.
     # Define station summary log file name
-    summary_filepath = os.path.join(logs_dir, f"logs_summary_{station_name}.log")
+    summary_filename = define_filename(
+        product=product,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # L2E option
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # L2M option
+        distribution=distribution,
+        # Filename options
+        add_version=False,
+        add_time_period=False,
+        add_extension=False,
+        prefix="SUMMARY",
+        suffix="log",
+    )
+    summary_filepath = os.path.join(logs_summary_dir, summary_filename)
+
     # Define station problem logs file name
-    problem_filepath = os.path.join(logs_dir, f"logs_problem_{station_name}.log")
-    # Create station summary log file
+    problem_filename = define_filename(
+        product=product,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # L2E option
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # L2M option
+        distribution=distribution,
+        # Filename options
+        add_version=False,
+        add_time_period=False,
+        add_extension=False,
+        prefix="PROBLEMS",
+        suffix="log",
+    )
+    problem_filepath = os.path.join(logs_problem_dir, problem_filename)
+
+    # --------------------------------------------------------.
+    # Create summary log file
     _define_station_summary_log_file(list_logs, summary_filepath)
-    # Create station ptoblems log file (if no problems, no file)
+
+    # Create problem log file (if no problems, no file created)
     _define_station_problem_log_file(list_logs, problem_filepath)
+
+    # --------------------------------------------------------.
+    # Remove /problem directory if empty !
+    if len(os.listdir(logs_problem_dir)) == 0:
+        os.rmdir(logs_problem_dir)

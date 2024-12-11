@@ -524,7 +524,7 @@ def define_logs_dir(
         sample_interval=sample_interval,
         rolling=rolling,
     )
-    logs_dir = os.path.join(campaign_dir, "logs", product_dir_tree, station_name)
+    logs_dir = os.path.join(campaign_dir, "logs", "files", product_dir_tree, station_name)
     if check_exists:
         check_directory_exists(logs_dir)
     return str(logs_dir)
@@ -666,6 +666,148 @@ def define_station_dir(
 #### Filenames for DISDRODB products
 
 
+def get_distribution_acronym(distribution):
+    """Define DISDRODB L2M distribution acronym."""
+    acronym_dict = {
+        "lognorm": "LOGNORM",
+        "normalized_gamma": "NGAMMA",
+        "gamma": "GAMMA",
+        "exponential": "EXP",
+    }
+    return acronym_dict[distribution]
+
+
+def get_sample_interval_acronym(seconds, rolling=False):
+    """
+    Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
+
+    Parameters
+    ----------
+    - seconds (int): The time duration in seconds.
+
+    Returns
+    -------
+    - str: The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
+    """
+    timedelta = pd.Timedelta(seconds=seconds)
+    components = timedelta.components
+
+    parts = []
+    if components.days > 0:
+        parts.append(f"{components.days}D")
+    if components.hours > 0:
+        parts.append(f"{components.hours}H")
+    if components.minutes > 0:
+        parts.append(f"{components.minutes}MIN")
+    if components.seconds > 0:
+        parts.append(f"{components.seconds}S")
+    sample_interval_acronym = "".join(parts)
+    # Prefix with ROLL if rolling=True
+    if rolling:
+        sample_interval_acronym = f"ROLL{sample_interval_acronym}"
+    return sample_interval_acronym
+
+
+def define_filename(
+    product: str,
+    campaign_name: str,
+    station_name: str,
+    # L2E option
+    sample_interval: int = None,
+    rolling: bool = None,
+    # L2M option
+    distribution: str = None,
+    # Filename options
+    obj=None,
+    add_version=True,
+    add_time_period=True,
+    add_extension=True,
+    # Prefix
+    prefix="",
+    suffix="",
+) -> str:
+    """Define DISDRODB products filename.
+
+    Parameters
+    ----------
+    obj  : xarray.Dataset or pandas.DataFrame
+        xarray Dataset or pandas DataFrame.
+        Required if add_time_period = True.
+    campaign_name : str
+       Name of the campaign.
+    station_name : str
+       Name of the station.
+    sample_interval : int, optional
+        The sampling interval in seconds of the product.
+        It must be specified only for product L2E and L2M !
+    rolling : bool, optional
+        Whether the dataset has been resampled by aggregating or rolling.
+        It must be specified only for product L2E and L2M !
+    distribution : str
+        The model of the statistical distribution for the DSD.
+        It must be specified only for product L2M !
+
+    Returns
+    -------
+    str
+        L0B file name.
+    """
+    from disdrodb import PRODUCT_VERSION
+    from disdrodb.utils.pandas import get_dataframe_start_end_time
+    from disdrodb.utils.xarray import get_dataset_start_end_time
+
+    # -----------------------------------------.
+    # Define product acronym
+    product_acronym = f"{product}"
+    if product in ["L2E", "L2M"]:
+        sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval)
+        if rolling:
+            sample_interval_acronym = f"ROLL{sample_interval_acronym}"
+        product_acronym = f"L2E.{sample_interval_acronym}"
+    if product in ["L2M"]:
+        distribution_acronym = get_distribution_acronym(distribution)
+        product_acronym = f"L2M_{distribution_acronym}.{sample_interval_acronym}"
+
+    # -----------------------------------------.
+    # Define base filename
+    filename = f"{product_acronym}.{campaign_name}.{station_name}"
+
+    # -----------------------------------------.
+    # Add prefix
+    if prefix != "":
+        filename = f"{prefix}.{filename}"
+
+    # -----------------------------------------.
+    # Add time period information
+    if add_time_period:
+        if product == "L0A":
+            starting_time, ending_time = get_dataframe_start_end_time(obj)
+        else:
+            starting_time, ending_time = get_dataset_start_end_time(obj)
+        starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
+        ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+        filename = f"{filename}.s{starting_time}.e{ending_time}"
+
+    # -----------------------------------------.
+    # Add product version
+    if add_version:
+        filename = f"{filename}.{PRODUCT_VERSION}"
+
+    # -----------------------------------------.
+    # Add product extension
+    if add_extension:
+        if product == "L0A":
+            filename = f"{filename}.parquet"
+        else:
+            filename = f"{filename}.nc"
+
+    # -----------------------------------------.
+    # Add suffix
+    if suffix != "":
+        filename = f"{filename}.{suffix}"
+    return filename
+
+
 def define_l0a_filename(df, campaign_name: str, station_name: str) -> str:
     """Define L0A file name.
 
@@ -748,48 +890,6 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     version = PRODUCT_VERSION
     filename = f"L0C.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return filename
-
-
-def get_distribution_acronym(distribution):
-    """Define DISDRODB L2M distribution acronym."""
-    acronym_dict = {
-        "lognorm": "LOGNORM",
-        "normalized_gamma": "NGAMMA",
-        "gamma": "GAMMA",
-        "exponential": "EXP",
-    }
-    return acronym_dict[distribution]
-
-
-def get_sample_interval_acronym(seconds, rolling=False):
-    """
-    Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
-
-    Parameters
-    ----------
-    - seconds (int): The time duration in seconds.
-
-    Returns
-    -------
-    - str: The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
-    """
-    timedelta = pd.Timedelta(seconds=seconds)
-    components = timedelta.components
-
-    parts = []
-    if components.days > 0:
-        parts.append(f"{components.days}D")
-    if components.hours > 0:
-        parts.append(f"{components.hours}H")
-    if components.minutes > 0:
-        parts.append(f"{components.minutes}MIN")
-    if components.seconds > 0:
-        parts.append(f"{components.seconds}S")
-    sample_interval_acronym = "".join(parts)
-    # Prefix with ROLL if rolling=True
-    if rolling:
-        sample_interval_acronym = f"ROLL{sample_interval_acronym}"
-    return sample_interval_acronym
 
 
 def define_l1_filename(ds, campaign_name, station_name: str) -> str:

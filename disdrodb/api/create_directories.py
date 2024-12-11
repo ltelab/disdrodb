@@ -44,6 +44,7 @@ from disdrodb.api.path import (
     define_data_dir,
     define_issue_dir,
     define_issue_filepath,
+    define_logs_dir,
     define_metadata_dir,
     define_metadata_filepath,
     define_station_dir,
@@ -348,6 +349,44 @@ def create_product_directory(
 
     # Return product directory
     return data_dir
+
+
+def create_logs_directory(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    # Option for L2E
+    sample_interval=None,
+    rolling=None,
+    # Option for L2M
+    distribution=None,
+):
+    """Initialize the logs directory structure for a DISDRODB product."""
+    # Define logs directory
+    logs_dir = define_logs_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Option for L2E
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Option for L2M
+        distribution=distribution,
+    )
+
+    # Ensure empty log directory
+    if os.path.isdir(logs_dir):
+        shutil.rmtree(logs_dir)
+
+    # Create logs directory
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # Return logs directory
+    return logs_dir
 
 
 #### DISDRODB Station Initialization

@@ -25,7 +25,6 @@ import time
 from typing import Optional
 
 import dask
-import dask.bag as db
 import xarray as xr
 
 from disdrodb.api.checks import check_sensor_name
@@ -33,6 +32,7 @@ from disdrodb.api.checks import check_sensor_name
 # Directory
 from disdrodb.api.create_directories import (
     create_l0_directory_structure,
+    create_logs_directory,
     create_product_directory,
 )
 from disdrodb.api.info import infer_path_info_tuple
@@ -42,7 +42,6 @@ from disdrodb.api.path import (
     define_l0a_filename,
     define_l0b_filename,
     define_l0c_filename,
-    define_logs_dir,
 )
 
 # get_disdrodb_path,
@@ -65,7 +64,7 @@ from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_par
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
-    define_summary_log,
+    create_product_logs,
     log_error,
     log_info,
 )
@@ -209,6 +208,7 @@ def _generate_l0b(
     try:
         # Read L0A Apache Parquet file
         df = read_l0a_dataframe(filepath, verbose=verbose, debugging_mode=debugging_mode)
+
         # -----------------------------------------------------------------.
         # Create xarray Dataset
         ds = create_l0b_from_l0a(df=df, attrs=metadata, verbose=verbose)
@@ -512,7 +512,7 @@ def run_l0a(
 
     # -------------------------------------------------------------------------.
     # Define logs directory
-    logs_dir = define_logs_dir(
+    logs_dir = create_logs_directory(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
@@ -569,7 +569,15 @@ def run_l0a(
     list_logs = dask.compute(*list_tasks) if parallel else list_tasks
     # -----------------------------------------------------------------.
     # Define L0A summary logs
-    define_summary_log(list_logs)
+    create_product_logs(
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        # Logs list
+        list_logs=list_logs,
+    )
 
     # ---------------------------------------------------------------------.
     # End L0A processing
@@ -684,7 +692,7 @@ def run_l0b_from_nc(
     base_dir, data_source, campaign_name = infer_path_info_tuple(processed_dir)
 
     # Define logs directory
-    logs_dir = define_logs_dir(
+    logs_dir = create_logs_directory(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
@@ -719,30 +727,9 @@ def run_l0b_from_nc(
     # - If parallel=True, it does that in parallel using dask.bag
     #   Settings npartitions=len(filepaths) enable to wait prior task on a core
     #   finish before starting a new one.
-    if not parallel:
-        list_logs = [
-            _generate_l0b_from_nc(
-                filepath=filepath,
-                data_dir=data_dir,
-                logs_dir=logs_dir,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                # Processing info
-                metadata=metadata,
-                # Reader arguments
-                dict_names=dict_names,
-                ds_sanitizer_fun=ds_sanitizer_fun,
-                # Processing options
-                force=force,
-                verbose=verbose,
-                parallel=parallel,
-            )
-            for filepath in filepaths
-        ]
-    else:
-        bag = db.from_sequence(filepaths, npartitions=len(filepaths))
-        list_logs = bag.map(
-            _generate_l0b_from_nc,
+    list_tasks = [
+        _generate_l0b_from_nc(
+            filepath=filepath,
             data_dir=data_dir,
             logs_dir=logs_dir,
             campaign_name=campaign_name,
@@ -756,11 +743,61 @@ def run_l0b_from_nc(
             force=force,
             verbose=verbose,
             parallel=parallel,
-        ).compute()
+        )
+        for filepath in filepaths
+    ]
+    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+
+    # if not parallel:
+    #     list_logs = [
+    #         _generate_l0b_from_nc(
+    #             filepath=filepath,
+    #             data_dir=data_dir,
+    #             logs_dir=logs_dir,
+    #             campaign_name=campaign_name,
+    #             station_name=station_name,
+    #             # Processing info
+    #             metadata=metadata,
+    #             # Reader arguments
+    #             dict_names=dict_names,
+    #             ds_sanitizer_fun=ds_sanitizer_fun,
+    #             # Processing options
+    #             force=force,
+    #             verbose=verbose,
+    #             parallel=parallel,
+    #         )
+    #         for filepath in filepaths
+    #     ]
+    # else:
+    #     bag = db.from_sequence(filepaths, npartitions=len(filepaths))
+    #     list_logs = bag.map(
+    #         _generate_l0b_from_nc,
+    #         data_dir=data_dir,
+    #         logs_dir=logs_dir,
+    #         campaign_name=campaign_name,
+    #         station_name=station_name,
+    #         # Processing info
+    #         metadata=metadata,
+    #         # Reader arguments
+    #         dict_names=dict_names,
+    #         ds_sanitizer_fun=ds_sanitizer_fun,
+    #         # Processing options
+    #         force=force,
+    #         verbose=verbose,
+    #         parallel=parallel,
+    #     ).compute()
 
     # -----------------------------------------------------------------.
     # Define L0B summary logs
-    define_summary_log(list_logs)
+    create_product_logs(
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        # Logs list
+        list_logs=list_logs,
+    )
 
     # ---------------------------------------------------------------------.
     # End L0B processing
@@ -820,7 +857,10 @@ def run_l0a_station(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     """
+    # Define base directory
     base_dir = get_base_dir(base_dir)
+
+    # Retrieve reader
     reader = get_station_reader_function(
         base_dir=base_dir,
         data_source=data_source,
@@ -934,7 +974,7 @@ def run_l0b_station(
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Define logs directory
-    logs_dir = define_logs_dir(
+    logs_dir = create_logs_directory(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
@@ -1023,7 +1063,15 @@ def run_l0b_station(
 
     # -----------------------------------------------------------------.
     # Define L0B summary logs
-    define_summary_log(list_logs)
+    create_product_logs(
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        # Logs list
+        list_logs=list_logs,
+    )
 
     # -----------------------------------------------------------------.
     # End L0B processing
@@ -1108,7 +1156,7 @@ def run_l0c_station(
     base_dir = get_base_dir(base_dir)
 
     # Define logs directory
-    logs_dir = define_logs_dir(
+    logs_dir = create_logs_directory(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
@@ -1174,7 +1222,15 @@ def run_l0c_station(
 
     # -----------------------------------------------------------------.
     # Define summary logs
-    define_summary_log(list_logs)
+    create_product_logs(
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        # Logs list
+        list_logs=list_logs,
+    )
 
     # ---------------------------------------------------------------------.
     # End processing

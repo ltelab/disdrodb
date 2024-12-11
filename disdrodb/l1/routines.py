@@ -29,12 +29,12 @@ import xarray as xr
 
 # Directory
 from disdrodb.api.create_directories import (
+    create_logs_directory,
     create_product_directory,
 )
 from disdrodb.api.io import get_filepaths, get_required_product
 from disdrodb.api.path import (
     define_l1_filename,
-    define_logs_dir,
 )
 from disdrodb.configs import get_base_dir
 from disdrodb.l1.processing import generate_l1
@@ -44,7 +44,7 @@ from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_par
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
-    define_summary_log,
+    create_product_logs,
     log_error,
     log_info,
 )
@@ -245,7 +245,7 @@ def run_l1_station(
     base_dir = get_base_dir(base_dir)
 
     # Define logs directory
-    logs_dir = define_logs_dir(
+    logs_dir = create_logs_directory(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
@@ -306,7 +306,15 @@ def run_l1_station(
 
     # -----------------------------------------------------------------.
     # Define L1 summary logs
-    define_summary_log(list_logs)
+    create_product_logs(
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        base_dir=base_dir,
+        # Logs list
+        list_logs=list_logs,
+    )
 
     # ---------------------------------------------------------------------.
     # End L1 processing
