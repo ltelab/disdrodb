@@ -279,7 +279,7 @@ def run_l2e_station(
     # ---------------------------------------------------------------------.
     # Retrieve source sample interval
     # TODO: Read from metadata ?
-    with xr.open_dataset(filepaths[0], chunks={}, autoclose=True) as ds:
+    with xr.open_dataset(filepaths[0], chunks={}, autoclose=True, cache=False) as ds:
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].data).item()
 
     # ---------------------------------------------------------------------.
@@ -563,7 +563,7 @@ def run_l2m_station(
         # Processing options
         debugging_mode=debugging_mode,
     )[0]
-    with xr.open_dataset(filepath, chunks={}, autoclose=True) as ds:
+    with xr.open_dataset(filepath, chunks={}, cache=False, autoclose=True) as ds:
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].data).item()
 
     # ---------------------------------------------------------------------.

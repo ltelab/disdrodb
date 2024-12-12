@@ -144,7 +144,7 @@ def reader(
         df["longitude"] = df_lon
 
         # - Drop columns not agreeing with DISDRODB L0 standards
-        df = df.drop(columns=["serial_number", "sensor_time", "serial_number"])
+        df = df.drop(columns=["serial_number", "sensor_time", "sensor_date", "serial_number"])
 
         return df
 

@@ -64,14 +64,21 @@ def reader(
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
+        import numpy as np
         import pandas as pd
 
         # Create ID and Value columns
         df = df["TO_PARSE"].str.split(":", expand=True, n=1)
         df.columns = ["ID", "Value"]
 
-        # Drop rows with no values
+        # Select only rows with values
         df = df[df["Value"].astype(bool)]
+        df = df[df["Value"].apply(lambda x: x is not None)]
+
+        # Drop rows with invalid IDs
+        # - Corrupted rows
+        valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
+        df = df[df["ID"].astype(str).isin(valid_id_str)]
 
         # Create the dataframe with each row corresponding to a timestep
         # - Group rows based on when ID values restart

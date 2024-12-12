@@ -19,6 +19,7 @@
 """Functions to process DISDRODB L0B files into DISDRODB L0C netCDF files."""
 import itertools
 import logging
+import shutil
 
 import numpy as np
 import pandas as pd
@@ -155,7 +156,7 @@ def check_same_raw_drop_number_values(list_ds, filepaths):
             raise ValueError(msg)
 
 
-def create_daily_file(day, filepaths):
+def create_daily_file(day, filepaths, verbose=True):
     """
     Create a daily file by merging and processing data from multiple filepaths.
 
@@ -199,7 +200,7 @@ def create_daily_file(day, filepaths):
     # Open files with data within the provided day
     # list_ds = [xr.open_dataset(filepath, chunks={}).sel({"time": slice(start_day_tol, end_day_tol)})
     # for filepath in filepaths]
-    list_ds = [xr.open_dataset(filepath, chunks={}).sortby("time") for filepath in filepaths]
+    list_ds = [xr.open_dataset(filepath, chunks={}, cache=False).sortby("time") for filepath in filepaths]
     list_ds = [ds.sel({"time": slice(start_day_tol, end_day_tol)}) for ds in list_ds]
 
     if len(list_ds) > 1:
@@ -215,7 +216,7 @@ def create_daily_file(day, filepaths):
         raise ValueError(f"Less than 5 timesteps available for day {day}.")
 
     # Identify time integration
-    sample_interval = infer_sample_interval(ds, verbose=True, robust=False)
+    sample_interval = infer_sample_interval(ds, verbose=verbose, robust=False)
     ds = add_sample_interval(ds, sample_interval=sample_interval)
 
     # Regularize timesteps (for trailing seconds)
@@ -233,3 +234,17 @@ def create_daily_file(day, filepaths):
     del list_ds
 
     return ds
+
+
+def copy_l0b_to_l0c_directory(filepath):
+    """Copy L0B file to L0C directory."""
+    import netCDF4
+
+    # Copy file
+    l0c_filepath = filepath.replace("L0B", "L0C")
+    _ = shutil.copy(filepath, l0c_filepath)
+
+    # Edit DISDRODB product attribute
+    with netCDF4.Dataset(l0c_filepath, mode="a") as nc_file:
+        # Modify the global attribute
+        nc_file.setncattr("disdrodb_product", "L0C")

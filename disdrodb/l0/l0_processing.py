@@ -52,8 +52,18 @@ from disdrodb.l0.io import (
     read_l0a_dataframe,
 )
 from disdrodb.l0.l0_reader import get_station_reader_function
-from disdrodb.l0.l0b_processing import set_l0b_encodings
+from disdrodb.l0.l0a_processing import (
+    process_raw_file,
+    write_l0a,
+)
+from disdrodb.l0.l0b_nc_processing import create_l0b_from_raw_nc
+from disdrodb.l0.l0b_processing import (
+    create_l0b_from_l0a,
+    set_l0b_encodings,
+    write_l0b,
+)
 from disdrodb.l0.l0c_processing import (
+    copy_l0b_to_l0c_directory,
     create_daily_file,
     get_files_per_days,
 )
@@ -99,11 +109,6 @@ def _generate_l0a(
     parallel,
 ):
     """Generate L0A file from raw file."""
-    from disdrodb.l0.l0a_processing import (
-        process_raw_file,
-        write_l0a,
-    )
-
     # Define product
     product = "L0A"
 
@@ -177,11 +182,6 @@ def _generate_l0b(
     parallel,
     debugging_mode,
 ):
-    from disdrodb.l0.l0b_processing import (
-        create_l0b_from_l0a,
-        write_l0b,
-    )
-
     # Define product
     product = "L0B"
 
@@ -256,9 +256,6 @@ def _generate_l0b_from_nc(
     verbose,
     parallel,
 ):
-    from disdrodb.l0.l0b_nc_processing import create_l0b_from_raw_nc
-    from disdrodb.l0.l0b_processing import write_l0b
-
     # -----------------------------------------------------------------.
     # Define product name
     product = "L0B"
@@ -358,28 +355,32 @@ def _generate_l0c(
     ##------------------------------------------------------------------------.
     ### Core computation
     try:
-        # Produce L0C dataset
-        ds = create_daily_file(day=day, filepaths=filepaths)
+        # If already single file per day, copy L0B to L0C
+        if len(filepaths) == 1:
+            copy_l0b_to_l0c_directory(filepaths[0])
+        # Otherwise combine products !
+        else:
+            # Produce L0C dataset
+            ds = create_daily_file(day=day, filepaths=filepaths, verbose=verbose)
 
-        # Write L0C netCDF4 dataset
-        if ds["time"].size > 1:
+            # Write L0C netCDF4 dataset
+            if ds["time"].size > 1:
 
-            # Get sensor name from dataset
-            sensor_name = ds.attrs.get("sensor_name")
+                # Get sensor name from dataset
+                sensor_name = ds.attrs.get("sensor_name")
 
-            # Set encodings
-            ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
+                # Set encodings
+                ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
 
-            # Define filepath
-            filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
-            filepath = os.path.join(data_dir, filename)
+                # Define filepath
+                filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
+                filepath = os.path.join(data_dir, filename)
 
-            # Write to disk
-            write_product(ds, product=product, filepath=filepath, force=force)
+                # Write to disk
+                write_product(ds, product=product, filepath=filepath, force=force)
 
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del ds
+            # Clean environment
+            del ds
 
         # Log end processing
         msg = f"{product} processing for {day} has ended."

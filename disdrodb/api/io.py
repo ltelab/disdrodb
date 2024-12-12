@@ -420,7 +420,7 @@ def available_stations(
         )
     # If no stations available, raise an error
     if raise_error_if_empty and len(list_info) == 0:
-        raise ValueError("No stations available given the provided `data_sources` {data_sources}.")
+        raise ValueError(f"No stations available given the provided `data_sources` {data_sources}.")
 
     ###-----------------------------------------------.
     ### Filter by campaign_names
@@ -430,7 +430,7 @@ def available_stations(
 
     # If no stations available, raise an error
     if raise_error_if_empty and len(list_info) == 0:
-        raise ValueError("No stations available given the provided `campaign_names` {campaign_names}.")
+        raise ValueError(f"No stations available given the provided `campaign_names` {campaign_names}.")
 
     ###-----------------------------------------------.
     ### Filter by station_names
@@ -439,7 +439,7 @@ def available_stations(
         list_info = [info for info in list_info if info[2] in station_names]
     # If no stations available, raise an error
     if raise_error_if_empty and len(list_info) == 0:
-        raise ValueError("No stations available given the provided `station_names` {station_names}.")
+        raise ValueError(f"No stations available given the provided `station_names` {station_names}.")
 
     ###-----------------------------------------------.
     # Return list with the tuple (data_source, campaign_name, station_name)

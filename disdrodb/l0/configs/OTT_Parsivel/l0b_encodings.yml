@@ -34,7 +34,7 @@ weather_code_synop_4677:
   _FillValue: 255
 weather_code_metar_4678:
   dtype: str
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -42,7 +42,7 @@ weather_code_metar_4678:
   chunksizes: 5000
 weather_code_nws:
   dtype: str
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -103,7 +103,7 @@ sensor_temperature:
   _FillValue: 255
 sensor_serial_number:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -111,7 +111,7 @@ sensor_serial_number:
   chunksizes: 5000
 firmware_iop:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -119,7 +119,7 @@ firmware_iop:
   chunksizes: 5000
 firmware_dsp:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -152,7 +152,7 @@ sensor_status:
   _FillValue: 255
 start_time:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -160,7 +160,7 @@ start_time:
   chunksizes: 5000
 sensor_time:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -168,7 +168,7 @@ sensor_time:
   chunksizes: 5000
 sensor_date:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -176,7 +176,7 @@ sensor_date:
   chunksizes: 5000
 station_name:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -184,7 +184,7 @@ station_name:
   chunksizes: 5000
 station_number:
   dtype: object
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false

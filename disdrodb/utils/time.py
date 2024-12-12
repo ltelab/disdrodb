@@ -226,7 +226,7 @@ def infer_sample_interval(ds, verbose=False, robust=False):
         )
         msg = (
             "The following unexpected intervals have a frequency "
-            + f"greater than 20%: {frequent_unexpected_intervals_str} %."
+            + f"greater than 20%: {frequent_unexpected_intervals_str} %. "
             + f"Total number of timesteps: {n_timesteps}."
         )
         raise ValueError(msg)

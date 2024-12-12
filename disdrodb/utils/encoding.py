@@ -55,6 +55,11 @@ def set_encodings(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
     for var, encoding in encoding_dict.items():
         ds[var].encoding.update(encoding)
 
+    # Ensure no deprecated "missing_value" attribute
+    # - When source dataset is netcdf (i.e. ARM)
+    for var in list(ds.variables):
+        _ = ds[var].encoding.pop("missing_value", None)
+
     return ds
 
 

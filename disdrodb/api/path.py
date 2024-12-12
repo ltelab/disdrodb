@@ -19,6 +19,7 @@
 """Define paths within the DISDRODB infrastructure."""
 
 import os
+from typing import Optional
 
 import pandas as pd
 
@@ -713,10 +714,10 @@ def define_filename(
     campaign_name: str,
     station_name: str,
     # L2E option
-    sample_interval: int = None,
-    rolling: bool = None,
+    sample_interval: Optional[int] = None,
+    rolling: Optional[bool] = None,
     # L2M option
-    distribution: str = None,
+    distribution: Optional[str] = None,
     # Filename options
     obj=None,
     add_version=True,
@@ -796,10 +797,7 @@ def define_filename(
     # -----------------------------------------.
     # Add product extension
     if add_extension:
-        if product == "L0A":
-            filename = f"{filename}.parquet"
-        else:
-            filename = f"{filename}.nc"
+        filename = f"{filename}.parquet" if product == "L0A" else f"{filename}.nc"
 
     # -----------------------------------------.
     # Add suffix

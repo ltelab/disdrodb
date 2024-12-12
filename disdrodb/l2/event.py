@@ -40,7 +40,7 @@ def identify_events(filepaths, parallel):
     if parallel:
         list_ds = dask.compute([_delayed_open_dataset(filepath) for filepath in filepaths])[0]
     else:
-        list_ds = [xr.open_dataset(filepath, chunks={}) for filepath in filepaths]
+        list_ds = [xr.open_dataset(filepath, chunks={}, cache=False) for filepath in filepaths]
 
     # List sample interval
     sample_intervals = np.array([ds["sample_interval"].data.item() for ds in list_ds])

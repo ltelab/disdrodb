@@ -99,7 +99,7 @@ def reader(
         import pandas as pd
 
         # - Replace 'status' NaN with 0
-        df["sensor_status"] = df["sensor_status"].fillna(0)
+        df["sensor_status"] = df["sensor_status"].astype(float).fillna(value=0).astype(int)
 
         # - Define 'time' datetime column
         df["time"] = df["date"].astype(str) + " " + df["time"].astype(str)
