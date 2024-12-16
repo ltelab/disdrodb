@@ -309,7 +309,10 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
     # Check existence
     if not os.path.exists(issue_filepath):
         create_station_issue(
-            base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
         )
 
     # Check validity
