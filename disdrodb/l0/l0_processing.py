@@ -63,7 +63,6 @@ from disdrodb.l0.l0b_processing import (
     write_l0b,
 )
 from disdrodb.l0.l0c_processing import (
-    copy_l0b_to_l0c_directory,
     create_daily_file,
     get_files_per_days,
 )
@@ -356,31 +355,33 @@ def _generate_l0c(
     ### Core computation
     try:
         # If already single file per day, copy L0B to L0C
-        if len(filepaths) == 1:
-            copy_l0b_to_l0c_directory(filepaths[0])
-        # Otherwise combine products !
-        else:
-            # Produce L0C dataset
-            ds = create_daily_file(day=day, filepaths=filepaths, verbose=verbose)
+        # --> File start_time and end_time should also be within the day !
+        # if len(filepaths) == 1:
+        #      files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
+        #      files_start_time.astype("M8[D]"), files_end_time.astype("M8[D]")
+        #     copy_l0b_to_l0c_directory(filepaths[0])
 
-            # Write L0C netCDF4 dataset
-            if ds["time"].size > 1:
+        # Produce L0C dataset
+        ds = create_daily_file(day=day, filepaths=filepaths, verbose=verbose)
 
-                # Get sensor name from dataset
-                sensor_name = ds.attrs.get("sensor_name")
+        # Write L0C netCDF4 dataset
+        if ds["time"].size > 1:
 
-                # Set encodings
-                ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
+            # Get sensor name from dataset
+            sensor_name = ds.attrs.get("sensor_name")
 
-                # Define filepath
-                filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
-                filepath = os.path.join(data_dir, filename)
+            # Set encodings
+            ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
 
-                # Write to disk
-                write_product(ds, product=product, filepath=filepath, force=force)
+            # Define filepath
+            filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
+            filepath = os.path.join(data_dir, filename)
 
-            # Clean environment
-            del ds
+            # Write to disk
+            write_product(ds, product=product, filepath=filepath, force=force)
+
+        # Clean environment
+        del ds
 
         # Log end processing
         msg = f"{product} processing for {day} has ended."

@@ -17,8 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities for Dask Distributed computations."""
-import os
 import logging
+import os
 
 
 def initialize_dask_cluster():
@@ -60,5 +60,3 @@ def close_dask_cluster(cluster, client):
     finally:
         # Restore the original log level
         logger.setLevel(original_level)
-    return None
-

@@ -92,9 +92,14 @@ def reader(
         df["time"] = pd.to_datetime(df["time"], format="%d-%m-%Y %H:%M:%S", errors="coerce")
 
         # - Split TO_BE_SPLITTED columns
+
         df_splitted = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=1)
         df_splitted.columns = ["datalogger_voltage", "rainfall_rate_32bit"]
         df["rainfall_rate_32bit"] = df_splitted["rainfall_rate_32bit"]
+
+        # Remove rows with error in data reading
+        # - When datalogger error: rainfall_rate_32bit: Error in data reading!
+        df = df[df["rainfall_rate_32bit"] != "Error in data reading! 0"]
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         columns_to_drop = [

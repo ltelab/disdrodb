@@ -65,40 +65,104 @@ def reader(
     #### - Define dataframe sanitizer function for L0 processing
     def df_sanitizer_fun(df):
         # - Import pandas
+        import numpy as np
         import pandas as pd
 
-        # - Define 'time' datetime
-        df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
+        # - Convert 'time' column to datetime
+        df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
-        # - Split the 'TO_BE_SPLITTED' column
-        df = df["TO_BE_SPLITTED"].str.split(",", n=9, expand=True)
+        # Count number of delimiters in the column to be parsed
+        # --> Some first rows are corrupted, so count the most frequent occurrence
+        possible_delimiters, counts = np.unique(df["TO_BE_SPLITTED"].str.count(","), return_counts=True)
+        n_delimiters = possible_delimiters[np.argmax(counts)]
 
-        # - Assign column names
-        column_names = [
-            "station_name",
-            "sensor_status",
-            "sensor_temperature",
-            "number_particles",
-            "rainfall_rate_32bit",
-            "reflectivity_16bit",
-            "mor_visibility",
-            "weather_code_synop_4680",
-            "weather_code_synop_4677",
-            "raw_drop_number",
-        ]
-        df.columns = column_names
-
-        # - Add the time column
-        df["time"] = df_time
+        if n_delimiters == 1031:  # first files
+            # - Select valid rows
+            df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1031]
+            # - Get time column
+            df_time = df["time"]
+            # - Split the 'TO_BE_SPLITTED' column
+            df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=7)
+            # - Assign column names
+            column_names = [
+                "station_name",
+                "sensor_status",
+                "sensor_temperature",
+                "reflectivity_32bit",
+                "mor_visibility",
+                "weather_code_synop_4680",
+                "weather_code_synop_4677",
+                "raw_drop_number",
+            ]
+            df.columns = column_names
+            # - Add time column
+            df["time"] = df_time
+            # - Remove columns not in other files
+            df = df.drop(columns="reflectivity_32bit")
+            # - Add missing columns and set NaN value
+            missing_columns = [
+                "number_particles",
+                "rainfall_rate_32bit",
+                "reflectivity_16bit",
+            ]
+            for column in missing_columns:
+                df[column] = "NaN"
+        elif n_delimiters == 1033:  # (most of the files)
+            # - Select valid rows
+            df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1033]
+            # - Get time column
+            df_time = df["time"]
+            # - Split the column be parsed
+            df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=9)
+            # - Assign column names
+            column_names = [
+                "station_name",
+                "sensor_status",
+                "sensor_temperature",
+                "number_particles",
+                "rainfall_rate_32bit",
+                "reflectivity_16bit",
+                "mor_visibility",
+                "weather_code_synop_4680",
+                "weather_code_synop_4677",
+                "raw_drop_number",
+            ]
+            df.columns = column_names
+            # - Add time column
+            df["time"] = df_time
+        elif n_delimiters == 1035:  # APU 17 first files
+            # - Select valid rows
+            df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1035]
+            # - Get time column
+            df_time = df["time"]
+            # - Split the column be parsed
+            df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=11)
+            # - Assign column names
+            column_names = [
+                "station_name",
+                "sensor_date",
+                "sensor_time",
+                "sensor_status",
+                "sensor_temperature",
+                "number_particles",
+                "rainfall_rate_32bit",
+                "reflectivity_16bit",
+                "mor_visibility",
+                "weather_code_synop_4680",
+                "weather_code_synop_4677",
+                "raw_drop_number",
+            ]
+            df.columns = column_names
+            # - Add time column
+            df["time"] = df_time
+            # - Drop columns not needed
+            df = df.drop(columns=["sensor_time", "sensor_date"])
+        else:
+            # Wrong number of delimiters ... likely a corrupted file
+            raise ValueError("Unexpected number of comma delimiters !")
 
         # - Drop columns not agreeing with DISDRODB L0 standards
         df = df.drop(columns=["station_name"])
-
-        # - Drop rows with invalid values
-        # --> Ensure that weather_code_synop_4677 has length 2
-        # --> If a previous column is missing it will have 000
-        df = df[df["weather_code_synop_4677"].str.len() == 2]
-
         return df
 
     ##------------------------------------------------------------------------.
