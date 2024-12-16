@@ -1125,6 +1125,7 @@ def get_gamma_moment_v1(N0, mu, Lambda, moment):
     Combining Reflectivity Profile and Path-integrated Attenuation.
     J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
     """
+    # Zhang et al 2001: N0 * gamma(mu + moment + 1) * Lambda ** (-(mu + moment + 1))
     return N0 * gamma(mu + moment + 1) / Lambda ** (mu + moment + 1)
 
 

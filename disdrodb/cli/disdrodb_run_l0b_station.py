@@ -87,34 +87,15 @@ def disdrodb_run_l0b_station(
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    import os
-
-    import dask
-    from dask.distributed import Client, LocalCluster
-
     from disdrodb.l0.l0_processing import run_l0b_station
+    from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 
     base_dir = parse_base_dir(base_dir)
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
     if parallel:
-        # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
-        os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-        # Retrieve the number of process to run
-        available_workers = os.cpu_count() - 2  # if not set, all CPUs
-        num_workers = dask.config.get("num_workers", available_workers)
-        # Silence dask warnings
-        dask.config.set({"logging.distributed": "error"})
-        # Create dask.distributed local cluster
-        cluster = LocalCluster(
-            n_workers=num_workers,
-            threads_per_worker=1,
-            processes=True,
-            # memory_limit='8GB',
-            # silence_logs=False,
-        )
-        Client(cluster)
+        cluster, client = initialize_dask_cluster()
 
     # -------------------------------------------------------------------------.
     run_l0b_station(
@@ -134,4 +115,4 @@ def disdrodb_run_l0b_station(
     # -------------------------------------------------------------------------.
     # Close the cluster
     if parallel:
-        cluster.close()
+        close_dask_cluster(cluster, client)

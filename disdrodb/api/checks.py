@@ -92,6 +92,7 @@ def check_directories_inside(dir_path):
 def check_base_dir(base_dir: str):
     """Raise an error if the path does not end with ``DISDRODB``."""
     base_dir = str(base_dir)  # convert Pathlib to string
+    base_dir = os.path.normpath(base_dir)
     if not base_dir.endswith("DISDRODB"):
         raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
     return base_dir
@@ -291,6 +292,7 @@ def check_issue_dir(data_source, campaign_name, base_dir=None):
 def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
     """Check existence of a valid issue YAML file. If does not exists, raise an error."""
     from disdrodb.issue.checks import check_issue_compliance
+    from disdrodb.issue.writer import create_station_issue
 
     _ = check_issue_dir(
         base_dir=base_dir,
@@ -306,9 +308,9 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
     )
     # Check existence
     if not os.path.exists(issue_filepath):
-        msg = f"The issue YAML file of {data_source} {campaign_name} {station_name} does not exist at {issue_filepath}."
-        logger.error(msg)
-        raise ValueError(msg)
+        create_station_issue(
+            base_dir=base_dir, data_source=data_source, campaign_name=campaign_name, station_name=station_name
+        )
 
     # Check validity
     check_issue_compliance(
