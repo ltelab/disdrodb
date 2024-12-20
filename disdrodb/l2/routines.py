@@ -32,11 +32,12 @@ from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
+from disdrodb.api.info import group_filepaths
 from disdrodb.api.io import get_filepaths, get_required_product
 from disdrodb.api.path import (
+    define_accumulation_acronym,
     define_l2e_filename,
     define_l2m_filename,
-    get_sample_interval_acronym,
 )
 from disdrodb.configs import get_base_dir
 from disdrodb.l1.resampling import (
@@ -45,12 +46,12 @@ from disdrodb.l1.resampling import (
 )
 from disdrodb.l2.event import get_events_info, identify_events
 from disdrodb.l2.processing import (
-    ensure_sample_interval_in_seconds,
     generate_l2_empirical,
     generate_l2_model,
     generate_l2_radar,
 )
-from disdrodb.l2.processing_options import get_l2_processing_options, get_resampling_information
+from disdrodb.l2.processing_options import get_l2_processing_options
+from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
@@ -61,6 +62,7 @@ from disdrodb.utils.logger import (
     log_error,
     log_info,
 )
+from disdrodb.utils.time import ensure_sample_interval_in_seconds, get_resampling_information
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
@@ -97,7 +99,7 @@ def _generate_l2e(
 
     # -----------------------------------------------------------------.
     # Create file logger
-    sample_interval_acronym = get_sample_interval_acronym(seconds=accumulation_interval)
+    sample_interval_acronym = define_accumulation_acronym(seconds=accumulation_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
     filename = f"L2E.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
@@ -119,7 +121,8 @@ def _generate_l2e(
         # - Open the netCDFs
         list_ds = [xr.open_dataset(filepath, chunks={}, cache=False, autoclose=True) for filepath in filepaths]
         # - Concatenate datasets
-        ds = xr.concat(list_ds, dim="time").sel(time=slice(start_time, end_time)).compute()
+        ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
+        ds = ds.sel(time=slice(start_time, end_time)).compute()
         # - Close file on disk
         _ = [ds.close() for ds in list_ds]
 
@@ -130,7 +133,7 @@ def _generate_l2e(
         # - When we regularize, we infill with NaN
         # - When we aggregate with sum, we don't skip NaN
         # --> Aggregation with original missing timesteps currently results in NaN !
-        # TODO: tolerance on fraction of missing timesteps for large accumulation_intervals
+        # TODO: Add tolerance on fraction of missing timesteps for large accumulation_intervals
         ds["drop_number"] = xr.where(np.isnan(ds["drop_number"]), 0, ds["drop_number"])
 
         # - Regularize dataset
@@ -147,6 +150,15 @@ def _generate_l2e(
         )
 
         ##------------------------------------------------------------------------.
+        # Remove timesteps with no drops or NaN (from L2E computations)
+        # timestep_zero_drops = ds["time"].data[ds["n_drops_selected"].data == 0]
+        # timestep_nan = ds["time"].data[np.isnan(ds["n_drops_selected"].data)]
+        indices_valid_timesteps = np.where(
+            ~np.logical_or(ds["n_drops_selected"].data == 0, np.isnan(ds["n_drops_selected"].data)),
+        )[0]
+        ds = ds.isel(time=indices_valid_timesteps)
+
+        ##------------------------------------------------------------------------.
         #### Generate L2E product
         ds = generate_l2_empirical(ds=ds)
 
@@ -155,6 +167,12 @@ def _generate_l2e(
             ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_simulation_options)
             ds.update(ds_radar)
             ds.attrs = ds_radar.attrs.copy()
+
+        ##------------------------------------------------------------------------.
+        #### Regularize back dataset
+        # TODO: infill timestep_zero_drops and timestep_nan differently ?
+        # --> R, P, LWC = 0,
+        # --> Z, D, with np.nan?
 
         ##------------------------------------------------------------------------.
         # Write netCDF4 dataset
@@ -191,6 +209,28 @@ def _generate_l2e(
     return logger_filepath
 
 
+def is_possible_product(accumulation_interval, sample_interval, rolling):
+    """Assess if production is possible given the requested accumulation interval and source sample_interval."""
+    # Avoid rolling product generation at source sample interval
+    if rolling and accumulation_interval == sample_interval:
+        return False
+    # Avoid product generation if the accumulation_interval is less than the sample interval
+    if accumulation_interval < sample_interval:
+        return False
+    # Avoid producti generation if accumulation_interval is not multiple of sample_interval
+    return accumulation_interval % sample_interval == 0
+
+
+def flatten_list(nested_list):
+    """Flatten a nested list into a single-level list."""
+    if isinstance(nested_list, list) and len(nested_list) == 0:
+        return nested_list
+    # If list is already flat, return as is to avoid flattening to chars
+    if isinstance(nested_list, list) and not isinstance(nested_list[0], list):
+        return nested_list
+    return [item for sublist in nested_list for item in sublist] if isinstance(nested_list, list) else [nested_list]
+
+
 def run_l2e_station(
     # Station arguments
     data_source,
@@ -208,6 +248,17 @@ def run_l2e_station(
 
     This function is intended to be called through the ``disdrodb_run_l2e_station``
     command-line interface.
+
+    The DISDRODB L2E routine generate a L2E file for each event.
+    Events are defined based on the DISDRODB event settings options.
+    The DISDRODB event settings allows to produce L2E files either
+    per custom block of time (i.e day/month/year) or for blocks of rainy events.
+
+    For stations with varying measurement intervals, DISDRODB defines a separate list of 'events'
+    for each measurement interval option. In other words, DISDRODB does not
+    mix files with data acquired at different sample intervals when resampling the data.
+
+    L0C product generation ensure creation of files with unique sample intervals.
 
     Parameters
     ----------
@@ -254,33 +305,70 @@ def run_l2e_station(
     # -------------------------------------------------------------------------.
     # List L1 files to process
     required_product = get_required_product(product)
-    filepaths = get_filepaths(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        product=required_product,
-        # Processing options
-        debugging_mode=False,
-    )
+    flag_not_available_data = False
+    try:
+        filepaths = get_filepaths(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product=required_product,
+            # Processing options
+            debugging_mode=False,
+        )
+    except Exception as e:
+        print(str(e))  # Case where no file paths available
+        flag_not_available_data = True
+
+    # -------------------------------------------------------------------------.
+    # If no data available, print error message and return None
+    if flag_not_available_data:
+        msg = (
+            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            + f"has not been launched because of missing {required_product} data."
+        )
+        print(msg)
+        return
 
     # -------------------------------------------------------------------------.
     # Retrieve L2 processing options
     # - Each dictionary item contains the processing options for a given rolling/accumulation_interval combo
     l2_processing_options = get_l2_processing_options()
 
+    # ---------------------------------------------------------------------.
+    # Group filepaths by sample intervals
+    # - Typically the sample interval is fixed
+    # - Some stations might change the sample interval along the years
+    # - For each sample interval, separated processing take place here after !
+    dict_filepaths = group_filepaths(filepaths, groups="sample_interval")
+
     # -------------------------------------------------------------------------.
-    # Define list event
-    # TODO: pass event option list !
-    list_events = identify_events(filepaths, parallel=parallel)
-    if debugging_mode:
-        list_events = list_events[0 : min(len(list_events), 3)]
+    # Define list of event
+    # - [(start_time, end_time)]
+    # TODO: Here pass event option list !
+    # TODO: Implement more general define_events function
+    # - Either rainy events
+    # - Either time blocks (day/month/year)
+    # TODO: Define events identification settings based on accumulation
+    # - This is currently done at the source sample interval !
+    # - Should we allow event definition for each accumulation interval and
+    #   move this code inside the loop below
+
+    # sample_interval = list(dict_filepaths)[0]
+    # filepaths = dict_filepaths[sample_interval]
+
+    dict_list_events = {
+        sample_interval: identify_events(filepaths, parallel=parallel)
+        for sample_interval, filepaths in dict_filepaths.items()
+    }
 
     # ---------------------------------------------------------------------.
-    # Retrieve source sample interval
-    # TODO: Read from metadata ?
-    with xr.open_dataset(filepaths[0], chunks={}, autoclose=True, cache=False) as ds:
-        sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].data).item()
+    # Subset for debugging mode
+    if debugging_mode:
+        dict_list_events = {
+            sample_interval: list_events[0 : min(len(list_events), 3)]
+            for sample_interval, list_events in dict_list_events.items()
+        }
 
     # ---------------------------------------------------------------------.
     # Loop
@@ -298,12 +386,33 @@ def run_l2e_station(
         radar_simulation_options = l2_options["radar_simulation_options"]
 
         # ------------------------------------------------------------------.
-        # Avoid generation of rolling products for source sample interval !
-        if rolling and accumulation_interval == sample_interval:
-            continue
+        # Group filepaths by events
+        # - This is done separately for each possible source sample interval
+        # - It groups filepaths by start_time and end_time provided by list_events
+        # - Here 'events' can also simply be period of times ('day', 'months', ...)
+        # - When aggregating/resampling/accumulating data, we need to load also
+        #   some data before/after the actual event start_time/end_time
+        # - get_events_info adjust the event times to accounts for the required "border" data.
+        events_info = [
+            get_events_info(
+                list_events=list_events,
+                filepaths=dict_filepaths[sample_interval],
+                accumulation_interval=accumulation_interval,
+                rolling=rolling,
+            )
+            for sample_interval, list_events in dict_list_events.items()
+            if is_possible_product(
+                accumulation_interval=accumulation_interval,
+                sample_interval=sample_interval,
+                rolling=rolling,
+            )
+        ]
+        events_info = flatten_list(events_info)
 
-        # Avoid product generation if the accumulation_interval is less than the sample interval
-        if accumulation_interval < sample_interval:
+        # ------------------------------------------------------------------.
+        # Skip processing if no files available
+        # - When not compatible accumulation_interval with source sample_interval
+        if len(events_info) == 0:
             continue
 
         # ------------------------------------------------------------------.
@@ -331,15 +440,10 @@ def run_l2e_station(
             sample_interval=accumulation_interval,
             rolling=rolling,
         )
-        # Retrieve files events information
-        events_info = get_events_info(
-            list_events=list_events,
-            filepaths=filepaths,
-            accumulation_interval=accumulation_interval,
-            rolling=rolling,
-        )
+
+        # ------------------------------------------------------------------.
         # Generate files
-        # - Loop over netCDF files and generate new product files.
+        # - L2E product generation is optionally parallelized over events
         # - If parallel=True, it does that in parallel using dask.delayed
         list_tasks = [
             _generate_l2e(
@@ -374,7 +478,7 @@ def run_l2e_station(
             station_name=station_name,
             base_dir=base_dir,
             # Product options
-            sample_interval=sample_interval,
+            sample_interval=accumulation_interval,
             rolling=rolling,
             # Logs list
             list_logs=list_logs,
@@ -383,7 +487,7 @@ def run_l2e_station(
     # ---------------------------------------------------------------------.
     # End product processing
     if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
         msg = f"{product} processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
 
@@ -552,19 +656,17 @@ def run_l2m_station(
     l2_processing_options = get_l2_processing_options()
 
     # ---------------------------------------------------------------------.
-    # Retrieve sampling interval
-    # TODO: read from metadata !
-    filepath = get_filepaths(
+    # Retrieve source sampling interval
+    # - If a station has varying measurement interval over time, choose the smallest one !
+    metadata = read_station_metadata(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        product="L1",
-        # Processing options
-        debugging_mode=debugging_mode,
-    )[0]
-    with xr.open_dataset(filepath, chunks={}, cache=False, autoclose=True) as ds:
-        sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].data).item()
+    )
+    sample_interval = metadata["measurement_interval"]
+    if isinstance(sample_interval, list):
+        sample_interval = min(sample_interval)
 
     # ---------------------------------------------------------------------.
     # Loop
@@ -596,17 +698,31 @@ def run_l2m_station(
         # -----------------------------------------------------------------.
         # List files to process
         required_product = get_required_product(product)
-        filepaths = get_filepaths(
-            base_dir=base_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            product=required_product,
-            sample_interval=accumulation_interval,
-            rolling=rolling,
-            # Processing options
-            debugging_mode=debugging_mode,
-        )
+        flag_not_available_data = False
+        try:
+            filepaths = get_filepaths(
+                base_dir=base_dir,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                product=required_product,
+                sample_interval=accumulation_interval,
+                rolling=rolling,
+                # Processing options
+                debugging_mode=debugging_mode,
+            )
+        except Exception as e:
+            print(str(e))  # Case where no file paths available
+            flag_not_available_data = True
+
+        # If no data available, try with other L2E accumulation intervals
+        if flag_not_available_data:
+            msg = (
+                f"{product} processing of {data_source} {campaign_name} {station_name}"
+                + f"has not been launched because of missing {required_product} {sample_interval_acronym} data ."
+            )
+            print(msg)
+            continue
 
         # -----------------------------------------------------------------.
         # Loop over distributions to fit
@@ -694,6 +810,6 @@ def run_l2m_station(
     # ---------------------------------------------------------------------.
     # End L2M processing
     if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
         msg = f"{product} processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)

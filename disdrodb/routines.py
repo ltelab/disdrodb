@@ -152,7 +152,7 @@ def run_disdrodb_l0_station(
 
     # -------------------------------------------------------------------------.
     # End of L0 processing for all stations
-    timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+    timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
     print(f"L0 processing of stations {station_name} completed in {timedelta_str}")
 
 

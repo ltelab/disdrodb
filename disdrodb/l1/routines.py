@@ -206,6 +206,9 @@ def run_l1_station(
     """
     Run the L1 processing of a specific DISDRODB station when invoked from the terminal.
 
+    The L1 routines just filter the raw drop spectrum and compute basic statistics.
+    The L1 routine expects as input L0C files where each file has a unique sample interval.
+
     This function is intended to be called through the ``disdrodb_run_l1_station``
     command-line interface.
 
@@ -274,15 +277,30 @@ def run_l1_station(
     # -------------------------------------------------------------------------.
     # List files to process
     required_product = get_required_product(product)
-    filepaths = get_filepaths(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        product=required_product,
-        # Processing options
-        debugging_mode=debugging_mode,
-    )
+    flag_not_available_data = False
+    try:
+        filepaths = get_filepaths(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product=required_product,
+            # Processing options
+            debugging_mode=debugging_mode,
+        )
+    except Exception as e:
+        print(str(e))  # Case where no file paths available
+        flag_not_available_data = True
+
+    # -------------------------------------------------------------------------.
+    # If no data available, print error message and return None
+    if flag_not_available_data:
+        msg = (
+            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            + f"has not been launched because of missing {required_product} data."
+        )
+        print(msg)
+        return
 
     # -----------------------------------------------------------------.
     # Generate L1 files
@@ -319,7 +337,7 @@ def run_l1_station(
     # ---------------------------------------------------------------------.
     # End L1 processing
     if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
         msg = f"{product} processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
 

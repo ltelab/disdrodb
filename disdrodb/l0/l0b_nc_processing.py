@@ -21,7 +21,6 @@
 import logging
 
 import numpy as np
-import xarray as xr
 
 from disdrodb.l0.l0b_processing import finalize_dataset
 from disdrodb.l0.standards import (
@@ -114,6 +113,8 @@ def subset_dataset(ds, dict_names, sensor_name):
 
 def add_dataset_missing_variables(ds, missing_vars, sensor_name):
     """Add missing xr.Dataset variables as ``np.nan`` xr.DataArrays."""
+    import xarray as xr
+
     from disdrodb.l0.standards import get_variables_dimension
 
     # Get dimension of each variables

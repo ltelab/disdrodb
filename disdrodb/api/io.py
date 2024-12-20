@@ -157,6 +157,7 @@ def _get_list_stations_with_data(product, campaign_dir):
     # Get stations directory
     list_stations_dir = _get_list_stations_dirs(product=product, campaign_dir=campaign_dir)
     # Count number of files within directory
+    # - TODO: here just check for one file !
     list_nfiles_per_station = [count_files(station_dir, "*", recursive=True) for station_dir in list_stations_dir]
     # Keep only stations with at least one file
     stations_names = [os.path.basename(path) for n, path in zip(list_nfiles_per_station, list_stations_dir) if n >= 1]
@@ -181,7 +182,6 @@ def _get_campaign_stations(base_dir, product, data_source, campaign_name):
         data_source=data_source,
         campaign_name=campaign_name,
     )
-
     # Get list of stations with data and metadata
     list_stations_data = _get_list_stations_with_data(product=product, campaign_dir=campaign_dir)
     list_stations_metadata = _get_list_stations_with_metadata(campaign_dir)
@@ -387,7 +387,7 @@ def available_stations(
     raise_error_if_empty=False,
     base_dir=None,
 ):
-    """Return stations for which data are available on disk.
+    """Return stations for which data and metadata are available on disk.
 
     Raise an error if no stations are available.
     """
@@ -410,6 +410,7 @@ def available_stations(
     # If data_source is None, retrieve all stations
     if data_sources is None:
         list_info = _get_stations(base_dir=base_dir, product=product)
+
     ###-----------------------------------------------.
     ### Filter by data_sources
     else:

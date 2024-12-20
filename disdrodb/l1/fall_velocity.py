@@ -221,7 +221,7 @@ def get_raindrop_fall_velocity(diameter, method, ds_env=None):
         - 'altitude' :  Altitude in meters (m).
         - 'latitude' :  Latitude in degrees.
         - 'temperature' : Temperature in degrees Celsius (°C).
-        - 'relative_humidity' :  Relative humidity in percentage (%).
+        - 'relative_humidity' :  Relative humidity. A value between 0 and 1.
         - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
         - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
         It is required for for the 'Beard1976' method.

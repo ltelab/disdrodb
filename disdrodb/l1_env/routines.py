@@ -25,7 +25,7 @@ def get_default_environment_dataset():
     ds_env["sea_level_air_pressure"] = 101_325
     ds_env["gas_constant_dry_air"] = 287.04
     ds_env["lapse_rate"] = 0.0065
-    ds_env["relative_humidity"] = 0.95
+    ds_env["relative_humidity"] = 0.95  # Value between 0 and 1 !
     ds_env["temperature"] = 20 + 273.15
     return ds_env
 

@@ -27,7 +27,7 @@ from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity, get_min_max_diameter  # TODO: maybe move out of L2
 from disdrodb.utils.attrs import set_attrs
 from disdrodb.utils.encoding import set_encodings
-from disdrodb.utils.time import infer_sample_interval, regularize_timesteps
+from disdrodb.utils.time import ensure_sample_interval_in_seconds, infer_sample_interval
 
 
 def generate_l1(
@@ -95,12 +95,16 @@ def generate_l1(
     # Initialize L2 dataset
     ds_l1 = xr.Dataset()
 
-    # Identify time integration
-    sample_interval = infer_sample_interval(ds, verbose=False)
-    ds = add_sample_interval(ds, sample_interval=sample_interval)
+    # Retrieve sample interval
+    # --> sample_interval is a coordinate of L0C products
+    if "sample_interval" in ds:
+        sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"].data)
+    else:
+        # This line is not called in the DISDRODB processing chain !
+        sample_interval = infer_sample_interval(ds, verbose=False)
 
-    # Regularize timesteps (for trailing seconds)
-    ds = regularize_timesteps(ds, sample_interval=sample_interval)
+    # Re-add sample interval as coordinate (in seconds)
+    ds = add_sample_interval(ds, sample_interval=sample_interval)
 
     # ---------------------------------------------------------------------------
     # Retrieve ENV dataset or take defaults
@@ -169,6 +173,11 @@ def generate_l1(
     ds_l1["Dmax"] = max_drop_diameter
     ds_l1["n_drops_selected"] = drop_counts.sum(dim=["diameter_bin_center"])
     ds_l1["n_drops_discarded"] = drop_counts.sum(dim=["diameter_bin_center"])
+
+    # -------------------------------------------------------------------------------------------
+    #### Add L0C coordinates that might got lost
+    if "time_qc" in ds:
+        ds_l1 = ds_l1.assign_coords({"time_qc": ds["time_qc"]})
 
     #### ----------------------------------------------------------------------------.
     #### Add encodings and attributes

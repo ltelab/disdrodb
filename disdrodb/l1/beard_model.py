@@ -122,7 +122,7 @@ def get_vapor_actual_pressure_at_height(
     sea_level_temperature : float
         Standard temperature at sea level in Kelvin.
     sea_level_relative_humidity : float
-        Relative humidity at sea level.
+        Relative humidity at sea level. A value between 0 and 1.
     sea_level_air_pressure : float, optional
         Standard atmospheric pressure at sea level in Pascals. The default is 101_325 Pascals.
     lapse_rate : float, optional
@@ -140,9 +140,6 @@ def get_vapor_actual_pressure_at_height(
     )
     esat = get_vapor_saturation_pressure(sea_level_temperature)
     actual_vapor = sea_level_relative_humidity / (1 / esat - (1 - sea_level_relative_humidity) / sea_level_air_pressure)
-    # actual_vapor = get_vapor_actual_pressure(relative_humidity=sea_level_relative_humidity,
-    #                                          temperature=sea_level_temperature,
-    #                                          air_pressure=sea_level_air_pressure)
     return actual_vapor * np.exp(-(5.8e3 * lapse_rate / (temperature_at_altitude**2) + 5.5e-5) * altitude)
 
 
@@ -184,18 +181,16 @@ def get_vapor_saturation_pressure(temperature):
     return np.exp(esat / (temperature**2))
 
 
-def get_vapor_actual_pressure(relative_humidity, temperature, air_pressure):
+def get_vapor_actual_pressure(relative_humidity, temperature):
     """
     Computes the actual vapor pressure over water.
 
     Parameters
     ----------
     relative_humidity : float
-        Relative humidity.
+        Relative humidity. A value between 0 and 1.
     temperature : float
         Temperature in Kelvin.
-    air_pressure : float
-        Air pressure in Pascals.
 
     Returns
     -------
@@ -203,7 +198,6 @@ def get_vapor_actual_pressure(relative_humidity, temperature, air_pressure):
         Actual vapor pressure in Pascal.
     """
     esat = get_vapor_saturation_pressure(temperature)
-    #  old_e = relative_humidity / (1 / esat - (1 - relative_humidity) / air_pressure)
     return relative_humidity * esat
 
 
@@ -548,7 +542,7 @@ def retrieve_fall_velocity(
     temperature : float
         Temperature in Kelvin.
     relative_humidity : float
-        Relative humidity.
+        Relative humidity. A value between 0 and 1.
     latitude : float
         Latitude in degrees.
     air_pressure : float
@@ -583,7 +577,6 @@ def retrieve_fall_velocity(
     vapor_pressure = get_vapor_actual_pressure(
         relative_humidity=relative_humidity,
         temperature=temperature,
-        air_pressure=air_pressure,
     )
 
     # Retrieve air density and water density

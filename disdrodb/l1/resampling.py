@@ -52,6 +52,7 @@ def add_sample_interval(ds, sample_interval):
     ds["sample_interval"].attrs["units"] = "seconds"
     ds = ds.set_coords("sample_interval")
     # Update measurement_interval attribute
+    ds.attrs = ds.attrs.copy()
     ds.attrs["measurement_interval"] = int(sample_interval)
     return ds
 

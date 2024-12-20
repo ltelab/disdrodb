@@ -17,7 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define paths within the DISDRODB infrastructure."""
-
 import os
 from typing import Optional
 
@@ -25,6 +24,7 @@ import pandas as pd
 
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import check_directory_exists
+from disdrodb.utils.time import ensure_sample_interval_in_seconds, seconds_to_acronym
 
 ####--------------------------------------------------------------------------.
 #### Paths from BASE_DIR
@@ -201,11 +201,11 @@ def define_issue_dir(
 
 
 def define_metadata_filepath(
-    product,
     data_source,
     campaign_name,
     station_name,
     base_dir=None,
+    product="RAW",
     check_exists=False,
 ):
     """Return the station metadata filepath in the DISDRODB infrastructure.
@@ -357,13 +357,13 @@ def define_product_dir_tree(
     if product == "L2E":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
-        sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
+        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         return os.path.join(product, sample_interval_acronym)
     if product == "L2M":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         check_distribution(distribution)
-        sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
+        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         distribution_acronym = get_distribution_acronym(distribution)
         return os.path.join(product, distribution_acronym, sample_interval_acronym)
     raise ValueError(f"The product {product} is not defined.")
@@ -587,13 +587,13 @@ def define_data_dir(
     elif product == "L2E":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
-        sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
+        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         data_dir = os.path.join(station_dir, sample_interval_acronym)
     elif product == "L2M":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         check_distribution(distribution)
-        sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval, rolling=rolling)
+        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         distribution_acronym = get_distribution_acronym(distribution)
         data_dir = os.path.join(station_dir, distribution_acronym, sample_interval_acronym)
     else:
@@ -678,35 +678,19 @@ def get_distribution_acronym(distribution):
     return acronym_dict[distribution]
 
 
-def get_sample_interval_acronym(seconds, rolling=False):
+def define_accumulation_acronym(seconds, rolling):
+    """Define the accumulation acronnym.
+
+    Prefix the accumulation interval acronym with ROLL if rolling=True.
     """
-    Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
-
-    Parameters
-    ----------
-    - seconds (int): The time duration in seconds.
-
-    Returns
-    -------
-    - str: The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
-    """
-    timedelta = pd.Timedelta(seconds=seconds)
-    components = timedelta.components
-
-    parts = []
-    if components.days > 0:
-        parts.append(f"{components.days}D")
-    if components.hours > 0:
-        parts.append(f"{components.hours}H")
-    if components.minutes > 0:
-        parts.append(f"{components.minutes}MIN")
-    if components.seconds > 0:
-        parts.append(f"{components.seconds}S")
-    sample_interval_acronym = "".join(parts)
-    # Prefix with ROLL if rolling=True
+    accumulation_acronym = seconds_to_acronym(seconds)
     if rolling:
-        sample_interval_acronym = f"ROLL{sample_interval_acronym}"
-    return sample_interval_acronym
+        accumulation_acronym = f"ROLL{accumulation_acronym}"
+    return accumulation_acronym
+
+
+####--------------------------------------------------------------------------.
+#### Filenames for DISDRODB products
 
 
 def define_filename(
@@ -758,12 +742,15 @@ def define_filename(
     from disdrodb.utils.xarray import get_dataset_start_end_time
 
     # -----------------------------------------.
+    # TODO: Define sample_interval_acronym
+    # - ADD sample_interval_acronym also to L0A and L0B
+    # - Add sample_interval_acronym also to L0C and L1
+
+    # -----------------------------------------.
     # Define product acronym
     product_acronym = f"{product}"
     if product in ["L2E", "L2M"]:
-        sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval)
-        if rolling:
-            sample_interval_acronym = f"ROLL{sample_interval_acronym}"
+        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         product_acronym = f"L2E.{sample_interval_acronym}"
     if product in ["L2M"]:
         distribution_acronym = get_distribution_acronym(distribution)
@@ -882,11 +869,16 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     from disdrodb import PRODUCT_VERSION
     from disdrodb.utils.xarray import get_dataset_start_end_time
 
+    # TODO: add sample_interval as argument
+    sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
+    sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
     starting_time, ending_time = get_dataset_start_end_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
-    filename = f"L0C.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    filename = (
+        f"L0C.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    )
     return filename
 
 
@@ -905,16 +897,21 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
     Returns
     -------
     str
-        L0B file name.
+        L1 file name.
     """
     from disdrodb import PRODUCT_VERSION
     from disdrodb.utils.xarray import get_dataset_start_end_time
 
+    # TODO: add sample_interval as argument
+    sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
+    sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
     starting_time, ending_time = get_dataset_start_end_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
-    filename = f"L1.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    filename = (
+        f"L1.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    )
     return filename
 
 
@@ -938,9 +935,7 @@ def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interv
     from disdrodb import PRODUCT_VERSION
     from disdrodb.utils.xarray import get_dataset_start_end_time
 
-    sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval)
-    if rolling:
-        sample_interval_acronym = f"ROLL{sample_interval_acronym}"
+    sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_dataset_start_end_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
@@ -979,9 +974,7 @@ def define_l2m_filename(
     from disdrodb.utils.xarray import get_dataset_start_end_time
 
     distribution_acronym = get_distribution_acronym(distribution)
-    sample_interval_acronym = get_sample_interval_acronym(seconds=sample_interval)
-    if rolling:
-        sample_interval_acronym = f"ROLL{sample_interval_acronym}"
+    sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_dataset_start_end_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")

@@ -74,6 +74,8 @@ def test_define_l0b_filename(product):
     # Set variables
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
+    sample_interval = 10
+    sample_interval_str = "10S"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
 
@@ -83,12 +85,16 @@ def test_define_l0b_filename(product):
     ds = xr.DataArray(
         data=data,
         dims=["time"],
-        coords={"time": pd.date_range(start=start_date, end=end_date)},
+        coords={"time": pd.date_range(start=start_date, end=end_date), "sample_interval": sample_interval},
     )
-
+    
     # Define expected results
-    expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"
-
+    # TODO: MODIFY !
+    if product == "L0B": 
+        expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"
+    else: 
+        expected_name = f"{product}.{sample_interval_str}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"
+   
     # Test the function
     define_filename_func = define_l0b_filename if product == "L0B" else define_l0c_filename
     res = define_filename_func(ds, campaign_name, station_name)

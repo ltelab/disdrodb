@@ -23,8 +23,6 @@ import os
 import re
 from asyncio.log import logger
 
-from disdrodb.api.path import define_campaign_dir, define_filename, define_logs_dir
-
 
 def create_logger_file(logs_dir, filename, parallel):
     """Create logger file."""
@@ -85,7 +83,8 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
     """
     if verbose:
         print(" - " + msg)
-    logger.debug(msg)
+    if logger is not None:
+        logger.debug(msg)
 
 
 def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -103,7 +102,8 @@ def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
     """
     if verbose:
         print(" - " + msg)
-    logger.info(msg)
+    if logger is not None:
+        logger.info(msg)
 
 
 def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -121,7 +121,8 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
     """
     if verbose:
         print(" - " + msg)
-    logger.warning(msg)
+    if logger is not None:
+        logger.warning(msg)
 
 
 def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
@@ -139,7 +140,8 @@ def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
     """
     if verbose:
         print(" - " + msg)
-    logger.error(msg)
+    if logger is not None:
+        logger.error(msg)
 
 
 ####---------------------------------------------------------------------------.
@@ -253,6 +255,7 @@ def create_product_logs(
     None
 
     """
+    from disdrodb.api.path import define_campaign_dir, define_filename, define_logs_dir
     from disdrodb.utils.directories import list_files
 
     # --------------------------------------------------------.

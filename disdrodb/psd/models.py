@@ -343,9 +343,9 @@ class GammaPSD(ExponentialPSD):
 
     Attributes
     ----------
-        N0: the intercept parameter.
-        Lambda: the inverse scale parameter
-        mu: the shape parameter
+        N0: the intercept parameter [mm**(-1-mu) m**-3] (scale parameter)
+        Lambda: the inverse scale parameter [mm-1] (slope parameter)
+        mu: the shape parameter [-]
         Dmax: the maximum diameter to consider (defaults to 11/Lambda,
             i.e. approx. 3*D50, if None)
 
@@ -439,6 +439,8 @@ class NormalizedGammaPSD(XarrayPSD):
     # --> Normalized with respect to liquid water content (mass) --> Nx=D3/Dm4
     N(D) = Nw * f1(mu) * (D/Dm)**mu * exp(-(mu+4)*D/Dm)   # Nw * f(D; Dm, mu)
     f1(mu) = 6/(4**4) * (mu+4)**(mu+4)/Gamma(mu+4)
+
+    Note: gamma(4) = 6
 
     An alternative formulation as function of Dm:
     # Tokay et al., 2010
@@ -641,3 +643,52 @@ class BinnedPSD(PSD):
             and (self.bin_edges == other.bin_edges).all()
             and (self.bin_psd == other.bin_psd).all()
         )
+
+
+####-----------------------------------------------------------------.
+#### Moments Computation
+
+
+def get_exponential_moment(N0, Lambda, moment):
+    """Compute exponential distribution moments."""
+    return N0 * gamma(moment + 1) / Lambda ** (moment + 1)
+
+
+def get_gamma_moment_v1(N0, mu, Lambda, moment):
+    """Compute gamma distribution moments.
+
+    References
+    ----------
+    Kozu, T., and K. Nakamura, 1991:
+    Rainfall Parameter Estimation from Dual-Radar Measurements
+    Combining Reflectivity Profile and Path-integrated Attenuation.
+    J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
+    """
+    # Zhang et al 2001: N0 * gamma(mu + moment + 1) * Lambda ** (-(mu + moment + 1))
+    return N0 * gamma(mu + moment + 1) / Lambda ** (mu + moment + 1)
+
+
+def get_gamma_moment_v2(Nt, mu, Lambda, moment):
+    """Compute gamma distribution moments.
+
+    References
+    ----------
+    Kozu, T., and K. Nakamura, 1991:
+    Rainfall Parameter Estimation from Dual-Radar Measurements
+    Combining Reflectivity Profile and Path-integrated Attenuation.
+    J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
+    """
+    return Nt * gamma(mu + moment + 1) / gamma(mu + 1) / Lambda**moment
+
+
+def get_lognormal_moment(Nt, sigma, mu, moment):
+    """Compute lognormal distribution moments.
+
+    References
+    ----------
+    Kozu, T., and K. Nakamura, 1991:
+    Rainfall Parameter Estimation from Dual-Radar Measurements
+    Combining Reflectivity Profile and Path-integrated Attenuation.
+    J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
+    """
+    return Nt * np.exp(moment * mu + 1 / 2 * moment * sigma**2)

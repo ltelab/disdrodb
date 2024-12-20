@@ -25,7 +25,6 @@ import time
 from typing import Optional
 
 import dask
-import xarray as xr
 
 from disdrodb.api.checks import check_sensor_name
 
@@ -42,6 +41,7 @@ from disdrodb.api.path import (
     define_l0a_filename,
     define_l0b_filename,
     define_l0c_filename,
+    define_metadata_filepath,
 )
 
 # get_disdrodb_path,
@@ -65,6 +65,7 @@ from disdrodb.l0.l0b_processing import (
 from disdrodb.l0.l0c_processing import (
     create_daily_file,
     get_files_per_days,
+    retrieve_possible_measurement_intervals,
 )
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
@@ -80,6 +81,7 @@ from disdrodb.utils.logger import (
 
 # log_warning,
 from disdrodb.utils.writer import write_product
+from disdrodb.utils.yaml import read_yaml
 
 logger = logging.getLogger(__name__)
 
@@ -255,6 +257,8 @@ def _generate_l0b_from_nc(
     verbose,
     parallel,
 ):
+    import xarray as xr  # Load in each process
+
     # -----------------------------------------------------------------.
     # Define product name
     product = "L0B"
@@ -327,6 +331,7 @@ def _generate_l0c(
     filepaths,
     data_dir,
     logs_dir,
+    metadata_filepath,
     campaign_name,
     station_name,
     # Processing options
@@ -354,31 +359,39 @@ def _generate_l0c(
     ##------------------------------------------------------------------------.
     ### Core computation
     try:
-        # If already single file per day, copy L0B to L0C
-        # --> File start_time and end_time should also be within the day !
-        # if len(filepaths) == 1:
-        #      files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
-        #      files_start_time.astype("M8[D]"), files_end_time.astype("M8[D]")
-        #     copy_l0b_to_l0c_directory(filepaths[0])
+        # Retrieve measurement_intervals
+        # - TODO: in future available from dataset
+        metadata = read_yaml(metadata_filepath)
+        measurement_intervals = retrieve_possible_measurement_intervals(metadata)
 
-        # Produce L0C dataset
-        ds = create_daily_file(day=day, filepaths=filepaths, verbose=verbose)
+        # Produce L0C datasets
+        dict_ds = create_daily_file(
+            day=day,
+            filepaths=filepaths,
+            measurement_intervals=measurement_intervals,
+            ensure_variables_equality=True,
+            logger=logger,
+            verbose=verbose,
+        )
 
-        # Write L0C netCDF4 dataset
-        if ds["time"].size > 1:
+        # Write a dataset for each sample interval
+        for ds in dict_ds.values():  # (sample_interval, ds)
+            # Write L0C netCDF4 dataset
+            if ds["time"].size > 1:
+                # Get sensor name from dataset
+                sensor_name = ds.attrs.get("sensor_name")
+                campaign_name = ds.attrs.get("campaign_name")
+                station_name = ds.attrs.get("station_name")
 
-            # Get sensor name from dataset
-            sensor_name = ds.attrs.get("sensor_name")
+                # Set encodings
+                ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
 
-            # Set encodings
-            ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
+                # Define filepath
+                filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
+                filepath = os.path.join(data_dir, filename)
 
-            # Define filepath
-            filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
-            filepath = os.path.join(data_dir, filename)
-
-            # Write to disk
-            write_product(ds, product=product, filepath=filepath, force=force)
+                # Write to disk
+                write_product(ds, product=product, filepath=filepath, force=force)
 
         # Clean environment
         del ds
@@ -584,7 +597,7 @@ def run_l0a(
     # ---------------------------------------------------------------------.
     # End L0A processing
     if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
         msg = f"L0A processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
 
@@ -804,7 +817,7 @@ def run_l0b_from_nc(
     # ---------------------------------------------------------------------.
     # End L0B processing
     if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
         msg = f"L0B processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
 
@@ -998,14 +1011,29 @@ def run_l0b_station(
     ##----------------------------------------------------------------.
     # Get L0A files for the station
     required_product = get_required_product(product)
-    filepaths = get_filepaths(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        product=required_product,
-        debugging_mode=debugging_mode,
-    )
+    flag_not_available_data = False
+    try:
+        filepaths = get_filepaths(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product=required_product,
+            debugging_mode=debugging_mode,
+        )
+    except Exception as e:
+        print(str(e))  # Case where no file paths available
+        flag_not_available_data = True
+
+    # -------------------------------------------------------------------------.
+    # If no data available, print error message and return None
+    if flag_not_available_data:
+        msg = (
+            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            + f"has not been launched because of missing {required_product} data."
+        )
+        print(msg)
+        return
 
     ##----------------------------------------------------------------.
     # Generate L0B files
@@ -1078,7 +1106,7 @@ def run_l0b_station(
     # -----------------------------------------------------------------.
     # End L0B processing
     if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
         msg = f"{product} processing of station_name {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
 
@@ -1113,7 +1141,15 @@ def run_l0c_station(
     """
     Run the L0C processing of a specific DISDRODB station when invoked from the terminal.
 
-    This routine merge files together to generate daily files.
+    The DISDRODB L0A and L0B routines just convert source raw data into netCDF format.
+    The DISDRODB L0C routine ingests L0B files and performs data homogenization.
+    The DISDRODB L0C routine takes care of:
+
+    - removing duplicated timesteps across files,
+    - merging/splitting files into daily files,
+    - regularizing timesteps for potentially trailing seconds,
+    - ensuring L0C files with unique sample intervals.
+
     Duplicated timesteps are automatically dropped if their variable values coincides,
     otherwise an error is raised.
 
@@ -1184,18 +1220,42 @@ def run_l0c_station(
         force=force,
     )
 
-    # -------------------------------------------------------------------------.
-    # List files to process
-    required_product = get_required_product(product)
-    filepaths = get_filepaths(
+    # ------------------------------------------------------------------------.
+    # Define metadata filepath
+    metadata_filepath = define_metadata_filepath(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        product=required_product,
-        # Processing options
-        debugging_mode=debugging_mode,
     )
+
+    # -------------------------------------------------------------------------.
+    # List files to process
+    required_product = get_required_product(product)
+    flag_not_available_data = False
+    try:
+        filepaths = get_filepaths(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product=required_product,
+            # Processing options
+            debugging_mode=debugging_mode,
+        )
+    except Exception as e:
+        print(str(e))  # Case where no file paths available
+        flag_not_available_data = True
+
+    # -------------------------------------------------------------------------.
+    # If no data available, print error message and return None
+    if flag_not_available_data:
+        msg = (
+            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            + f"has not been launched because of missing {required_product} data."
+        )
+        print(msg)
+        return
 
     # -------------------------------------------------------------------------.
     # Retrieve dictionary with the required files for each day.
@@ -1211,6 +1271,7 @@ def run_l0c_station(
             filepaths=filepaths,
             data_dir=data_dir,
             logs_dir=logs_dir,
+            metadata_filepath=metadata_filepath,
             campaign_name=campaign_name,
             station_name=station_name,
             # Processing options
@@ -1237,7 +1298,7 @@ def run_l0c_station(
     # ---------------------------------------------------------------------.
     # End processing
     if verbose:
-        timedelta_str = str(datetime.timedelta(seconds=time.time() - t_i))
+        timedelta_str = str(datetime.timedelta(seconds=round(time.time() - t_i)))
         msg = f"{product} processing of station {station_name} completed in {timedelta_str}"
         log_info(logger=logger, msg=msg, verbose=verbose)
 

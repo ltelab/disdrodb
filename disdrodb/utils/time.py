@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """This module contains utilities related to the processing of temporal dataset."""
 import logging
+import re
 from typing import Optional
 
 import numpy as np
@@ -23,9 +24,113 @@ import pandas as pd
 import xarray as xr
 from xarray.core import dtypes
 
-from disdrodb.utils.logger import log_info
+from disdrodb.utils.logger import log_info, log_warning
 
 logger = logging.getLogger(__name__)
+
+####------------------------------------------------------------------------------------.
+#### Sampling Interval Acronyms
+
+
+def seconds_to_acronym(seconds):
+    """
+    Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
+
+    Parameters
+    ----------
+    - seconds (int): The time duration in seconds.
+
+    Returns
+    -------
+    - str: The duration as a string in a format like "30S", "1MIN30S", "1H30MIN", or "1D2H".
+    """
+    timedelta = pd.Timedelta(seconds=seconds)
+    components = timedelta.components
+
+    parts = []
+    if components.days > 0:
+        parts.append(f"{components.days}D")
+    if components.hours > 0:
+        parts.append(f"{components.hours}H")
+    if components.minutes > 0:
+        parts.append(f"{components.minutes}MIN")
+    if components.seconds > 0:
+        parts.append(f"{components.seconds}S")
+    acronym = "".join(parts)
+    return acronym
+
+
+def get_resampling_information(sample_interval_acronym):
+    """
+    Extract resampling information from the sample interval acronym.
+
+    Parameters
+    ----------
+    sample_interval_acronym: str
+      A string representing the sample interval: e.g., "1H30MIN", "ROLL1H30MIN".
+
+    Returns
+    -------
+    sample_interval_seconds, rolling: tuple
+        Sample_interval in seconds and whether rolling is enabled.
+    """
+    rolling = sample_interval_acronym.startswith("ROLL")
+    if rolling:
+        sample_interval_acronym = sample_interval_acronym[4:]  # Remove "ROLL"
+
+    # Allowed pattern: one or more occurrences of "<number><unit>"
+    # where unit is exactly one of D, H, MIN, or S.
+    # Examples: 1H, 30MIN, 2D, 45S, and any concatenation like 1H30MIN.
+    pattern = r"^(\d+(?:D|H|MIN|S))+$"
+
+    # Check if the entire string matches the pattern
+    if not re.match(pattern, sample_interval_acronym):
+        raise ValueError(
+            f"Invalid sample interval acronym '{sample_interval_acronym}'. "
+            "Must be composed of one or more <number><unit> groups, where unit is D, H, MIN, or S.",
+        )
+
+    # Regular expression to match duration components and extract all (value, unit) pairs
+    pattern = r"(\d+)(D|H|MIN|S)"
+    matches = re.findall(pattern, sample_interval_acronym)
+
+    # Conversion factors for each unit
+    unit_to_seconds = {
+        "D": 86400,  # Seconds in a day
+        "H": 3600,  # Seconds in an hour
+        "MIN": 60,  # Seconds in a minute
+        "S": 1,  # Seconds in a second
+    }
+
+    # Parse matches and calculate total seconds
+    sample_interval = 0
+    for value, unit in matches:
+        value = int(value)
+        if unit in unit_to_seconds:
+            sample_interval += value * unit_to_seconds[unit]
+    return sample_interval, rolling
+
+
+def acronym_to_seconds(acronym):
+    """
+    Extract the interval in seconds from the duration acronym.
+
+    Parameters
+    ----------
+    acronym: str
+      A string representing a duration: e.g., "1H30MIN", "ROLL1H30MIN".
+
+    Returns
+    -------
+    seconds
+        Duration in seconds.
+    """
+    seconds, _ = get_resampling_information(acronym)
+    return seconds
+
+
+####------------------------------------------------------------------------------------.
+#### Xarray utilities
 
 
 def get_dataset_start_end_time(ds: xr.Dataset, time_dim="time"):
@@ -138,8 +243,58 @@ def ensure_sorted_by_time(ds):
     return ds
 
 
-def infer_sample_interval(ds, verbose=False, robust=False):
-    """Infer the sample interval of a dataset."""
+####------------------------------------------
+#### Sampling interval utilities
+
+
+def ensure_sample_interval_in_seconds(sample_interval):
+    """
+    Ensure the sample interval is in seconds.
+
+    Parameters
+    ----------
+    sample_interval : int, numpy.ndarray, xarray.DataArray, or numpy.timedelta64
+        The sample interval to be converted to seconds.
+        It can be:
+        - An integer representing the interval in seconds.
+        - A numpy array or xarray DataArray of integers representing intervals in seconds.
+        - A numpy.timedelta64 object representing the interval.
+        - A numpy array or xarray DataArray of numpy.timedelta64 objects representing intervals.
+
+    Returns
+    -------
+    int, numpy.ndarray, or xarray.DataArray
+        The sample interval converted to seconds. The return type matches the input type:
+        - If the input is an integer, the output is an integer.
+        - If the input is a numpy array, the output is a numpy array of integers.
+        - If the input is an xarray DataArray, the output is an xarray DataArray of integers.
+
+    """
+    if (
+        isinstance(sample_interval, int)
+        or isinstance(sample_interval, (np.ndarray, xr.DataArray))
+        and np.issubdtype(sample_interval.dtype, int)
+    ):
+        return sample_interval
+    if isinstance(sample_interval, np.timedelta64):
+        return sample_interval / np.timedelta64(1, "s")
+    if isinstance(sample_interval, np.ndarray) and np.issubdtype(sample_interval.dtype, np.timedelta64):
+        return sample_interval.astype("timedelta64[s]").astype(int)
+    if isinstance(sample_interval, xr.DataArray) and np.issubdtype(sample_interval.dtype, np.timedelta64):
+        sample_interval = sample_interval.copy()
+        sample_interval_int = sample_interval.data.astype("timedelta64[s]").astype(int)
+        sample_interval.data = sample_interval_int
+        return sample_interval
+    raise TypeError(
+        "sample_interval must be an int, numpy.timedelta64, or numpy array of timedelta64.",
+    )
+
+
+def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
+    """Infer the sample interval of a dataset.
+
+    NOTE: This function is not used in the DISDRODB processing chain.
+    """
     # Check sorted by time and sort if necessary
     ds = ensure_sorted_by_time(ds)
 
@@ -204,21 +359,19 @@ def infer_sample_interval(ds, verbose=False, robust=False):
     if robust and np.any(deltadt == 0):
         raise ValueError("Likely presence of duplicated timesteps.")
 
-    # - Raise error if estimated sample interval has frequency less than 80 %
-    # TODO: this currently allow to catch up sensors that logs data only when rainy !
-    # --> HPICONET often below 50 %
-    sample_interval_fraction_threshold = 50
+    ####-------------------------------------------------------------------------.
+    #### Informative messages
+    # - Log a warning if estimated sample interval has frequency less than 60 %
+    sample_interval_fraction_threshold = 60
     msg = (
         f"The most frequent sampling interval ({sample_interval} s) "
         + f"has a frequency lower than {sample_interval_fraction_threshold}%: {sample_interval_fraction} %. "
         + f"Total number of timesteps: {n_timesteps}."
     )
     if sample_interval_fraction < sample_interval_fraction_threshold:
-        raise ValueError(msg)
-    if verbose and sample_interval_fraction < sample_interval_fraction_threshold:
-        print(msg)
+        log_warning(logger=logger, msg=msg, verbose=verbose)
 
-    # - Raise error if an unexpected interval has frequency larger than 20 percent
+    # - Log a warning if an unexpected interval has frequency larger than 20 percent
     frequent_unexpected_intervals = unexpected_intervals[unexpected_intervals_fractions > 20]
     if len(frequent_unexpected_intervals) != 0:
         frequent_unexpected_intervals_str = ", ".join(
@@ -229,9 +382,9 @@ def infer_sample_interval(ds, verbose=False, robust=False):
             + f"greater than 20%: {frequent_unexpected_intervals_str} %. "
             + f"Total number of timesteps: {n_timesteps}."
         )
-        raise ValueError(msg)
+        log_warning(logger=logger, msg=msg, verbose=verbose)
 
-    # - Raise error if the most frequent interval is not the smallest
+    # - Raise error if the most frequent interval is not the expected one !
     if sample_interval != min_delta:
         raise ValueError(
             f"The most frequent sampling interval ({sample_interval} seconds) "
@@ -240,6 +393,10 @@ def infer_sample_interval(ds, verbose=False, robust=False):
         )
 
     return int(sample_interval)
+
+
+####---------------------------------------------------------------------------------
+#### Timesteps regularization
 
 
 def get_problematic_timestep_indices(timesteps, sample_interval):
@@ -254,7 +411,7 @@ def get_problematic_timestep_indices(timesteps, sample_interval):
     return idx_previous_missing, idx_next_missing, idx_isolated_missing
 
 
-def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=True):
+def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=True, logger=None, verbose=True):
     """Ensure timesteps match with the sample_interval."""
     # Check sorted by time and sort if necessary
     ds = ensure_sorted_by_time(ds)
@@ -320,7 +477,7 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
             if n_duplicates == 2:
                 if prev_time not in adjusted_times:
                     adjusted_times[dup_indices[0]] = prev_time
-                    qc_flag[dup_indices[0]] = 1
+                    qc_flag[dup_indices[0]] = flag_solved_duplicated_timestep
                     count_solved += 1
                 elif next_time not in adjusted_times:
                     adjusted_times[dup_indices[-1]] = next_time
@@ -335,15 +492,18 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
                     count_solved += 1
                 if next_time not in adjusted_times:
                     adjusted_times[dup_indices[-1]] = next_time
-                    qc_flag[dup_indices[-1]] = 1
+                    qc_flag[dup_indices[-1]] = flag_solved_duplicated_timestep
                     count_solved += 1
             if count_solved != n_duplicates - 1:
                 idx_to_drop = np.append(idx_to_drop, dup_indices[0:-1])
-                qc_flag[dup_indices[-1]] = 2
-                msg = f"Cannot resolve {n_duplicates} duplicated timesteps around {dup_time}."
+                qc_flag[dup_indices[-1]] = flag_dropped_duplicated_timestep
+                msg = (
+                    f"Cannot resolve {n_duplicates} duplicated timesteps"
+                    f"(after trailing seconds correction) around {dup_time}."
+                )
+                log_warning(logger=logger, msg=msg, verbose=verbose)
                 if robust:
                     raise ValueError(msg)
-                print(msg)
 
     # Update the time coordinate (Convert to ns for xarray compatibility)
     ds = ds.assign_coords({"time": adjusted_times.astype("datetime64[ns]")})
@@ -357,8 +517,23 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
         qc_flag[idx_previous_missing] = np.maximum(qc_flag[idx_previous_missing], flag_previous_missing)
         qc_flag[idx_next_missing] = np.maximum(qc_flag[idx_next_missing], flag_next_missing)
         qc_flag[idx_isolated_missing] = np.maximum(qc_flag[idx_isolated_missing], flag_isolated_timestep)
-        # Assign time quality flag
-        ds["qc_time"] = xr.DataArray(qc_flag, dims="time")
+
+        # If the first timestep is at 00:00 and currently flagged as previous missing (1), reset to 0
+        # first_time = pd.to_datetime(adjusted_times[0]).time()
+        # first_expected_time = pd.Timestamp("00:00:00").time()
+        # if first_time == first_expected_time and qc_flag[0] == flag_previous_missing:
+        #     qc_flag[0] = 0
+
+        # # If the last timestep is flagged and currently flagged as next missing (2), reset it to 0
+        # last_time = pd.to_datetime(adjusted_times[-1]).time()
+        # last_time_expected = (pd.Timestamp("00:00:00") - pd.Timedelta(30, unit="seconds")).time()
+        # # Check if adding one interval would go beyond the end_time
+        # if last_time == last_time_expected and qc_flag[-1] == flag_next_missing:
+        #     qc_flag[-1] = 0
+
+        # Assign time quality flag coordinate
+        ds["time_qc"] = xr.DataArray(qc_flag, dims="time")
+        ds = ds.set_coords("time_qc")
 
     # Drop duplicated timesteps
     if len(idx_to_drop) > 0:

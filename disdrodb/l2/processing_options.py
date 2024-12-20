@@ -1,10 +1,14 @@
-import re
-
 # TODO: Write to YAML
+# TODO: radar_simulation_enabled: differentiate between L2E and L2M:
 
 config = {
     "global_settings": {
-        "time_integration": ["10S", "30S", "1MIN", "5MIN", "10MIN", "15MIN", "30MIN", "1H", "ROLL5MIN", "ROLL10MIN"],
+        "time_integration": [
+            "1MIN",
+            "10MIN",
+            "ROLL1MIN",
+            "ROLL10MIN",
+        ],  # ["10S", "30S", "1MIN",  "5MIN", "10MIN", "15MIN", "30MIN", "1H", "ROLL5MIN", "ROLL10MIN"],
         # L2M options
         "l2m_options": {
             "fall_velocity_method": "Beard1976",
@@ -26,13 +30,6 @@ config = {
                 "order": 2,
                 "add_gof_metrics": True,
             },
-            # 'fixed': {
-            #     'psd_model': 'NormalizedGammaPSD',
-            #     'parameters': {
-            #         'mu': [1.5, 2, 2.5, 3],
-            #     },
-            #     "add_gof_metrics": True
-            # },
         },
         # Radar options
         "radar_simulation_enabled": True,
@@ -76,45 +73,8 @@ def get_l2_processing_options():
     for tt in config["global_settings"]["time_integration"]:
         l2_options_dict[tt] = config["global_settings"].copy()
         _ = l2_options_dict[tt].pop("time_integration", None)
+    # Add specific settings
     for tt, product_options in config["specific_settings"].items():
-        l2_options_dict[tt].update(product_options)
+        if tt in l2_options_dict:
+            l2_options_dict[tt].update(product_options)
     return l2_options_dict
-
-
-def get_resampling_information(sample_interval_acronym):
-    """
-    Extract resampling information from the sample interval acronym.
-
-    Parameters
-    ----------
-    sample_interval_acronym: str
-      A string representing the sample interval: e.g., "1H30MIN", "ROLL1H30MIN".
-
-    Returns
-    -------
-    sample_interval_seconds, rolling: tuple
-        Sample_interval in seconds and whether rolling is enabled.
-    """
-    rolling = sample_interval_acronym.startswith("ROLL")
-    if rolling:
-        sample_interval_acronym = sample_interval_acronym[4:]  # Remove "ROLL"
-
-    # Regular expression to match duration components
-    pattern = r"(\d+)([DHMIN]+)"
-    matches = re.findall(pattern, sample_interval_acronym)
-
-    # Conversion factors for each unit
-    unit_to_seconds = {
-        "D": 86400,  # Seconds in a day
-        "H": 3600,  # Seconds in an hour
-        "MIN": 60,  # Seconds in a minute
-        "S": 1,  # Seconds in a second
-    }
-
-    # Parse matches and calculate total seconds
-    sample_interval = 0
-    for value, unit in matches:
-        value = int(value)
-        if unit in unit_to_seconds:
-            sample_interval += value * unit_to_seconds[unit]
-    return sample_interval, rolling

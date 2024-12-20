@@ -151,7 +151,8 @@ def test_remove_corrupted_rows():
         remove_corrupted_rows(pd.DataFrame())
 
     # Test case 3: Check if the function raises ValueError when only one row remains
-    with pytest.raises(ValueError, match=r"Only 1 row remains after data corruption checks. Check the file."):
+    msg = r"Only 1 row remains after data corruption checks. Check the raw file and maybe delete it."
+    with pytest.raises(ValueError, match=msg):
         remove_corrupted_rows(pd.DataFrame({"raw_drop_number": ["1"]}))
 
 

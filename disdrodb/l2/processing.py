@@ -49,6 +49,7 @@ from disdrodb.psd.fitting import compute_gof_stats
 from disdrodb.scattering import get_radar_parameters
 from disdrodb.utils.attrs import set_attrs
 from disdrodb.utils.encoding import set_encodings
+from disdrodb.utils.time import ensure_sample_interval_in_seconds
 
 
 def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05):
@@ -87,49 +88,6 @@ def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05
         },
     )
     return da
-
-
-def ensure_sample_interval_in_seconds(sample_interval):
-    """
-    Ensure the sample interval is in seconds.
-
-    Parameters
-    ----------
-    sample_interval : int, numpy.ndarray, xarray.DataArray, or numpy.timedelta64
-        The sample interval to be converted to seconds.
-        It can be:
-        - An integer representing the interval in seconds.
-        - A numpy array or xarray DataArray of integers representing intervals in seconds.
-        - A numpy.timedelta64 object representing the interval.
-        - A numpy array or xarray DataArray of numpy.timedelta64 objects representing intervals.
-
-    Returns
-    -------
-    int, numpy.ndarray, or xarray.DataArray
-        The sample interval converted to seconds. The return type matches the input type:
-        - If the input is an integer, the output is an integer.
-        - If the input is a numpy array, the output is a numpy array of integers.
-        - If the input is an xarray DataArray, the output is an xarray DataArray of integers.
-
-    """
-    if (
-        isinstance(sample_interval, int)
-        or isinstance(sample_interval, (np.ndarray, xr.DataArray))
-        and np.issubdtype(sample_interval.dtype, int)
-    ):
-        return sample_interval
-    if isinstance(sample_interval, np.timedelta64):
-        return sample_interval / np.timedelta64(1, "s")
-    if isinstance(sample_interval, np.ndarray) and np.issubdtype(sample_interval.dtype, np.timedelta64):
-        return sample_interval.astype("timedelta64[s]").astype(int)
-    if isinstance(sample_interval, xr.DataArray) and np.issubdtype(sample_interval.dtype, np.timedelta64):
-        sample_interval = sample_interval.copy()
-        sample_interval_int = sample_interval.data.astype("timedelta64[s]").astype(int)
-        sample_interval.data = sample_interval_int
-        return sample_interval
-    raise TypeError(
-        "sample_interval must be an int, numpy.timedelta64, or numpy array of timedelta64.",
-    )
 
 
 def define_velocity_array(ds):
@@ -229,8 +187,8 @@ def compute_integral_parameters(
     # Compute rain accumulation (P) [mm]
     rain_accumulation = get_rain_accumulation(rain_rate=rain_rate, sample_interval=sample_interval)
 
-    # Compute moments (m1 to m6)
-    for moment in range(1, 7):
+    # Compute moments (m0 to m6)
+    for moment in range(0, 7):
         ds[f"M{moment}"] = get_moment(
             drop_number_concentration=drop_number_concentration,
             diameter=diameter,

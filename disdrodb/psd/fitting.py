@@ -1015,7 +1015,8 @@ def get_gamma_parameters_johnson2014(ds, method="Nelder-Mead"):
 
 
 ####-----------------------------------------------------------------------------------------.
-#### Optimize Normalized Gamma
+#### Grid Search
+# Optimize Normalized Gamma
 
 
 def _estimate_normalized_gamma_w_d50(Nd, D, D50, Nw, order=2):
@@ -1107,55 +1108,6 @@ def get_normalized_gamma_parameters(ds, order=2):
 
 
 ####-----------------------------------------------------------------.
-#### Moments
-
-
-def get_exponential_moment(N0, Lambda, moment):
-    """Compute exponential distribution moments."""
-    return N0 * gamma(moment + 1) / Lambda ** (moment + 1)
-
-
-def get_gamma_moment_v1(N0, mu, Lambda, moment):
-    """Compute gamma distribution moments.
-
-    References
-    ----------
-    Kozu, T., and K. Nakamura, 1991:
-    Rainfall Parameter Estimation from Dual-Radar Measurements
-    Combining Reflectivity Profile and Path-integrated Attenuation.
-    J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
-    """
-    # Zhang et al 2001: N0 * gamma(mu + moment + 1) * Lambda ** (-(mu + moment + 1))
-    return N0 * gamma(mu + moment + 1) / Lambda ** (mu + moment + 1)
-
-
-def get_gamma_moment_v2(Nt, mu, Lambda, moment):
-    """Compute gamma distribution moments.
-
-    References
-    ----------
-    Kozu, T., and K. Nakamura, 1991:
-    Rainfall Parameter Estimation from Dual-Radar Measurements
-    Combining Reflectivity Profile and Path-integrated Attenuation.
-    J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
-    """
-    return Nt * gamma(mu + moment + 1) / gamma(mu + 1) / Lambda**moment
-
-
-def get_lognormal_moment(Nt, sigma, mu, moment):
-    """Compute lognormal distribution moments.
-
-    References
-    ----------
-    Kozu, T., and K. Nakamura, 1991:
-    Rainfall Parameter Estimation from Dual-Radar Measurements
-    Combining Reflectivity Profile and Path-integrated Attenuation.
-    J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
-    """
-    return Nt * np.exp(moment * mu + 1 / 2 * moment * sigma**2)
-
-
-####-----------------------------------------------------------------.
 #### Methods of Moments
 
 
@@ -1189,7 +1141,7 @@ def get_exponential_parameters_Zhang2008(moment_l, moment_m, l, m):  # noqa: E74
     return Lambda, N0
 
 
-def get_exponential_parameters_Testud2001(moment_3, moment_4):
+def get_exponential_parameters_M34(moment_3, moment_4):
     """Compute exponential distribution parameters following Testud 2001.
 
     References
@@ -1206,24 +1158,103 @@ def get_exponential_parameters_Testud2001(moment_3, moment_4):
     return Lambda, N0
 
 
-def get_gamma_parameters_Testud2001(moment_3, moment_4):
-    """Compute exponential distribution parameters following Testud 2001.
+# M246 DEFAULT FOR GAMMA ?
+# -----------------------------
+
+# LMOM (Johnson et al., 2014)
+
+
+def get_gamma_parameters_M012(M0, M1, M2):
+    """Compute gamma distribution parameters following Cao et al., 2009.
 
     References
     ----------
-    Testud, J., S. Oury, R. A. Black, P. Amayenc, and X. Dou, 2001:
-    The Concept of “Normalized” Distribution to Describe Raindrop Spectra:
-    A Tool for Cloud Physics and Cloud Remote Sensing.
-    J. Appl. Meteor. Climatol., 40, 1118-1140,
-    https://doi.org/10.1175/1520-0450(2001)040<1118:TCONDT>2.0.CO;2
+    Cao, Q., and G. Zhang, 2009:
+    Errors in Estimating Raindrop Size Distribution Parameters Employing Disdrometer  and Simulated Raindrop Spectra.
+    J. Appl. Meteor. Climatol., 48, 406-425, https://doi.org/10.1175/2008JAMC2026.1.
     """
-    # gamma(4) = 6
-    N0 = 256 / gamma(4) * moment_3**5 / moment_4**4  # 256/6*moment_3**5/moment_4**4
-    return N0
+    G = M1**3 / M0 / M2
+    mu = 1 / (1 - G) - 2
+    Lambda = M0 / M1 * (mu + 1)
+    N0 = Lambda ** (mu + 1) * M0 / gamma(mu + 1)
+    return mu, Lambda, N0
 
 
-def get_gamma_parameters_Kozu1991(moment_3, moment_4, moment_6):
-    """Compute exponential distribution parameters following Kozu 1991.
+def get_gamma_parameters_M234(M2, M3, M4):
+    """Compute gamma distribution parameters following Cao et al., 2009.
+
+    References
+    ----------
+    Cao, Q., and G. Zhang, 2009:
+    Errors in Estimating Raindrop Size Distribution Parameters Employing Disdrometer  and Simulated Raindrop Spectra.
+    J. Appl. Meteor. Climatol., 48, 406-425, https://doi.org/10.1175/2008JAMC2026.1.
+    """
+    G = M3**2 / M2 / M4
+    mu = 1 / (1 - G) - 4
+    Lambda = M2 / M3 * (mu + 3)
+    N0 = Lambda ** (mu + 3) * M2 / gamma(mu + 3)
+    return mu, Lambda, N0
+
+
+def get_gamma_parameters_M246(M2, M4, M6):
+    """Compute gamma distribution parameters following Ulbrich 1998.
+
+    References
+    ----------
+    Ulbrich, C. W., and D. Atlas, 1998:
+    Rainfall Microphysics and Radar Properties: Analysis Methods for Drop Size Spectra.
+    J. Appl. Meteor. Climatol., 37, 912-923,
+    https://doi.org/10.1175/1520-0450(1998)037<0912:RMARPA>2.0.CO;2
+
+    Cao, Q., and G. Zhang, 2009:
+    Errors in Estimating Raindrop Size Distribution Parameters Employing Disdrometer  and Simulated Raindrop Spectra.
+    J. Appl. Meteor. Climatol., 48, 406-425, https://doi.org/10.1175/2008JAMC2026.1.
+
+    Thurai, M., Williams, C.R., Bringi, V.N., 2014:
+    Examining the correlations between drop size distribution parameters using data
+    from two side-by-side 2D-video disdrometers.
+    Atmospheric Research, 144, 95-110, https://doi.org/10.1016/j.atmosres.2014.01.002.
+    """
+    G = M4**2 / M2 / M6
+
+    # TODO: Different formulas !
+    # Thurai et al., 2014 (A4), Ulbrich et al., 1998 (2)
+    #  mu = ((7.0 - 11.0 * G) -
+    #  np.sqrt((7.0 - 11.0 * G) ** 2.0 - 4.0 * (G - 1.0) * (30.0 * G - 12.0)) / (2.0 * (G - 1.0)))
+    mu = (7.0 - 11.0 * G) - np.sqrt(G**2 + 89 * G + 1) / (2.0 * (G - 1.0))
+
+    # Cao et al., 2009 (B3)
+    # --> Wrong ???
+    mu = (7.0 - 11.0 * G) - np.sqrt(G**2 + 14 * G + 1) / (2.0 * (G - 1.0))
+
+    Lambda = np.sqrt((4 + mu) * (3 + mu) * M2 / M4)
+    # Cao et al., 2009
+    N0 = M2 * Lambda ** (3 + mu) / gamma(3 + mu)
+    # # Thurai et al., 2014
+    # N0 = M3 * Lambda ** (4 + mu) / gamma(4 + mu)
+    # # Ulbrich et al., 1998
+    # N0 = M6 * Lambda ** (7.0 + mu) / gamma(7 + mu)
+    return mu, Lambda, N0
+
+
+def get_gamma_parameters_M456(M4, M5, M6):
+    """Compute gamma distribution parameters following Cao et al., 2009.
+
+    References
+    ----------
+    Cao, Q., and G. Zhang, 2009:
+    Errors in Estimating Raindrop Size Distribution Parameters Employing Disdrometer  and Simulated Raindrop Spectra.
+    J. Appl. Meteor. Climatol., 48, 406-425, https://doi.org/10.1175/2008JAMC2026.1.
+    """
+    G = M5**2 / M4 / M6
+    mu = 1 / (1 - G) - 6
+    Lambda = M4 / M5 * (mu + 5)
+    N0 = Lambda ** (mu + 5) * M4 / gamma(mu + 5)
+    return mu, Lambda, N0
+
+
+def get_gamma_parameters_M346(M3, M4, M6):
+    """Compute gamma distribution parameters following Kozu 1991.
 
     References
     ----------
@@ -1237,36 +1268,25 @@ def get_gamma_parameters_Kozu1991(moment_3, moment_4, moment_6):
     Stratiform versus Convective Clouds.
     J. Appl. Meteor. Climatol., 35, 355-371,
     https://doi.org/10.1175/1520-0450(1996)035<0355:EFTRSO>2.0.CO;2
+
+    Cao, Q., and G. Zhang, 2009:
+    Errors in Estimating Raindrop Size Distribution Parameters Employing Disdrometer  and Simulated Raindrop Spectra.
+    J. Appl. Meteor. Climatol., 48, 406-425, https://doi.org/10.1175/2008JAMC2026.1.
     """
-    G = moment_4**3 / moment_3**2 / moment_6
-    mu = (11 * G - 8 + np.sqrt(G * (G + 8))) / (2 * (1 - G))
-    # mu = (5.5*G - 4 + np.sqrt(G*(G * 0.25 + 2)))/(1-G)
-    Lambda = (mu + 4) * moment_3 / moment_4
-    N0 = Lambda ** (mu + 4) * moment_3 / gamma(mu + 4)
-    # Nt = Lambda**3*moment_3*gamma(mu+1)/gamma(mu+4)
-    # Dm = moment_4/moment_3   # 4/lambda
+    G = M4**3 / M3**2 / M6
+
+    # Kozu
+    mu = (5.5 * G - 4 + np.sqrt(G * (G * 0.25 + 2))) / (1 - G)
+
+    # Cao et al., 2009 (equivalent)
+    # mu = (11 * G - 8 + np.sqrt(G * (G + 8))) / (2 * (1 - G))
+
+    Lambda = (mu + 4) * M3 / M4
+    N0 = Lambda ** (mu + 4) * M3 / gamma(mu + 4)
     return mu, Lambda, N0
 
 
-def get_gamma_parameters_Ulbrich1998(moment_2, moment_4, moment_6):
-    """Compute exponential distribution parameters following Ulbrich 1998.
-
-    References
-    ----------
-    Ulbrich, C. W., and D. Atlas, 1998:
-    Rainfall Microphysics and Radar Properties: Analysis Methods for Drop Size Spectra.
-    J. Appl. Meteor. Climatol., 37, 912-923,
-    https://doi.org/10.1175/1520-0450(1998)037<0912:RMARPA>2.0.CO;2
-    """
-    G = moment_4**2 / moment_2 / moment_6
-    mu = (7.0 - 11.0 * G) - np.sqrt((7.0 - 11.0 * G) ** 2.0 - 4.0 * (G - 1.0) * (30.0 * G - 12.0)) / (2.0 * (G - 1.0))
-    Lambda = np.sqrt((4 + mu) * (3 + mu) * moment_2 / moment_4)
-    N0 = moment_6 * Lambda ** (7.0 + mu) / gamma(7 + mu)
-    # D50 = (3.67 + mu) / Lambda
-    return mu, Lambda, N0
-
-
-def get_lognormal_parameters_Kozu1991(moment_3, moment_4, moment_6):
+def get_lognormal_parameters_M346(M3, M4, M6):
     """Compute lognormal distribution parameters following Kozu1991.
 
     References
@@ -1276,9 +1296,9 @@ def get_lognormal_parameters_Kozu1991(moment_3, moment_4, moment_6):
     Combining Reflectivity Profile and Path-integrated Attenuation.
     J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
     """
-    L3 = np.log(moment_3)
-    L4 = np.log(moment_4)
-    L6 = np.log(moment_6)
+    L3 = np.log(M3)
+    L4 = np.log(M4)
+    L6 = np.log(M6)
     Nt = np.exp((24 * L3 - 27 * L4 - 6 * L6) / 3)
     mu = (-10 * L3 + 13.5 * L4 - 3.5 * L6) / 3
     sigma = (2 * L3 - 3 * L4 + L6) / 3

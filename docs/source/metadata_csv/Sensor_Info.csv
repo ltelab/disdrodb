@@ -9,7 +9,7 @@ firmware_version,Firmware version
 sensor_beam_length,Length of the laser beam's measurement area in mm
 sensor_beam_width,Width of the laser beam's measurement area in mm
 sensor_nominal_width,Expected width of the sensor beam under typical operating conditions
-measurement_interval,Number of seconds over which measurements are taken
+measurement_interval,Number of seconds over which measurements are taken.
 calibration_sensitivity,Sensor sensitivity
 calibration_certification_date,Sensor calibration date(s)
 calibration_certification_url,Sensor calibration certification url

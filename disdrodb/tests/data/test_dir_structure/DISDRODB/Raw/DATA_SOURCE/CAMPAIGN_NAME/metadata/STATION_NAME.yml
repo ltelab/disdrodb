@@ -37,7 +37,7 @@ firmware_version: ""
 sensor_beam_length: ""
 sensor_beam_width: ""
 sensor_nominal_width: ""
-measurement_interval: ""
+measurement_interval: 30
 calibration_sensitivity: ""
 calibration_certification_date: ""
 calibration_certification_url: ""

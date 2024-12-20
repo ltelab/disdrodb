@@ -506,7 +506,7 @@ def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diam
 
 def get_mass_spectrum(drop_number_concentration, diameter, water_density=1000):
     """
-    Calculate the rain drop mass spectrum m(D) in g/m3 mm.
+    Calculate the rain drop mass spectrum m(D) in g/m3 mm-1.
 
     It represents the mass of liquid water as a function of raindrop diameter.
 
@@ -521,7 +521,7 @@ def get_mass_spectrum(drop_number_concentration, diameter, water_density=1000):
     Returns
     -------
     array-like
-        The calculated rain drop mass spectrum in grams per cubic meter per diameter (g/m3 mm).
+        The calculated rain drop mass spectrum in grams per cubic meter per diameter (g/m3 mm-1).
 
     """
     # Convert water density from kg/m3 to g/m3
@@ -814,6 +814,72 @@ def get_mean_volume_drop_diameter(moment_3, moment_4):
     return D_m
 
 
+def get_std_volume_drop_diameter(drop_number_concentration, diameter_bin_width, diameter, mean_volume_diameter):
+    r"""
+    Calculate the standard deviation of the mass-weighted drop diameter (σₘ).
+
+    This parameter is often also referred as the mass spectrum standard deviation.
+    It quantifies the spread or variability of DSD.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        The drop number concentration \\( N(D) \\) for each diameter bin, typically in units of
+        number per cubic meter per millimeter (m⁻³·mm⁻¹).
+    diameter : xarray.DataArray
+        The equivalent volume diameters \\( D \\) of the drops in each bin, in meters (m).
+    diameter_bin_width : xarray.DataArray
+        The width \\( \\Delta D \\) of each diameter bin, in millimeters (mm).
+    mean_volume_diameter : xarray.DataArray
+        The mean volume diameter \\( D_m \\), in millimeters (mm). This is typically computed using the
+        third and fourth moments or directly from the DSD.
+
+    Returns
+    -------
+    sigma_m : xarray.DataArray or float
+        The standard deviation of the mass-weighted drop diameter, \\( \\sigma_m \\),
+        in millimeters (mm).
+
+    Notes
+    -----
+    The standard deviation of the mass-weighted drop diameter is calculated using the formula:
+
+    .. math::
+
+        \\sigma_m = \\sqrt{\frac{\\sum [N(D) \\cdot (D - D_m)^2 \\cdot D^3
+        \\cdot \\Delta D]}{\\sum [N(D) \\cdot D^3 \\cdot \\Delta D]}}
+
+    where:
+
+    - \\( N(D) \\) is the drop number concentration for diameter \\( D \\) [m⁻³·mm⁻¹].
+    - \\( D \\) is the drop diameter [mm].
+    - \\( D_m \\) is the mean volume diameter [mm].
+    - \\( \\Delta D \\) is the diameter bin width [mm].
+    - The numerator computes the weighted variance of diameters.
+    - The weighting factor \\( D^3 \\) accounts for mass (since mass ∝ \\( D^3 \\)).
+
+    **Physical Interpretation:**
+
+    - A smaller \\( \\sigma_m \\) indicates that the mass is concentrated around the
+      mean mass-weighted diameter, implying less variability in drop sizes.
+    - A larger \\( \\sigma_m \\) suggests a wider spread of drop sizes contributing
+      to the mass, indicating greater variability.
+
+    References
+    ----------
+    - Smith, P. L., Johnson, R. W., & Kliche, D. V. (2019). On Use of the Standard
+      Deviation of the Mass Distribution as a Parameter in Raindrop Size Distribution
+      Functions. *Journal of Applied Meteorology and Climatology*, 58(4), 787-796.
+      https://doi.org/10.1175/JAMC-D-18-0086.1
+    - Williams, C. R., and Coauthors, 2014: Describing the Shape of Raindrop Size Distributions Using Uncorrelated
+      Raindrop Mass Spectrum Parameters. J. Appl. Meteor. Climatol., 53, 1282-1296, https://doi.org/10.1175/JAMC-D-13-076.1.
+    """
+    const = drop_number_concentration * diameter_bin_width * diameter**3
+    numerator = ((diameter * 1000 - mean_volume_diameter) ** 2 * const).sum(dim="diameter_bin_center")
+    sigma_m = np.sqrt(numerator / const.sum(dim="diameter_bin_center"))
+    return sigma_m
+
+
 def get_median_volume_drop_diameter(drop_number_concentration, diameter, diameter_bin_width, water_density=1000):
     r"""
     Compute the median volume drop diameter (D50).
@@ -960,72 +1026,6 @@ def get_quantile_volume_drop_diameter(
     return d
 
 
-def get_std_volume_drop_diameter(drop_number_concentration, diameter_bin_width, diameter, mean_volume_diameter):
-    r"""
-    Calculate the standard deviation of the mass-weighted drop diameter (σₘ).
-
-    This parameter is often also referred as the mass spectrum standard deviation.
-    It quantifies the spread or variability of DSD.
-
-    Parameters
-    ----------
-    drop_number_concentration : xarray.DataArray
-        The drop number concentration \\( N(D) \\) for each diameter bin, typically in units of
-        number per cubic meter per millimeter (m⁻³·mm⁻¹).
-    diameter : xarray.DataArray
-        The equivalent volume diameters \\( D \\) of the drops in each bin, in meters (m).
-    diameter_bin_width : xarray.DataArray
-        The width \\( \\Delta D \\) of each diameter bin, in millimeters (mm).
-    mean_volume_diameter : xarray.DataArray
-        The mean volume diameter \\( D_m \\), in millimeters (mm). This is typically computed using the
-        third and fourth moments or directly from the DSD.
-
-    Returns
-    -------
-    sigma_m : xarray.DataArray or float
-        The standard deviation of the mass-weighted drop diameter, \\( \\sigma_m \\),
-        in millimeters (mm).
-
-    Notes
-    -----
-    The standard deviation of the mass-weighted drop diameter is calculated using the formula:
-
-    .. math::
-
-        \\sigma_m = \\sqrt{\frac{\\sum [N(D) \\cdot (D - D_m)^2 \\cdot D^3
-        \\cdot \\Delta D]}{\\sum [N(D) \\cdot D^3 \\cdot \\Delta D]}}
-
-    where:
-
-    - \\( N(D) \\) is the drop number concentration for diameter \\( D \\) [m⁻³·mm⁻¹].
-    - \\( D \\) is the drop diameter [mm].
-    - \\( D_m \\) is the mean volume diameter [mm].
-    - \\( \\Delta D \\) is the diameter bin width [mm].
-    - The numerator computes the weighted variance of diameters.
-    - The weighting factor \\( D^3 \\) accounts for mass (since mass ∝ \\( D^3 \\)).
-
-    **Physical Interpretation:**
-
-    - A smaller \\( \\sigma_m \\) indicates that the mass is concentrated around the
-      mean mass-weighted diameter, implying less variability in drop sizes.
-    - A larger \\( \\sigma_m \\) suggests a wider spread of drop sizes contributing
-      to the mass, indicating greater variability.
-
-    References
-    ----------
-    - Smith, P. L., Johnson, R. W., & Kliche, D. V. (2019). On Use of the Standard
-      Deviation of the Mass Distribution as a Parameter in Raindrop Size Distribution
-      Functions. *Journal of Applied Meteorology and Climatology*, 58(4), 787-796.
-      https://doi.org/10.1175/JAMC-D-18-0086.1
-    - Williams, C. R., and Coauthors, 2014: Describing the Shape of Raindrop Size Distributions Using Uncorrelated
-      Raindrop Mass Spectrum Parameters. J. Appl. Meteor. Climatol., 53, 1282-1296, https://doi.org/10.1175/JAMC-D-13-076.1.
-    """
-    const = drop_number_concentration * diameter_bin_width * diameter**3
-    numerator = ((diameter * 1000 - mean_volume_diameter) ** 2 * const).sum(dim="diameter_bin_center")
-    sigma_m = np.sqrt(numerator / const.sum(dim="diameter_bin_center"))
-    return sigma_m
-
-
 ####-----------------------------------------------------------------------------------------------------
 #### Normalized Gamma Parameters
 
@@ -1072,7 +1072,8 @@ def get_normalized_intercept_parameter(liquid_water_content, mean_volume_diamete
 
     # Compute Nw
     # --> 1e9 is used to convert from mm-4 to m-3 mm-1
-    # 256 = 4**4
+    # - 256 = 4**4
+    # - lwc = (np.pi * water_density / 6) * moment_3
     Nw = (256.0 / (np.pi * water_density)) * liquid_water_content / mean_volume_diameter**4 * 1e9
     return Nw
 
@@ -1093,6 +1094,14 @@ def get_mom_normalized_intercept_parameter(moment_3, moment_4):
     -------
     Nw : xarray.DataArray or float
         Normalized intercept parameter \\( N_w \\) in units of m⁻3·mm⁻¹.
+
+    References
+    ----------
+    Testud, J., S. Oury, R. A. Black, P. Amayenc, and X. Dou, 2001:
+    The Concept of “Normalized” Distribution to Describe Raindrop Spectra:
+    A Tool for Cloud Physics and Cloud Remote Sensing.
+    J. Appl. Meteor. Climatol., 40, 1118-1140,
+    https://doi.org/10.1175/1520-0450(2001)040<1118:TCONDT>2.0.CO;2
 
     """
     Nw = 256 / 6 * moment_3**5 / moment_4**4

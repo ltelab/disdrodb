@@ -15,16 +15,13 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Functions for event definition."""
-
-import datetime
-
 import dask
 import numpy as np
 import pandas as pd
 import xarray as xr
 
 from disdrodb.api.info import get_start_end_time_from_filepaths
-from disdrodb.utils.time import ensure_sorted_by_time
+from disdrodb.utils.time import acronym_to_seconds, ensure_sorted_by_time
 
 
 @dask.delayed
@@ -34,105 +31,157 @@ def _delayed_open_dataset(filepath):
     return ds
 
 
-def identify_events(filepaths, parallel):
-    """Identify rainy events."""
+def identify_events(
+    filepaths,
+    parallel=False,
+    min_n_drops=5,
+    neighbor_min_size=2,
+    neighbor_time_interval="5MIN",
+    intra_event_max_time_gap="6H",
+    event_min_duration="5MIN",
+    event_min_size=3,
+):
+    """Return a list of rainy events.
+
+    Rainy timesteps are defined when n_drops_selected > min_n_drops.
+    Any rainy isolated timesteps (based on neighborhood criteria) is removed.
+    Then, consecutive rainy timesteps are grouped into the same event if the time gap between them does not
+    exceed `intra_event_max_time_gap`. Finally, events that do not meet minimum size or duration
+    requirements are filtered out.
+
+    Parameters
+    ----------
+    filepaths: list
+        List of L1C file paths.
+    parallel: bool
+        Whether to load the files in parallel.
+        Set parallel=True only in a multiprocessing environment.
+        The default is False.
+    neighbor_time_interval : str
+        The time interval around a given a timestep defining the neighborhood.
+        Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
+    neighbor_min_size : int, optional
+        The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
+        timestep to be considered non-isolated.  Isolated timesteps are removed !
+        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
+        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
+        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        Defaults to 1.
+    intra_event_max_time_gap: str
+        The maximum time interval between two timesteps to be considered part of the same event.
+        This parameters is used to group timesteps into events !
+    event_min_duration : str
+        The minimum duration an event must span. Events shorter than this duration are discarded.
+    event_min_size : int, optional
+        The minimum number of valid timesteps required for an event. Defaults to 1.
+
+    Returns
+    -------
+    list of dict
+        A list of events, where each event is represented as a dictionary with keys:
+        - "start_time": np.datetime64, start time of the event
+        - "end_time": np.datetime64, end time of the event
+        - "duration": np.timedelta64, duration of the event
+        - "n_timesteps": int, number of valid timesteps in the event
+    """
     # Open datasets in parallel
     if parallel:
         list_ds = dask.compute([_delayed_open_dataset(filepath) for filepath in filepaths])[0]
     else:
         list_ds = [xr.open_dataset(filepath, chunks={}, cache=False) for filepath in filepaths]
-
-    # List sample interval
-    sample_intervals = np.array([ds["sample_interval"].data.item() for ds in list_ds])
+    # Filter dataset for requested variables
+    variables = ["time", "n_drops_selected"]
+    list_ds = [ds[variables] for ds in list_ds]
     # Concat datasets
-    ds = xr.concat(list_ds, dim="time")
-    # Read in memory what is needed
-    ds = ds[["time", "n_drops_selected"]].compute()
+    ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
+    # Read in memory the variable needed
+    ds = ds.compute()
     # Close file on disk
     _ = [ds.close() for ds in list_ds]
     del list_ds
-    # Check for sample intervals
-    if len(set(sample_intervals)) > 1:
-        raise ValueError("Sample intervals are not constant across files.")
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
-    # Select events
-    # TODO:
-    minimum_n_drops = 5
-    min_time_contiguity = pd.Timedelta(datetime.timedelta(minutes=10))
-    max_dry_time_interval = pd.Timedelta(datetime.timedelta(hours=2))
-    minimum_duration = pd.Timedelta(datetime.timedelta(minutes=5))
-    event_list = select_events(
-        ds=ds,
-        minimum_n_drops=minimum_n_drops,
-        minimum_duration=minimum_duration,
-        min_time_contiguity=min_time_contiguity,
-        max_dry_time_interval=max_dry_time_interval,
+    # Define candidate timesteps to group into events
+    idx_valid = ds["n_drops_selected"].data > min_n_drops
+    timesteps = ds["time"].data[idx_valid]
+    # Define event list
+    event_list = group_timesteps_into_event(
+        timesteps=timesteps,
+        neighbor_min_size=neighbor_min_size,
+        neighbor_time_interval=neighbor_time_interval,
+        intra_event_max_time_gap=intra_event_max_time_gap,
+        event_min_duration=event_min_duration,
+        event_min_size=event_min_size,
     )
     return event_list
 
 
-def remove_isolated_timesteps(timesteps, min_time_contiguity):
-    """Remove isolated timesteps."""
-    # Sort timesteps just in case
-    timesteps.sort()
-    cleaned_timesteps = []
-    for i, t in enumerate(timesteps):
-        prev_t = timesteps[i - 1] if i > 0 else None
-        next_t = timesteps[i + 1] if i < len(timesteps) - 1 else None
-
-        is_isolated = True
-        if prev_t and t - prev_t <= min_time_contiguity:
-            is_isolated = False
-        if next_t and next_t - t <= min_time_contiguity:
-            is_isolated = False
-
-        if not is_isolated:
-            cleaned_timesteps.append(t)
-
-    return cleaned_timesteps
-
-
-def group_timesteps_into_events(timesteps, max_dry_time_interval):
-    """Group timesteps into events."""
-    timesteps.sort()
-    events = []
-    current_event = [timesteps[0]]
-
-    for i in range(1, len(timesteps)):
-        current_t = timesteps[i]
-        previous_t = timesteps[i - 1]
-
-        if current_t - previous_t <= max_dry_time_interval:
-            current_event.append(current_t)
-        else:
-            events.append(current_event)
-            current_event = [current_t]
-
-    events.append(current_event)
-    return events
-
-
-def select_events(
-    ds,
-    minimum_n_drops,
-    minimum_duration,  # TODO UNUSED
-    min_time_contiguity,
-    max_dry_time_interval,
+def group_timesteps_into_event(
+    timesteps,
+    intra_event_max_time_gap,
+    event_min_size=0,
+    event_min_duration="0S",
+    neighbor_min_size=0,
+    neighbor_time_interval="0S",
 ):
-    """Select events."""
-    timesteps = ds["time"].data
-    n_drops_selected = ds["n_drops_selected"].data
+    """
+    Group candidate timesteps into events based on temporal criteria.
 
-    # Define candidate timesteps to group into events
-    idx_valid = n_drops_selected > minimum_n_drops
-    timesteps = timesteps[idx_valid]
+    This function groups valid candidate timesteps into events by considering how they cluster
+    in time. Any isolated timesteps (based on neighborhood criteria) are first removed. Then,
+    consecutive timesteps are grouped into the same event if the time gap between them does not
+    exceed `intra_event_max_time_gap`. Finally, events that do not meet minimum size or duration
+    requirements are filtered out.
 
-    # Remove noisy timesteps
-    timesteps = remove_isolated_timesteps(timesteps, min_time_contiguity)
+    Please note that neighbor_min_size and neighbor_time_interval are very sensitive to the
+    actual sample interval of the data !
+
+    Parameters
+    ----------
+    timesteps: np.ndarray
+        Candidate timesteps to be grouped into events.
+    neighbor_time_interval : str
+        The time interval around a given a timestep defining the neighborhood.
+        Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
+    neighbor_min_size : int, optional
+        The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
+        timestep to be considered non-isolated.  Isolated timesteps are removed !
+        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
+        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
+        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        Defaults to 1.
+    intra_event_max_time_gap: str
+        The maximum time interval between two timesteps to be considered part of the same event.
+        This parameters is used to group timesteps into events !
+    event_min_duration : str
+        The minimum duration an event must span. Events shorter than this duration are discarded.
+    event_min_size : int, optional
+        The minimum number of valid timesteps required for an event. Defaults to 1.
+
+    Returns
+    -------
+    list of dict
+        A list of events, where each event is represented as a dictionary with keys:
+        - "start_time": np.datetime64, start time of the event
+        - "end_time": np.datetime64, end time of the event
+        - "duration": np.timedelta64, duration of the event
+        - "n_timesteps": int, number of valid timesteps in the event
+    """
+    # Retrieve datetime arguments
+    neighbor_time_interval = pd.Timedelta(acronym_to_seconds(neighbor_time_interval), unit="seconds")
+    intra_event_max_time_gap = pd.Timedelta(acronym_to_seconds(intra_event_max_time_gap), unit="seconds")
+    event_min_duration = pd.Timedelta(acronym_to_seconds(event_min_duration), unit="seconds")
+
+    # Remove isolated timesteps
+    timesteps = remove_isolated_timesteps(
+        timesteps,
+        neighbor_min_size=neighbor_min_size,
+        neighbor_time_interval=neighbor_time_interval,
+    )
 
     # Group timesteps into events
-    events = group_timesteps_into_events(timesteps, max_dry_time_interval)
+    # - If two timesteps are separated by less than intra_event_max_time_gap, are considered the same event
+    events = group_timesteps_into_events(timesteps, intra_event_max_time_gap)
 
     # Define list of event
     event_list = [
@@ -140,10 +189,139 @@ def select_events(
             "start_time": event[0],
             "end_time": event[-1],
             "duration": (event[-1] - event[0]).astype("m8[m]"),
+            "n_timesteps": len(event),
         }
         for event in events
     ]
+
+    # Filter event list by duration
+    event_list = [event for event in event_list if event["duration"] >= event_min_duration]
+
+    # Filter event list by duration
+    event_list = [event for event in event_list if event["n_timesteps"] >= event_min_size]
+
     return event_list
+
+
+def remove_isolated_timesteps(timesteps, neighbor_min_size, neighbor_time_interval):
+    """
+    Remove isolated timesteps that do not have enough neighboring timesteps within a specified time gap.
+
+    A timestep is considered isolated (and thus removed) if it does not have at least `neighbor_min_size` other
+    timesteps within the `neighbor_time_interval` before or after it.
+    In other words, for each timestep, we look for how many other timesteps fall into the
+    time interval [t - neighbor_time_interval, t + neighbor_time_interval], excluding it itself.
+    If the count of such neighbors is less than `neighbor_min_size`, that timestep is removed.
+
+    Parameters
+    ----------
+    timesteps : array-like of np.datetime64
+        Sorted or unsorted array of valid timesteps.
+    neighbor_time_interval : np.timedelta64
+        The time interval around a given a timestep defining the neighborhood.
+        Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
+    neighbor_min_size : int, optional
+        The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
+        timestep to be considered non-isolated.
+        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
+        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
+        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        Defaults to 1.
+
+    Returns
+    -------
+    np.ndarray
+        Array of timesteps with isolated entries removed.
+    """
+    # Sort timesteps
+    timesteps = np.array(timesteps)
+    timesteps.sort()
+
+    # Do nothing if neighbor_min_size is 0
+    if neighbor_min_size == 0:
+        return timesteps
+
+    # Compute the start and end of the interval for each timestep
+    t_starts = timesteps - neighbor_time_interval
+    t_ends = timesteps + neighbor_time_interval
+
+    # Use searchsorted to find the positions where these intervals would be inserted
+    # to keep the array sorted. This effectively gives us the bounds of timesteps
+    # within the neighbor interval.
+    left_indices = np.searchsorted(timesteps, t_starts, side="left")
+    right_indices = np.searchsorted(timesteps, t_ends, side="right")
+
+    # The number of neighbors is the difference in indices minus one (to exclude the timestep itself)
+    n_neighbors = right_indices - left_indices - 1
+    valid_mask = n_neighbors >= neighbor_min_size
+
+    non_isolated_timesteps = timesteps[valid_mask]
+
+    # NON VECTORIZED CODE
+    # non_isolated_timesteps = []
+    # n_neighbours_arr = []
+    # for i, t in enumerate(timesteps):
+    #     n_neighbours = np.sum(np.logical_and(timesteps >= (t - neighbor_time_interval),
+    #                                          timesteps <= (t + neighbor_time_interval))) - 1
+    #     n_neighbours_arr.append(n_neighbours)
+    #     if n_neighbours > neighbor_min_size:
+    #       non_isolated_timesteps.append(t)
+    # non_isolated_timesteps = np.array(non_isolated_timesteps)
+    return non_isolated_timesteps
+
+
+def group_timesteps_into_events(timesteps, intra_event_max_time_gap):
+    """
+    Group valid timesteps into events based on a maximum allowed dry interval.
+
+    Parameters
+    ----------
+    timesteps : array-like of np.datetime64
+        Sorted array of valid timesteps.
+    intra_event_max_time_gap : np.timedelta64
+        Maximum time interval allowed between consecutive valid timesteps for them
+        to be considered part of the same event.
+
+    Returns
+    -------
+    list of np.ndarray
+        A list of events, where each event is an array of timesteps.
+    """
+    # Deal with case with no timesteps
+    if len(timesteps) == 0:
+        return []
+
+    # Ensure timesteps are sorted
+    timesteps.sort()
+
+    # Compute differences between consecutive timesteps
+    diffs = np.diff(timesteps)
+
+    # Identify the indices where the gap is larger than intra_event_max_time_gap
+    # These indices represent boundaries between events
+    break_indices = np.where(diffs > intra_event_max_time_gap)[0] + 1
+
+    # Split the timesteps at the identified break points
+    events = np.split(timesteps, break_indices)
+
+    # NON VECTORIZED CODE
+    # events = []
+    # current_event = [timesteps[0]]
+    # for i in range(1, len(timesteps)):
+    #     current_t = timesteps[i]
+    #     previous_t = timesteps[i - 1]
+
+    #     if current_t - previous_t <= intra_event_max_time_gap:
+    #         current_event.append(current_t)
+    #     else:
+    #         events.append(current_event)
+    #         current_event = [current_t]
+
+    # events.append(current_event)
+    return events
+
+
+####-----------------------------------------------------------------------------------.
 
 
 def get_events_info(list_events, filepaths, accumulation_interval, rolling):
@@ -208,14 +386,3 @@ def get_events_info(list_events, filepaths, accumulation_interval, rolling):
             )
 
     return event_info
-
-
-# list_events[0]
-# accumulation_interval = 30
-
-
-# For event
-# - Get start_time, end_time
-# - Buffer start_time and end_time by accumulation_interval
-
-# - Get filepaths for start_time, end_time (assign_filepaths_to_event)

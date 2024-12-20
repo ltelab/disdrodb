@@ -161,6 +161,8 @@ def reader(
         df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
         df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
 
+        # TODO: correct time is unavailable yet !
+
         # Drop row if start_identifier different than 00
         df = df[df["start_identifier"].astype(str) == "00"]
 
