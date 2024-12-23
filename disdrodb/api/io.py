@@ -63,7 +63,7 @@ def get_filepaths(
     campaign_name,
     station_name,
     product,
-    distribution=None,
+    model_name=None,
     sample_interval=None,
     rolling=None,
     debugging_mode: bool = False,
@@ -89,8 +89,8 @@ def get_filepaths(
     rolling : bool, optional
         Whether the dataset has been resampled by aggregating or rolling.
         It must be specified only for product L2E and L2M !
-    distribution : str
-        The model of the statistical distribution for the DSD.
+    model_name : str
+        The model name of the statistical distribution for the DSD.
         It must be specified only for product L2M !
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
@@ -116,7 +116,7 @@ def get_filepaths(
         sample_interval=sample_interval,
         rolling=rolling,
         # Options for L2M
-        distribution=distribution,
+        model_name=model_name,
     )
 
     # Define glob pattern

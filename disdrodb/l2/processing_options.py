@@ -9,28 +9,6 @@ config = {
             "ROLL1MIN",
             "ROLL10MIN",
         ],  # ["10S", "30S", "1MIN",  "5MIN", "10MIN", "15MIN", "30MIN", "1H", "ROLL5MIN", "ROLL10MIN"],
-        # L2M options
-        "l2m_options": {
-            "fall_velocity_method": "Beard1976",
-            "diameter_min": 0,
-            "diameter_max": 8,
-            "diameter_spacing": 0.05,
-        },
-        # PSD models fitting options
-        "psd_models": {
-            "gamma": {
-                "probability_method": "cdf",
-                "likelihood": "multinomial",
-                "truncated_likelihood": True,
-                "optimizer": "Nelder-Mead",
-                "add_gof_metrics": True,
-            },
-            "normalized_gamma": {
-                "optimizer": "Nelder-Mead",
-                "order": 2,
-                "add_gof_metrics": True,
-            },
-        },
         # Radar options
         "radar_simulation_enabled": True,
         "radar_simulation_options": {
@@ -38,6 +16,57 @@ config = {
             "canting_angle_std": 7,
             "diameter_max": 8,
             "axis_ratio": "Thurai2007",
+        },
+        # L2E options
+        # "l2e_options": {}
+        # L2M options
+        "l2m_options": {
+            "fall_velocity_method": "Beard1976",
+            "diameter_min": 0,
+            "diameter_max": 8,
+            "diameter_spacing": 0.05,
+            "gof_metrics": True,
+            "models": {
+                # PSD models fitting options
+                "GAMMA_ML": {
+                    "psd_model": "GammaPSD",
+                    "optimization": "ML",
+                    "optimization_kwargs": {
+                        "init_method": "M246",
+                        "probability_method": "cdf",
+                        "likelihood": "multinomial",
+                        "truncated_likelihood": True,
+                        "optimizer": "Nelder-Mead",
+                    },
+                },
+                "NGAMMA_GS_LOG_ND_MAE": {
+                    "psd_model": "NormalizedGammaPSD",
+                    "optimization": "GS",
+                    "optimization_kwargs": {
+                        "target": "ND",
+                        "transformation": "log",
+                        "error_order": 1,  # MAE
+                    },
+                },
+                # "NGAMMA_GS_ND_MAE": {
+                #     "psd_model": "NormalizedGammaPSD",
+                #     "optimization": "GS",
+                #     "optimization_kwargs": {
+                #         "target": "ND",
+                #         "transformation": "identity",
+                #         "error_order": 1,  # MAE
+                #     },
+                # },
+                # "NGAMMA_GS_Z": {
+                #     "psd_model": "NormalizedGammaPSD",
+                #     "optimization": "GS",
+                #     "optimization_kwargs": {
+                #         "target": "Z",
+                #         "transformation": "identity",  # unused
+                #         "error_order": 1,  # unused
+                #     },
+                # },
+            },
         },
     },
     "specific_settings": {

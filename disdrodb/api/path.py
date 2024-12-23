@@ -310,13 +310,6 @@ def check_sample_interval(sample_interval):
         raise ValueError("'sample_interval' must be an integer.")
 
 
-def check_distribution(distribution):
-    """Check distribution argument validity."""
-    valid_distributions = ["gamma", "normalized_gamma", "lognormal", "exponential"]
-    if distribution not in valid_distributions:
-        raise ValueError(f"Invalid 'distribution' {distribution}. Valid values are {valid_distributions}")
-
-
 def check_rolling(rolling):
     """Check rolling argument validity."""
     if not isinstance(rolling, bool):
@@ -325,7 +318,7 @@ def check_rolling(rolling):
 
 def define_product_dir_tree(
     product,
-    distribution=None,
+    model_name=None,
     sample_interval=None,
     rolling=None,
 ):
@@ -341,8 +334,8 @@ def define_product_dir_tree(
     rolling : bool, optional
         Whether the dataset has been resampled by aggregating or rolling.
         It must be specified only for product L2E and L2M !
-    distribution : str
-        The model of the statistical distribution for the DSD.
+    model_name : str
+        The custom model name of the fitted statistical distribution.
         It must be specified only for product L2M !
 
     Returns
@@ -362,10 +355,8 @@ def define_product_dir_tree(
     if product == "L2M":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
-        check_distribution(distribution)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        distribution_acronym = get_distribution_acronym(distribution)
-        return os.path.join(product, distribution_acronym, sample_interval_acronym)
+        return os.path.join(product, model_name, sample_interval_acronym)
     raise ValueError(f"The product {product} is not defined.")
 
 
@@ -422,7 +413,7 @@ def define_data_dir_new(
     data_source,
     campaign_name,
     station_name,
-    distribution=None,
+    model_name=None,
     sample_interval=None,
     rolling=None,
     base_dir=None,
@@ -461,7 +452,7 @@ def define_data_dir_new(
     )
     product_dir_tree = define_product_dir_tree(
         product=product,
-        distribution=distribution,
+        model_name=model_name,
         sample_interval=sample_interval,
         rolling=rolling,
     )
@@ -476,7 +467,7 @@ def define_logs_dir(
     data_source,
     campaign_name,
     station_name,
-    distribution=None,
+    model_name=None,
     sample_interval=None,
     rolling=None,
     base_dir=None,
@@ -521,7 +512,7 @@ def define_logs_dir(
     )
     product_dir_tree = define_product_dir_tree(
         product=product,
-        distribution=distribution,
+        model_name=model_name,
         sample_interval=sample_interval,
         rolling=rolling,
     )
@@ -536,7 +527,7 @@ def define_data_dir(
     data_source,
     campaign_name,
     station_name,
-    distribution=None,
+    model_name=None,
     sample_interval=None,
     rolling=None,
     base_dir=None,
@@ -565,8 +556,8 @@ def define_data_dir(
     rolling : bool, optional
         Whether the dataset has been resampled by aggregating or rolling.
         It must be specified only for product L2E and L2M !
-    distribution : str
-        The model of the statistical distribution for the DSD.
+    model_name : str
+        The name of the fitted statistical distribution for the DSD.
         It must be specified only for product L2M !
 
     Returns
@@ -592,10 +583,8 @@ def define_data_dir(
     elif product == "L2M":
         check_rolling(rolling)
         check_sample_interval(sample_interval)
-        check_distribution(distribution)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        distribution_acronym = get_distribution_acronym(distribution)
-        data_dir = os.path.join(station_dir, distribution_acronym, sample_interval_acronym)
+        data_dir = os.path.join(station_dir, model_name, sample_interval_acronym)
     else:
         raise ValueError("TODO")  # CHECK Product on top !`
     if check_exists:
@@ -667,17 +656,6 @@ def define_station_dir(
 #### Filenames for DISDRODB products
 
 
-def get_distribution_acronym(distribution):
-    """Define DISDRODB L2M distribution acronym."""
-    acronym_dict = {
-        "lognorm": "LOGNORM",
-        "normalized_gamma": "NGAMMA",
-        "gamma": "GAMMA",
-        "exponential": "EXP",
-    }
-    return acronym_dict[distribution]
-
-
 def define_accumulation_acronym(seconds, rolling):
     """Define the accumulation acronnym.
 
@@ -701,7 +679,7 @@ def define_filename(
     sample_interval: Optional[int] = None,
     rolling: Optional[bool] = None,
     # L2M option
-    distribution: Optional[str] = None,
+    model_name: Optional[str] = None,
     # Filename options
     obj=None,
     add_version=True,
@@ -728,8 +706,8 @@ def define_filename(
     rolling : bool, optional
         Whether the dataset has been resampled by aggregating or rolling.
         It must be specified only for product L2E and L2M !
-    distribution : str
-        The model of the statistical distribution for the DSD.
+    model_name : str
+        The model name of the fitted statistical distribution for the DSD.
         It must be specified only for product L2M !
 
     Returns
@@ -753,8 +731,7 @@ def define_filename(
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         product_acronym = f"L2E.{sample_interval_acronym}"
     if product in ["L2M"]:
-        distribution_acronym = get_distribution_acronym(distribution)
-        product_acronym = f"L2M_{distribution_acronym}.{sample_interval_acronym}"
+        product_acronym = f"L2M_{model_name}.{sample_interval_acronym}"
 
     # -----------------------------------------.
     # Define base filename
@@ -950,9 +927,9 @@ def define_l2m_filename(
     ds,
     campaign_name: str,
     station_name: str,
-    distribution: str,
     sample_interval: int,
     rolling: bool,
+    model_name: str,
 ) -> str:
     """Define L2M file name.
 
@@ -973,14 +950,13 @@ def define_l2m_filename(
     from disdrodb import PRODUCT_VERSION
     from disdrodb.utils.xarray import get_dataset_start_end_time
 
-    distribution_acronym = get_distribution_acronym(distribution)
     sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_dataset_start_end_time(ds)
     starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
     filename = (
-        f"L2M_{distribution_acronym}.{sample_interval_acronym}.{campaign_name}."
+        f"L2M_{model_name}.{sample_interval_acronym}.{campaign_name}."
         + f"{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     )
     return filename

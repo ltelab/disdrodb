@@ -28,7 +28,8 @@ Source code:
 import numpy as np
 import xarray as xr
 from pytmatrix.psd import PSD
-from scipy.special import gamma
+from scipy.special import gamma as gamma_f
+from scipy.stats import expon, gamma, lognorm
 
 # psd.log_likelihood
 # psd.moment(order)
@@ -63,6 +64,11 @@ def check_psd_model(psd_model):
 def get_psd_model(psd_model):
     """Retrieve the PSD Class."""
     return PSD_MODELS_DICT[psd_model]
+
+
+def get_psd_model_formula(psd_model):
+    """Retrieve the PSD formula."""
+    return PSD_MODELS_DICT[psd_model].formula
 
 
 def create_psd(psd_model, parameters):  # TODO: check name around
@@ -176,14 +182,21 @@ class LognormalPSD(XarrayPSD):
 
     """
 
-    def __init__(self, Nt=1.0, mu=0.0, sigma=1.0, Dmin=0, Dmax=None):
+    def __init__(self, Nt=1.0, mu=0.0, sigma=1.0, Dmin=0, Dmax=None, coverage=0.999):
         self.Nt = Nt
         self.mu = mu
         self.sigma = sigma
+        self.parameters = {"Nt": self.Nt, "mu": self.mu, "sigma": self.sigma}
+        # Define Dmin and Dmax
         self.Dmin = Dmin
-        self.Dmax = mu + sigma * 4 if Dmax is None else Dmax
-
-        self.parameters = {"Nt": Nt, "mu": self.mu, "sigma": self.sigma}
+        if Dmax is not None:
+            self.Dmax = Dmax
+        else:
+            dmax = lognorm.ppf(coverage, s=self.sigma, scale=np.exp(self.mu))
+            if isinstance(self.sigma, xr.DataArray):
+                self.Dmax = xr.DataArray(dmax, dims=self.sigma.dims, coords=self.sigma.coords)
+            else:
+                self.Dmax = dmax
 
     @staticmethod
     def required_parameters():
@@ -267,12 +280,22 @@ class ExponentialPSD(XarrayPSD):
         Returns 0 for all diameters larger than Dmax.
     """
 
-    def __init__(self, N0=1.0, Lambda=1.0, Dmin=0, Dmax=None):
+    def __init__(self, N0=1.0, Lambda=1.0, Dmin=0, Dmax=None, coverage=0.999):
+        # Define parameters
         self.N0 = N0
         self.Lambda = Lambda
-        self.Dmax = 11.0 / Lambda if Dmax is None else Dmax
-        self.Dmin = Dmin
         self.parameters = {"N0": self.N0, "Lambda": self.Lambda}
+
+        # Define Dmin and Dmax
+        self.Dmin = Dmin
+        if Dmax is not None:
+            self.Dmax = Dmax
+        else:
+            dmax = expon.ppf(coverage, scale=1 / self.Lambda)
+            if isinstance(self.Lambda, xr.DataArray):
+                self.Dmax = xr.DataArray(dmax, dims=self.Lambda.dims, coords=self.Lambda.coords)
+            else:
+                self.Dmax = dmax
 
     @staticmethod
     def required_parameters():
@@ -363,10 +386,22 @@ class GammaPSD(ExponentialPSD):
     J. Appl. Meteor. Climatol., 24, 580-590, https://doi.org/10.1175/1520-0450(1985)024<0580:TEODSD>2.0.CO;2
     """
 
-    def __init__(self, N0=1.0, mu=0.0, Lambda=1.0, Dmin=0, Dmax=None):
-        super().__init__(N0=N0, Lambda=Lambda, Dmin=Dmin, Dmax=Dmax)
+    def __init__(self, N0=1.0, mu=0.0, Lambda=1.0, Dmin=0, Dmax=None, coverage=0.999):
+        # Define parameters
+        self.N0 = N0
+        self.Lambda = Lambda
         self.mu = mu
-        self.parameters = {"N0": self.N0, "mu": mu, "Lambda": self.Lambda}
+        self.parameters = {"N0": self.N0, "mu": self.mu, "Lambda": self.Lambda}
+        # Define Dmin and Dmax
+        self.Dmin = Dmin
+        if Dmax is not None:
+            self.Dmax = Dmax
+        else:
+            dmax = gamma.ppf(coverage, a=self.mu + 1.0, scale=1.0 / self.Lambda)
+            if isinstance(self.Lambda, xr.DataArray):
+                self.Dmax = xr.DataArray(dmax, dims=self.Lambda.dims, coords=self.Lambda.coords)
+            else:
+                self.Dmax = dmax
 
     @staticmethod
     def required_parameters():
@@ -530,7 +565,7 @@ class NormalizedGammaPSD(XarrayPSD):
     def formula(D, Nw, D50, mu):
         """Calculates the NormalizedGamma PSD values."""
         d_ratio = D / D50
-        nf = Nw * 6.0 / 3.67**4 * (3.67 + mu) ** (mu + 4) / gamma(mu + 4)
+        nf = Nw * 6.0 / 3.67**4 * (3.67 + mu) ** (mu + 4) / gamma_f(mu + 4)
         return nf * np.exp(mu * np.log(d_ratio) - (3.67 + mu) * d_ratio)
 
     def parameters_summary(self):
@@ -651,7 +686,7 @@ class BinnedPSD(PSD):
 
 def get_exponential_moment(N0, Lambda, moment):
     """Compute exponential distribution moments."""
-    return N0 * gamma(moment + 1) / Lambda ** (moment + 1)
+    return N0 * gamma_f(moment + 1) / Lambda ** (moment + 1)
 
 
 def get_gamma_moment_v1(N0, mu, Lambda, moment):
@@ -664,8 +699,8 @@ def get_gamma_moment_v1(N0, mu, Lambda, moment):
     Combining Reflectivity Profile and Path-integrated Attenuation.
     J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
     """
-    # Zhang et al 2001: N0 * gamma(mu + moment + 1) * Lambda ** (-(mu + moment + 1))
-    return N0 * gamma(mu + moment + 1) / Lambda ** (mu + moment + 1)
+    # Zhang et al 2001: N0 * gamma_f(mu + moment + 1) * Lambda ** (-(mu + moment + 1))
+    return N0 * gamma_f(mu + moment + 1) / Lambda ** (mu + moment + 1)
 
 
 def get_gamma_moment_v2(Nt, mu, Lambda, moment):
@@ -678,7 +713,7 @@ def get_gamma_moment_v2(Nt, mu, Lambda, moment):
     Combining Reflectivity Profile and Path-integrated Attenuation.
     J. Atmos. Oceanic Technol., 8, 259-270, https://doi.org/10.1175/1520-0426(1991)008<0259:RPEFDR>2.0.CO;2
     """
-    return Nt * gamma(mu + moment + 1) / gamma(mu + 1) / Lambda**moment
+    return Nt * gamma_f(mu + moment + 1) / gamma_f(mu + 1) / Lambda**moment
 
 
 def get_lognormal_moment(Nt, sigma, mu, moment):

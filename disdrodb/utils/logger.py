@@ -212,7 +212,7 @@ def create_product_logs(
     # Product options
     sample_interval=None,
     rolling=None,
-    distribution=None,
+    model_name=None,
     # Logs list
     list_logs=None,  # If none, list it !
 ):
@@ -245,8 +245,8 @@ def create_product_logs(
         The sample interval for L2E option. Default is None.
     rolling : str, optional
         The rolling option for L2E. Default is None.
-    distribution : str, optional
-        The distribution type for L2M option. Default is None.
+    model_name : str, optional
+        The model name for L2M. Default is None.
     list_logs : list, optional
         List of log file paths. If None, the function will list the log files.
 
@@ -272,7 +272,7 @@ def create_product_logs(
             sample_interval=sample_interval,
             rolling=rolling,
             # Option for L2M
-            distribution=distribution,
+            model_name=model_name,
         )
         list_logs = list_files(logs_dir, glob_pattern="*", recursive=True)
 
@@ -305,7 +305,7 @@ def create_product_logs(
         sample_interval=sample_interval,
         rolling=rolling,
         # L2M option
-        distribution=distribution,
+        model_name=model_name,
         # Filename options
         add_version=False,
         add_time_period=False,
@@ -324,7 +324,7 @@ def create_product_logs(
         sample_interval=sample_interval,
         rolling=rolling,
         # L2M option
-        distribution=distribution,
+        model_name=model_name,
         # Filename options
         add_version=False,
         add_time_period=False,

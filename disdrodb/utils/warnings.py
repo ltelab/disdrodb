@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -14,25 +16,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Implement PSD model and fitting routines."""
+"""Warning utilities."""
+import warnings
+from contextlib import contextmanager
 
-
-from disdrodb.psd.fitting import estimate_model_parameters
-from disdrodb.psd.models import (
-    ExponentialPSD,
-    GammaPSD,
-    LognormalPSD,
-    NormalizedGammaPSD,
-    available_psd_models,
-    create_psd,
-)
-
-__all__ = [
-    "available_psd_models",
-    "create_psd",
-    "estimate_model_parameters",
-    "LognormalPSD",
-    "ExponentialPSD",
-    "GammaPSD",
-    "NormalizedGammaPSD",
-]
+@contextmanager
+def suppress_warnings():
+    """Context manager suppressing RuntimeWarnings and UserWarnings."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
+        warnings.simplefilter("ignore", UserWarning)
+        yield

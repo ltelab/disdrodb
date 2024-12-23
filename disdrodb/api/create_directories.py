@@ -265,7 +265,7 @@ def create_product_directory(
     sample_interval=None,
     rolling=None,
     # Option for L2M
-    distribution=None,
+    model_name=None,
 ):
     """Initialize the directory structure for a DISDRODB product.
 
@@ -298,7 +298,7 @@ def create_product_directory(
         sample_interval=sample_interval,
         rolling=rolling,
         # Option for L2M
-        distribution=distribution,
+        model_name=model_name,
     )
 
     # Check metadata file is available
@@ -321,7 +321,7 @@ def create_product_directory(
         sample_interval=sample_interval,
         rolling=rolling,
         # Option for L2M
-        distribution=distribution,
+        model_name=model_name,
     )
 
     # Create required directory (if it doesn't exist)
@@ -338,7 +338,7 @@ def create_product_directory(
         sample_interval=sample_interval,
         rolling=rolling,
         # Option for L2M
-        distribution=distribution,
+        model_name=model_name,
     )
 
     # If product files are already available:
@@ -361,7 +361,7 @@ def create_logs_directory(
     sample_interval=None,
     rolling=None,
     # Option for L2M
-    distribution=None,
+    model_name=None,
 ):
     """Initialize the logs directory structure for a DISDRODB product."""
     # Define logs directory
@@ -375,7 +375,7 @@ def create_logs_directory(
         sample_interval=sample_interval,
         rolling=rolling,
         # Option for L2M
-        distribution=distribution,
+        model_name=model_name,
     )
 
     # Ensure empty log directory

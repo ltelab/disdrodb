@@ -16,7 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Implement PSD scattering routines."""
 
-from itertools import product
+import itertools
 
 import dask
 import numpy as np
@@ -27,6 +27,7 @@ from pytmatrix.tmatrix import Scatterer
 
 from disdrodb.psd.models import create_psd, get_required_parameters
 from disdrodb.scattering.axis_ratio import check_axis_ratio, get_axis_ratio_method
+from disdrodb.utils.warnings import suppress_warnings
 
 # Wavelengths for which the refractive index is defined in pytmatrix (in mm)
 wavelength_dict = {
@@ -134,12 +135,12 @@ def _estimate_empirical_radar_parameters(
     scatterer.psd = BinnedPSD(bin_edges, drop_number_concentration)
 
     # Get radar variables
-    # with suppress_warnings():
-    try:
-        radar_vars = compute_radar_variables(scatterer)
-        output = radar_vars if output_dictionary else np.array(list(radar_vars.values()))
-    except Exception:
-        output = null_output
+    with suppress_warnings():
+        try:
+            radar_vars = compute_radar_variables(scatterer)
+            output = radar_vars if output_dictionary else np.array(list(radar_vars.values()))
+        except Exception:
+            output = null_output
     return output
 
 
@@ -161,13 +162,13 @@ def _estimate_model_radar_parameters(
     scatterer.psd = create_psd(psd_model, parameters)
 
     # Get radar variables
-    # with suppress_warnings():
-    radar_vars = compute_radar_variables(scatterer)
-    try:
+    with suppress_warnings():
         radar_vars = compute_radar_variables(scatterer)
-        output = radar_vars if output_dictionary else np.array(list(radar_vars.values()))
-    except Exception:
-        output = null_output
+        try:
+            radar_vars = compute_radar_variables(scatterer)
+            output = radar_vars if output_dictionary else np.array(list(radar_vars.values()))
+        except Exception:
+            output = null_output
     return output
 
 
@@ -423,7 +424,7 @@ def get_radar_parameters(
             "axis_ratio": ar.item(),
             "diameter_max": d_max.item(),
         }
-        for rb, cas, ar, d_max in product(radar_band, canting_angle_std, axis_ratio, diameter_max)
+        for rb, cas, ar, d_max in itertools.product(radar_band, canting_angle_std, axis_ratio, diameter_max)
     ]
 
     # Compute radar variables for each configuration in parallel

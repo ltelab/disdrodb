@@ -507,10 +507,8 @@ def _generate_l2m(
     # L2M options
     sample_interval,
     rolling,
-    distribution,
+    model_name,
     l2m_options,
-    # PSD options
-    model_options,
     # Radar options
     radar_simulation_enabled,
     radar_simulation_options,
@@ -522,6 +520,13 @@ def _generate_l2m(
     # -----------------------------------------------------------------.
     # Define product name
     product = "L2M"
+
+    # -----------------------------------------------------------------.
+    # Define model options
+    psd_model = l2m_options["models"][model_name]["psd_model"]
+    optimization = l2m_options["models"][model_name]["optimization"]
+    optimization_kwargs = l2m_options["models"][model_name]["optimization_kwargs"]
+    other_options = {k: v for k, v in l2m_options.items() if k != "models"}
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -542,10 +547,29 @@ def _generate_l2m(
     try:
         # Open the raw netCDF
         with xr.open_dataset(filepath, chunks={}, cache=False) as ds:
-            ds = ds[["drop_number_concentration", "D50", "Nw", "Nt"]].load()
+            variables = [
+                "drop_number_concentration",
+                "fall_velocity",
+                "D50",
+                "Nw",
+                "Nt",
+                "M1",
+                "M2",
+                "M3",
+                "M4",
+                "M5",
+                "M6",
+            ]
+            ds = ds[variables].load()
 
         # Produce L2M dataset
-        ds = generate_l2_model(ds=ds, distribution=distribution, **l2m_options, **model_options)
+        ds = generate_l2_model(
+            ds=ds,
+            psd_model=psd_model,
+            optimization=optimization,
+            optimization_kwargs=optimization_kwargs,
+            **other_options,
+        )
 
         # Simulate L2M-based radar variables if asked
         if radar_simulation_enabled:
@@ -560,9 +584,9 @@ def _generate_l2m(
                 ds,
                 campaign_name=campaign_name,
                 station_name=station_name,
-                distribution=distribution,
                 sample_interval=sample_interval,
                 rolling=rolling,
+                model_name=model_name,
             )
             filepath = os.path.join(data_dir, filename)
             # Write to disk
@@ -670,8 +694,6 @@ def run_l2m_station(
 
     # ---------------------------------------------------------------------.
     # Loop
-    # rolling = False
-    # accumulation_interval = 60
     # sample_interval_acronym = "1MIN"
     # l2_options = l2_processing_options["1MIN"]
     for sample_interval_acronym, l2_options in l2_processing_options.items():
@@ -726,11 +748,18 @@ def run_l2m_station(
 
         # -----------------------------------------------------------------.
         # Loop over distributions to fit
-        # model_options =  l2_options["psd_models"]["normalized_gamma"]
-        for distribution, model_options in l2_options["psd_models"].items():
+        # model_name = "GAMMA_ML"
+        # model_options =  l2m_options["models"][model_name]
+        for model_name, model_options in l2m_options["models"].items():
+
+            # Retrieve model options
+            psd_model = model_options["psd_model"]
+            optimization = model_options["optimization"]
 
             # -----------------------------------------------------------------.
-            msg = f" - Fitting distribution {distribution} for sample interval {accumulation_interval} s."
+            msg = f" - Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."
+            log_info(logger=logger, msg=msg, verbose=verbose)
+            msg = f" - Estimating {psd_model} parameters using {optimization}."
             log_info(logger=logger, msg=msg, verbose=verbose)
 
             # -------------------------------------------------------------.
@@ -746,7 +775,7 @@ def run_l2m_station(
                 sample_interval=accumulation_interval,
                 rolling=rolling,
                 # Option for L2M
-                distribution=distribution,
+                model_name=model_name,
             )
 
             # Define logs directory
@@ -760,7 +789,7 @@ def run_l2m_station(
                 sample_interval=accumulation_interval,
                 rolling=rolling,
                 # Option for L2M
-                distribution=distribution,
+                model_name=model_name,
             )
 
             # Generate L2M files
@@ -776,9 +805,8 @@ def run_l2m_station(
                     # L2M option
                     sample_interval=accumulation_interval,
                     rolling=rolling,
+                    model_name=model_name,
                     l2m_options=l2m_options,
-                    distribution=distribution,
-                    model_options=model_options,
                     # Radar options
                     radar_simulation_enabled=radar_simulation_enabled,
                     radar_simulation_options=radar_simulation_options,
@@ -800,7 +828,7 @@ def run_l2m_station(
                 station_name=station_name,
                 base_dir=base_dir,
                 # Product options
-                distribution=distribution,
+                model_name=model_name,
                 sample_interval=sample_interval,
                 rolling=rolling,
                 # Logs list

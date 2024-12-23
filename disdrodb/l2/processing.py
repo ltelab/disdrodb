@@ -477,7 +477,6 @@ def generate_l2_empirical(ds, ds_env=None):
 
 def generate_l2_model(
     ds,
-    distribution,
     ds_env=None,
     fall_velocity_method="Beard1976",
     # PSD discretization
@@ -485,12 +484,11 @@ def generate_l2_model(
     diameter_max=8,
     diameter_spacing=0.05,
     # Fitting options
-    probability_method="cdf",
-    likelihood="multinomial",
-    truncated_likelihood=True,
-    optimizer="Nelder-Mead",
-    order=2,
-    add_gof_metrics=True,
+    psd_model=None,
+    optimization=None,
+    optimization_kwargs=None,
+    # GOF metrics options
+    gof_metrics=True,
 ):
     """
     Generate the DISDRODB L2M dataset from a DISDRODB L2E dataset.
@@ -503,8 +501,6 @@ def generate_l2_model(
     ----------
     ds : xarray.Dataset
         DISDRODB L2E dataset.
-    distribution : str
-        The type of distribution to fit the PSD model.
     ds_env : xarray.Dataset, optional
         Environmental dataset used for fall velocity and water density estimates.
         If None, a default environment dataset will be loaded.
@@ -514,20 +510,14 @@ def generate_l2_model(
         Maximum PSD diameter. The default value is 8 mm.
     diameter_spacing : float, optional
         PSD diameter spacing. The default value is 0.05 mm.
-    fall_velocity_method : str, optional
-        Method to compute raindrop fall velocity. The default method is "Beard1976".
-    probability_method : str, optional
-        Method to compute probabilities. The default is ``cdf``.
-    likelihood : str, optional
-        Likelihood function to use for fitting. The default is ``multinomial``.
-    truncated_likelihood : bool, optional
-        Whether to use truncated likelihood. The default is ``True``.
-    optimizer : str, optional
-        Optimization method to use. The default is ``Nelder-Mead``.
-    order : int, optional
-        The order parameter for the ``normalized_gamma`` distribution.
-        The default value is 2.
-    add_gof_metrics : bool, optional
+    psd_model : str
+        The PSD model to fit. See ``available_psd_models()``.
+    optimization : str, optional
+        The fitting optimization procedure. Either "GS" (Grid Search), "ML (Maximum Likelihood)
+        or "MOM" (Method of Moments).
+    optimization_kwargs : dict, optional
+        Dictionary with arguments to customize the fitting procedure.
+    gof_metrics : bool, optional
         Whether to add goodness-of-fit metrics to the output dataset. The default is True.
 
     Returns
@@ -561,15 +551,23 @@ def generate_l2_model(
     # TODO --> try to fit and define reasonable criteria based on R2, max deviation, rain_rate abs/relative error
 
     ####------------------------------------------------------.
-    #### Define PSD model
+    #### Define default PSD optimization arguments
+    if psd_model is None and optimization is None:
+        psd_model = "NormalizedGammaPSD"
+        optimization = "GS"
+        optimization_kwargs = {
+            "target": "ND",
+            "transformation": "identity",
+            "error_order": 1,  # MAE
+        }
+
+    ####------------------------------------------------------.
+    #### Retrieve PSD parameters
     ds_psd_params = estimate_model_parameters(
         ds=ds,
-        distribution=distribution,
-        probability_method=probability_method,
-        likelihood=likelihood,
-        truncated_likelihood=truncated_likelihood,
-        optimizer=optimizer,
-        order=order,
+        psd_model=psd_model,
+        optimization=optimization,
+        optimization_kwargs=optimization_kwargs,
     )
     psd_name = ds_psd_params.attrs["disdrodb_psd_model"]
     psd = create_psd(psd_name, parameters=ds_psd_params)
@@ -610,7 +608,7 @@ def generate_l2_model(
 
     # Add GOF statistics if asked
     # TODO: Add metrics variables or GOF DataArray ?
-    if add_gof_metrics:
+    if gof_metrics:
         ds_gof = compute_gof_stats(drop_number_concentration=ds["drop_number_concentration"], psd=psd)
         ds_params.update(ds_gof)
 

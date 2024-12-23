@@ -166,7 +166,7 @@ def has_available_data(
     sample_interval=None,
     rolling=None,
     # Option for L2M
-    distribution=None,
+    model_name=None,
 ):
     """Return ``True`` if data are available for the given product and station."""
     # Define product directory
@@ -180,7 +180,7 @@ def has_available_data(
         sample_interval=sample_interval,
         rolling=rolling,
         # Option for L2M
-        distribution=distribution,
+        model_name=model_name,
         # Directory options
         check_exists=False,
     )
@@ -204,7 +204,7 @@ def check_data_availability(
     sample_interval=None,
     rolling=None,
     # Option for L2M
-    distribution=None,
+    model_name=None,
 ):
     """Check the station product data directory has files inside. If not, raise an error."""
     if not has_available_data(
@@ -217,7 +217,7 @@ def check_data_availability(
         sample_interval=sample_interval,
         rolling=rolling,
         # Option for L2M
-        distribution=distribution,
+        model_name=model_name,
     ):
         msg = f"The {product} station data directory of {data_source} {campaign_name} {station_name} is empty !"
         logger.error(msg)
