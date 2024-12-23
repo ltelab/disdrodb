@@ -20,6 +20,7 @@
 import warnings
 from contextlib import contextmanager
 
+
 @contextmanager
 def suppress_warnings():
     """Context manager suppressing RuntimeWarnings and UserWarnings."""
