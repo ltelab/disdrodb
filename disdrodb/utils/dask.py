@@ -25,7 +25,7 @@ def initialize_dask_cluster():
     """Initialize Dask Cluster."""
     import dask
     from dask.distributed import Client, LocalCluster
-    
+
     # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
     # Retrieve the number of process to run
