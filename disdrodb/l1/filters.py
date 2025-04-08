@@ -177,8 +177,8 @@ def define_spectrum_mask(
 
     # Define mask
     mask = np.logical_and(
-        velocity_lower >= below_fall_velocity,
-        velocity_upper <= above_fall_velocity,
+        np.logical_or(velocity_lower >= below_fall_velocity, velocity_upper >= below_fall_velocity),
+        np.logical_or(velocity_lower <= above_fall_velocity, velocity_upper <= above_fall_velocity),
     )
 
     # Maintant smallest drops

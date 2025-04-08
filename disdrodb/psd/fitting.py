@@ -723,6 +723,7 @@ def get_gamma_parameters(
 
 def get_lognormal_parameters(
     ds,
+    init_method=None,  # noqa: ARG001
     probability_method="cdf",
     likelihood="multinomial",
     truncated_likelihood=True,
@@ -805,6 +806,7 @@ def get_lognormal_parameters(
 
 def get_exponential_parameters(
     ds,
+    init_method=None,  # noqa: ARG001
     probability_method="cdf",
     likelihood="multinomial",
     truncated_likelihood=True,
@@ -1480,8 +1482,8 @@ def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", er
 
     Returns
     -------
-
-
+    ds_params : xarray.Dataset
+        Dataset containing the estimated Normalized Gamma distribution parameters.
     """
     # "target": ["ND", "LWC", "Z", "R"]
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
@@ -1966,9 +1968,8 @@ def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
     # Further special checks
     if optimization == "MOM":
         _ = check_mom_methods(mom_methods=optimization_kwargs["mom_methods"], psd_model=psd_model)
-    if optimization == "ML":
-        if optimization_kwargs["init_method"] is not None:
-            _ = check_mom_methods(mom_methods=optimization_kwargs["init_method"], psd_model=psd_model)
+    if optimization == "ML" and optimization_kwargs["init_method"] is not None:
+        _ = check_mom_methods(mom_methods=optimization_kwargs["init_method"], psd_model=psd_model)
 
 
 ####--------------------------------------------------------------------------------------.
@@ -2083,6 +2084,7 @@ def get_ml_parameters(
 
 
 def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_order=1):
+    """Retrieve PSD model parameters using Grid Search."""
     # Check valid psd_model
     check_psd_model(psd_model, optimization="GS")
 
@@ -2108,7 +2110,7 @@ def estimate_model_parameters(
     optimization,
     optimization_kwargs,
 ):
-
+    """Routine to estimate PSD model parameters."""
     optimization = check_optimization(optimization)
     check_optimization_kwargs(optimization_kwargs=optimization_kwargs, optimization=optimization, psd_model=psd_model)
 

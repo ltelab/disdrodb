@@ -566,6 +566,7 @@ class NormalizedGammaPSD(XarrayPSD):
         """Calculates the NormalizedGamma PSD values."""
         d_ratio = D / D50
         nf = Nw * 6.0 / 3.67**4 * (3.67 + mu) ** (mu + 4) / gamma_f(mu + 4)
+        # return nf * d_ratio ** mu * np.exp(-(mu + 3.67) * d_ratio)
         return nf * np.exp(mu * np.log(d_ratio) - (3.67 + mu) * d_ratio)
 
     def parameters_summary(self):

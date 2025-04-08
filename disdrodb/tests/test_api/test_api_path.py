@@ -93,7 +93,7 @@ def test_define_l0b_filename(product):
     if product == "L0B":
         expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"
     else:
-        expected_name = f"{product}.{sample_interval_str}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"
+        expected_name = f"{product}.{sample_interval_str}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"  # noqa: E501
 
     # Test the function
     define_filename_func = define_l0b_filename if product == "L0B" else define_l0c_filename
