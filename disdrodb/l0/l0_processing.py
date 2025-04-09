@@ -35,7 +35,7 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import infer_path_info_tuple
-from disdrodb.api.io import get_filepaths, get_required_product, remove_product
+from disdrodb.api.io import find_files, get_required_product, remove_product
 from disdrodb.api.path import (
     define_campaign_dir,
     define_l0a_filename,
@@ -1013,7 +1013,7 @@ def run_l0b_station(
     required_product = get_required_product(product)
     flag_not_available_data = False
     try:
-        filepaths = get_filepaths(
+        filepaths = find_files(
             base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
@@ -1234,7 +1234,7 @@ def run_l0c_station(
     required_product = get_required_product(product)
     flag_not_available_data = False
     try:
-        filepaths = get_filepaths(
+        filepaths = find_files(
             base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,

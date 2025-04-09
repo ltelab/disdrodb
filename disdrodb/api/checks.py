@@ -122,7 +122,6 @@ def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
         raise TypeError("'sensor_name' must be a string.")
     if sensor_name not in sensor_names:
         msg = f"{sensor_name} not valid {sensor_name}. Valid values are {sensor_names}."
-        logger.error(msg)
         raise ValueError(msg)
 
 

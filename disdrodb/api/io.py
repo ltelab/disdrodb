@@ -16,14 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Routines tot extract information from the DISDRODB infrastructure."""
+"""Routines to list and open DISDRODB products."""
 
 import os
 import shutil
 from typing import Optional
-
 import numpy as np
-
+import xarray as xr
 from disdrodb.api.checks import check_product
 from disdrodb.api.path import define_data_dir, define_product_dir, get_disdrodb_path
 from disdrodb.configs import get_base_dir
@@ -58,7 +57,7 @@ def filter_filepaths(filepaths, debugging_mode):
     return filepaths
 
 
-def get_filepaths(
+def find_files(
     data_source,
     campaign_name,
     station_name,
@@ -137,6 +136,79 @@ def get_filepaths(
     filepaths = sorted(filepaths)
 
     return filepaths
+
+
+def open_dataset(
+    data_source,
+    campaign_name,
+    station_name,
+    product,
+    model_name=None,
+    sample_interval=None,
+    rolling=None,
+    debugging_mode: bool = False,
+    base_dir: Optional[str] = None,
+    **open_kwargs,
+):
+    """Retrieve DISDRODB product files for a give station.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    product : str
+        The name DISDRODB product.
+    sample_interval : int, optional
+        The sampling interval in seconds of the product.
+        It must be specified only for product L2E and L2M !
+    rolling : bool, optional
+        Whether the dataset has been resampled by aggregating or rolling.
+        It must be specified only for product L2E and L2M !
+    model_name : str
+        The model name of the statistical distribution for the DSD.
+        It must be specified only for product L2M !
+    debugging_mode : bool, optional
+        If ``True``, it select maximum 3 files for debugging purposes.
+        The default is ``False``.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    Returns
+    -------
+    xr.Dataset
+
+    """
+    # Check product validity
+    if product == "RAW": 
+        raise ValueError("It's not possible to open the raw data with this function.")
+    # List product files
+    filepaths = find_files(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=product,
+        debugging_mode=debugging_mode,
+        model_name=model_name,
+        sample_interval=sample_interval,
+        rolling=rolling,
+    )
+    # Open L0A Parquet files
+    if product == "L0A": 
+        NotImplementedError()
+ 
+    # Open DISDRODB netCDF files using xarray
+    # - TODO: parallel option and add closers !
+    list_ds = [xr.open_dataset(fpath, **open_kwargs) for fpath in filepaths]
+    ds = xr.concat(list_ds, dim="time")
+    return ds 
 
 
 def _get_list_stations_dirs(product, campaign_dir):

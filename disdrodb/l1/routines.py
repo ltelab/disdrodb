@@ -32,7 +32,7 @@ from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
-from disdrodb.api.io import get_filepaths, get_required_product
+from disdrodb.api.io import find_files, get_required_product
 from disdrodb.api.path import (
     define_l1_filename,
 )
@@ -279,7 +279,7 @@ def run_l1_station(
     required_product = get_required_product(product)
     flag_not_available_data = False
     try:
-        filepaths = get_filepaths(
+        filepaths = find_files(
             base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,

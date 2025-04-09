@@ -27,6 +27,8 @@ from disdrodb.api.io import (
     available_campaigns,
     available_data_sources,
     available_stations,
+    find_files, 
+    open_dataset,
 )
 from disdrodb.configs import define_disdrodb_configs as define_configs
 from disdrodb.data_transfer.download_data import download_archive, download_station
@@ -48,6 +50,8 @@ __all__ = [
     "available_campaigns",
     "available_data_sources",
     "available_sensor_names",
+    "find_files",
+    "open_dataset",
     "check_archive_metadata_compliance",
     "check_archive_metadata_geolocation",
     "open_documentation",

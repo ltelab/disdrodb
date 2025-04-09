@@ -14,37 +14,51 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Functions for computation of DSD parameters."""
+"""Functions for computation of DSD parameters.
 
+The functions of this module expects xarray.DataArray objects as input.
+Zeros and NaN values input arrays are correctly processed.
+Infinite values should be removed beforehand or otherwise are propagated throughout the computations.
+"""
 import numpy as np
 import xarray as xr
+from disdrodb.api.checks import check_sensor_name
 
+DIAMETER_COORDS = ["diameter_bin_center", "diameter_bin_width"]
+VELOCITY_COORDS = ["velocity_bin_center", "velocity_bin_width"]
+
+
+def remove_diameter_coordinates(xr_obj): 
+    """Drop diameter coordinates from xarray object."""
+    return xr_obj.drop_vars(DIAMETER_COORDS, errors="ignore")
+
+
+def remove_velocity_coordinates(xr_obj): 
+    """Drop diameter coordinates from xarray object."""
+    return xr_obj.drop_vars(VELOCITY_COORDS, errors="ignore")
 
 def get_effective_sampling_area(sensor_name, diameter):
-    """Compute the effective sampling area of the disdrometer."""
+    """Compute the effective sampling area in m2 of the disdrometer.
+    
+    The diameter must be provided in meters !
+    """
+    check_sensor_name(sensor_name)
     if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
         # Calculate sampling area for each diameter bin (S_i)
         L = 180 / 1000  # Length of the Parsivel beam in m (180 mm)
         B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
-        sampling_area = L * (B - diameter / 1000 / 2)
-    elif sensor_name in "Thies_LPM":
-        # TODO: provided as variable varying with time?
+        sampling_area = L * (B - diameter / 2)
+        return sampling_area
+    if sensor_name in "Thies_LPM":
+        # Calculate sampling area for each diameter bin (S_i)
         L = 228 / 1000  # Length of the Parsivel beam in m (228 mm)
         B = 20 / 1000  # Width of the Parsivel beam in m (20 mm)
-        sampling_area = L * (B - diameter / 1000 / 2)
-    elif sensor_name in "RD80":
-        sampling_area = 1  # TODO
-    else:
-        raise NotImplementedError
-    return sampling_area
-
-
-def _get_spectrum_dims(ds):
-    if "velocity_bin_center" in ds.dims:
-        dims = ["diameter_bin_center", "velocity_bin_center"]
-    else:
-        dims = ["diameter_bin_center"]
-    return dims
+        sampling_area = L * (B - diameter / 2)
+        return sampling_area
+    if sensor_name in "RD80":
+        sampling_area = 0.005 # m2 
+        return sampling_area
+    raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")
 
 
 def get_drop_volume(diameter):
@@ -89,7 +103,7 @@ def get_drop_average_velocity(drop_number):
     """
     velocity = xr.ones_like(drop_number) * drop_number["velocity_bin_center"]
     average_velocity = ((velocity * drop_number).sum(dim="velocity_bin_center")) / drop_number.sum(
-        dim="velocity_bin_center",
+        dim="velocity_bin_center", skipna=False
     )
     # average_velocity = average_velocity.where(average_velocity > 0, 0)
     return average_velocity
@@ -148,12 +162,12 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     # Compute drop number concentration
     # - For disdrometer with velocity bins
     if "velocity_bin_center" in drop_number.dims:
-        drop_number_concentration = (drop_number / velocity).sum(dim=["velocity_bin_center"]) / (
+        drop_number_concentration = (drop_number / velocity).sum(dim=["velocity_bin_center"], skipna=False) / (
             sampling_area * diameter_bin_width * sample_interval
         )
     # - For impact disdrometers
     else:
-        drop_number_concentration = drop_number / (sampling_area * diameter_bin_width * sample_interval * velocity)
+        drop_number_concentration = (drop_number / velocity) / (sampling_area * diameter_bin_width * sample_interval)
     return drop_number_concentration
 
 
@@ -240,7 +254,7 @@ def get_total_number_concentration(drop_number_concentration, diameter_bin_width
     - \\( \\Delta D \\): Diameter bin width in millimeters (mm).
 
     """
-    total_number_concentration = (drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center")
+    total_number_concentration = (drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
     return total_number_concentration
 
 
@@ -289,7 +303,7 @@ def get_moment(drop_number_concentration, diameter, diameter_bin_width, moment):
     This computation integrates over the drop size distribution to provide a
     scalar value representing the statistical momen
     """
-    return ((diameter * 1000) ** moment * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center")
+    return ((diameter * 1000) ** moment * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
 
 
 ####------------------------------------------------------------------------------------------------------------------
@@ -343,7 +357,7 @@ def get_rain_rate(drop_counts, sampling_area, diameter, sample_interval):
         np.pi
         / 6
         / sample_interval
-        * (drop_counts / sampling_area * diameter**3).sum(dim="diameter_bin_center")
+        * (drop_counts / sampling_area * diameter**3).sum(dim="diameter_bin_center", skipna=False)
         * 3600
         * 1000
     )
@@ -407,7 +421,7 @@ def get_rain_rate_from_dsd(drop_number_concentration, velocity, diameter, diamet
     rain_rate = (
         np.pi
         / 6
-        * (drop_number_concentration * velocity * diameter**3 * diameter_bin_width).sum(dim="diameter_bin_center")
+        * (drop_number_concentration * velocity * diameter**3 * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
         * 3600
         * 1000
     )
@@ -489,7 +503,7 @@ def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diam
 
     """
     # Compute reflectivity in mm⁶·m⁻³
-    z = ((diameter * 1000) ** 6 * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center")
+    z = ((diameter * 1000) ** 6 * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
     invalid_mask = z > 0
     z = z.where(invalid_mask)
     # Compute equivalent reflectivity factor in dBZ
@@ -562,7 +576,7 @@ def get_liquid_water_content(drop_number_concentration, diameter, diameter_bin_w
     vol_constant = np.pi / 6.0 * water_density
 
     # Calculate the liquid water content
-    lwc = vol_constant * (diameter**3 * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center")
+    lwc = vol_constant * (diameter**3 * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
     return lwc
 
 
@@ -735,9 +749,8 @@ def get_min_max_diameter(drop_counts):
     return min_drop_diameter, max_drop_diameter
 
 
-def get_mode_diameter(drop_number_concentration):
+def get_mode_diameter(drop_number_concentration, diameter):
     """Get raindrop diameter with highest occurrence."""
-    diameter = drop_number_concentration["diameter_bin_center"]
     # If all NaN, set to 0 otherwise argmax fail when all NaN data
     idx_all_nan_mask = np.isnan(drop_number_concentration).all(dim="diameter_bin_center")
     drop_number_concentration = drop_number_concentration.where(~idx_all_nan_mask, 0)
@@ -748,8 +761,9 @@ def get_mode_diameter(drop_number_concentration):
     idx_observed_mode = drop_number_concentration.argmax(dim="diameter_bin_center")
     # Find the diameter corresponding to the "mode"
     diameter_mode = diameter.isel({"diameter_bin_center": idx_observed_mode})
-    diameter_mode = diameter_mode.drop(
+    diameter_mode = diameter_mode.drop_vars(
         ["diameter_bin_width", "diameter_bin_lower", "diameter_bin_upper", "diameter_bin_center"],
+        errors="ignore",
     )
     # Set to np.nan where data where all NaN or all 0
     idx_mask = np.logical_or(idx_all_nan_mask, idx_all_zero)
@@ -810,11 +824,15 @@ def get_mean_volume_drop_diameter(moment_3, moment_4):
     Mean Volume Diameter D_m: 5.0000 mm
 
     """
+    # Note: 
+    # - 0/0 return NaN 
+    # - <number>/0 return Inf  
     D_m = moment_4 / moment_3  # Units: [mm⁴] / [mm³] = [mm]
     return D_m
 
 
-def get_std_volume_drop_diameter(drop_number_concentration, diameter_bin_width, diameter, mean_volume_diameter):
+
+def get_std_volume_drop_diameter(moment_3, moment_4, moment_5): 
     r"""
     Calculate the standard deviation of the mass-weighted drop diameter (σₘ).
 
@@ -874,11 +892,15 @@ def get_std_volume_drop_diameter(drop_number_concentration, diameter_bin_width, 
     - Williams, C. R., and Coauthors, 2014: Describing the Shape of Raindrop Size Distributions Using Uncorrelated
       Raindrop Mass Spectrum Parameters. J. Appl. Meteor. Climatol., 53, 1282-1296, https://doi.org/10.1175/JAMC-D-13-076.1.
     """
-    const = drop_number_concentration * diameter_bin_width * diameter**3
-    numerator = ((diameter * 1000 - mean_volume_diameter) ** 2 * const).sum(dim="diameter_bin_center")
-    sigma_m = np.sqrt(numerator / const.sum(dim="diameter_bin_center"))
+    # # Full formula
+    # const = drop_number_concentration * diameter_bin_width * diameter**3
+    # numerator = ((diameter * 1000 - mean_volume_diameter) ** 2 * const).sum(dim="diameter_bin_center", skipna=False)
+    # sigma_m = np.sqrt(numerator / const.sum(dim="diameter_bin_center", skipna=False))
+    
+    # Moment formula
+    sigma_m = np.sqrt(((moment_3*moment_5 - moment_4**2)/moment_3**2))
     return sigma_m
-
+    
 
 def get_median_volume_drop_diameter(drop_number_concentration, diameter, diameter_bin_width, water_density=1000):
     r"""
@@ -921,14 +943,85 @@ def get_median_volume_drop_diameter(drop_number_concentration, diameter, diamete
     )
     return d50
 
-
-def get_quantile_volume_drop_diameter(
+ 
+def _get_quantile_volume_drop_diameter(
     drop_number_concentration,
     diameter,
     diameter_bin_width,
     fraction,
     water_density=1000,
 ):
+    # Check fraction value(s)
+    fraction = np.atleast_1d(fraction)
+    for value in fraction:
+        if not (0 < value < 1):
+            raise ValueError("Fraction values must be between 0 and 1 (exclusive)")
+    
+    # Create fraction DataArray
+    fraction = xr.DataArray(fraction, coords={"quantile": fraction}, dims="quantile")
+    
+    # Convert water density from kg/m3 to g/m3
+    water_density = water_density * 1000
+    
+    # Compute LWC per diameter bin [g/m3]
+    lwc_per_diameter = np.pi / 6.0 * water_density * (diameter**3 * drop_number_concentration * diameter_bin_width)
+        
+    # Compute the cumulative sum of LWC along the diameter bins
+    cumulative_lwc = lwc_per_diameter.cumsum(dim="diameter_bin_center", skipna=False)
+    
+    # ------------------------------------------------------.
+    # Retrieve total lwc and target lwc
+    total_lwc = cumulative_lwc.isel(diameter_bin_center=-1)
+    target_lwc = total_lwc * fraction
+    
+    # Retrieve idx half volume is reached
+    # --> If all NaN or False, argmax and _get_last_xr_valid_idx(fill_value=0) return 0 !
+    idx_upper = (cumulative_lwc >= target_lwc).argmax(dim="diameter_bin_center").astype(int)
+    idx_lower = _get_last_xr_valid_idx(
+        da_condition=(cumulative_lwc <= target_lwc),
+        dim="diameter_bin_center",
+        fill_value=0,
+    ).astype(int)
+    
+    # Define mask when fraction fall exactly at a diameter bin center
+    # - Also related to the case of only values in the first bin.
+    solution_is_bin_center = idx_upper == idx_lower
+    
+    # Define diameter increment from lower bin center
+    y1 = cumulative_lwc.isel(diameter_bin_center=idx_lower)
+    y2 = cumulative_lwc.isel(diameter_bin_center=idx_upper)
+    yt = target_lwc
+    d1 = diameter.isel(diameter_bin_center=idx_lower)  # m
+    d2 = diameter.isel(diameter_bin_center=idx_upper)  # m
+    d_increment = (d2 - d1) * (yt - y1) / (y2 - y1)
+    
+    # Define quantile diameter
+    quantile_diameter = xr.where(solution_is_bin_center, d1, d1 + d_increment)
+    
+    # Set NaN where total sum is 0 or all NaN
+    mask_invalid = np.logical_or(total_lwc == 0, np.isnan(total_lwc))
+    quantile_diameter = quantile_diameter.where(~mask_invalid)
+    
+    # Convert diameter to mm
+    quantile_diameter = quantile_diameter * 1000
+    
+    # If only 1 fraction specified, squeeze and drop quantile coordinate
+    if quantile_diameter.sizes["quantile"] == 1:
+        quantile_diameter = quantile_diameter.drop_vars("quantile").squeeze()
+    
+    # Drop meaningless coordinates 
+    quantile_diameter = remove_diameter_coordinates(quantile_diameter)
+    quantile_diameter = remove_velocity_coordinates(quantile_diameter) 
+    return quantile_diameter
+
+ 
+def get_quantile_volume_drop_diameter(
+    drop_number_concentration,
+    diameter,
+    diameter_bin_width,
+    fraction,
+    water_density=1000,
+    ):
     r"""
     Compute the diameter corresponding to a specified fraction of the cumulative liquid water content (LWC).
 
@@ -946,10 +1039,11 @@ def get_quantile_volume_drop_diameter(
         The equivalent volume diameters \( D \) of the drops in each bin, in meters (m).
     diameter_bin_width : xarray.DataArray
         The width \( \Delta D \) of each diameter bin, in millimeters (mm).
-    fraction : float
+    fraction : float or numpy.ndarray
         The fraction \( f \) of the total liquid water content to compute the diameter for.
         Default is 0.5, which computes the median volume diameter (D50).
-        For other percentiles, use 0.1 for D10, 0.9 for D90, etc. Must be between 0 and 1 (exclusive).
+        For other percentiles, use 0.1 for D10, 0.9 for D90, etc.
+        Values must be between 0 and 1 (exclusive).
     water_density : float, optional
         The density of water in kg/m^3. The default is 1000 kg/m3.
 
@@ -969,61 +1063,42 @@ def get_quantile_volume_drop_diameter(
     crosses the target LWC fraction.
 
     """
-    # Check fraction
-    if not (0 < fraction < 1):
-        raise ValueError("Fraction must be between 0 and 1 (exclusive)")
+    # Dask array backed
+    if hasattr(drop_number_concentration.data, "chunks"): 
+        fraction = np.atleast_1d(fraction) 
+        if fraction.size > 1:
+            dask_gufunc_kwargs = {"output_sizes": {"quantile": fraction.size}}
+            output_core_dims = [["quantile"]]
+        else: 
+            dask_gufunc_kwargs = None
+            output_core_dims = ((), )
+        quantile_diameter = xr.apply_ufunc(
+                _get_quantile_volume_drop_diameter,
+                drop_number_concentration,
+                kwargs={"fraction": fraction, 
+                        "diameter": diameter.compute(),
+                        "diameter_bin_width": diameter_bin_width.compute(),
+                        "water_density": water_density},
+                input_core_dims=[["diameter_bin_center"]],
+                vectorize=True, 
+                dask="parallelized",
+                output_core_dims=output_core_dims,
+                dask_gufunc_kwargs=dask_gufunc_kwargs,
+                output_dtypes=["float64"],
+        )
+        if fraction.size > 1:
+            quantile_diameter = quantile_diameter.assign_coords({"quantile": fraction})
+        return quantile_diameter 
 
-    # Convert water density from kg/m3 to g/m3
-    water_density = water_density * 1000
-
-    # Compute LWC per diameter bin [g/m3]
-    lwc_per_diameter = np.pi / 6.0 * water_density * (diameter**3 * drop_number_concentration * diameter_bin_width)
-
-    # Compute rain rate per diameter [mm/hr]
-    # rain_rate_per_diameter = np.pi / 6 * (
-    # (drop_number_concentration * velocity * diameter**3 * diameter_bin_width) * 3600 * 1000
-    # )
-
-    # Compute the cumulative sum of LWC along the diameter bins
-    cumulative_lwc = lwc_per_diameter.cumsum(dim="diameter_bin_center")
-
-    # ------------------------------------------------------.
-    # Retrieve total lwc and target lwc
-    total_lwc = cumulative_lwc.isel(diameter_bin_center=-1)
-    target_lwc = total_lwc * fraction
-
-    # Retrieve idx half volume is reached
-    # --> If all NaN or False, argmax and _get_last_xr_valid_idx(fill_value=0) return 0 !
-    idx_upper = (cumulative_lwc >= target_lwc).argmax(dim="diameter_bin_center")
-    idx_lower = _get_last_xr_valid_idx(
-        da_condition=(cumulative_lwc <= target_lwc),
-        dim="diameter_bin_center",
-        fill_value=0,
+    # Numpy array backed
+    quantile_diameter = _get_quantile_volume_drop_diameter(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,
+        diameter_bin_width=diameter_bin_width,
+        fraction=fraction,
+        water_density=water_density,
     )
-
-    # Define mask when fraction fall exactly at a diameter bin center
-    # - Also related to the case of only values in the first bin.
-    solution_is_bin_center = idx_upper == idx_lower
-
-    # Define diameter increment from lower bin center
-    y1 = cumulative_lwc.isel(diameter_bin_center=idx_lower)
-    y2 = cumulative_lwc.isel(diameter_bin_center=idx_upper)
-    yt = target_lwc
-    d1 = diameter.isel(diameter_bin_center=idx_lower)  # m
-    d2 = diameter.isel(diameter_bin_center=idx_upper)  # m
-    d_increment = (d2 - d1) * (yt - y1) / (y2 - y1)
-
-    # Define quantile diameter
-    d = xr.where(solution_is_bin_center, d1, d1 + d_increment)
-
-    # Set NaN where total sum is 0 or all NaN
-    mask_invalid = np.logical_or(total_lwc == 0, np.isnan(total_lwc))
-    d = d.where(~mask_invalid)
-
-    # Convert diameter to mm
-    d = d * 1000
-
-    return d
+    return quantile_diameter
 
 
 ####-----------------------------------------------------------------------------------------------------
@@ -1110,6 +1185,14 @@ def get_mom_normalized_intercept_parameter(moment_3, moment_4):
 
 ####--------------------------------------------------------------------------------------------------------
 #### Kinetic Energy Parameters
+
+
+def _get_spectrum_dims(ds):
+    if "velocity_bin_center" in ds.dims:
+        dims = ["diameter_bin_center", "velocity_bin_center"]
+    else:
+        dims = ["diameter_bin_center"]
+    return dims
 
 
 def get_min_max_drop_kinetic_energy(drop_number, diameter, velocity, water_density=1000):
@@ -1324,7 +1407,7 @@ def get_rainfall_kinetic_energy(drop_number, diameter, velocity, rain_accumulati
         * water_density
         / rain_accumulation
         * ((drop_number * diameter**3 * velocity**2) / sampling_area).sum(
-            dim=_get_spectrum_dims(drop_number),
+            dim=_get_spectrum_dims(drop_number), skipna=False
         )
     )
     return E

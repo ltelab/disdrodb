@@ -215,17 +215,15 @@ def compute_integral_parameters(
     )
 
     # Compute the diameter at which the distribution peak
-    mode_diameter = get_mode_diameter(drop_number_concentration)
+    mode_diameter = get_mode_diameter(drop_number_concentration,
+                                      diameter=diameter)* 1000 # Output converted to mm
 
     # Compute mean_volume_diameter (Dm) [mm]
     mean_volume_diameter = get_mean_volume_drop_diameter(moment_3=ds["M3"], moment_4=ds["M4"])
 
     # Compute σₘ[mm]
     sigma_m = get_std_volume_drop_diameter(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,
-        diameter_bin_width=diameter_bin_width,
-        mean_volume_diameter=mean_volume_diameter,
+        moment_3=ds["M3"], moment_4=ds["M4"], moment_5=ds["M5"]
     )
 
     # Compute normalized_intercept_parameter (Nw) [m-3·mm⁻¹]

@@ -23,7 +23,7 @@ import os
 import pandas as pd
 import pytest
 
-from disdrodb.api.io import get_filepaths
+from disdrodb.api.io import find_files
 from disdrodb.api.path import define_campaign_dir
 from disdrodb.l0.io import (
     _check_glob_pattern,
@@ -104,7 +104,7 @@ def test_get_l0a_filepaths(tmp_path):
 
     # Test that the function raises an error if no files presenet
     with pytest.raises(ValueError):
-        _ = get_filepaths(
+        _ = find_files(
             base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
@@ -124,7 +124,7 @@ def test_get_l0a_filepaths(tmp_path):
         )
 
     # Test that the function returns the correct number of files in debugging mode
-    filepaths = get_filepaths(
+    filepaths = find_files(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -135,7 +135,7 @@ def test_get_l0a_filepaths(tmp_path):
     assert len(filepaths) == 2  # max(2, 3)
 
     # Test that the function returns the correct number of files in normal mode
-    filepaths = get_filepaths(
+    filepaths = find_files(
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
