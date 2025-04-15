@@ -91,7 +91,10 @@ def compute_gof_stats(drop_number_concentration, psd):
         max_relative_deviation = max_deviation / fitted_values.max(dim="diameter_bin_center")
 
         # - Compute diameter difference of the distribution mode
-        diameter_mode_deviation = get_mode_diameter(observed_values, diameter) - get_mode_diameter(fitted_values, diameter)
+        diameter_mode_deviation = get_mode_diameter(observed_values, diameter) - get_mode_diameter(
+            fitted_values,
+            diameter,
+        )
 
     # Create an xarray.Dataset to hold the computed statistics
     ds = xr.Dataset(

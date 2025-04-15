@@ -134,6 +134,7 @@ def _generate_l2e(
         # - When we aggregate with sum, we don't skip NaN
         # --> Aggregation with original missing timesteps currently results in NaN !
         # TODO: Add tolerance on fraction of missing timesteps for large accumulation_intervals
+        # TODO: NaN should not be set as 0 !
         ds["drop_number"] = xr.where(np.isnan(ds["drop_number"]), 0, ds["drop_number"])
 
         # - Regularize dataset

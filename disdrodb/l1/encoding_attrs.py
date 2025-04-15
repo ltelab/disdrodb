@@ -329,7 +329,7 @@ def get_encoding_dict():
         "Z": {
             "dtype": "uint16",
             "scale_factor": 0.01,
-            "add_offset": -90,
+            "add_offset": -60,
             "_FillValue": 65535,
             "zlib": True,
             "complevel": 3,

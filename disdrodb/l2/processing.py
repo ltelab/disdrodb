@@ -23,26 +23,14 @@ from disdrodb.l1.encoding_attrs import get_attrs_dict, get_encoding_dict
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (
+    compute_integral_parameters,
+    compute_spectrum_parameters,
     get_drop_average_velocity,
     get_drop_number_concentration,
-    get_drop_volume,
     get_effective_sampling_area,
-    get_equivalent_reflectivity_factor,
-    get_kinetic_energy_density_flux,
-    get_liquid_water_content,
-    get_mean_volume_drop_diameter,
-    get_median_volume_drop_diameter,
-    get_min_max_drop_kinetic_energy,
-    get_mode_diameter,
-    get_moment,
-    get_normalized_intercept_parameter,
-    get_quantile_volume_drop_diameter,
+    get_kinetic_energy_variables_from_drop_number,
     get_rain_accumulation,
-    get_rain_rate,
-    get_rain_rate_from_dsd,
-    get_rainfall_kinetic_energy,
-    get_std_volume_drop_diameter,
-    get_total_number_concentration,
+    get_rain_rate_from_drop_number,
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
 from disdrodb.psd.fitting import compute_gof_stats
@@ -121,169 +109,11 @@ def define_velocity_array(ds):
     return velocity
 
 
-def compute_integral_parameters(
-    drop_number_concentration,
-    velocity,
-    diameter,
-    diameter_bin_width,
-    sample_interval,
-    water_density,
-):
-    """
-    Compute integral parameters of a drop size distribution (DSD).
-
-    Parameters
-    ----------
-    drop_number_concentration : array-like
-        Drop number concentration in each diameter bin [#/m3/mm].
-    velocity : array-like
-        Fall velocity of drops in each diameter bin [m/s].
-    diameter : array-like
-        Diameter of drops in each bin in m.
-    diameter_bin_width : array-like
-        Width of each diameter bin in mm.
-    sample_interval : float
-        Time interval over which the samples are collected in seconds.
-    water_density : float or array-like
-        Density of water [kg/m3].
-
-    Returns
-    -------
-    ds : xarray.Dataset
-        Dataset containing the computed integral parameters:
-        - Nt : Total number concentration [#/m3]
-        - R : Rain rate [mm/h]
-        - P : Rain accumulation [mm]
-        - Z : Reflectivity factor [dBZ]
-        - W : Liquid water content [g/m3]
-        - D10 : Diameter at the 10th quantile of the cumulative LWC distribution [mm]
-        - D50 : Median volume drop diameter [mm]
-        - D90 : Diameter at the 90th quantile of the cumulative LWC distribution [mm]
-        - Dmode : Diameter at which the distribution peaks [mm]
-        - Dm : Mean volume drop diameter [mm]
-        - sigma_m : Standard deviation of the volume drop diameter [mm]
-        - Nw : Normalized intercept parameter [m-3·mm⁻¹]
-        - M1 to M6 : Moments of the drop size distribution
-    """
-    # diameter in m!
-
-    # Initialize dataset
-    ds = xr.Dataset()
-
-    # Compute total number concentration (Nt) [#/m3]
-    total_number_concentration = get_total_number_concentration(
-        drop_number_concentration=drop_number_concentration,
-        diameter_bin_width=diameter_bin_width,
-    )
-
-    # Compute rain rate
-    rain_rate = get_rain_rate_from_dsd(
-        drop_number_concentration=drop_number_concentration,
-        velocity=velocity,
-        diameter=diameter,
-        diameter_bin_width=diameter_bin_width,
-    )
-
-    # Compute rain accumulation (P) [mm]
-    rain_accumulation = get_rain_accumulation(rain_rate=rain_rate, sample_interval=sample_interval)
-
-    # Compute moments (m0 to m6)
-    for moment in range(0, 7):
-        ds[f"M{moment}"] = get_moment(
-            drop_number_concentration=drop_number_concentration,
-            diameter=diameter,
-            diameter_bin_width=diameter_bin_width,
-            moment=moment,
-        )
-
-    # Compute Liquid Water Content (LWC) (W) [g/m3]
-    liquid_water_content = get_liquid_water_content(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,
-        diameter_bin_width=diameter_bin_width,
-        water_density=water_density,
-    )
-
-    # lwc_m = get_mom_liquid_water_content(moment_3=ds_l2["M3"],
-    #                                      water_density=water_density)
-
-    # Compute reflectivity in dBZ
-    reflectivity_factor = get_equivalent_reflectivity_factor(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,
-        diameter_bin_width=diameter_bin_width,
-    )
-
-    # Compute the diameter at which the distribution peak
-    mode_diameter = get_mode_diameter(drop_number_concentration,
-                                      diameter=diameter)* 1000 # Output converted to mm
-
-    # Compute mean_volume_diameter (Dm) [mm]
-    mean_volume_diameter = get_mean_volume_drop_diameter(moment_3=ds["M3"], moment_4=ds["M4"])
-
-    # Compute σₘ[mm]
-    sigma_m = get_std_volume_drop_diameter(
-        moment_3=ds["M3"], moment_4=ds["M4"], moment_5=ds["M5"]
-    )
-
-    # Compute normalized_intercept_parameter (Nw) [m-3·mm⁻¹]
-    normalized_intercept_parameter = get_normalized_intercept_parameter(
-        liquid_water_content=liquid_water_content,
-        mean_volume_diameter=mean_volume_diameter,
-        water_density=water_density,
-    )
-
-    # Nw = get_mom_normalized_intercept_parameter(moment_3=ds_l2["M3"],
-    #                                             moment_4=ds_l2["M4"])
-
-    # Compute median volume_drop_diameter
-    d50 = get_median_volume_drop_diameter(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,
-        diameter_bin_width=diameter_bin_width,
-        water_density=water_density,
-    )
-
-    # Compute volume_drop_diameter for the 10th and 90th quantile of the cumulative LWC distribution
-    d10 = get_quantile_volume_drop_diameter(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,
-        diameter_bin_width=diameter_bin_width,
-        fraction=0.1,
-        water_density=water_density,
-    )
-
-    d90 = get_quantile_volume_drop_diameter(
-        drop_number_concentration=drop_number_concentration,
-        diameter=diameter,
-        diameter_bin_width=diameter_bin_width,
-        fraction=0.9,
-        water_density=water_density,
-    )
-
-    ds["Nt"] = total_number_concentration
-    ds["R"] = rain_rate
-    ds["P"] = rain_accumulation
-    ds["Z"] = reflectivity_factor
-    ds["W"] = liquid_water_content
-
-    ds["D10"] = d10
-    ds["D50"] = d50
-    ds["D90"] = d90
-    ds["Dmode"] = mode_diameter
-    ds["Dm"] = mean_volume_diameter
-    ds["sigma_m"] = sigma_m
-
-    ds["Nw"] = normalized_intercept_parameter
-
-    return ds
-
-
 ####--------------------------------------------------------------------------
 #### L2 Empirical Parameters
 
 
-def generate_l2_empirical(ds, ds_env=None):
+def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
     """Generate the DISDRODB L2E dataset from the DISDRODB L1 dataset.
 
     Parameters
@@ -299,6 +129,9 @@ def generate_l2_empirical(ds, ds_env=None):
     xarray.Dataset
         DISRODB L2E dataset.
     """
+    # Initialize L2E dataset
+    ds_l2 = xr.Dataset()
+
     # Retrieve attributes
     attrs = ds.attrs.copy()
 
@@ -327,32 +160,29 @@ def generate_l2_empirical(ds, ds_env=None):
     diameter = ds["diameter_bin_center"] / 1000  # m
     diameter_bin_width = ds["diameter_bin_width"]  # mm
     drop_number = ds["drop_number"]
-    drop_counts = ds["drop_counts"]
     sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])  # s
 
     # Compute sampling area [m2]
     sampling_area = get_effective_sampling_area(sensor_name=sensor_name, diameter=diameter)  # m2
 
-    # Select relevant L1 variables to L2 product
+    # Copy relevant L1 variables to L2 product
     variables = [
-        "drop_number",
-        "drop_counts",
-        "drop_number_concentration",
+        "drop_number",  # 2D V x D
+        "drop_counts",  # 1D D
         "sample_interval",
         "n_drops_selected",
         "n_drops_discarded",
         "Dmin",
         "Dmax",
-        "drop_average_velocity",
         "fall_velocity",
     ]
 
     variables = [var for var in variables if var in ds]
-    ds_l1_subset = ds[variables]
+    ds_l2.update(ds[variables])
 
     # -------------------------------------------------------------------------------------------
     # Compute and add drop average velocity if an optical disdrometer (i.e OTT Parsivel or ThiesLPM)
-    # - Recompute it because if input dataset is aggregated, it must be updated !
+    # - We recompute it because if the input dataset is aggregated, it must be updated !
     if has_velocity_dimension:
         ds["drop_average_velocity"] = get_drop_average_velocity(ds["drop_number"])
 
@@ -360,8 +190,6 @@ def generate_l2_empirical(ds, ds_env=None):
     # Define velocity array with dimension 'velocity_method'
     velocity = define_velocity_array(ds)
 
-    # -------------------------------------------------------
-    #### Compute L2 variables
     # Compute drop number concentration (Nt) [#/m3/mm]
     drop_number_concentration = get_drop_number_concentration(
         drop_number=drop_number,
@@ -370,88 +198,68 @@ def generate_l2_empirical(ds, ds_env=None):
         sample_interval=sample_interval,
         sampling_area=sampling_area,
     )
+    ds_l2["drop_number_concentration"] = drop_number_concentration
 
-    # Compute rain rate (R) [mm/hr]
-    rain_rate = get_rain_rate(
-        drop_counts=drop_counts,
-        sampling_area=sampling_area,
-        diameter=diameter,
-        sample_interval=sample_interval,
-    )
-
-    # Compute rain accumulation (P) [mm]
-    rain_accumulation = get_rain_accumulation(rain_rate=rain_rate, sample_interval=sample_interval)
-
-    # Compute drop volume information (per diameter bin)
-    drop_volume = drop_counts * get_drop_volume(diameter)  # (np.pi/6 * diameter**3 * drop_counts)
-    drop_total_volume = drop_volume.sum(dim="diameter_bin_center")
-    drop_relative_volume_ratio = drop_volume / drop_total_volume
-
-    # Compute kinetic energy variables
-    # --> TODO: implement from_dsd (using drop_concentration!)
-    min_drop_kinetic_energy, max_drop_kinetic_energy = get_min_max_drop_kinetic_energy(
-        drop_number=drop_number,
-        diameter=diameter,
-        velocity=velocity,
-        water_density=water_density,
-    )
-
-    kinetic_energy_density_flux = get_kinetic_energy_density_flux(
-        drop_number=drop_number,
-        diameter=diameter,
-        velocity=velocity,
-        sample_interval=sample_interval,
-        sampling_area=sampling_area,
-        water_density=water_density,
-    )
-
-    rainfall_kinetic_energy = get_rainfall_kinetic_energy(
-        drop_number=drop_number,
-        diameter=diameter,
-        velocity=velocity,
-        sampling_area=sampling_area,
-        rain_accumulation=rain_accumulation,
-        water_density=water_density,
-    )
+    # -------------------------------------------------------
+    #### Compute L2 spectra
+    if compute_spectra:
+        ds_spectrum = compute_spectrum_parameters(
+            drop_number_concentration,
+            velocity=ds["fall_velocity"],
+            diameter=diameter,
+            sample_interval=sample_interval,
+            water_density=water_density,
+        )
+        ds_l2.update(ds_spectrum)
 
     # ----------------------------------------------------------------------------
-    # Compute integral parameters
-    ds_l2 = compute_integral_parameters(
+    #### Compute L2 integral parameters from drop_number_concentration
+    ds_parameters = compute_integral_parameters(
         drop_number_concentration=drop_number_concentration,
-        velocity=velocity,
+        velocity=ds["fall_velocity"],
         diameter=diameter,
         diameter_bin_width=diameter_bin_width,
         sample_interval=sample_interval,
         water_density=water_density,
     )
 
+    # -------------------------------------------------------
+    #### Compute R and P from drop number (without velocity assumptions)
+    # - Rain rate and accumulation computed with this method are not influenced by the fall velocity of drops !
+    ds_l2["Rm"] = get_rain_rate_from_drop_number(
+        drop_number=drop_number,
+        sampling_area=sampling_area,
+        diameter=diameter,
+        sample_interval=sample_interval,
+    )
+    # Compute rain accumulation (P) [mm]
+    ds_l2["Pm"] = get_rain_accumulation(rain_rate=ds_l2["Rm"], sample_interval=sample_interval)
+
+    # -------------------------------------------------------
+    #### Compute KE integral parameters directly from drop_number
+    # - The kinetic energy variables can be computed using the actual measured fall velocity by the sensor.
+    if has_velocity_dimension:
+        ds_ke = get_kinetic_energy_variables_from_drop_number(
+            drop_number=drop_number,
+            diameter=diameter,
+            velocity=velocity,
+            sampling_area=sampling_area,
+            sample_interval=sample_interval,
+            water_density=water_density,
+        )
+        # Combine integral parameters
+        ke_vars = list(ds_ke.data_vars)
+        ds_ke = ds_ke.expand_dims(dim={"source": ["drop_number"]}, axis=-1)
+        ds_ke_dsd = ds_parameters[ke_vars].expand_dims(dim={"source": ["drop_number_concentration"]}, axis=-1)
+        ds_ke = xr.concat((ds_ke_dsd, ds_ke), dim="source")
+        ds_parameters = ds_parameters.drop_vars(ke_vars)
+        for var in ke_vars:
+            ds_parameters[var] = ds_ke[var]
+
     # ----------------------------------------------------------------------------
-    #### Create L2 Dataset
-    # Update with L1 parameters
-    ds_l2.update(ds_l1_subset)
-
-    ds_l2["drop_number"] = drop_number  # 2D V x D
-    ds_l2["drop_counts"] = drop_counts  # 1D D
-    ds_l2["drop_number_concentration"] = drop_number_concentration
-
-    ds_l2["drop_volume"] = drop_volume
-    ds_l2["drop_total_volume"] = drop_total_volume
-    ds_l2["drop_relative_volume_ratio"] = drop_relative_volume_ratio
-
-    ds_l2["R"] = rain_rate
-    ds_l2["P"] = rain_accumulation
-
-    # TODO: adapt code to compute from drop_number_concentration
-    ds_l2["KEmin"] = min_drop_kinetic_energy
-    ds_l2["KEmax"] = max_drop_kinetic_energy
-    ds_l2["E"] = rainfall_kinetic_energy
-    ds_l2["KE"] = kinetic_energy_density_flux
-
-    # ----------------------------------------------------------------------------
-
-    # ----------------------------------------------------------------------------.
-    # Remove timesteps where rain rate is 0
-    ds_l2 = ds_l2.isel(time=ds_l2["R"] > 0)
+    #### Finalize L2 Dataset
+    # Add DSD integral parameters
+    ds_l2.update(ds_parameters)
 
     # ----------------------------------------------------------------------------.
     #### Add encodings and attributes
@@ -605,7 +413,6 @@ def generate_l2_model(
     ds_params.update(ds_psd_params)
 
     # Add GOF statistics if asked
-    # TODO: Add metrics variables or GOF DataArray ?
     if gof_metrics:
         ds_gof = compute_gof_stats(drop_number_concentration=ds["drop_number_concentration"], psd=psd)
         ds_params.update(ds_gof)

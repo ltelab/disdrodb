@@ -21,8 +21,10 @@
 import os
 import shutil
 from typing import Optional
+
 import numpy as np
 import xarray as xr
+
 from disdrodb.api.checks import check_product
 from disdrodb.api.path import define_data_dir, define_product_dir, get_disdrodb_path
 from disdrodb.configs import get_base_dir
@@ -186,7 +188,7 @@ def open_dataset(
 
     """
     # Check product validity
-    if product == "RAW": 
+    if product == "RAW":
         raise ValueError("It's not possible to open the raw data with this function.")
     # List product files
     filepaths = find_files(
@@ -201,14 +203,15 @@ def open_dataset(
         rolling=rolling,
     )
     # Open L0A Parquet files
-    if product == "L0A": 
+    if product == "L0A":
         NotImplementedError()
- 
+
     # Open DISDRODB netCDF files using xarray
     # - TODO: parallel option and add closers !
-    list_ds = [xr.open_dataset(fpath, **open_kwargs) for fpath in filepaths]
+    # - decode_timedelta -- > sample_interval not decoded to timedelta !
+    list_ds = [xr.open_dataset(fpath, decode_timedelta=False, **open_kwargs) for fpath in filepaths]
     ds = xr.concat(list_ds, dim="time")
-    return ds 
+    return ds
 
 
 def _get_list_stations_dirs(product, campaign_dir):

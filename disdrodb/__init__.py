@@ -27,7 +27,7 @@ from disdrodb.api.io import (
     available_campaigns,
     available_data_sources,
     available_stations,
-    find_files, 
+    find_files,
     open_dataset,
 )
 from disdrodb.configs import define_disdrodb_configs as define_configs
@@ -42,6 +42,15 @@ from disdrodb.metadata.checks import (
 PRODUCT_VERSION = "V0"
 SOFTWARE_VERSION = "V" + importlib.metadata.version("disdrodb")
 CONVENTIONS = "CF-1.10, ACDD-1.3"
+
+# Define coordinates names
+# TODO: make it configurable
+DIAMETER_COORDS = ["diameter_bin_center", "diameter_bin_width", "diameter_bin_lower", "diameter_bin_upper"]
+VELOCITY_COORDS = ["velocity_bin_center", "velocity_bin_width", "velocity_bin_lower", "velocity_bin_upper"]
+VELOCITY_DIMENSION = "velocity_bin_center"
+DIAMETER_DIMENSION = "diameter_bin_center"
+OPTICAL_SENSORS = ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]
+IMPACT_SENSORS = ["RD_80"]
 
 
 __all__ = [

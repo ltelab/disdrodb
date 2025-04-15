@@ -22,43 +22,14 @@ Infinite values should be removed beforehand or otherwise are propagated through
 """
 import numpy as np
 import xarray as xr
+
+from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.api.checks import check_sensor_name
-
-DIAMETER_COORDS = ["diameter_bin_center", "diameter_bin_width"]
-VELOCITY_COORDS = ["velocity_bin_center", "velocity_bin_width"]
-
-
-def remove_diameter_coordinates(xr_obj): 
-    """Drop diameter coordinates from xarray object."""
-    return xr_obj.drop_vars(DIAMETER_COORDS, errors="ignore")
-
-
-def remove_velocity_coordinates(xr_obj): 
-    """Drop diameter coordinates from xarray object."""
-    return xr_obj.drop_vars(VELOCITY_COORDS, errors="ignore")
-
-def get_effective_sampling_area(sensor_name, diameter):
-    """Compute the effective sampling area in m2 of the disdrometer.
-    
-    The diameter must be provided in meters !
-    """
-    check_sensor_name(sensor_name)
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
-        # Calculate sampling area for each diameter bin (S_i)
-        L = 180 / 1000  # Length of the Parsivel beam in m (180 mm)
-        B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
-        sampling_area = L * (B - diameter / 2)
-        return sampling_area
-    if sensor_name in "Thies_LPM":
-        # Calculate sampling area for each diameter bin (S_i)
-        L = 228 / 1000  # Length of the Parsivel beam in m (228 mm)
-        B = 20 / 1000  # Width of the Parsivel beam in m (20 mm)
-        sampling_area = L * (B - diameter / 2)
-        return sampling_area
-    if sensor_name in "RD80":
-        sampling_area = 0.005 # m2 
-        return sampling_area
-    raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")
+from disdrodb.utils.xarray import (
+    remove_diameter_coordinates,
+    remove_velocity_coordinates,
+    xr_get_last_valid_idx,
+)
 
 
 def get_drop_volume(diameter):
@@ -80,10 +51,7 @@ def get_drop_volume(diameter):
     The volume is calculated using the formula for the volume of a sphere:
     V = (π/6) * d^3, where d is the diameter of the droplet.
     """
-    return np.pi / 6 * diameter**3  # /6 = 4/3*(0.5**3)
-
-
-####-------------------------------------------------------------------------------------------------------------------.
+    return np.pi / 6 * diameter**3  # 1/6 = 4/3*(0.5**3)
 
 
 def get_drop_average_velocity(drop_number):
@@ -95,18 +63,53 @@ def get_drop_average_velocity(drop_number):
     drop_number : xarray.DataArray
         Array of drop counts \\( n(D,v) \\) per diameter (and velocity, if available) bins
         over the time integration period.
+        The DataArray must have the ``velocity_bin_center`` coordinate.
 
     Returns
     -------
     average_velocity : xarray.DataArray
         Array of drop average velocity \\( v_m(D))) \\) in m·s⁻¹ .
+        At timesteps with zero drop counts, it returns NaN.
     """
     velocity = xr.ones_like(drop_number) * drop_number["velocity_bin_center"]
-    average_velocity = ((velocity * drop_number).sum(dim="velocity_bin_center")) / drop_number.sum(
-        dim="velocity_bin_center", skipna=False
+    average_velocity = ((velocity * drop_number).sum(dim=VELOCITY_DIMENSION)) / drop_number.sum(
+        dim=VELOCITY_DIMENSION,
+        skipna=False,
     )
-    # average_velocity = average_velocity.where(average_velocity > 0, 0)
     return average_velocity
+
+
+####-------------------------------------------------------------------------------------------------------------------.
+#### DSD Spectrum, Concentration, Moments
+
+
+def get_effective_sampling_area(sensor_name, diameter):
+    """Compute the effective sampling area in m2 of the disdrometer.
+
+    The diameter must be provided in meters !
+    """
+    check_sensor_name(sensor_name)
+    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+        # Calculate sampling area for each diameter bin (S_i)
+        L = 180 / 1000  # Length of the Parsivel beam in m (180 mm)
+        B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
+        sampling_area = L * (B - diameter / 2)
+        return sampling_area
+    if sensor_name in "Thies_LPM":
+        # Calculate sampling area for each diameter bin (S_i)
+        L = 228 / 1000  # Length of the Parsivel beam in m (228 mm)
+        B = 20 / 1000  # Width of the Parsivel beam in m (20 mm)
+        sampling_area = L * (B - diameter / 2)
+        return sampling_area
+    if sensor_name in "RD_80":
+        sampling_area = 0.005  # m2
+        return sampling_area
+    raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")
+
+
+def get_bin_dimensions(xr_obj):
+    """Return the dimensions of the drop spectrum."""
+    return sorted([k for k in [DIAMETER_DIMENSION, VELOCITY_DIMENSION] if k in xr_obj.dims])
 
 
 def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sampling_area, sample_interval):
@@ -114,18 +117,21 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     Calculate the volumetric drop number concentration \\( N(D) \\) per diameter class.
 
     Computes the drop number concentration \\( N(D) \\) [m⁻³·mm⁻¹] for each diameter
-    class based on the measured drop counts and sensor parameters. This represents
-    the number of drops per unit volume per unit diameter interval.
+    class based on the measured drop counts and sensor parameters.
+    This represents the number of drops per unit volume per unit diameter interval.
     It is also referred to as the drop size distribution N(D) per cubic metre per millimetre [m-3 mm-1]
 
     Parameters
     ----------
     velocity : xarray.DataArray
         Array of drop fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
+        Typically the estimated fall velocity is used.
+        But one can also pass the velocity bin center of the optical disdrometer, which get broadcasted
+        along the diameter bin dimension.
     diameter_bin_width : xarray.DataArray
         Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
     drop_number : xarray.DataArray
-        Array of drop counts \\( n(D,v) \\) per diameter (and velocity, if available)
+        Array of drop counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
         bins over the time integration period.
     sample_interval : float or xarray.DataArray
         Time over which the drops are counted \\( \\Delta t \\) in seconds (s).
@@ -161,63 +167,14 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
 
     # Compute drop number concentration
     # - For disdrometer with velocity bins
-    if "velocity_bin_center" in drop_number.dims:
-        drop_number_concentration = (drop_number / velocity).sum(dim=["velocity_bin_center"], skipna=False) / (
+    if VELOCITY_DIMENSION in drop_number.dims:
+        drop_number_concentration = (drop_number / velocity).sum(dim=VELOCITY_DIMENSION, skipna=False) / (
             sampling_area * diameter_bin_width * sample_interval
         )
     # - For impact disdrometers
     else:
         drop_number_concentration = (drop_number / velocity) / (sampling_area * diameter_bin_width * sample_interval)
     return drop_number_concentration
-
-
-# def get_drop_number_concentration1(drop_counts, velocity, diameter_bin_width, sampling_area, sample_interval):
-#     r"""
-#     Calculate the volumetric drop number concentration \\( N(D) \\) per diameter class.
-
-#     Computes the drop number concentration \\( N(D) \\) [m⁻³·mm⁻¹] for each diameter
-#     class based on the measured drop counts and sensor parameters. This represents
-#     the number of drops per unit volume per unit diameter interval.
-#     It is also referred to as the drop size distribution N(D) per cubic metre per millimetre [m-3 mm-1]
-
-#     Parameters
-#     ----------
-#     velocity : xarray.DataArray
-#         Array of drop fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
-#     diameter_bin_width : xarray.DataArray
-#         Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
-#     drop_counts : xarray.DataArray
-#         Array of drop counts \\( n(D) \\) per diameter bin over the time integration period.
-#     sample_interval : float or xarray.DataArray
-#         Time over which the drops are counted \\( \\Delta t \\) in seconds (s).
-#     sampling_area : xarray.DataArray
-
-#     Returns
-#     -------
-#     drop_number_concentration : xarray.DataArray or ndarray
-#         Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹, representing
-#         the number of drops per unit volume per unit diameter interval.
-
-#     Notes
-#     -----
-#     The drop number concentration \\( N(D) \\) is calculated using:
-
-#     .. math::
-
-#         N(D) = \frac{n(D)}{A_{\text{eff}}(D) \\cdot \\Delta D \\cdot \\Delta t \\cdot v(D)}
-
-#     where:
-
-#     - \\( n(D) \\): Number of drops counted in diameter bin \\( D \\).
-#     - \\( A_{\text{eff}}(D) \\): Effective sampling area of the sensor for diameter \\( D \\) in square meters (m²).
-#     - \\( \\Delta D \\): Diameter bin width in millimeters (mm).
-#     - \\( \\Delta t \\): Time integration period in seconds (s).
-#     - \\( v(D) \\): Fall velocity of drops in diameter bin \\( D \\) in meters per second (m/s).
-
-#     The effective sampling area \\( A_{\text{eff}}(D) \\) depends on the sensor and may vary with drop diameter.
-#     """
-#     drop_number_concentration = drop_counts / (sampling_area * diameter_bin_width * sample_interval * velocity)
-#     return drop_number_concentration
 
 
 def get_total_number_concentration(drop_number_concentration, diameter_bin_width):
@@ -254,7 +211,10 @@ def get_total_number_concentration(drop_number_concentration, diameter_bin_width
     - \\( \\Delta D \\): Diameter bin width in millimeters (mm).
 
     """
-    total_number_concentration = (drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
+    total_number_concentration = (drop_number_concentration * diameter_bin_width).sum(
+        dim=DIAMETER_DIMENSION,
+        skipna=False,
+    )
     return total_number_concentration
 
 
@@ -303,77 +263,17 @@ def get_moment(drop_number_concentration, diameter, diameter_bin_width, moment):
     This computation integrates over the drop size distribution to provide a
     scalar value representing the statistical momen
     """
-    return ((diameter * 1000) ** moment * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
+    return ((diameter * 1000) ** moment * drop_number_concentration * diameter_bin_width).sum(
+        dim=DIAMETER_DIMENSION,
+        skipna=False,
+    )
 
 
 ####------------------------------------------------------------------------------------------------------------------
-#### Rain and Reflectivity
+#### Rain Rate and Accumulation
 
 
-def get_rain_rate(drop_counts, sampling_area, diameter, sample_interval):
-    r"""
-    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and drop velocities.
-
-    This function calculates the rain rate by integrating over the drop size distribution (DSD),
-    considering the volume of water falling per unit time and area. It uses the number of drops
-    counted in each diameter class, the effective sampling area of the sensor, the diameters of the
-    drops, and the time interval over which the drops are counted.
-
-    Parameters
-    ----------
-    drop_counts : xarray.DataArray
-        Array representing the number of drops per diameter class \\( n(D) \\) in each bin.
-    sample_interval : float or xarray.DataArray
-        The time duration over which drops are counted \\( \\Delta t \\) in seconds (s).
-    sampling_area : float or xarray.DataArray
-        The effective sampling area \\( A \\) of the sensor in square meters (m²).
-    diameter : xarray.DataArray
-        Array of drop diameters \\( D \\) in meters (m).
-
-    Returns
-    -------
-    rain_rate : xarray.DataArray
-        The computed rain rate \\( R \\) in millimeters per hour (mm/h), which represents the volume
-        of water falling per unit area per unit time.
-
-    Notes
-    -----
-    The rain rate \\( R \\) is calculated using the following formula:
-
-    .. math::
-
-        R = \frac{\\pi}{6} \times 10^{-3} \times 3600 \times
-        \\sum_{\text{bins}} n(D) \cdot A(D) \cdot D^3 \cdot \\Delta t
-
-    Where:
-    - \\( n(D) \\) is the number of drops in each diameter class.
-    - \\( A(D) \\) is the effective sampling area.
-    - \\( D \\) is the drop diameter.
-    - \\( \\Delta t \\) is the time interval for drop counts.
-
-    This formula incorporates a conversion factor to express the rain rate in millimeters per hour.
-    """
-    rain_rate = (
-        np.pi
-        / 6
-        / sample_interval
-        * (drop_counts / sampling_area * diameter**3).sum(dim="diameter_bin_center", skipna=False)
-        * 3600
-        * 1000
-    )
-
-    # 0.6 or / 6 --> Different variant across articles and codes !!! (pydsd 0.6, raupach 2015, ...)
-    # -->  1/6 * 3600 = 600 = 0.6  * 1e3 = 6 * 1e2
-    # -->  1/6 * 3600 * 1000 = 0.6 * 1e6 = 6 * 1e5 --> 6 * 1e-4 (if diameter in mm)
-    # rain_rate = np.pi * 0.6 * 1e3 / sample_interval * (
-    #   (drop_counts * diameter**3 / sampling_area).sum(dim="diameter_bin_center") * 1000))
-    # rain_rate = np.pi / 6 / sample_interval * (
-    #   (drop_counts * diameter**3 / sampling_area).sum(dim="diameter_bin_center") * 1000 * 3600)
-
-    return rain_rate
-
-
-def get_rain_rate_from_dsd(drop_number_concentration, velocity, diameter, diameter_bin_width):
+def get_rain_rate(drop_number_concentration, velocity, diameter, diameter_bin_width):
     r"""
     Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and raindrop velocities.
 
@@ -417,22 +317,116 @@ def get_rain_rate_from_dsd(drop_number_concentration, velocity, diameter, diamet
     - The factor \\( 3600 \\) converts from seconds to hours.
 
     """
-    # The following formula assume diameter in mm !!!
+    if VELOCITY_DIMENSION in velocity.dims:
+        raise ValueError(f"The 'velocity' DataArray must not have the {VELOCITY_DIMENSION} dimension.")
+
+    rain_rate = (
+        6
+        * np.pi
+        * 1e5
+        * (drop_number_concentration * (velocity * diameter**3 * diameter_bin_width)).sum(
+            dim=DIAMETER_DIMENSION,
+            skipna=False,
+        )
+    )
+    return rain_rate
+
+
+def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_interval):
+    r"""
+    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and drop velocities.
+
+    This function calculates the rain rate by integrating over the drop size distribution (DSD),
+    considering the volume of water falling per unit time and area. It uses the number of drops
+    counted in each diameter class, the effective sampling area of the sensor, the diameters of the
+    drops, and the time interval over which the drops are counted.
+
+    Parameters
+    ----------
+    drop_number : xarray.DataArray
+        Array representing the number of drops per diameter class
+        and, optionally, velocity class \\( n(D, (v)) \\).
+    sample_interval : float or xarray.DataArray
+        The time duration over which drops are counted \\( \\Delta t \\) in seconds (s).
+    sampling_area : float or xarray.DataArray
+        The effective sampling area \\( A \\) of the sensor in square meters (m²).
+    diameter : xarray.DataArray
+        Array of drop diameters \\( D \\) in meters (m).
+
+    Returns
+    -------
+    rain_rate : xarray.DataArray
+        The computed rain rate \\( R \\) in millimeters per hour (mm/h), which represents the volume
+        of water falling per unit area per unit time.
+
+    Notes
+    -----
+    The rain rate \\( R \\) is calculated using the following formula:
+
+    .. math::
+
+        R = \frac{\\pi}{6} \times 10^{3} \times 3600 \times
+            \\sum_{\text{bins}} n(D) \cdot A(D) \cdot D^3 \cdot \\Delta t
+
+          = \\pi \times 0.6 \times 10^{6} \times
+            \\sum_{\text{bins}} n(D) \cdot A(D) \cdot D^3 \cdot \\Delta t
+
+           = \\pi \times 6 \times 10^{5} \times
+             \\sum_{\text{bins}} n(D) \cdot A(D) \cdot D^3 \cdot \\Delta t
+
+    Where:
+    - \\( n(D) \\) is the number of drops in each diameter class.
+    - \\( A(D) \\) is the effective sampling area.
+    - \\( D \\) is the drop diameter.
+    - \\( \\Delta t \\) is the time interval for drop counts.
+
+    This formula incorporates a conversion factor to express the rain rate in millimeters per hour.
+
+    In the literature, when the diameter is expected in millimeters, the formula is given
+    as:
+    .. math::
+
+        R = \\pi  \times {6} \times 10^{-4}  \times
+        \\sum_{\text{bins}} n(D) \cdot A(D) \cdot D^3 \cdot \\Delta t
+
+    """
+    dim = get_bin_dimensions(drop_number)
     rain_rate = (
         np.pi
         / 6
-        * (drop_number_concentration * velocity * diameter**3 * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
+        / sample_interval
+        * (drop_number * (diameter**3 / sampling_area)).sum(dim=dim, skipna=False)
         * 3600
         * 1000
     )
+    return rain_rate
 
-    # Alternative formulation
-    # 3600*1000/6 = 6e5
-    # 1e-9 for mm to meters conversion
-    # --> 6 * 1 e-4
-    # rain_rate = 6 * np.pi * 1e-4 * (
-    #   (drop_number_concentration * velocity * diameter**3 * diameter_bin_width).sum(dim="diameter_bin_center")
-    # )
+
+def get_rain_rate_spectrum(drop_number_concentration, velocity, diameter):
+    r"""
+    Compute the rain rate per diameter class.
+
+    It represents the rain rate as a function of raindrop diameter.
+    The total rain rate can be obtained by multiplying the spectrum with
+    the diameter bin width and summing over the diameter bins.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹.
+    velocity : xarray.DataArray
+        Array of drop fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
+    diameter : xarray.DataArray
+        Array of drop diameters \\( D \\) in meters (m).
+
+    Returns
+    -------
+    xarray.DataArray
+        The rain rate spectrum in millimeters per hour per mm, representing the volume
+        of water falling per unit area per unit time per unit diameter.
+
+    """
+    rain_rate = 6 * np.pi * 1e5 * (drop_number_concentration * (velocity * diameter**3))
     return rain_rate
 
 
@@ -457,6 +451,8 @@ def get_rain_accumulation(rain_rate, sample_interval):
     return rain_accumulation
 
 
+####------------------------------------------------------------------------------------------------------------------
+#### Reflectivity
 def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diameter_bin_width):
     r"""
     Compute the equivalent reflectivity factor in decibels relative to 1 mm⁶·m⁻³ (dBZ).
@@ -503,7 +499,10 @@ def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diam
 
     """
     # Compute reflectivity in mm⁶·m⁻³
-    z = ((diameter * 1000) ** 6 * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
+    z = (drop_number_concentration * ((diameter * 1000) ** 6 * diameter_bin_width)).sum(
+        dim=DIAMETER_DIMENSION,
+        skipna=False,
+    )
     invalid_mask = z > 0
     z = z.where(invalid_mask)
     # Compute equivalent reflectivity factor in dBZ
@@ -511,6 +510,57 @@ def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diam
     # --> We mask again after the log
     Z = 10 * np.log10(z)
     Z = Z.where(invalid_mask)
+    # Clip reflectivity at -60 dBZ
+    Z = Z.clip(-60, None)
+    return Z
+
+
+def get_equivalent_reflectivity_spectrum(drop_number_concentration, diameter):
+    r"""
+    Compute the equivalent reflectivity per diameter class.
+
+    The equivalent reflectivity per unit diameter Z(D) [in mm⁶·m⁻³ / mm] is expressed in decibels
+    using the formula:
+
+    .. math::
+
+        Z(D) = 10 \cdot \log_{10}(z(D))
+
+    where \\( z(D) \\) is the equivalent reflectivity spectrum in linear units of the DSD.
+
+    To convert back the reflectivity factor to linear units (mm⁶·m⁻³ / mm), use the formula:
+
+    .. math::
+
+        z(D) = 10^{(Z(D)/10)}
+
+    To obtain the total equivalent reflectivity factor (z) one has to multiply z(D) with the diameter
+    bins intervals and summing over the diameter bins.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Array representing the concentration of droplets per diameter class in number per unit volume.
+    diameter : xarray.DataArray
+        Array of droplet diameters in meters (m).
+
+    Returns
+    -------
+    xarray.DataArray
+        The equivalent reflectivity spectrum in decibels (dBZ).
+
+    """
+    # Compute reflectivity in mm⁶·m⁻³
+    z = drop_number_concentration * ((diameter * 1000) ** 6)
+    invalid_mask = z > 0
+    z = z.where(invalid_mask)
+    # Compute equivalent reflectivity factor in dBZ
+    # - np.log10(np.nan) returns -Inf !
+    # --> We mask again after the log
+    Z = 10 * np.log10(z)
+    Z = Z.where(invalid_mask)
+    # Clip reflectivity at -60 dBZ
+    Z = Z.clip(-60, None)
     return Z
 
 
@@ -518,11 +568,13 @@ def get_equivalent_reflectivity_factor(drop_number_concentration, diameter, diam
 #### Liquid Water Content / Mass Parameters
 
 
-def get_mass_spectrum(drop_number_concentration, diameter, water_density=1000):
+def get_liquid_water_spectrum(drop_number_concentration, diameter, water_density=1000):
     """
-    Calculate the rain drop mass spectrum m(D) in g/m3 mm-1.
+    Calculate the mass spectrum W(D) per diameter class.
 
     It represents the mass of liquid water as a function of raindrop diameter.
+    The integrated liquid water content can be obtained by multiplying
+    the spectrum with the diameter bins intervals and summing over the diameter bins.
 
     Parameters
     ----------
@@ -531,21 +583,53 @@ def get_mass_spectrum(drop_number_concentration, diameter, water_density=1000):
     diameter : array-like
         The diameters of the droplets for each bin, in meters (m).
 
-
     Returns
     -------
     array-like
-        The calculated rain drop mass spectrum in grams per cubic meter per diameter (g/m3 mm-1).
+        The calculated rain drop mass spectrum in grams per cubic meter per unit diameter (g/m3/mm).
 
     """
     # Convert water density from kg/m3 to g/m3
     water_density = water_density * 1000
 
-    # Calculate the volume constant for the water droplet formula
-    vol_constant = np.pi / 6.0 * water_density
+    # Calculate the mass spectrum (LWC per diameter bin)
+    return (np.pi / 6.0 * water_density * diameter**3) * drop_number_concentration  #  [g/m3 mm-1]
 
-    # Calculate the mass spectrum (lwc per diameter bin)
-    return vol_constant * (diameter**3 * drop_number_concentration)  #  [g/m3 mm-1]
+
+# def get_mass_flux(drop_number_concentration, diameter, velocity, diameter_bin_width, water_density=1000):
+#     """
+#     Calculate the mass flux based on drop number concentration and drop diameter and velocity.
+
+#     Parameters
+#     ----------
+#     drop_number_concentration : array-like
+#         The concentration of droplets (number of droplets per unit volume) in each diameter bin.
+#     diameter : array-like
+#         The diameters of the droplets for each bin, in meters (m).
+#     water_density : float, optional
+#         The density of water in kg/m^3. The default is 1000 kg/m3.
+
+#     Returns
+#     -------
+#     array-like
+#         The calculated mass in grams per cubic meter per second (g/m3/s).
+
+#     """
+# if VELOCITY_DIMENSION in velocity.dims:
+#     raise ValueError("The 'velocity' DataArray must not have the {VELOCITY_DIMENSION} dimension.")
+# # Convert water density from kg/m3 to g/m3
+# water_density = water_density * 1000
+
+# # Calculate the volume constant for the water droplet formula
+# vol_constant = np.pi / 6.0 * water_density
+
+# # Calculate the mass flux
+# # TODO: check equal to density * R
+# mass_flux = (vol_constant *
+#          (drop_number_concentration *
+#           (diameter**3 * velocity)).sum(dim=DIAMETER_DIMENSION, skipna=False)
+#  )
+# return mass_flux
 
 
 def get_liquid_water_content(drop_number_concentration, diameter, diameter_bin_width, water_density=1000):
@@ -572,15 +656,20 @@ def get_liquid_water_content(drop_number_concentration, diameter, diameter_bin_w
     # Convert water density from kg/m3 to g/m3
     water_density = water_density * 1000
 
-    # Calculate the volume constant for the water droplet formula
-    vol_constant = np.pi / 6.0 * water_density
-
     # Calculate the liquid water content
-    lwc = vol_constant * (diameter**3 * drop_number_concentration * diameter_bin_width).sum(dim="diameter_bin_center", skipna=False)
+    lwc = (
+        np.pi
+        / 6.0
+        * water_density
+        * (drop_number_concentration * (diameter**3 * diameter_bin_width)).sum(
+            dim=DIAMETER_DIMENSION,
+            skipna=False,
+        )
+    )
     return lwc
 
 
-def get_mom_liquid_water_content(moment_3, water_density=1000):
+def get_liquid_water_content_from_moments(moment_3, water_density=1000):
     r"""
     Calculate the liquid water content (LWC) from the third moment of the DSD.
 
@@ -631,78 +720,7 @@ def get_mom_liquid_water_content(moment_3, water_density=1000):
 
 
 ####--------------------------------------------------------------------------------------------------------
-#### Diameter parameters
-
-
-def _get_last_xr_valid_idx(da_condition, dim, fill_value=None):
-    """
-    Get the index of the last True value along a specified dimension in an xarray DataArray.
-
-    This function finds the last index along the given dimension where the condition is True.
-    If all values are False or NaN along that dimension, the function returns ``fill_value``.
-
-    Parameters
-    ----------
-    da_condition : xarray.DataArray
-        A boolean DataArray where True indicates valid or desired values.
-        Should have the dimension specified in `dim`.
-    dim : str
-        The name of the dimension along which to find the last True index.
-    fill_value : int or float
-        The fill value when all values are False or NaN along the specified dimension.
-        The default is ``dim_size - 1``.
-
-    Returns
-    -------
-    last_idx : xarray.DataArray
-        An array containing the index of the last True value along the specified dimension.
-        If all values are False or NaN, the corresponding entry in `last_idx` will be NaN.
-
-    Notes
-    -----
-    The function works by reversing the DataArray along the specified dimension and using
-    `argmax` to find the first True value in the reversed array. It then calculates the
-    corresponding index in the original array. To handle cases where all values are False
-    or NaN (and `argmax` would return 0), the function checks if there is any True value
-    along the dimension and assigns NaN to `last_idx` where appropriate.
-
-    Examples
-    --------
-    >>> import xarray as xr
-    >>> da = xr.DataArray([[False, False, True], [False, False, False]], dims=["time", "diameter_bin_center"])
-    >>> last_idx = _get_last_xr_valid_idx(da, "diameter_bin_center")
-    >>> print(last_idx)
-    <xarray.DataArray (time: 2)>
-    array([2., nan])
-    Dimensions without coordinates: time
-
-    In this example, for the first time step, the last True index is 2.
-    For the second time step, all values are False, so the function returns NaN.
-
-    """
-    # Get the size of the 'diameter_bin_center' dimension
-    dim_size = da_condition.sizes[dim]
-
-    # Define default fillvalue
-    if fill_value is None:
-        fill_value = dim_size - 1
-
-    # Reverse the mask along 'diameter_bin_center'
-    da_condition_reversed = da_condition.isel({dim: slice(None, None, -1)})
-
-    # Check if there is any True value along the dimension for each slice
-    has_true = da_condition.any(dim=dim)
-
-    # Find the first non-zero index in the reversed array
-    last_idx_from_end = da_condition_reversed.argmax(dim=dim)
-
-    # Calculate the last True index in the original array
-    last_idx = xr.where(
-        has_true,
-        dim_size - last_idx_from_end - 1,
-        fill_value,
-    )
-    return last_idx
+#### Diameter Statistics
 
 
 def get_min_max_diameter(drop_counts):
@@ -714,6 +732,7 @@ def get_min_max_diameter(drop_counts):
     drop_counts : xarray.DataArray
         Drop counts with dimensions ("time", "diameter_bin_center") and
         coordinate "diameter_bin_center".
+        It assumes the diameter coordinate to be monotonically increasing !
 
     Returns
     -------
@@ -727,24 +746,28 @@ def get_min_max_diameter(drop_counts):
 
     # Find the first non-zero index along 'diameter_bin_center' for each time
     # - Return 0 if all False, zero or NaN
-    first_non_zero_idx = non_zero_mask.argmax(dim="diameter_bin_center")
+    first_non_zero_idx = non_zero_mask.argmax(dim=DIAMETER_DIMENSION)
 
     # Calculate the last non-zero index in the original array
-    last_non_zero_idx = _get_last_xr_valid_idx(da_condition=non_zero_mask, dim="diameter_bin_center")
+    last_non_zero_idx = xr_get_last_valid_idx(da_condition=non_zero_mask, dim=DIAMETER_DIMENSION)
 
     # Get the 'diameter_bin_center' coordinate
     diameters = drop_counts["diameter_bin_center"]
 
     # Retrieve the diameters corresponding to the first and last non-zero indices
-    min_drop_diameter = diameters.isel(diameter_bin_center=first_non_zero_idx.astype(int))
-    max_drop_diameter = diameters.isel(diameter_bin_center=last_non_zero_idx.astype(int))
+    min_drop_diameter = diameters.isel({DIAMETER_DIMENSION: first_non_zero_idx.astype(int)})
+    max_drop_diameter = diameters.isel({DIAMETER_DIMENSION: last_non_zero_idx.astype(int)})
 
     # Identify time steps where all drop_counts are zero
-    is_all_zero_or_nan = ~non_zero_mask.any(dim="diameter_bin_center")
+    is_all_zero_or_nan = ~non_zero_mask.any(dim=DIAMETER_DIMENSION)
 
     # Mask with NaN where no drop or all values are NaN
     min_drop_diameter = min_drop_diameter.where(~is_all_zero_or_nan)
     max_drop_diameter = max_drop_diameter.where(~is_all_zero_or_nan)
+
+    # Remove diameter coordinates
+    min_drop_diameter = remove_diameter_coordinates(min_drop_diameter)
+    max_drop_diameter = remove_diameter_coordinates(max_drop_diameter)
 
     return min_drop_diameter, max_drop_diameter
 
@@ -752,19 +775,17 @@ def get_min_max_diameter(drop_counts):
 def get_mode_diameter(drop_number_concentration, diameter):
     """Get raindrop diameter with highest occurrence."""
     # If all NaN, set to 0 otherwise argmax fail when all NaN data
-    idx_all_nan_mask = np.isnan(drop_number_concentration).all(dim="diameter_bin_center")
+    idx_all_nan_mask = np.isnan(drop_number_concentration).all(dim=DIAMETER_DIMENSION)
     drop_number_concentration = drop_number_concentration.where(~idx_all_nan_mask, 0)
     # Find index where all 0
     # --> argmax will return 0
-    idx_all_zero = (drop_number_concentration == 0).all(dim="diameter_bin_center")
+    idx_all_zero = (drop_number_concentration == 0).all(dim=DIAMETER_DIMENSION)
     # Find the diameter index corresponding the "mode"
-    idx_observed_mode = drop_number_concentration.argmax(dim="diameter_bin_center")
+    idx_observed_mode = drop_number_concentration.argmax(dim=DIAMETER_DIMENSION)
     # Find the diameter corresponding to the "mode"
-    diameter_mode = diameter.isel({"diameter_bin_center": idx_observed_mode})
-    diameter_mode = diameter_mode.drop_vars(
-        ["diameter_bin_width", "diameter_bin_lower", "diameter_bin_upper", "diameter_bin_center"],
-        errors="ignore",
-    )
+    diameter_mode = diameter.isel({DIAMETER_DIMENSION: idx_observed_mode})
+    # Remove diameter coordinates
+    diameter_mode = remove_diameter_coordinates(diameter_mode)
     # Set to np.nan where data where all NaN or all 0
     idx_mask = np.logical_or(idx_all_nan_mask, idx_all_zero)
     diameter_mode = diameter_mode.where(~idx_mask)
@@ -772,7 +793,7 @@ def get_mode_diameter(drop_number_concentration, diameter):
 
 
 ####-------------------------------------------------------------------------------------------------------------------.
-#### Mass diameters
+#### Mass Distribution Diameters
 
 
 def get_mean_volume_drop_diameter(moment_3, moment_4):
@@ -784,6 +805,8 @@ def get_mean_volume_drop_diameter(moment_3, moment_4):
 
     The volume-weighted mean volume diameter is also referred as the mass mean diameter.
     It represents the first moment of the mass spectrum.
+
+    If no drops are recorded, the output values is NaN.
 
     Parameters
     ----------
@@ -824,20 +847,23 @@ def get_mean_volume_drop_diameter(moment_3, moment_4):
     Mean Volume Diameter D_m: 5.0000 mm
 
     """
-    # Note: 
-    # - 0/0 return NaN 
-    # - <number>/0 return Inf  
+    # Note:
+    # - 0/0 return NaN
+    # - <number>/0 return Inf
     D_m = moment_4 / moment_3  # Units: [mm⁴] / [mm³] = [mm]
     return D_m
 
 
-
-def get_std_volume_drop_diameter(moment_3, moment_4, moment_5): 
+def get_std_volume_drop_diameter(moment_3, moment_4, moment_5):
     r"""
     Calculate the standard deviation of the mass-weighted drop diameter (σₘ).
 
     This parameter is often also referred as the mass spectrum standard deviation.
     It quantifies the spread or variability of DSD.
+
+    If drops are recorded in just one bin, the standard deviation of the mass-weighted drop diameter
+    is set to 0.
+    If no drops are recorded, the output values is NaN.
 
     Parameters
     ----------
@@ -894,13 +920,20 @@ def get_std_volume_drop_diameter(moment_3, moment_4, moment_5):
     """
     # # Full formula
     # const = drop_number_concentration * diameter_bin_width * diameter**3
-    # numerator = ((diameter * 1000 - mean_volume_diameter) ** 2 * const).sum(dim="diameter_bin_center", skipna=False)
-    # sigma_m = np.sqrt(numerator / const.sum(dim="diameter_bin_center", skipna=False))
-    
-    # Moment formula
-    sigma_m = np.sqrt(((moment_3*moment_5 - moment_4**2)/moment_3**2))
+    # numerator = ((diameter * 1000 - mean_volume_diameter) ** 2 * const).sum(dim=DIAMETER_DIMENSION, skipna=False)
+    # variance_m = numerator / const.sum(dim=DIAMETER_DIMENSION, skipna=False))
+
+    # Compute variance using moment formula
+    variance_m = (moment_3 * moment_5 - moment_4**2) / moment_3**2
+
+    # Set to 0 when very low values (resulting from numerical errors)
+    # --> For example should return 0 when drops only recorded in 1 bin !
+    variance_m = xr.where(np.logical_and(variance_m < 1e-5, ~np.isnan(variance_m)), 0, variance_m)
+
+    # Compute standard deviation
+    sigma_m = np.sqrt(variance_m)
     return sigma_m
-    
+
 
 def get_median_volume_drop_diameter(drop_number_concentration, diameter, diameter_bin_width, water_density=1000):
     r"""
@@ -943,7 +976,7 @@ def get_median_volume_drop_diameter(drop_number_concentration, diameter, diamete
     )
     return d50
 
- 
+
 def _get_quantile_volume_drop_diameter(
     drop_number_concentration,
     diameter,
@@ -956,72 +989,97 @@ def _get_quantile_volume_drop_diameter(
     for value in fraction:
         if not (0 < value < 1):
             raise ValueError("Fraction values must be between 0 and 1 (exclusive)")
-    
+
     # Create fraction DataArray
     fraction = xr.DataArray(fraction, coords={"quantile": fraction}, dims="quantile")
-    
+
     # Convert water density from kg/m3 to g/m3
     water_density = water_density * 1000
-    
+
     # Compute LWC per diameter bin [g/m3]
-    lwc_per_diameter = np.pi / 6.0 * water_density * (diameter**3 * drop_number_concentration * diameter_bin_width)
-        
+    mass_spectrum = get_liquid_water_spectrum(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,
+        water_density=water_density,
+    )
+    lwc_per_diameter = diameter_bin_width * mass_spectrum
+
     # Compute the cumulative sum of LWC along the diameter bins
-    cumulative_lwc = lwc_per_diameter.cumsum(dim="diameter_bin_center", skipna=False)
-    
-    # ------------------------------------------------------.
+    cumulative_lwc = lwc_per_diameter.cumsum(dim=DIAMETER_DIMENSION, skipna=False)
+
+    # Check if single bin
+    is_single_bin = (lwc_per_diameter != 0).sum(dim=DIAMETER_DIMENSION) == 1
+
     # Retrieve total lwc and target lwc
-    total_lwc = cumulative_lwc.isel(diameter_bin_center=-1)
+    total_lwc = cumulative_lwc.isel({DIAMETER_DIMENSION: -1})
     target_lwc = total_lwc * fraction
-    
-    # Retrieve idx half volume is reached
-    # --> If all NaN or False, argmax and _get_last_xr_valid_idx(fill_value=0) return 0 !
-    idx_upper = (cumulative_lwc >= target_lwc).argmax(dim="diameter_bin_center").astype(int)
-    idx_lower = _get_last_xr_valid_idx(
+
+    # Retrieve bin indices between which the quantile of the volume is reached
+    # --> If all NaN or False, argmax and xr_get_last_valid_idx(fill_value=0) return 0 !
+    idx_upper = (cumulative_lwc >= target_lwc).argmax(dim=DIAMETER_DIMENSION).astype(int)
+    idx_lower = xr_get_last_valid_idx(
         da_condition=(cumulative_lwc <= target_lwc),
-        dim="diameter_bin_center",
+        dim=DIAMETER_DIMENSION,
         fill_value=0,
     ).astype(int)
-    
-    # Define mask when fraction fall exactly at a diameter bin center
-    # - Also related to the case of only values in the first bin.
-    solution_is_bin_center = idx_upper == idx_lower
-    
-    # Define diameter increment from lower bin center
-    y1 = cumulative_lwc.isel(diameter_bin_center=idx_lower)
-    y2 = cumulative_lwc.isel(diameter_bin_center=idx_upper)
+
+    # Retrieve cumulative LWC values at such bins adn target LWC
+    y1 = cumulative_lwc.isel({DIAMETER_DIMENSION: idx_lower})
+    y2 = cumulative_lwc.isel({DIAMETER_DIMENSION: idx_upper})
     yt = target_lwc
+
+    # ------------------------------------------------------.
+    ## Case with multiple bins
+    # Define interpolation slope, avoiding division by zero if y1 equals y2.
+    # - When target LWC exactly equal to cumulative_lwc value of a bin --> Diameter is the bin center diameter !
+    slope = xr.where(y1 == y2, 0, (yt - y1) / (y2 - y1))
+
+    # Define diameter increment from lower bin center
     d1 = diameter.isel(diameter_bin_center=idx_lower)  # m
     d2 = diameter.isel(diameter_bin_center=idx_upper)  # m
-    d_increment = (d2 - d1) * (yt - y1) / (y2 - y1)
-    
+    d_increment = (d2 - d1) * slope
+
     # Define quantile diameter
-    quantile_diameter = xr.where(solution_is_bin_center, d1, d1 + d_increment)
-    
+    quantile_diameter_multi_bin = d1 + d_increment
+
+    ## ------------------------------------------------------.
+    ## Case with single bin
+    # When no accumulation has yet occurred (y1==0), use the upper bin for both indices.
+    idx_lower = xr.where(y1 == 0, idx_upper, idx_lower)
+    # Identify the bin center diameter
+    d = diameter.isel(diameter_bin_center=idx_lower)  # m
+    d_width = diameter_bin_width.isel({DIAMETER_DIMENSION: idx_lower}) / 1000  # m
+    d_lower = d - d_width / 2
+    quantile_diameter_single_bin = d_lower + d_width * fraction
+
+    ## ------------------------------------------------------.
+    # Define quantile diameter
+    quantile_diameter = xr.where(is_single_bin, quantile_diameter_single_bin, quantile_diameter_multi_bin)
+
     # Set NaN where total sum is 0 or all NaN
     mask_invalid = np.logical_or(total_lwc == 0, np.isnan(total_lwc))
     quantile_diameter = quantile_diameter.where(~mask_invalid)
-    
+
     # Convert diameter to mm
     quantile_diameter = quantile_diameter * 1000
-    
+
     # If only 1 fraction specified, squeeze and drop quantile coordinate
     if quantile_diameter.sizes["quantile"] == 1:
         quantile_diameter = quantile_diameter.drop_vars("quantile").squeeze()
-    
-    # Drop meaningless coordinates 
+
+    # Drop meaningless coordinates
     quantile_diameter = remove_diameter_coordinates(quantile_diameter)
-    quantile_diameter = remove_velocity_coordinates(quantile_diameter) 
+    quantile_diameter = remove_velocity_coordinates(quantile_diameter)
     return quantile_diameter
 
- 
+
 def get_quantile_volume_drop_diameter(
     drop_number_concentration,
     diameter,
     diameter_bin_width,
     fraction,
     water_density=1000,
-    ):
+):
     r"""
     Compute the diameter corresponding to a specified fraction of the cumulative liquid water content (LWC).
 
@@ -1063,32 +1121,34 @@ def get_quantile_volume_drop_diameter(
     crosses the target LWC fraction.
 
     """
-    # Dask array backed
-    if hasattr(drop_number_concentration.data, "chunks"): 
-        fraction = np.atleast_1d(fraction) 
+    # Dask array backend
+    if hasattr(drop_number_concentration.data, "chunks"):
+        fraction = np.atleast_1d(fraction)
         if fraction.size > 1:
             dask_gufunc_kwargs = {"output_sizes": {"quantile": fraction.size}}
             output_core_dims = [["quantile"]]
-        else: 
+        else:
             dask_gufunc_kwargs = None
-            output_core_dims = ((), )
+            output_core_dims = ((),)
         quantile_diameter = xr.apply_ufunc(
-                _get_quantile_volume_drop_diameter,
-                drop_number_concentration,
-                kwargs={"fraction": fraction, 
-                        "diameter": diameter.compute(),
-                        "diameter_bin_width": diameter_bin_width.compute(),
-                        "water_density": water_density},
-                input_core_dims=[["diameter_bin_center"]],
-                vectorize=True, 
-                dask="parallelized",
-                output_core_dims=output_core_dims,
-                dask_gufunc_kwargs=dask_gufunc_kwargs,
-                output_dtypes=["float64"],
+            _get_quantile_volume_drop_diameter,
+            drop_number_concentration,
+            kwargs={
+                "fraction": fraction,
+                "diameter": diameter.compute(),
+                "diameter_bin_width": diameter_bin_width.compute(),
+                "water_density": water_density,
+            },
+            input_core_dims=[[DIAMETER_DIMENSION]],
+            vectorize=True,
+            dask="parallelized",
+            output_core_dims=output_core_dims,
+            dask_gufunc_kwargs=dask_gufunc_kwargs,
+            output_dtypes=["float64"],
         )
         if fraction.size > 1:
             quantile_diameter = quantile_diameter.assign_coords({"quantile": fraction})
-        return quantile_diameter 
+        return quantile_diameter
 
     # Numpy array backed
     quantile_diameter = _get_quantile_volume_drop_diameter(
@@ -1153,7 +1213,7 @@ def get_normalized_intercept_parameter(liquid_water_content, mean_volume_diamete
     return Nw
 
 
-def get_mom_normalized_intercept_parameter(moment_3, moment_4):
+def get_normalized_intercept_parameter_from_moments(moment_3, moment_4):
     r"""
     Calculate the normalized intercept parameter \\( N_w \\) of the drop size distribution.
 
@@ -1173,7 +1233,7 @@ def get_mom_normalized_intercept_parameter(moment_3, moment_4):
     References
     ----------
     Testud, J., S. Oury, R. A. Black, P. Amayenc, and X. Dou, 2001:
-    The Concept of “Normalized” Distribution to Describe Raindrop Spectra:
+    The Concept of “Normalized” Distribution to Describe Raindrop spectrum:
     A Tool for Cloud Physics and Cloud Remote Sensing.
     J. Appl. Meteor. Climatol., 40, 1118-1140,
     https://doi.org/10.1175/1520-0450(2001)040<1118:TCONDT>2.0.CO;2
@@ -1187,108 +1247,138 @@ def get_mom_normalized_intercept_parameter(moment_3, moment_4):
 #### Kinetic Energy Parameters
 
 
-def _get_spectrum_dims(ds):
-    if "velocity_bin_center" in ds.dims:
-        dims = ["diameter_bin_center", "velocity_bin_center"]
-    else:
-        dims = ["diameter_bin_center"]
-    return dims
+def get_kinetic_energy_spectrum(
+    drop_number_concentration,
+    velocity,
+    diameter,
+    sample_interval,
+    water_density=1000,
+):
+    r"""Compute the rainfall kinetic energy per diameter class.
 
-
-def get_min_max_drop_kinetic_energy(drop_number, diameter, velocity, water_density=1000):
-    r"""
-    Calculate the minimum and maximum kinetic energy of raindrops in a drop size distribution (DSD).
-
-    This function computes the kinetic energy of individual raindrops based on their diameters and
-    fall velocities and returns the minimum and maximum values among these drops for each time step.
+    To obtain the Total Kinetic Energy (TKE) one has to multiply KE(D) with the diameter
+     bins intervals and summing over the diameter bins.
 
     Parameters
     ----------
-    drop_number : xarray.DataArray
-        The number of drops in each diameter (and velocity, if available) bin(s).
+    drop_number_concentration : xarray.DataArray
+        Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹.
+    velocity : xarray.DataArray or float
+        The fall velocities \\( v \\) of the drops, in meters per second (m/s).
     diameter : xarray.DataArray
         The equivalent volume diameters \\( D \\) of the drops in each bin, in meters (m).
-    velocity : xarray.DataArray or float
-        The fall velocities \\( v \\) of the drops in each bin, in meters per second (m/s).
+    sample_interval : float
+        The time over which the drops are counted \\( \\Delta t \\) in seconds (s).
     water_density : float, optional
         The density of water \\( \rho_w \\) in kilograms per cubic meter (kg/m³).
         Default is 1000 kg/m³.
 
     Returns
     -------
-    min_drop_kinetic_energy : xarray.DataArray
-        The minimum kinetic energy among the drops present in the DSD, in joules (J).
-    max_drop_kinetic_energy : xarray.DataArray
-        The maximum kinetic energy among the drops present in the DSD, in joules (J).
-
-    Notes
-    -----
-    The kinetic energy \\( KE \\) of an individual drop is calculated using:
-
-    .. math::
-
-        KE = \frac{1}{2} \\cdot m \\cdot v^2
-
-    where:
-
-    - \\( m \\) is the mass of the drop, calculated as:
-
-      .. math::
-
-          m = \frac{\\pi}{6} \\cdot \rho_w \\cdot D^3
-
-      with \\( D \\) being the drop diameter.
-
-    - \\( v \\) is the fall velocity of the drop.
+    xr.DataArray
+        Kinetic Energy Spectrum [J/m2/mm]
     """
-    # Ensure velocity is 2D (diameter, velocity)
-    velocity = xr.ones_like(drop_number) * velocity
-
-    # # Compute the mass of each drop: m = (π/6) * rho_w * D^3
-    # mass = (np.pi / 6) * water_density * diameter**3  # Units: kg
-
-    # # Compute kinetic energy: KE = 0.5 * m * v^2
-    # ke = 0.5 * mass * velocity**2  # Units: J
-
-    # Compute kinetic energy
-    ke = 1 / 12 * water_density * np.pi * diameter**3 * velocity**2
-
-    # Select kinetic energies where drops are present
-    ke = ke.where(drop_number > 0)
-
-    # Compute min, mean and maximum drop kinetic energy
-    max_drop_kinetic_energy = ke.max(dim=_get_spectrum_dims(ke))
-    min_drop_kinetic_energy = ke.min(dim=_get_spectrum_dims(ke))
-    return min_drop_kinetic_energy, max_drop_kinetic_energy
+    KE_spectrum = (
+        np.pi / 12 * water_density * sample_interval * (drop_number_concentration * (diameter**3 * velocity**3))
+    )
+    return KE_spectrum
 
 
-def get_kinetic_energy_density_flux(
-    drop_number,
-    diameter,
+def get_kinetic_energy_variables(
+    drop_number_concentration,
     velocity,
-    sampling_area,
+    diameter,
+    diameter_bin_width,
     sample_interval,
     water_density=1000,
 ):
-    r"""
-    Calculate the kinetic energy flux density (KE) of rainfall over time.
+    r"""Compute rainfall kinetic energy descriptors from the drop number concentration.
 
-    This function computes the total kinetic energy of raindrops passing through the sensor's sampling area
-    per unit time and area, resulting in the kinetic energy flux density
-    in joules per square meter per hour (J·m⁻²·h⁻¹).
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹.
+    velocity : xarray.DataArray or float
+        The fall velocities \\( v \\) of the drops, in meters per second (m/s).
+    diameter : xarray.DataArray
+        The equivalent volume diameters \\( D \\) of the drops in each bin, in meters (m).
+    diameter_bin_width : xarray.DataArray
+        Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
+    sample_interval : float
+        The time over which the drops are counted \\( \\Delta t \\) in seconds (s).
+    water_density : float, optional
+        The density of water \\( \rho_w \\) in kilograms per cubic meter (kg/m³).
+        Default is 1000 kg/m³.
 
-    Typical values range between 0 and 5000 J·m⁻²·h⁻¹ .
-       KE = E * R
+    Returns
+    -------
+    xr.Dataset
+        Xarray Dataset with relevant rainfall kinetic energy variables:
+        - TKE: Total Kinetic Energy [J/m2]
+        - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
+        - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹]. Typical values range between 0 and 5000 J·m⁻²·h⁻¹.
+        KEF is related to the KED by the rain rate: KED = KEF/R .
+    """
+    # Check velocity DataArray does not have a velocity dimension
+    if VELOCITY_DIMENSION in velocity.dims:
+        raise ValueError(f"The 'velocity' DataArray must not have the '{VELOCITY_DIMENSION}' dimension.")
+
+    # Compute rain rate
+    R = get_rain_rate(
+        drop_number_concentration=drop_number_concentration,
+        velocity=velocity,
+        diameter=diameter,
+        diameter_bin_width=diameter_bin_width,
+    )
+
+    # Compute total kinetic energy in [J/m2]
+    TKE = (
+        np.pi
+        / 12
+        * water_density
+        * sample_interval
+        * (drop_number_concentration * diameter**3 * velocity**3 * diameter_bin_width).sum(
+            dim=DIAMETER_DIMENSION,
+            skipna=False,
+        )
+    )
+
+    # Compute Kinetic Energy Flux (KEF) [J/m2/h]
+    KEF = TKE / sample_interval * 3600
+
+    # Compute Kinetic Energy per Rainfall Depth [J/m2/mm]
+    KED = KEF / R
+    KED = xr.where(R == 0, 0, KED)  # Ensure KED is 0 when R (and thus drop number is 0)
+
+    # Create dataset
+    dict_vars = {
+        "TKE": TKE,
+        "KEF": KEF,
+        "KED": KED,
+    }
+    ds = xr.Dataset(dict_vars)
+    return ds
+
+
+def get_kinetic_energy_variables_from_drop_number(
+    drop_number,
+    velocity,
+    sampling_area,
+    diameter,
+    sample_interval,
+    water_density=1000,
+):
+    r"""Compute rainfall kinetic energy descriptors from the measured drop number spectrum.
 
     Parameters
     ----------
     drop_number : xarray.DataArray
         The number of drops in each diameter (and velocity, if available) bin(s).
-    diameter : xarray.DataArray
-        The equivalent volume diameters \\( D \\) of the drops in each bin, in meters (m).
     velocity : xarray.DataArray or float
         The fall velocities \\( v \\) of the drops in each bin, in meters per second (m/s).
         Values are broadcasted to match the dimensions of `drop_number`.
+    diameter : xarray.DataArray
+        The equivalent volume diameters \\( D \\) of the drops in each bin, in meters (m).
     sampling_area : float
         The effective sampling area \\( A \\) of the sensor in square meters (m²).
     sample_interval : float
@@ -1299,17 +1389,43 @@ def get_kinetic_energy_density_flux(
 
     Returns
     -------
-    kinetic_energy_flux : xarray.DataArray
-        The kinetic energy flux density of rainfall in joules per square meter per hour (J·m⁻²·h⁻¹).
-        Dimensions are reduced to ('time',).
+    xr.Dataset
+        Xarray Dataset with relevant rainfall kinetic energy variables:
+        - TKE: Total Kinetic Energy [J/m2]
+        - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
+        - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹]. Typical values range between 0 and 5000 J·m⁻²·h⁻¹.
+        KEF is related to the KED by the rain rate: KED = KEF/R .
 
     Notes
     -----
-    The kinetic energy flux density \\( KE \\) is calculated using:
+    KED provides a measure of the energy associated with each unit of rainfall depth.
+    KED is useful for analyze the potential impact of raindrop erosion as a function of
+    the intensity of rainfall events.
+
+    The kinetic energy of a rain drop is defined as:
 
     .. math::
 
-        KE = \frac{1}{2} \\cdot \frac{\rho_w \\pi}{6} \\cdot \frac{1}{\\Delta t} \\cdot 3600 \\cdot \\sum_{i,j}
+        KE(D) = \frac{1}{2} · m_{drop} · v_{drop}^2 = \frac{\\pi \rho_{w}}{12} · D^3 · v^2
+
+    The Total Kinetic Energy (TKE) is calculated using:
+
+    .. math::
+
+        TKE = \\sum_{i,j} \\left({n_{ij} · KE(D_{i}) \right)
+            = \frac{\\pi \rho_{w}}{12 · A} \\sum_{i,j} \\left( {n_{ij} · D_{i}^3 · v_{j}^2}} \right)
+
+    The Kinetic Energy Flux (KEF) is calculated using:
+
+    .. math::
+
+        KEF = \frac{TKE}{\\Delta t } · 3600
+
+    KED is calculated using:
+
+    .. math::
+
+        KED = \frac{KEF}{R} \\cdot \frac{\\pi}{6} \\cdot \frac{\rho_w}{R} \\cdot \\sum_{i,j}
         \\left( \frac{n_{ij} \\cdot D_i^3 \\cdot v_j^2}{A} \right)
 
     where:
@@ -1319,95 +1435,252 @@ def get_kinetic_energy_density_flux(
     - \\( v_j \\) is the velocity of bin \\( j \\).
     - \\( A \\) is the sampling area.
     - \\( \\Delta t \\) is the time integration period in seconds.
-    - The factor \\( 3600 \\) converts the rate to per hour.
+    - \\( R \\) is the rainfall rate in mm/hr.
 
     """
-    # Ensure velocity is 2D (diameter, velocity)
+    # Get drop number core dimensions
+    dim = get_bin_dimensions(drop_number)
+
+    # Ensure velocity is 2D if drop number has velocity dimension
+    # - if measured velocity --> already 2D
+    # - if estimated velocity --> broadcasted to 2D
     velocity = xr.ones_like(drop_number) * velocity
 
-    # # Compute rain drop kinetic energy [J]
-    # ke = 0.5 *  water_density * np.pi / 6 * diameter **3 * velocity**2
-    # # Compute total kinetic energy in [J / m2]
-    # total_kinetic_energy =  (ke * drop_number / sampling_area).sum(dim=["diameter_bin_center", "velocity_bin_center"])
-    # # Compute kinetic energy density flux (KE) (J/m2/h)
-    # kinetic_energy_flux = total_kinetic_energy / sample_interval * 3600
-
-    # Compute kinetic energy flux density (KE) (J/m2/h)
-    kinetic_energy_flux = (
-        water_density
-        * np.pi
-        / 12
-        / sample_interval
-        * 3600
-        * ((drop_number * diameter**3 * velocity**2) / sampling_area).sum(
-            dim=_get_spectrum_dims(drop_number),
-        )
+    # Compute rain rate
+    R = get_rain_rate_from_drop_number(
+        drop_number=drop_number,
+        sampling_area=sampling_area,
+        diameter=diameter,
+        sample_interval=sample_interval,
     )
-    return kinetic_energy_flux
+
+    # Compute drop size kinetic energy per diameter (and velocity bin)
+    KE = np.pi / 12 * water_density * diameter**3 * velocity**2  # [J]
+
+    # Compute total kinetic energy in [J/m2]
+    TKE = (KE * drop_number / sampling_area).sum(dim=dim, skipna=False)
+
+    # Compute Kinetic Energy Flux (KEF) [J/m2/h]
+    KEF = TKE / sample_interval * 3600
+
+    # Compute Kinetic Energy per Rainfall Depth [J/m2/mm]
+    KED = KEF / R
+    KED = xr.where(R == 0, 0, KED)  # Ensure KED is 0 when R (and thus drop number is 0)
+
+    # Create dataset
+    dict_vars = {
+        "TKE": TKE,
+        "KEF": KEF,
+        "KED": KED,
+    }
+    ds = xr.Dataset(dict_vars)
+    return ds
 
 
-def get_rainfall_kinetic_energy(drop_number, diameter, velocity, rain_accumulation, sampling_area, water_density=1000):
-    r"""
-    Calculate the kinetic energy per unit rainfall depth (E) in joules per square meter per millimeter (J·m⁻²·mm⁻¹).
+####-------------------------------------------------------------------------------------------------------.
+#### Wrapper ####
 
-    This function computes the kinetic energy of the rainfall per millimeter of rain, providing a measure of the
-    energy associated with each unit of rainfall depth. This parameter is useful for understanding the potential
-    impact of raindrop erosion and the intensity of rainfall events.
 
-    The values typically range between 0 and 40 J·m⁻²·mm⁻¹.
-    E is related to the kinetic energy flux density (KE) by the rain rate: E = KE/R .
+def compute_integral_parameters(
+    drop_number_concentration,
+    velocity,
+    diameter,
+    diameter_bin_width,
+    sample_interval,
+    water_density,
+):
+    """
+    Compute integral parameters of a drop size distribution (DSD).
 
     Parameters
     ----------
-    drop_number : xarray.DataArray
-        The number of drops in each diameter (and velocity, if available) bin(s).
-    diameter : xarray.DataArray
-        The equivalent volume diameters \\( D \\) of the drops in each bin, in meters (m).
-    velocity : xarray.DataArray or float
-        The fall velocities \\( v \\) of the drops in each bin, in meters per second (m/s).
-        Values are broadcasted to match the dimensions of `drop_number`.
-    rain_accumulation : xarray.DataArray or float
-        The total rainfall accumulation over the time integration period, in millimeters (mm).
-    sampling_area : float
-        The effective sampling area \\( A \\) of the sensor in square meters (m²).
-    water_density : float, optional
-        The density of water \\( \rho_w \\) in kilograms per cubic meter (kg/m³).
-        Default is 1000 kg/m³.
+    drop_number_concentration : xr.DataArray
+        Drop number concentration in each diameter bin [#/m3/mm].
+    velocity : xr.DataArray
+        Fall velocity of drops in each diameter bin [m/s].
+        The presence of a velocity_method dimension enable to compute the parameters
+        with different velocity estimates.
+    diameter : array-like
+        Diameter of drops in each bin in m.
+    diameter_bin_width : array-like
+        Width of each diameter bin in mm.
+    sample_interval : float
+        Time interval over which the samples are collected in seconds.
+    water_density : float or array-like
+        Density of water [kg/m3].
 
     Returns
     -------
-    E : xarray.DataArray
-        The kinetic energy per unit rainfall depth in joules per square meter per millimeter (J·m⁻²·mm⁻¹).
-        Dimensions are reduced to ('time',).
-
-    Notes
-    -----
-    The kinetic energy per unit rainfall depth \\( E \\) is calculated using:
-
-    .. math::
-
-        E = \frac{1}{2} \\cdot \frac{\\pi}{6} \\cdot \frac{\rho_w}{R} \\cdot \\sum_{i,j}
-        \\left( \frac{n_{ij} \\cdot D_i^3 \\cdot v_j^2}{A} \right)
-
-    where:
-
-    - \\( n_{ij} \\) is the number of drops in diameter bin \\( i \\) and velocity bin \\( j \\).
-    - \\( D_i \\) is the diameter of bin \\( i \\).
-    - \\( v_j \\) is the velocity of bin \\( j \\).
-    - \\( A \\) is the sampling area.
-    - \\( R \\) is the rainfall accumulation over the integration period (mm).
+    ds : xarray.Dataset
+        Dataset containing the computed integral parameters:
+        - Nt : Total number concentration [#/m3]
+        - M1 to M6 : Moments of the drop size distribution
+        - Z : Reflectivity factor [dBZ]
+        - W : Liquid water content [g/m3]
+        - D10 : Diameter at the 10th quantile of the cumulative LWC distribution [mm]
+        - D50 : Median volume drop diameter [mm]
+        - D90 : Diameter at the 90th quantile of the cumulative LWC distribution [mm]
+        - Dmode : Diameter at which the distribution peaks [mm]
+        - Dm : Mean volume drop diameter [mm]
+        - sigma_m : Standard deviation of the volume drop diameter [mm]
+        - Nw : Normalized intercept parameter [m-3·mm⁻¹]
+        - R : Rain rate [mm/h]
+        - P : Rain accumulation [mm]
+        - TKE: Total Kinetic Energy [J/m2]
+        - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹].
+        - KEF: Kinetic Energy Flux [J·m⁻²·h⁻¹].
     """
-    # Ensure velocity has the same dimensions as drop_number
-    velocity = xr.ones_like(drop_number) * velocity
-    # Compute rainfall kinetic energy per unit rainfall depth
-    E = (
-        0.5
-        * np.pi
-        / 6
-        * water_density
-        / rain_accumulation
-        * ((drop_number * diameter**3 * velocity**2) / sampling_area).sum(
-            dim=_get_spectrum_dims(drop_number), skipna=False
-        )
+    # Initialize dataset
+    ds = xr.Dataset()
+
+    # Compute total number concentration (Nt) [#/m3]
+    ds["Nt"] = get_total_number_concentration(
+        drop_number_concentration=drop_number_concentration,
+        diameter_bin_width=diameter_bin_width,
     )
-    return E
+
+    # Compute rain rate
+    ds["R"] = get_rain_rate(
+        drop_number_concentration=drop_number_concentration,
+        velocity=velocity,
+        diameter=diameter,
+        diameter_bin_width=diameter_bin_width,
+    )
+
+    # Compute rain accumulation (P) [mm]
+    ds["P"] = get_rain_accumulation(rain_rate=ds["R"], sample_interval=sample_interval)
+
+    # Compute moments (m0 to m6)
+    for moment in range(0, 7):
+        ds[f"M{moment}"] = get_moment(
+            drop_number_concentration=drop_number_concentration,
+            diameter=diameter,
+            diameter_bin_width=diameter_bin_width,
+            moment=moment,
+        )
+
+    # Compute Liquid Water Content (LWC) (W) [g/m3]
+    # ds["W"] = get_liquid_water_content(
+    #     drop_number_concentration=drop_number_concentration,
+    #     diameter=diameter,
+    #     diameter_bin_width=diameter_bin_width,
+    #     water_density=water_density,
+    # )
+
+    ds["W"] = get_liquid_water_content_from_moments(moment_3=ds["M3"], water_density=water_density)
+
+    # Compute reflectivity in dBZ
+    ds["Z"] = get_equivalent_reflectivity_factor(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,
+        diameter_bin_width=diameter_bin_width,
+    )
+
+    # Compute the diameter at which the distribution peak
+    ds["Dmode"] = get_mode_diameter(drop_number_concentration, diameter=diameter) * 1000  # Output converted to mm
+
+    # Compute mean_volume_diameter (Dm) [mm]
+    ds["Dm"] = get_mean_volume_drop_diameter(moment_3=ds["M3"], moment_4=ds["M4"])
+
+    # Compute σₘ[mm]
+    ds["sigma_m"] = get_std_volume_drop_diameter(
+        moment_3=ds["M3"],
+        moment_4=ds["M4"],
+        moment_5=ds["M5"],
+    )
+
+    # Compute normalized_intercept_parameter (Nw) [m-3·mm⁻¹]
+    # ds["Nw"] = get_normalized_intercept_parameter(
+    #     liquid_water_content=liquid_water_content,
+    #     mean_volume_diameter=mean_volume_diameter,
+    #     water_density=water_density,
+    # )
+
+    ds["Nw"] = get_normalized_intercept_parameter_from_moments(moment_3=ds["M3"], moment_4=ds["M4"])
+
+    # Compute median volume_drop_diameter
+    # --> Equivalent to get_quantile_volume_drop_diameter with fraction = 0.5
+    # ds["D50"] = get_median_volume_drop_diameter(
+    #     drop_number_concentration=drop_number_concentration,
+    #     diameter=diameter,
+    #     diameter_bin_width=diameter_bin_width,
+    #     water_density=water_density,
+    # )
+
+    # Compute volume_drop_diameter for the 10th and 90th quantile of the cumulative LWC distribution
+    fractions = [0.1, 0.5, 0.9]
+    d_q = get_quantile_volume_drop_diameter(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,
+        diameter_bin_width=diameter_bin_width,
+        fraction=fractions,
+        water_density=water_density,
+    )
+    for fraction in fractions:
+        var = f"D{round(fraction*100)!s}"  # D10, D50, D90
+        ds[var] = d_q.sel(quantile=fraction).drop_vars("quantile")
+
+    # Compute kinetic energy variables
+    ds_ke = get_kinetic_energy_variables(
+        drop_number_concentration=drop_number_concentration,
+        velocity=velocity,
+        diameter=diameter,
+        diameter_bin_width=diameter_bin_width,
+        sample_interval=sample_interval,
+        water_density=water_density,
+    )
+    ds.update(ds_ke)
+    return ds
+
+
+def compute_spectrum_parameters(
+    drop_number_concentration,
+    velocity,
+    diameter,
+    sample_interval,
+    water_density=1000,
+):
+    """
+    Compute drop size spectrum of rain rate, kinetic energy, mass and reflectivity.
+
+    Parameters
+    ----------
+    drop_number_concentration : xr.DataArray
+        Drop number concentration in each diameter bin [#/m3/mm].
+    velocity : xr.DataArray
+        Fall velocity of drops in each diameter bin [m/s].
+        The presence of a velocity_method dimension enable to compute the parameters
+        with different velocity estimates.
+    diameter : array-like
+        Diameter of drops in each bin in m.
+    sample_interval : float
+        Time interval over which the samples are collected in seconds.
+    water_density : float or array-like
+        Density of water [kg/m3].
+
+    Returns
+    -------
+    ds : xarray.Dataset
+        Dataset containing the following spectrum:
+        - KE_spectrum : Kinetic Energy spectrum [J/m2/mm]
+        - R_spectrum : Rain Rate spectrum [mm/h/mm]
+        - W_spectrum : Mass spectrum [g/m3/mm]
+        - Z_spectrum : Reflectivity spectrum [dBZ of mm6/m3/mm]
+    """
+    # Initialize dataset
+    ds = xr.Dataset()
+    ds["KE_spectrum"] = get_kinetic_energy_spectrum(
+        drop_number_concentration,
+        velocity=velocity,
+        diameter=diameter,
+        sample_interval=sample_interval,
+        water_density=water_density,
+    )
+    ds["R_spectrum"] = get_rain_rate_spectrum(drop_number_concentration, velocity=velocity, diameter=diameter)
+    ds["W_spectrum"] = get_liquid_water_spectrum(
+        drop_number_concentration,
+        diameter=diameter,
+        water_density=water_density,
+    )
+    ds["Z_spectrum"] = get_equivalent_reflectivity_spectrum(drop_number_concentration, diameter=diameter)
+    return ds

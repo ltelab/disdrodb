@@ -24,28 +24,13 @@ Source code:
 - https://github.com/wolfidan/pyradsim/blob/master/pyradsim/psd.py
 
 """
-
+import dask.array
 import numpy as np
 import xarray as xr
 from pytmatrix.psd import PSD
 from scipy.special import gamma as gamma_f
-from scipy.stats import expon, gamma, lognorm
 
-# psd.log_likelihood
-# psd.moment(order)
-# psd.mean
-# psd.variance
-# psd.mode
-
-# TODO
-# - psd.isel(**kwargs)
-# - psd.sel(**kwargs)
-
-# __eq__
-# --> Generalize using self.parameters and deep diff
-
-
-# ------------------------------------------------------------------------------------------------------------.
+from disdrodb import DIAMETER_DIMENSION
 
 
 def available_psd_models():
@@ -59,6 +44,31 @@ def check_psd_model(psd_model):
     if psd_model not in available_models:
         raise ValueError(f"{psd_model} is an invalid PSD model. Valid models are: {available_models}.")
     return psd_model
+
+
+def check_input_parameters(parameters):
+    """Check valid input parameters."""
+    if not isinstance(parameters, dict):
+        raise TypeError("Parameters must be a dictionary.")
+    for param, value in parameters.items():
+        if not (is_scalar(value) or isinstance(value, xr.DataArray)):
+            raise TypeError(f"Parameter {param} must be a scalar or xarray.DataArray, not {type(value)}")
+    return parameters
+
+
+def check_diameter_inputs(D):
+    """Check valid diameter input."""
+    if isinstance(D, xr.DataArray) or is_scalar(D):
+        return D
+    if isinstance(D, (tuple, list)):
+        D = np.asanyarray(D)
+    if isinstance(D, (np.ndarray, dask.array.Array)):
+        if D.ndim != 1:
+            raise ValueError("Expecting a 1-dimensional diameter array.")
+        if D.size == 0:
+            raise ValueError("Expecting a non-empty diameter array.")
+        return xr.DataArray(D, dims=DIAMETER_DIMENSION)
+    raise TypeError(f"Invalid diameter type: {type(D)}")
 
 
 def get_psd_model(psd_model):
@@ -84,28 +94,6 @@ def get_required_parameters(psd_model):
     return psd_class.required_parameters()
 
 
-def clip_values(D, values, Dmax=np.inf):
-    """Clip values outside the [Dmin,Dmax) interval to 0."""
-    # Handle scalar input
-    if np.isscalar(D):
-        if Dmax < D or D == 0.0:
-            return 0.0
-        return values
-
-    # Handle numpy array input
-    if isinstance(values, np.ndarray):
-        mask = (Dmax < D) | (D == 0)
-        values = np.where(mask, 0, values)
-
-    # Handle xarray.DataArray input
-    elif isinstance(values, xr.DataArray):
-        values = xr.where(np.logical_or(Dmax < D, D == 0), 0, values)
-        values = values.where(~np.isnan(values).any(dim="diameter_bin_center"))
-    else:
-        raise TypeError("Input 'D' and 'values' must be a scalar, numpy array or an xarray.DataArray.")
-    return values
-
-
 def is_scalar(value):
     """Determines if the input value is a scalar."""
     return isinstance(value, (float, int)) or isinstance(value, (np.ndarray, xr.DataArray)) and value.size == 1
@@ -118,46 +106,107 @@ class XarrayPSD(PSD):
     --> https://github.com/ltelab/pytmatrix-lte/blob/880170b4ca62a04e8c843619fa1b8713b9e11894/pytmatrix/psd.py#L321
     """
 
-    def __eq__(self, other):
-        """Check if two objects are equal."""
-        return False
-
-    def has_scalar_parameters(self):
-        """Check if the PSD object contains only a single set of parameters."""
-        return np.all(is_scalar(value) for param, value in self.parameters.items())
-
     def formula(self, D, **parameters):
         """PSD formula."""
         pass
 
     def __call__(self, D):
         """Compute the PSD."""
-        values = self.formula(D=D, **self.parameters)
-        return clip_values(D=D, values=values, Dmax=self.Dmax)
+        D = check_diameter_inputs(D)
+        return self.formula(D=D, **self.parameters)
 
-    def moment(self, order, nbins_diam=1024):
+    def has_scalar_parameters(self):
+        """Check if the PSD object contains only a single set of parameters."""
+        return np.all([is_scalar(value) for value in self.parameters.values()])
+
+    def has_xarray_parameters(self):
+        """Check if the PSD object contains at least one xarray parameter."""
+        return any(isinstance(value, xr.DataArray) for param, value in self.parameters.items())
+
+    def isel(self, **kwargs):
+        """Subset the parameters by index using xarray.isel.
+
+        If the PSD has xarray parameters, returns a new PSD with subset parameters.
+        Otherwise raises an error.
         """
-        Compute the moments of the Particle Size Distribution (PSD).
+        if not self.has_xarray_parameters():
+            raise ValueError("isel() can only be used when PSD model parameters are xarray DataArrays")
 
-        Parameters
-        ----------
-        order : int
-            The order of the moment to compute.
-        nbins_diam : int, optional
-            The number of bins to use for the diameter range (default is 1024).
+        # Subset each xarray parameter
+        new_params = {}
+        for param, value in self.parameters.items():
+            if isinstance(value, xr.DataArray):
+                new_params[param] = value.isel(**kwargs)
+            else:
+                new_params[param] = value
 
-        Returns
-        -------
-        float
-            The computed moment of the PSD.
+        # Create new PSD instance
+        return self.__class__.from_parameters(new_params)
 
-        Notes
-        -----
-        The method uses numerical integration (trapezoidal rule) to compute the moment.
+    def sel(self, **kwargs):
+        """Subset the parameters by label using xarray.sel.
+
+        If the PSD has xarray parameters, returns a new PSD with subset parameters.
+        Otherwise raises an error.
         """
-        dbins = np.linspace(self.Dmin, self.Dmax, nbins_diam)
-        dD = dbins[1] - dbins[0]
-        return np.trapz(dbins**order * self.__call__(dbins), dx=dD)
+        if not self.has_xarray_parameters():
+            raise ValueError("sel() can only be used when PSD model parameters are xarray DataArrays")
+
+        # Subset each xarray parameter
+        new_params = {}
+        for param, value in self.parameters.items():
+            if isinstance(value, xr.DataArray):
+                new_params[param] = value.sel(**kwargs)
+            else:
+                new_params[param] = value
+
+        # Create new PSD instance
+        return self.__class__.from_parameters(new_params)
+
+    @staticmethod
+    def required_parameters():
+        """Return the PSD model required parameters."""
+        raise NotImplementedError("A PSD model must specify the required_parameters function.")
+
+    def __eq__(self, other):
+        """Check if two objects are equal."""
+        try:
+            # Check class equality
+            if not isinstance(other, self.__class__):
+                return False
+            # Get required parameters
+            params = self.required_parameters()
+            # Check scalar parameters case
+            if self.has_scalar_parameters() and other.has_scalar_parameters():
+                return all(self.parameters[param] == other.parameters[param] for param in params)
+            # Check array parameters case
+            return all(np.all(self.parameters[param] == other.parameters[param]) for param in params)
+        except AttributeError:
+            return False
+
+    # def moment(self, D, dD, order):
+    #     """
+    #     Compute the moments of the Particle Size Distribution (PSD).
+
+    #     Parameters
+    #     ----------
+    #     D: array-like
+    #         Diameter bin center in m.
+    #     dD: array-like
+    #         Diameter bin width in mm.
+    #     order : int
+    #         The order of the moment to compute.
+
+    #     Returns
+    #     -------
+    #     float
+    #         The computed moment of the PSD.
+
+    #     Notes
+    #     -----
+    #     The method uses numerical integration (trapezoidal rule) to compute the moment.
+    #     """
+    #     return np.trapezoid(D**order * self.__call__(D), x=D, dx=dD)
 
 
 class LognormalPSD(XarrayPSD):
@@ -182,31 +231,23 @@ class LognormalPSD(XarrayPSD):
 
     """
 
-    def __init__(self, Nt=1.0, mu=0.0, sigma=1.0, Dmin=0, Dmax=None, coverage=0.999):
+    def __init__(self, Nt=1.0, mu=0.0, sigma=1.0):
         self.Nt = Nt
         self.mu = mu
         self.sigma = sigma
         self.parameters = {"Nt": self.Nt, "mu": self.mu, "sigma": self.sigma}
-        # Define Dmin and Dmax
-        self.Dmin = Dmin
-        if Dmax is not None:
-            self.Dmax = Dmax
-        else:
-            dmax = lognorm.ppf(coverage, s=self.sigma, scale=np.exp(self.mu))
-            if isinstance(self.sigma, xr.DataArray):
-                self.Dmax = xr.DataArray(dmax, dims=self.sigma.dims, coords=self.sigma.coords)
-            else:
-                self.Dmax = dmax
-
-    @staticmethod
-    def required_parameters():
-        """Return the required parameters of the PSD."""
-        return ["Nt", "mu", "sigma"]
+        check_input_parameters(self.parameters)
 
     @property
     def name(self):
         """Return name of the PSD."""
         return "LognormalPSD"
+
+    @staticmethod
+    def formula(D, Nt, mu, sigma):
+        """Calculates the Lognormal PSD values."""
+        coeff = Nt / (np.sqrt(2.0 * np.pi) * sigma * (D))
+        return coeff * np.exp(-((np.log(D) - mu) ** 2) / (2.0 * sigma**2))
 
     @staticmethod
     def from_parameters(parameters):
@@ -224,6 +265,11 @@ class LognormalPSD(XarrayPSD):
         sigma = parameters["sigma"]
         return LognormalPSD(Nt=Nt, mu=mu, sigma=sigma)
 
+    @staticmethod
+    def required_parameters():
+        """Return the required parameters of the PSD."""
+        return ["Nt", "mu", "sigma"]
+
     def parameters_summary(self):
         """Return a string with the parameter summary."""
         if self.has_scalar_parameters():
@@ -237,23 +283,6 @@ class LognormalPSD(XarrayPSD):
         else:
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
-
-    @staticmethod
-    def formula(D, Nt, mu, sigma):
-        """Calculates the Lognormal PSD values."""
-        coeff = Nt / (np.sqrt(2.0 * np.pi) * sigma * (D))
-        expon = np.exp(-((np.log(D) - mu) ** 2) / (2.0 * sigma**2))
-        return coeff * expon
-
-    # def __eq__(self, other):
-    #     try:
-    #         return isinstance(other, ExponentialPSD) and \
-    #             (self.N0 == other.N0) and (self.Lambda == other.Lambda) and \
-    #             (self.Dmax == other.Dmax)
-    #     except AttributeError:
-    #         return False
-
-    # params dictionary !
 
 
 class ExponentialPSD(XarrayPSD):
@@ -270,42 +299,30 @@ class ExponentialPSD(XarrayPSD):
     ----------
         N0: the intercept parameter.
         Lambda: the inverse scale parameter
-        Dmax: the maximum diameter to consider (defaults to 11/Lambda, i.e. approx. 3*D50, if None)
 
     Args (call):
         D: the particle diameter.
 
     Returns (call):
         The PSD value for the given diameter.
-        Returns 0 for all diameters larger than Dmax.
     """
 
-    def __init__(self, N0=1.0, Lambda=1.0, Dmin=0, Dmax=None, coverage=0.999):
+    def __init__(self, N0=1.0, Lambda=1.0):
         # Define parameters
         self.N0 = N0
         self.Lambda = Lambda
         self.parameters = {"N0": self.N0, "Lambda": self.Lambda}
-
-        # Define Dmin and Dmax
-        self.Dmin = Dmin
-        if Dmax is not None:
-            self.Dmax = Dmax
-        else:
-            dmax = expon.ppf(coverage, scale=1 / self.Lambda)
-            if isinstance(self.Lambda, xr.DataArray):
-                self.Dmax = xr.DataArray(dmax, dims=self.Lambda.dims, coords=self.Lambda.coords)
-            else:
-                self.Dmax = dmax
-
-    @staticmethod
-    def required_parameters():
-        """Return the required parameters of the PSD."""
-        return ["N0", "Lambda"]
+        check_input_parameters(self.parameters)
 
     @property
     def name(self):
         """Return name of the PSD."""
         return "ExponentialPSD"
+
+    @staticmethod
+    def formula(D, N0, Lambda):
+        """Calculates the Exponential PSD values."""
+        return N0 * np.exp(-Lambda * D)
 
     @staticmethod
     def from_parameters(parameters):
@@ -322,6 +339,11 @@ class ExponentialPSD(XarrayPSD):
         Lambda = parameters["Lambda"]
         return ExponentialPSD(N0=N0, Lambda=Lambda)
 
+    @staticmethod
+    def required_parameters():
+        """Return the required parameters of the PSD."""
+        return ["N0", "Lambda"]
+
     def parameters_summary(self):
         """Return a string with the parameter summary."""
         if self.has_scalar_parameters():
@@ -335,23 +357,6 @@ class ExponentialPSD(XarrayPSD):
         else:
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
-
-    @staticmethod
-    def formula(D, N0, Lambda):
-        """Calculates the Exponential PSD values."""
-        return N0 * np.exp(-Lambda * D)
-
-    def __eq__(self, other):
-        """Check if two objects are equal."""
-        try:
-            return (
-                isinstance(other, ExponentialPSD)
-                and (self.N0 == other.N0)
-                and (self.Lambda == other.Lambda)
-                and (self.Dmax == other.Dmax)
-            )
-        except AttributeError:
-            return False
 
 
 class GammaPSD(ExponentialPSD):
@@ -369,15 +374,12 @@ class GammaPSD(ExponentialPSD):
         N0: the intercept parameter [mm**(-1-mu) m**-3] (scale parameter)
         Lambda: the inverse scale parameter [mm-1] (slope parameter)
         mu: the shape parameter [-]
-        Dmax: the maximum diameter to consider (defaults to 11/Lambda,
-            i.e. approx. 3*D50, if None)
 
     Args (call):
         D: the particle diameter.
 
     Returns (call):
         The PSD value for the given diameter.
-        Returns 0 for all diameters larger than Dmax.
 
     References
     ----------
@@ -386,32 +388,23 @@ class GammaPSD(ExponentialPSD):
     J. Appl. Meteor. Climatol., 24, 580-590, https://doi.org/10.1175/1520-0450(1985)024<0580:TEODSD>2.0.CO;2
     """
 
-    def __init__(self, N0=1.0, mu=0.0, Lambda=1.0, Dmin=0, Dmax=None, coverage=0.999):
+    def __init__(self, N0=1.0, mu=0.0, Lambda=1.0):
         # Define parameters
         self.N0 = N0
         self.Lambda = Lambda
         self.mu = mu
         self.parameters = {"N0": self.N0, "mu": self.mu, "Lambda": self.Lambda}
-        # Define Dmin and Dmax
-        self.Dmin = Dmin
-        if Dmax is not None:
-            self.Dmax = Dmax
-        else:
-            dmax = gamma.ppf(coverage, a=self.mu + 1.0, scale=1.0 / self.Lambda)
-            if isinstance(self.Lambda, xr.DataArray):
-                self.Dmax = xr.DataArray(dmax, dims=self.Lambda.dims, coords=self.Lambda.coords)
-            else:
-                self.Dmax = dmax
-
-    @staticmethod
-    def required_parameters():
-        """Return the required parameters of the PSD."""
-        return ["N0", "mu", "Lambda"]
+        check_input_parameters(self.parameters)
 
     @property
     def name(self):
         """Return name of the PSD."""
         return "GammaPSD"
+
+    @staticmethod
+    def formula(D, N0, Lambda, mu):
+        """Calculates the Gamma PSD values."""
+        return N0 * np.exp(mu * np.log(D) - Lambda * D)
 
     @staticmethod
     def from_parameters(parameters):
@@ -429,6 +422,11 @@ class GammaPSD(ExponentialPSD):
         mu = parameters["mu"]
         return GammaPSD(N0=N0, Lambda=Lambda, mu=mu)
 
+    @staticmethod
+    def required_parameters():
+        """Return the required parameters of the PSD."""
+        return ["N0", "mu", "Lambda"]
+
     def parameters_summary(self):
         """Return a string with the parameter summary."""
         if self.has_scalar_parameters():
@@ -443,18 +441,6 @@ class GammaPSD(ExponentialPSD):
         else:
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
-
-    @staticmethod
-    def formula(D, N0, Lambda, mu):
-        """Calculates the Gamma PSD values."""
-        return N0 * np.exp(mu * np.log(D) - Lambda * D)
-
-    def __eq__(self, other):
-        """Check if two objects are equal."""
-        try:
-            return super().__eq__(other) and self.mu == other.mu
-        except AttributeError:
-            return False
 
 
 class NormalizedGammaPSD(XarrayPSD):
@@ -489,15 +475,12 @@ class NormalizedGammaPSD(XarrayPSD):
         D50: the median volume diameter.
         Nw: the intercept parameter.
         mu: the shape parameter.
-        Dmax: the maximum diameter to consider (defaults to 3*D50 when
-            if None)
 
     Args (call):
         D: the particle diameter.
 
     Returns (call):
         The PSD value for the given diameter.
-        Returns 0 for all diameters larger than Dmax.
 
     References
     ----------
@@ -527,23 +510,25 @@ class NormalizedGammaPSD(XarrayPSD):
 
     """
 
-    def __init__(self, Nw=1.0, D50=1.0, mu=0.0, Dmin=0, Dmax=None):
+    def __init__(self, Nw=1.0, D50=1.0, mu=0.0):
         self.D50 = D50
         self.mu = mu
-        self.Dmin = Dmin
-        self.Dmax = 3.0 * D50 if Dmax is None else Dmax
         self.Nw = Nw
         self.parameters = {"Nw": Nw, "D50": D50, "mu": mu}
-
-    @staticmethod
-    def required_parameters():
-        """Return the required parameters of the PSD."""
-        return ["Nw", "D50", "mu"]
+        check_input_parameters(self.parameters)
 
     @property
     def name(self):
         """Return the PSD name."""
         return "NormalizedGammaPSD"
+
+    @staticmethod
+    def formula(D, Nw, D50, mu):
+        """Calculates the NormalizedGamma PSD values."""
+        d_ratio = D / D50
+        nf = Nw * 6.0 / 3.67**4 * (3.67 + mu) ** (mu + 4) / gamma_f(mu + 4)
+        # return nf * d_ratio ** mu * np.exp(-(mu + 3.67) * d_ratio)
+        return nf * np.exp(mu * np.log(d_ratio) - (3.67 + mu) * d_ratio)
 
     @staticmethod
     def from_parameters(parameters):
@@ -562,12 +547,9 @@ class NormalizedGammaPSD(XarrayPSD):
         return NormalizedGammaPSD(D50=D50, Nw=Nw, mu=mu)
 
     @staticmethod
-    def formula(D, Nw, D50, mu):
-        """Calculates the NormalizedGamma PSD values."""
-        d_ratio = D / D50
-        nf = Nw * 6.0 / 3.67**4 * (3.67 + mu) ** (mu + 4) / gamma_f(mu + 4)
-        # return nf * d_ratio ** mu * np.exp(-(mu + 3.67) * d_ratio)
-        return nf * np.exp(mu * np.log(d_ratio) - (3.67 + mu) * d_ratio)
+    def required_parameters():
+        """Return the required parameters of the PSD."""
+        return ["Nw", "D50", "mu"]
 
     def parameters_summary(self):
         """Return a string with the parameter summary."""
@@ -584,19 +566,6 @@ class NormalizedGammaPSD(XarrayPSD):
             summary = "" f"{self.name} with N-d parameters \n"
         return summary
 
-    def __eq__(self, other):
-        """Check if two objects are equal."""
-        try:
-            return (
-                isinstance(other, NormalizedGammaPSD)
-                and (self.D50 == other.D50)
-                and (self.Nw == other.Nw)
-                and (self.mu == other.mu)
-                and (self.Dmax == other.Dmax)
-            )
-        except AttributeError:
-            return False
-
 
 PSD_MODELS_DICT = {
     "LognormalPSD": LognormalPSD,
@@ -607,7 +576,7 @@ PSD_MODELS_DICT = {
 
 
 class BinnedPSD(PSD):
-    """Binned gamma particle size distribution (PSD).
+    """Binned particle size distribution (PSD).
 
     Callable class to provide a binned PSD with the given bin edges and PSD
     values.
@@ -649,6 +618,7 @@ class BinnedPSD(PSD):
         -----
         This method uses a binary search algorithm to find the appropriate bin for the given diameter D.
         """
+        # Alternative formulation: https://github.com/wolfidan/pyradsim/blob/master/pyradsim/psd.py#L122
         if not (self.bin_edges[0] < D <= self.bin_edges[-1]):
             return 0.0
 
@@ -673,6 +643,8 @@ class BinnedPSD(PSD):
     def __eq__(self, other):
         """Check PSD equality."""
         if other is None:
+            return False
+        if not isinstance(other, self.__class__):
             return False
         return (
             len(self.bin_edges) == len(other.bin_edges)
