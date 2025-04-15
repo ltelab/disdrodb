@@ -273,65 +273,6 @@ def get_moment(drop_number_concentration, diameter, diameter_bin_width, moment):
 #### Rain Rate and Accumulation
 
 
-def get_rain_rate(drop_number_concentration, velocity, diameter, diameter_bin_width):
-    r"""
-    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and raindrop velocities.
-
-    Calculates the rain rate by integrating over the drop size distribution (DSD),
-    considering the volume of water falling per unit time and area.
-
-    Parameters
-    ----------
-    drop_number_concentration : xarray.DataArray
-        Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹.
-    velocity : xarray.DataArray
-        Array of drop fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
-    diameter : xarray.DataArray
-        Array of drop diameters \\( D \\) in meters (m).
-    diameter_bin_width : xarray.DataArray
-        Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
-
-    Returns
-    -------
-    rain_rate : xarray.DataArray
-        The rain rate \\( R \\) in millimeters per hour (mm/h), representing the volume
-        of water falling per unit area per unit time.
-
-    Notes
-    -----
-    The rain rate \\( R \\) is calculated using:
-
-    .. math::
-
-        R = \frac{\\pi}{6} \times 10^{-3} \times 3600 \times
-          \\sum_{\text{bins}} N(D) \\cdot v(D) \\cdot D^3 \\cdot \\Delta D
-
-    where:
-
-    - \\( N(D) \\): Drop number concentration [m⁻³·mm⁻¹].
-    - \\( v(D) \\): Fall velocity of drops in diameter bin \\( D \\) [m/s].
-    - \\( D \\): Drop diameter [mm].
-    - \\( \\Delta D \\): Diameter bin width [mm].
-    - The factor \\( \frac{\\pi}{6} \\) converts the diameter cubed to volume of a sphere.
-    - The factor \\( 10^{-3} \\) converts from mm³ to m³.
-    - The factor \\( 3600 \\) converts from seconds to hours.
-
-    """
-    if VELOCITY_DIMENSION in velocity.dims:
-        raise ValueError(f"The 'velocity' DataArray must not have the {VELOCITY_DIMENSION} dimension.")
-
-    rain_rate = (
-        6
-        * np.pi
-        * 1e5
-        * (drop_number_concentration * (velocity * diameter**3 * diameter_bin_width)).sum(
-            dim=DIAMETER_DIMENSION,
-            skipna=False,
-        )
-    )
-    return rain_rate
-
-
 def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_interval):
     r"""
     Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and drop velocities.
@@ -402,6 +343,65 @@ def get_rain_rate_from_drop_number(drop_number, sampling_area, diameter, sample_
     return rain_rate
 
 
+def get_rain_rate(drop_number_concentration, velocity, diameter, diameter_bin_width):
+    r"""
+    Compute the rain rate \\( R \\) [mm/h] based on the drop size distribution and raindrop velocities.
+
+    Calculates the rain rate by integrating over the drop size distribution (DSD),
+    considering the volume of water falling per unit time and area.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹.
+    velocity : xarray.DataArray
+        Array of drop fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
+    diameter : xarray.DataArray
+        Array of drop diameters \\( D \\) in meters (m).
+    diameter_bin_width : xarray.DataArray
+        Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
+
+    Returns
+    -------
+    rain_rate : xarray.DataArray
+        The rain rate \\( R \\) in millimeters per hour (mm/h), representing the volume
+        of water falling per unit area per unit time.
+
+    Notes
+    -----
+    The rain rate \\( R \\) is calculated using:
+
+    .. math::
+
+        R = \frac{\\pi}{6} \times 10^{-3} \times 3600 \times
+          \\sum_{\text{bins}} N(D) \\cdot v(D) \\cdot D^3 \\cdot \\Delta D
+
+    where:
+
+    - \\( N(D) \\): Drop number concentration [m⁻³·mm⁻¹].
+    - \\( v(D) \\): Fall velocity of drops in diameter bin \\( D \\) [m/s].
+    - \\( D \\): Drop diameter [mm].
+    - \\( \\Delta D \\): Diameter bin width [mm].
+    - The factor \\( \frac{\\pi}{6} \\) converts the diameter cubed to volume of a sphere.
+    - The factor \\( 10^{-3} \\) converts from mm³ to m³.
+    - The factor \\( 3600 \\) converts from seconds to hours.
+
+    """
+    if VELOCITY_DIMENSION in velocity.dims:
+        raise ValueError(f"The 'velocity' DataArray must not have the {VELOCITY_DIMENSION} dimension.")
+
+    rain_rate = (
+        6
+        * np.pi
+        * 1e5
+        * (drop_number_concentration * (velocity * diameter**3 * diameter_bin_width)).sum(
+            dim=DIAMETER_DIMENSION,
+            skipna=False,
+        )
+    )
+    return rain_rate
+
+
 def get_rain_rate_spectrum(drop_number_concentration, velocity, diameter):
     r"""
     Compute the rain rate per diameter class.
@@ -428,6 +428,33 @@ def get_rain_rate_spectrum(drop_number_concentration, velocity, diameter):
     """
     rain_rate = 6 * np.pi * 1e5 * (drop_number_concentration * (velocity * diameter**3))
     return rain_rate
+
+
+def get_rain_rate_contribution(drop_number_concentration, velocity, diameter, diameter_bin_width):
+    r"""Compute the rain rate contribution per diameter class.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        Array of drop number concentrations \\( N(D) \\) in m⁻³·mm⁻¹.
+    velocity : xarray.DataArray
+        Array of drop fall velocities \\( v(D) \\) corresponding to each diameter bin in meters per second (m/s).
+    diameter : xarray.DataArray
+        Array of drop diameters \\( D \\) in meters (m).
+    diameter_bin_width : xarray.DataArray
+        Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
+
+    Returns
+    -------
+    xarray.DataArray
+        The rain rate contribution percentage per diameter class.
+
+    """
+    rain_rate_spectrum = (6 * np.pi * 1e5 * (velocity * diameter**3 * diameter_bin_width)) * drop_number_concentration
+
+    rain_rate_total = rain_rate_spectrum.sum(dim=DIAMETER_DIMENSION, skipna=False)
+    rain_rate_contribution = rain_rate_spectrum / rain_rate_total * 100
+    return rain_rate_contribution
 
 
 def get_rain_accumulation(rain_rate, sample_interval):
@@ -1023,7 +1050,7 @@ def _get_quantile_volume_drop_diameter(
         fill_value=0,
     ).astype(int)
 
-    # Retrieve cumulative LWC values at such bins adn target LWC
+    # Retrieve cumulative LWC values at such bins and target LWC
     y1 = cumulative_lwc.isel({DIAMETER_DIMENSION: idx_lower})
     y2 = cumulative_lwc.isel({DIAMETER_DIMENSION: idx_upper})
     yt = target_lwc

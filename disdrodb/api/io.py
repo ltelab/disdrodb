@@ -204,7 +204,8 @@ def open_dataset(
     )
     # Open L0A Parquet files
     if product == "L0A":
-        NotImplementedError()
+        # TODO: with pandas?
+        raise NotImplementedError
 
     # Open DISDRODB netCDF files using xarray
     # - TODO: parallel option and add closers !

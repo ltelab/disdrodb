@@ -28,6 +28,7 @@ import dask.array
 import numpy as np
 import xarray as xr
 from pytmatrix.psd import PSD
+from scipy.interpolate import PchipInterpolator, interp1d
 from scipy.special import gamma as gamma_f
 
 from disdrodb import DIAMETER_DIMENSION
@@ -48,8 +49,6 @@ def check_psd_model(psd_model):
 
 def check_input_parameters(parameters):
     """Check valid input parameters."""
-    if not isinstance(parameters, dict):
-        raise TypeError("Parameters must be a dictionary.")
     for param, value in parameters.items():
         if not (is_scalar(value) or isinstance(value, xr.DataArray)):
             raise TypeError(f"Parameter {param} must be a scalar or xarray.DataArray, not {type(value)}")
@@ -106,10 +105,6 @@ class XarrayPSD(PSD):
     --> https://github.com/ltelab/pytmatrix-lte/blob/880170b4ca62a04e8c843619fa1b8713b9e11894/pytmatrix/psd.py#L321
     """
 
-    def formula(self, D, **parameters):
-        """PSD formula."""
-        pass
-
     def __call__(self, D):
         """Compute the PSD."""
         D = check_diameter_inputs(D)
@@ -163,26 +158,18 @@ class XarrayPSD(PSD):
         # Create new PSD instance
         return self.__class__.from_parameters(new_params)
 
-    @staticmethod
-    def required_parameters():
-        """Return the PSD model required parameters."""
-        raise NotImplementedError("A PSD model must specify the required_parameters function.")
-
     def __eq__(self, other):
         """Check if two objects are equal."""
-        try:
-            # Check class equality
-            if not isinstance(other, self.__class__):
-                return False
-            # Get required parameters
-            params = self.required_parameters()
-            # Check scalar parameters case
-            if self.has_scalar_parameters() and other.has_scalar_parameters():
-                return all(self.parameters[param] == other.parameters[param] for param in params)
-            # Check array parameters case
-            return all(np.all(self.parameters[param] == other.parameters[param]) for param in params)
-        except AttributeError:
+        # Check class equality
+        if not isinstance(other, self.__class__):
             return False
+        # Get required parameters
+        params = self.required_parameters()
+        # Check scalar parameters case
+        if self.has_scalar_parameters() and other.has_scalar_parameters():
+            return all(self.parameters[param] == other.parameters[param] for param in params)
+        # Check array parameters case
+        return all(np.all(self.parameters[param] == other.parameters[param]) for param in params)
 
     # def moment(self, D, dD, order):
     #     """
@@ -575,34 +562,110 @@ PSD_MODELS_DICT = {
 }
 
 
+def define_interpolator(bin_edges, bin_values, interp_method):
+    """
+    Returns an interpolation function that takes one argument D.
+
+    Parameters
+    ----------
+      interp_method (str): Interpolation method: 'step_left', 'step_right', 'linear' or 'pchip'.
+      bin_edges (array-like): Sorted array of bin edge values.
+      bin_values (array-like): Array of bin values corresponding to each bin.
+
+    Returns
+    -------
+    callable
+      A function f(D) that returns the interpolated values.
+    """
+    # Ensure bin_edges and bin_values are NumPy arrays
+    bin_edges = np.asarray(bin_edges)
+    bin_values = np.asarray(bin_values)
+    bin_center = bin_edges[:-1] + np.diff(bin_edges) / 2
+    # Define a dictionary of lambda functions for each method.
+    # - Each lambda accepts only the variable D.
+    methods = {
+        # 'linear': Linear interpolation between bin values.
+        "linear": lambda D: interp1d(
+            bin_center,
+            bin_values,
+            kind="linear",
+            bounds_error=False,
+            fill_value="extrapolate",
+        )(D),
+        # 'pchip': Uses the PCHIP interpolator which preserves monotonicity.
+        "pchip": lambda D: PchipInterpolator(
+            bin_center,
+            bin_values,
+            extrapolate="extrapolate",
+        )(D),
+        # 'binary': Uses np.searchsorted for a vectorized direct bin lookup.
+        "step_left": lambda D: _stepwise_interpolator(bin_edges, bin_values, D, side="left"),
+        "step_right": lambda D: _stepwise_interpolator(bin_edges, bin_values, D, side="right"),
+    }
+    return methods[interp_method]
+
+
+def _stepwise_interpolator(bin_edges, bin_values, D, side="left"):
+    # Use np.searchsorted binary search to determine the insertion indices.
+    # With side='right', it returns the index of the first element greater than D
+    # Subtracting by 1 gives the bin to the left of D.
+    indices = np.searchsorted(bin_edges, D, side=side) - 1
+    indices = np.minimum(indices, len(bin_values) - 1)  # enable left inclusion of bin edge max
+    # Prepare an array for the results. For D outside the valid range the value is 0.
+    result = np.zeros_like(D, dtype=bin_values.dtype)
+    # Define valid indices
+    valid = (bin_edges[0] < D) & (bin_edges[-1] >= D)
+    # For valid entries, assign the corresponding bin value from self.bin_psd.
+    result[valid] = bin_values[indices[valid]]
+    return result
+
+
 class BinnedPSD(PSD):
-    """Binned particle size distribution (PSD).
+    """Binned Particle Size Distribution (PSD).
 
-    Callable class to provide a binned PSD with the given bin edges and PSD
-    values.
+    This class represents a binned particle size distribution (PSD) that computes PSD values
+    based on provided bin edges and corresponding PSD values. The PSD is evaluated via interpolation
+    using one of several available methods.
 
-    Args (constructor):
-        The first argument to the constructor should specify n+1 bin edges,
-        and the second should specify n bin_psd values.
+    Parameters
+    ----------
+    bin_edges : array_like
+        A sequence of n+1 bin edge values defining the bins. The edges must be monotonically increasing.
+    bin_psd : array_like
+        A sequence of n PSD values corresponding to the intervals defined by bin_edges.
+    interp_method : {'step_left', 'step_right', 'linear', 'pchip'}, optional
+        The interpolation method used to compute the PSD values. The default is 'step_left'.
 
-    Args (call):
-        D: the particle diameter.
+    For any input diameter (or diameters) D:
+        - If D lies outside the range (bin_edges[0], bin_edges[-1]), the PSD value is set to 0.
+        - The interpolation function is defined internally based on the chosen method.
+        - PSD values are clipped to ensure they are non-negative.
 
-    Returns (call):
-        The PSD value for the given diameter.
-        Returns 0 for all diameters outside the bins.
+    Examples
+    --------
+    >>> import numpy as np
+    >>> bin_edges = [0.0, 1.0, 2.0, 3.0, 4.0]
+    >>> bin_psd = [10.0, 20.0, 30.0, 0.0]
+    >>> D = np.linspace(0, 3.5, 100)
+    >>>
+    >>> # Using linear interpolation
+    >>> psd_linear = BinnedPSD(bin_edges, bin_psd, interp_method="linear")
+    >>> psd_values = psd_linear(D)
+    >>>
+    >>> # Values for D outside (bin_edges[0], bin_edges[-1]) are set to 0
     """
 
-    def __init__(self, bin_edges, bin_psd):
-        if len(bin_edges) != len(bin_psd) + 1:
+    def __init__(self, bin_edges, bin_psd, interp_method="step_left"):
+        # Check array size
+        if len(bin_edges) != (len(bin_psd) + 1):
             raise ValueError("There must be n+1 bin edges for n bins.")
+        # Assign psd values and edges
+        self.bin_edges = np.asanyarray(bin_edges)
+        self.bin_psd = np.asanyarray(bin_psd)
+        self.interp_method = interp_method
 
-        self.bin_edges = bin_edges
-        self.bin_psd = bin_psd
-
-    def psd_for_D(self, D):
-        """
-        Calculate the particle size distribution (PSD) for a given diameter D.
+    def __call__(self, D):
+        """Compute the PSD.
 
         Parameters
         ----------
@@ -611,37 +674,32 @@ class BinnedPSD(PSD):
 
         Returns
         -------
-        float
-            The PSD value corresponding to the given diameter D. Returns 0.0 if D is outside the range of bin edges.
+        array-like
+            The PSD value(s) corresponding to the given diameter(s) D.
+            if D values are outside the range of bin edges, 0 values are returned.
 
-        Notes
-        -----
-        This method uses a binary search algorithm to find the appropriate bin for the given diameter D.
         """
-        # Alternative formulation: https://github.com/wolfidan/pyradsim/blob/master/pyradsim/psd.py#L122
-        if not (self.bin_edges[0] < D <= self.bin_edges[-1]):
-            return 0.0
-
-        # binary search for the right bin
-        start = 0
-        end = len(self.bin_edges)
-        while end - start > 1:
-            half = (start + end) // 2
-            if self.bin_edges[start] < D <= self.bin_edges[half]:
-                end = half
-            else:
-                start = half
-
-        return self.bin_psd[start]
-
-    def __call__(self, D):
-        """Compute the PSD."""
-        if np.shape(D) == ():  # D is a scalar
-            return self.psd_for_D(D)
-        return np.array([self.psd_for_D(d) for d in D])
+        # Ensure D is numpy array of correct dimension
+        D = np.asanyarray(check_diameter_inputs(D))
+        # Define interpolator
+        interpolator = define_interpolator(
+            bin_edges=self.bin_edges,
+            bin_values=self.bin_psd,
+            interp_method=self.interp_method,
+        )
+        # Interpolate
+        values = interpolator(D)
+        # Mask outside bin edges
+        values[~(self.bin_edges[0] < D) & (self.bin_edges[-1] >= D)] = 0
+        # Clip values above 0
+        # - Extrapolation of some interpolator
+        values = np.clip(values, a_min=0, a_max=None)
+        if D.size == 1:
+            return values.item()
+        return values
 
     def __eq__(self, other):
-        """Check PSD equality."""
+        """Check Binned PSD equality."""
         if other is None:
             return False
         if not isinstance(other, self.__class__):
@@ -654,7 +712,7 @@ class BinnedPSD(PSD):
 
 
 ####-----------------------------------------------------------------.
-#### Moments Computation
+#### Moments Computations from PSD parameters
 
 
 def get_exponential_moment(N0, Lambda, moment):
