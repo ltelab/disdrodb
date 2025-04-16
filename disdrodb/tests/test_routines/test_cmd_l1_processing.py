@@ -29,8 +29,8 @@ from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
 from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
 from disdrodb.routines import (
-    run_disdrodb_l1_station,
     run_disdrodb_l1,
+    run_disdrodb_l1_station,
 )
 from disdrodb.utils.directories import count_files
 
@@ -49,7 +49,7 @@ VERSION = "Processed"
 # test_base_dir = os.path.join(tmp_path, "DISDRODB")
 # dst_dir = os.path.join(test_base_dir, VERSION)
 # shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
-   
+
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
@@ -105,14 +105,13 @@ def test_disdrodb_run_l1_station(tmp_path, parallel, cli):
     assert count_files(data_dir, glob_pattern="L1.30S.*.nc", recursive=True) == 2
 
 
-
 @pytest.mark.parametrize("cli", [True, False])
 def test_disdrodb_run_l1(tmp_path, cli):
     """Test the disdrodb_run_l1 command."""
     test_base_dir = tmp_path / "DISDRODB"
     dst_dir = test_base_dir / VERSION
     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
-    
+
     # Produce data
     if cli:
         runner = CliRunner()
@@ -160,4 +159,3 @@ def test_disdrodb_run_l1(tmp_path, cli):
         station_name=STATION_NAME,
     )
     assert count_files(data_dir, glob_pattern="L1.30S.*.nc", recursive=True) == 2
-   

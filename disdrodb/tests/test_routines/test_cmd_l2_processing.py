@@ -26,16 +26,15 @@ from click.testing import CliRunner
 
 from disdrodb import __root_path__
 from disdrodb.api.path import define_data_dir
-from disdrodb.cli.disdrodb_run_l2m import disdrodb_run_l2m
 from disdrodb.cli.disdrodb_run_l2e import disdrodb_run_l2e
-from disdrodb.cli.disdrodb_run_l2m_station import disdrodb_run_l2m_station
 from disdrodb.cli.disdrodb_run_l2e_station import disdrodb_run_l2e_station
-
+from disdrodb.cli.disdrodb_run_l2m import disdrodb_run_l2m
+from disdrodb.cli.disdrodb_run_l2m_station import disdrodb_run_l2m_station
 from disdrodb.routines import (
-    run_disdrodb_l2e_station,
     run_disdrodb_l2e,
-    run_disdrodb_l2m_station,
+    run_disdrodb_l2e_station,
     run_disdrodb_l2m,
+    run_disdrodb_l2m_station,
 )
 from disdrodb.utils.directories import count_files
 
@@ -56,8 +55,6 @@ VERSION = "Processed"
 # dst_dir = os.path.join(test_base_dir, VERSION)
 # shutil.copytree(TEST_DATA_L1_DIR, dst_dir, dirs_exist_ok=True)
 # shutil.copytree(TEST_DATA_L2E_DIR, dst_dir, dirs_exist_ok=True)
-  
- 
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -122,7 +119,7 @@ def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60*10,
+        sample_interval=60 * 10,
         rolling=False,
     )
     assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
@@ -146,7 +143,7 @@ def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
     test_base_dir = tmp_path / "DISDRODB"
     dst_dir = test_base_dir / VERSION
     shutil.copytree(TEST_DATA_L2E_DIR, dst_dir)
-    
+
     # Produce data
     if cli:
         runner = CliRunner()
@@ -204,10 +201,10 @@ def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
         station_name=STATION_NAME,
         sample_interval=60,
         rolling=True,
-        model_name="GAMMA_ML"
+        model_name="GAMMA_ML",
     )
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.ROLL1MIN.*.nc", recursive=True) == 2
-    
+
 
 @pytest.mark.parametrize("cli", [True, False])
 def test_disdrodb_run_l2e(tmp_path, cli):
@@ -215,7 +212,7 @@ def test_disdrodb_run_l2e(tmp_path, cli):
     test_base_dir = tmp_path / "DISDRODB"
     dst_dir = test_base_dir / VERSION
     shutil.copytree(TEST_DATA_L1_DIR, dst_dir)
-    
+
     # Produce data
     if cli:
         runner = CliRunner()
@@ -273,7 +270,7 @@ def test_disdrodb_run_l2e(tmp_path, cli):
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60*10,
+        sample_interval=60 * 10,
         rolling=False,
     )
     assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
@@ -357,8 +354,6 @@ def test_disdrodb_run_l2m(tmp_path, cli):
         station_name=STATION_NAME,
         sample_interval=60,
         rolling=True,
-        model_name="GAMMA_ML"
+        model_name="GAMMA_ML",
     )
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.ROLL1MIN.*.nc", recursive=True) == 2
-
- 
