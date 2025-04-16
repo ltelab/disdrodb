@@ -16,25 +16,25 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Pandas utility."""
+"""Test decorators."""
+import pytest
+from disdrodb.utils.decorators import (
+    check_software_availability,
+)
 
-import pandas as pd
 
+def test_check_software_availability_decorator():
+    """Test check_software_availability_decorator raise ImportError."""
 
-def get_dataframe_start_end_time(df: pd.DataFrame):
-    """Retrieves dataframe starting and ending time.
+    @check_software_availability(software="dummy_package", conda_package="dummy_package")
+    def dummy_function(a, b=1):
+        return a, b
 
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        Input dataframe
+    with pytest.raises(ImportError):
+        dummy_function()
 
-    Returns
-    -------
-    tuple
-        (``starting_time``, ``ending_time``)
+    @check_software_availability(software="numpy", conda_package="numpy")
+    def dummy_function(a, b=1):
+        return a, b
 
-    """
-    starting_time = df["time"].iloc[0]
-    ending_time = df["time"].iloc[-1]
-    return (starting_time, ending_time)
+    assert dummy_function(2, b=3) == (2, 3)

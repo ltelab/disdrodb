@@ -98,25 +98,6 @@ def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
     return last_idx
 
 
-def get_dataset_start_end_time(ds: xr.Dataset):
-    """Retrieves dataset starting and ending time.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        Input dataset
-
-    Returns
-    -------
-    tuple
-        (``starting_time``, ``ending_time``)
-
-    """
-    starting_time = ds["time"].to_numpy()[0]
-    ending_time = ds["time"].to_numpy()[-1]
-    return (starting_time, ending_time)
-
-
 def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, fill_value=dtypes.NA):
     """
     Regularize a dataset across time dimension with uniform resolution.

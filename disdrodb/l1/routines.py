@@ -34,11 +34,12 @@ from disdrodb.api.create_directories import (
 )
 from disdrodb.api.io import find_files, get_required_product
 from disdrodb.api.path import (
+    define_file_folder_path,
     define_l1_filename,
 )
-from disdrodb.configs import get_base_dir
+from disdrodb.configs import get_base_dir, get_folder_partitioning
 from disdrodb.l1.processing import generate_l1
-from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
+from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
 from disdrodb.utils.logger import (
@@ -133,6 +134,9 @@ def _generate_l1(
     # Define product name
     product = "L1"
 
+    # Define folder partitioning
+    folder_partitioning = get_folder_partitioning()
+
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
@@ -165,7 +169,8 @@ def _generate_l1(
         if ds["time"].size > 1:
             # Define filepath
             filename = define_l1_filename(ds, campaign_name=campaign_name, station_name=station_name)
-            filepath = os.path.join(data_dir, filename)
+            folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+            filepath = os.path.join(folder_path, filename)
             # Write to disk
             write_product(ds, product=product, filepath=filepath, force=force)
 

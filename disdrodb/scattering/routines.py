@@ -173,7 +173,7 @@ def _estimate_model_radar_parameters(
 
 
 def get_psd_parameters(ds):
-    """Return a xr.Dataset with the PSD parameters."""
+    """Return a xr.Dataset with only the PSD parameters as variable."""
     psd_model = ds.attrs["disdrodb_psd_model"]
     required_parameters = get_required_parameters(psd_model)
     missing_parameters = [param for param in required_parameters if param not in ds]
@@ -416,6 +416,10 @@ def get_radar_parameters(
     axis_ratio = [check_axis_ratio(method) for method in axis_ratio]
     radar_band = [check_radar_band(band) for band in radar_band]
 
+    # Order radar band from longest to shortest wavelength
+    # - ["S", "C", "X", "Ku", "Ka", "W"]
+    radar_band = sorted(radar_band, key=lambda x: wavelength_dict[x])[::-1]
+
     # Retrieve combination of parameters
     list_params = [
         {
@@ -436,7 +440,9 @@ def get_radar_parameters(
         list_ds = [func(ds_subset, **params) for params in list_params]
 
     # Merge into a single dataset
+    # - Order radar bands from longest to shortest wavelength
     ds_radar = xr.merge(list_ds)
+    ds_radar = ds_radar.sel(radar_band=radar_band)
 
     # Copy global attributes from input dataset
     ds_radar.attrs = ds.attrs.copy()

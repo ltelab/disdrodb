@@ -20,11 +20,13 @@
 import os
 from typing import Optional
 
-import pandas as pd
-
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import check_directory_exists
-from disdrodb.utils.time import ensure_sample_interval_in_seconds, seconds_to_acronym
+from disdrodb.utils.time import (
+    ensure_sample_interval_in_seconds,
+    get_file_start_end_time,
+    seconds_to_acronym,
+)
 
 ####--------------------------------------------------------------------------.
 #### Paths from BASE_DIR
@@ -314,6 +316,94 @@ def check_rolling(rolling):
     """Check rolling argument validity."""
     if not isinstance(rolling, bool):
         raise ValueError("'rolling' must be a boolean.")
+
+
+def check_folder_partitioning(folder_partitioning):
+    """
+    Check if the given folder partitioning scheme is valid.
+
+    Parameters
+    ----------
+    folder_partitioning : str or None
+        Defines the subdirectory structure based on the dataset's start time.
+        Allowed values are:
+          - "": No additional subdirectories, files are saved directly in data_dir.
+          - "year": Files are stored under a subdirectory for the year (<data_dir>/2025).
+          - "year/month": Files are stored under subdirectories by year and month (<data_dir>/2025/04).
+          - "year/month/day": Files are stored under subdirectories by year, month and day (<data_dir>/2025/04/01).
+          - "year/month_name": Files are stored under subdirectories by year and month name (<data_dir>/2025/April).
+          - "year/quarter": Files are stored under subdirectories by year and quarter (<data_dir>/2025/Q2).
+
+    Returns
+    -------
+    folder_partitioning
+        The verified folder partitioning scheme.
+    """
+    valid_options = ["", "year", "year/month", "year/month/day", "year/month_name", "year/quarter"]
+    if folder_partitioning not in valid_options:
+        raise ValueError(
+            f"Invalid folder_partitioning scheme '{folder_partitioning}'. Valid options are: {valid_options}.",
+        )
+    return folder_partitioning
+
+
+def define_file_folder_path(obj, data_dir, folder_partitioning):
+    """
+    Define the folder path where saving a file based on the dataset's starting time.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset or pandas.DataFrame
+        The object containing time information.
+    data_dir : str
+        Base directory where files are to be saved.
+    folder_partitioning : str or None
+        Define the subdirectory structure where saving files.
+        Allowed values are:
+          - None: Files are saved directly in data_dir.
+          - "year": Files are saved under a subdirectory for the year.
+          - "year/month": Files are saved under subdirectories for year and month.
+          - "year/month/day": Files are saved under subdirectories for year, month and day
+          - "year/month_name": Files are stored under subdirectories by year and month name
+          - "year/quarter": Files are saved under subdirectories for year and quarter.
+
+    Returns
+    -------
+    str
+        A complete directory path where the file should be saved.
+    """
+    # Validate the folder partition parameter.
+    check_folder_partitioning(folder_partitioning)
+
+    # Retrieve the starting time from the dataset.
+    starting_time, _ = get_file_start_end_time(obj)
+
+    # Build the folder path based on the chosen partition scheme.
+    if folder_partitioning == "":
+        return data_dir
+    if folder_partitioning == "year":
+        year = str(starting_time.year)
+        return os.path.join(data_dir, year)
+    if folder_partitioning == "year/month":
+        year = str(starting_time.year)
+        month = str(starting_time.month).zfill(2)
+        return os.path.join(data_dir, year, month)
+    if folder_partitioning == "year/month/day":
+        year = str(starting_time.year)
+        month = str(starting_time.month).zfill(2)
+        day = str(starting_time.day).zfill(2)
+        return os.path.join(data_dir, year, month, day)
+    if folder_partitioning == "year/month_name":
+        year = str(starting_time.year)
+        month = str(starting_time.month_name())
+        return os.path.join(data_dir, year, month)
+    if folder_partitioning == "year/quarter":
+        year = str(starting_time.year)
+        # Calculate quarter: months 1-3 => Q1, 4-6 => Q2, etc.
+        quarter = (starting_time.month - 1) // 3 + 1
+        quarter_dir = f"Q{quarter}"
+        return os.path.join(data_dir, year, quarter_dir)
+    raise NotImplementedError(f"Unrecognized '{folder_partitioning}' folder partitioning scheme.")
 
 
 def define_product_dir_tree(
@@ -716,8 +806,6 @@ def define_filename(
         L0B file name.
     """
     from disdrodb import PRODUCT_VERSION
-    from disdrodb.utils.pandas import get_dataframe_start_end_time
-    from disdrodb.utils.xarray import get_dataset_start_end_time
 
     # -----------------------------------------.
     # TODO: Define sample_interval_acronym
@@ -745,12 +833,9 @@ def define_filename(
     # -----------------------------------------.
     # Add time period information
     if add_time_period:
-        if product == "L0A":
-            starting_time, ending_time = get_dataframe_start_end_time(obj)
-        else:
-            starting_time, ending_time = get_dataset_start_end_time(obj)
-        starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-        ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+        starting_time, ending_time = get_file_start_end_time(obj)
+        starting_time = starting_time.strftime("%Y%m%d%H%M%S")
+        ending_time = ending_time.strftime("%Y%m%d%H%M%S")
         filename = f"{filename}.s{starting_time}.e{ending_time}"
 
     # -----------------------------------------.
@@ -788,11 +873,10 @@ def define_l0a_filename(df, campaign_name: str, station_name: str) -> str:
         L0A file name.
     """
     from disdrodb import PRODUCT_VERSION
-    from disdrodb.utils.pandas import get_dataframe_start_end_time
 
-    starting_time, ending_time = get_dataframe_start_end_time(df)
-    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    starting_time, ending_time = get_file_start_end_time(df)
+    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
+    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
     filename = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return filename
@@ -816,11 +900,10 @@ def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
         L0B file name.
     """
     from disdrodb import PRODUCT_VERSION
-    from disdrodb.utils.xarray import get_dataset_start_end_time
 
-    starting_time, ending_time = get_dataset_start_end_time(ds)
-    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    starting_time, ending_time = get_file_start_end_time(ds)
+    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
+    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
     filename = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return filename
@@ -844,14 +927,13 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
         L0B file name.
     """
     from disdrodb import PRODUCT_VERSION
-    from disdrodb.utils.xarray import get_dataset_start_end_time
 
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
-    starting_time, ending_time = get_dataset_start_end_time(ds)
-    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    starting_time, ending_time = get_file_start_end_time(ds)
+    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
+    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
     filename = (
         f"L0C.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
@@ -877,14 +959,13 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
         L1 file name.
     """
     from disdrodb import PRODUCT_VERSION
-    from disdrodb.utils.xarray import get_dataset_start_end_time
 
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
-    starting_time, ending_time = get_dataset_start_end_time(ds)
-    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    starting_time, ending_time = get_file_start_end_time(ds)
+    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
+    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
     filename = (
         f"L1.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
@@ -910,12 +991,11 @@ def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interv
         L0B file name.
     """
     from disdrodb import PRODUCT_VERSION
-    from disdrodb.utils.xarray import get_dataset_start_end_time
 
     sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-    starting_time, ending_time = get_dataset_start_end_time(ds)
-    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    starting_time, ending_time = get_file_start_end_time(ds)
+    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
+    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
     filename = (
         f"L2E.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
@@ -948,12 +1028,11 @@ def define_l2m_filename(
         L0B file name.
     """
     from disdrodb import PRODUCT_VERSION
-    from disdrodb.utils.xarray import get_dataset_start_end_time
 
     sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-    starting_time, ending_time = get_dataset_start_end_time(ds)
-    starting_time = pd.to_datetime(starting_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(ending_time).strftime("%Y%m%d%H%M%S")
+    starting_time, ending_time = get_file_start_end_time(ds)
+    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
+    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = PRODUCT_VERSION
     filename = (
         f"L2M_{model_name}.{sample_interval_acronym}.{campaign_name}."

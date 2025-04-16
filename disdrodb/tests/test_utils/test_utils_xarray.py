@@ -24,34 +24,9 @@ import pytest
 import xarray as xr
 
 from disdrodb.utils.xarray import (
-    get_dataset_start_end_time,
     regularize_dataset,
     xr_get_last_valid_idx,
 )
-
-
-def create_test_dataset():
-    """Create a mock xarray.Dataset for testing."""
-    times = pd.date_range("2023-01-01", periods=10, freq="D")
-    data = np.random.rand(10, 2, 2)  # Random data for the sake of example
-    ds = xr.Dataset({"my_data": (("time", "x", "y"), data)}, coords={"time": times})
-    return ds
-
-
-def test_get_dataset_start_end_time():
-    ds = create_test_dataset()
-    expected_start_time = ds["time"].to_numpy()[0]
-    expected_end_time = ds["time"].to_numpy()[-1]
-
-    start_time, end_time = get_dataset_start_end_time(ds)
-
-    assert start_time == expected_start_time
-    assert end_time == expected_end_time
-
-    # Test raise if empty dataset
-    empty_ds = xr.Dataset()
-    with pytest.raises(KeyError):
-        get_dataset_start_end_time(empty_ds)
 
 
 def test_regularize_dataset():

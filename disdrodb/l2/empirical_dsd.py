@@ -58,6 +58,10 @@ def get_drop_average_velocity(drop_number):
     r"""
     Calculate the drop average velocity \\( v_m(D))) \\) per diameter class.
 
+    The average velocity is obtained by weighting by the number of drops in each velocity bin.
+    If in a given diameter bin no drops are recorded, the resulting average drop size velocity for
+    such bin will be set to NaN.
+
     Parameters
     ----------
     drop_number : xarray.DataArray
@@ -72,7 +76,7 @@ def get_drop_average_velocity(drop_number):
         At timesteps with zero drop counts, it returns NaN.
     """
     velocity = xr.ones_like(drop_number) * drop_number["velocity_bin_center"]
-    average_velocity = ((velocity * drop_number).sum(dim=VELOCITY_DIMENSION)) / drop_number.sum(
+    average_velocity = ((velocity * drop_number).sum(dim=VELOCITY_DIMENSION, skipna=False)) / drop_number.sum(
         dim=VELOCITY_DIMENSION,
         skipna=False,
     )

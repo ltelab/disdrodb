@@ -1546,10 +1546,29 @@ class TestDropAverageVelocity:
 
         # Test output type
         check_datarray_type(output, array_type=array_type)
-        # Test expected values - for template dataset with uniform counts,
-        # average velocity should be mean of velocity bins
+        # Test expected values
         expected = np.array(
             [[0.56666667, 0.56666667, 0.56666667, 0.56666667], [0.56666667, 0.56666667, 0.56666667, 0.56666667]],
+        )
+        np.testing.assert_allclose(output.to_numpy(), expected)
+
+    @pytest.mark.parametrize("array_type", ["numpy", "dask"])
+    def test_drop_average_velocity_nan_where_no_drops(self, template_dataset, array_type):
+        """Test that in diameter bins with no drops, average velocity output is NaN."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number",
+            scenario="realistic",
+            array_type=array_type,
+        )
+        ds["drop_number"].data[:, :, -2:] = 0
+        output = get_drop_average_velocity(ds["drop_number"])
+
+        # Test output type
+        check_datarray_type(output, array_type=array_type)
+        # Test expected values
+        expected = np.array(
+            [[0.56666667, 0.56666667, np.nan, np.nan], [0.56666667, 0.56666667, np.nan, np.nan]],
         )
         np.testing.assert_allclose(output.to_numpy(), expected)
 

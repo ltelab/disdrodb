@@ -24,15 +24,27 @@ Source code:
 - https://github.com/wolfidan/pyradsim/blob/master/pyradsim/psd.py
 
 """
+import importlib
+
 import dask.array
 import numpy as np
 import xarray as xr
-from pytmatrix.psd import PSD
 from scipy.interpolate import PchipInterpolator, interp1d
 from scipy.special import gamma as gamma_f
 
 from disdrodb import DIAMETER_DIMENSION
 from disdrodb.utils.warnings import suppress_warnings
+
+# Check if pytmatrix is available
+# - We import pytmatrix.PSD class to pass isinstance(obj, PSD) checks in pytmatrix
+if importlib.util.find_spec("pytmatrix") is not None:
+    from pytmatrix.psd import PSD
+else:
+
+    class PSD:
+        """Dummy."""
+
+        pass
 
 
 def available_psd_models():

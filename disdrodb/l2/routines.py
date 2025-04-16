@@ -28,6 +28,7 @@ import pandas as pd
 import xarray as xr
 
 # Directory
+from disdrodb import is_pytmatrix_available
 from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
@@ -52,7 +53,7 @@ from disdrodb.l2.processing import (
 )
 from disdrodb.l2.processing_options import get_l2_processing_options
 from disdrodb.metadata import read_station_metadata
-from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
+from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
 from disdrodb.utils.logger import (
@@ -383,6 +384,8 @@ def run_l2e_station(
     # accumulation_interval = 60
     # sample_interval_acronym = "1MIN"
     # l2_options = l2_processing_options["1MIN"]
+    available_pytmatrix = is_pytmatrix_available()
+
     for sample_interval_acronym, l2_options in l2_processing_options.items():
 
         # Retrieve accumulation_interval and rolling option
@@ -391,6 +394,8 @@ def run_l2e_station(
         # Retrieve radar simulation options
         radar_simulation_enabled = l2_options.get("radar_simulation_enabled", False)
         radar_simulation_options = l2_options["radar_simulation_options"]
+        if not available_pytmatrix:
+            radar_simulation_enabled = False
 
         # ------------------------------------------------------------------.
         # Group filepaths by events
@@ -705,6 +710,7 @@ def run_l2m_station(
     # Loop
     # sample_interval_acronym = "1MIN"
     # l2_options = l2_processing_options["1MIN"]
+    available_pytmatrix = is_pytmatrix_available()
     for sample_interval_acronym, l2_options in l2_processing_options.items():
 
         # Retrieve accumulation_interval and rolling option
@@ -716,6 +722,8 @@ def run_l2m_station(
         # Retrieve radar simulation options
         radar_simulation_enabled = l2_options.get("radar_simulation_enabled", False)
         radar_simulation_options = l2_options["radar_simulation_options"]
+        if not available_pytmatrix:
+            radar_simulation_enabled = False
 
         # ------------------------------------------------------------------.
         # Avoid generation of rolling products for source sample interval !

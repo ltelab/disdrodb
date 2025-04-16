@@ -129,8 +129,29 @@ def acronym_to_seconds(acronym):
     return seconds
 
 
-####------------------------------------------------------------------------------------.
-#### Xarray utilities
+####----------------------------------------------------------------------------.
+#### File start and end time utilities
+def get_dataframe_start_end_time(df: pd.DataFrame, time_column="time"):
+    """Retrieves dataframe starting and ending time.
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        Input dataframe
+    time_column: str
+        Name of the time column.
+        The default is "time".
+        The column must be of type datetime.
+
+    Returns
+    -------
+    (start_time, end_time): tuple
+        File start and end time of type pandas.Timestamp.
+
+    """
+    starting_time = pd.to_datetime(df[time_column].iloc[0])
+    ending_time = pd.to_datetime(df[time_column].iloc[-1])
+    return (starting_time, ending_time)
 
 
 def get_dataset_start_end_time(ds: xr.Dataset, time_dim="time"):
@@ -146,13 +167,41 @@ def get_dataset_start_end_time(ds: xr.Dataset, time_dim="time"):
 
     Returns
     -------
-    tuple
-        (``starting_time``, ``ending_time``)
+    (start_time, end_time): tuple
+        File start and end time of type pandas.Timestamp.
 
     """
-    starting_time = ds[time_dim].to_numpy()[0]
-    ending_time = ds[time_dim].to_numpy()[-1]
+    starting_time = pd.to_datetime(ds[time_dim].to_numpy()[0])
+    ending_time = pd.to_datetime(ds[time_dim].to_numpy()[-1])
     return (starting_time, ending_time)
+
+
+def get_file_start_end_time(obj, time="time"):
+    """Retrieves object starting and ending time.
+
+    Parameters
+    ----------
+    obj : xarray.Dataset or pandas.DataFrame
+        Input object with time dimension or column respectively.
+    time: str
+        Name of the time dimension or column.
+        The default is "time".
+
+    Returns
+    -------
+    (start_time, end_time): tuple
+        File start and end time of type pandas.Timestamp.
+
+    """
+    if isinstance(obj, xr.Dataset):
+        return get_dataset_start_end_time(obj, time_dim=time)
+    if isinstance(obj, pd.DataFrame):
+        return get_dataframe_start_end_time(obj, time_column=time)
+    raise TypeError("Expecting a xarray Dataset or a pandas Dataframe object.")
+
+
+####------------------------------------------------------------------------------------.
+#### Xarray utilities
 
 
 def _define_fill_value(ds, fill_value):

@@ -79,14 +79,14 @@ def test_define_l0b_filename(product):
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
 
-    # Create xarray object
+    # Create xarray dataset
     timesteps = pd.date_range(start=start_date, end=end_date)
     data = np.zeros(timesteps.shape)
     ds = xr.DataArray(
         data=data,
         dims=["time"],
         coords={"time": pd.date_range(start=start_date, end=end_date), "sample_interval": sample_interval},
-    )
+    ).to_dataset(name="dummy")
 
     # Define expected results
     # TODO: MODIFY !

@@ -73,6 +73,16 @@ __all__ = [
 
 __root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
+
+def is_pytmatrix_available():
+    """Check if the pytmatrix package is correctly installed and available."""
+    try:
+        import pytmatrix
+    except Exception:
+        return False
+    return hasattr(pytmatrix, "psd")
+
+
 # Get version
 with contextlib.suppress(PackageNotFoundError):
     __version__ = version("disdrodb")

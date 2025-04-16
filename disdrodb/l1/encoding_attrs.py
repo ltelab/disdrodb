@@ -61,6 +61,11 @@ def get_attrs_dict():
             "long_name": "Total number of discarded drops",
             "units": "",
         },
+        "n_bins_with_drops": {
+            "description": "Number of diameter bins with drops",
+            "long_name": "Number of diameter bins with drops",
+            "units": "",
+        },
         #### L2
         "drop_number_concentration": {
             "description": "Number concentration of drops per diameter class per unit volume",
@@ -448,6 +453,15 @@ def get_encoding_dict():
             "fletcher32": False,
             "contiguous": False,
             "_FillValue": 4294967295,
+        },
+        "n_bins_with_drops": {
+            "dtype": "uint8",
+            "_FillValue": 255,
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
         },
         "Dmin": {
             "dtype": "uint16",

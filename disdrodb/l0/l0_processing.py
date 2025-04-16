@@ -38,6 +38,7 @@ from disdrodb.api.info import infer_path_info_tuple
 from disdrodb.api.io import find_files, get_required_product, remove_product
 from disdrodb.api.path import (
     define_campaign_dir,
+    define_file_folder_path,
     define_l0a_filename,
     define_l0b_filename,
     define_l0c_filename,
@@ -45,7 +46,7 @@ from disdrodb.api.path import (
 )
 
 # get_disdrodb_path,
-from disdrodb.configs import get_base_dir
+from disdrodb.configs import get_base_dir, get_folder_partitioning
 from disdrodb.issue import read_station_issue
 from disdrodb.l0.io import (
     get_raw_filepaths,
@@ -68,7 +69,7 @@ from disdrodb.l0.l0c_processing import (
     retrieve_possible_measurement_intervals,
 )
 from disdrodb.metadata import read_station_metadata
-from disdrodb.utils.decorator import delayed_if_parallel, single_threaded_if_parallel
+from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
 from disdrodb.utils.logger import (
@@ -113,6 +114,9 @@ def _generate_l0a(
     # Define product
     product = "L0A"
 
+    # Define folder partitioning
+    folder_partitioning = get_folder_partitioning()
+
     ##------------------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
@@ -143,7 +147,8 @@ def _generate_l0a(
         ##--------------------------------------------------------------------.
         #### - Write to Parquet
         filename = define_l0a_filename(df=df, campaign_name=campaign_name, station_name=station_name)
-        filepath = os.path.join(data_dir, filename)
+        folder_path = define_file_folder_path(df, data_dir=data_dir, folder_partitioning=folder_partitioning)
+        filepath = os.path.join(folder_path, filename)
         write_l0a(df=df, filepath=filepath, force=force, verbose=verbose)
 
         ##--------------------------------------------------------------------.
@@ -186,6 +191,9 @@ def _generate_l0b(
     # Define product
     product = "L0B"
 
+    # Define folder partitioning
+    folder_partitioning = get_folder_partitioning()
+
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
@@ -217,7 +225,8 @@ def _generate_l0b(
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
         filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
-        filepath = os.path.join(data_dir, filename)
+        folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+        filepath = os.path.join(folder_path, filename)
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -263,6 +272,9 @@ def _generate_l0b_from_nc(
     # Define product name
     product = "L0B"
 
+    # Define folder partitioning
+    folder_partitioning = get_folder_partitioning()
+
     # -----------------------------------------------------------------.
     # Create file logger
     filename = os.path.basename(filepath)
@@ -300,7 +312,8 @@ def _generate_l0b_from_nc(
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
         filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
-        filepath = os.path.join(data_dir, filename)
+        folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+        filepath = os.path.join(folder_path, filename)
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
@@ -342,6 +355,9 @@ def _generate_l0c(
     # -----------------------------------------------------------------.
     # Define product name
     product = "L0C"
+
+    # Define folder partitioning
+    folder_partitioning = get_folder_partitioning()
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -388,7 +404,8 @@ def _generate_l0c(
 
                 # Define filepath
                 filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
-                filepath = os.path.join(data_dir, filename)
+                folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+                filepath = os.path.join(folder_path, filename)
 
                 # Write to disk
                 write_product(ds, product=product, filepath=filepath, force=force)

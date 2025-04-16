@@ -35,8 +35,8 @@ from disdrodb.l2.empirical_dsd import (
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
 from disdrodb.psd.fitting import compute_gof_stats
-from disdrodb.scattering import get_radar_parameters
 from disdrodb.utils.attrs import set_attrs
+from disdrodb.utils.decorators import check_pytmatrix_availability
 from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
 
@@ -100,9 +100,8 @@ def define_velocity_array(ds):
     if "velocity_bin_center" in ds.dims:
         velocity = xr.Dataset(
             {
-                "measured_velocity": xr.ones_like(drop_number) * ds["velocity_bin_center"],
-                "average_velocity": xr.ones_like(drop_number) * ds["drop_average_velocity"],
                 "fall_velocity": xr.ones_like(drop_number) * ds["fall_velocity"],
+                "measured_velocity": xr.ones_like(drop_number) * ds["velocity_bin_center"],
             },
         ).to_array(dim="velocity_method")
     else:
@@ -395,7 +394,7 @@ def generate_l2_model(
     )
 
     ####------------------------------------------------------.
-    # Mask timesteps with few bins if asked
+    #### Mask timesteps with few bins if asked
     if mask_timesteps_with_few_bins:
         ds_psd_params = ds_psd_params.where(valid_timesteps)
 
@@ -466,6 +465,7 @@ def generate_l2_model(
 #### L2 Radar Parameters
 
 
+@check_pytmatrix_availability
 def generate_l2_radar(ds, radar_band=None, canting_angle_std=7, diameter_max=8, axis_ratio="Thurai2007", parallel=True):
     """Simulate polarimetric radar variables from empirical drop number concentration or the estimated PSD.
 
@@ -491,6 +491,10 @@ def generate_l2_radar(ds, radar_band=None, canting_angle_std=7, diameter_max=8, 
     xarray.Dataset
         Dataset containing the computed radar parameters.
     """
+    # Import here to avoid pytmatrix has mandatory dependency
+    # - It is only needed for radar simulation
+    from disdrodb.scattering import get_radar_parameters
+
     # Retrieve radar variables from L2E drop number concentration or from estimated L2M PSD model
     ds_radar = get_radar_parameters(
         ds=ds,
