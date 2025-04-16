@@ -285,7 +285,7 @@ def _generate_l0b_from_nc(
     ##------------------------------------------------------------------------.
     try:
         # Open the raw netCDF
-        with xr.open_dataset(filepath, cache=False) as data:
+        with xr.open_dataset(filepath, decode_timedelta=False, cache=False) as data:
             ds = data.load()
 
         # Convert to DISDRODB L0 format

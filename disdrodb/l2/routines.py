@@ -82,9 +82,10 @@ def _generate_l2e(
     logs_dir,
     campaign_name,
     station_name,
-    # Sampling options
+    # L2E options
     accumulation_interval,
     rolling,
+    l2e_options,
     # Radar options
     radar_simulation_enabled,
     radar_simulation_options,
@@ -119,7 +120,10 @@ def _generate_l2e(
         # ------------------------------------------------------------------------.
         #### Open the dataset over the period of interest
         # - Open the netCDFs
-        list_ds = [xr.open_dataset(filepath, chunks={}, cache=False, autoclose=True) for filepath in filepaths]
+        list_ds = [
+            xr.open_dataset(filepath, chunks={}, decode_timedelta=False, cache=False, autoclose=True)
+            for filepath in filepaths
+        ]
         # - Concatenate datasets
         ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
         ds = ds.sel(time=slice(start_time, end_time)).compute()
@@ -154,6 +158,7 @@ def _generate_l2e(
         # Remove timesteps with no drops or NaN (from L2E computations)
         # timestep_zero_drops = ds["time"].data[ds["n_drops_selected"].data == 0]
         # timestep_nan = ds["time"].data[np.isnan(ds["n_drops_selected"].data)]
+        # TODO: Make it a choice !
         indices_valid_timesteps = np.where(
             ~np.logical_or(ds["n_drops_selected"].data == 0, np.isnan(ds["n_drops_selected"].data)),
         )[0]
@@ -161,7 +166,8 @@ def _generate_l2e(
 
         ##------------------------------------------------------------------------.
         #### Generate L2E product
-        ds = generate_l2_empirical(ds=ds)
+        # TODO: Pass filtering criteria and actual L2E options !
+        ds = generate_l2_empirical(ds=ds, **l2e_options)
 
         # Simulate L2M-based radar variables if asked
         if radar_simulation_enabled:
@@ -455,9 +461,10 @@ def run_l2e_station(
                 logs_dir=logs_dir,
                 campaign_name=campaign_name,
                 station_name=station_name,
-                # Sampling options
+                # L2E options
                 rolling=rolling,
                 accumulation_interval=accumulation_interval,
+                l2e_options={},  # TODO
                 # Radar options
                 radar_simulation_enabled=radar_simulation_enabled,
                 radar_simulation_options=radar_simulation_options,
@@ -547,7 +554,7 @@ def _generate_l2m(
     ### Core computation
     try:
         # Open the raw netCDF
-        with xr.open_dataset(filepath, chunks={}, cache=False) as ds:
+        with xr.open_dataset(filepath, chunks={}, decode_timedelta=False, cache=False) as ds:
             variables = [
                 "drop_number_concentration",
                 "fall_velocity",
@@ -688,6 +695,7 @@ def run_l2m_station(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        product="L2M",  # TODO: remove when using metadata_dir !
     )
     sample_interval = metadata["measurement_interval"]
     if isinstance(sample_interval, list):
@@ -803,7 +811,7 @@ def run_l2m_station(
                     logs_dir=logs_dir,
                     campaign_name=campaign_name,
                     station_name=station_name,
-                    # L2M option
+                    # L2M options
                     sample_interval=accumulation_interval,
                     rolling=rolling,
                     model_name=model_name,

@@ -32,6 +32,7 @@ from scipy.interpolate import PchipInterpolator, interp1d
 from scipy.special import gamma as gamma_f
 
 from disdrodb import DIAMETER_DIMENSION
+from disdrodb.utils.warnings import suppress_warnings
 
 
 def available_psd_models():
@@ -108,7 +109,8 @@ class XarrayPSD(PSD):
     def __call__(self, D):
         """Compute the PSD."""
         D = check_diameter_inputs(D)
-        return self.formula(D=D, **self.parameters)
+        with suppress_warnings():
+            return self.formula(D=D, **self.parameters)
 
     def has_scalar_parameters(self):
         """Check if the PSD object contains only a single set of parameters."""

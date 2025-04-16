@@ -27,7 +27,7 @@ from disdrodb.utils.time import acronym_to_seconds, ensure_sorted_by_time
 @dask.delayed
 def _delayed_open_dataset(filepath):
     with dask.config.set(scheduler="synchronous"):
-        ds = xr.open_dataset(filepath, chunks={}, autoclose=True, cache=False)
+        ds = xr.open_dataset(filepath, chunks={}, autoclose=True, decode_timedelta=False, cache=False)
     return ds
 
 

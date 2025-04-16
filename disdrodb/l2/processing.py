@@ -25,6 +25,7 @@ from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (
     compute_integral_parameters,
     compute_spectrum_parameters,
+    count_bins_with_drops,
     get_drop_average_velocity,
     get_drop_number_concentration,
     get_effective_sampling_area,
@@ -141,6 +142,10 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
     # - This allow to speed up processing
     # - Regularization can be done at the end
     ds = ds.isel(time=ds["n_drops_selected"] > 0)
+
+    # Count number of diameter bins with data
+    if "n_bins_with_drops" not in ds:
+        ds["n_bins_with_drops"] = count_bins_with_drops(ds)
 
     # Retrieve ENV dataset or take defaults
     # --> Used for fall velocity and water density estimates
@@ -293,6 +298,10 @@ def generate_l2_model(
     psd_model=None,
     optimization=None,
     optimization_kwargs=None,
+    # Filtering options
+    min_bins_with_drops=4,
+    remove_timesteps_with_few_bins=False,
+    mask_timesteps_with_few_bins=False,
     # GOF metrics options
     gof_metrics=True,
 ):
@@ -346,15 +355,24 @@ def generate_l2_model(
     # -->  (T == 10){density_water <- 999.7}else if(T == 20){density_water <- 998.2}else{density_water <- 995.7}
     water_density = 1000  # kg / m3
 
+    ####------------------------------------------------------.
+    #### Preprocessing
+    # Count number of diameter bins with data
+    if "n_bins_with_drops" not in ds:
+        ds["n_bins_with_drops"] = count_bins_with_drops(ds)
+
+    # Identify timesteps with enough diameter bins with counted trops
+    valid_timesteps = ds["n_bins_with_drops"] >= min_bins_with_drops
+
+    # Drop such timesteps if asked
+    if remove_timesteps_with_few_bins:
+        mask_timesteps_with_few_bins = False
+        ds = ds.isel(time=valid_timesteps, drop=False)
+
     # Retrieve ENV dataset or take defaults
     # --> Used for fall velocity and water density estimates
     if ds_env is None:
         ds_env = load_env_dataset(ds)
-
-    ####------------------------------------------------------.
-    #### Preprocessing
-    # - Filtering criteria for when fitting a PSD
-    # TODO --> try to fit and define reasonable criteria based on R2, max deviation, rain_rate abs/relative error
 
     ####------------------------------------------------------.
     #### Define default PSD optimization arguments
@@ -375,6 +393,14 @@ def generate_l2_model(
         optimization=optimization,
         optimization_kwargs=optimization_kwargs,
     )
+
+    ####------------------------------------------------------.
+    # Mask timesteps with few bins if asked
+    if mask_timesteps_with_few_bins:
+        ds_psd_params = ds_psd_params.where(valid_timesteps)
+
+    ####-------------------------------------------------------
+    #### Create PSD
     psd_name = ds_psd_params.attrs["disdrodb_psd_model"]
     psd = create_psd(psd_name, parameters=ds_psd_params)
 
@@ -389,6 +415,7 @@ def generate_l2_model(
     diameter_bin_width = diameter["diameter_bin_width"]
 
     # Retrieve time of integration
+    # - If dataset is opened with decode_timedelta=False, sample_interval is already in seconds !
     sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])
 
     # Retrieve drop number concentration

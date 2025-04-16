@@ -79,6 +79,24 @@ def get_drop_average_velocity(drop_number):
     return average_velocity
 
 
+def count_bins_with_drops(ds):
+    """Count the number of diameter bins with data."""
+    # Select useful variable
+    candidate_variables = ["drop_counts", "drop_number_concentration", "drop_number"]
+    available_variables = [var for var in candidate_variables if var in ds]
+    if len(available_variables) == 0:
+        raise ValueError(f"One of these variables is required: {candidate_variables}")
+    da = ds[available_variables[0]]
+    if VELOCITY_DIMENSION in da.dims:
+        da = da.sum(dim=VELOCITY_DIMENSION)
+    # Count number of bins with data
+    da = (da > 0).sum(dim=DIAMETER_DIMENSION)
+    # TODO: remove this in future !
+    if "velocity_method" in da.dims:
+        da = da.max(dim="velocity_method")
+    return da
+
+
 ####-------------------------------------------------------------------------------------------------------------------.
 #### DSD Spectrum, Concentration, Moments
 

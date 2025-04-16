@@ -25,6 +25,8 @@ from scipy.special import gamma, gammainc, gammaln  # Regularized lower incomple
 from disdrodb.psd.models import ExponentialPSD, GammaPSD, LognormalPSD, NormalizedGammaPSD
 from disdrodb.utils.warnings import suppress_warnings
 
+# gamma(>171) return inf !
+
 
 ####--------------------------------------------------------------------------------------.
 #### Goodness of fit (GOF)
@@ -605,8 +607,10 @@ def estimate_gamma_parameters(
     with suppress_warnings():
         log_N0 = np.log(Nt) + (mu + 1) * np.log(Lambda) - gammaln(mu + 1)
         N0 = np.exp(log_N0)
-        if not np.isfinite(N0):
-            N0 = np.nan
+
+    # Set parameters to np.nan if any of the parameters is not a finite number
+    if not np.isfinite(N0) or not np.isfinite(mu) or not np.isfinite(Lambda):
+        return null_output
 
     # Define output
     output = {"N0": N0, "mu": mu, "Lambda": Lambda} if output_dictionary else np.array([N0, mu, Lambda])
@@ -629,6 +633,9 @@ def _get_initial_gamma_parameters(ds, mom_method=None):
         )
         ds_init["a"] = ds_init["mu"] + 1
         ds_init["scale"] = 1 / ds_init["Lambda"]
+        # If initialization results in some not finite number, set default value
+        ds_init["a"] = xr.where(np.isfinite(ds_init["a"]), ds_init["a"], ds["M1"])
+        ds_init["scale"] = xr.where(np.isfinite(ds_init["scale"]), ds_init["scale"], ds["M1"])
     return ds_init
 
 
@@ -712,6 +719,8 @@ def get_gamma_parameters(
         dask_gufunc_kwargs={"output_sizes": {"parameters": 3}},  # lengths of the new output_core_dims dimensions.
         output_dtypes=["float64"],
     )
+
+    ds_init.isel(velocity_method=0, time=-3)
 
     # Add parameters coordinates
     da_params = da_params.assign_coords({"parameters": ["N0", "mu", "Lambda"]})

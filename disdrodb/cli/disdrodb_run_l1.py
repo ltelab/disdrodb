@@ -92,7 +92,7 @@ def disdrodb_run_l1(
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l1.routines import run_disdrodb_l1
+    from disdrodb.routines import run_disdrodb_l1
 
     # Parse data_sources, campaign_names and station arguments
     base_dir = parse_base_dir(base_dir)

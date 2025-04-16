@@ -30,6 +30,8 @@ dependencies = [
 	"netCDF4",
 	"pyarrow",
 	"pandas",
+    "numpy",
+    "scipy",
 	"dask[distributed]",
 	"xarray",
 

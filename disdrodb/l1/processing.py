@@ -19,12 +19,17 @@
 
 import xarray as xr
 
+from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l1.encoding_attrs import get_attrs_dict, get_encoding_dict
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
 from disdrodb.l1.filters import define_spectrum_mask, filter_diameter_bins, filter_velocity_bins
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
-from disdrodb.l2.empirical_dsd import get_drop_average_velocity, get_min_max_diameter  # TODO: maybe move out of L2
+from disdrodb.l2.empirical_dsd import (  # TODO: maybe move out of L2
+    count_bins_with_drops,
+    get_drop_average_velocity,
+    get_min_max_diameter,
+)
 from disdrodb.utils.attrs import set_attrs
 from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.time import ensure_sample_interval_in_seconds, infer_sample_interval
@@ -90,7 +95,7 @@ def generate_l1(
     attrs = ds.attrs.copy()
 
     # Determine if the velocity dimension is available
-    has_velocity_dimension = "velocity_bin_center" in ds.dims
+    has_velocity_dimension = VELOCITY_DIMENSION in ds.dims
 
     # Initialize L2 dataset
     ds_l1 = xr.Dataset()
@@ -149,11 +154,13 @@ def generate_l1(
     # Retrieve drop number and drop_counts arrays
     if has_velocity_dimension:
         drop_number = ds["raw_drop_number"].where(mask)  # 2D (diameter, velocity)
-        drop_counts = drop_number.sum(dim="velocity_bin_center")  # 1D (diameter)
+        drop_counts = drop_number.sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
+        drop_counts_raw = ds["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
 
     else:
         drop_number = ds["raw_drop_number"]  # 1D (diameter)
         drop_counts = ds["raw_drop_number"]  # 1D (diameter)
+        drop_counts_raw = ds["raw_drop_number"]
 
     # Add drop number and drop_counts
     ds_l1["drop_number"] = drop_number
@@ -171,8 +178,9 @@ def generate_l1(
     # Add drop statistics
     ds_l1["Dmin"] = min_drop_diameter
     ds_l1["Dmax"] = max_drop_diameter
-    ds_l1["n_drops_selected"] = drop_counts.sum(dim=["diameter_bin_center"])
-    ds_l1["n_drops_discarded"] = drop_counts.sum(dim=["diameter_bin_center"])
+    ds_l1["n_drops_selected"] = drop_counts.sum(dim=DIAMETER_DIMENSION)
+    ds_l1["n_drops_discarded"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION) - ds_l1["n_drops_selected"]
+    ds_l1["n_bins_with_drops"] = count_bins_with_drops(ds_l1)
 
     # -------------------------------------------------------------------------------------------
     #### Add L0C coordinates that might got lost
