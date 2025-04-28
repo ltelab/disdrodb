@@ -18,8 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Retrieve L0 sensor standards."""
 
-import datetime
-import importlib
 import logging
 
 import numpy as np
@@ -28,11 +26,6 @@ from disdrodb.api.checks import check_sensor_name
 from disdrodb.api.configs import read_config_file
 
 logger = logging.getLogger(__name__)
-
-PRODUCT_VERSION = "V0"
-SOFTWARE_VERSION = "V" + importlib.metadata.version("disdrodb")
-CONVENTIONS = "CF-1.10, ACDD-1.3"
-EPOCH = "seconds since 1970-01-01 00:00:00"
 
 
 ####--------------------------------------------------------------------------.
@@ -250,150 +243,6 @@ def get_l0b_cf_attrs_dict(sensor_name: str) -> dict:
         For each variable, the 'units', 'description', and 'long_name' attributes are specified.
     """
     return read_config_file(sensor_name=sensor_name, product="L0A", filename="l0b_cf_attrs.yml")
-
-
-####-------------------------------------------------------------------------.
-#### Coordinates attributes
-
-
-def get_coords_attrs_dict():
-    """Return dictionary with DISDRODB coordinates attributes."""
-    attrs_dict = {}
-    # Define diameter attributes
-    attrs_dict["diameter_bin_center"] = {
-        "name": "diameter_bin_center",
-        "standard_name": "diameter_bin_center",
-        "long_name": "diameter_bin_center",
-        "units": "mm",
-        "description": "Bin center drop diameter value",
-    }
-    attrs_dict["diameter_bin_width"] = {
-        "name": "diameter_bin_width",
-        "standard_name": "diameter_bin_width",
-        "long_name": "diameter_bin_width",
-        "units": "mm",
-        "description": "Drop diameter bin width",
-    }
-    attrs_dict["diameter_bin_upper"] = {
-        "name": "diameter_bin_upper",
-        "standard_name": "diameter_bin_upper",
-        "long_name": "diameter_bin_upper",
-        "units": "mm",
-        "description": "Bin upper bound drop diameter value",
-    }
-    attrs_dict["velocity_bin_lower"] = {
-        "name": "velocity_bin_lower",
-        "standard_name": "velocity_bin_lower",
-        "long_name": "velocity_bin_lower",
-        "units": "mm",
-        "description": "Bin lower bound drop diameter value",
-    }
-    # Define velocity attributes
-    attrs_dict["velocity_bin_center"] = {
-        "name": "velocity_bin_center",
-        "standard_name": "velocity_bin_center",
-        "long_name": "velocity_bin_center",
-        "units": "m/s",
-        "description": "Bin center drop fall velocity value",
-    }
-    attrs_dict["velocity_bin_width"] = {
-        "name": "velocity_bin_width",
-        "standard_name": "velocity_bin_width",
-        "long_name": "velocity_bin_width",
-        "units": "m/s",
-        "description": "Drop fall velocity bin width",
-    }
-    attrs_dict["velocity_bin_upper"] = {
-        "name": "velocity_bin_upper",
-        "standard_name": "velocity_bin_upper",
-        "long_name": "velocity_bin_upper",
-        "units": "m/s",
-        "description": "Bin upper bound drop fall velocity value",
-    }
-    attrs_dict["velocity_bin_lower"] = {
-        "name": "velocity_bin_lower",
-        "standard_name": "velocity_bin_lower",
-        "long_name": "velocity_bin_lower",
-        "units": "m/s",
-        "description": "Bin lower bound drop fall velocity value",
-    }
-    # Define geolocation attributes
-    attrs_dict["latitude"] = {
-        "name": "latitude",
-        "standard_name": "latitude",
-        "long_name": "Latitude",
-        "units": "degrees_north",
-    }
-    attrs_dict["longitude"] = {
-        "name": "longitude",
-        "standard_name": "longitude",
-        "long_name": "Longitude",
-        "units": "degrees_east",
-    }
-    attrs_dict["altitude"] = {
-        "name": "altitude",
-        "standard_name": "altitude",
-        "long_name": "Altitude",
-        "units": "m",
-        "description": "Elevation above sea level",
-    }
-    # Define time attributes
-    attrs_dict["time"] = {
-        "name": "time",
-        "standard_name": "time",
-        "long_name": "time",
-        "description": "UTC Time",
-    }
-
-    return attrs_dict
-
-
-####-------------------------------------------------------------------------.
-#### DISDRODB attributes
-
-
-def set_disdrodb_attrs(ds, product: str):
-    """Add DISDRODB processing information to the netCDF global attributes.
-
-    It assumes stations metadata are already added the dataset.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        Dataset
-    product: str
-        DISDRODB product.
-
-    Returns
-    -------
-    xarray dataset
-        Dataset.
-    """
-    # Add dataset conventions
-    ds.attrs["Conventions"] = CONVENTIONS
-
-    # Add featureType
-    platform_type = ds.attrs["platform_type"]
-    if platform_type == "fixed":
-        ds.attrs["featureType"] = "timeSeries"
-    else:
-        ds.attrs["featureType"] = "trajectory"
-
-    # Add time_coverage_start and time_coverage_end
-    ds.attrs["time_coverage_start"] = str(ds["time"].data[0])
-    ds.attrs["time_coverage_end"] = str(ds["time"].data[-1])
-
-    # DISDRODDB attributes
-    # - Add DISDRODB processing info
-    now = datetime.datetime.utcnow()
-    current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-    ds.attrs["disdrodb_processing_date"] = current_time
-    # - Add DISDRODB product and version
-    ds.attrs["disdrodb_product_version"] = PRODUCT_VERSION
-    ds.attrs["disdrodb_software_version"] = SOFTWARE_VERSION
-    ds.attrs["disdrodb_product"] = product
-
-    return ds
 
 
 ####-------------------------------------------------------------------------.
@@ -760,20 +609,6 @@ def get_l0b_encodings_dict(sensor_name: str) -> dict:
     encoding_dict = read_config_file(sensor_name=sensor_name, product="L0A", filename="l0b_encodings.yml")
     encoding_dict = _ensure_valid_netcdf_encoding_dict(encoding_dict)
     return encoding_dict
-
-
-def get_time_encoding() -> dict:
-    """Create time encoding.
-
-    Returns
-    -------
-    dict
-        Time encoding.
-    """
-    encoding = {}
-    encoding["units"] = EPOCH
-    encoding["calendar"] = "proleptic_gregorian"
-    return encoding
 
 
 ####-------------------------------------------------------------------------.

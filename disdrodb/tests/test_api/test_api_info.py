@@ -68,7 +68,7 @@ INVALID_KEY = "nonexistent_key"
 # valid_filepath = VALID_FNAME
 
 
-@pytest.fixture()
+@pytest.fixture
 def valid_filepath(tmp_path):
     # Create a valid filepath for testing
     filepath = tmp_path / VALID_FNAME
@@ -76,7 +76,7 @@ def valid_filepath(tmp_path):
     return str(filepath)
 
 
-@pytest.fixture()
+@pytest.fixture
 def invalid_filepath(tmp_path):
     # Create an invalid filepath for testing
     filepath = tmp_path / INVALID_FNAME
@@ -275,5 +275,5 @@ def test_get_end_time_from_filepaths(valid_filepath):
 
 def test_get_start_end_time_from_filepaths(valid_filepath):
     start_time, end_time = get_start_end_time_from_filepaths(valid_filepath)
-    assert np.array_equal(start_time, np.array([START_TIME]))
-    assert np.array_equal(end_time, np.array([END_TIME]))
+    assert np.array_equal(start_time, np.array([START_TIME]).astype("M8[s]"))
+    assert np.array_equal(end_time, np.array([END_TIME]).astype("M8[s]"))

@@ -82,7 +82,7 @@ def reader(
         possible_delimiters, counts = np.unique(df["TO_BE_SPLITTED"].str.count(","), return_counts=True)
         n_delimiters = possible_delimiters[np.argmax(counts)]
 
-        if n_delimiters == 1027:
+        if n_delimiters == 1027:  # APU 2010
             # - Select valid rows
             df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1027]
             # - Get time column
@@ -107,6 +107,37 @@ def reader(
                 "mor_visibility",
                 "weather_code_synop_4680",
                 "weather_code_synop_4677",
+            ]
+            for column in missing_columns:
+                df[column] = "NaN"
+        elif n_delimiters == 1031:  # APU08 (2011)
+            # - Select valid rows
+            df = df.loc[df["TO_BE_SPLITTED"].str.count(",") == 1031]
+            # - Get time column
+            df_time = df["time"]
+            # - Split the 'TO_BE_SPLITTED' column
+            df = df["TO_BE_SPLITTED"].str.split(",", expand=True, n=7)
+            # - Assign column names
+            column_names = [
+                "station_name",
+                "sensor_status",
+                "sensor_temperature",
+                "reflectivity_32bit",
+                "mor_visibility",
+                "weather_code_synop_4680",
+                "weather_code_synop_4677",
+                "raw_drop_number",
+            ]
+            df.columns = column_names
+            # - Add time column
+            df["time"] = df_time
+            # - Remove columns not in other files
+            df = df.drop(columns="reflectivity_32bit")
+            # - Add missing columns and set NaN value
+            missing_columns = [
+                "number_particles",
+                "rainfall_rate_32bit",
+                "reflectivity_16bit",
             ]
             for column in missing_columns:
                 df[column] = "NaN"

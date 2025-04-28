@@ -19,7 +19,7 @@
 """Tools to create Raw, L0A and L0B DISDRODB directories."""
 
 # L0A and L0B from raw NC: create_l0_directory_structure(raw_dir, processed_dir)
-# L0B: create_directory_structure(processed_dir)
+# L0B: create_product_directory(processed_dir)
 
 import logging
 import os
@@ -27,12 +27,12 @@ import shutil
 from typing import Optional
 
 from disdrodb.api.checks import (
+    check_data_availability,
     check_metadata_file,
     check_processed_dir,
     check_product,
     check_raw_dir,
-    check_station_has_data,
-    has_available_station_files,
+    has_available_data,
 )
 from disdrodb.api.info import (
     infer_campaign_name_from_path,
@@ -41,16 +41,18 @@ from disdrodb.api.info import (
 )
 from disdrodb.api.path import (
     define_campaign_dir,
+    define_data_dir,
     define_issue_dir,
     define_issue_filepath,
+    define_logs_dir,
     define_metadata_dir,
     define_metadata_filepath,
     define_station_dir,
 )
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import (
-    check_directory_exists,
     copy_file,
+    create_directory,
     create_required_directory,
     remove_if_exists,
 )
@@ -162,52 +164,17 @@ def _copy_station_metadata(
     )
 
 
-def _check_pre_existing_station_data(
-    data_source: str,
-    campaign_name: str,
-    station_name: str,
-    product: str,
-    base_dir=None,
-    force=False,
-):
-    """Check for pre-existing station data.
-
-    - If ``force=True``, remove all data inside the station directory.
-    - If ``force=False``, raise error.
-    """
-    # NOTE: ``force=False`` behaviour could be changed to enable updating of missing files.
-    # This would require also adding code to check whether a downstream file already exist.
-
-    # Check if there are available data
-    available_data = has_available_station_files(
-        product=product,
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    # Define the station directory path
-    station_dir = define_station_dir(
-        product=product,
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    # If the station data are already present:
-    # - If force=True, remove all data inside the station directory
-    # - If force=False, raise error
-    if available_data:
-        # Check is a directory
-        check_directory_exists(station_dir)
-        # If force=True, remove all the content
-        if force:
-            # Remove all station directory content
-            shutil.rmtree(station_dir)
-        else:
-            msg = f"The station directory {station_dir} already exists and force=False."
-            logger.error(msg)
-            raise ValueError(msg)
+def ensure_empty_data_dir(data_dir, force):
+    """Remove the content of the data_dir directory."""
+    # If force=True, remove all the directory content
+    if force:
+        shutil.rmtree(data_dir)
+        # Recreate the directory
+        create_directory(data_dir)
+    else:
+        msg = f"The product directory {data_dir} already contains files and force=False."
+        logger.error(msg)
+        raise ValueError(msg)
 
 
 def create_l0_directory_structure(
@@ -236,8 +203,8 @@ def create_l0_directory_structure(
     # Retrieve components
     base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(processed_dir)
 
-    # Check station data are available
-    check_station_has_data(
+    # Check RAW station data are available
+    check_data_availability(
         product="RAW",
         base_dir=base_dir,
         data_source=data_source,
@@ -248,7 +215,18 @@ def create_l0_directory_structure(
     # Create required directories (if they don't exist)
     create_required_directory(processed_dir, dir_name="metadata")
     create_required_directory(processed_dir, dir_name="info")
-    create_required_directory(processed_dir, dir_name=product)
+
+    # Define and create product directory
+    data_dir = define_data_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # Create required directory (if it doesn't exist)
+    create_directory(data_dir)
 
     # Copy the station metadata
     _copy_station_metadata(
@@ -257,40 +235,70 @@ def create_l0_directory_structure(
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    # Remove <product>/<station> directory if force=True
-    _check_pre_existing_station_data(
+
+    # Check if product files are already available
+    available_data = has_available_data(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        force=force,
     )
-    # Create the <product>/<station> directory
-    create_required_directory(os.path.join(processed_dir, product), dir_name=station_name)
+
+    # If product files are already available:
+    # - If force=True, remove all data inside the product directory
+    # - If force=False, raise an error
+    if available_data:
+        ensure_empty_data_dir(data_dir, force=force)
+
+    return data_dir
 
 
-def create_directory_structure(processed_dir, product, station_name, force):
-    """Create directory structure for L0B and higher DISDRODB products."""
+def create_product_directory(
+    data_source,
+    campaign_name,
+    station_name,
+    product,
+    force,
+    base_dir=None,
+    # Option for L2E
+    sample_interval=None,
+    rolling=None,
+    # Option for L2M
+    model_name=None,
+):
+    """Initialize the directory structure for a DISDRODB product.
+
+    If product files already exists:
+    - If ``force=True``, it remove all existing data inside the product directory.
+    - If ``force=False``, it raise an error.
+    """
+    # NOTE: ``force=False`` behaviour could be changed to enable updating of missing files.
+    # This would require also adding code to check whether a downstream file already exist.
+
+    from disdrodb.api.io import get_required_product
+
+    # Get DISDRODB base directory
+    base_dir = get_base_dir(base_dir)
+
     # Check inputs
     check_product(product)
-    processed_dir = check_processed_dir(processed_dir=processed_dir)
-
-    base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(processed_dir)
 
     # Determine required product
-    if product == "L0B":
-        required_product = "L0A"
-    else:
-        raise NotImplementedError("product {product} not yet implemented.")
+    required_product = get_required_product(product)
 
-    # Check station is available in the previous product level
-    check_station_has_data(
+    # Check station data is available in the previous product level
+    check_data_availability(
         product=required_product,
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Option for L2E
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Option for L2M
+        model_name=model_name,
     )
 
     # Check metadata file is available
@@ -302,18 +310,83 @@ def create_directory_structure(processed_dir, product, station_name, force):
         station_name=station_name,
     )
 
-    # Create required directory (if it doesn't exist)
-    create_required_directory(processed_dir, dir_name=product)
-
-    # Remove <product>/<station_name> directory if force=True
-    _check_pre_existing_station_data(
+    # Define product output directory
+    data_dir = define_data_dir(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        force=force,
+        # Option for L2E
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Option for L2M
+        model_name=model_name,
     )
+
+    # Create required directory (if it doesn't exist)
+    create_directory(data_dir)
+
+    # Check if product files are already available
+    available_data = has_available_data(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Option for L2E
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Option for L2M
+        model_name=model_name,
+    )
+
+    # If product files are already available:
+    # - If force=True, remove all data inside the product directory
+    # - If force=False, raise an error
+    if available_data:
+        ensure_empty_data_dir(data_dir, force=force)
+
+    # Return product directory
+    return data_dir
+
+
+def create_logs_directory(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    # Option for L2E
+    sample_interval=None,
+    rolling=None,
+    # Option for L2M
+    model_name=None,
+):
+    """Initialize the logs directory structure for a DISDRODB product."""
+    # Define logs directory
+    logs_dir = define_logs_dir(
+        product=product,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Option for L2E
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Option for L2M
+        model_name=model_name,
+    )
+
+    # Ensure empty log directory
+    if os.path.isdir(logs_dir):
+        shutil.rmtree(logs_dir)
+
+    # Create logs directory
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # Return logs directory
+    return logs_dir
 
 
 #### DISDRODB Station Initialization

@@ -109,6 +109,19 @@ def get_base_dir(base_dir=None):
     return base_dir
 
 
+def get_folder_partitioning():
+    """Return the folder partitioning."""
+    import disdrodb
+    from disdrodb.api.path import check_folder_partitioning
+
+    # Get the folder partitioning
+    folder_partitioning = disdrodb.config.get("folder_partitioning", None)
+    if folder_partitioning is None:
+        raise ValueError("The folder partitioning is not specified.")
+    check_folder_partitioning(folder_partitioning)
+    return folder_partitioning
+
+
 def get_zenodo_token(sandbox: bool):
     """Return the Zenodo access token."""
     import disdrodb

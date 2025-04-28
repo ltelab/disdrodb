@@ -11,6 +11,8 @@ dependencies:
   - trollsift
   - netcdf4
   - pyarrow
+  - numpy
+  - scipy
   - pandas
   - dask[distributed]
   - xarray

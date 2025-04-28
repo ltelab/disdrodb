@@ -39,6 +39,7 @@ _CONFIG_DEFAULTS = {
     "base_dir": None,
     "zenodo_sandbox_token": None,
     "zenodo_token": None,
+    "folder_partitioning": "year/month",
 }
 _CONFIG_DEFAULTS.update(_get_disdrodb_default_configs())
 

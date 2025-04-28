@@ -183,7 +183,7 @@ def _define_zenodo_metadata(metadata):
     description = f"Disdrometer measurements of the {name} station. "
     description += "This dataset is part of the DISDRODB project. "
     description += "Station metadata are available at "
-    description += f"https://github.com/ltelab/disdrodb-data/blob/main/DISDRODB/Raw/{data_source}/{campaign_name}/metadata/{station_name}.yml . "  # noqa
+    description += f"https://github.com/ltelab/disdrodb-data/blob/main/DISDRODB/Raw/{data_source}/{campaign_name}/metadata/{station_name}.yml . "  # noqa: E501
     description += "The software to easily process and standardize the raw data into netCDF files is available at "
     description += "https://github.com/ltelab/disdrodb ."
 

@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Routines to read the DISDRODB Metadata."""
 
+import pandas as pd
 
 from disdrodb.api.path import define_metadata_filepath
 from disdrodb.utils.yaml import read_yaml
@@ -60,3 +61,19 @@ def read_station_metadata(data_source, campaign_name, station_name, base_dir=Non
     )
     metadata_dict = read_yaml(metadata_filepath)
     return metadata_dict
+
+
+def read_metadata_database(base_dir=None):
+    """Read the metadata database."""
+    from disdrodb.metadata.search import get_list_metadata
+
+    list_metadata_paths = get_list_metadata(
+        base_dir=base_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        with_stations_data=False,
+    )
+    list_metadata = [read_yaml(fpath) for fpath in list_metadata_paths]
+    df = pd.DataFrame(list_metadata)
+    return df

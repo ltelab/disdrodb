@@ -18,11 +18,9 @@
 # -----------------------------------------------------------------------------.
 """Functions to process DISDRODB raw netCDF files into DISDRODB L0B netCDF files."""
 
-import copy
 import logging
 
 import numpy as np
-import xarray as xr
 
 from disdrodb.l0.l0b_processing import finalize_dataset
 from disdrodb.l0.standards import (
@@ -115,6 +113,8 @@ def subset_dataset(ds, dict_names, sensor_name):
 
 def add_dataset_missing_variables(ds, missing_vars, sensor_name):
     """Add missing xr.Dataset variables as ``np.nan`` xr.DataArrays."""
+    import xarray as xr
+
     from disdrodb.l0.standards import get_variables_dimension
 
     # Get dimension of each variables
@@ -171,8 +171,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
         ds = add_dataset_missing_variables(ds=ds, missing_vars=missing_vars, sensor_name=sensor_name)
 
     # Update the coordinates for (diameter and velocity)
-    coords = get_bin_coords_dict(sensor_name)
-    ds = ds.assign_coords(coords)
+    ds = ds.assign_coords(get_bin_coords_dict(sensor_name))
 
     # Return dataset
     return ds
@@ -346,19 +345,6 @@ def create_l0b_from_raw_nc(
     # Preprocess netcdf
     ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
-    # Add CRS and geolocation information
-    attrs = copy.deepcopy(attrs)
-    coords = {}
-    geolocation_vars = ["latitude", "longitude", "altitude"]
-    for var in geolocation_vars:
-        if var not in ds:
-            coords[var] = attrs[var]
-        _ = attrs.pop(var)
-    ds = ds.assign_coords(coords)
-
-    # Add global attributes
-    ds.attrs = attrs
-
     # Apply dataset sanitizer function
     ds = ds_sanitizer_fun(ds)
 
@@ -372,7 +358,7 @@ def create_l0b_from_raw_nc(
     ds = set_nan_invalid_values(ds, sensor_name=sensor_name, verbose=verbose)
 
     # Finalize dataset
-    ds = finalize_dataset(ds, sensor_name=sensor_name)
+    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=attrs)
 
     # Return dataset
     return ds

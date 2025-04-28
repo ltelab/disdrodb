@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB path."""
 import datetime
-import os
 
 import numpy as np
 import pandas as pd
@@ -26,113 +25,77 @@ import pytest
 import xarray as xr
 
 from disdrodb.api.path import (
-    define_campaign_dir,
-    define_l0a_filepath,
-    define_l0a_station_dir,
-    define_l0b_filepath,
-    define_l0b_station_dir,
+    # define_campaign_dir,
+    define_l0a_filename,
+    define_l0b_filename,
+    define_l0c_filename,
 )
 
-PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\Processed"
-PROCESSED_FOLDER_LINUX = "/DISDRODB/Processed"
+# PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\Processed"
+# PROCESSED_FOLDER_LINUX = "/DISDRODB/Processed"
 
 
-@pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
-def test_define_l0a_station_dir(processed_folder):
-    res = (
-        define_l0a_station_dir(processed_folder, "STATION_NAME")
-        .replace(processed_folder, "")
-        .replace("\\", "")
-        .replace("/", "")
-    )
-    assert res == "L0ASTATION_NAME"
+# @pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
+# def test_define_l0a_station_dir(processed_folder):
+#     res = (
+#         define_l0a_station_dir(processed_folder, "STATION_NAME")
+#         .replace(processed_folder, "")
+#         .replace("\\", "")
+#         .replace("/", "")
+#     )
+#     assert res == "L0ASTATION_NAME"
 
 
-@pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
-def test_define_l0b_station_dir(processed_folder):
-    res = (
-        define_l0b_station_dir(processed_folder, "STATION_NAME")
-        .replace(processed_folder, "")
-        .replace("\\", "")
-        .replace("/", "")
-    )
-    assert res == "L0BSTATION_NAME"
-
-
-def test_define_l0a_filepath(tmp_path):
-    from disdrodb.l0.standards import PRODUCT_VERSION
+def test_define_l0a_filename():
+    from disdrodb import PRODUCT_VERSION
 
     # Set variables
     product = "L0A"
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
-    start_date_str = start_date.strftime("%Y%m%d%H%M%S")
-    end_date_str = end_date.strftime("%Y%m%d%H%M%S")
-
-    # Set paths
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
 
     # Create dataframe
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
-    # Test the function
-    res = define_l0a_filepath(df, processed_dir, station_name)
-
     # Define expected results
-    expected_name = (
-        f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.parquet"
-    )
-    expected_path = os.path.join(processed_dir, product, station_name, expected_name)
-    assert res == expected_path
+    expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.parquet"
+
+    # Test the function
+    res = define_l0a_filename(df, campaign_name, station_name)
+    assert res == expected_name
 
 
-def test_define_l0b_filepath(tmp_path):
-    from disdrodb.l0.standards import PRODUCT_VERSION
+@pytest.mark.parametrize("product", ["L0B", "L0C"])
+def test_define_l0b_filename(product):
+    from disdrodb import PRODUCT_VERSION
 
     # Set variables
-
-    product = "L0B"
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
+    sample_interval = 10
+    sample_interval_str = "10S"
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
-    start_date_str = start_date.strftime("%Y%m%d%H%M%S")
-    end_date_str = end_date.strftime("%Y%m%d%H%M%S")
 
-    # Set paths
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
-    # Create xarray object
+    # Create xarray dataset
     timesteps = pd.date_range(start=start_date, end=end_date)
     data = np.zeros(timesteps.shape)
     ds = xr.DataArray(
         data=data,
         dims=["time"],
-        coords={"time": pd.date_range(start=start_date, end=end_date)},
-    )
-
-    # Test the function
-    res = define_l0b_filepath(ds, processed_dir, station_name)
+        coords={"time": pd.date_range(start=start_date, end=end_date), "sample_interval": sample_interval},
+    ).to_dataset(name="dummy")
 
     # Define expected results
-    expected_name = (
-        f"{product}.{campaign_name.upper()}.{station_name}.s{start_date_str}.e{end_date_str}.{PRODUCT_VERSION}.nc"
-    )
-    expected_path = os.path.join(processed_dir, product, station_name, expected_name)
-    assert res == expected_path
+    # TODO: MODIFY !
+    if product == "L0B":
+        expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"
+    else:
+        expected_name = f"{product}.{sample_interval_str}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"  # noqa: E501
+
+    # Test the function
+    define_filename_func = define_l0b_filename if product == "L0B" else define_l0c_filename
+    res = define_filename_func(ds, campaign_name, station_name)
+    assert res == expected_name

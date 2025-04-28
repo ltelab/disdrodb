@@ -208,6 +208,8 @@ def remove_duplicated_timesteps(df: pd.DataFrame, verbose: bool = False):
     values_duplicates = values[idx_duplicates].astype("M8[s]")
     # If there are duplicated timesteps
     if len(values_duplicates) > 0:
+        # TODO: raise error if duplicated timesteps have different values !
+
         # Drop duplicated timesteps (keeping the first occurrence)
         df = df.drop_duplicates(subset="time", keep="first")
         # Report the values of duplicated timesteps
@@ -446,7 +448,7 @@ def remove_corrupted_rows(df):
         raise ValueError("No remaining rows after data corruption checks.")
     # If only one row available, raise also error
     if len(df) == 1:
-        raise ValueError("Only 1 row remains after data corruption checks. Check the file.")
+        raise ValueError("Only 1 row remains after data corruption checks. Check the raw file and maybe delete it.")
     # Return the dataframe
     return df
 
@@ -652,6 +654,9 @@ def process_raw_file(
 
     # - Replace invalid values with np.nan
     df = set_nan_invalid_values(df, sensor_name=sensor_name, verbose=verbose)
+
+    # - Sort by time
+    df = df.sort_values("time")
 
     # ------------------------------------------------------.
     # - Check column names agrees to DISDRODB standards

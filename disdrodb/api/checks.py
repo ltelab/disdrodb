@@ -24,11 +24,11 @@ import re
 
 from disdrodb.api.info import infer_disdrodb_tree_path_components
 from disdrodb.api.path import (
+    define_data_dir,
     define_issue_dir,
     define_issue_filepath,
     define_metadata_dir,
     define_metadata_filepath,
-    define_station_dir,
 )
 from disdrodb.utils.directories import (
     ensure_string_path,
@@ -70,10 +70,7 @@ def check_url(url: str) -> bool:
         ``True`` if url well formatted, ``False`` if not well formatted.
     """
     regex = r"^(https?:\/\/)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$"  # noqa: E501
-
-    if re.match(regex, url):
-        return True
-    return False
+    return re.match(regex, url)
 
 
 def check_path_is_a_directory(dir_path, path_name=""):
@@ -95,6 +92,7 @@ def check_directories_inside(dir_path):
 def check_base_dir(base_dir: str):
     """Raise an error if the path does not end with ``DISDRODB``."""
     base_dir = str(base_dir)  # convert Pathlib to string
+    base_dir = os.path.normpath(base_dir)
     if not base_dir.endswith("DISDRODB"):
         raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
     return base_dir
@@ -124,7 +122,6 @@ def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
         raise TypeError("'sensor_name' must be a string.")
     if sensor_name not in sensor_names:
         msg = f"{sensor_name} not valid {sensor_name}. Valid values are {sensor_names}."
-        logger.error(msg)
         raise ValueError(msg)
 
 
@@ -150,7 +147,7 @@ def check_product(product):
     """Check DISDRODB product."""
     if not isinstance(product, str):
         raise TypeError("`product` must be a string.")
-    valid_products = ["RAW", "L0A", "L0B"]
+    valid_products = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M", "L2S"]
     if product.upper() not in valid_products:
         msg = f"Valid `products` are {valid_products}."
         logger.error(msg)
@@ -158,45 +155,68 @@ def check_product(product):
     return product
 
 
-def check_station_dir(product, data_source, campaign_name, station_name, base_dir=None):
-    """Check existence of the station data directory. If does not exists, raise an error."""
-    station_dir = define_station_dir(
+def has_available_data(
+    data_source,
+    campaign_name,
+    station_name,
+    product,
+    base_dir=None,
+    # Option for L2E
+    sample_interval=None,
+    rolling=None,
+    # Option for L2M
+    model_name=None,
+):
+    """Return ``True`` if data are available for the given product and station."""
+    # Define product directory
+    data_dir = define_data_dir(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Option for L2E
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Option for L2M
+        model_name=model_name,
+        # Directory options
         check_exists=False,
     )
-    if not os.path.exists(station_dir) and os.path.isdir(station_dir):
-        msg = f"The station {station_name} data directory does not exist at {station_dir}."
-        logger.error(msg)
-        raise ValueError(msg)
-    return station_dir
+    # If the product directory does not exists, return False
+    if not os.path.isdir(data_dir):
+        return False
 
-
-def has_available_station_files(product, data_source, campaign_name, station_name, base_dir=None):
-    """Return ``True`` if data are available for the given product and station."""
-    station_dir = check_station_dir(
-        product=product,
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    filepaths = list_files(station_dir, glob_pattern="*", recursive=True)
+    # If no files, return False
+    filepaths = list_files(data_dir, glob_pattern="*", recursive=True)
     nfiles = len(filepaths)
     return nfiles >= 1
 
 
-def check_station_has_data(product, data_source, campaign_name, station_name, base_dir=None):
-    """Check the station data directory has data inside. If not, raise an error."""
-    if not has_available_station_files(
+def check_data_availability(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    # Option for L2E
+    sample_interval=None,
+    rolling=None,
+    # Option for L2M
+    model_name=None,
+):
+    """Check the station product data directory has files inside. If not, raise an error."""
+    if not has_available_data(
         product=product,
         base_dir=base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Option for L2E
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Option for L2M
+        model_name=model_name,
     ):
         msg = f"The {product} station data directory of {data_source} {campaign_name} {station_name} is empty !"
         logger.error(msg)
@@ -271,6 +291,7 @@ def check_issue_dir(data_source, campaign_name, base_dir=None):
 def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
     """Check existence of a valid issue YAML file. If does not exists, raise an error."""
     from disdrodb.issue.checks import check_issue_compliance
+    from disdrodb.issue.writer import create_station_issue
 
     _ = check_issue_dir(
         base_dir=base_dir,
@@ -286,9 +307,12 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
     )
     # Check existence
     if not os.path.exists(issue_filepath):
-        msg = f"The issue YAML file of {data_source} {campaign_name} {station_name} does not exist at {issue_filepath}."
-        logger.error(msg)
-        raise ValueError(msg)
+        create_station_issue(
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
 
     # Check validity
     check_issue_compliance(
@@ -398,7 +422,7 @@ def check_raw_dir(raw_dir: str, station_name: str) -> None:
     check_directories_inside(raw_dir)
 
     # Check there is data in the station directory
-    check_station_has_data(
+    check_data_availability(
         product="RAW",
         base_dir=base_dir,
         data_source=data_source,

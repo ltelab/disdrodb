@@ -38,7 +38,7 @@ def reader(
         "date",
         "time",
         "sensor_status",
-        "interval",
+        "sample_interval",
         "n1",
         "n2",
         "n3",
@@ -99,7 +99,7 @@ def reader(
         import pandas as pd
 
         # - Replace 'status' NaN with 0
-        df["sensor_status"] = df["sensor_status"].fillna(0)
+        df["sensor_status"] = df["sensor_status"].astype(float).fillna(value=0).astype(int)
 
         # - Replace all ',' with '.' in RI, RA, RAT
         df["RI"] = df["RI"].replace({",": "."}, regex=True)

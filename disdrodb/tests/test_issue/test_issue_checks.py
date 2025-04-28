@@ -40,10 +40,6 @@ def test__is_numpy_array_string():
     arr = np.array(["foo", "bar"], dtype=np.str_)
     assert _is_numpy_array_string(arr)
 
-    # Test unicode array
-    arr = np.array(["foo", "bar"], dtype=np.unicode_)
-    assert _is_numpy_array_string(arr)
-
     # Test nonstring array
     arr = np.array([1, 2, 3])
     assert not _is_numpy_array_string(arr)

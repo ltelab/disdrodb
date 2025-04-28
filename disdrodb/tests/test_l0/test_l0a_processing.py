@@ -151,7 +151,8 @@ def test_remove_corrupted_rows():
         remove_corrupted_rows(pd.DataFrame())
 
     # Test case 3: Check if the function raises ValueError when only one row remains
-    with pytest.raises(ValueError, match=r"Only 1 row remains after data corruption checks. Check the file."):
+    msg = r"Only 1 row remains after data corruption checks. Check the raw file and maybe delete it."
+    with pytest.raises(ValueError, match=msg):
         remove_corrupted_rows(pd.DataFrame({"raw_drop_number": ["1"]}))
 
 
@@ -569,7 +570,7 @@ def test_write_l0a(tmp_path):
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")
-    df["time"] = pd.Timestamp.now()
+    df["time"] = pd.Timestamp.now().to_numpy().astype("M8[ns]")  # open by default as [ns]. Now() returns as [us]
 
     # Write parquet file
     filepath = os.path.join(tmp_path, "fake_data_sample.parquet")

@@ -12,6 +12,8 @@ dependencies:
   - netcdf4
   - pyarrow
   - pandas
+  - numpy
+  - scipy
   - dask[distributed]
   - xarray
   # Docs

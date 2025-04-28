@@ -90,21 +90,18 @@ def create_directory(path: str, exist_ok=True) -> None:
         os.makedirs(path, exist_ok=exist_ok)
         logger.debug(f"Created directory {path}.")
     except Exception as e:
+        dir_path = os.path.dirname(path)
         dir_name = os.path.basename(path)
-        msg = f"Can not create directory {dir_name} inside <path>. Error: {e}"
+        msg = f"Can not create directory {dir_name} inside {dir_path}. Error: {e}"
         logger.exception(msg)
         raise FileNotFoundError(msg)
 
 
-def create_required_directory(dir_path, dir_name):
+def create_required_directory(dir_path, dir_name, exist_ok=True):
     """Create directory ``dir_name`` inside the ``dir_path`` directory."""
-    try:
-        new_dir = os.path.join(dir_path, dir_name)
-        os.makedirs(new_dir, exist_ok=True)
-    except Exception as e:
-        msg = f"Can not create directory {dir_name} at {new_dir}. Error: {e}"
-        logger.exception(msg)
-        raise FileNotFoundError(msg)
+    dir_path = ensure_string_path(dir_path, msg="'path' must be a string", accepth_pathlib=True)
+    new_dir_path = os.path.join(dir_path, dir_name)
+    create_directory(path=new_dir_path, exist_ok=exist_ok)
 
 
 def is_empty_directory(path):
@@ -119,9 +116,7 @@ def is_empty_directory(path):
         return False
 
     paths = os.listdir(path)
-    if len(paths) == 0:
-        return True
-    return False
+    return len(paths) == 0
 
 
 def _remove_file_or_directories(path):

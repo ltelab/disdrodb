@@ -16,26 +16,208 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Routines tot extract information from the DISDRODB infrastructure."""
+"""Routines to list and open DISDRODB products."""
 
 import os
+import shutil
+from typing import Optional
 
 import numpy as np
+import xarray as xr
 
 from disdrodb.api.checks import check_product
-from disdrodb.api.path import get_disdrodb_path
+from disdrodb.api.path import define_data_dir, define_product_dir, get_disdrodb_path
 from disdrodb.configs import get_base_dir
 from disdrodb.utils.directories import count_files, list_directories, list_files
+from disdrodb.utils.logger import (
+    log_info,
+)
+
+
+def get_required_product(product):
+    """Determine the required product for input product processing."""
+    # Check input
+    check_product(product)
+    # Determine required product
+    requirement_dict = {
+        "L0A": "RAW",
+        "L0B": "L0A",
+        "L0C": "L0B",
+        "L1": "L0C",
+        "L2E": "L1",
+        "L2M": "L2E",
+    }
+    required_product = requirement_dict[product]
+    return required_product
+
+
+def filter_filepaths(filepaths, debugging_mode):
+    """Filter out filepaths if ``debugging_mode=True``."""
+    if debugging_mode:
+        max_files = min(3, len(filepaths))
+        filepaths = filepaths[0:max_files]
+    return filepaths
+
+
+def find_files(
+    data_source,
+    campaign_name,
+    station_name,
+    product,
+    model_name=None,
+    sample_interval=None,
+    rolling=None,
+    debugging_mode: bool = False,
+    base_dir: Optional[str] = None,
+):
+    """Retrieve DISDRODB product files for a give station.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    product : str
+        The name DISDRODB product.
+    sample_interval : int, optional
+        The sampling interval in seconds of the product.
+        It must be specified only for product L2E and L2M !
+    rolling : bool, optional
+        Whether the dataset has been resampled by aggregating or rolling.
+        It must be specified only for product L2E and L2M !
+    model_name : str
+        The model name of the statistical distribution for the DSD.
+        It must be specified only for product L2M !
+    debugging_mode : bool, optional
+        If ``True``, it select maximum 3 files for debugging purposes.
+        The default is ``False``.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    Returns
+    -------
+    filepaths : list
+        List of file paths.
+
+    """
+    # Retrieve data directory
+    data_dir = define_data_dir(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=product,
+        # Option for L2E and L2M
+        sample_interval=sample_interval,
+        rolling=rolling,
+        # Options for L2M
+        model_name=model_name,
+    )
+
+    # Define glob pattern
+    glob_pattern = "*.parquet" if product == "L0A" else "*.nc"
+
+    # Retrieve files
+    filepaths = list_files(data_dir, glob_pattern=glob_pattern, recursive=True)
+
+    # Filter out filepaths if debugging_mode=True
+    filepaths = filter_filepaths(filepaths, debugging_mode=debugging_mode)
+
+    # If no file available, raise error
+    if len(filepaths) == 0:
+        msg = f"No {product} files are available in {data_dir}. Run {product} processing first."
+        raise ValueError(msg)
+
+    # Sort filepaths
+    filepaths = sorted(filepaths)
+
+    return filepaths
+
+
+def open_dataset(
+    data_source,
+    campaign_name,
+    station_name,
+    product,
+    model_name=None,
+    sample_interval=None,
+    rolling=None,
+    debugging_mode: bool = False,
+    base_dir: Optional[str] = None,
+    **open_kwargs,
+):
+    """Retrieve DISDRODB product files for a give station.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the institution (for campaigns spanning multiple countries) or
+        the name of the country (for campaigns or sensor networks within a single country).
+        Must be provided in UPPER CASE.
+    campaign_name : str
+        The name of the campaign. Must be provided in UPPER CASE.
+    station_name : str
+        The name of the station.
+    product : str
+        The name DISDRODB product.
+    sample_interval : int, optional
+        The sampling interval in seconds of the product.
+        It must be specified only for product L2E and L2M !
+    rolling : bool, optional
+        Whether the dataset has been resampled by aggregating or rolling.
+        It must be specified only for product L2E and L2M !
+    model_name : str
+        The model name of the statistical distribution for the DSD.
+        It must be specified only for product L2M !
+    debugging_mode : bool, optional
+        If ``True``, it select maximum 3 files for debugging purposes.
+        The default is ``False``.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    Returns
+    -------
+    xr.Dataset
+
+    """
+    # Check product validity
+    if product == "RAW":
+        raise ValueError("It's not possible to open the raw data with this function.")
+    # List product files
+    filepaths = find_files(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=product,
+        debugging_mode=debugging_mode,
+        model_name=model_name,
+        sample_interval=sample_interval,
+        rolling=rolling,
+    )
+    # Open L0A Parquet files
+    if product == "L0A":
+        # TODO: with pandas?
+        raise NotImplementedError
+
+    # Open DISDRODB netCDF files using xarray
+    # - TODO: parallel option and add closers !
+    # - decode_timedelta -- > sample_interval not decoded to timedelta !
+    list_ds = [xr.open_dataset(fpath, decode_timedelta=False, **open_kwargs) for fpath in filepaths]
+    ds = xr.concat(list_ds, dim="time")
+    return ds
 
 
 def _get_list_stations_dirs(product, campaign_dir):
     # Get directory where data are stored
-    # - Raw: <campaign>/data/<...>
-    # - Processed: <campaign>/L0A/L0B>
-    if product.upper() == "RAW":
-        product_dir = os.path.join(campaign_dir, "data")
-    else:
-        product_dir = os.path.join(campaign_dir, product)
+    product_dir = define_product_dir(campaign_dir=campaign_dir, product=product)
     # Check if the data directory exists
     # - For a fresh disdrodb-data cloned repo, no "data" directories
     if not os.path.exists(product_dir):
@@ -51,6 +233,7 @@ def _get_list_stations_with_data(product, campaign_dir):
     # Get stations directory
     list_stations_dir = _get_list_stations_dirs(product=product, campaign_dir=campaign_dir)
     # Count number of files within directory
+    # - TODO: here just check for one file !
     list_nfiles_per_station = [count_files(station_dir, "*", recursive=True) for station_dir in list_stations_dir]
     # Keep only stations with at least one file
     stations_names = [os.path.basename(path) for n, path in zip(list_nfiles_per_station, list_stations_dir) if n >= 1]
@@ -75,7 +258,6 @@ def _get_campaign_stations(base_dir, product, data_source, campaign_name):
         data_source=data_source,
         campaign_name=campaign_name,
     )
-
     # Get list of stations with data and metadata
     list_stations_data = _get_list_stations_with_data(product=product, campaign_dir=campaign_dir)
     list_stations_metadata = _get_list_stations_with_metadata(campaign_dir)
@@ -278,9 +460,13 @@ def available_stations(
     campaign_names=None,
     station_names=None,
     return_tuple=True,
+    raise_error_if_empty=False,
     base_dir=None,
 ):
-    """Return stations for which data are available on disk."""
+    """Return stations for which data and metadata are available on disk.
+
+    Raise an error if no stations are available.
+    """
     base_dir = get_base_dir(base_dir)
     # Checks arguments
     product = check_product(product)
@@ -297,24 +483,42 @@ def available_stations(
     if isinstance(station_names, str):
         station_names = [station_names]
 
-    # If data_source is None, first retrieve all stations
+    # If data_source is None, retrieve all stations
     if data_sources is None:
         list_info = _get_stations(base_dir=base_dir, product=product)
-    # Otherwise retrieve all stations for the specified data sources
+
+    ###-----------------------------------------------.
+    ### Filter by data_sources
     else:
         list_info = _get_data_sources_stations(
             base_dir=base_dir,
             data_sources=data_sources,
             product=product,
         )
+    # If no stations available, raise an error
+    if raise_error_if_empty and len(list_info) == 0:
+        raise ValueError(f"No stations available given the provided `data_sources` {data_sources}.")
+
+    ###-----------------------------------------------.
+    ### Filter by campaign_names
     # If campaign_names is not None, subset by campaign_names
     if campaign_names is not None:
         list_info = [info for info in list_info if info[1] in campaign_names]
 
+    # If no stations available, raise an error
+    if raise_error_if_empty and len(list_info) == 0:
+        raise ValueError(f"No stations available given the provided `campaign_names` {campaign_names}.")
+
+    ###-----------------------------------------------.
+    ### Filter by station_names
     # If station_names is not None, subset by station_names
     if station_names is not None:
         list_info = [info for info in list_info if info[2] in station_names]
+    # If no stations available, raise an error
+    if raise_error_if_empty and len(list_info) == 0:
+        raise ValueError(f"No stations available given the provided `station_names` {station_names}.")
 
+    ###-----------------------------------------------.
     # Return list with the tuple (data_source, campaign_name, station_name)
     if return_tuple:
         return list_info
@@ -322,3 +526,33 @@ def available_stations(
     # - Return list with the name of the available stations
     list_stations = [info[2] for info in list_info]
     return list_stations
+
+
+####----------------------------------------------------------------------------------
+#### DISDRODB Removal Functions
+
+
+def remove_product(
+    base_dir,
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    logger=None,
+    verbose=True,
+):
+    """Remove all product files of a specific station."""
+    if product.upper() == "RAW":
+        raise ValueError("Removal of 'RAW' files is not allowed.")
+    data_dir = define_data_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    if logger is not None:
+        log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
+    shutil.rmtree(data_dir)
+    if logger is not None:
+        log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)

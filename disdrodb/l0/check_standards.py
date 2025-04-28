@@ -218,5 +218,5 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, verbose: bool = True
 def check_l0b_standards(x: str) -> None:
     """Check L0B standards."""
     # - Check for realistic values after having removed the flags !!!!
-    x = "noqa"  # noqa F841
+    x = "noqa"  # noqa: F841
     pass

@@ -18,7 +18,7 @@ device_address:
   _FillValue: 255
 # sensor_serial_number:
 #   dtype: uint16
-#   zlib: true
+#   zlib: false
 #   complevel: 3
 #   shuffle: true
 #   fletcher32: false
@@ -27,7 +27,7 @@ device_address:
 #   _FillValue: 65535
 # software_version:
 #   dtype: float32
-#   zlib: true
+#   zlib: false
 #   complevel: 3
 #   shuffle: true
 #   fletcher32: false
@@ -35,7 +35,7 @@ device_address:
 #   chunksizes: 5000
 # sensor_date:
 #   dtype: object
-#   zlib: true
+#   zlib: false
 #   complevel: 3
 #   shuffle: true
 #   fletcher32: false
@@ -43,7 +43,7 @@ device_address:
 #   chunksizes: 5000
 # sensor_time:
 #   dtype: object
-#   zlib: true
+#   zlib: false
 #   complevel: 3
 #   shuffle: true
 #   fletcher32: false
@@ -69,7 +69,7 @@ weather_code_synop_4680_5min:
   _FillValue: 255
 weather_code_metar_4678_5min:
   dtype: str
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false
@@ -103,7 +103,7 @@ weather_code_synop_4680:
   _FillValue: 255
 weather_code_metar_4678:
   dtype: str
-  zlib: true
+  zlib: false
   complevel: 3
   shuffle: true
   fletcher32: false

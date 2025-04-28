@@ -194,7 +194,7 @@ def print_df_summary_stats(
     # Define columns of interest
     _, columns_of_interest = _get_selected_column_names(df, column_indices)
     # Remove columns of dtype object or string
-    indices_to_remove = np.where((df.dtypes == type(object)) | (df.dtypes == str))
+    indices_to_remove = np.where((df.dtypes == type(object)) | (df.dtypes == str))  # noqa
     indices = np.arange(0, len(df.columns))
     indices = indices[np.isin(indices, indices_to_remove, invert=True)]
     columns = df.columns[indices]
@@ -325,9 +325,7 @@ def str_has_decimal_digits(string: str) -> bool:
     bool
         True if string has digits.
     """
-    if len(string.split(".")) == 2:
-        return True
-    return False
+    return len(string.split(".")) == 2
 
 
 def get_decimal_ndigits(string: str) -> int:

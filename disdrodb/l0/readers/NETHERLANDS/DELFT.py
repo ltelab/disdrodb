@@ -156,9 +156,7 @@ def reader(
             "station_name",
             "station_number",
             "sensor_serial_number",
-            "sample_interval",
             "sensor_serial_number",
-            # "epoch_time",
             # "number_particles_all_detected",
         ]
         df = df.drop(columns=columns_to_drop)

@@ -82,8 +82,14 @@ def reader(
         df = df["TO_PARSE"].str.split(":", expand=True, n=1)
         df.columns = ["ID", "Value"]
 
-        # Drop rows with no values
+        # Select only rows with values
         df = df[df["Value"].astype(bool)]
+        df = df[df["Value"].apply(lambda x: x is not None)]
+
+        # Drop rows with invalid IDs
+        # - Corrupted rows
+        valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
+        df = df[df["ID"].astype(str).isin(valid_id_str)]
 
         # Create the dataframe with each row corresponding to a timestep
         # - Group rows based on when ID values restart
@@ -127,8 +133,8 @@ def reader(
             # "23": "station_number",
             "24": "rainfall_amount_absolute_32bit",
             "25": "error_code",
-            "30": "rainfall_rate_16_bit",
-            "31": "rainfall_rate_12_bit",
+            "30": "rainfall_rate_16bit",
+            "31": "rainfall_rate_12bit",
             "32": "rainfall_accumulated_16bit",
             "90": "raw_drop_concentration",
             "91": "raw_drop_average_velocity",
