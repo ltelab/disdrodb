@@ -16,15 +16,16 @@
 # -----------------------------------------------------------------------------.
 """This module contains utilities related to the processing of temporal dataset."""
 import logging
+import numbers
 import re
 from typing import Optional
 
 import numpy as np
 import pandas as pd
 import xarray as xr
-from xarray.core import dtypes
 
 from disdrodb.utils.logger import log_info, log_warning
+from disdrodb.utils.xarray import define_fill_value_dictionary
 
 logger = logging.getLogger(__name__)
 
@@ -204,21 +205,21 @@ def get_file_start_end_time(obj, time="time"):
 #### Xarray utilities
 
 
-def _define_fill_value(ds, fill_value):
-    fill_value = {}
-    for var in ds.data_vars:
-        if np.issubdtype(ds[var].dtype, np.floating):
-            fill_value[var] = dtypes.NA
-        elif np.issubdtype(ds[var].dtype, np.integer):
-            if "_FillValue" in ds[var].attrs:
-                fill_value[var] = ds[var].attrs["_FillValue"]
-            else:
-                fill_value[var] = np.iinfo(ds[var].dtype).max
-    return fill_value
+def ensure_sorted_by_time(obj, time="time"):
+    """Ensure a xarray object or pandas Dataframe is sorted by time."""
+    # Check sorted by time and sort if necessary
+    is_sorted = np.all(np.diff(obj[time].to_numpy().astype(int)) > 0)
+    if not is_sorted:
+        if isinstance(obj, pd.DataFrame):
+            return obj.sort_values(by="time")
+        # Else xarray DataArray or Dataset
+        obj = obj.sortby("time")
+    return obj
 
 
 def _check_time_sorted(ds, time_dim):
-    time_diff = np.diff(ds[time_dim].data.astype(int))
+    """Ensure the xarray.Dataset is sorted."""
+    time_diff = np.diff(ds[time_dim].to_numpy().astype(int))
     if np.any(time_diff == 0):
         raise ValueError(f"In the {time_dim} dimension there are duplicated timesteps !")
     if not np.all(time_diff > 0):
@@ -228,7 +229,7 @@ def _check_time_sorted(ds, time_dim):
 
 
 def regularize_dataset(
-    ds: xr.Dataset,
+    xr_obj,
     freq: str,
     time_dim: str = "time",
     method: Optional[str] = None,
@@ -238,10 +239,10 @@ def regularize_dataset(
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        xarray Dataset.
+    xr_obj : xarray.Dataset or xr.DataArray
+        xarray object with time dimension.
     time_dim : str, optional
-        The time dimension in the xarray.Dataset. The default is ``"time"``.
+        The time dimension in the xarray object. The default is ``"time"``.
     freq : str
         The ``freq`` string to pass to `pd.date_range()` to define the new time coordinates.
         Examples: ``freq="2min"``.
@@ -261,42 +262,41 @@ def regularize_dataset(
         Regularized dataset.
 
     """
-    ds = _check_time_sorted(ds, time_dim=time_dim)
-    start_time, end_time = get_dataset_start_end_time(ds, time_dim=time_dim)
+    xr_obj = _check_time_sorted(xr_obj, time_dim=time_dim)
+    start_time, end_time = get_dataset_start_end_time(xr_obj, time_dim=time_dim)
+
+    # Define new time index
     new_time_index = pd.date_range(
-        start=pd.to_datetime(start_time),
-        end=pd.to_datetime(end_time),
+        start=start_time,
+        end=end_time,
         freq=freq,
     )
+    # Check all existing timesteps are within the new time index
+    # - Otherwise raise error because it means that the desired frequency is not compatible
+    idx_missing = np.where(~np.isin(xr_obj[time_dim].data, new_time_index))[0]
+    if len(idx_missing) > 0:
+        not_included_timesteps = xr_obj[time_dim].data[idx_missing].astype("M8[s]")
+        raise ValueError(f"With freq='{freq}', the following timesteps would be dropped: {not_included_timesteps}")
 
     # Define fill_value dictionary
     if fill_value is None:
-        fill_value = _define_fill_value(ds, fill_value)
+        fill_value = define_fill_value_dictionary(xr_obj)
 
     # Regularize dataset and fill with NA values
-    ds = ds.reindex(
+    xr_obj = xr_obj.reindex(
         {time_dim: new_time_index},
         method=method,  # do not fill gaps
         # tolerance=tolerance,  # mismatch in seconds
         fill_value=fill_value,
     )
-    return ds
-
-
-def ensure_sorted_by_time(ds):
-    """Ensure a dataset is sorted by time."""
-    # Check sorted by time and sort if necessary
-    is_sorted = np.all(ds["time"].data[:-1] <= ds["time"].data[1:])
-    if not is_sorted:
-        ds = ds.sortby("time")
-    return ds
+    return xr_obj
 
 
 ####------------------------------------------
 #### Sampling interval utilities
 
 
-def ensure_sample_interval_in_seconds(sample_interval):
+def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
     """
     Ensure the sample interval is in seconds.
 
@@ -315,43 +315,107 @@ def ensure_sample_interval_in_seconds(sample_interval):
     int, numpy.ndarray, or xarray.DataArray
         The sample interval converted to seconds. The return type matches the input type:
         - If the input is an integer, the output is an integer.
-        - If the input is a numpy array, the output is a numpy array of integers.
-        - If the input is an xarray DataArray, the output is an xarray DataArray of integers.
+        - If the input is a numpy array, the output is a numpy array of integers (unless NaN is present)
+        - If the input is an xarray DataArray, the output is an xarray DataArray of integers (unless NaN is present).
 
     """
-    if (
-        isinstance(sample_interval, int)
-        or isinstance(sample_interval, (np.ndarray, xr.DataArray))
-        and np.issubdtype(sample_interval.dtype, int)
-    ):
-        return sample_interval
+    # Deal with timedelta objects
     if isinstance(sample_interval, np.timedelta64):
-        return sample_interval / np.timedelta64(1, "s")
+        return (sample_interval.astype("m8[s]") / np.timedelta64(1, "s")).astype(int)
+        # return sample_interval.astype("m8[s]").astype(int)
+
+    # Deal with scalar pure integer types (Python int or numpy int32/int64/etc.)
+    # --> ATTENTION: this also include np.timedelta64 objects !
+    if isinstance(sample_interval, numbers.Integral):
+        return sample_interval
+
+    # Deal with numpy or xarray arrays of integer types
+    if isinstance(sample_interval, (np.ndarray, xr.DataArray)) and np.issubdtype(sample_interval.dtype, int):
+        return sample_interval
+
+    # Deal with scalar floats that are actually integers (e.g. 1.0, np.float64(3.0))
+    if isinstance(sample_interval, numbers.Real):
+        if float(sample_interval).is_integer():
+            # Cast back to int seconds
+            return int(sample_interval)
+        raise TypeError(f"sample_interval floats must be whole numbers of seconds, got {sample_interval}")
+
+    # Deal with timedelta64 numpy arrays
     if isinstance(sample_interval, np.ndarray) and np.issubdtype(sample_interval.dtype, np.timedelta64):
+        is_nat = np.isnat(sample_interval)
+        if np.any(is_nat):
+            sample_interval = sample_interval.astype("timedelta64[s]").astype(float)
+            sample_interval[is_nat] = np.nan
+            return sample_interval
         return sample_interval.astype("timedelta64[s]").astype(int)
+    # Deal with timedelta64 xarray arrays
     if isinstance(sample_interval, xr.DataArray) and np.issubdtype(sample_interval.dtype, np.timedelta64):
         sample_interval = sample_interval.copy()
-        sample_interval_int = sample_interval.data.astype("timedelta64[s]").astype(int)
-        sample_interval.data = sample_interval_int
+        is_nat = np.isnat(sample_interval)
+        if np.any(is_nat):
+            sample_interval_array = sample_interval.data.astype("timedelta64[s]").astype(float)
+            sample_interval_array[is_nat] = np.nan
+            sample_interval.data = sample_interval_array
+            return sample_interval
+        sample_interval_array = sample_interval.data.astype("timedelta64[s]").astype(int)
+        sample_interval.data = sample_interval_array
         return sample_interval
+
+    # Deal with numpy array of floats that are all integer-valued (with optionally some NaN)
+    if isinstance(sample_interval, np.ndarray) and np.issubdtype(sample_interval.dtype, np.floating):
+        mask_nan = np.isnan(sample_interval)
+        if mask_nan.any():
+            # Check non-NaN entries are whole numbers
+            nonnan = sample_interval[~mask_nan]
+            if not np.allclose(nonnan, np.rint(nonnan)):
+                raise TypeError("Float array sample_interval must contain only whole numbers or NaN.")
+            # Leave as float array so NaNs are preserved
+            return sample_interval
+        # No NaNs: can safely cast to integer dtype
+        if not np.allclose(sample_interval, np.rint(sample_interval)):
+            raise TypeError("Float array sample_interval must contain only whole numbers.")
+        return sample_interval.astype(int)
+
+    # Deal with xarray.DataArrayy of floats that are all integer-valued (with optionally some NaN)
+    if isinstance(sample_interval, xr.DataArray) and np.issubdtype(sample_interval.dtype, np.floating):
+        arr = sample_interval.copy()
+        data = arr.data
+        mask_nan = np.isnan(data)
+        if mask_nan.any():
+            nonnan = data[~mask_nan]
+            if not np.allclose(nonnan, np.rint(nonnan)):
+                raise TypeError("Float DataArray sample_interval must contain only whole numbers or NaN.")
+            # return as float DataArray so NaNs stay
+            return arr
+        if not np.allclose(data, np.rint(data)):
+            raise TypeError("Float DataArray sample_interval must contain only whole numbers.")
+        arr.data = data.astype(int)
+        return arr
+
     raise TypeError(
-        "sample_interval must be an int, numpy.timedelta64, or numpy array of timedelta64.",
+        "sample_interval must be an integer value or array, or numpy.ndarray / xarray.DataArray with type timedelta64.",
     )
 
 
 def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
     """Infer the sample interval of a dataset.
 
+    Duplicated timesteps are removed before inferring the sample interval.
+
     NOTE: This function is not used in the DISDRODB processing chain.
     """
     # Check sorted by time and sort if necessary
     ds = ensure_sorted_by_time(ds)
 
+    # Retrieve timesteps
+    # - Remove duplicate timesteps
+    timesteps = np.unique(ds["time"].data)
+
     # Calculate number of timesteps
-    n_timesteps = len(ds["time"].data)
+    n_timesteps = len(timesteps)
 
     # Calculate time differences in seconds
-    deltadt = np.diff(ds["time"].data).astype("timedelta64[s]").astype(int)
+    deltadt = np.diff(timesteps).astype("timedelta64[s]").astype(int)
 
     # Round each delta to the nearest multiple of 5 (because the smallest possible sample interval is 10 s)
     # Example: for sample_interval = 10, deltat values like 8, 9, 11, 12 become 10 ...
@@ -373,14 +437,11 @@ def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
     # Reround deltadt once knowing the sample interval
     # - If sample interval is 10: all values between 6 and 14 are rounded to 10, below 6 to 0, above 14 to 20
     # - If sample interval is 30: all values between 16 and 44 are rounded to 30, below 16 to 0, above 44 to 20
-    deltadt = np.round(deltadt / sample_interval) * sample_interval
+    deltadt = np.round(deltadt / min_sample_interval) * min_sample_interval
 
     # Identify unique time intervals and their occurrences
     unique_deltas, counts = np.unique(deltadt, return_counts=True)
     fractions = np.round(counts / len(deltadt) * 100, 2)
-
-    # Identify the minimum delta (except 0)
-    min_delta = unique_deltas[unique_deltas != 0].min()
 
     # Determine the most frequent time interval (mode)
     most_frequent_delta_idx = np.argmax(counts)
@@ -392,14 +453,14 @@ def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
     unexpected_intervals_counts = counts[unique_deltas != sample_interval]
     unexpected_intervals_fractions = fractions[unique_deltas != sample_interval]
     if verbose and len(unexpected_intervals) > 0:
-        msg = "Irregular timesteps detected."
+        msg = "Non-unique interval detected."
         log_info(logger=logger, msg=msg, verbose=verbose)
         for interval, count, fraction in zip(
             unexpected_intervals,
             unexpected_intervals_counts,
             unexpected_intervals_fractions,
         ):
-            msg = f"  Interval: {interval} seconds, Occurrence: {count}, Frequency: {fraction} %"
+            msg = f"--> Interval: {interval} seconds, Occurrence: {count}, Frequency: {fraction} %"
             log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Perform checks
@@ -408,14 +469,17 @@ def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
     if robust and np.any(deltadt == 0):
         raise ValueError("Likely presence of duplicated timesteps.")
 
-    ####-------------------------------------------------------------------------.
-    #### Informative messages
+    if robust and len(unexpected_intervals) > 0:
+        raise ValueError("Not unique sampling interval.")
+
+    ###-------------------------------------------------------------------------.
+    ### Display informative messages
     # - Log a warning if estimated sample interval has frequency less than 60 %
     sample_interval_fraction_threshold = 60
     msg = (
         f"The most frequent sampling interval ({sample_interval} s) "
         + f"has a frequency lower than {sample_interval_fraction_threshold}%: {sample_interval_fraction} %. "
-        + f"Total number of timesteps: {n_timesteps}."
+        + f"(Total number of timesteps: {n_timesteps})"
     )
     if sample_interval_fraction < sample_interval_fraction_threshold:
         log_warning(logger=logger, msg=msg, verbose=verbose)
@@ -428,19 +492,10 @@ def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
         )
         msg = (
             "The following unexpected intervals have a frequency "
-            + f"greater than 20%: {frequent_unexpected_intervals_str} %. "
-            + f"Total number of timesteps: {n_timesteps}."
+            + f"greater than 20%: {frequent_unexpected_intervals_str}. "
+            + f"(Total number of timesteps: {n_timesteps})"
         )
         log_warning(logger=logger, msg=msg, verbose=verbose)
-
-    # - Raise error if the most frequent interval is not the expected one !
-    if sample_interval != min_delta:
-        raise ValueError(
-            f"The most frequent sampling interval ({sample_interval} seconds) "
-            f"is not the smallest interval ({min_delta} seconds). "
-            "Inconsistent sampling intervals in the dataset !",
-        )
-
     return int(sample_interval)
 
 
@@ -461,7 +516,12 @@ def get_problematic_timestep_indices(timesteps, sample_interval):
 
 
 def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=True, logger=None, verbose=True):
-    """Ensure timesteps match with the sample_interval."""
+    """Ensure timesteps match with the sample_interval.
+
+    This function:
+    - drop dataset indices with duplicated timesteps,
+    - but does not add missing timesteps to the dataset.
+    """
     # Check sorted by time and sort if necessary
     ds = ensure_sorted_by_time(ds)
 
@@ -537,7 +597,7 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
             elif n_duplicates == 3:
                 if prev_time not in adjusted_times:
                     adjusted_times[dup_indices[0]] = prev_time
-                    qc_flag[dup_indices[0]] = flag_dropped_duplicated_timestep
+                    qc_flag[dup_indices[0]] = flag_solved_duplicated_timestep
                     count_solved += 1
                 if next_time not in adjusted_times:
                     adjusted_times[dup_indices[-1]] = next_time
@@ -547,7 +607,7 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
                 idx_to_drop = np.append(idx_to_drop, dup_indices[0:-1])
                 qc_flag[dup_indices[-1]] = flag_dropped_duplicated_timestep
                 msg = (
-                    f"Cannot resolve {n_duplicates} duplicated timesteps"
+                    f"Cannot resolve {n_duplicates} duplicated timesteps "
                     f"(after trailing seconds correction) around {dup_time}."
                 )
                 log_warning(logger=logger, msg=msg, verbose=verbose)
@@ -585,6 +645,9 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
         ds = ds.set_coords("time_qc")
 
     # Drop duplicated timesteps
+    # - Using ds =  ds.drop_isel({"time": idx_to_drop.astype(int)}) raise:
+    #   --> pandas.errors.InvalidIndexError: Reindexing only valid with uniquely valued Index objects
+    #   --> https://github.com/pydata/xarray/issues/6605
     if len(idx_to_drop) > 0:
         idx_to_drop = idx_to_drop.astype(int)
         idx_valid_timesteps = np.arange(0, ds["time"].size)

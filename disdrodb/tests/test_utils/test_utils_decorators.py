@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Test decorators."""
 import pytest
+
 from disdrodb.utils.decorators import (
     check_software_availability,
 )

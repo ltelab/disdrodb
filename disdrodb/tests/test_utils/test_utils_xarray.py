@@ -19,34 +19,17 @@
 """Test Xarray utility."""
 
 import numpy as np
-import pandas as pd
 import pytest
 import xarray as xr
+from xarray.core import dtypes
 
 from disdrodb.utils.xarray import (
-    regularize_dataset,
+    define_dataarray_fill_value,
+    define_fill_value_dictionary,
     xr_get_last_valid_idx,
+    # remove_diameter_coordinates,
+    # remove_velocity_coordinates,
 )
-
-
-def test_regularize_dataset():
-    # Create a sample Dataset
-    times = pd.date_range("2020-01-01", periods=4, freq="2min")
-    data = np.random.rand(4)
-    ds = xr.Dataset({"data": ("time", data)}, coords={"time": times})
-
-    # Regularize the dataset
-    desired_freq = "1min"
-    fill_value = 0
-    ds_regularized = regularize_dataset(ds, freq=desired_freq, fill_value=fill_value)
-
-    # Check new time dimension coordinates
-    expected_times = pd.date_range("2020-01-01", periods=7, freq=desired_freq)
-    assert np.array_equal(ds_regularized["time"].to_numpy(), expected_times)
-
-    # Get time index which were infilled
-    new_indices = np.where(np.isin(expected_times, ds["time"].to_numpy(), invert=True))[0]
-    assert np.all(ds_regularized.isel(time=new_indices)["data"].data == fill_value)
 
 
 class TestXrGetLastValidIdx:
@@ -128,3 +111,86 @@ class TestXrGetLastValidIdx:
         da = xr.DataArray([0.0, 1.0, 2.0], dims=["x"])
         with pytest.raises(ValueError, match="must be a boolean DataArray"):
             xr_get_last_valid_idx(da, dim="x")
+
+
+class TestDefineDataarrayFillValue:
+    def test_float_dtype_returns_NA(self):
+        """Return NA for floating dtype DataArray."""
+        da = xr.DataArray(np.array([1.1, 2.2], dtype=float))
+        result = define_dataarray_fill_value(da)
+        assert result is dtypes.NA
+
+    def test_integer_dtype_uses_attrs_fillvalue(self):
+        """Use _FillValue from attrs for integer dtype DataArray."""
+        da = xr.DataArray(np.array([1, 2, 3], dtype=np.int32))
+        da.attrs["_FillValue"] = -999
+        result = define_dataarray_fill_value(da)
+        assert result == -999
+
+    def test_integer_dtype_uses_encoding_fillvalue(self):
+        """Use _FillValue from encoding when attrs has none for integer dtype."""
+        da = xr.DataArray(np.array([4, 5, 6], dtype=np.int16))
+        # simulate NetCDF-style encoding
+        da.encoding["_FillValue"] = -888
+        result = define_dataarray_fill_value(da)
+        assert result == -888
+
+    def test_integer_dtype_without_fillvalue_returns_iinfo_max(self):
+        """Return max integer value when no _FillValue is set for integer dtype."""
+        da = xr.DataArray(np.array([7, 8, 9], dtype=np.int8))
+        expected = np.iinfo(np.int8).max
+        result = define_dataarray_fill_value(da)
+        assert result == expected
+
+    def test_non_numeric_dtype_returns_None(self):
+        """Return None for non-numeric dtype DataArray."""
+        da = xr.DataArray(np.array(["a", "b", "c"], dtype=object))
+        result = define_dataarray_fill_value(da)
+        assert result is None
+
+
+class TestDefineFillValueDictionary:
+
+    def test_dataarray_float_dtype(self):
+        """Return dict with NA for floating DataArray."""
+        da = xr.DataArray(
+            np.array([1.0, 2.0], dtype=float),
+            dims="x",
+            coords={"x": np.array([0, 1], dtype=int)},
+            name="var",
+        )
+        result = define_fill_value_dictionary(da)
+        # Should include only the DataArray and its coordinate
+        assert set(result.keys()) == {"var", "x"}
+        assert result["var"] is dtypes.NA
+        assert result["x"] == np.iinfo(np.int64).max
+
+    def test_dataarray_int_dtype_with_attrs(self):
+        """Return dict with attrs fill value for integer DataArray."""
+        da = xr.DataArray(
+            np.array([1, 2, 3], dtype=np.int32),
+            dims="y",
+            coords={"y": np.array([10, 20, 30], dtype=int)},
+            name="var2",
+        )
+        da.attrs["_FillValue"] = -1
+        result = define_fill_value_dictionary(da)
+        assert set(result.keys()) == {"var2", "y"}
+        assert result["var2"] == -1
+        assert result["y"] == np.iinfo(np.int64).max
+
+    def test_dataset_mixed_dtypes(self):
+        """Return dict with fill values for mixed-dtype Dataset variables and coords."""
+        ds = xr.Dataset(
+            data_vars={
+                "fvar": ("x", np.array([1.5, 2.5], dtype=float)),
+                "ivar": ("x", np.array([1, 2], dtype=np.int16)),
+            },
+            coords={"x": np.array([0, 1], dtype=int)},
+        )
+        ds["ivar"].attrs["_FillValue"] = -7
+        result = define_fill_value_dictionary(ds)
+        assert set(result.keys()) == {"fvar", "ivar", "x"}
+        assert result["fvar"] is dtypes.NA
+        assert result["ivar"] == -7
+        assert result["x"] == np.iinfo(np.int64).max

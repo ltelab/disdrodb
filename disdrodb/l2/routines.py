@@ -41,10 +41,7 @@ from disdrodb.api.path import (
     define_l2m_filename,
 )
 from disdrodb.configs import get_base_dir
-from disdrodb.l1.resampling import (
-    regularize_dataset,
-    resample_dataset,
-)
+from disdrodb.l1.resampling import resample_dataset
 from disdrodb.l2.event import get_events_info, identify_events
 from disdrodb.l2.processing import (
     generate_l2_empirical,
@@ -63,7 +60,7 @@ from disdrodb.utils.logger import (
     log_error,
     log_info,
 )
-from disdrodb.utils.time import ensure_sample_interval_in_seconds, get_resampling_information
+from disdrodb.utils.time import ensure_sample_interval_in_seconds, get_resampling_information, regularize_dataset
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)

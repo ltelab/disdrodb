@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Xarray utilities."""
 import numpy as np
-import pandas as pd
 import xarray as xr
 from xarray.core import dtypes
 
@@ -98,44 +97,68 @@ def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
     return last_idx
 
 
-def regularize_dataset(ds: xr.Dataset, freq: str, time_dim="time", method=None, fill_value=dtypes.NA):
+def define_dataarray_fill_value(da):
+    """Define the fill value for a numerical xarray.DataArray."""
+    if np.issubdtype(da.dtype, np.floating):
+        return dtypes.NA
+    if np.issubdtype(da.dtype, np.integer):
+        if "_FillValue" in da.attrs:
+            return da.attrs["_FillValue"]
+        if "_FillValue" in da.encoding:
+            return da.encoding["_FillValue"]
+        return np.iinfo(da.dtype).max
+    return None
+
+
+def define_dataarray_fill_value_dictionary(da):
+    """Define fill values for numerical variables and coordinates of a xarray.DataArray.
+
+    Return a dict of fill values:
+      - floating → NaN
+      - integer → ds[var].attrs["_FillValue"] if present, else np.iinfo(dtype).max
     """
-    Regularize a dataset across time dimension with uniform resolution.
+    fill_value_dict = {}
+    # Add fill value of DataArray
+    fill_value_array = define_dataarray_fill_value(da)
+    if fill_value_array is not None:
+        fill_value_dict[da.name] = fill_value_array
+    # Add fill value of coordinates
+    fill_value_dict.update(define_dataset_fill_value_dictionary(da.coords))
+    # Return fill value dictionary
+    return fill_value_dict
 
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        xarray Dataset.
-    time_dim : str, optional
-        The time dimension in the xr.Dataset. The default is ``"time"``.
-    freq : str
-        The ``freq`` string to pass to ``pd.date_range`` to define the new time coordinates.
-        Examples: ``freq="2min"``.
-    method : str, optional
-        Method to use for filling missing timesteps.
-        If ``None``, fill with ``fill_value``. The default is ``None``.
-        For other possible methods, see https://docs.xarray.dev/en/stable/generated/xarray.Dataset.reindex.html
-    fill_value : float, optional
-        Fill value to fill missing timesteps. The default is ``dtypes.NA``.
 
-    Returns
-    -------
-    ds_reindexed  : xarray.Dataset
-        Regularized dataset.
+def define_dataset_fill_value_dictionary(ds):
+    """Define fill values for numerical variables and coordinates of a xarray.Dataset.
 
+    Return a dict of per-variable fill values:
+      - floating --> NaN
+      - integer --> ds[var].attrs["_FillValue"] if present, else the maximum allowed number.
     """
-    start = ds[time_dim].to_numpy()[0]
-    end = ds[time_dim].to_numpy()[-1]
-    new_time_index = pd.date_range(start=pd.to_datetime(start), end=pd.to_datetime(end), freq=freq)
+    fill_value_dict = {}
+    # Retrieve fill values for numerical variables and coordinates
+    for var in list(ds.variables):
+        array_fill_value = define_dataarray_fill_value(ds[var])
+        if array_fill_value is not None:
+            fill_value_dict[var] = array_fill_value
+    # Return fill value dictionary
+    return fill_value_dict
 
-    # Regularize dataset and fill with NA values
-    ds_reindexed = ds.reindex(
-        {"time": new_time_index},
-        method=method,  # do not fill gaps
-        # tolerance=tolerance,  # mismatch in seconds
-        fill_value=fill_value,
-    )
-    return ds_reindexed
+
+def define_fill_value_dictionary(xr_obj):
+    """Define fill values for numerical variables and coordinates of a xarray object.
+
+    Return a dict of per-variable fill values:
+      - floating --> NaN
+      - integer --> ds[var].attrs["_FillValue"] if present, else the maximum allowed number.
+    """
+    if isinstance(xr_obj, xr.Dataset):
+        return define_dataset_fill_value_dictionary(xr_obj)
+    return define_dataarray_fill_value_dictionary(xr_obj)
+
+
+####-----------------------------------------------------------------------------------
+#### Diameter and Velocity Coordinates
 
 
 def remove_diameter_coordinates(xr_obj):

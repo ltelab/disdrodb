@@ -17,8 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB decorators."""
-import importlib
 import functools
+import importlib
 
 import dask
 
@@ -92,9 +92,9 @@ def check_software_availability(software, conda_package):
     return decorator
 
 
-
 def check_pytmatrix_availability(func):
     """Decorator to ensure that the 'pytmatrix' package is installed."""
+
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
         if not importlib.util.find_spec("pytmatrix"):
@@ -103,7 +103,8 @@ def check_pytmatrix_availability(func):
                 "Please install the following software: \n"
                 "  conda install conda-forge gfortran \n"
                 "  conda install conda-forge meson \n"
-                "  pip install git+https://github.com/ltelab/pytmatrix-lte.git@main \n"
+                "  pip install git+https://github.com/ltelab/pytmatrix-lte.git@main \n",
             )
         return func(*args, **kwargs)
+
     return wrapper
