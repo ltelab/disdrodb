@@ -32,7 +32,7 @@ from disdrodb.tests.conftest import (
 
 
 def test__get_list_all_metadata(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "DISDRODB"
 
     expected_result = []
 
@@ -44,7 +44,7 @@ def test__get_list_all_metadata(tmp_path):
     station_name = "station_1"
 
     metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -53,7 +53,7 @@ def test__get_list_all_metadata(tmp_path):
 
     expected_result.append(metadata_filepath)
     result = _get_list_all_metadata(
-        base_dir=str(base_dir),
+        metadata_dir=str(metadata_dir),
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -63,7 +63,7 @@ def test__get_list_all_metadata(tmp_path):
     # Test 2 : two metadata files
     station_name = "station_2"
     metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -71,7 +71,7 @@ def test__get_list_all_metadata(tmp_path):
     )
     expected_result.append(metadata_filepath)
     result = _get_list_all_metadata(
-        base_dir=str(base_dir),
+        metadata_dir=str(metadata_dir),
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -82,7 +82,8 @@ def test__get_list_all_metadata(tmp_path):
 def test__get_list_metadata_with_data(tmp_path):
     expected_result = []
 
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : one metadata file + one data file
     data_source = "DATA_SOURCE"
@@ -92,7 +93,7 @@ def test__get_list_metadata_with_data(tmp_path):
     key_name = "key1"
     metadata_dict = {key_name: "value1"}
     metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -100,6 +101,7 @@ def test__get_list_metadata_with_data(tmp_path):
     )
     _ = create_fake_raw_data_file(
         base_dir=base_dir,
+        product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -108,7 +110,8 @@ def test__get_list_metadata_with_data(tmp_path):
     expected_result.append(metadata_filepath)
 
     result = _get_list_metadata_with_data(
-        base_dir=str(base_dir),
+        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
     )
@@ -121,7 +124,7 @@ def test__get_list_metadata_with_data(tmp_path):
     metadata_dict = {key_name: "value1"}
 
     metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -153,12 +156,12 @@ def test__get_list_metadata_with_data(tmp_path):
 
 
 def test_get_list_metadata_file(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
     metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict={},
         data_source=data_source,
         campaign_name=campaign_name,
@@ -167,7 +170,7 @@ def test_get_list_metadata_file(tmp_path):
 
     # Test 1 : Retrieve specific station name
     result = get_list_metadata(
-        base_dir=str(base_dir),
+        metadata_dir=metadata_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
         station_names=station_name,
@@ -176,23 +179,23 @@ def test_get_list_metadata_file(tmp_path):
     assert result == [metadata_filepath]
 
     # Test 2: Retrieve all metadata
-    result = get_list_metadata(base_dir=str(base_dir), with_stations_data=False)
+    result = get_list_metadata(metadata_dir=metadata_dir, with_stations_data=False)
     assert result == [metadata_filepath]
 
     # Test 3: Retrieve all metadata with data
     with pytest.raises(ValueError):  # raise error if None
-        get_list_metadata(base_dir=str(base_dir), with_stations_data=True)
+        get_list_metadata(metadata_dir=metadata_dir, with_stations_data=True)
 
     # Test 4: Check return [] if no metadata
-    result = get_list_metadata(base_dir=str(base_dir), data_sources="unexisting", with_stations_data=False)
+    result = get_list_metadata(metadata_dir=metadata_dir, data_sources="unexisting", with_stations_data=False)
     assert result == []
 
-    result = get_list_metadata(base_dir=str(base_dir), station_names="unexisting", with_stations_data=False)
+    result = get_list_metadata(metadata_dir=metadata_dir, station_names="unexisting", with_stations_data=False)
     assert result == []
 
-    result = get_list_metadata(base_dir=str(base_dir), campaign_names="unexisting", with_stations_data=False)
+    result = get_list_metadata(metadata_dir=metadata_dir, campaign_names="unexisting", with_stations_data=False)
     assert result == []
 
     # Test 5: Check by station names
-    result = get_list_metadata(base_dir=str(base_dir), station_names=station_name, with_stations_data=False)
+    result = get_list_metadata(metadata_dir=metadata_dir, station_names=station_name, with_stations_data=False)
     assert [metadata_filepath] == result

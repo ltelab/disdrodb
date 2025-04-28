@@ -13,12 +13,11 @@ from disdrodb import __root_path__
 from disdrodb.utils.yaml import write_yaml
 
 
-def create_fake_metadata_directory(base_dir, product, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
+def create_fake_metadata_directory(metadata_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
     from disdrodb.api.create_directories import create_metadata_directory
 
     return create_metadata_directory(
-        base_dir=base_dir,
-        product=product,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
     )
@@ -43,8 +42,7 @@ def create_fake_station_dir(
 
 
 def create_fake_metadata_file(
-    base_dir,
-    product="RAW",
+    metadata_dir,
     metadata_dict=None,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
@@ -57,12 +55,10 @@ def create_fake_metadata_file(
     if metadata_dict is None:
         metadata_dict = {}
     metadata_filepath = define_metadata_filepath(
-        base_dir=base_dir,
-        product=product,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        check_exists=False,
     )
     # Create metadata directory
     os.makedirs(os.path.dirname(metadata_filepath), exist_ok=True)
@@ -74,6 +70,8 @@ def create_fake_metadata_file(
         metadata_dict["campaign_name"] = campaign_name
     if "station_name" not in metadata_dict:
         metadata_dict["station_name"] = station_name
+    if "sensor_name" not in metadata_dict:
+        metadata_dict["sensor_name"] = "OTT_Parsivel"
 
     # Update over default metadata dict
     default_metadata_dict = get_default_metadata_dict()
@@ -87,7 +85,7 @@ def create_fake_metadata_file(
 
 
 def create_fake_issue_file(
-    base_dir,
+    metadata_dir,
     issue_dict=None,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
@@ -100,7 +98,7 @@ def create_fake_issue_file(
     if issue_dict is None:
         issue_dict = {}
     issue_filepath = define_issue_filepath(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

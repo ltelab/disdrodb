@@ -90,7 +90,7 @@ def write_issue(filepath: str, timesteps: Optional[list] = None, time_periods: O
             yaml.dump(time_periods_dict, f, default_flow_style=None)
 
 
-def create_station_issue(data_source, campaign_name, station_name, base_dir=None):
+def create_station_issue(data_source, campaign_name, station_name, metadata_dir=None):
     """Write an empty YAML issue YAML file for a DISDRODB station.
 
     An error is raised if the file already exists !
@@ -115,7 +115,7 @@ def create_station_issue(data_source, campaign_name, station_name, base_dir=None
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         check_exists=False,
     )
     if os.path.exists(issue_filepath):

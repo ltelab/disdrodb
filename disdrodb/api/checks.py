@@ -27,7 +27,6 @@ from disdrodb.api.path import (
     define_data_dir,
     define_issue_dir,
     define_issue_filepath,
-    define_metadata_dir,
     define_metadata_filepath,
 )
 from disdrodb.utils.directories import (
@@ -96,6 +95,15 @@ def check_base_dir(base_dir: str):
     if not base_dir.endswith("DISDRODB"):
         raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
     return base_dir
+
+
+def check_metadata_dir(metadata_dir: str):
+    """Raise an error if the path does not end with ``DISDRODB``."""
+    metadata_dir = str(metadata_dir)  # convert Pathlib to string
+    metadata_dir = os.path.normpath(metadata_dir)
+    if not metadata_dir.endswith("DISDRODB"):
+        raise ValueError(f"The path {metadata_dir} does not end with DISDRODB. Please check the path.")
+    return metadata_dir
 
 
 def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
@@ -223,34 +231,31 @@ def check_data_availability(
         raise ValueError(msg)
 
 
-def check_metadata_dir(product, data_source, campaign_name, base_dir=None):
-    """Check existence of the metadata directory. If does not exists, raise an error."""
-    metadata_dir = define_metadata_dir(
-        product=product,
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exists=False,
-    )
-    if not os.path.exists(metadata_dir) and os.path.isdir(metadata_dir):
-        msg = f"The metadata directory does not exist at {metadata_dir}."
-        logger.error(msg)
-        raise ValueError(msg)
-    return metadata_dir
+# def check_metadata_dir(product, data_source, campaign_name, base_dir=None):
+#     """Check existence of the metadata directory. If does not exists, raise an error."""
+#     metadata_dir = define_metadata_dir(
+#         product=product,
+#         base_dir=base_dir,
+#         data_source=data_source,
+#         campaign_name=campaign_name,
+#         check_exists=False,
+#     )
+#     if not os.path.exists(metadata_dir) and os.path.isdir(metadata_dir):
+#         msg = f"The metadata directory does not exist at {metadata_dir}."
+#         logger.error(msg)
+#         raise ValueError(msg)
+#     return metadata_dir
 
 
-def check_metadata_file(product, data_source, campaign_name, station_name, base_dir=None, check_validity=True):
+def check_metadata_file(metadata_dir, data_source, campaign_name, station_name, check_validity=True):
     """Check existence of a valid metadata YAML file. If does not exists, raise an error."""
     from disdrodb.metadata.checks import check_metadata_compliance
 
-    _ = check_metadata_dir(product=product, base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
     metadata_filepath = define_metadata_filepath(
-        product=product,
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        check_exists=False,
     )
     # Check existence
     if not os.path.exists(metadata_filepath):
@@ -264,19 +269,18 @@ def check_metadata_file(product, data_source, campaign_name, station_name, base_
     # Check validity
     if check_validity:
         check_metadata_compliance(
-            base_dir=base_dir,
+            metadata_dir=metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            product=product,
         )
     return metadata_filepath
 
 
-def check_issue_dir(data_source, campaign_name, base_dir=None):
+def check_issue_dir(data_source, campaign_name, metadata_dir=None):
     """Check existence of the issue directory. If does not exists, raise an error."""
     issue_dir = define_issue_dir(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -288,18 +292,18 @@ def check_issue_dir(data_source, campaign_name, base_dir=None):
     return issue_dir
 
 
-def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
+def check_issue_file(data_source, campaign_name, station_name, metadata_dir=None):
     """Check existence of a valid issue YAML file. If does not exists, raise an error."""
     from disdrodb.issue.checks import check_issue_compliance
     from disdrodb.issue.writer import create_station_issue
 
     _ = check_issue_dir(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
     )
     issue_filepath = define_issue_filepath(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -308,7 +312,7 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
     # Check existence
     if not os.path.exists(issue_filepath):
         create_station_issue(
-            base_dir=base_dir,
+            metadata_dir=metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -316,7 +320,7 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
 
     # Check validity
     check_issue_compliance(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -373,31 +377,16 @@ def check_valid_campaign_dir(campaign_dir):
         raise ValueError(msg)
 
 
-def check_raw_dir(raw_dir: str, station_name: str) -> None:
-    """Check validity of raw_dir content.
-
-    Steps:
-
-        1. Check that ``raw_dir`` is a valid directory path
-
-        2. Check that ``raw_dir`` follows the expect directory structure
-
-        3. Check that each ``station_name`` directory contains data
-
-        4. Check that for each station_name the mandatory ``metadata.yml`` is specified.
-
-        5. Check that for each station_name the mandatory ``issue.yml`` is specified.
+def check_raw_dir(raw_dir: str) -> None:
+    """Check input, format and validity of the ``raw_dir`` directory path.
 
     Parameters
     ----------
     raw_dir : str
         Input raw campaign directory.
-    station_name : str
-        Station name.
     verbose : bool, optional
         Whether to verbose the processing.
         The default is ``False``.
-
     """
     # Ensure valid path format
     raw_dir = remove_path_trailing_slash(raw_dir)
@@ -411,41 +400,8 @@ def check_raw_dir(raw_dir: str, station_name: str) -> None:
     # Check is inside the 'Raw' directory
     check_is_within_raw_directory(raw_dir)
 
-    # Retrieve data_source and campaign_name
-    base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(raw_dir)
-
-    # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
-    check_campaign_name(campaign_name)
-    check_data_source(data_source)
-
     # Check there are directories in raw_dir
     check_directories_inside(raw_dir)
-
-    # Check there is data in the station directory
-    check_data_availability(
-        product="RAW",
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
-    # Check there is a valid metadata YAML file
-    check_metadata_file(
-        product="RAW",
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
-    # Check there is valid issue YAML file
-    check_issue_file(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
     return raw_dir
 
 

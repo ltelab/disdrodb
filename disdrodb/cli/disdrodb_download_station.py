@@ -24,7 +24,12 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.download_data import click_download_options
-from disdrodb.utils.cli import click_base_dir_option, click_station_arguments, parse_base_dir
+from disdrodb.utils.cli import (
+    click_base_dir_option,
+    click_metadata_dir_option,
+    click_station_arguments,
+    parse_base_dir,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -32,12 +37,14 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_base_dir_option
+@click_metadata_dir_option
 @click_download_options
 def disdrodb_download_station(
     data_source: str,
     campaign_name: str,
     station_name: str,
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
     force: bool = False,
 ):
     """
@@ -66,8 +73,10 @@ def disdrodb_download_station(
     from disdrodb.data_transfer.download_data import download_station
 
     base_dir = parse_base_dir(base_dir)
+    metadata_dir = parse_base_dir(metadata_dir)
     download_station(
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

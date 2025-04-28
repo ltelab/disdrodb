@@ -24,7 +24,7 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 def test_get_archive_metadata_key_value(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "DISDRODB"
 
     expected_result = []
 
@@ -37,13 +37,13 @@ def test_get_archive_metadata_key_value(tmp_path):
 
     metadata_dict = {expected_key: expected_value}
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    result = get_archive_metadata_key_value(key=expected_key, return_tuple=True, base_dir=base_dir)
+    result = get_archive_metadata_key_value(key=expected_key, return_tuple=True, metadata_dir=metadata_dir)
     expected_result.append((data_source, campaign_name, station_name, expected_value))
 
     assert sorted(result) == sorted(expected_result)
@@ -56,13 +56,13 @@ def test_get_archive_metadata_key_value(tmp_path):
     station_name = "station_name2"
     metadata_dict = {expected_key: expected_value}
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=True)
+    result = get_archive_metadata_key_value(key=expected_key, metadata_dir=metadata_dir, return_tuple=True)
     expected_result.append((data_source, campaign_name, station_name, expected_value))
 
     assert sorted(result) == sorted(expected_result)
@@ -77,14 +77,14 @@ def test_get_archive_metadata_key_value(tmp_path):
 
     metadata_dict = {expected_key: expected_value}
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    result = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=True)
-    values = get_archive_metadata_key_value(key=expected_key, base_dir=base_dir, return_tuple=False)
+    result = get_archive_metadata_key_value(key=expected_key, metadata_dir=metadata_dir, return_tuple=True)
+    values = get_archive_metadata_key_value(key=expected_key, metadata_dir=metadata_dir, return_tuple=False)
     expected_result.append((data_source, campaign_name, station_name, expected_value))
     expected_values = [item[3] for item in result]
 

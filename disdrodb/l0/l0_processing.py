@@ -46,7 +46,7 @@ from disdrodb.api.path import (
 )
 
 # get_disdrodb_path,
-from disdrodb.configs import get_base_dir, get_folder_partitioning
+from disdrodb.configs import get_base_dir, get_folder_partitioning, get_metadata_dir
 from disdrodb.issue import read_station_issue
 from disdrodb.l0.io import (
     get_raw_filepaths,
@@ -509,6 +509,9 @@ def run_l0a(
     # Define product name
     product = "L0A"
 
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_dir = get_metadata_dir()
+
     # ------------------------------------------------------------------------.
     # Start L0A processing
     if verbose:
@@ -521,6 +524,7 @@ def run_l0a(
     data_dir = create_l0_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
+        metadata_dir=metadata_dir,
         product=product,
         station_name=station_name,
         force=force,
@@ -555,7 +559,7 @@ def run_l0a(
     # -----------------------------------------------------------------.
     # Read issue YAML file
     issue_dict = read_station_issue(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -564,7 +568,7 @@ def run_l0a(
     ##------------------------------------------------------------------------.
     # Read metadata
     metadata = read_station_metadata(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -702,6 +706,9 @@ def run_l0b_from_nc(
     # Define product name
     product = "L0B"
 
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_dir = get_metadata_dir()
+
     # ------------------------------------------------------------------------.
     # Start L0B NC processing
     if verbose:
@@ -714,6 +721,7 @@ def run_l0b_from_nc(
     data_dir = create_l0_directory_structure(
         raw_dir=raw_dir,
         processed_dir=processed_dir,
+        metadata_dir=metadata_dir,
         product=product,
         station_name=station_name,
         force=force,
@@ -735,7 +743,7 @@ def run_l0b_from_nc(
     # -----------------------------------------------------------------.
     # Retrieve metadata
     metadata = read_station_metadata(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -891,10 +899,11 @@ def run_l0a_station(
     """
     # Define base directory
     base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir()
 
     # Retrieve reader
     reader = get_station_reader_function(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -984,10 +993,13 @@ def run_l0b_station(
     # Retrieve DISDRODB base directory
     base_dir = get_base_dir(base_dir)
 
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_dir = get_metadata_dir()
+
     # -----------------------------------------------------------------.
     # Retrieve metadata
     metadata = read_station_metadata(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -1018,6 +1030,7 @@ def run_l0b_station(
     # Create product directory
     data_dir = create_product_directory(
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -1210,6 +1223,10 @@ def run_l0c_station(
     # Define base directory
     base_dir = get_base_dir(base_dir)
 
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_dir = get_metadata_dir()
+
+    # ------------------------------------------------------------------------.
     # Define logs directory
     logs_dir = create_logs_directory(
         product=product,
@@ -1230,6 +1247,7 @@ def run_l0c_station(
     # Create product directory
     data_dir = create_product_directory(
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -1240,7 +1258,7 @@ def run_l0c_station(
     # ------------------------------------------------------------------------.
     # Define metadata filepath
     metadata_filepath = define_metadata_filepath(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

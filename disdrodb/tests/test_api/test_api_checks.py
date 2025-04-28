@@ -95,7 +95,6 @@ def test_check_raw_dir():
     # Set variables
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
-    station_name = "STATION_NAME"
     # Set paths
     raw_dir = os.path.join(
         TEST_DATA_DIR,
@@ -106,7 +105,7 @@ def test_check_raw_dir():
         campaign_name,
     )
 
-    assert check_raw_dir(raw_dir, station_name=station_name) == raw_dir
+    assert check_raw_dir(raw_dir) == raw_dir
 
 
 def test_check_processed_dir(tmp_path):

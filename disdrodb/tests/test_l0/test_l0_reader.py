@@ -111,7 +111,7 @@ def test_check_reader_arguments():
 
 
 def test_get_station_reader_function(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAGIN_NAME"
     station_name = "station_name"
@@ -119,7 +119,7 @@ def test_get_station_reader_function(tmp_path):
     metadata_dict = {"reader": f"{DATA_SOURCE}/{CAMPAIGN_NAME}"}
 
     metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -127,7 +127,7 @@ def test_get_station_reader_function(tmp_path):
     )
 
     result = get_station_reader_function(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -141,7 +141,7 @@ def test_get_station_reader_function(tmp_path):
 
     with pytest.raises(ValueError, match="The `reader` key is not available in the metadata"):
         get_station_reader_function(
-            base_dir=base_dir,
+            metadata_dir=metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -149,7 +149,7 @@ def test_get_station_reader_function(tmp_path):
 
 
 def test_get_reader_from_metadata(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "DISDRODB"
     data_source = DATA_SOURCE
     campaign_name = CAMPAIGN_NAME
     station_name = "station_name"
@@ -158,7 +158,7 @@ def test_get_reader_from_metadata(tmp_path):
     reader_data_source_name = f"{DATA_SOURCE}/{CAMPAIGN_NAME}"
 
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,

@@ -37,7 +37,7 @@ from disdrodb.api.path import (
     define_file_folder_path,
     define_l1_filename,
 )
-from disdrodb.configs import get_base_dir, get_folder_partitioning
+from disdrodb.configs import get_base_dir, get_folder_partitioning, get_metadata_dir
 from disdrodb.l1.processing import generate_l1
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
@@ -252,6 +252,9 @@ def run_l1_station(
     # Define base directory
     base_dir = get_base_dir(base_dir)
 
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_dir = get_metadata_dir()
+
     # Define logs directory
     logs_dir = create_logs_directory(
         product=product,
@@ -272,6 +275,7 @@ def run_l1_station(
     # Create directory structure
     data_dir = create_product_directory(
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

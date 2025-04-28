@@ -18,32 +18,51 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB metadata reader."""
 
-import pytest
-
+import disdrodb
 from disdrodb.metadata.reader import read_station_metadata
 from disdrodb.tests.conftest import create_fake_metadata_file
 
 
-@pytest.mark.parametrize("product", ["RAW", "L0A", "L0B"])
-def test_read_station_metadata(tmp_path, product):
-    base_dir = tmp_path / "DISDRODB"
+def test_read_station_metadata(tmp_path):
+    metadata_dir = tmp_path / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
 
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
-        product=product,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     metadata_dict = read_station_metadata(
-        base_dir=base_dir,
-        product=product,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
+
+    assert isinstance(metadata_dict, dict)
+
+
+def test_read_station_metadata_with_default_config(tmp_path):
+    metadata_dir = tmp_path / "DISDRODB"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "station_name"
+
+    _ = create_fake_metadata_file(
+        metadata_dir=metadata_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    with disdrodb.config.set({"metadata_dir": metadata_dir}):
+        metadata_dict = read_station_metadata(
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
 
     assert isinstance(metadata_dict, dict)

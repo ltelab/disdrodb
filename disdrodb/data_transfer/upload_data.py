@@ -23,8 +23,10 @@ from typing import Optional
 import click
 
 from disdrodb.api.path import define_metadata_filepath
+from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.data_transfer.zenodo import upload_station_to_zenodo
-from disdrodb.metadata import get_list_metadata
+from disdrodb.metadata.search import _get_list_metadata_with_data
+from disdrodb.utils.compression import archive_station_data
 from disdrodb.utils.yaml import read_yaml
 
 
@@ -126,6 +128,7 @@ def upload_station(
     platform: Optional[str] = "sandbox.zenodo",
     force: bool = False,
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ) -> None:
     """
     Upload data from a single DISDRODB station on a remote repository.
@@ -154,33 +157,42 @@ def upload_station(
         The default is ``force=False``.
 
     """
+    # Retrieve the DISDRODB Metadata and Data Archive Directories
+    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
+
+    # Check valid platform
     _check_valid_platform(platform)
 
     # Define metadata_filepath
     metadata_filepath = define_metadata_filepath(
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
-        product="RAW",
         check_exists=True,
     )
     # Check if data must be uploaded
     _check_if_upload(metadata_filepath, force=force)
 
-    print(f"Start uploading of {data_source} {campaign_name} {station_name}")
+    # Zip station data
+    print(f" - Zipping station data  of {data_source} {campaign_name} {station_name}")
+    station_zip_filepath = archive_station_data(metadata_filepath, base_dir=base_dir)
+
+    print(f" - Start uploading of {data_source} {campaign_name} {station_name}")
     # Upload the data
     if platform == "zenodo":
-        upload_station_to_zenodo(metadata_filepath, sandbox=False)
+        upload_station_to_zenodo(metadata_filepath, station_zip_filepath=station_zip_filepath, sandbox=False)
 
     else:  # platform == "sandbox.zenodo":  # Only for testing purposes, not available through CLI
-        upload_station_to_zenodo(metadata_filepath, sandbox=True)
+        upload_station_to_zenodo(metadata_filepath, station_zip_filepath=station_zip_filepath, sandbox=True)
 
 
 def upload_archive(
     platform: Optional[str] = None,
     force: bool = False,
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
     **kwargs,
 ) -> None:
     """Find all stations containing local data and upload them to a remote repository.
@@ -215,11 +227,15 @@ def upload_archive(
     """
     _check_valid_platform(platform)
 
+    # Retrieve the DISDRODB Metadata and Data Archive Directories
+    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
+
     # Get list metadata
-    metadata_filepaths = get_list_metadata(
+    metadata_filepaths = _get_list_metadata_with_data(
         **kwargs,
         base_dir=base_dir,
-        with_stations_data=True,
+        metadata_dir=metadata_dir,
     )
     # If force=False, keep only metadata without disdrodb_data_url
     if not force:
@@ -239,6 +255,7 @@ def upload_archive(
         try:
             upload_station(
                 base_dir=base_dir,
+                metadata_dir=metadata_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,

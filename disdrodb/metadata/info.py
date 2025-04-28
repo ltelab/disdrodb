@@ -24,12 +24,12 @@ from disdrodb.api.info import (
     infer_campaign_name_from_path,
     infer_data_source_from_path,
 )
-from disdrodb.configs import get_base_dir
+from disdrodb.configs import get_metadata_dir
 from disdrodb.metadata.reader import read_station_metadata
 from disdrodb.metadata.search import get_list_metadata
 
 
-def get_archive_metadata_key_value(key: str, return_tuple: bool = True, base_dir: Optional[str] = None):
+def get_archive_metadata_key_value(key: str, return_tuple: bool = True, metadata_dir: Optional[str] = None):
     """Return the values of a metadata key for all the archive.
 
     Parameters
@@ -51,13 +51,13 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, base_dir
     list or tuple
         List or tuple of values of the metadata key.
     """
-    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
     list_metadata_paths = get_list_metadata(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        with_stations_data=False,  # TODO: REFACTOR_STRUCTURE REMOVE !
     )
     list_info = []
     for filepath in list_metadata_paths:
@@ -65,8 +65,7 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, base_dir
         campaign_name = infer_campaign_name_from_path(filepath)
         station_name = os.path.basename(filepath).replace(".yml", "")
         metadata = read_station_metadata(
-            base_dir=base_dir,
-            product="RAW",
+            metadata_dir=metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

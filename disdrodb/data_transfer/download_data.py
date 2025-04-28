@@ -26,8 +26,8 @@ import click
 import pooch
 import tqdm
 
-from disdrodb.api.path import define_metadata_filepath
-from disdrodb.configs import get_base_dir
+from disdrodb.api.path import define_metadata_filepath, define_station_dir
+from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.metadata import get_list_metadata
 from disdrodb.utils.compression import unzip_file
 from disdrodb.utils.directories import is_empty_directory
@@ -101,6 +101,7 @@ def download_archive(
     station_names: Optional[Union[str, list[str]]] = None,
     force: bool = False,
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Download DISDRODB stations with the ``disdrodb_data_url`` in the metadata.
 
@@ -125,10 +126,13 @@ def download_archive(
         Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
         If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
     """
-    # Retrieve the requested metadata
+    # Retrieve the DISDRODB Metadata and Data Archive Directories
     base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
+
+    # List the requested metadata files
     metadata_filepaths = get_list_metadata(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
@@ -154,6 +158,7 @@ def download_archive(
                 campaign_name=campaign_name,
                 station_name=station_name,
                 base_dir=base_dir,
+                metadata_dir=metadata_dir,
                 force=force,
             )
         except Exception as e:
@@ -167,6 +172,7 @@ def download_station(
     station_name: str,
     force: bool = False,
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ) -> None:
     """
     Download data of a single DISDRODB station from the DISDRODB remote repository.
@@ -192,17 +198,21 @@ def download_station(
         If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
     """
     print(f"Start download of {data_source} {campaign_name} {station_name} station data")
+    # Retrieve the DISDRODB Metadata and Data Archive Directories
+    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
+
     # Define metadata_filepath
     metadata_filepath = define_metadata_filepath(
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
-        product="RAW",
         check_exists=True,
     )
+
     # Download data
-    _download_station_data(metadata_filepath, force=force)
+    _download_station_data(metadata_filepath, base_dir=base_dir, force=force)
 
 
 def _is_valid_disdrodb_data_url(disdrodb_data_url):
@@ -229,7 +239,7 @@ def _extract_station_files(zip_filepath, station_dir):
         os.remove(zip_filepath)
 
 
-def _download_station_data(metadata_filepath: str, force: bool = False) -> None:
+def _download_station_data(metadata_filepath: str, base_dir: str, force: bool = False) -> None:
     """Download and unzip the station data .
 
     Parameters
@@ -240,45 +250,39 @@ def _download_station_data(metadata_filepath: str, force: bool = False) -> None:
         If ``True``, delete existing files and redownload it. The default is ``False``.
 
     """
-    disdrodb_data_url, station_dir = _get_station_url_and_dir_path(metadata_filepath)
+    # Open metadata file
+    metadata_dict = read_yaml(metadata_filepath)
+    # Retrieve station information
+    base_dir = get_base_dir(base_dir)
+    data_source = metadata_dict["data_source"]
+    campaign_name = metadata_dict["campaign_name"]
+    station_name = metadata_dict["station_name"]
+    station_name = check_consistent_station_name(metadata_filepath, station_name)
+    # Define the destination local filepath path
+    station_dir = define_station_dir(
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="RAW",
+    )
+    # Check DISDRODB data url
+    disdrodb_data_url = metadata_dict.get("disdrodb_data_url", None)
+    if not _is_valid_disdrodb_data_url(disdrodb_data_url):
+        raise ValueError(f"Invalid disdrodb_data_url '{disdrodb_data_url}' for station {station_name}")
     # Download file
     zip_filepath = _download_file_from_url(disdrodb_data_url, dst_dir=station_dir, force=force)
     # Extract the stations files from the downloaded station.zip file
     _extract_station_files(zip_filepath, station_dir=station_dir)
 
 
-def _get_valid_station_name(metadata_filepath, metadata_dict):
+def check_consistent_station_name(metadata_filepath, station_name):
     """Check consistent station_name between YAML file name and metadata key."""
     # Check consistent station name
     expected_station_name = os.path.basename(metadata_filepath).replace(".yml", "")
-    station_name = metadata_dict.get("station_name")
     if station_name and str(station_name) != str(expected_station_name):
         raise ValueError(f"Inconsistent station_name values in the {metadata_filepath} file. Download aborted.")
     return station_name
-
-
-def _get_station_url_and_dir_path(metadata_filepath: str) -> tuple:
-    """Return the station's remote url and the local destination directory path.
-
-    Parameters
-    ----------
-    metadata_filepath : str
-        Path to the metadata YAML file.
-
-    Returns
-    -------
-    disdrodb_data_url, station_dir
-        Tuple containing the remote url and the DISDRODB station directory path.
-    """
-    metadata_dict = read_yaml(metadata_filepath)
-    station_name = _get_valid_station_name(metadata_filepath, metadata_dict)
-    disdrodb_data_url = metadata_dict.get("disdrodb_data_url", None)
-    if not _is_valid_disdrodb_data_url(disdrodb_data_url):
-        raise ValueError(f"Invalid disdrodb_data_url '{disdrodb_data_url}' for station {station_name}")
-    # Define the destination local filepath path
-    data_dir = os.path.dirname(metadata_filepath).replace("metadata", "data")
-    station_dir = os.path.join(data_dir, station_name)
-    return disdrodb_data_url, station_dir
 
 
 def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:

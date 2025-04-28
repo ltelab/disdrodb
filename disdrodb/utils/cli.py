@@ -110,6 +110,24 @@ def click_base_dir_option(function: object):
     return function
 
 
+def click_metadata_dir_option(function: object):
+    """Click command line argument for DISDRODB ``metadata_dir``.
+
+    Parameters
+    ----------
+    function : object
+        Function.
+    """
+    function = click.option(
+        "--metadata_dir",
+        type=str,
+        show_default=True,
+        default=None,
+        help="DISDRODB Metadata Archive Directory",
+    )(function)
+    return function
+
+
 def click_stations_options(function: object):
     """Click command line options for DISDRODB archive L0 processing.
 

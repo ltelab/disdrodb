@@ -75,6 +75,7 @@ def _check_identical_parquet_files(file1: str, file2: str) -> bool:
 
 def _check_station_reader_results(
     base_dir,
+    metadata_dir,
     data_source,
     campaign_name,
     station_name,
@@ -98,8 +99,7 @@ def _check_station_reader_results(
     )
 
     metadata = read_station_metadata(
-        base_dir=base_dir,
-        product="L0A",
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -154,6 +154,7 @@ def test_check_all_readers(tmp_path) -> None:
     TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
     test_base_dir = tmp_path / "DISDRODB"
+    test_metadata_dir = tmp_path / "metadata" / "DISDRODB"
     shutil.copytree(TEST_BASE_DIR, test_base_dir)
 
     list_stations_info = available_stations(
@@ -166,9 +167,12 @@ def test_check_all_readers(tmp_path) -> None:
 
     # data_source, campaign_name, station_name = list_stations_info[0]
     # data_source, campaign_name, station_name = list_stations_info[1]
+
+    # TODO: add config metadata_dir / base_dir
     for data_source, campaign_name, station_name in list_stations_info:
         _check_station_reader_results(
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

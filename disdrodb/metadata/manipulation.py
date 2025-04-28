@@ -17,11 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Metadata Manipulation Tools."""
-import shutil
-
-from disdrodb.api.io import available_stations
-from disdrodb.api.path import define_metadata_filepath
-from disdrodb.configs import get_base_dir
 
 
 def remove_invalid_metadata_keys(metadata):
@@ -51,40 +46,3 @@ def sort_metadata_dictionary(metadata):
     list_metadata_keys = get_valid_metadata_keys()
     metadata = {k: metadata[k] for k in list_metadata_keys}
     return metadata
-
-
-def update_processed_metadata():
-    """Update metadata in the 'DISDRODB/Processed' directory."""
-    base_dir = get_base_dir()
-    # Retrieve list of all processed stations
-    # --> (data_source, campaign_name, station_name)
-    list_info = available_stations(
-        product="L0B",
-    )
-
-    # Retrieve metadata filepaths
-    list_src_dst_path = [
-        (
-            # Source
-            define_metadata_filepath(
-                product="RAW",
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                base_dir=base_dir,
-                check_exists=False,
-            ),
-            # Destination
-            define_metadata_filepath(
-                product="L0B",
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                base_dir=base_dir,
-                check_exists=False,
-            ),
-        )
-        for data_source, campaign_name, station_name in list_info
-    ]
-    # Copy file from RAW directory to Processed directory
-    _ = [shutil.copyfile(src_path, dst_path) for (src_path, dst_path) in list_src_dst_path]

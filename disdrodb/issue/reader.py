@@ -77,7 +77,7 @@ def read_issue(filepath: str) -> dict:
     return issue_dict
 
 
-def read_station_issue(data_source, campaign_name, station_name, base_dir=None):
+def read_station_issue(data_source, campaign_name, station_name, metadata_dir=None):
     """Open the station issue YAML file into a dictionary.
 
     Parameters
@@ -102,7 +102,7 @@ def read_station_issue(data_source, campaign_name, station_name, base_dir=None):
     """
     # Retrieve metadata filepath
     issue_filepath = define_issue_filepath(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

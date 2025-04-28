@@ -40,7 +40,7 @@ from disdrodb.api.path import (
     define_l2e_filename,
     define_l2m_filename,
 )
-from disdrodb.configs import get_base_dir
+from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.l1.resampling import resample_dataset
 from disdrodb.l2.event import get_events_info, identify_events
 from disdrodb.l2.processing import (
@@ -300,6 +300,9 @@ def run_l2e_station(
     # Define base directory
     base_dir = get_base_dir(base_dir)
 
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_dir = get_metadata_dir()
+
     # ------------------------------------------------------------------------.
     # Start processing
     if verbose:
@@ -428,6 +431,7 @@ def run_l2e_station(
         # Create product directory
         data_dir = create_product_directory(
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -677,6 +681,9 @@ def run_l2m_station(
     # Define base directory
     base_dir = get_base_dir(base_dir)
 
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_dir = get_metadata_dir()
+
     # ------------------------------------------------------------------------.
     # Start processing
     if verbose:
@@ -693,11 +700,10 @@ def run_l2m_station(
     # Retrieve source sampling interval
     # - If a station has varying measurement interval over time, choose the smallest one !
     metadata = read_station_metadata(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        product="L2M",  # TODO: remove when using metadata_dir !
     )
     sample_interval = metadata["measurement_interval"]
     if isinstance(sample_interval, list):
@@ -780,6 +786,7 @@ def run_l2m_station(
             # Create product directory
             data_dir = create_product_directory(
                 base_dir=base_dir,
+                metadata_dir=metadata_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,

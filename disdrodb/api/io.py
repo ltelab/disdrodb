@@ -246,7 +246,9 @@ def _get_list_stations_with_metadata(campaign_dir):
     # List metadata files
     metadata_filepaths = list_files(metadata_path, glob_pattern="*.yml", recursive=False)
     # Return stations with metadata
-    stations_names = [os.path.basename(filepath).replace(".yml", "") for filepath in metadata_filepaths]
+    stations_names = [
+        os.path.basename(filepath).replace(".yml", "") for filepath in metadata_filepaths
+    ]  # TODO: use api.path
     return stations_names
 
 
@@ -468,6 +470,7 @@ def available_stations(
     Raise an error if no stations are available.
     """
     base_dir = get_base_dir(base_dir)
+
     # Checks arguments
     product = check_product(product)
     data_sources = _check_data_sources(

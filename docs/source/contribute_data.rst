@@ -638,8 +638,9 @@ Step 11: Test the download and DISDRODB L0 processing of the stations you just c
 -------------------------------------------------------------------------------------------
 
 To test that the data upload has been successful, you can try to download the data and run the DISDRODB L0 processing.
-However you **must NOT perform this test in the disdrodb-data directory you were working till now** because you would risk to
+However you **MUST NOT perform this test using the DISDRODB Data Archive directory you were working till now** because you would risk to
 overwrite/delete the data you just uploaded on Zenodo.
+Instead, you **MUST TEST this procedure using a different directory** (e.g. ``/tmp/DISDRODB``) where you will download the data.
 
 We strongly suggest to test this procedure by first uploading and publishing data on the Zenodo Sandbox repository.
 
@@ -654,10 +655,10 @@ We provide this python script that should enable you to test safely the whole pr
     test_base_dir = "/tmp/DISDRODB"
     data_source = "<your_data_source>"
     campaign_name = "<your_campaign>"
-    station_name = "<your_campaign>"
+    station_name = "<your_station_name>"
 
 
-    # Create test DISDRODB archive where to download the data
+    # Create test DISDRODB Data Archive where to download the data
     create_test_archive(
         test_base_dir=test_base_dir,
         data_source=data_source,

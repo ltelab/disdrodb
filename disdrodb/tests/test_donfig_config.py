@@ -51,22 +51,24 @@ def test_disdrodb_config_takes_config_YAML(tmp_path, mocker):
     assert disdrodb.config.get("base_dir") == "test_dir/DISDRODB"
 
 
-@pytest.mark.parametrize("key", ["base_dir", "zenodo_token", "zenodo_sandbox_token"])
+@pytest.mark.parametrize("key", ["base_dir", "metadata_dir", "zenodo_token", "zenodo_sandbox_token"])
 def test_disdrodb_config_donfig(key):
     import disdrodb
 
+    expected_key = "dummy_path/DISDRODB"
     # Assert donfig key context manager
-    with disdrodb.config.set({key: "dummy_string"}):
-        assert disdrodb.config.get(key) == "dummy_string"
+    with disdrodb.config.set({key: expected_key}):
+        assert disdrodb.config.get(key) == expected_key
 
     # # Assert if not initialized, defaults to None
     # assert disdrodb.config.get(key) is None
 
     # Now initialize
-    disdrodb.config.set({key: "dummy_string"})
-    assert disdrodb.config.get(key) == "dummy_string"
+    disdrodb.config.set({key: expected_key})
+    assert disdrodb.config.get(key) == expected_key
 
     # Now try context manager again
-    with disdrodb.config.set({key: "new_dummy_string"}):
-        assert disdrodb.config.get(key) == "new_dummy_string"
-    assert disdrodb.config.get(key) == "dummy_string"
+    new_expected_key = "new_dummy_path/DISDRODB"
+    with disdrodb.config.set({key: new_expected_key}):
+        assert disdrodb.config.get(key) == new_expected_key
+    assert disdrodb.config.get(key) == expected_key

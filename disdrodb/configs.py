@@ -20,6 +20,8 @@ def _define_config_filepath():
 
 def define_disdrodb_configs(
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
+    folder_partitioning: Optional[str] = None,
     zenodo_token: Optional[str] = None,
     zenodo_sandbox_token: Optional[str] = None,
 ):
@@ -29,7 +31,18 @@ def define_disdrodb_configs(
     Parameters
     ----------
     base_dir : str
-        The base directory where DISDRODB Metadata Archive is located.
+        The directory path where the DISDRODB Data Archive is located.
+    metadata_dir : str
+        The directory path where the DISDRODB Metadata Archive is located.
+    folder_partitioning : str
+        The folder partitioning scheme used in the DISDRODB Data Archive.
+        Allowed values are:
+        - "": No additional subdirectories, files are saved directly in <station_dir>.
+        - "year": Files are stored under a subdirectory for the year (<station_dir>/2025).
+        - "year/month": Files are stored under subdirectories by year and month (<station_dir>/2025/04).
+        - "year/month/day": Files are stored under subdirectories by year, month and day (<station_dir>/2025/04/01).
+        - "year/month_name": Files are stored under subdirectories by year and month name (<station_dir>/2025/April).
+        - "year/quarter": Files are stored under subdirectories by year and quarter (<station_dir>/2025/Q2).
     zenodo__token: str
         Zenodo Access Token. It is required to upload stations data to Zenodo.
     zenodo_sandbox_token: str
@@ -42,6 +55,9 @@ def define_disdrodb_configs(
     The configuration file is used to run the various DISDRODB operations.
 
     """
+    from disdrodb.api.checks import check_base_dir, check_metadata_dir
+    from disdrodb.api.path import check_folder_partitioning
+
     # Define path to .config_disdrodb.yaml file
     filepath = _define_config_filepath()
 
@@ -55,7 +71,13 @@ def define_disdrodb_configs(
 
     # Add DISDRODB Base Directory
     if base_dir is not None:
-        config_dict["base_dir"] = base_dir
+        config_dict["base_dir"] = check_base_dir(base_dir)
+    # Add DISDRODB Metadata Archive Directory
+    if metadata_dir is not None:
+        config_dict["metadata_dir"] = check_metadata_dir(metadata_dir)
+    # Add DISDRODB Folder Partitioning
+    if folder_partitioning is not None:
+        config_dict["folder_partitioning"] = check_folder_partitioning(folder_partitioning)
 
     # Add Zenodo Access Tokens
     if zenodo_token is not None:
@@ -100,13 +122,27 @@ def read_disdrodb_configs() -> dict[str, str]:
 def get_base_dir(base_dir=None):
     """Return the DISDRODB base directory."""
     import disdrodb
+    from disdrodb.api.checks import check_base_dir
 
     if base_dir is None:
         base_dir = disdrodb.config.get("base_dir", None)
     if base_dir is None:
         raise ValueError("The DISDRODB Base Directory is not specified.")
-    base_dir = str(base_dir)  # convert Path to str
+    base_dir = check_base_dir(base_dir)  # ensure Path converted to str
     return base_dir
+
+
+def get_metadata_dir(metadata_dir=None):
+    """Return the DISDRODB Metadata Archive Directory."""
+    import disdrodb
+    from disdrodb.api.checks import check_metadata_dir
+
+    if metadata_dir is None:
+        metadata_dir = disdrodb.config.get("metadata_dir", None)
+    if metadata_dir is None:
+        raise ValueError("The DISDRODB Metadata Archive Directory is not specified.")
+    metadata_dir = check_metadata_dir(metadata_dir)  # ensure Path converted to str
+    return metadata_dir
 
 
 def get_folder_partitioning():

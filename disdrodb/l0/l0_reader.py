@@ -314,14 +314,13 @@ def _get_reader_from_metadata(metadata):
     return get_reader_function_from_metadata_key(reader_data_source_name)
 
 
-def get_station_reader_function(data_source, campaign_name, station_name, base_dir=None):
+def get_station_reader_function(data_source, campaign_name, station_name, metadata_dir=None):
     """Retrieve the reader function from the station metadata."""
     from disdrodb.metadata import read_station_metadata
 
     # Get metadata
     metadata = read_station_metadata(
-        base_dir=base_dir,
-        product="RAW",
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

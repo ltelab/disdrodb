@@ -20,7 +20,7 @@
 import os
 from typing import Optional
 
-from disdrodb.configs import get_base_dir
+from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.utils.directories import check_directory_exists
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
@@ -68,12 +68,14 @@ def get_disdrodb_path(
     from disdrodb.api.checks import check_base_dir
 
     # Check base_dir validity
-    base_dir = check_base_dir(base_dir)
+    base_dir = check_base_dir(base_dir)  # TODO: REMOVE HERE !
     if len(campaign_name) > 0 and len(data_source) == 0:
         raise ValueError("If campaign_name is specified, data_source must be specified.")
 
     # Get directory
-    if product.upper() == "RAW":
+    if product.upper() == "METADATA":
+        dir_path = os.path.join(base_dir, "METADATA", data_source, campaign_name)
+    elif product.upper() == "RAW":
         dir_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
     else:
         dir_path = os.path.join(base_dir, "Processed", data_source, campaign_name)
@@ -122,18 +124,15 @@ def define_campaign_dir(
 
 
 def define_metadata_dir(
-    product,
     data_source,
     campaign_name,
-    base_dir=None,
+    metadata_dir=None,
     check_exists=False,
 ):
     """Return the metadata directory in the DISDRODB infrastructure.
 
     Parameters
     ----------
-    product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
     data_source : str
         The data source.
     campaign_name : str
@@ -149,11 +148,11 @@ def define_metadata_dir(
     metadata_dir : str
         Station data directory path
     """
-    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
     campaign_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product=product,
+        base_dir=metadata_dir,  # TODO: REMOVE FUNCTION USAGE HERE FOR SECURITY
         data_source=data_source,
+        product="METADATA",
         campaign_name=campaign_name,
         check_exists=check_exists,
     )
@@ -166,7 +165,7 @@ def define_metadata_dir(
 def define_issue_dir(
     data_source,
     campaign_name,
-    base_dir=None,
+    metadata_dir=None,
     check_exists=False,
 ):
     """Return the issue directory in the DISDRODB infrastructure.
@@ -188,10 +187,10 @@ def define_issue_dir(
     issue_dir : str
         Station data directory path
     """
-    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
     campaign_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="RAW",
+        base_dir=metadata_dir,
+        product="METADATA",
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=check_exists,
@@ -206,16 +205,13 @@ def define_metadata_filepath(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
-    product="RAW",
+    metadata_dir=None,
     check_exists=False,
 ):
     """Return the station metadata filepath in the DISDRODB infrastructure.
 
     Parameters
     ----------
-    product : str
-        The DISDRODB product. It can be "RAW", "L0A", or "L0B".
     data_source : str
         The data source.
     campaign_name : str
@@ -233,10 +229,9 @@ def define_metadata_filepath(
     metadata_dir : str
         Station data directory path
     """
-    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
     metadata_dir = define_metadata_dir(
-        base_dir=base_dir,
-        product=product,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -252,7 +247,7 @@ def define_issue_filepath(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
+    metadata_dir=None,
     check_exists=False,
 ):
     """Return the station issue filepath in the DISDRODB infrastructure.
@@ -276,9 +271,9 @@ def define_issue_filepath(
     issue_dir : str
         Station data directory path
     """
-    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
     issue_dir = define_issue_dir(
-        base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -286,7 +281,6 @@ def define_issue_filepath(
     issue_filepath = os.path.join(issue_dir, f"{station_name}.yml")
     if check_exists and not os.path.exists(issue_filepath):
         raise ValueError(f"The issue file for {station_name} at {issue_filepath} does not exists.")
-
     return str(issue_filepath)
 
 

@@ -22,7 +22,7 @@ import glob
 import os
 
 from disdrodb.api.path import define_metadata_filepath
-from disdrodb.configs import get_base_dir
+from disdrodb.configs import get_metadata_dir
 
 
 def get_list_metadata(
@@ -30,7 +30,7 @@ def get_list_metadata(
     campaign_names=None,
     station_names=None,
     with_stations_data=True,
-    base_dir=None,
+    metadata_dir=None,
 ):
     """
     Get the list of metadata filepaths in the DISDRODB raw archive.
@@ -61,17 +61,17 @@ def get_list_metadata(
         List of metadata YAML file paths
 
     """
-    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
     if with_stations_data:
         list_metadata = _get_list_metadata_with_data(
-            base_dir=base_dir,
+            base_dir=metadata_dir,
             data_sources=data_sources,
             campaign_names=campaign_names,
             station_names=station_names,
         )
     else:
         list_metadata = _get_list_all_metadata(
-            base_dir=base_dir,
+            metadata_dir=metadata_dir,
             data_sources=data_sources,
             campaign_names=campaign_names,
             station_names=station_names,
@@ -79,7 +79,7 @@ def get_list_metadata(
     return list_metadata
 
 
-def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, station_names=None):
+def _get_list_all_metadata(metadata_dir, data_sources=None, campaign_names=None, station_names=None):
     """
     Get the list of metadata filepaths in the DISDRODB raw archive.
 
@@ -124,7 +124,7 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
 
     for data_source in data_sources:
         for campaign_name in campaign_names:
-            base_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
+            base_path = os.path.join(metadata_dir, "METADATA", data_source, campaign_name)
             list_of_base_path.append(base_path)
 
     metadata_filepaths = []
@@ -133,16 +133,22 @@ def _get_list_all_metadata(base_dir, data_sources=None, campaign_names=None, sta
             if isinstance(station_names, str):
                 station_names = [station_names]
             for station_name in station_names:
-                metadata_path = os.path.join(base_path, "**", "metadata", f"{station_name}.yml")
+                metadata_path = os.path.join(base_path, "metadata", f"{station_name}.yml")
                 metadata_filepaths += glob.glob(metadata_path, recursive=True)
         else:
-            metadata_path = os.path.join(base_path, "**", "metadata", "*.yml")
+            metadata_path = os.path.join(base_path, "metadata", "*.yml")
             metadata_filepaths += glob.glob(metadata_path, recursive=True)
 
     return sorted(set(metadata_filepaths))
 
 
-def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=None, station_names=None):
+def _get_list_metadata_with_data(
+    base_dir,
+    metadata_dir=None,
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+):
     """
     Get the list of metadata filepaths that have corresponding data in the DISDRODB raw archive.
 
@@ -170,6 +176,10 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
 
     """
     from disdrodb.api.io import available_stations
+    from disdrodb.configs import get_base_dir, get_metadata_dir
+
+    base_dir = get_base_dir(base_dir)
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # Retrieve information of all stations
     # --> (data_source, campaign_name, station_name)
@@ -184,12 +194,10 @@ def _get_list_metadata_with_data(base_dir, data_sources=None, campaign_names=Non
     # Retrieve metadata filepaths
     metadata_filepaths = [
         define_metadata_filepath(
-            product="RAW",
+            metadata_dir=metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            base_dir=base_dir,
-            check_exists=False,
         )
         for data_source, campaign_name, station_name in list_info
     ]
