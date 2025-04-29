@@ -256,7 +256,8 @@ def check_archive_metadata_keys(metadata_dir: Optional[str] = None) -> bool:
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,  # TODO: REFACTOR_STRUCTURE REMOVE !
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -300,7 +301,8 @@ def check_archive_metadata_campaign_name(metadata_dir: Optional[str] = None) -> 
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -343,7 +345,8 @@ def check_archive_metadata_data_source(metadata_dir: Optional[str] = None) -> bo
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -386,7 +389,8 @@ def check_archive_metadata_sensor_name(metadata_dir: Optional[str] = None) -> bo
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -429,7 +433,8 @@ def check_archive_metadata_station_name(metadata_dir: Optional[str] = None) -> b
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -474,7 +479,8 @@ def check_archive_metadata_reader(metadata_dir: Optional[str] = None) -> bool:
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -520,7 +526,8 @@ def check_archive_metadata_compliance(metadata_dir: Optional[str] = None, raise_
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)
@@ -566,7 +573,8 @@ def check_archive_metadata_geolocation(metadata_dir: Optional[str] = None):
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     for filepath in list_metadata_paths:
         data_source = infer_data_source_from_path(filepath)

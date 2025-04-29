@@ -24,11 +24,13 @@ from importlib.metadata import PackageNotFoundError, version
 from disdrodb._config import config  # noqa
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.api.io import (
+    find_files,
+    open_dataset,
+)
+from disdrodb.api.search import (
     available_campaigns,
     available_data_sources,
     available_stations,
-    find_files,
-    open_dataset,
 )
 from disdrodb.configs import define_disdrodb_configs as define_configs
 from disdrodb.data_transfer.download_data import download_archive, download_station
@@ -52,6 +54,14 @@ DIAMETER_DIMENSION = "diameter_bin_center"
 OPTICAL_SENSORS = ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]
 IMPACT_SENSORS = ["RD_80"]
 
+PRODUCTS_REQUIREMENTS = {
+    "L0A": "RAW",
+    "L0B": "L0A",
+    "L0C": "L0B",
+    "L1": "L0C",
+    "L2E": "L1",
+    "L2M": "L2E",
+}
 
 __all__ = [
     "define_configs",

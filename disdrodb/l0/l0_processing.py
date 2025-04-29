@@ -35,7 +35,7 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import infer_path_info_tuple
-from disdrodb.api.io import find_files, get_required_product, remove_product
+from disdrodb.api.io import find_files, remove_product
 from disdrodb.api.path import (
     define_campaign_dir,
     define_file_folder_path,
@@ -44,6 +44,7 @@ from disdrodb.api.path import (
     define_l0c_filename,
     define_metadata_filepath,
 )
+from disdrodb.api.search import get_required_product
 
 # get_disdrodb_path,
 from disdrodb.configs import get_base_dir, get_folder_partitioning, get_metadata_dir

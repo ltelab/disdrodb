@@ -44,6 +44,29 @@ def _recursive_glob(dir_path, glob_pattern):
     return [str(path) for path in dir_path.rglob(glob_pattern)]
 
 
+def contains_netcdf_or_parquet_files(dir_path: str) -> bool:
+    """Check (recursively) if a directory has any Parquet or netCDF file.
+
+    os.walk under the hood uses os.scandir
+    os.walk file generator + any() avoid use of while loop
+
+    The function returns True as soon as one file is found (short-circuit)^; False otherwise.
+    """
+    suffixes = (".nc", ".parquet")
+    return any(fname.endswith(suffixes) for _, _, files in os.walk(dir_path) for fname in files)
+
+
+def contains_files(dir_path: str) -> bool:
+    """Check (recursively) if a directory contains any file.
+
+    os.walk under the hood uses os.scandir
+    os.walk file generator + any() avoid use of while loop
+
+    The function returns True as soon as one file is found (short-circuit); False otherwise.
+    """
+    return any(fname for _, _, files in os.walk(dir_path) for fname in files)
+
+
 def list_paths(dir_path, glob_pattern, recursive=False):
     """Return a list of filepaths and directory paths."""
     if not recursive:

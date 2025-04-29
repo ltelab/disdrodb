@@ -17,10 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB Checks Functions."""
-
 import logging
 import os
 import re
+import warnings
+
+import numpy as np
 
 from disdrodb.api.info import infer_disdrodb_tree_path_components
 from disdrodb.api.path import (
@@ -36,6 +38,14 @@ from disdrodb.utils.directories import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]
+
+PRODUCTS_ARGUMENTS = {
+    "L2E": ["rolling", "sample_interval"],
+    "L2M": ["rolling", "sample_interval", "model_name"],
+}
 
 
 def check_path(path: str) -> None:
@@ -155,12 +165,108 @@ def check_product(product):
     """Check DISDRODB product."""
     if not isinstance(product, str):
         raise TypeError("`product` must be a string.")
-    valid_products = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M", "L2S"]
+    valid_products = PRODUCTS
     if product.upper() not in valid_products:
         msg = f"Valid `products` are {valid_products}."
         logger.error(msg)
         raise ValueError(msg)
     return product
+
+
+def check_product_kwargs(product, product_kwargs):
+    """Validate that product_kwargs for a given product contains exactly the required parameters.
+
+    Parameters
+    ----------
+    product : str
+        The product name (e.g., "L2E", "L2M").
+    product_kwargs : dict
+        Keyword arguments provided for this product.
+
+    Returns
+    -------
+    dict
+        The validated product_kwargs.
+
+    Raises
+    ------
+    ValueError
+        If required arguments are missing or if there are unexpected extra arguments.
+    """
+    required = set(PRODUCTS_ARGUMENTS.get(product, []))
+    provided = set(product_kwargs.keys())
+    missing = required - provided
+    extra = provided - required
+    if missing and extra:
+        raise ValueError(
+            f"For product '{product}', missing arguments: {sorted(missing)}, " f"unexpected arguments: {sorted(extra)}",
+        )
+    if missing:
+        raise ValueError(f"For product '{product}', missing arguments: {sorted(missing)}")
+    if extra:
+        raise ValueError(f"For product '{product}', unexpected arguments: {sorted(extra)}")
+    return product_kwargs
+
+
+def _check_fields(fields):
+    if fields is None:  # isinstance(fields, type(None)):
+        return fields
+    # Ensure is a list
+    if isinstance(fields, str):
+        fields = [fields]
+    # Remove duplicates
+    fields = np.unique(np.array(fields))
+    return fields
+
+
+def check_data_sources(data_sources):
+    """Check DISDRODB data sources."""
+    return _check_fields(data_sources)
+
+
+def check_campaign_names(campaign_names):
+    """Check DISDRODB campaign names."""
+    return _check_fields(campaign_names)
+
+
+def check_station_names(station_names):
+    """Check DISDRODB station names."""
+    return _check_fields(station_names)
+
+
+def check_invalid_fields_policy(invalid_fields):
+    """Check invalid fields policy."""
+    if invalid_fields not in ["raise", "warn", "ignore"]:
+        raise ValueError(
+            f"Invalid value for invalid_fields: {invalid_fields}. " "Valid values are 'raise', 'warn', or 'ignore'.",
+        )
+    return invalid_fields
+
+
+def check_valid_fields(fields, available_fields, field_name, invalid_fields_policy="raise"):
+    """Check if fields are valid."""
+    if fields is None:
+        return fields
+    if isinstance(fields, str):
+        fields = [fields]
+    fields = np.unique(np.array(fields))
+    invalid_fields_policy = check_invalid_fields_policy(invalid_fields_policy)
+    # Check for invalid fields
+    fields = np.array(fields)
+    is_valid = np.isin(fields, available_fields)
+    invalid_fields_values = fields[~is_valid].tolist()
+    fields = fields[is_valid].tolist()
+    # Error handling for invalid fields were found
+    if invalid_fields_policy == "warn" and invalid_fields_values:
+        warnings.warn(f"Ignoring invalid {field_name}: {invalid_fields_values}", UserWarning, stacklevel=2)
+    elif invalid_fields_policy == "raise" and invalid_fields_values:
+        raise ValueError(f"These {field_name} does not exist: {invalid_fields_values}.")
+    else:  # "ignore" silently drop invalid entries
+        pass
+    # If no valid fields left, raise error
+    if len(fields) == 0:
+        raise ValueError(f"All specified {field_name} do not exist !.")
+    return fields
 
 
 def has_available_data(
@@ -169,11 +275,8 @@ def has_available_data(
     station_name,
     product,
     base_dir=None,
-    # Option for L2E
-    sample_interval=None,
-    rolling=None,
-    # Option for L2M
-    model_name=None,
+    # Product Options
+    **product_kwargs,
 ):
     """Return ``True`` if data are available for the given product and station."""
     # Define product directory
@@ -183,13 +286,10 @@ def has_available_data(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
         # Directory options
         check_exists=False,
+        # Product Options
+        **product_kwargs,
     )
     # If the product directory does not exists, return False
     if not os.path.isdir(data_dir):
@@ -207,11 +307,8 @@ def check_data_availability(
     campaign_name,
     station_name,
     base_dir=None,
-    # Option for L2E
-    sample_interval=None,
-    rolling=None,
-    # Option for L2M
-    model_name=None,
+    # Product Options
+    **product_kwargs,
 ):
     """Check the station product data directory has files inside. If not, raise an error."""
     if not has_available_data(
@@ -220,11 +317,8 @@ def check_data_availability(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
+        # Product Options
+        **product_kwargs,
     ):
         msg = f"The {product} station data directory of {data_source} {campaign_name} {station_name} is empty !"
         logger.error(msg)

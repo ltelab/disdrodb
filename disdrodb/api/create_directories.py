@@ -236,11 +236,8 @@ def create_product_directory(
     force,
     base_dir=None,
     metadata_dir=None,
-    # Option for L2E
-    sample_interval=None,
-    rolling=None,
-    # Option for L2M
-    model_name=None,
+    # Product Options
+    **product_kwargs,
 ):
     """Initialize the directory structure for a DISDRODB product.
 
@@ -251,7 +248,7 @@ def create_product_directory(
     # NOTE: ``force=False`` behaviour could be changed to enable updating of missing files.
     # This would require also adding code to check whether a downstream file already exist.
 
-    from disdrodb.api.io import get_required_product
+    from disdrodb.api.search import get_required_product
 
     # Get DISDRODB base directory
     base_dir = get_base_dir(base_dir)
@@ -270,11 +267,8 @@ def create_product_directory(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
+        # Product options
+        **product_kwargs,
     )
 
     # Check metadata file is available
@@ -292,11 +286,8 @@ def create_product_directory(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
+        # Product options
+        **product_kwargs,
     )
 
     # Create required directory (if it doesn't exist)
@@ -309,11 +300,8 @@ def create_product_directory(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
+        # Product options
+        **product_kwargs,
     )
 
     # If product files are already available:
@@ -440,7 +428,7 @@ def create_initial_station_structure(
     base_dir=None,
     metadata_dir=None,
 ):
-    """Create the DISDRODB Data Archive structure for a single station."""
+    """Create the DISDRODB Data and Metadata Archive structure for a single station."""
     from disdrodb.issue.writer import create_station_issue
     from disdrodb.metadata.writer import create_station_metadata
 
@@ -528,7 +516,7 @@ def create_test_archive(
         f"The test DISDRODB Data Archive for {tree} has been set up at {test_base_dir} !",
     )
 
-    # TODO: LIKELY UNNECESSARY HERE BELOW !
+    # TODO: REFACTOR_STRUCTURE LIKELY UNNECESSARY HERE BELOW !
     # Create directories (/metadata, /issue and /data/<station_name>)
     # _create_station_directories(
     #     base_dir=test_base_dir,

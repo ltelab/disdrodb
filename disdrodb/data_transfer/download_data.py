@@ -130,19 +130,21 @@ def download_archive(
     base_dir = get_base_dir(base_dir)
     metadata_dir = get_metadata_dir(metadata_dir)
 
-    # List the requested metadata files
+    # Select only metadata_filepaths with specified disdrodb_data_url
     metadata_filepaths = get_list_metadata(
         metadata_dir=metadata_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
-        with_stations_data=False,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=True,  # --> Select only metadata with disdrodb_data_url
+        raise_error_if_empty=False,  # Do not raise error if no matching metadata file found
+        invalid_fields_policy="raise",  # Raise error if invalid filtering criteria are specified
     )
 
-    # Select only metadata_filepaths with disdrodb_data_url
-    metadata_filepaths = _select_metadata_with_remote_data_url(metadata_filepaths)
+    # Return early if no data to download
     if len(metadata_filepaths) == 0:
-        print("No available remote data to download.")
+        print("No available data to download from the online DISDRODB Decentralized Archive.")
         return
 
     # Try to download the data
@@ -218,18 +220,6 @@ def download_station(
 def _is_valid_disdrodb_data_url(disdrodb_data_url):
     """Check if it is a valid disdrodb_data_url."""
     return isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 10
-
-
-def _has_disdrodb_data_url(metadata_filepath):
-    """Check the metadata has a valid disdrodb_data_url."""
-    metadata_dict = read_yaml(metadata_filepath)
-    disdrodb_data_url = metadata_dict.get("disdrodb_data_url", "")
-    return _is_valid_disdrodb_data_url(disdrodb_data_url)
-
-
-def _select_metadata_with_remote_data_url(metadata_filepaths: list[str]) -> list[str]:
-    """Select metadata files that have a remote data url specified."""
-    return [fpath for fpath in metadata_filepaths if _has_disdrodb_data_url(fpath)]
 
 
 def _extract_station_files(zip_filepath, station_dir):

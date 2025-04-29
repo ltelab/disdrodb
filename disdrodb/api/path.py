@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Define paths within the DISDRODB infrastructure."""
 import os
-from typing import Optional
 
 from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.utils.directories import check_directory_exists
@@ -402,9 +401,7 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
 
 def define_product_dir_tree(
     product,
-    model_name=None,
-    sample_interval=None,
-    rolling=None,
+    **product_kwargs,
 ):
     """Return the product directory tree.
 
@@ -427,16 +424,25 @@ def define_product_dir_tree(
     data_dir : str
         Station data directory path
     """
+    from disdrodb.api.checks import check_product, check_product_kwargs
+
+    product = check_product(product)
+    product_kwargs = check_product_kwargs(product, product_kwargs)
     if product.upper() == "RAW":
         return ""
     if product.upper() in ["L0A", "L0B", "L0C", "L1"]:
         return product
     if product == "L2E":
+        rolling = product_kwargs.get("rolling")
+        sample_interval = product_kwargs.get("sample_interval")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         return os.path.join(product, sample_interval_acronym)
     if product == "L2M":
+        rolling = product_kwargs.get("rolling")
+        sample_interval = product_kwargs.get("sample_interval")
+        model_name = product_kwargs.get("model_name")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
@@ -497,11 +503,9 @@ def define_data_dir_new(
     data_source,
     campaign_name,
     station_name,
-    model_name=None,
-    sample_interval=None,
-    rolling=None,
     base_dir=None,
     check_exists=False,
+    **product_kwargs,
 ):
     """Return the station data directory in the DISDRODB infrastructure.
 
@@ -536,9 +540,7 @@ def define_data_dir_new(
     )
     product_dir_tree = define_product_dir_tree(
         product=product,
-        model_name=model_name,
-        sample_interval=sample_interval,
-        rolling=rolling,
+        **product_kwargs,
     )
     data_dir = os.path.join(station_dir, product_dir_tree)
     if check_exists:
@@ -551,11 +553,9 @@ def define_logs_dir(
     data_source,
     campaign_name,
     station_name,
-    model_name=None,
-    sample_interval=None,
-    rolling=None,
     base_dir=None,
     check_exists=False,
+    **product_kwargs,
 ):
     """Return the station log directory in the DISDRODB infrastructure.
 
@@ -596,9 +596,7 @@ def define_logs_dir(
     )
     product_dir_tree = define_product_dir_tree(
         product=product,
-        model_name=model_name,
-        sample_interval=sample_interval,
-        rolling=rolling,
+        **product_kwargs,
     )
     logs_dir = os.path.join(campaign_dir, "logs", "files", product_dir_tree, station_name)
     if check_exists:
@@ -611,11 +609,9 @@ def define_data_dir(
     data_source,
     campaign_name,
     station_name,
-    model_name=None,
-    sample_interval=None,
-    rolling=None,
     base_dir=None,
     check_exists=False,
+    **product_kwargs,
 ):
     """Return the station data directory in the DISDRODB infrastructure.
 
@@ -649,6 +645,11 @@ def define_data_dir(
     data_dir : str
         Station data directory path
     """
+    from disdrodb.api.checks import check_product, check_product_kwargs
+
+    product = check_product(product)
+    product_kwargs = check_product_kwargs(product, product_kwargs)
+
     station_dir = define_station_dir(
         base_dir=base_dir,
         product=product,
@@ -660,17 +661,22 @@ def define_data_dir(
     if product.upper() in ["RAW", "L0A", "L0B", "L0C", "L1"]:
         data_dir = station_dir
     elif product == "L2E":
+        rolling = product_kwargs.get("rolling")
+        sample_interval = product_kwargs.get("sample_interval")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         data_dir = os.path.join(station_dir, sample_interval_acronym)
     elif product == "L2M":
+        rolling = product_kwargs.get("rolling")
+        sample_interval = product_kwargs.get("sample_interval")
+        model_name = product_kwargs.get("model_name")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         data_dir = os.path.join(station_dir, model_name, sample_interval_acronym)
     else:
-        raise ValueError("TODO")  # CHECK Product on top !`
+        raise NotImplementedError
     if check_exists:
         check_directory_exists(data_dir)
     return str(data_dir)
@@ -759,11 +765,6 @@ def define_filename(
     product: str,
     campaign_name: str,
     station_name: str,
-    # L2E option
-    sample_interval: Optional[int] = None,
-    rolling: Optional[bool] = None,
-    # L2M option
-    model_name: Optional[str] = None,
     # Filename options
     obj=None,
     add_version=True,
@@ -772,6 +773,8 @@ def define_filename(
     # Prefix
     prefix="",
     suffix="",
+    # Product options
+    **product_kwargs,
 ) -> str:
     """Define DISDRODB products filename.
 
@@ -800,6 +803,10 @@ def define_filename(
         L0B file name.
     """
     from disdrodb import PRODUCT_VERSION
+    from disdrodb.api.checks import check_product, check_product_kwargs
+
+    product = check_product(product)
+    product_kwargs = check_product_kwargs(product, product_kwargs)
 
     # -----------------------------------------.
     # TODO: Define sample_interval_acronym
@@ -810,9 +817,12 @@ def define_filename(
     # Define product acronym
     product_acronym = f"{product}"
     if product in ["L2E", "L2M"]:
+        rolling = product_kwargs.get("rolling")
+        sample_interval = product_kwargs.get("sample_interval")
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
         product_acronym = f"L2E.{sample_interval_acronym}"
     if product in ["L2M"]:
+        model_name = product_kwargs.get("model_name")
         product_acronym = f"L2M_{model_name}.{sample_interval_acronym}"
 
     # -----------------------------------------.

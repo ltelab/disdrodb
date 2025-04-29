@@ -25,7 +25,7 @@ import click
 from disdrodb.api.path import define_metadata_filepath
 from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.data_transfer.zenodo import upload_station_to_zenodo
-from disdrodb.metadata.search import _get_list_metadata_with_data
+from disdrodb.metadata.search import get_list_metadata
 from disdrodb.utils.compression import archive_station_data
 from disdrodb.utils.yaml import read_yaml
 
@@ -193,7 +193,7 @@ def upload_archive(
     force: bool = False,
     base_dir: Optional[str] = None,
     metadata_dir: Optional[str] = None,
-    **kwargs,
+    **fields_kwargs,
 ) -> None:
     """Find all stations containing local data and upload them to a remote repository.
 
@@ -231,12 +231,17 @@ def upload_archive(
     base_dir = get_base_dir(base_dir)
     metadata_dir = get_metadata_dir(metadata_dir)
 
-    # Get list metadata
-    metadata_filepaths = _get_list_metadata_with_data(
-        **kwargs,
-        base_dir=base_dir,
+    # Retrieve only metadata_filepaths of stations with RAW data in the local DISDRODB Data Archive
+    metadata_filepaths = get_list_metadata(
         metadata_dir=metadata_dir,
+        base_dir=base_dir,
+        product="RAW",  # --> Search in local DISDRODB Data Archive
+        available_data=True,  # --> Select only stations with raw data
+        raise_error_if_empty=False,  # Do not raise error if no matching metadata file found
+        invalid_fields_policy="raise",  # Raise error if invalid filtering criteria are specified
+        **fields_kwargs,  # data_sources, campaign_names, station_names
     )
+
     # If force=False, keep only metadata without disdrodb_data_url
     if not force:
         metadata_filepaths = _filter_already_uploaded(metadata_filepaths, force=force)

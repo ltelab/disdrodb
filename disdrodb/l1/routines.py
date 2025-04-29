@@ -32,11 +32,12 @@ from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
-from disdrodb.api.io import find_files, get_required_product
+from disdrodb.api.io import find_files
 from disdrodb.api.path import (
     define_file_folder_path,
     define_l1_filename,
 )
+from disdrodb.api.search import get_required_product
 from disdrodb.configs import get_base_dir, get_folder_partitioning, get_metadata_dir
 from disdrodb.l1.processing import generate_l1
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel

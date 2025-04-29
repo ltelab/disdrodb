@@ -396,8 +396,12 @@ def create_l0b_from_l0a(
     ----------
     df : pandas.DataFrame
         DISDRODB L0A dataframe.
+        The raw drop number spectrum is reshaped to a 2D(+time) array.
+        The raw drop concentration and velocity are reshaped to 1D(+time) arrays.
     attrs : dict
         Station metadata.
+        To use this function outside the DISDRODB routines, the dictionary must
+        contain the fields: sensor_name, latitude, longitude, altitude.
     verbose : bool, optional
         Whether to verbose the processing. The default is ``False``.
 

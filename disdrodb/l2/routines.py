@@ -34,12 +34,13 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import group_filepaths
-from disdrodb.api.io import find_files, get_required_product
+from disdrodb.api.io import find_files
 from disdrodb.api.path import (
     define_accumulation_acronym,
     define_l2e_filename,
     define_l2m_filename,
 )
+from disdrodb.api.search import get_required_product
 from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.l1.resampling import resample_dataset
 from disdrodb.l2.event import get_events_info, identify_events

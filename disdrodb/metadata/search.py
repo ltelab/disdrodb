@@ -18,42 +18,94 @@
 # -----------------------------------------------------------------------------.
 """Routines to manipulate the DISDRODB Metadata Archive."""
 
-import glob
-import os
 
 from disdrodb.api.path import define_metadata_filepath
-from disdrodb.configs import get_metadata_dir
+from disdrodb.api.search import available_stations
 
 
 def get_list_metadata(
     data_sources=None,
     campaign_names=None,
     station_names=None,
-    with_stations_data=True,
+    product=None,
+    available_data=False,
+    raise_error_if_empty=False,
+    invalid_fields_policy="raise",
+    base_dir=None,
     metadata_dir=None,
+    **product_kwargs,
 ):
     """
-    Get the list of metadata filepaths in the DISDRODB raw archive.
+    Get station metadata filepaths.
+
+    By default, it returns the metadata file paths of stations present in the DISDRODB Metadata Archive matching
+    the filtering criteria.
+
+    If the DISDRODB product is specified, it lists only metadata file paths of stations with the specified product
+    present in the local DISDRODB Data Archive.
 
     Parameters
     ----------
-    data_sources : str or list of str
-        Name of data source(s) of interest.
+    product : str or None, optional
+        Name of the product to filter on (e.g., "RAW", "L0A", "L1").
+
+        If the DISDRODB product is not specified (default),
+        it returns the metadata file paths of stations present in the DISDRODB Metadata Archive matching
+        the filtering criteria.
+
+        If the DISDRODB product is specified, it lists only metadata file paths of stations with the specified product
+        present in the local DISDRODB Data Archive.
+
+    available_data : bool, optional
+
+        If ``product`` is not specified:
+
+            - if available_data is False, return metadata filepaths of stations present in the DISDRODB Metadata Archive
+            - if available_data is True, return metadata filepaths of stations with data available on the
+            online DISDRODB Decentralized Data Archive (i.e., stations with the disdrodb_data_url in the metadata).
+
+        If ``product`` is specified:
+
+            - if available_data is False, return metadata filepaths of stations where
+            the product directory exists in the in the local DISDRODB Data Archive
+            - if available_data is True, return metadata filepaths of stations where product data exists in the
+              in the local DISDRODB Data Archive.
+        The default is is False.
+
+    data_sources : str or sequence of str, optional
+        One or more data source identifiers to filter stations by.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
-    campaign_names : str or list of str
-        Name of the campaign(s) of interest.
+        If None, no filtering on data source is applied. The default is is ``None``.
+    campaign_names : str or sequence of str, optional
+        One or more campaign names to filter stations by.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
-    station_names : str or list of str
-        Station names of interest.
-        The default is ``None``.
-    with_stations_data : bool
-        If ``True``, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
-        The default is ``True``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        If None, no filtering on campaign is applied. The default is is ``None``.
+    station_names : str or sequence of str, optional
+        One or more station names to include.
+        If None, all stations matching other filters are considered. The default is is ``None``.
+    raise_error_if_empty : bool, optional
+        If True and no stations satisfy the criteria, raise a ``ValueError``.
+        If False, return an empty list/tuple. The default is False.
+    invalid_fields_policy : {'raise', 'warn', 'ignore'}, optional
+        How to handle invalid filter values for ``data_sources``, ``campaign_names``,
+        or ``station_names`` that are not present in the metadata archive:
+
+          - 'raise' : raise a ``ValueError`` (default)
+          - 'warn'  : emit a warning, then ignore invalid entries
+          - 'ignore': silently drop invalid entries
+    base_dir : str or Path-like, optional
+        Path to the root of the local DISDRODB Data Archive. Format: ``<...>/DISDRODB``
+        Required only if ``product``is specified.
+        If None, the``base_dir`` path specified in the DISDRODB active configuration file is used.
+        The default is None.
+    metadata_dir : str or Path-like, optional
+        Path to the root of the DISDRODB Metadata Archive. Format: ``<...>/DISDRODB``
+        If None, the``metadata_dir`` path specified in the DISDRODB active configuratio. The default is None.
+    **product_kwargs : dict, optional
+        Additional arguments required for some products.
+        For example, for the "L2E" product, you need to specify ``rolling`` and
+        ``sample_interval``. For the "L2M" product, you need to specify also
+        the ``model_name``.
 
     Returns
     -------
@@ -61,137 +113,21 @@ def get_list_metadata(
         List of metadata YAML file paths
 
     """
-    metadata_dir = get_metadata_dir(metadata_dir)
-    if with_stations_data:
-        list_metadata = _get_list_metadata_with_data(
-            base_dir=metadata_dir,
-            data_sources=data_sources,
-            campaign_names=campaign_names,
-            station_names=station_names,
-        )
-    else:
-        list_metadata = _get_list_all_metadata(
-            metadata_dir=metadata_dir,
-            data_sources=data_sources,
-            campaign_names=campaign_names,
-            station_names=station_names,
-        )
-    return list_metadata
-
-
-def _get_list_all_metadata(metadata_dir, data_sources=None, campaign_names=None, station_names=None):
-    """
-    Get the list of metadata filepaths in the DISDRODB raw archive.
-
-    Parameters
-    ----------
-    base_dir : str
-        Base directory of DISDRODB
-        Format: ``<...>/DISDRODB``.
-    data_sources : str or list of str
-        Name of data source(s) of interest.
-        The name(s) must be UPPER CASE.
-        The default is ``None``.
-    campaign_names : str or list of str
-        Name of the campaign(s) of interest.
-        The name(s) must be UPPER CASE.
-        The default is ``None``.
-    station_names : str or list of str
-        Station names of interest.
-        The default is ``None``.
-    with_stations_data : bool
-        If ``True``, only return metadata filepaths that have corresponding data in the local DISDRODB raw archive.
-        The default is ``True``.
-
-    Returns
-    -------
-    metadata_filepaths: list
-        List of metadata YAML file paths
-
-    """
-    # Get all config files from the metadata directories
-    list_of_base_path = []
-    if data_sources:
-        if isinstance(data_sources, str):
-            data_sources = [data_sources]
-    else:
-        data_sources = ["**"]
-    if campaign_names:
-        if isinstance(campaign_names, str):
-            campaign_names = [campaign_names]
-    else:
-        campaign_names = ["**"]
-
-    for data_source in data_sources:
-        for campaign_name in campaign_names:
-            base_path = os.path.join(metadata_dir, "METADATA", data_source, campaign_name)
-            list_of_base_path.append(base_path)
-
-    metadata_filepaths = []
-    for base_path in list_of_base_path:
-        if station_names:
-            if isinstance(station_names, str):
-                station_names = [station_names]
-            for station_name in station_names:
-                metadata_path = os.path.join(base_path, "metadata", f"{station_name}.yml")
-                metadata_filepaths += glob.glob(metadata_path, recursive=True)
-        else:
-            metadata_path = os.path.join(base_path, "metadata", "*.yml")
-            metadata_filepaths += glob.glob(metadata_path, recursive=True)
-
-    return sorted(set(metadata_filepaths))
-
-
-def _get_list_metadata_with_data(
-    base_dir,
-    metadata_dir=None,
-    data_sources=None,
-    campaign_names=None,
-    station_names=None,
-):
-    """
-    Get the list of metadata filepaths that have corresponding data in the DISDRODB raw archive.
-
-    Parameters
-    ----------
-    base_dir : str
-        Base directory of DISDRODB
-        Format: ``<...>/DISDRODB``.
-    data_sources : str or list of str
-        Name of data source(s) of interest.
-        The name(s) must be UPPER CASE.
-        The default is ``None``.
-    campaign_names : str or list of str
-        Name of the campaign(s) of interest.
-        The name(s) must be UPPER CASE.
-        The default is ``None``.
-    station_names : str or list of str
-        Station names of interest.
-        The default is ``None``.
-
-    Returns
-    -------
-    metadata_filepaths: list
-        List of metadata YAML file paths
-
-    """
-    from disdrodb.api.io import available_stations
-    from disdrodb.configs import get_base_dir, get_metadata_dir
-
-    base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir(metadata_dir)
-
-    # Retrieve information of all stations
-    # --> (data_source, campaign_name, station_name)
     list_info = available_stations(
-        base_dir=base_dir,
-        product="RAW",
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        product=product,
+        available_data=available_data,
+        raise_error_if_empty=raise_error_if_empty,
+        invalid_fields_policy=invalid_fields_policy,
+        metadata_dir=metadata_dir,
+        base_dir=base_dir,
+        return_tuple=True,
+        **product_kwargs,
     )
 
-    # Retrieve metadata filepaths
+    # Define metadata filepath
     metadata_filepaths = [
         define_metadata_filepath(
             metadata_dir=metadata_dir,
@@ -201,9 +137,4 @@ def _get_list_metadata_with_data(
         )
         for data_source, campaign_name, station_name in list_info
     ]
-
-    # If no stations available, raise an error
-    if len(metadata_filepaths) == 0:
-        raise ValueError("No stations are available !")
-
-    return sorted(metadata_filepaths)
+    return sorted(set(metadata_filepaths))

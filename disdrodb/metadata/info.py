@@ -57,7 +57,8 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, metadata
         data_sources=None,
         campaign_names=None,
         station_names=None,
-        with_stations_data=False,  # TODO: REFACTOR_STRUCTURE REMOVE !
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
     )
     list_info = []
     for filepath in list_metadata_paths:

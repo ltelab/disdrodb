@@ -24,8 +24,8 @@ import pandas as pd
 import xarray as xr
 
 from disdrodb import __root_path__
-from disdrodb.api.io import available_stations
 from disdrodb.api.path import define_campaign_dir, define_station_dir
+from disdrodb.api.search import available_stations
 from disdrodb.l0.l0_processing import run_l0a_station
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.directories import list_files

@@ -19,7 +19,7 @@ import datetime
 import time
 from typing import Optional
 
-from disdrodb.api.io import available_stations, get_required_product
+from disdrodb.api.search import available_stations, get_required_product
 from disdrodb.utils.cli import _execute_cmd
 
 ####--------------------------------------------------------------------------.

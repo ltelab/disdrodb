@@ -21,8 +21,6 @@
 import pytest
 
 from disdrodb.metadata.search import (
-    _get_list_all_metadata,
-    _get_list_metadata_with_data,
     get_list_metadata,
 )
 from disdrodb.tests.conftest import (
