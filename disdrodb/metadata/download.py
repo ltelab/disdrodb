@@ -17,32 +17,32 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routine to download the DISDRODB Metadata Archive from GitHub."""
+import io
 import os
 import urllib.request
 import zipfile
-import io
 
 
-def download_metadata_archive(root_dir): 
+def download_metadata_archive(root_dir):
     """Download the DISDRODB Metadata Archive.
-    
+
     It returns the DISDRODB Metadata Archive directory.
     """
     # Define DISDRODB Metadata Archive GitHub URL
     archive_zip_url = "https://github.com/ltelab/disdrodb-data/archive/refs/heads/main.zip"
-    
+
     # Download archive to disk
     resp = urllib.request.urlopen(archive_zip_url)
     archive_data = resp.read()
-    
+
     # Unpack archive
     with zipfile.ZipFile(io.BytesIO(archive_data)) as zf:
         zf.extractall(root_dir)
-    
+
     # Check "disdrodb-data-main" directory has been download
-    if os.listdir(root_dir) != ['disdrodb-data-main']:
+    if os.listdir(root_dir) != ["disdrodb-data-main"]:
         raise ValueError("The DISDRODB Metadata Archive hosted on Github could not been download !")
-    
+
     # Define metadata directory
-    metadata_dir = str(os.path.join(root_dir, 'disdrodb-data-main', "DISDRODB"))
+    metadata_dir = str(os.path.join(root_dir, "disdrodb-data-main", "DISDRODB"))
     return metadata_dir
