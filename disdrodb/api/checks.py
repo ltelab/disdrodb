@@ -188,7 +188,7 @@ def check_product_kwargs(product, product_kwargs):
         If required arguments are missing or if there are unexpected extra arguments.
     """
     from disdrodb import PRODUCTS_ARGUMENTS
-    
+
     required = set(PRODUCTS_ARGUMENTS.get(product, []))
     provided = set(product_kwargs.keys())
     missing = required - provided

@@ -201,7 +201,6 @@ def is_disdrodb_data_url_specified(metadata_filepath):
     return isinstance(disdrodb_data_url, str) and len(disdrodb_data_url) > 1
 
 
-
 def keep_list_info_with_disdrodb_data_url(metadata_dir, list_info):
     """Keep only the stations with disdrodb_data_url specified in the metadata file."""
     list_info_with_data = []
@@ -372,7 +371,8 @@ def available_stations(
     >>> # List stations with raw data available in the local DISDRODB Data Archive
     >>> raw_stations = available_stations(product='RAW', available_data=True)
     >>> # List stations of specific data sources
-    >>> stations = available_stations(data sources =['GPM', 'ARM'])
+    >>> stations = available_stations(data sources=['GPM', 'ARM'])
+
     """
     # Retrieve DISDRODB Data and Metadata Archive directories
     metadata_dir = get_metadata_dir(metadata_dir)

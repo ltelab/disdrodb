@@ -237,10 +237,10 @@ class TestGetListMetadata:
 
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
-        
+
         # Define required product arguments (using some defaults for testing)
         product_kwargs = get_default_product_kwargs(product)
-        
+
         # Create metadata and data for one station
         metadata_filepath1 = create_fake_metadata_file(
             metadata_dir=metadata_dir,
@@ -354,10 +354,10 @@ class TestGetListMetadata:
 
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
-        
+
         # Define required product arguments (using some defaults for testing)
         product_kwargs = get_default_product_kwargs(product)
-        
+
         # Create metadata and data for two station
         metadata_filepath1 = create_fake_metadata_file(
             metadata_dir=metadata_dir,
@@ -418,12 +418,15 @@ class TestGetListMetadata:
             **product_kwargs,
         )
         # Check no station is returned if available_data=True
-        assert [] == get_list_metadata(
+        assert (
+            get_list_metadata(
                 metadata_dir=metadata_dir,
                 base_dir=base_dir,
                 product=product,
                 available_data=True,
                 **product_kwargs,
+            )
+            == []
         )
 
     def test_empty_metadata_archive_case(self, tmp_path):

@@ -117,23 +117,24 @@ def create_fake_issue_file(
     return str(issue_filepath)
 
 
-def get_default_product_kwargs(product, product_kwargs=None): 
-    from disdrodb import PRODUCTS_ARGUMENTS 
+def get_default_product_kwargs(product, product_kwargs=None):
+    from disdrodb import PRODUCTS_ARGUMENTS
+
     product_kwargs = {} if product_kwargs is None else product_kwargs
-    if product not in PRODUCTS_ARGUMENTS: 
+    if product not in PRODUCTS_ARGUMENTS:
         return product_kwargs
-    # Define default test product_kwargs 
+    # Define default test product_kwargs
     default_kwargs = {
         "model_name": "GAMMA_ML",
-        "sample_interval": 30, 
+        "sample_interval": 30,
         "rolling": False,
-    } 
+    }
     # Set missing product kwargs
     required_args = PRODUCTS_ARGUMENTS[product]
     product_kwargs = {arg: product_kwargs.get(arg, default_kwargs[arg]) for arg in required_args}
     return product_kwargs
-    
-    
+
+
 def create_fake_raw_data_file(
     base_dir,
     product="RAW",
@@ -141,12 +142,12 @@ def create_fake_raw_data_file(
     campaign_name="CAMPAIGN_NAME",
     station_name="station_name",
     filename="test_data.txt",
-    **product_kwargs
+    **product_kwargs,
 ):
     from disdrodb.api.create_directories import create_data_directory
-    
+
     product_kwargs = get_default_product_kwargs(product, product_kwargs)
-        
+
     # Define station data directory
     data_dir = create_data_directory(
         base_dir=base_dir,
@@ -156,7 +157,7 @@ def create_fake_raw_data_file(
         station_name=station_name,
         **product_kwargs,
     )
-        
+
     # Define filepath
     filepath = os.path.join(data_dir, filename)
 
