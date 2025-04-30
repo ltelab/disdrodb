@@ -40,14 +40,6 @@ from disdrodb.utils.directories import (
 logger = logging.getLogger(__name__)
 
 
-PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]
-
-PRODUCTS_ARGUMENTS = {
-    "L2E": ["rolling", "sample_interval"],
-    "L2M": ["rolling", "sample_interval", "model_name"],
-}
-
-
 def check_path(path: str) -> None:
     """Check if a path exists.
 
@@ -163,6 +155,8 @@ def check_data_source(data_source):
 
 def check_product(product):
     """Check DISDRODB product."""
+    from disdrodb import PRODUCTS
+
     if not isinstance(product, str):
         raise TypeError("`product` must be a string.")
     valid_products = PRODUCTS
@@ -193,6 +187,8 @@ def check_product_kwargs(product, product_kwargs):
     ValueError
         If required arguments are missing or if there are unexpected extra arguments.
     """
+    from disdrodb import PRODUCTS_ARGUMENTS
+    
     required = set(PRODUCTS_ARGUMENTS.get(product, []))
     provided = set(product_kwargs.keys())
     missing = required - provided

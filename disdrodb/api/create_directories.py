@@ -408,6 +408,22 @@ def create_station_directory(base_dir, product, data_source, campaign_name, stat
     return str(station_dir)
 
 
+def create_data_directory(base_dir, product, data_source, campaign_name, station_name, **product_kwargs):
+    """Create station product data directory."""
+    data_dir = define_data_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=False,
+        **product_kwargs,
+    )
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir, exist_ok=True)
+    return str(data_dir)
+
+
 def create_issue_directory(metadata_dir, data_source, campaign_name):
     """Create issue directory."""
     issue_dir = define_issue_dir(

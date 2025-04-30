@@ -54,6 +54,14 @@ DIAMETER_DIMENSION = "diameter_bin_center"
 OPTICAL_SENSORS = ["OTT_Parsivel", "OTT_Parsivel2", "Thies_LPM"]
 IMPACT_SENSORS = ["RD_80"]
 
+
+PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]
+
+PRODUCTS_ARGUMENTS = {
+    "L2E": ["rolling", "sample_interval"],
+    "L2M": ["rolling", "sample_interval", "model_name"],
+}
+
 PRODUCTS_REQUIREMENTS = {
     "L0A": "RAW",
     "L0B": "L0A",
