@@ -10,6 +10,7 @@ import shutil
 import pytest
 
 from disdrodb import __root_path__
+from disdrodb.metadata.download import download_metadata_archive
 from disdrodb.utils.yaml import write_yaml
 
 
@@ -203,3 +204,13 @@ def create_test_config_files(request):  # noqa: PT004
 
     os.remove(test_filepath)
     shutil.rmtree(test_dir)
+
+
+@pytest.fixture(scope="session")
+def disdrodb_metadata_dir(tmp_path_factory):
+    """Download the DISDRODB Metadata Archive once per pytest session.
+
+    It return the metadata root directory pointing to it.
+    """
+    # Define directory where to download repository
+    return download_metadata_archive(tmp_path_factory.mktemp("original_metadata_archive_repo"))

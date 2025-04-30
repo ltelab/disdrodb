@@ -68,7 +68,7 @@ def parse_arg_to_list(args):
     return args
 
 
-def parse_base_dir(base_dir):
+def parse_root_dir(base_dir):
     """Utility to parse base_dir provided by command line.
 
     If ``base_dir = 'None'`` returns ``None``.

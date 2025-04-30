@@ -207,7 +207,9 @@ def run_l1_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L1 processing of a specific DISDRODB station when invoked from the terminal.
@@ -254,7 +256,7 @@ def run_l1_station(
     base_dir = get_base_dir(base_dir)
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # Define logs directory
     logs_dir = create_logs_directory(

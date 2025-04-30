@@ -24,7 +24,7 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.upload_data import click_upload_options
-from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, click_station_arguments, parse_base_dir
+from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, click_station_arguments, parse_root_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -35,13 +35,16 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_base_dir_option
 @click_metadata_dir_option
 def disdrodb_upload_station(
+    # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
+    # Upload options
     platform: Optional[str] = None,
+    force: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
     metadata_dir: Optional[str] = None,
-    force: bool = False,
 ):
     """
     Upload data from a single DISDRODB station on a remote repository.
@@ -72,14 +75,17 @@ def disdrodb_upload_station(
     """
     from disdrodb.data_transfer.upload_data import upload_station
 
-    base_dir = parse_base_dir(base_dir)
-    metadata_dir = parse_base_dir(metadata_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
     upload_station(
+        # DISDRODB root directories
         base_dir=base_dir,
         metadata_dir=metadata_dir,
+        # Station argument
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Upload options
         platform=platform,
         force=force,
     )

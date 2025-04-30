@@ -111,7 +111,7 @@ def test_check_reader_arguments():
 
 
 def test_get_station_reader_function(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAGIN_NAME"
     station_name = "station_name"
@@ -149,7 +149,7 @@ def test_get_station_reader_function(tmp_path):
 
 
 def test_get_reader_from_metadata(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = DATA_SOURCE
     campaign_name = CAMPAIGN_NAME
     station_name = "station_name"

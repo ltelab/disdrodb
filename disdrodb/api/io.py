@@ -43,11 +43,9 @@ def find_files(
     campaign_name,
     station_name,
     product,
-    model_name=None,
-    sample_interval=None,
-    rolling=None,
     debugging_mode: bool = False,
     base_dir: Optional[str] = None,
+    **product_kwargs,
 ):
     """Retrieve DISDRODB product files for a give station.
 
@@ -92,11 +90,8 @@ def find_files(
         campaign_name=campaign_name,
         station_name=station_name,
         product=product,
-        # Option for L2E and L2M
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Options for L2M
-        model_name=model_name,
+        # Product options
+        **product_kwargs,
     )
 
     # Define glob pattern
@@ -124,9 +119,7 @@ def open_dataset(
     campaign_name,
     station_name,
     product,
-    model_name=None,
-    sample_interval=None,
-    rolling=None,
+    product_kwargs=None,
     debugging_mode: bool = False,
     base_dir: Optional[str] = None,
     **open_kwargs,
@@ -169,6 +162,7 @@ def open_dataset(
     # Check product validity
     if product == "RAW":
         raise ValueError("It's not possible to open the raw data with this function.")
+    product_kwargs = product_kwargs if product_kwargs else {}
     # List product files
     filepaths = find_files(
         base_dir=base_dir,
@@ -177,9 +171,7 @@ def open_dataset(
         station_name=station_name,
         product=product,
         debugging_mode=debugging_mode,
-        model_name=model_name,
-        sample_interval=sample_interval,
-        rolling=rolling,
+        **product_kwargs,
     )
     # Open L0A Parquet files
     if product == "L0A":

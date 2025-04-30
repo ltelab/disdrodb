@@ -23,11 +23,12 @@ import click
 
 from disdrodb.utils.cli import (
     click_base_dir_option,
+    click_metadata_dir_option,
     click_processing_options,
     click_remove_l0a_option,
     click_stations_options,
     parse_arg_to_list,
-    parse_base_dir,
+    parse_root_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -38,8 +39,9 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_processing_options
 @click_remove_l0a_option
 @click_base_dir_option
+@click_metadata_dir_option
 def disdrodb_run_l0b(
-    # L0 disdrodb stations options
+    # Stations options
     data_sources: Optional[str] = None,
     campaign_names: Optional[str] = None,
     station_names: Optional[str] = None,
@@ -49,7 +51,9 @@ def disdrodb_run_l0b(
     parallel: bool = True,
     debugging_mode: bool = False,
     remove_l0a: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L0B processing of DISDRODB stations.
@@ -98,14 +102,18 @@ def disdrodb_run_l0b(
     from disdrodb.routines import run_disdrodb_l0b
 
     # Parse data_sources, campaign_names and station arguments
-    base_dir = parse_base_dir(base_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
     # Run processing
     run_disdrodb_l0b(
+        # DISDRODB root directories
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        # Stations options
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

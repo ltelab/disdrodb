@@ -30,6 +30,7 @@ def reader(
     verbose=False,
     parallel=False,
     debugging_mode=False,
+    metadata_dir=None,  # TODO: HACK for refactor
 ):
     """Reader."""
     ##------------------------------------------------------------------------.
@@ -116,4 +117,5 @@ def reader(
         verbose=verbose,
         parallel=parallel,
         debugging_mode=debugging_mode,
+        metadata_dir=metadata_dir,  # TODO: HACK for refactor
     )

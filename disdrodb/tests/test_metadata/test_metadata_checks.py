@@ -89,7 +89,7 @@ def test_check_metadata_geolocation():
 
 
 def test_identify_empty_metadata_keys(tmp_path, capsys):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
     metadata_dict = {"key1": "value1"}
     metadata_filepath = create_fake_metadata_file(metadata_dir, metadata_dict=metadata_dict)
 
@@ -108,7 +108,7 @@ def test_identify_empty_metadata_keys(tmp_path, capsys):
 
 def test_check_archive_metadata_keys(tmp_path):
     """Test check on correct archive."""
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1: Correct metadata key
     valid_metadata_keys = get_valid_metadata_keys()
@@ -142,7 +142,7 @@ def test_check_archive_metadata_valid_values(tmp_path):
 
 
 def test_check_archive_metadata_campaign_name(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct campaign_name metadata key
     campaign_name = "CAMPAIGN_NAME"
@@ -179,7 +179,7 @@ def test_check_archive_metadata_campaign_name(tmp_path):
 
 
 def test_check_archive_metadata_data_source(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct data_source metadata key
     data_source = "DATA_SOURCE"
@@ -214,7 +214,7 @@ def test_check_archive_metadata_data_source(tmp_path):
 
 @pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
 def test_check_archive_metadata_sensor_name(tmp_path, sensor_name):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct sensor_name metadata key
     metadata_dict = {"sensor_name": sensor_name}
@@ -230,7 +230,7 @@ def test_check_archive_metadata_sensor_name(tmp_path, sensor_name):
 
 
 def test_check_archive_metadata_station_name(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct station_name metadata key
     station_name = "station_name"
@@ -269,7 +269,7 @@ def test_check_archive_metadata_station_name(tmp_path):
 
 
 def test_check_archive_metadata_reader(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     list_readers = available_readers()
 
@@ -295,7 +295,7 @@ def test_check_archive_metadata_reader(tmp_path):
 
 
 def test_check_archive_metadata_compliance(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # We check only the failure, the success are tested in the above tests.
     metadata_dict = {"reader": ""}
@@ -313,7 +313,7 @@ def test_check_archive_metadata_compliance(tmp_path):
 @pytest.mark.parametrize("platform_type", ["mobile", "fixed"])
 @pytest.mark.parametrize("latlon_value", [0, 500, -9999, -99991, "bad_type"])
 def test_check_archive_metadata_geolocation(tmp_path, latlon_value, platform_type):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     metadata_dict = {"longitude": latlon_value, "latitude": latlon_value, "platform_type": platform_type}
     _ = create_fake_metadata_file(
@@ -328,7 +328,7 @@ def test_check_archive_metadata_geolocation(tmp_path, latlon_value, platform_typ
 
 
 def test_identify_missing_metadata_coords(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test correct coordinates
     metadata_dict = {"longitude": 170, "latitude": 80, "platform_type": "fixed"}

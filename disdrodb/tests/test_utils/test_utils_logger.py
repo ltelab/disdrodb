@@ -42,7 +42,7 @@ def create_dummy_log_file(filepath, contents):
 
 
 def test_create_product_logs(tmp_path):
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -124,7 +124,7 @@ def test_create_product_logs(tmp_path):
 
 def test_define_summary_log_when_no_problems(tmp_path):
     """Test that not problem log file is created if no errors occurs."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"

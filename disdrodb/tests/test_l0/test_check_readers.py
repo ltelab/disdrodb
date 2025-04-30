@@ -30,6 +30,8 @@ from disdrodb.l0.l0_processing import run_l0a_station
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.directories import list_files
 
+TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
+
 
 def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
     """Check if two L0B netCDF files are identical.
@@ -89,6 +91,7 @@ def _check_station_reader_results(
 
     run_l0a_station(
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -143,7 +146,19 @@ def _check_station_reader_results(
             )
 
 
-def test_check_all_readers(tmp_path) -> None:
+# from disdrodb.metadata.download import download_metadata_archive
+# import pathlib
+
+# tmp_path = pathlib.Path("/tmp/19/")
+# tmp_path.mkdir(parents=True)
+# test_base_dir = tmp_path / "data" / "DISDRODB"
+# shutil.copytree(TEST_BASE_DIR, test_base_dir)
+
+# parallel = False
+# test_metadata_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+
+
+def test_check_all_readers(tmp_path, disdrodb_metadata_dir) -> None:
     """Test all readers that have data samples and ground truth.
 
     Raises
@@ -151,18 +166,18 @@ def test_check_all_readers(tmp_path) -> None:
     Exception
         If the reader validation has failed.
     """
-    TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
-
-    test_base_dir = tmp_path / "DISDRODB"
-    test_metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
     shutil.copytree(TEST_BASE_DIR, test_base_dir)
 
     list_stations_info = available_stations(
+        base_dir=test_base_dir,
+        metadata_dir=test_metadata_dir,
         product="RAW",
         data_sources=None,
         campaign_names=None,
         return_tuple=True,
-        base_dir=test_base_dir,
+        available_data=True,
     )
 
     # data_source, campaign_name, station_name = list_stations_info[0]

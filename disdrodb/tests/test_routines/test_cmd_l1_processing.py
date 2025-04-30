@@ -44,18 +44,22 @@ FORCE = False
 PARALLEL = False
 VERSION = "Processed"
 
+# from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
-# tmp_path = pathlib.Path("/tmp")
+# tmp_path = pathlib.Path("/tmp/10")
 # test_base_dir = os.path.join(tmp_path, "DISDRODB")
 # dst_dir = os.path.join(test_base_dir, VERSION)
 # shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
+# test_metadata_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
 
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
-def test_disdrodb_run_l1_station(tmp_path, parallel, cli):
+def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_dir, parallel, cli):
     """Test the disdrodb_run_l1_station command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
+
     dst_dir = test_base_dir / VERSION
     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
 
@@ -65,11 +69,16 @@ def test_disdrodb_run_l1_station(tmp_path, parallel, cli):
         runner.invoke(
             disdrodb_run_l1_station,
             [
+                # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
+                # DISDRODB root directories
                 "--base_dir",
                 test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
+                # Processing options
                 "--parallel",
                 parallel,
                 "--debugging_mode",
@@ -82,6 +91,9 @@ def test_disdrodb_run_l1_station(tmp_path, parallel, cli):
         )
     else:
         run_disdrodb_l1_station(
+            # DISDRODB root directories
+            base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -91,7 +103,6 @@ def test_disdrodb_run_l1_station(tmp_path, parallel, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
-            base_dir=test_base_dir,
         )
 
     # Check product files are produced
@@ -106,9 +117,10 @@ def test_disdrodb_run_l1_station(tmp_path, parallel, cli):
 
 
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_run_l1(tmp_path, cli):
+def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_dir, cli):
     """Test the disdrodb_run_l1 command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
     dst_dir = test_base_dir / VERSION
     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
 
@@ -118,8 +130,12 @@ def test_disdrodb_run_l1(tmp_path, cli):
         runner.invoke(
             disdrodb_run_l1,
             [
+                # DISDRODB root directories
                 "--base_dir",
                 test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
+                # Stations arguments
                 "--data_sources",
                 DATA_SOURCE,
                 "--campaign_names",
@@ -127,6 +143,7 @@ def test_disdrodb_run_l1(tmp_path, cli):
                 "--station_names",
                 STATION_NAME,
                 "--verbose",
+                # Processing options
                 VERBOSE,
                 "--parallel",
                 PARALLEL,
@@ -138,6 +155,9 @@ def test_disdrodb_run_l1(tmp_path, cli):
         )
     else:
         run_disdrodb_l1(
+            # DISDRODB root directories
+            base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
             # Station arguments
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
@@ -147,7 +167,6 @@ def test_disdrodb_run_l1(tmp_path, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
-            base_dir=test_base_dir,
         )
 
     # Check products files are produced

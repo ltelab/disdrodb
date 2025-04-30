@@ -17,7 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define DISDRODB L0 readers routines."""
-
+import inspect
 import logging
 import os
 
@@ -248,14 +248,13 @@ def _get_expected_reader_arguments():
         "verbose",
         "parallel",
         "debugging_mode",
+        "metadata_dir",  # TODO: HACK for refactor
     ]
     return expected_arguments
 
 
 def _check_reader_arguments(reader):
     """Check the reader have the expected input arguments."""
-    import inspect
-
     signature = inspect.signature(reader)
     reader_arguments = sorted(signature.parameters.keys())
     expected_arguments = sorted(_get_expected_reader_arguments())

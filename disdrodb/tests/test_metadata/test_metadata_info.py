@@ -24,7 +24,7 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 def test_get_archive_metadata_key_value(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
     expected_result = []
 

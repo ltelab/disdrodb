@@ -86,7 +86,7 @@ def test_check_sensor_name():
 
 
 def test_check_path_is_a_directory(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
     base_dir.mkdir(parents=True, exist_ok=True)
     check_path_is_a_directory(str(base_dir))
 

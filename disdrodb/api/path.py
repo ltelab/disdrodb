@@ -73,7 +73,8 @@ def get_disdrodb_path(
 
     # Get directory
     if product.upper() == "METADATA":
-        dir_path = os.path.join(base_dir, "METADATA", data_source, campaign_name)
+        # TODO: "METADATA",
+        dir_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
     elif product.upper() == "RAW":
         dir_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
     else:

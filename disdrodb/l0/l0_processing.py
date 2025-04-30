@@ -450,6 +450,8 @@ def run_l0a(
     verbose,
     force,
     debugging_mode,
+    # DISDRODB root directories
+    metadata_dir=None,
 ):
     """Run the L0A processing for a specific DISDRODB station.
 
@@ -511,7 +513,7 @@ def run_l0a(
     product = "L0A"
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # ------------------------------------------------------------------------.
     # Start L0A processing
@@ -637,6 +639,8 @@ def run_l0b_from_nc(
     verbose,
     force,
     debugging_mode,
+    # DISDRODB root directories
+    metadata_dir=None,
 ):
     """Run the L0B processing for a specific DISDRODB station with raw netCDFs.
 
@@ -708,7 +712,7 @@ def run_l0b_from_nc(
     product = "L0B"
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # ------------------------------------------------------------------------.
     # Start L0B NC processing
@@ -862,7 +866,9 @@ def run_l0a_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L0A processing of a specific DISDRODB station when invoked from the terminal.
@@ -900,7 +906,7 @@ def run_l0a_station(
     """
     # Define base directory
     base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # Retrieve reader
     reader = get_station_reader_function(
@@ -909,6 +915,7 @@ def run_l0a_station(
         campaign_name=campaign_name,
         station_name=station_name,
     )
+
     # Define campaign raw_dir and process_dir
     raw_dir = define_campaign_dir(
         base_dir=base_dir,
@@ -922,6 +929,7 @@ def run_l0a_station(
         data_source=data_source,
         campaign_name=campaign_name,
     )
+
     # Run L0A processing
     # --> The reader calls the run_l0a or the run_l0b_from_nc if the raw data are
     # text files or netCDF files respectively.
@@ -934,6 +942,8 @@ def run_l0a_station(
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        # DISDRODB root directories
+        metadata_dir=metadata_dir,
     )
 
 
@@ -949,7 +959,9 @@ def run_l0b_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L0B processing of a specific DISDRODB station when invoked from the terminal.
@@ -995,7 +1007,7 @@ def run_l0b_station(
     base_dir = get_base_dir(base_dir)
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # -----------------------------------------------------------------.
     # Retrieve metadata
@@ -1167,7 +1179,9 @@ def run_l0c_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L0C processing of a specific DISDRODB station when invoked from the terminal.
@@ -1225,7 +1239,7 @@ def run_l0c_station(
     base_dir = get_base_dir(base_dir)
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # ------------------------------------------------------------------------.
     # Define logs directory

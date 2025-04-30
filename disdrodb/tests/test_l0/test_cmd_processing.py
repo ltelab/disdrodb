@@ -49,16 +49,24 @@ DEBUGGING_MODE = True
 VERBOSE = False
 FORCE = False
 
-# test_base_dir = "/tmp/new/DISDRODB"
+# from disdrodb.metadata.download import download_metadata_archive
+# import pathlib
+
+# tmp_path = pathlib.Path("/tmp/17/")
+# tmp_path.mkdir(parents=True)
+# test_base_dir = tmp_path / "data" / "DISDRODB"
 # shutil.copytree(BASE_DIR, test_base_dir)
+
 # parallel = False
+# test_metadata_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
 
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
-def test_disdrodb_run_l0a_station(tmp_path, parallel, cli):
+def test_disdrodb_run_l0a_station(tmp_path, disdrodb_metadata_dir, parallel, cli):
     """Test the disdrodb_run_l0a_station command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
     shutil.copytree(BASE_DIR, test_base_dir)
 
     # Produce data
@@ -67,11 +75,11 @@ def test_disdrodb_run_l0a_station(tmp_path, parallel, cli):
         runner.invoke(
             disdrodb_run_l0a_station,
             [
+                # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
-                "--base_dir",
-                test_base_dir,
+                # Processing options
                 "--parallel",
                 parallel,
                 "--debugging_mode",
@@ -80,6 +88,11 @@ def test_disdrodb_run_l0a_station(tmp_path, parallel, cli):
                 VERBOSE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
     else:
@@ -93,7 +106,9 @@ def test_disdrodb_run_l0a_station(tmp_path, parallel, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
 
     # Check files are produced
@@ -109,9 +124,11 @@ def test_disdrodb_run_l0a_station(tmp_path, parallel, cli):
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
-def test_disdrodb_run_l0b_station(tmp_path, parallel, cli):
+def test_disdrodb_run_l0b_station(tmp_path, disdrodb_metadata_dir, parallel, cli):
     """Test the disdrodb_run_l0b_station command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
+
     shutil.copytree(BASE_DIR, test_base_dir)
 
     # Produce data
@@ -120,11 +137,11 @@ def test_disdrodb_run_l0b_station(tmp_path, parallel, cli):
         runner.invoke(
             disdrodb_run_l0a_station,
             [
+                # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
-                "--base_dir",
-                test_base_dir,
+                # Processing options
                 "--parallel",
                 parallel,
                 "--debugging_mode",
@@ -133,22 +150,31 @@ def test_disdrodb_run_l0b_station(tmp_path, parallel, cli):
                 VERBOSE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
         runner.invoke(
             disdrodb_run_l0b_station,
-            [
+            [  # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
-                "--base_dir",
-                test_base_dir,
+                # Processing options
                 "--parallel",
                 parallel,
                 "--debugging_mode",
                 DEBUGGING_MODE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
     else:
@@ -162,7 +188,9 @@ def test_disdrodb_run_l0b_station(tmp_path, parallel, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
 
         run_disdrodb_l0b_station(
@@ -175,7 +203,9 @@ def test_disdrodb_run_l0b_station(tmp_path, parallel, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
 
     # Check files are produced
@@ -192,14 +222,14 @@ def test_disdrodb_run_l0b_station(tmp_path, parallel, cli):
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
 @pytest.mark.parametrize("verbose", [True, False])
-def test_disdrodb_run_l0_nc_station(tmp_path, verbose, parallel, cli):
+def test_disdrodb_run_l0_nc_station(tmp_path, disdrodb_metadata_dir, verbose, parallel, cli):
     """Test the disdrodb_run_l0_station process correctly raw netCDF files."""
-    BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
     DATA_SOURCE = "UK"
     CAMPAIGN_NAME = "DIVEN"
     STATION_NAME = "CAIRNGORM"
 
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
     shutil.copytree(BASE_DIR, test_base_dir)
 
     # Produce data
@@ -208,15 +238,20 @@ def test_disdrodb_run_l0_nc_station(tmp_path, verbose, parallel, cli):
         runner.invoke(
             disdrodb_run_l0_station,
             [
+                # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
-                "--base_dir",
-                test_base_dir,
+                # Processing options
                 "--verbose",
                 verbose,
                 "--parallel",
                 parallel,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
     else:
@@ -230,7 +265,9 @@ def test_disdrodb_run_l0_nc_station(tmp_path, verbose, parallel, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
 
     # Check files are produced
@@ -246,9 +283,11 @@ def test_disdrodb_run_l0_nc_station(tmp_path, verbose, parallel, cli):
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("verbose", [True, False])
-def test_disdrodb_run_l0_station(tmp_path, verbose, cli):
+def test_disdrodb_run_l0_station(tmp_path, disdrodb_metadata_dir, verbose, cli):
     """Test the disdrodb_run_l0_station command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
+
     shutil.copytree(BASE_DIR, test_base_dir)
 
     # Produce data
@@ -257,11 +296,11 @@ def test_disdrodb_run_l0_station(tmp_path, verbose, cli):
         runner.invoke(
             disdrodb_run_l0_station,
             [
+                # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
-                "--base_dir",
-                test_base_dir,
+                # Processing options
                 "--verbose",
                 verbose,
                 "--parallel",
@@ -270,6 +309,11 @@ def test_disdrodb_run_l0_station(tmp_path, verbose, cli):
                 DEBUGGING_MODE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
     else:
@@ -283,7 +327,9 @@ def test_disdrodb_run_l0_station(tmp_path, verbose, cli):
             force=FORCE,
             verbose=verbose,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
 
     # Check files are produced
@@ -298,9 +344,11 @@ def test_disdrodb_run_l0_station(tmp_path, verbose, cli):
 
 
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_run_l0a(tmp_path, cli):
+def test_disdrodb_run_l0a(tmp_path, disdrodb_metadata_dir, cli):
     """Test the disdrodb_run_l0a command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
+
     shutil.copytree(BASE_DIR, test_base_dir)
 
     # Produce data
@@ -309,14 +357,14 @@ def test_disdrodb_run_l0a(tmp_path, cli):
         runner.invoke(
             disdrodb_run_l0a,
             [
-                "--base_dir",
-                test_base_dir,
+                # Stations options
                 "--data_sources",
                 DATA_SOURCE,
                 "--campaign_names",
                 CAMPAIGN_NAME,
                 "--station_names",
                 STATION_NAME,
+                # Processing options
                 "--verbose",
                 VERBOSE,
                 "--parallel",
@@ -325,11 +373,16 @@ def test_disdrodb_run_l0a(tmp_path, cli):
                 DEBUGGING_MODE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
     else:
         run_disdrodb_l0a(
-            # Station arguments
+            # Station options
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
             station_names=STATION_NAME,
@@ -338,7 +391,9 @@ def test_disdrodb_run_l0a(tmp_path, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
 
     # Check files are produced
@@ -353,9 +408,11 @@ def test_disdrodb_run_l0a(tmp_path, cli):
 
 
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_run_l0b(tmp_path, cli):
+def test_disdrodb_run_l0b(tmp_path, disdrodb_metadata_dir, cli):
     """Test the disdrodb_run_l0b command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
+
     shutil.copytree(BASE_DIR, test_base_dir)
 
     # Produce data
@@ -364,14 +421,14 @@ def test_disdrodb_run_l0b(tmp_path, cli):
         runner.invoke(
             disdrodb_run_l0a,
             [
-                "--base_dir",
-                test_base_dir,
+                # Stations options
                 "--data_sources",
                 DATA_SOURCE,
                 "--campaign_names",
                 CAMPAIGN_NAME,
                 "--station_names",
                 STATION_NAME,
+                # Processing options
                 "--verbose",
                 VERBOSE,
                 "--parallel",
@@ -380,20 +437,25 @@ def test_disdrodb_run_l0b(tmp_path, cli):
                 DEBUGGING_MODE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
 
         runner.invoke(
             disdrodb_run_l0b,
             [
-                "--base_dir",
-                test_base_dir,
+                # Station options
                 "--data_sources",
                 DATA_SOURCE,
                 "--campaign_names",
                 CAMPAIGN_NAME,
                 "--station_names",
                 STATION_NAME,
+                # Processing options
                 "--verbose",
                 VERBOSE,
                 "--parallel",
@@ -402,11 +464,16 @@ def test_disdrodb_run_l0b(tmp_path, cli):
                 DEBUGGING_MODE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--base_dir",
+                test_base_dir,
+                "--metadata_dir",
+                test_metadata_dir,
             ],
         )
     else:
         run_disdrodb_l0a(
-            # Station arguments
+            # Stations options
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
             station_names=STATION_NAME,
@@ -415,10 +482,12 @@ def test_disdrodb_run_l0b(tmp_path, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
         run_disdrodb_l0b(
-            # Station arguments
+            # Station options
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
             station_names=STATION_NAME,
@@ -427,7 +496,9 @@ def test_disdrodb_run_l0b(tmp_path, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
+            # DISDRODB root directories
             base_dir=test_base_dir,
+            metadata_dir=test_metadata_dir,
         )
 
     # Check files are produced
@@ -443,9 +514,11 @@ def test_disdrodb_run_l0b(tmp_path, cli):
 
 @pytest.mark.parametrize("remove_l0a", [True, False])
 @pytest.mark.parametrize("remove_l0b", [True, False])
-def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b):
+def test_disdrodb_run_l0(tmp_path, disdrodb_metadata_dir, remove_l0a, remove_l0b):
     """Test the disdrodb_run_l0b command."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
+
     shutil.copytree(BASE_DIR, test_base_dir)
 
     # Produce data
@@ -453,8 +526,12 @@ def test_disdrodb_run_l0(tmp_path, remove_l0a, remove_l0b):
     runner.invoke(
         disdrodb_run_l0,
         [
+            # DISDRODB root directories
             "--base_dir",
             test_base_dir,
+            "--metadata_dir",
+            test_metadata_dir,
+            # Processing options
             "--debugging_mode",
             True,
             "--remove_l0a",

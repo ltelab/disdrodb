@@ -41,7 +41,7 @@ class TestGetListMetadata:
 
     def test_list_all_metadata(self, tmp_path):
         """Test return metadata filepaths of all stations in the DISDRODB Metadata Archive."""
-        metadata_dir = tmp_path / "DISDRODB"
+        metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
@@ -84,7 +84,7 @@ class TestGetListMetadata:
 
     def test_filtering_metadata(self, tmp_path):
         """Test return metadata filepaths of stations matching the filtering criteria."""
-        metadata_dir = tmp_path / "DISDRODB"
+        metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
         # Create metadata files with different data source
         metadata_filepath1 = create_fake_metadata_file(
@@ -140,7 +140,7 @@ class TestGetListMetadata:
 
     def test_list_metadata_with_disdrodb_data_url(self, tmp_path):
         """Test return metadata filepaths of metadata with disdrodb_data_url specified."""
-        metadata_dir = tmp_path / "DISDRODB"
+        metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
         # Create metadata files without disdrodb_data_url
         metadata_dict = {"disdrodb_data_url": ""}

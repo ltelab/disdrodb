@@ -204,6 +204,21 @@ def check_product_kwargs(product, product_kwargs):
     return product_kwargs
 
 
+def select_required_product_kwargs(product, product_kwargs):
+    """Select the required product arguments."""
+    from disdrodb import PRODUCTS_ARGUMENTS
+
+    required = set(PRODUCTS_ARGUMENTS.get(product, []))
+    provided = set(product_kwargs.keys())
+    missing = required - provided
+    # If missing, raise error
+    if missing:
+        raise ValueError(f"For product '{product}', missing arguments: {sorted(missing)}")
+    # Else return just required arguments
+    # --> e.g. for L0 no product arguments
+    return {k: product_kwargs[k] for k in required}
+
+
 def _check_fields(fields):
     if fields is None:  # isinstance(fields, type(None)):
         return fields

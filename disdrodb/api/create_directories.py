@@ -36,6 +36,7 @@ from disdrodb.api.checks import (
     check_product,
     check_raw_dir,
     has_available_data,
+    select_required_product_kwargs,
 )
 from disdrodb.api.info import (
     infer_campaign_name_from_path,
@@ -261,6 +262,7 @@ def create_product_directory(
     required_product = get_required_product(product)
 
     # Check station data is available in the previous product level
+    required_product_kwargs = select_required_product_kwargs(required_product, product_kwargs)
     check_data_availability(
         product=required_product,
         base_dir=base_dir,
@@ -268,7 +270,7 @@ def create_product_directory(
         campaign_name=campaign_name,
         station_name=station_name,
         # Product options
-        **product_kwargs,
+        **required_product_kwargs,
     )
 
     # Check metadata file is available
@@ -320,11 +322,8 @@ def create_logs_directory(
     campaign_name,
     station_name,
     base_dir=None,
-    # Option for L2E
-    sample_interval=None,
-    rolling=None,
-    # Option for L2M
-    model_name=None,
+    # Product options
+    **product_kwargs,
 ):
     """Initialize the logs directory structure for a DISDRODB product."""
     # Define logs directory
@@ -334,11 +333,8 @@ def create_logs_directory(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
+        # Product options
+        **product_kwargs,
     )
 
     # Ensure empty log directory
@@ -463,7 +459,7 @@ def create_initial_station_structure(
         raise ValueError(
             f"A metadata file already exists at {metadata_filepath}. "
             "The station is already part of the DISDRODB Archive or "
-            "or you already initialized the directory structure for the station !",
+            "you already initialized the directory structure for the station !",
         )
 
     # Create directory structure (/metadata, /issue and /data/<station_name>)

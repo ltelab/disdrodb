@@ -22,7 +22,7 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.download_data import click_download_archive_options, click_download_options
-from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, parse_arg_to_list, parse_base_dir
+from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, parse_arg_to_list, parse_root_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -65,8 +65,8 @@ def disdrodb_download_archive(
     """
     from disdrodb.data_transfer.download_data import download_archive
 
-    base_dir = parse_base_dir(base_dir)
-    metadata_dir = parse_base_dir(metadata_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)

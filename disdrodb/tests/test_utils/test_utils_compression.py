@@ -51,7 +51,7 @@ def create_fake_data_dir(base_dir, data_source, campaign_name, station_name):
 @pytest.mark.parametrize("method", ["zip", "gzip", "bzip2"])
 def test_files_compression(tmp_path, method):
     """Test compression of files in a directory."""
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
     station_name = "station_name"

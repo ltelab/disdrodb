@@ -20,7 +20,7 @@ from typing import Optional
 
 import click
 
-from disdrodb.utils.cli import click_base_dir_option, click_station_arguments, parse_base_dir
+from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, click_station_arguments, parse_root_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -31,13 +31,15 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_base_dir_option
+@click_metadata_dir_option
 def disdrodb_initialize_station(
     # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
-    # Processing options
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     r"""Initialize the DISDRODB directory structure for a station.
 
@@ -60,10 +62,14 @@ def disdrodb_initialize_station(
     """
     from disdrodb.api.create_directories import create_initial_station_structure
 
-    base_dir = parse_base_dir(base_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
 
     create_initial_station_structure(
+        # DISDRODB root directories
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

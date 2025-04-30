@@ -23,9 +23,10 @@ import click
 from disdrodb.utils.cli import (
     click_base_dir_option,
     click_l0_archive_options,
+    click_metadata_dir_option,
     click_processing_options,
     click_station_arguments,
-    parse_base_dir,
+    parse_root_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -39,6 +40,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_processing_options
 @click_l0_archive_options
 @click_base_dir_option
+@click_metadata_dir_option
 def disdrodb_run_l0_station(
     # Station arguments
     data_source: str,
@@ -55,7 +57,9 @@ def disdrodb_run_l0_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     r"""Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -110,10 +114,13 @@ def disdrodb_run_l0_station(
     """
     from disdrodb.routines import run_disdrodb_l0_station
 
-    base_dir = parse_base_dir(base_dir)
+    base_dir = parse_root_dir(base_dir)
 
     run_disdrodb_l0_station(
+        # DISDRODB root directories
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

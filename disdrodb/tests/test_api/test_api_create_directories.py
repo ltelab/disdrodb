@@ -375,7 +375,7 @@ def test_create_initial_station_structure_cmd(tmp_path):
     runner = CliRunner()
     runner.invoke(
         disdrodb_initialize_station,
-        [data_source, campaign_name, station_name, "--base_dir", str(base_dir)],
+        [data_source, campaign_name, station_name, "--base_dir", str(base_dir), "--metadata_dir", str(metadata_dir)],
     )
 
     # Check metadata and issue files have been created
@@ -461,7 +461,7 @@ def test_create_test_archive(tmp_path):
 
 
 def test_check_campaign_name_consistency(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
 
@@ -493,7 +493,7 @@ def test_check_campaign_name_consistency(tmp_path):
 
 
 def test_check_data_source_consistency(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     raw_dir = define_campaign_dir(
@@ -525,7 +525,7 @@ def test_check_data_source_consistency(tmp_path):
 
 
 def test_create_issue_directory(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
 

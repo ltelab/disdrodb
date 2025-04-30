@@ -46,7 +46,7 @@ def test__check_glob_pattern():
 
 def test_get_raw_filepaths(tmp_path):
     # Define station info
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -97,7 +97,7 @@ def test_get_raw_filepaths(tmp_path):
 
 def test_get_l0a_filepaths(tmp_path):
     # Define station info
-    base_dir = tmp_path / "DISDRODB"
+    base_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"

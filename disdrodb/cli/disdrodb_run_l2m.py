@@ -23,10 +23,11 @@ import click
 
 from disdrodb.utils.cli import (
     click_base_dir_option,
+    click_metadata_dir_option,
     click_processing_options,
     click_stations_options,
     parse_arg_to_list,
-    parse_base_dir,
+    parse_root_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -36,6 +37,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_stations_options
 @click_processing_options
 @click_base_dir_option
+@click_metadata_dir_option
 def disdrodb_run_l2m(
     # Stations options
     data_sources: Optional[str] = None,
@@ -46,7 +48,9 @@ def disdrodb_run_l2m(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L2M processing of DISDRODB stations.
@@ -95,14 +99,18 @@ def disdrodb_run_l2m(
     from disdrodb.routines import run_disdrodb_l2m
 
     # Parse data_sources, campaign_names and station arguments
-    base_dir = parse_base_dir(base_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
     # Run processing
     run_disdrodb_l2m(
+        # DISDRODB root directories
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        # Stations options
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

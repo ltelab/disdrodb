@@ -41,7 +41,9 @@ def run_disdrodb_l0_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -103,8 +105,10 @@ def run_disdrodb_l0_station(
     # L0A processing
     if l0a_processing:
         run_disdrodb_l0a_station(
-            # Station arguments
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -118,8 +122,10 @@ def run_disdrodb_l0_station(
     # L0B processing
     if l0b_processing:
         run_disdrodb_l0b_station(
-            # Station arguments
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -136,8 +142,10 @@ def run_disdrodb_l0_station(
     # L0C processing
     if l0c_processing:
         run_disdrodb_l0c_station(
-            # Station arguments
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -166,7 +174,9 @@ def run_disdrodb_l0a_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0A processing of a station calling the disdrodb_l0a_station in the terminal."""
     # Define command
@@ -177,6 +187,11 @@ def run_disdrodb_l0a_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--base_dir",
+            str(base_dir),
+            "--metadata_dir",
+            str(metadata_dir),
             # Processing options
             "--force",
             str(force),
@@ -186,8 +201,6 @@ def run_disdrodb_l0a_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
@@ -206,7 +219,9 @@ def run_disdrodb_l0b_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0B processing of a station calling disdrodb_run_l0b_station in the terminal."""
     # Define command
@@ -217,6 +232,11 @@ def run_disdrodb_l0b_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--base_dir",
+            str(base_dir),
+            "--metadata_dir",
+            str(metadata_dir),
             # L0B processing options
             "--remove_l0a",
             str(remove_l0a),
@@ -229,8 +249,6 @@ def run_disdrodb_l0b_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
@@ -249,7 +267,9 @@ def run_disdrodb_l0c_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0C processing of a station calling the disdrodb_l0c_station in the terminal."""
     # TODO: implement remove_l0b!
@@ -262,6 +282,11 @@ def run_disdrodb_l0c_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--base_dir",
+            str(base_dir),
+            "--metadata_dir",
+            str(metadata_dir),
             # L0C processing options
             "--remove_l0b",
             str(remove_l0b),
@@ -274,8 +299,6 @@ def run_disdrodb_l0c_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
@@ -292,7 +315,9 @@ def run_disdrodb_l1_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L1 processing of a station calling the disdrodb_l1_station in the terminal."""
     # Define command
@@ -303,6 +328,11 @@ def run_disdrodb_l1_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--base_dir",
+            str(base_dir),
+            "--metadata_dir",
+            str(metadata_dir),
             # Processing options
             "--force",
             str(force),
@@ -312,8 +342,6 @@ def run_disdrodb_l1_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
@@ -330,7 +358,9 @@ def run_disdrodb_l2e_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L2E processing of a station calling the disdrodb_l1_station in the terminal."""
     # Define command
@@ -341,6 +371,11 @@ def run_disdrodb_l2e_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--base_dir",
+            str(base_dir),
+            "--metadata_dir",
+            str(metadata_dir),
             # Processing options
             "--force",
             str(force),
@@ -350,8 +385,6 @@ def run_disdrodb_l2e_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
@@ -368,7 +401,9 @@ def run_disdrodb_l2m_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L2M processing of a station calling the disdrodb_l2m_station in the terminal."""
     # Define command
@@ -379,6 +414,11 @@ def run_disdrodb_l2m_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--base_dir",
+            str(base_dir),
+            "--metadata_dir",
+            str(metadata_dir),
             # Processing options
             "--force",
             str(force),
@@ -388,8 +428,6 @@ def run_disdrodb_l2m_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
@@ -409,7 +447,9 @@ def run_disdrodb_l0a(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0A processing of DISDRODB stations.
 
@@ -456,11 +496,15 @@ def run_disdrodb_l0a(
 
     # Get list of available stations
     list_info = available_stations(
+        # DISDRODB root directories
         base_dir=base_dir,
-        product=required_product,
+        metadata_dir=metadata_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -473,7 +517,10 @@ def run_disdrodb_l0a(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l0a_station(
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -497,7 +544,9 @@ def run_disdrodb_l0b(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0B processing of DISDRODB stations.
 
@@ -547,11 +596,15 @@ def run_disdrodb_l0b(
 
     # Get list of available stations
     list_info = available_stations(
+        # DISDRODB root directories
         base_dir=base_dir,
-        product=required_product,
+        metadata_dir=metadata_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -564,7 +617,10 @@ def run_disdrodb_l0b(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l0b_station(
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -590,7 +646,9 @@ def run_disdrodb_l0c(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0C processing of DISDRODB stations.
 
@@ -642,11 +700,15 @@ def run_disdrodb_l0c(
 
     # Get list of available stations
     list_info = available_stations(
+        # DISDRODB root directories
         base_dir=base_dir,
-        product=required_product,
+        metadata_dir=metadata_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -659,7 +721,10 @@ def run_disdrodb_l0c(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l0c_station(
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -689,7 +754,9 @@ def run_disdrodb_l0(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L0 processing of DISDRODB stations.
 
@@ -758,11 +825,15 @@ def run_disdrodb_l0(
 
     # Get list of available stations
     list_info = available_stations(
+        # DISDRODB root directories
         base_dir=base_dir,
-        product=required_product,
+        metadata_dir=metadata_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -775,7 +846,10 @@ def run_disdrodb_l0(
         print(f"L0 processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l0_station(
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -803,7 +877,9 @@ def run_disdrodb_l1(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L1 processing of DISDRODB stations.
 
@@ -851,11 +927,16 @@ def run_disdrodb_l1(
 
     # Get list of available stations
     list_info = available_stations(
+        # DISDRODB root directories
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        # Stations arguments
         product=required_product,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        available_data=False,  # Check for station product directory is present only
         raise_error_if_empty=True,
     )
 
@@ -868,7 +949,10 @@ def run_disdrodb_l1(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l1_station(
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -890,7 +974,9 @@ def run_disdrodb_l2e(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L2E processing of DISDRODB stations.
 
@@ -938,11 +1024,15 @@ def run_disdrodb_l2e(
 
     # Get list of available stations
     list_info = available_stations(
+        # DISDRODB root directories
         base_dir=base_dir,
-        product=required_product,
+        metadata_dir=metadata_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -955,7 +1045,10 @@ def run_disdrodb_l2e(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l2e_station(
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -977,7 +1070,9 @@ def run_disdrodb_l2m(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """Run the L2M processing of DISDRODB stations.
 
@@ -1025,11 +1120,15 @@ def run_disdrodb_l2m(
 
     # Get list of available stations
     list_info = available_stations(
+        # DISDRODB root directories
         base_dir=base_dir,
-        product=required_product,
+        metadata_dir=metadata_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -1042,7 +1141,10 @@ def run_disdrodb_l2m(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
         run_disdrodb_l2m_station(
+            # DISDRODB root directories
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

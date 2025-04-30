@@ -247,7 +247,9 @@ def run_l2e_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Generate the L2E product of a specific DISDRODB station when invoked from the terminal.
@@ -302,7 +304,7 @@ def run_l2e_station(
     base_dir = get_base_dir(base_dir)
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir=metadata_dir)
 
     # ------------------------------------------------------------------------.
     # Start processing
@@ -639,7 +641,9 @@ def run_l2m_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L2M processing of a specific DISDRODB station when invoked from the terminal.
@@ -683,7 +687,7 @@ def run_l2m_station(
     base_dir = get_base_dir(base_dir)
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir()
+    metadata_dir = get_metadata_dir(metadata_dir)
 
     # ------------------------------------------------------------------------.
     # Start processing
@@ -745,9 +749,11 @@ def run_l2m_station(
         try:
             filepaths = find_files(
                 base_dir=base_dir,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
+                # Product options
                 product=required_product,
                 sample_interval=accumulation_interval,
                 rolling=rolling,
@@ -786,11 +792,14 @@ def run_l2m_station(
             # -------------------------------------------------------------.
             # Create product directory
             data_dir = create_product_directory(
+                # DISDRODB root directories
                 base_dir=base_dir,
                 metadata_dir=metadata_dir,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
+                # Processing options
                 product=product,
                 force=force,
                 # Option for L2E
@@ -804,6 +813,7 @@ def run_l2m_station(
             logs_dir = create_logs_directory(
                 product=product,
                 base_dir=base_dir,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -845,9 +855,11 @@ def run_l2m_station(
             # Define L2M summary logs
             create_product_logs(
                 product=product,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
+                # DISDRODB root directory
                 base_dir=base_dir,
                 # Product options
                 model_name=model_name,

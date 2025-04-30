@@ -22,9 +22,10 @@ import click
 
 from disdrodb.utils.cli import (
     click_base_dir_option,
+    click_metadata_dir_option,
     click_processing_options,
     click_station_arguments,
-    parse_base_dir,
+    parse_root_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -37,6 +38,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_station_arguments
 @click_processing_options
 @click_base_dir_option
+@click_metadata_dir_option
 def disdrodb_run_l0a_station(
     # Station arguments
     data_source: str,
@@ -47,7 +49,9 @@ def disdrodb_run_l0a_station(
     verbose: bool = False,
     parallel: bool = True,
     debugging_mode: bool = False,
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
 ):
     """
     Run the L0A processing of a specific DISDRODB station from the terminal.
@@ -88,7 +92,8 @@ def disdrodb_run_l0a_station(
     from disdrodb.l0.l0_processing import run_l0a_station
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 
-    base_dir = parse_base_dir(base_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
@@ -106,7 +111,9 @@ def disdrodb_run_l0a_station(
         verbose=verbose,
         debugging_mode=debugging_mode,
         parallel=parallel,
+        # DISDRODB root directories
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
     )
 
     # -------------------------------------------------------------------------.

@@ -28,7 +28,7 @@ from disdrodb.utils.cli import (
     click_base_dir_option,
     click_metadata_dir_option,
     click_station_arguments,
-    parse_base_dir,
+    parse_root_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -72,8 +72,8 @@ def disdrodb_download_station(
     """
     from disdrodb.data_transfer.download_data import download_station
 
-    base_dir = parse_base_dir(base_dir)
-    metadata_dir = parse_base_dir(metadata_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
     download_station(
         base_dir=base_dir,
         metadata_dir=metadata_dir,

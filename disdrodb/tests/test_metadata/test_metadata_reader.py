@@ -24,7 +24,7 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 def test_read_station_metadata(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
@@ -46,7 +46,7 @@ def test_read_station_metadata(tmp_path):
 
 
 def test_read_station_metadata_with_default_config(tmp_path):
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"

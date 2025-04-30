@@ -24,7 +24,7 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.upload_data import click_upload_archive_options, click_upload_options
-from disdrodb.utils.cli import click_base_dir_option, parse_arg_to_list, parse_base_dir
+from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, parse_arg_to_list, parse_root_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -33,11 +33,16 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_upload_archive_options
 @click_upload_options
 @click_base_dir_option
+@click_metadata_dir_option
 def disdrodb_upload_archive(
+    # DISDRODB root directories
     base_dir: Optional[str] = None,
+    metadata_dir: Optional[str] = None,
+    # Stations options
     data_sources: Optional[str] = None,
     campaign_names: Optional[str] = None,
     station_names: Optional[str] = None,
+    # Upload options
     platform: Optional[str] = None,
     force: bool = False,
 ):
@@ -73,16 +78,21 @@ def disdrodb_upload_archive(
     """
     from disdrodb.data_transfer.upload_data import upload_archive
 
-    base_dir = parse_base_dir(base_dir)
+    base_dir = parse_root_dir(base_dir)
+    metadata_dir = parse_root_dir(metadata_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
     upload_archive(
+        # DISDRODB root directories
         base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        # Stations options
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Upload options
         platform=platform,
         force=force,
     )

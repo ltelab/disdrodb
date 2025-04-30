@@ -104,7 +104,7 @@ def test_write_issue(tmpdir):
 
 def test_create_station_issue(tmp_path):
     """Test the creation of the default issue YAML file."""
-    metadata_dir = tmp_path / "DISDRODB"
+    metadata_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"

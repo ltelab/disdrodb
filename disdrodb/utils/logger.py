@@ -209,12 +209,10 @@ def create_product_logs(
     campaign_name,
     station_name,
     base_dir=None,
-    # Product options
-    sample_interval=None,
-    rolling=None,
-    model_name=None,
     # Logs list
     list_logs=None,  # If none, list it !
+    # Product options
+    **product_kwargs,
 ):
     """Create station summary and station problems log files.
 
@@ -268,11 +266,8 @@ def create_product_logs(
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            # Option for L2E
-            sample_interval=sample_interval,
-            rolling=rolling,
-            # Option for L2M
-            model_name=model_name,
+            # Product options
+            **product_kwargs,
         )
         list_logs = list_files(logs_dir, glob_pattern="*", recursive=True)
 
@@ -301,17 +296,14 @@ def create_product_logs(
         product=product,
         campaign_name=campaign_name,
         station_name=station_name,
-        # L2E option
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # L2M option
-        model_name=model_name,
         # Filename options
         add_version=False,
         add_time_period=False,
         add_extension=False,
         prefix="SUMMARY",
         suffix="log",
+        # Product options
+        **product_kwargs,
     )
     summary_filepath = os.path.join(logs_summary_dir, summary_filename)
 
@@ -320,17 +312,14 @@ def create_product_logs(
         product=product,
         campaign_name=campaign_name,
         station_name=station_name,
-        # L2E option
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # L2M option
-        model_name=model_name,
         # Filename options
         add_version=False,
         add_time_period=False,
         add_extension=False,
         prefix="PROBLEMS",
         suffix="log",
+        # Product options
+        **product_kwargs,
     )
     problem_filepath = os.path.join(logs_problem_dir, problem_filename)
 
