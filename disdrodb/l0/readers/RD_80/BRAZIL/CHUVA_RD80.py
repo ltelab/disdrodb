@@ -115,6 +115,6 @@ def reader(
 
     # Remove bins columns
     df = df.drop(columns=bin_columns)
-    
+
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

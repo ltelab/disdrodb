@@ -29,6 +29,9 @@ from disdrodb.utils.logger import (
     log_info,
 )
 
+####----------------------------------------------------------------------------------
+#### DISDRODB Search Product Files
+
 
 def filter_filepaths(filepaths, debugging_mode):
     """Filter out filepaths if ``debugging_mode=True``."""
@@ -45,6 +48,7 @@ def find_files(
     product,
     debugging_mode: bool = False,
     base_dir: Optional[str] = None,
+    glob_pattern="*",
     **product_kwargs,
 ):
     """Retrieve DISDRODB product files for a give station.
@@ -67,6 +71,9 @@ def find_files(
     base_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
+    glob_pattern: str, optional
+        Glob pattern to search for raw data files. The default is "*".
+        The argument is used only if product="RAW".
 
     Other Parameters
     ----------------
@@ -97,8 +104,9 @@ def find_files(
         **product_kwargs,
     )
 
-    # Define glob pattern
-    glob_pattern = "*.parquet" if product == "L0A" else "*.nc"
+    # Define or check the specified glob pattern
+    if product != "RAW":
+        glob_pattern = "*.parquet" if product == "L0A" else "*.nc"
 
     # Retrieve files
     filepaths = list_files(data_dir, glob_pattern=glob_pattern, recursive=True)
@@ -113,10 +121,11 @@ def find_files(
 
     # Sort filepaths
     filepaths = sorted(filepaths)
-
     return filepaths
 
 
+####----------------------------------------------------------------------------------
+#### DISDRODB Open Product Files
 def open_dataset(
     data_source,
     campaign_name,
@@ -190,7 +199,7 @@ def open_dataset(
 
 
 ####----------------------------------------------------------------------------------
-#### DISDRODB Product Removal
+#### DISDRODB Remove Product Files
 
 
 def remove_product(

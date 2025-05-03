@@ -77,7 +77,7 @@ def reader(
     possible_delimiters, counts = np.unique(df["TO_BE_SPLITTED"].str.count(","), return_counts=True)
     n_delimiters = possible_delimiters[np.argmax(counts)]
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     #### Case of 1031 delimiters
     if n_delimiters == 1031:  # first files
         # Select valid rows
@@ -114,7 +114,7 @@ def reader(
         df = df.drop(columns=["station_name"])
         # Return the dataframe adhering to DISDRODB L0 standards
         return df
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     #### Case of 1032 delimiters
     if n_delimiters == 1033:  # (most of the files)
         # Select valid rows
@@ -144,7 +144,7 @@ def reader(
         # Return the dataframe adhering to DISDRODB L0 standards
         return df
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     #### Case of 1035 delimiters
     if n_delimiters == 1035:  # APU 17 first files
         # Select valid rows
@@ -178,7 +178,7 @@ def reader(
         # Return the dataframe adhering to DISDRODB L0 standards
         return df
 
-    #---------------------------------------------------------
+    # ---------------------------------------------------------
     #### Undefined number of delimiters
     # - Likely a corrupted file
     raise ValueError(f"Unexpected number of comma delimiters: {n_delimiters} !")

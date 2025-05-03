@@ -48,9 +48,6 @@ from disdrodb.api.search import get_required_product
 # get_disdrodb_path,
 from disdrodb.configs import get_base_dir, get_folder_partitioning, get_metadata_dir
 from disdrodb.issue import read_station_issue
-from disdrodb.l0.io import (
-    get_raw_filepaths,
-)
 from disdrodb.l0.l0_reader import get_reader
 from disdrodb.l0.l0a_processing import (
     read_l0a_dataframe,
@@ -559,7 +556,7 @@ def run_l0a_station(
     reader_reference = metadata["reader"]
 
     # Retrieve glob patterns
-    glob_patterns = metadata["raw_data_glob_pattern"]
+    glob_pattern = metadata["raw_data_glob_pattern"]
 
     ##------------------------------------------------------------------------.
     # Retrieve reader
@@ -567,15 +564,14 @@ def run_l0a_station(
 
     # -------------------------------------------------------------------------.
     # List files to process
-    # TODO: remove raw_dir
-    filepaths = get_raw_filepaths(
-        raw_dir=raw_dir,
+    filepaths = find_files(
+        data_source=data_source,
+        campaign_name=campaign_name,
         station_name=station_name,
-        # L0A reader argument
-        glob_patterns=glob_patterns,
-        # Processing options
-        verbose=verbose,
+        product="RAW",
         debugging_mode=debugging_mode,
+        base_dir=base_dir,
+        glob_pattern=glob_pattern,
     )
 
     # Print the number of files to be processed

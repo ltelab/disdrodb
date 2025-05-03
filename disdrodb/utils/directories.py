@@ -23,6 +23,9 @@ import logging
 import os
 import pathlib
 import shutil
+from typing import Union
+
+from disdrodb.utils.list import flatten_list
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +36,6 @@ def ensure_string_path(path, msg, accepth_pathlib=False):
     if not isinstance(path, valid_types):
         raise TypeError(msg)
     return str(path)
-
-
-def _recursive_glob(dir_path, glob_pattern):
-    # ** search for all files recursively
-    # glob_pattern = os.path.join(base_dir, "**", "metadata", f"{station_name}.yml")
-    # metadata_filepaths = glob.glob(glob_pattern, recursive=True)
-
-    dir_path = pathlib.Path(dir_path)
-    return [str(path) for path in dir_path.rglob(glob_pattern)]
 
 
 def contains_netcdf_or_parquet_files(dir_path: str) -> bool:
@@ -67,11 +61,70 @@ def contains_files(dir_path: str) -> bool:
     return any(fname for _, _, files in os.walk(dir_path) for fname in files)
 
 
-def list_paths(dir_path, glob_pattern, recursive=False):
-    """Return a list of filepaths and directory paths."""
+def check_glob_pattern(pattern: str) -> None:
+    """Check if glob pattern is a string and is a valid pattern.
+
+    Parameters
+    ----------
+    pattern : str
+        String to be checked.
+    """
+    if not isinstance(pattern, str):
+        raise TypeError("Expect pattern as a string.")
+    if pattern[0] == "/":
+        raise ValueError("glob_pattern should not start with /")
+    if "//" in pattern:
+        raise ValueError("glob_pattern expects path with single separators: /, not //")
+    if "\\" in pattern:
+        raise ValueError("glob_pattern expects path separators to be /, not \\")
+    return pattern
+
+
+def check_glob_patterns(patterns: Union[str, list]) -> list:
+    """Check if glob patterns are valids."""
+    if not isinstance(patterns, (str, list)):
+        raise ValueError("'glob_patterns' must be a str or list of strings.")
+    if isinstance(patterns, str):
+        patterns = [patterns]
+    patterns = [check_glob_pattern(pattern) for pattern in patterns]
+    return patterns
+
+
+def _recursive_glob(dir_path, glob_pattern):
+    # ** search for in zero or all subdirectories recursively
+    # glob_pattern = os.path.join(base_dir, "**", "metadata", f"{station_name}.yml")
+    # metadata_filepaths = glob.glob(glob_pattern, recursive=True)
+
+    dir_path = pathlib.Path(dir_path)
+    return [str(path) for path in dir_path.rglob(glob_pattern)]
+
+
+def _list_paths(dir_path, glob_pattern, recursive=False):
+    """Return a list of filepaths and directory paths based on a single glob pattern."""
+    # If glob pattern has separators, disable recursive option
+    if "/" in glob_pattern and "**" not in glob_pattern:
+        recursive = False
+    # Search paths
     if not recursive:
         return glob.glob(os.path.join(dir_path, glob_pattern))
     return _recursive_glob(dir_path, glob_pattern)
+
+
+def list_paths(dir_path, glob_pattern, recursive=False):
+    """Return a list of filepaths and directory paths.
+
+    This function accept also a list of glob patterns !
+    """
+    # Check validity of glob pattern(s)
+    glob_patterns = check_glob_patterns(glob_pattern)
+    # Search path for specified glob patterns
+    paths = flatten_list(
+        [
+            _list_paths(dir_path=dir_path, glob_pattern=glob_pattern, recursive=recursive)
+            for glob_pattern in glob_patterns
+        ],
+    )
+    return paths
 
 
 def list_files(dir_path, glob_pattern, recursive=False):
