@@ -21,11 +21,8 @@ import logging
 import os
 from typing import Union
 
-import pandas as pd
-
 from disdrodb.api.io import filter_filepaths
 from disdrodb.utils.directories import list_files
-from disdrodb.utils.logger import log_info
 
 logger = logging.getLogger(__name__)
 
@@ -101,7 +98,7 @@ def _get_available_filepaths(raw_dir, station_name, glob_patterns):
     return filepaths
 
 
-def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debugging_mode=False):
+def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, logger=logger, debugging_mode=False):
     """Get the list of files from a directory based on input parameters.
 
     Currently concatenates all files provided by the glob patterns.
@@ -135,86 +132,5 @@ def get_raw_filepaths(raw_dir, station_name, glob_patterns, verbose=False, debug
     # Filter out filepaths if debugging_mode=True
     filepaths = filter_filepaths(filepaths, debugging_mode)
 
-    # Log number of files to process
-    n_files = len(filepaths)
-    data_dir = os.path.join(raw_dir, "data", station_name)
-    msg = f" - {n_files} files to process in {data_dir}"
-    log_info(logger=logger, msg=msg, verbose=verbose)
-
     # Return file list
     return filepaths
-
-
-####--------------------------------------------------------------------------.
-#### DISDRODB L0A product reader
-
-
-def _read_l0a(filepath: str, verbose: bool = False, debugging_mode: bool = False) -> pd.DataFrame:
-    # Log
-    msg = f" - Reading L0 Apache Parquet file at {filepath} started."
-    log_info(logger, msg, verbose)
-    # Open file
-    df = pd.read_parquet(filepath)
-    if debugging_mode:
-        df = df.iloc[0:100]
-    # Log
-    msg = f" - Reading L0 Apache Parquet file at {filepath} ended."
-    log_info(logger, msg, verbose)
-    return df
-
-
-def read_l0a_dataframe(
-    filepaths: Union[str, list],
-    verbose: bool = False,
-    debugging_mode: bool = False,
-) -> pd.DataFrame:
-    """Read DISDRODB L0A Apache Parquet file(s).
-
-    Parameters
-    ----------
-    filepaths : str or list
-        Either a list or a single filepath.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is ``False``.
-    debugging_mode : bool
-        If ``True``, it reduces the amount of data to process.
-        If filepaths is a list, it reads only the first 3 files.
-        For each file it select only the first 100 rows.
-        The default is ``False``.
-
-    Returns
-    -------
-    pd.DataFrame
-        L0A Dataframe.
-
-    """
-    from disdrodb.l0.l0a_processing import concatenate_dataframe
-
-    # ----------------------------------------
-    # Check filepaths validity
-    if not isinstance(filepaths, (list, str)):
-        raise TypeError("Expecting filepaths to be a string or a list of strings.")
-
-    # ----------------------------------------
-    # If filepath is a string, convert to list
-    if isinstance(filepaths, str):
-        filepaths = [filepaths]
-    # ---------------------------------------------------
-    # If debugging_mode=True, it reads only the first 3 filepaths
-    if debugging_mode:
-        filepaths = filepaths[0:3]  # select first 3 filepaths
-
-    # ---------------------------------------------------
-    # Define the list of dataframe
-    list_df = [_read_l0a(filepath, verbose=verbose, debugging_mode=debugging_mode) for filepath in filepaths]
-
-    # Concatenate dataframe
-    df = concatenate_dataframe(list_df, verbose=verbose)
-
-    # Ensure time is in nanoseconds
-    df["time"] = df["time"].astype("M8[ns]")
-
-    # ---------------------------------------------------
-    # Return dataframe
-    return df

@@ -60,7 +60,7 @@ The DISDRODB Decentralized Data Archive collects disdrometer data from all aroun
 
 The data are stored in remote data repositories but are easily accessible through the disdrodb software.
 
-The metadata of each stations are stored in a `centralized repository hosted on GitHub <https://github.com/ltelab/disdrodb-data>`__.
+The metadata of each stations are stored in a `centralized repository hosted on GitHub <https://github.com/ltelab/DISDRODB-METADATA>`__.
 
 The currently available disdrometer stations are depicted in the figure below.
 

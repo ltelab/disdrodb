@@ -375,5 +375,5 @@ def check_sensor_configs(sensor_name: str) -> None:
 
 def check_all_sensors_configs() -> None:
     """Check all sensors configuration YAML files."""
-    for sensor_name in available_sensor_names(product="L0A"):
+    for sensor_name in available_sensor_names():
         check_sensor_configs(sensor_name=sensor_name)

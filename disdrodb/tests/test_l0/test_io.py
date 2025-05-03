@@ -18,18 +18,14 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0 Input/Output routines."""
 
-import os
 
-import pandas as pd
 import pytest
 
 from disdrodb.api.io import find_files
 from disdrodb.api.path import define_campaign_dir
 from disdrodb.l0.io import (
     _check_glob_pattern,
-    _read_l0a,
     get_raw_filepaths,
-    read_l0a_dataframe,
 )
 from disdrodb.tests.conftest import create_fake_raw_data_file
 
@@ -146,62 +142,3 @@ def test_get_l0a_filepaths(tmp_path):
 
 
 ####--------------------------------------------------------------------------.
-
-
-def test__read_l0a(tmp_path):
-    # create dummy dataframe
-    data = [{"a": "1", "b": "2"}, {"a": "2", "b": "2", "c": "3"}]
-    df = pd.DataFrame(data)
-
-    # save dataframe to parquet file
-    filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
-    df.to_parquet(filepath, compression="gzip")
-
-    # read written parquet file
-    df_written = _read_l0a(filepath, False)
-
-    assert df.equals(df_written)
-
-
-def test_read_l0a_dataframe(tmp_path):
-    filepaths = []
-    list_df = []
-    for i in [0, 1]:
-        # create dummy dataframe
-        data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
-        df = pd.DataFrame(data).set_index("a")
-        df["time"] = pd.Timestamp.now()
-
-        # save dataframe to parquet file
-        filepath = os.path.join(
-            tmp_path,
-            f"fake_data_sample_{i}.parquet",
-        )
-        df.to_parquet(filepath, compression="gzip")
-        filepaths.append(filepath)
-        list_df.append(df)
-
-    # Create concatenate dataframe
-    df_concatenate = pd.concat(list_df, axis=0, ignore_index=True)
-
-    # Drop duplicated values
-    df_concatenate = df_concatenate.drop_duplicates(subset="time")
-
-    # Sort by increasing time
-    df_concatenate = df_concatenate.sort_values(by="time")
-
-    # read written parquet files
-    df_written = read_l0a_dataframe(filepaths, verbose=False)
-
-    # Create lists
-    df_concatenate_list = df_concatenate.to_numpy().tolist()
-    df_written_list = df_written.to_numpy().tolist()
-
-    # Compare lists
-    comparison = df_written_list == df_concatenate_list
-
-    assert comparison
-
-    # Assert raise error if filepaths is not a list or string
-    with pytest.raises(TypeError, match="Expecting filepaths to be a string or a list of strings."):
-        read_l0a_dataframe(1, verbose=False)

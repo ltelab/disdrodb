@@ -452,7 +452,7 @@ def get_bin_coords_dict(sensor_name: str) -> dict:
     dict
         Dictionary with coordinates arrays.
     """
-    check_sensor_name(sensor_name=sensor_name)
+    check_sensor_name(sensor_name)
     coords = {}
     # Retrieve diameter coords
     coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)

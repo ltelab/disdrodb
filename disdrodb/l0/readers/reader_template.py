@@ -16,20 +16,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-from disdrodb.l0 import run_l0a
+"""DISDRODB reader template for raw text data."""
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
+from disdrodb.l0.l0a_processing import read_raw_text_file
 
 
 @is_documented_by(reader_generic_docstring)
 def reader(
-    raw_dir,
-    processed_dir,
-    station_name,
-    # Processing options
-    force=False,
-    verbose=False,
-    parallel=False,
-    debugging_mode=False,
+    filepath,
+    logger=None,
 ):
     """Reader."""
     ##------------------------------------------------------------------------.
@@ -40,7 +35,7 @@ def reader(
     column_names = []  # [ADD THE COLUMN NAMES LIST HERE]
 
     ##------------------------------------------------------------------------.
-    #### - Define reader options
+    #### Define reader options
     # - For more info: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
     reader_kwargs = {}
 
@@ -75,36 +70,16 @@ def reader(
     reader_kwargs["skiprows"] = None
 
     ##------------------------------------------------------------------------.
-    #### - Define facultative dataframe sanitizer function for L0 processing
-    # - Enable to deal with bad raw data files
-    # - Enable to standardize raw data files to L0 standards
-
-    def df_sanitizer_fun(df):
-        # Import dask or pandas
-
-        # [ADD YOUR CUSTOM CODE HERE]
-        #             ...
-
-        return df
-
-    ##------------------------------------------------------------------------.
-    #### - Define glob pattern to search data files within raw_dir/data/<station_name>
-    glob_patterns = "*"  # [TO BE ADAPTED TO THE STATION RAW FILE NAME PATTERN]
-
-    ####----------------------------------------------------------------------.
-    #### - Create L0A products
-    run_l0a(
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
-        station_name=station_name,
-        # Custom arguments of the reader for L0A processing
-        glob_patterns=glob_patterns,
+    #### Read the data
+    df = read_raw_text_file(
+        filepath=filepath,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
-        df_sanitizer_fun=df_sanitizer_fun,
-        # Processing options
-        force=force,
-        verbose=verbose,
-        parallel=parallel,
-        debugging_mode=debugging_mode,
+        logger=logger,
     )
+
+    ##------------------------------------------------------------------------.
+    #### Adapt the dataframe to adhere to DISDRODB L0 standards
+    # [ADD YOUR CUSTOM CODE HERE]
+
+    return df

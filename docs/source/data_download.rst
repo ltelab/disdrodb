@@ -23,17 +23,19 @@ Then clone the DISDRODB Metadata Archive repository with:
 
 .. code:: bash
 
-   git clone https://github.com/ltelab/disdrodb-data.git
+   git clone https://github.com/ltelab/DISDRODB-METADATA.git
 
-This will create a directory called ``disdrodb-data``.
+This will create a directory called ``DISDRODB-METADATA``.
 
 .. note:: Remember that the DISDRODB Metadata Archive is often updated with new stations or metadata.
           To update your local DISDRODB Metada Archive (and therefore download recently added new stations),
-          run :code:`git pull` inside the ``disdrodb-data`` directory.
+          run :code:`git pull` inside the ``DISDRODB-METADATA`` directory.
 
 
 Define the DISDRODB Base Directory
 ------------------------------------------
+
+# TODO: UPDATE DOC
 
 The DISDRODB base directory is the directory ``DISDRODB`` inside ``disdrodb-data``.
 
@@ -43,7 +45,7 @@ You can set the default DISDRODB base directory by running in python:
 
     import disdrodb
 
-    base_dir = "<path_to>/disdrodb-data/DISDRODB>"
+    base_dir = "<path_to_local_data_archive>/DISDRODB"
     disdrodb.define_configs(base_dir=base_dir)
 
 By running this command, the disdrodb software will write a ``.config_disdrodb.yml`` file into your home directory (i.e. ``~/.config_disdrodb.yml``)
@@ -53,9 +55,11 @@ that will be used as default configuration file when running the disdrodb softwa
 Alternatively, you can also define the DISDRODB base directory as an environment variable ``DISDRODB_BASE_DIR``.
 In the terminal, you must type the following command:
 
+# TODO: UPDATE DOC
+
 .. code:: bash
 
-   export DISDRODB_BASE_DIR="<path_to>/disdrodb-data/DISDRODB"
+   export DISDRODB_BASE_DIR="<path_to_local_data_archive>/DISDRODB"
 
 .. note:: It's important to remember that the environment variable ``DISDRODB_BASE_DIR`` (if defined) will take priority over the default path
           defined in the ``.config_disdrodb.yml`` file.

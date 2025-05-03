@@ -47,12 +47,13 @@ the `DISDRODB.l0.readers directory <https://github.com/ltelab/disdrodb/tree/main
 The function ``available_readers`` returns a dictionary with all readers available within DISDRODB.
 By specifying the ``data_sources`` argument, only the readers for the specified data sources are returned.
 
+# TODO: require sensor name
 .. code-block:: python
 
     from disdrodb.l0 import available_readers
 
-    available_readers()
-    available_readers(data_sources=["EPFL", "GPM"])
+    available_readers(sensor_name)
+    available_readers(sensor_name=sensor_name, data_sources=["EPFL", "GPM"])
 
 The dictionary has the following structure:
 

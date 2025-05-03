@@ -48,7 +48,7 @@ def get_sensor_configs_dir(sensor_name: str, product: str) -> str:
     ValueError
         Error if the config directory does not exist.
     """
-    check_sensor_name(sensor_name, product=product)
+    check_sensor_name(sensor_name)
     product = check_product(product)
     config_dir = define_config_dir(product=product)
     config_sensor_dir = os.path.join(config_dir, sensor_name)
@@ -79,7 +79,7 @@ def read_config_file(sensor_name: str, product: str, filename: str) -> dict:
     ValueError
         Error if file does not exist.
     """
-    check_sensor_name(sensor_name, product=product)
+    check_sensor_name(sensor_name)
     product = check_product(product)
     config_sensor_dir = get_sensor_configs_dir(sensor_name, product=product)
     config_filepath = os.path.join(config_sensor_dir, filename)
@@ -93,17 +93,13 @@ def read_config_file(sensor_name: str, product: str, filename: str) -> dict:
     return dictionary
 
 
-def available_sensor_names(product: str = "L0A") -> list:
+def available_sensor_names() -> list:
     """Get available names of sensors.
 
     Returns
     -------
     sensor_names: list
         Sorted list of the available sensors
-    product: str
-        DISDRODB product.
-        By default, it returns the sensors available for DISDRODB L0A products.
     """
-    product = check_product(product)
-    config_dir = define_config_dir(product=product)
+    config_dir = define_config_dir(product="L0A")
     return sorted(os.listdir(config_dir))

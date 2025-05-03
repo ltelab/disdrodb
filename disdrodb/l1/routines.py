@@ -150,7 +150,7 @@ def _generate_l1(
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"{product} processing of {filename} has started."
-    log_info(logger, msg, verbose=verbose)
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     # Retrieve L1 configurations
@@ -181,7 +181,7 @@ def _generate_l1(
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
-        log_info(logger, msg, verbose=verbose)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error

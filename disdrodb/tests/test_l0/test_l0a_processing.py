@@ -24,21 +24,21 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from disdrodb.l0.io import read_l0a_dataframe
 from disdrodb.l0.l0a_processing import (
-    _check_df_sanitizer_fun,
     _check_matching_column_number,
     _check_not_empty_dataframe,
     _is_not_corrupted,
     _preprocess_reader_kwargs,
+    _read_l0a,
     _strip_delimiter,
     cast_column_dtypes,
     coerce_corrupted_values_to_nan,
     concatenate_dataframe,
     drop_time_periods,
     drop_timesteps,
-    read_raw_file,
-    read_raw_files,
+    read_l0a_dataframe,
+    read_raw_text_file,
+    read_raw_text_files,
     remove_corrupted_rows,
     remove_duplicated_timesteps,
     remove_issue_timesteps,
@@ -487,7 +487,7 @@ def create_fake_csv(filename, data):
     df.to_csv(filename, index=False)
 
 
-def test_read_raw_file(tmp_path):
+def test_read_raw_text_file(tmp_path):
     # Create a valid test file
     filepath = os.path.join(tmp_path, "test.csv")
     data = {"att_1": ["11", "21"], "att_2": ["12", "22"]}
@@ -498,7 +498,7 @@ def test_read_raw_file(tmp_path):
     reader_kwargs["header"] = 0
     reader_kwargs["engine"] = "python"
 
-    r = read_raw_file(
+    r = read_raw_text_file(
         filepath=filepath,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
@@ -514,7 +514,7 @@ def test_read_raw_file(tmp_path):
 
     # Call the function and catch the exception
     with pytest.raises(UnboundLocalError):
-        r = read_raw_file(
+        r = read_raw_text_file(
             filepath=filepath,
             column_names=[],
             reader_kwargs=reader_kwargs,
@@ -527,7 +527,7 @@ def test_read_raw_file(tmp_path):
     create_fake_csv(filepath, data)
 
     # Call the function and catch the exception
-    r = read_raw_file(
+    r = read_raw_text_file(
         filepath=filepath,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
@@ -535,35 +535,6 @@ def test_read_raw_file(tmp_path):
 
     # Check that an empty dataframe is returned
     assert r.empty
-
-
-def test_check_df_sanitizer_fun():
-    # Test with valid df_sanitizer_fun
-    def df_sanitizer_fun(df):
-        return df
-
-    assert _check_df_sanitizer_fun(df_sanitizer_fun) is None
-
-    # Test with None argument
-    assert _check_df_sanitizer_fun(None) is None
-
-    # Test with non-callable argument
-    with pytest.raises(ValueError, match="'df_sanitizer_fun' must be a function."):
-        _check_df_sanitizer_fun(123)
-
-    # Test with argument that has more than one parameter
-    def bad_fun(x, y):
-        pass
-
-    with pytest.raises(ValueError, match="The `df_sanitizer_fun` must have only `df` as input argument!"):
-        _check_df_sanitizer_fun(bad_fun)
-
-    # Test with argument that has wrong parameter name
-    def bad_fun2(d):
-        pass
-
-    with pytest.raises(ValueError, match="The `df_sanitizer_fun` must have only `df` as input argument!"):
-        _check_df_sanitizer_fun(bad_fun2)
 
 
 def test_write_l0a(tmp_path):
@@ -574,10 +545,10 @@ def test_write_l0a(tmp_path):
 
     # Write parquet file
     filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
-    write_l0a(df, filepath, True, False)
+    write_l0a(df, filepath, force=True, verbose=False)
 
     # Read parquet file
-    df_written = read_l0a_dataframe([filepath], False)
+    df_written = read_l0a_dataframe([filepath], verbose=False)
 
     # Check if parquet file are similar
     is_equal = df.equals(df_written)
@@ -585,10 +556,10 @@ def test_write_l0a(tmp_path):
 
     # Test error is raised when bad parquet file
     with pytest.raises(ValueError):
-        write_l0a("dummy_object", filepath, True, False)
+        write_l0a("dummy_object", filepath, force=True, verbose=False)
 
 
-def test_read_raw_files():
+def test_read_raw_text_files():
     from disdrodb.l0 import l0a_processing
 
     # Set up the inputs
@@ -609,7 +580,7 @@ def test_read_raw_files():
 
     # Test raise value error if empty filepaths list is passed
     with pytest.raises(ValueError):
-        read_raw_files(
+        read_raw_text_files(
             filepaths=[],
             column_names=column_names,
             reader_kwargs=reader_kwargs,
@@ -617,10 +588,10 @@ def test_read_raw_files():
             verbose=verbose,
         )
 
-    # Mock the process_raw_file function
-    # The code block is defining a mock function called mock_process_raw_file
-    # which will be used in unit testing to replace the original process_raw_file function.
-    def mock_process_raw_file(filepath, column_names, reader_kwargs, df_sanitizer_fun, sensor_name, verbose):
+    # Mock the sanitize_df function
+    # The code block is defining a mock function called mock_sanitize_df
+    # which will be used in unit testing to replace the original sanitize_df function.
+    def mock_sanitize_df(filepath, column_names, reader_kwargs, df_sanitizer_fun, sensor_name, verbose):
         if filepath == "test_file1.csv":
             return df1
         if filepath == "test_file2.csv":
@@ -628,10 +599,10 @@ def test_read_raw_files():
         return None
 
     # Monkey patch the function
-    l0a_processing.process_raw_file = mock_process_raw_file
+    l0a_processing.sanitize_df = mock_sanitize_df
 
     # Call the function
-    result = read_raw_files(
+    result = read_raw_text_files(
         filepaths=filepaths,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
@@ -644,7 +615,7 @@ def test_read_raw_files():
     assert result.equals(expected_result)
 
     # Assert that it can also process a single filepath (as string)
-    df1_out = read_raw_files(
+    df1_out = read_raw_text_files(
         filepaths=filepaths[0],
         column_names=column_names,
         reader_kwargs=reader_kwargs,
@@ -654,7 +625,7 @@ def test_read_raw_files():
     assert df1_out.equals(df1)
 
 
-def test_read_raw_files_failure():
+def test_read_raw_text_files_failure():
     filepaths = ["test1.csv", "test2.csv"]
     column_names = ["time", "value"]
     reader_kwargs = {"delimiter": ","}
@@ -662,10 +633,69 @@ def test_read_raw_files_failure():
     verbose = False
 
     with pytest.raises(ValueError):
-        read_raw_files(
+        read_raw_text_files(
             filepaths=filepaths,
             column_names=column_names,
             reader_kwargs=reader_kwargs,
             sensor_name=sensor_name,
             verbose=verbose,
         )
+
+
+def test__read_l0a(tmp_path):
+    # create dummy dataframe
+    data = [{"a": "1", "b": "2"}, {"a": "2", "b": "2", "c": "3"}]
+    df = pd.DataFrame(data)
+
+    # save dataframe to parquet file
+    filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
+    df.to_parquet(filepath, compression="gzip")
+
+    # read written parquet file
+    df_written = _read_l0a(filepath, False)
+
+    assert df.equals(df_written)
+
+
+def test_read_l0a_dataframe(tmp_path):
+    filepaths = []
+    list_df = []
+    for i in [0, 1]:
+        # create dummy dataframe
+        data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
+        df = pd.DataFrame(data).set_index("a")
+        df["time"] = pd.Timestamp.now()
+
+        # save dataframe to parquet file
+        filepath = os.path.join(
+            tmp_path,
+            f"fake_data_sample_{i}.parquet",
+        )
+        df.to_parquet(filepath, compression="gzip")
+        filepaths.append(filepath)
+        list_df.append(df)
+
+    # Create concatenate dataframe
+    df_concatenate = pd.concat(list_df, axis=0, ignore_index=True)
+
+    # Drop duplicated values
+    df_concatenate = df_concatenate.drop_duplicates(subset="time")
+
+    # Sort by increasing time
+    df_concatenate = df_concatenate.sort_values(by="time")
+
+    # read written parquet files
+    df_written = read_l0a_dataframe(filepaths, verbose=False)
+
+    # Create lists
+    df_concatenate_list = df_concatenate.to_numpy().tolist()
+    df_written_list = df_written.to_numpy().tolist()
+
+    # Compare lists
+    comparison = df_written_list == df_concatenate_list
+
+    assert comparison
+
+    # Assert raise error if filepaths is not a list or string
+    with pytest.raises(TypeError, match="Expecting filepaths to be a string or a list of strings."):
+        read_l0a_dataframe(1, verbose=False)

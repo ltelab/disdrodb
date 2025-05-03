@@ -56,13 +56,13 @@ Before going down the road, please also have a look at the `Contributors Guideli
 Step 1: Fork and download the DISDRODB Metadata Archive
 --------------------------------------------------------------
 
-1. Go to the `DISDRODB metadata repository <https://github.com/ltelab/disdrodb-data>`__, fork the repository on your GitHub account and then clone the forked repository:
+1. Go to the `DISDRODB Metadata Repository <https://github.com/ltelab/DISDRODB-METADATA>`__, fork the repository on your GitHub account and then clone the forked repository:
 
    .. code:: bash
 
-      git clone https://github.com/<your_username>/disdrodb-data.git
+      git clone https://github.com/<your_username>/DISDRODB-METADATA.git
 
-2. Go inside the ``disdrodb-data`` directory where you have cloned the repository:
+2. Go inside the ``DISDRODB-METADATA`` directory where you have cloned the repository:
 
 3. Create a new branch:
 
@@ -86,12 +86,12 @@ Step 1: Fork and download the DISDRODB Metadata Archive
       git push
 
 6. When you want to show your changes to the DISDRODB maintainers, you will need to open a Pull Request.
-   To do so, go to the `GitHub disdrodb-data repository <https://github.com/ltelab/disdrodb-data>`__, open the Pull Request and ask for a review.
+   To do so, go to the `GitHub DISDRODB-METADATA repository <https://github.com/ltelab/DISDRODB-METADATA>`__, open the Pull Request and ask for a review.
 
    For more information on GitHub Pull Requests, read the
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
-   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__
+   If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/DISDRODB-METADATA/issues/new/choose>`__
    or ask in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__ so that we can help !
 
 
@@ -164,7 +164,7 @@ On Windows, the DISDRODB base directory will have a path ending by ``"\DISDRODB"
 
     import disdrodb
 
-    base_dir = "<path_to>/disdrodb-data/DISDRODB"
+    base_dir = "<path_to_local_data_archive>/DISDRODB"
     disdrodb.define_configs(base_dir=base_dir)
 
 
@@ -182,6 +182,8 @@ If you contribute multiple stations, just rerun the following command for each s
 
 
 The DISDRODB Raw archive will have the following structure:
+
+# TODO: UPDATE DOC
 
 | 📁 DISDRODB
 | ├── 📁 Raw
@@ -237,7 +239,7 @@ The only error you should temporary get is the one related to the missing value 
 Step 5: Add the raw data
 --------------------------
 
-It's now time to move the raw data of each station into the corresponding ``disdrodb-data/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>/data/<STATION_NAME>`` directory.
+It's now time to move the raw data of each station into the corresponding ``<base_dir>/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>/data/<STATION_NAME>`` directory.
 
 Once done, you are mostly ready for the next step: implementing the DISDRODB reader for your data.
 
@@ -282,15 +284,16 @@ The ``reader`` key value must be defined with the pattern ``<READER_DATA_SOURCE>
 For example, to use the `disdrodb.l0.reader.GPM.IFLOODS.py reader <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/GPM/IFLOODS.py>`_
 to process the data, you specify the ``reader`` name ``GPM/IFLOODS``.
 
-To check you are specifying the correct ``reader`` value in the metadata, adapt the following piece of code to your reader name and run it:
-``get_reader_function_from_metadata_key`` should return the reader function:
+To check you are specifying the correct ``reader`` value in the metadata, adapt the following piece of code with your reader_reference and then call
+the ``get_reader`` function: it should return the reader function you just implemented !
 
 .. code-block:: python
 
-    from disdrodb.l0.l0_reader import get_reader_function_from_metadata_key
+    import disdrodb
 
-    reader_name = "GPM/IFLOODS"  # <READER_DATA_SOURCE>/<READER_NAME>
-    reader = get_reader_function_from_metadata_key(reader_name)
+    sensor_name = "OTT_Parsivel"
+    reader_reference = "GPM/IFLOODS"  # <READER_DATA_SOURCE>/<READER_NAME>
+    reader = disdrodb.get_reader(reader_reference, sensor_name=sensor_name)
     print(reader)
 
 
@@ -298,12 +301,12 @@ If you updated the station metadata files, your reader function should also now 
 
 .. code-block:: python
 
-    from disdrodb.l0.l0_reader import get_station_reader_function
+    import disdrodb
 
     campaign_name = "<CAMPAIGN_NAME>"
     data_source = "<DATA_SOURCE>"
     station_name = "<STATION_NAME>"
-    reader = get_station_reader_function(
+    reader = disdrodb.get_station_reader(
         data_source=data_source, campaign_name=campaign_name, station_name=station_name
     )
 
@@ -318,7 +321,7 @@ At this point, no error and printed message should appear !!!
 
 If you have any question at this point, you are encountering some issues, or you just want to let the DISRODB maintainers know that you are working on the
 implementation of a reader for your data, just  ``git add *``, ``git commit -m <describe-your-change>``, ``git push`` your code changes.
-Then, open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__ and `GitHub disdrodb-data repository <https://github.com/ltelab/disdrodb-data>`__
+Then, open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__ and `GitHub DISDRODB-METADATA repository <https://github.com/ltelab/DISDRODB-METADATA>`__
 so that we keep track of your work and we can help you if needed !
 
 .. _step7:
@@ -478,7 +481,7 @@ Below, we offer a utility designed to compress each raw file associated to a spe
 
     from disdrodb.utils.compression import compress_station_files
 
-    base_dir = "<path_to>/disdrodb-data/DISDRODB"
+    base_dir = "<path_to_local_data_archive>/DISDRODB"
     data_source = "<your_data_source>"
     campaign_name = "<your_campaign>"
     station_name = "<your_station_name>"
@@ -540,12 +543,12 @@ If the raw data are text files, the ground truth files must be Apache Parquet (D
 If the raw data are netCDF files, the ground truth files must be netCDF (DISDRODB L0B) files generated by the DISDRODB L0 processing of the raw data.
 
 If you arrived at this point and you didn't open yet a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__
-and in the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, do it now so
+and in the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/DISDRODB-METADATA>`__, do it now so
 that the DISDRODB maintainers can review your code and help you with the final steps !
 
 .. note::
-   To open a Pull Request in the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, you need to  ``git push`` the changes
-   of your local ``disdrodb-data`` directory.
+   To open a Pull Request in the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/DISDRODB-METADATA>`__,
+   you need to  ``git push`` the changes of your local ``DISDRODB-METADATA`` directory.
 
 .. note::
    To open a Pull Request in the `GitHub disdrodb repository <https://github.com/ltelab/disdrodb>`__, you need to ``git push`` the changes

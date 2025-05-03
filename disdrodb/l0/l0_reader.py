@@ -20,301 +20,235 @@
 import inspect
 import logging
 import os
+from collections import defaultdict
+
+from disdrodb.api.checks import check_data_sources, check_sensor_name
+from disdrodb.utils.directories import list_files
+from disdrodb.utils.list import flatten_list
 
 logger = logging.getLogger(__name__)
 
 
 ####--------------------------------------------------------------------------.
+#### Search readers
 
 
-def _get_readers_directory() -> str:
+def define_reader_path(sensor_name, reader_reference):
+    """Define the reader path based on the reader reference name."""
+    # Retrieve path to directory with sensor readers
+    reader_dir = get_readers_directory(sensor_name)
+    # Define reader path
+    reader_path = os.path.join(reader_dir, f"{reader_reference}.py")
+    return reader_path
+
+
+def get_readers_directory(sensor_name="") -> str:
     """Returns the path to the ``disdrodb.l0.readers`` directory within the disdrodb package."""
     from disdrodb import __root_path__
 
-    reader_dir = os.path.join(__root_path__, "disdrodb", "l0", "readers")
+    reader_dir = os.path.join(__root_path__, "disdrodb", "l0", "readers", sensor_name)
     return reader_dir
 
 
-def _get_readers_data_sources() -> list:
-    """Returns the readers data sources available at ``disdrodb.l0.readers``."""
-    # Readers directory path
-    reader_dir = _get_readers_directory()
-
-    # List of readers directory
-    list_data_sources = [os.path.basename(f.path) for f in os.scandir(reader_dir) if f.is_dir()]
-    # Directory to remove
-    bad_dirs = ["__pycache__", ".ipynb_checkpoints"]
-    list_data_sources = [name for name in list_data_sources if name not in bad_dirs]
-
-    return list_data_sources
+def list_readers_paths(sensor_name) -> list:
+    """Returns the file paths of the available readers for a given sensor in ``disdrodb.l0.readers.{sensor_name}``."""
+    # Retrieve path to directory with sensor readers
+    reader_dir = get_readers_directory(sensor_name)
+    # List readers
+    readers_paths = list_files(reader_dir, glob_pattern="*.py", recursive=True)
+    return readers_paths
 
 
-def _get_readers_data_sources_path() -> list:
-    """Returns the list of readers data sources directory paths within ``disdrodb.l0.readers``."""
-    # Readers directory path
-    reader_dir = _get_readers_directory()
-
-    # List of readers directory
-    list_data_sources = [f.path for f in os.scandir(reader_dir) if f.is_dir()]
-    return list_data_sources
-
-
-def _get_readers_paths_by_data_source(data_source):
-    """Return the filepath list of available readers for a specific data source.
-
-    This function does not check the ``data_source`` validity.
-    """
-    # Retrieve reader data source directory
-    reader_dir = _get_readers_directory()
-    reader_data_source_path = os.path.join(reader_dir, data_source)
-    if not os.path.isdir(reader_data_source_path):
-        raise ValueError(f"No {data_source} directory in disdrodb.l0.readers")
-    # Retrieve list of available readers paths
-    list_readers_paths = [f.path for f in os.scandir(reader_data_source_path) if f.is_file() and f.path.endswith(".py")]
-    return list_readers_paths
+def list_readers_references(sensor_name):
+    """Returns the readers references available for a given sensor in ``disdrodb.l0.readers.{sensor_name}``."""
+    # Retrieve path to directory with sensor readers
+    reader_dir = get_readers_directory(sensor_name)
+    # List readers paths
+    readers_paths = list_readers_paths(sensor_name)
+    # Derive readers references
+    readers_references = [path.replace(reader_dir, "").lstrip(os.path.sep).rstrip(".py") for path in readers_paths]
+    return readers_references
 
 
-def _get_readers_names_by_data_source(data_source):
-    """Return the reader available for a given ``data_source``.
-
-    This function does not check the ``data_source`` validity.
-    """
-    # Retrieve reader data source directory
-    list_readers_paths = _get_readers_paths_by_data_source(data_source)
-    list_readers_names = [os.path.basename(path).replace(".py", "") for path in list_readers_paths]
-    return list_readers_names
-
-
-####--------------------------------------------------------------------------.
-
-
-def _check_reader_data_source(reader_data_source: str) -> str:
-    """Check if the provided data source exists within the available readers.
-
-    Please run ``_get_available_readers_dict()`` to get the list of all available reader.
-
-    Parameters
-    ----------
-    reader_data_source : str
-        The directory within which the ``reader_name`` is located in the
-        ``disdrodb.l0.readers`` directory.
-
-    Returns
-    -------
-    str
-        If data source is valid, return the correct reader data source name.
-
-    Raises
-    ------
-    ValueError
-        Error if the data source name provided is not a directory within the ``disdrodb.l0.readers`` directory.
-    """
-    # List available readers data sources
-    available_reader_data_sources = _get_readers_data_sources()
-    # If not valid data_source, raise error
-    if reader_data_source not in available_reader_data_sources:
-        msg = f"Reader data source {reader_data_source} is not a directory inside the disdrodb.l0.readers directory."
-        logger.error(msg)
-        raise ValueError(msg)
-    return reader_data_source
-
-
-def _check_reader_exists(reader_data_source: str, reader_name: str) -> str:
-    """Check if the provided data source exists and reader names exists within the available readers.
-
-    Please run ``_get_available_readers_dict()`` to get the list of all available reader.
-
-    Parameters
-    ----------
-    reader_data_source : str
-        The directory within which the ``reader_name`` is located in the
-        ``disdrodb.l0.readers`` directory.
-    reader_name : str
-        Campaign name
-
-    Returns
-    -------
-    str
-        If the reader exists, returns the ``reader_name``.
-        If the reader does not exist, it raises a ValueError.
-
-    Raises
-    ------
-    ValueError
-        Error if the reader name provided for the campaign has not been found.
-    """
-    # Check valid data_source
-    reader_data_source = _check_reader_data_source(reader_data_source)
-    # Get available reader names
-    list_readers_names = _get_readers_names_by_data_source(reader_data_source)
-    # If not valid reader_name, raise error
-    if reader_name not in list_readers_names:
-        msg = f"Reader {reader_name} is not valid. Valid readers {list_readers_names}."
-        logger.exception(msg)
-        raise ValueError(msg)
-    return reader_name
-
-
-def _get_available_readers_dict() -> dict:
-    """Returns the readers description included into the current release of DISDRODB.
-
-    Returns
-    -------
-    dict
-        The dictionary has the following schema ``{"data_source": {"reader_name": "reader_filepath"}}``.
-    """
-    # Format:
-    # {data_source: {reader_name: reader_path,
-    #                reader_name1: reader_path1}
-    # }
-    # Get list of reader data sources
-    list_reader_data_sources = _get_readers_data_sources()
-
-    # Build dictionary
-    dict_reader = {}
-    for data_source in list_reader_data_sources:
-        # Retrieve the filepath of the available readers
-        list_readers_paths = _get_readers_paths_by_data_source(data_source)
-        # Initialize the data_source dictionary
-        dict_reader[data_source] = {}
-        for reader_path in list_readers_paths:
-            reader_name = os.path.basename(reader_path).replace(".py", "")
-            dict_reader[data_source][reader_name] = reader_path
-    # Return available dictionary
-    return dict_reader
-
-
-def available_readers(data_sources=None, reader_path=False):
-    """Retrieve available readers information."""
-    # Get available readers dictionary
-    dict_readers = _get_available_readers_dict()
-    # If data sources is not None, subset the dictionary
-    if data_sources is not None:
-        # Check valid data sources
-        if isinstance(data_sources, str):
-            data_sources = [data_sources]
-        data_sources = [_check_reader_data_source(data_source) for data_source in data_sources]
-        # Create new dictionary
-        dict_readers = {data_source: dict_readers[data_source] for data_source in data_sources}
-    # If reader_path=False, provide {data_source: [list_reader_names]}
-    if not reader_path:
-        dict_readers = {data_source: list(dict_readers.keys()) for data_source, dict_readers in dict_readers.items()}
-    return dict_readers
-
-
-####--------------------------------------------------------------------------.
-
-
-def get_reader_function(reader_data_source: str, reader_name: str) -> object:
-    """Returns the reader function based on input parameters.
-
-    Parameters
-    ----------
-    reader_data_source : str
-        The directory within which the ``reader_name`` is located in the
-        ``disdrodb.l0.readers directory``.
-    reader_name : str
-        The reader name.
-
-    Returns
-    -------
-    object
-        The ``reader()`` function
-
-    """
-    # Check data source and reader_name validity
-    reader_data_source = _check_reader_data_source(reader_data_source)
-    reader_name = _check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
-    # Retrieve reader function
-    if reader_name:
-        full_name = f"disdrodb.l0.readers.{reader_data_source}.{reader_name}.reader"
-        module_name, unit_name = full_name.rsplit(".", 1)
-        my_reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
-
-    return my_reader
-
-
-####--------------------------------------------------------------------------.
-#### Checks for reader args
-
-
-def _get_expected_reader_arguments():
-    """Return a list with the expected reader arguments."""
-    expected_arguments = [
-        "raw_dir",
-        "processed_dir",
-        "station_name",
-        "force",
-        "verbose",
-        "parallel",
-        "debugging_mode",
-        "metadata_dir",  # TODO: HACK for refactor
+def get_specific_readers_references(sensor_name):
+    """Returns a dictionary with the readers references available for each data source."""
+    # List reader references
+    readers_references = list_readers_references(sensor_name)
+    # Group reader by data source
+    # - Discard generic readers references
+    specific_reader_references = [
+        reader_reference.split("/") for reader_reference in readers_references if len(reader_reference.split("/")) == 2
     ]
-    return expected_arguments
+    data_sources_readers_dict = defaultdict(list)
+    for data_source, reader_name in specific_reader_references:
+        data_sources_readers_dict[data_source].append(f"{data_source}/{reader_name}")
+    data_sources_readers_dict = dict(data_sources_readers_dict)
+    return data_sources_readers_dict
 
 
-def _check_reader_arguments(reader):
-    """Check the reader have the expected input arguments."""
+def get_specific_readers_path(sensor_name):
+    """Returns a dictionary with the file paths of the available readers for each data source."""
+    data_sources_readers_dict = get_specific_readers_references(sensor_name)
+    data_sources_readers_dict = {
+        data_source: [
+            define_reader_path(sensor_name=sensor_name, reader_reference=reader_reference)
+            for reader_reference in readers_references
+        ]
+        for data_source, readers_references in data_sources_readers_dict.items()
+    }
+    return data_sources_readers_dict
+
+
+def available_readers(sensor_name, data_sources=None, return_path=False):
+    """Retrieve available readers information."""
+    check_sensor_name(sensor_name)
+    # Return all available readers for a specific sensor_name
+    if data_sources is None and not return_path:
+        return list_readers_references(sensor_name)
+    if data_sources is None and return_path:
+        return list_readers_paths(sensor_name)
+    # Return all available readers for a specific sensor_name and set of data sources
+    data_sources = check_data_sources(data_sources)
+    if return_path:
+        dict_readers_paths = get_specific_readers_path(sensor_name)
+        dict_readers_paths = {data_source: dict_readers_paths[data_source] for data_source in data_sources}
+        return flatten_list(list(dict_readers_paths.values()))
+    # Return dictionary of paths otherwise
+    dict_readers_references = get_specific_readers_references(sensor_name)
+    dict_readers_references = {data_source: dict_readers_references[data_source] for data_source in data_sources}
+    return flatten_list(list(dict_readers_references.values()))
+
+
+####--------------------------------------------------------------------------.
+#### Reader Function Checks
+
+
+def check_reader_reference(reader_reference):
+    """Check the reader_reference value."""
+    if isinstance(reader_reference, type(None)):
+        raise TypeError("`reader_reference` is None. Specify the reader reference name !")
+    if not isinstance(reader_reference, str):
+        raise TypeError(f"`reader_reference` must be a string. Got type {type(reader_reference)}.")
+    if reader_reference == "":
+        raise ValueError("`reader_reference` is an empty string. Specify the reader reference name !")
+    if len(reader_reference.split("/")) > 2:
+        raise ValueError("`reader_reference` expects to be composed by maximum one `/` (<DATA_SOURCE>/<CUSTOM_NAME>).")
+    return reader_reference
+
+
+def check_reader_exists(reader_reference, sensor_name):
+    """Check the reader exists."""
+    valid_readers_references = available_readers(sensor_name)
+    if reader_reference not in valid_readers_references:
+        msg = (
+            f"{sensor_name} reader '{reader_reference}' does not exists. Valid readers are {valid_readers_references}."
+        )
+        raise ValueError(msg)
+
+
+def check_reader_arguments(reader):
+    """Check the reader function have the expected input arguments."""
+    expected_arguments = ["filepath", "logger"]
     signature = inspect.signature(reader)
     reader_arguments = sorted(signature.parameters.keys())
-    expected_arguments = sorted(_get_expected_reader_arguments())
     if reader_arguments != expected_arguments:
         raise ValueError(f"The reader must be defined with the following arguments: {expected_arguments}")
+    # Verify 'logger' default
+    logger_param = signature.parameters.get("logger")
+    if logger_param.default is inspect._empty:
+        raise ValueError(
+            "The 'logger' argument must have a default value (None).",
+        )
+    if logger_param.default is not None:
+        raise ValueError(
+            f"The default value for 'logger' must be None, got {logger_param.default!r}.",
+        )
+
+
+def check_metadata_reader(metadata):
+    """Check the metadata ``reader`` key is available and points to an existing disdrodb reader."""
+    data_source = metadata.get("data_source", "")
+    campaign_name = metadata.get("campaign_name", "")
+    station_name = metadata.get("station_name", "")
+    # Check the reader is specified
+    if "reader" not in metadata:
+        raise ValueError(
+            "The `reader` key is not specified in the metadata of the"
+            f" {data_source} {campaign_name} {station_name} station.",
+        )
+    if "sensor_name" not in metadata:
+        raise ValueError(
+            "The `sensor_name` is not specified in the metadata of the"
+            f" {data_source} {campaign_name} {station_name} station.",
+        )
+    # If the reader name is specified, test it is valid.
+    # --> Reader location: disdrodb.l0.readers.{sensor_name}.{reader_reference}
+    # --> reader_reference typically defined as "{DATA_SOURCE}"/"{CAMPAIGN_NAME}_{OPTIONAL_SUFFIX}"
+    reader_reference = metadata["reader"]
+    sensor_name = metadata["sensor_name"]
+    _ = get_reader(reader_reference, sensor_name=sensor_name)
+
+
+def check_software_readers():
+    """Check the validity of all readers included in disdrodb software ."""
+    import disdrodb
+
+    sensors_names = disdrodb.available_sensor_names()
+    for sensor_name in sensors_names:
+        readers_references = available_readers(sensor_name=sensor_name, return_path=False)
+        for reader_reference in readers_references:
+            try:
+                _ = get_reader(reader_reference=reader_reference, sensor_name=sensor_name)
+            except Exception as e:
+                raise ValueError(f"Invalid {sensor_name} {reader_reference}.py reader: {e}")
 
 
 ####--------------------------------------------------------------------------.
-#### Checks for metadata reader key
+#### Reader Retrieval
 
 
-def _check_metadata_reader(metadata):
-    """Check the ``reader`` key is available and points to an existing disdrodb reader."""
-    # Check the reader is specified
-    if "reader" not in metadata:
-        raise ValueError("The reader is not specified in the metadata.")
-    # If the reader name is specified, test it is valid.
-    # - Convention: reader: "<DATA_SOURCE>/<READER_NAME>" in disdrodb.l0.readers
-    reader_reference = metadata.get("reader")
-    # - Check it contains /
-    if "/" not in reader_reference:
-        raise ValueError(
-            f"The reader '{reader_reference}' reported in the metadata is not valid. Must have"
-            " '<DATA_SOURCE>/<READER_NAME>' pattern.",
-        )
-    # - Get the reader_reference component list
-    reader_components = reader_reference.split("/")
-    # - Check composed by two elements
-    if len(reader_components) != 2:
-        raise ValueError("Expecting the reader reference to be composed of <DATA_SOURCE>/<READER_NAME>.")
-    # - Retrieve reader data source and reader name
-    reader_data_source = reader_components[0]
-    reader_name = reader_components[1]
+def get_reader(reader_reference, sensor_name):
+    """Retrieve the reader function.
 
-    # - Check the reader is available
-    _check_reader_exists(reader_data_source=reader_data_source, reader_name=reader_name)
+    Parameters
+    ----------
+    reader_reference : str
+        The reader reference name.
+        The reader is located at ``disdrodb.l0.readers.{sensor_name}.{reader_reference}``.
+        The reader_reference naming convention is ``"{DATA_SOURCE}"/"{CAMPAIGN_NAME}_{OPTIONAL_SUFFIX}"``.
+    sensor_name : str
+        The sensor name.
 
+    Returns
+    -------
+    callable
+        The ``reader()`` function.
 
-def get_reader_function_from_metadata_key(reader_data_source_name):
-    """Retrieve the reader function from the ``reader`` metadata value.
-
-    The convention for metadata reader key: ``<data_source/reader_name>`` in ``disdrodb.l0.readers``.
     """
-    reader_data_source = reader_data_source_name.split("/")[0]
-    reader_name = reader_data_source_name.split("/")[1]
-    reader = get_reader_function(reader_data_source=reader_data_source, reader_name=reader_name)
+    # Check reader reference value
+    reader_reference = check_reader_reference(reader_reference)
+
+    # Check reader exists
+    check_reader_exists(reader_reference=reader_reference, sensor_name=sensor_name)
+
+    # Replace "/" with "." to define reader reference path
+    reader_reference = reader_reference.replace("/", ".")
+
+    # Import reader function
+    # --> This will not raise error if check_reader_exists pass !
+    full_name = f"disdrodb.l0.readers.{sensor_name}.{reader_reference}.reader"
+    module_name, unit_name = full_name.rsplit(".", 1)
+    reader = getattr(__import__(module_name, fromlist=[""]), unit_name)
+
+    # Check reader function validity
+    check_reader_arguments(reader)
+
+    # Return readere function
     return reader
 
 
-def _get_reader_from_metadata(metadata):
-    """Retrieve the reader function from the metadata key ``reader``.
-
-    The convention for metadata reader key: ``<data_source/reader_name>`` in ``disdrodb.l0.readers``.
-    """
-    reader_data_source_name = metadata.get("reader")
-    return get_reader_function_from_metadata_key(reader_data_source_name)
-
-
-def get_station_reader_function(data_source, campaign_name, station_name, metadata_dir=None):
-    """Retrieve the reader function from the station metadata."""
+def get_station_reader(data_source, campaign_name, station_name, metadata_dir=None):
+    """Retrieve the reader function of a specific DISDRODB station."""
     from disdrodb.metadata import read_station_metadata
 
     # Get metadata
@@ -324,31 +258,34 @@ def get_station_reader_function(data_source, campaign_name, station_name, metada
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    # ------------------------------------------------------------------------.
-    # Check reader key is within the dictionary
-    if "reader" not in metadata:
-        raise ValueError(
-            "The `reader` key is not available in the metadata of the"
-            f" {data_source} {campaign_name} {station_name} station.",
-        )
 
-    # ------------------------------------------------------------------------.
-    # Check reader name validity
-    _check_metadata_reader(metadata)
+    # Retrieve reader function using metadata information
+    reader = get_reader_from_metadata(metadata)
 
-    # ------------------------------------------------------------------------.
-    # Retrieve reader
-    reader = _get_reader_from_metadata(metadata)
+    # Return the reader function
+    return reader
 
-    # ------------------------------------------------------------------------.
-    # Check reader argument
-    _check_reader_arguments(reader)
 
+def get_reader_from_metadata(metadata):
+    """Retrieve the reader function based on the metadata information.
+
+    The reader_reference naming convention is ``"{DATA_SOURCE}"/"{CAMPAIGN_NAME}_{OPTIONAL_SUFFIX}"``.
+    The reader is located at ``disdrodb.l0.readers.{sensor_name}.{reader_reference}``.
+    """
+    # Check validity of metadata reader key
+    check_metadata_reader(metadata)
+
+    # Extract reader information from metadata
+    reader_reference = metadata.get("reader")
+    sensor_name = metadata.get("sensor_name")
+
+    # Retrieve reader function
+    reader = get_reader(reader_reference=reader_reference, sensor_name=sensor_name)
     return reader
 
 
 ####--------------------------------------------------------------------------.
-#### Readers Docs
+#### Readers Docstring
 
 
 def is_documented_by(original):
@@ -368,72 +305,16 @@ def is_documented_by(original):
 
 
 def reader_generic_docstring():
-    """Script to convert the raw data to L0A format.
+    """Reader to convert a raw data file to DISDRODB L0A or L0B format.
+
+    Raw text files are read and converted to a ``pandas.DataFrame`` (L0A format).
+    Raw netCDF files are read and converted to a ``xarray.Dataset`` (L0B format).
 
     Parameters
     ----------
-    raw_dir : str
-        The directory path where all the raw content of a specific campaign is stored.
-        The path must have the following structure ``<...>/DISDRODB/Raw/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
-        Inside the ``raw_dir`` directory, it is required to adopt the following structure::
-
-            - ``/data/<station_name>/<raw_files>``
-            - ``/metadata/<station_name>.yml``
-
-        **Important points:**
-
-        - For each ``<station_name>``, there must be a corresponding YAML file in the metadata subdirectory.
-        - The ``<CAMPAIGN_NAME>`` are expected to be UPPER CASE.
-        - The ``<CAMPAIGN_NAME>`` must semantically match between:
-
-            - the ``raw_dir`` and ``processed_dir`` directory paths;
-            - with the key ``campaign_name`` within the metadata YAML files.
-
-    processed_dir : str
-        The desired directory path for the processed DISDRODB L0A and L0B products.
-        The path should have the following structure ``<...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>``
-        For testing purposes, this function exceptionally accepts also a directory path simply ending
-        with ``<CAMPAIGN_NAME>`` (e.g., ``/tmp/<CAMPAIGN_NAME>``).
-
-    station_name : str
-        The name of the station.
-
-    force : bool, optional
-        If ``True``, overwrite existing data in destination directories.
-        If ``False``, raise an error if data already exists in destination directories.
-        Default is ``False``.
-
-    verbose : bool, optional
-        If ``True``, print detailed processing information to the terminal.
-        Default is ``True``.
-
-    parallel : bool, optional
-        If ``True``, process the files simultaneously in multiple processes.
-        The number of simultaneous processes can be customized using the ``dask.distributed.LocalCluster``.
-        If ``False``, process the files sequentially in a single process.
-        Default is ``False``.
-
-    debugging_mode : bool, optional
-        If ``True``, reduce the amount of data to process.
-        Only the first 3 raw data files will be processed.
-        Default is ``False``.
+    filepath : str
+        Filepath of the raw data file to be processed.
+    logger: logging.Logger, optional
+        Logger to use for logging messages.
+        Default is ``None``, which means no logger is used.
     """
-
-
-####--------------------------------------------------------------------------.
-#### Check DISDRODB readers
-
-
-def check_available_readers():
-    """Check the readers arguments of all package."""
-    dict_all_readers = available_readers(data_sources=None, reader_path=False)
-    for reader_data_source, list_reader_name in dict_all_readers.items():
-        for reader_name in list_reader_name:
-            try:
-                reader = get_reader_function(reader_data_source=reader_data_source, reader_name=reader_name)
-                _check_reader_arguments(reader)
-            except Exception as e:
-                raise ValueError(f"Invalid reader for {reader_data_source}/{reader_name}.py. The error is {e}")
-
-
-####--------------------------------------------------------------------------.

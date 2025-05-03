@@ -117,7 +117,7 @@ def test_check_raw_fields_available():
         _check_raw_fields_available(df, sensor_name)
 
     # Test case 2: All required columns present
-    sensor_names = available_sensor_names(product="L0A")
+    sensor_names = available_sensor_names()
     for sensor_name in sensor_names:
         n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
         raw_vars = np.array(list(n_bins_dict.keys()))
@@ -127,7 +127,7 @@ def test_check_raw_fields_available():
 
 
 def test_check_l0a_column_names(capsys):
-    sensor_names = available_sensor_names(product="L0A")
+    sensor_names = available_sensor_names()
     sensor_name = sensor_names[0]
 
     # Test 1 : All columns are present

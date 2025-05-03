@@ -17,8 +17,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Check DISDRODB Metadata Archive files."""
-
-
 import pytest
 
 from disdrodb.api.configs import available_sensor_names
@@ -212,7 +210,7 @@ def test_check_archive_metadata_data_source(tmp_path):
     assert not is_valid
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test_check_archive_metadata_sensor_name(tmp_path, sensor_name):
     metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
@@ -268,28 +266,28 @@ def test_check_archive_metadata_station_name(tmp_path):
     assert not is_valid
 
 
-def test_check_archive_metadata_reader(tmp_path):
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
+def test_check_archive_metadata_reader(tmp_path, sensor_name):
     metadata_dir = tmp_path / "metadata" / "DISDRODB"
 
-    list_readers = available_readers()
+    list_readers = available_readers(sensor_name)
 
     # Test 1 : Correct reader metadata key
-    data_source = next(iter(list_readers.keys()))
-    reader_name = list_readers[data_source][0]
-    metadata_dict = {"reader": f"{data_source}/{reader_name}"}
-    _ = create_fake_metadata_file(metadata_dir=metadata_dir, metadata_dict=metadata_dict, data_source=data_source)
+    reader_reference = list_readers[0]
+    metadata_dict = {"reader": f"{reader_reference}", "sensor_name": sensor_name}
+    _ = create_fake_metadata_file(metadata_dir=metadata_dir, metadata_dict=metadata_dict)
     is_valid = check_archive_metadata_reader(metadata_dir)
     assert is_valid
 
     # Test 2 : Wrong reader metadata key
-    metadata_dict = {"reader": ""}
-    _ = create_fake_metadata_file(metadata_dir=metadata_dir, metadata_dict=metadata_dict, data_source=data_source)
+    metadata_dict = {"reader": "", "sensor_name": sensor_name}
+    _ = create_fake_metadata_file(metadata_dir=metadata_dir, metadata_dict=metadata_dict)
     is_valid = check_archive_metadata_reader(metadata_dir)
     assert not is_valid
 
     # Test 3 : Wrong reader metadata key
-    metadata_dict = {"reader": "dummy/dummy"}
-    _ = create_fake_metadata_file(metadata_dir=metadata_dir, metadata_dict=metadata_dict, data_source=data_source)
+    metadata_dict = {"reader": "dummy/dummy", "sensor_name": sensor_name}
+    _ = create_fake_metadata_file(metadata_dir=metadata_dir, metadata_dict=metadata_dict)
     is_valid = check_archive_metadata_reader(metadata_dir)
     assert not is_valid
 

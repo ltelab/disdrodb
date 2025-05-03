@@ -61,6 +61,15 @@ def find_files(
         The name of the station.
     product : str
         The name DISDRODB product.
+    debugging_mode : bool, optional
+        If ``True``, it select maximum 3 files for debugging purposes.
+        The default is ``False``.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+
+    Other Parameters
+    ----------------
     sample_interval : int, optional
         The sampling interval in seconds of the product.
         It must be specified only for product L2E and L2M !
@@ -70,12 +79,6 @@ def find_files(
     model_name : str
         The model name of the statistical distribution for the DSD.
         It must be specified only for product L2M !
-    debugging_mode : bool, optional
-        If ``True``, it select maximum 3 files for debugging purposes.
-        The default is ``False``.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------

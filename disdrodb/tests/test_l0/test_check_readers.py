@@ -49,8 +49,10 @@ def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
     ds2 = xr.open_dataset(file2, decode_timedelta=False)
 
     # Remove attributes that depends on processing time
-    attrs_to_remove = ["disdrodb_processing_date", "disdrodb_software_version"]
-    for key in attrs_to_remove:
+    attrs_varying = ["disdrodb_processing_date", "disdrodb_software_version"]
+    attrs_added_recently = ["raw_data_glob_pattern"]
+    attr_to_remove = attrs_varying + attrs_added_recently
+    for key in attr_to_remove:
         ds1.attrs.pop(key, None)
         ds2.attrs.pop(key, None)
 

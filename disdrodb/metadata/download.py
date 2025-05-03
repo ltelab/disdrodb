@@ -29,7 +29,7 @@ def download_metadata_archive(root_dir):
     It returns the DISDRODB Metadata Archive directory.
     """
     # Define DISDRODB Metadata Archive GitHub URL
-    archive_zip_url = "https://github.com/ltelab/disdrodb-data/archive/refs/heads/main.zip"
+    archive_zip_url = "https://github.com/ltelab/DISDRODB-METADATA/archive/refs/heads/main.zip"
 
     # Download archive to disk
     resp = urllib.request.urlopen(archive_zip_url)
@@ -39,10 +39,10 @@ def download_metadata_archive(root_dir):
     with zipfile.ZipFile(io.BytesIO(archive_data)) as zf:
         zf.extractall(root_dir)
 
-    # Check "disdrodb-data-main" directory has been download
-    if os.listdir(root_dir) != ["disdrodb-data-main"]:
+    # Check "DISDRODB-METADATA-main" directory has been download
+    if os.listdir(root_dir) != ["DISDRODB-METADATA-main"]:
         raise ValueError("The DISDRODB Metadata Archive hosted on Github could not been download !")
 
     # Define metadata directory
-    metadata_dir = str(os.path.join(root_dir, "disdrodb-data-main", "DISDRODB"))
+    metadata_dir = str(os.path.join(root_dir, "DISDRODB-METADATA-main", "DISDRODB"))
     return metadata_dir

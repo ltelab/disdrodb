@@ -4,7 +4,7 @@
 DISDRODB Metadata Archive
 ==========================
 
-The `DISDRODB metadata repository <https://github.com/ltelab/disdrodb-data>`__ is hosted on GitHub and serves as a central hub for tracking available stations,
+The `DISDRODB metadata repository <https://github.com/ltelab/DISDRODB-METADATA>`__ is hosted on GitHub and serves as a central hub for tracking available stations,
 the potential malfunctioning of the sensors, and to list the URLs of the remote data repositories where the raw disdrometer data are stored.
 The GitHub platform facilitates community collaboration to continuously enhance station metadata using best open-source practices.
 This approach also enables recursive data quality improvements, while keeping the DISDRODB product chain transparent and fully reproducible.
@@ -22,12 +22,12 @@ Fork and download the DISDRODB Metadata Archive
 
 If you plan to add new data to the DISDRODB Decentralized Data Archive or you want to just update
 some station metadata/issues information, go to the
-`DISDRODB metadata repository <https://github.com/ltelab/disdrodb-data>`__,
+`DISDRODB metadata repository <https://github.com/ltelab/DISDRODB-METADATA>`__,
 fork the repository on your GitHub account and then clone the forked repository:
 
 .. code:: bash
 
-   git clone https://github.com/<your_username>/disdrodb-data.git
+   git clone https://github.com/<your_username>/DISDRODB-METADATA.git
 
 
 Update the DISDRODB Metadata Archive
@@ -35,7 +35,7 @@ Update the DISDRODB Metadata Archive
 
 To update the DISDRODB Metadata Archive follow these steps:
 
-1. Go inside the ``disdrodb-data`` directory where you have cloned the repository:
+1. Go inside the ``DISDRODB-METADATA`` directory where you have cloned the repository:
 
 2. Create a new branch.
 
@@ -54,7 +54,7 @@ To update the DISDRODB Metadata Archive follow these steps:
 
    .. code:: bash
 
-      export DISDRODB_BASE_DIR="<path_to>/disdrodb-data/DISDRODB"
+      export DISDRODB_BASE_DIR="<path_to_local_data_archive>/DISDRODB"
       disdrodb_check_metadata_archive
 
    .. note::
@@ -68,8 +68,8 @@ To update the DISDRODB Metadata Archive follow these steps:
       git commit -m "Add/update metadata for <data_source> <campaign_name>"
       git push origin <branch_name>
 
-6. Go to the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/disdrodb-data>`__, open the Pull Request and wait for a maintainer to accept it!
+6. Go to the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/DISDRODB-METADATA>`__, open the Pull Request and wait for a maintainer to accept it!
    For more information on GitHub Pull Requests, read the
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
-7.  If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/disdrodb-data/issues/new/choose>`__ so we can help!
+7.  If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/DISDRODB-METADATA/issues/new/choose>`__ so we can help!

@@ -108,7 +108,7 @@ def check_metadata_dir(metadata_dir: str):
     return metadata_dir
 
 
-def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
+def check_sensor_name(sensor_name: str) -> None:
     """Check sensor name.
 
     Parameters
@@ -127,11 +127,11 @@ def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
     """
     from disdrodb.api.configs import available_sensor_names
 
-    sensor_names = available_sensor_names(product=product)
+    sensor_names = available_sensor_names()
     if not isinstance(sensor_name, str):
         raise TypeError("'sensor_name' must be a string.")
     if sensor_name not in sensor_names:
-        msg = f"{sensor_name} not valid {sensor_name}. Valid values are {sensor_names}."
+        msg = f"'{sensor_name}' is not a valid sensor_name. Valid values are {sensor_names}."
         raise ValueError(msg)
 
 

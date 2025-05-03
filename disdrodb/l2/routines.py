@@ -52,6 +52,7 @@ from disdrodb.l2.processing import (
 from disdrodb.l2.processing_options import get_l2_processing_options
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
+from disdrodb.utils.list import flatten_list
 
 # Logger
 from disdrodb.utils.logger import (
@@ -111,7 +112,7 @@ def _generate_l2e(
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"{product} processing of {filename} has started."
-    log_info(logger, msg, verbose=verbose)
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     ### Core computation
@@ -199,7 +200,7 @@ def _generate_l2e(
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
-        log_info(logger, msg, verbose=verbose)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -225,16 +226,6 @@ def is_possible_product(accumulation_interval, sample_interval, rolling):
         return False
     # Avoid producti generation if accumulation_interval is not multiple of sample_interval
     return accumulation_interval % sample_interval == 0
-
-
-def flatten_list(nested_list):
-    """Flatten a nested list into a single-level list."""
-    if isinstance(nested_list, list) and len(nested_list) == 0:
-        return nested_list
-    # If list is already flat, return as is to avoid flattening to chars
-    if isinstance(nested_list, list) and not isinstance(nested_list[0], list):
-        return nested_list
-    return [item for sublist in nested_list for item in sublist] if isinstance(nested_list, list) else [nested_list]
 
 
 def run_l2e_station(
@@ -557,7 +548,7 @@ def _generate_l2m(
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"{product} processing of {filename} has started."
-    log_info(logger, msg, verbose=verbose)
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     ### Core computation
@@ -615,7 +606,7 @@ def _generate_l2m(
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
-        log_info(logger, msg, verbose=verbose)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error

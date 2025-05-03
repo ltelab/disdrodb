@@ -22,8 +22,6 @@ import logging
 import numpy as np
 import pandas as pd
 
-from disdrodb.utils.logger import log_error
-
 logger = logging.getLogger(__name__)
 
 
@@ -75,7 +73,6 @@ def _check_timestep_datetime_accuracy(timesteps, unit="s"):
     """
     if timesteps.dtype != f"<M8[{unit}]":
         msg = f"The timesteps does not have datetime64 {unit} accuracy."
-        log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return timesteps
 
@@ -92,7 +89,6 @@ def _check_timestep_string_second_accuracy(timesteps):
             f"The following timesteps are mispecified: {mispecified_timesteps}. Expecting the YYYY-mm-dd HH:MM:SS"
             " format."
         )
-        log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return timesteps
 
@@ -114,7 +110,6 @@ def _check_timesteps_string(timesteps):
             f"The following timesteps are mispecified: {mispecified_timesteps}. Expecting the YYYY-mm-dd HH:MM:SS"
             " format."
         )
-        log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
     # Convert to numpy
     new_timesteps = new_timesteps.to_numpy()
@@ -148,13 +143,11 @@ def _check_time_period_nested_list_format(time_periods):
     """Check that the time_periods is a list of list of length 2."""
     if not isinstance(time_periods, list):
         msg = "'time_periods' must be a list'"
-        log_error(logger, msg=msg, verbose=False)
         raise TypeError(msg)
 
     for time_period in time_periods:
         if not isinstance(time_period, (list, np.ndarray)) or len(time_period) != 2:
             msg = "Every time period of time_periods must be a list of length 2."
-            log_error(logger, msg=msg, verbose=False)
             raise ValueError(msg)
 
 
@@ -174,7 +167,6 @@ def check_time_periods(time_periods):
     for time_period in new_time_periods:
         if time_period[0] > time_period[1]:
             msg = f"The {time_period} time_period is invalid. Start time occurs after end time."
-            log_error(logger, msg=msg, verbose=False)
             raise ValueError(msg)
     return new_time_periods
 
@@ -207,7 +199,6 @@ def check_issue_dict(issue_dict):
     invalid_keys = [k for k in keys if k not in valid_keys]
     if len(invalid_keys) > 0:
         msg = f"Invalid {invalid_keys} keys. The issue YAML file accept only {valid_keys}"
-        log_error(logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
     # Check timesteps

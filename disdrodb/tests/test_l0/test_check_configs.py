@@ -34,45 +34,45 @@ from disdrodb.l0.check_configs import (
 )
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test__check_yaml_files_exists(sensor_name):
     _check_yaml_files_exists(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test__check_variable_consistency(sensor_name):
     _check_variable_consistency(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test_check_l0b_encoding(sensor_name):
     check_l0b_encoding(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test_check_l0a_encoding(sensor_name):
     check_l0b_encoding(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test__check_raw_data_format(sensor_name):
     _check_raw_data_format(sensor_name)
 
 
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test__check_cf_attributes(sensor_name):
     _check_cf_attributes(sensor_name)
 
 
 # Test that all instruments config files are valid regarding the bin consistency
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test__check_bin_consistency(sensor_name):
     # Test that no error is raised
     assert _check_bin_consistency(sensor_name) is None
 
 
 # Test that all instruments config files are valid regarding the bin consistency
-@pytest.mark.parametrize("sensor_name", available_sensor_names(product="L0A"))
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
 def test__check_raw_array(sensor_name):
     # Test that no error is raised
     assert _check_raw_array(sensor_name) is None

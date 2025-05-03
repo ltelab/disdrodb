@@ -22,6 +22,7 @@ import logging
 
 import numpy as np
 
+from disdrodb.api.checks import check_sensor_name
 from disdrodb.l0.l0b_processing import finalize_dataset
 from disdrodb.l0.standards import (
     get_bin_coords_dict,
@@ -34,7 +35,6 @@ from disdrodb.l0.standards import (
 from disdrodb.utils.logger import (
     # log_warning,
     # log_debug,
-    log_error,
     log_info,
 )
 
@@ -54,7 +54,6 @@ def _check_dict_names_validity(dict_names, sensor_name):
         # Report invalid keys and raise error
         invalid_dict = {k: dict_names[k] for k in invalid_keys}
         msg = f"The following dict_names values are not valid: {invalid_dict}"
-        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
 
@@ -133,7 +132,7 @@ def add_dataset_missing_variables(ds, missing_vars, sensor_name):
     return ds
 
 
-def preprocess_raw_netcdf(ds, dict_names, sensor_name):
+def standardize_raw_dataset(ds, dict_names, sensor_name):
     """This function preprocess raw netCDF to improve compatibility with DISDRODB standards.
 
     This function checks validity of the ``dict_names``, rename and subset the data accordingly.
@@ -155,6 +154,9 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
         xarray Dataset with variables compliant to DISDRODB conventions.
 
     """
+    # Check if the sensor name is valid
+    check_sensor_name(sensor_name)
+
     # Check variable_dict has valid values
     # - Check valid DISDRODB variables + dimensions + coords
     _check_dict_names_validity(dict_names=dict_names, sensor_name=sensor_name)
@@ -177,7 +179,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     return ds
 
 
-def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
+def replace_custom_nan_flags(ds, dict_nan_flags, logger=None, verbose=False):
     """Set values corresponding to ``nan_flags`` to ``np.nan``.
 
     This function must be used in a reader, if necessary.
@@ -212,7 +214,7 @@ def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
     return ds
 
 
-def replace_nan_flags(ds, sensor_name, verbose):
+def replace_nan_flags(ds, sensor_name, verbose, logger=None):
     """Set values corresponding to ``nan_flags`` to ``np.nan``.
 
     Parameters
@@ -232,11 +234,11 @@ def replace_nan_flags(ds, sensor_name, verbose):
     # Get dictionary of nan flags
     dict_nan_flags = get_nan_flags_dict(sensor_name)
     # Replace nan flags with nan
-    ds = replace_custom_nan_flags(ds, dict_nan_flags, verbose=verbose)
+    ds = replace_custom_nan_flags(ds, dict_nan_flags=dict_nan_flags, logger=logger, verbose=verbose)
     return ds
 
 
-def set_nan_outside_data_range(ds, sensor_name, verbose):
+def set_nan_outside_data_range(ds, sensor_name, verbose, logger=None):
     """Set values outside the data range as ``np.nan``.
 
     Parameters
@@ -274,7 +276,7 @@ def set_nan_outside_data_range(ds, sensor_name, verbose):
     return ds
 
 
-def set_nan_invalid_values(ds, sensor_name, verbose):
+def set_nan_invalid_values(ds, sensor_name, verbose, logger=None):
     """Set invalid (class) values to ``np.nan``.
 
     Parameters
@@ -310,25 +312,20 @@ def set_nan_invalid_values(ds, sensor_name, verbose):
     return ds
 
 
-def create_l0b_from_raw_nc(
+def sanitize_ds(
     ds,
-    dict_names,
-    ds_sanitizer_fun,
     sensor_name,
-    verbose,
-    attrs,
+    metadata,
+    issue_dict=None,  # noqa
+    verbose=False,
+    logger=None,
 ):
     """Convert a raw ``xr.Dataset`` into a DISDRODB L0B netCDF.
 
     Parameters
     ----------
-    ds  : xarray.Dataset
+    ds : xarray.Dataset
         Raw xarray dataset
-    dict_names : dict
-        Dictionary mapping raw netCDF variables/coordinates/dimension names
-        to DISDRODB standards.
-    ds_sanitizer_fun : function
-        Sanitizer function to do ad-hoc processing of the xr.Dataset.
     attrs: dict
         Global metadata to attach as global attributes to the xr.Dataset.
     sensor_name : str
@@ -342,23 +339,60 @@ def create_l0b_from_raw_nc(
     xr.Dataset
         L0B xr.Dataset
     """
-    # Preprocess netcdf
-    ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
-
-    # Apply dataset sanitizer function
-    ds = ds_sanitizer_fun(ds)
-
     # Replace nan flags values with np.nans
-    ds = replace_nan_flags(ds, sensor_name=sensor_name, verbose=verbose)
+    ds = replace_nan_flags(ds, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Set values outside the data range to np.nan
-    ds = set_nan_outside_data_range(ds, sensor_name=sensor_name, verbose=verbose)
+    ds = set_nan_outside_data_range(ds, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Replace invalid values with np.nan
-    ds = set_nan_invalid_values(ds, sensor_name=sensor_name, verbose=verbose)
+    ds = set_nan_invalid_values(ds, sensor_name=sensor_name, logger=logger, verbose=verbose)
+
+    # TODO: subset dataset based on the issue_dict
 
     # Finalize dataset
-    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=attrs)
+    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=metadata)
 
     # Return dataset
+    return ds
+
+
+def open_raw_netcdf_file(
+    filepath,
+    logger=None,
+    engine="netcdf4",
+    cache=False,
+    chunks=None,
+    decode_timedelta=False,
+    **kwargs,
+):
+    """Open a raw netCDF file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the raw netCDF file.
+
+    Returns
+    -------
+    xarray.Dataset
+        Raw netCDF file as an xarray Dataset.
+    """
+    import xarray as xr
+
+    # Note: chunks=None avoid usage of Dask
+
+    # Open the raw netCDF
+    with xr.open_dataset(
+        filepath,
+        decode_timedelta=decode_timedelta,
+        cache=cache,
+        engine=engine,
+        chunks=chunks,
+        **kwargs,
+    ) as data:
+        ds = data.load()
+
+    # Log information
+    log_info(logger=logger, msg=f" - netCDF file {filepath} has been loaded successively into xarray.", verbose=False)
     return ds

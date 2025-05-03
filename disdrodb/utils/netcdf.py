@@ -24,7 +24,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from disdrodb.utils.logger import log_error, log_info, log_warning
+from disdrodb.utils.logger import log_info, log_warning
 
 logger = logging.getLogger(__name__)
 
@@ -407,7 +407,6 @@ def _concatenate_datasets(list_ds, dim="time", verbose=False):
 
     except Exception as e:
         msg = f"Concatenation with xr.concat failed. Error is {e}."
-        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return ds
 

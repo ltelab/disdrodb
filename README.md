@@ -50,14 +50,16 @@ Let's start by travel to the directory where you want to store the DISDRODB Data
 Then clone the DISDRODB Metadata Archive repository with:
 
 ```bash
-git clone https://github.com/ltelab/disdrodb-data.git
+git clone https://github.com/ltelab/DISDRODB-METADATA.git
 ```
 
-This will create a directory called `disdrodb-data`, which is ready to be filled with data from the DISDRODB Decentralized Data Archive.
+This will create a directory called `DISDRODB-METADATA`, which is ready to be filled with data from the DISDRODB Decentralized Data Archive.
 
 But before starting to download some data, we need to specify the location of the DISDRODB Local Archive.
 
 You can specify once forever the default DISDRODB Local Archive directory by running in python:
+
+# TODO: UPDATE DOC
 
 ```python
 import disdrodb
@@ -106,7 +108,7 @@ please read the software documentation available at [https://disdrodb.readthedoc
 ### 🗄️ Explore the DISDRODB Metadata Archive
 
 The DISDRODB Metadata Archive collecting and tracking information of the available DISDRODB stations
-is hosted on GitHub at [https://github.com/ltelab/disdrodb-data](https://github.com/ltelab/disdrodb-data)
+is hosted on GitHub at [https://github.com/ltelab/DISDRODB-METADATA](https://github.com/ltelab/DISDRODB-METADATA)
 
 ## 🛠️ Installation
 

@@ -128,12 +128,12 @@ def _check_metadata_sensor_name(metadata):
     from disdrodb.api.checks import check_sensor_name
 
     sensor_name = metadata["sensor_name"]
-    check_sensor_name(sensor_name=sensor_name)
+    check_sensor_name(sensor_name)
 
 
 def check_metadata_compliance(data_source, campaign_name, station_name, metadata_dir=None):
     """Check DISDRODB metadata compliance."""
-    from disdrodb.l0.l0_reader import _check_metadata_reader
+    from disdrodb.l0.l0_reader import check_metadata_reader
 
     metadata = read_station_metadata(
         data_source=data_source,
@@ -147,7 +147,7 @@ def check_metadata_compliance(data_source, campaign_name, station_name, metadata
     _check_metadata_data_source(metadata, expected_name=data_source)
     _check_metadata_station_name(metadata, expected_name=station_name)
     _check_metadata_sensor_name(metadata)
-    _check_metadata_reader(metadata)
+    check_metadata_reader(metadata)
 
 
 #### --------------------------------------------------------------------------.
@@ -470,7 +470,7 @@ def check_archive_metadata_reader(metadata_dir: Optional[str] = None) -> bool:
     bool
         If the check succeeds, the result is ``True``, otherwise ``False``.
     """
-    from disdrodb.l0.l0_reader import _check_metadata_reader
+    from disdrodb.l0.l0_reader import check_metadata_reader
 
     is_valid = True
     metadata_dir = get_metadata_dir(metadata_dir)
@@ -494,7 +494,7 @@ def check_archive_metadata_reader(metadata_dir: Optional[str] = None) -> bool:
             station_name=station_name,
         )
         try:
-            _check_metadata_reader(metadata)
+            check_metadata_reader(metadata)
         except Exception as e:
             is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")

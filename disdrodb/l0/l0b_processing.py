@@ -48,7 +48,6 @@ from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.logger import (
     # log_warning,
     # log_debug,
-    log_error,
     log_info,
 )
 from disdrodb.utils.time import ensure_sorted_by_time
@@ -192,7 +191,6 @@ def _reshape_raw_spectrum(
         arr = arr.reshape(reshape_dims)
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return arr, dims
 
@@ -200,6 +198,7 @@ def _reshape_raw_spectrum(
 def retrieve_l0b_arrays(
     df: pd.DataFrame,
     sensor_name: str,
+    logger=None,
     verbose: bool = False,
 ) -> dict:
     """Retrieves the L0B data matrix.
@@ -221,7 +220,7 @@ def retrieve_l0b_arrays(
     log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
-    _check_raw_fields_available(df=df, sensor_name=sensor_name)
+    _check_raw_fields_available(df=df, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Retrieve the number of values expected for each array
     n_values_dict = get_raw_array_nvalues(sensor_name=sensor_name)
@@ -361,13 +360,13 @@ def add_dataset_crs_coords(ds):
 #### L0B Raw DataFrame Preprocessing
 
 
-def _define_dataset_variables(df, sensor_name, verbose):
+def _define_dataset_variables(df, sensor_name, logger=None, verbose=False):
     """Define DISDRODB L0B netCDF variables."""
     # Preprocess raw_spectrum, diameter and velocity arrays if available
     raw_fields = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
     if np.any(np.isin(raw_fields, df.columns)):
         # Retrieve dictionary of raw data matrices for xarray Dataset
-        data_vars = retrieve_l0b_arrays(df, sensor_name, verbose=verbose)
+        data_vars = retrieve_l0b_arrays(df, sensor_name=sensor_name, logger=logger, verbose=verbose)
     else:
         raise ValueError("No raw fields available.")
 
@@ -388,6 +387,7 @@ def _define_dataset_variables(df, sensor_name, verbose):
 def create_l0b_from_l0a(
     df: pd.DataFrame,
     attrs: dict,
+    logger=None,
     verbose: bool = False,
 ) -> xr.Dataset:
     """Transform the L0A dataframe to the L0B xr.Dataset.
@@ -420,7 +420,7 @@ def create_l0b_from_l0a(
     sensor_name = attrs["sensor_name"]
 
     # Define Dataset variables and coordinates
-    data_vars = _define_dataset_variables(df, sensor_name=sensor_name, verbose=verbose)
+    data_vars = _define_dataset_variables(df, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Create xarray Dataset
     ds = xr.Dataset(data_vars=data_vars)

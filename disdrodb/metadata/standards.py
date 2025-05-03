@@ -28,7 +28,7 @@ def get_valid_metadata_keys() -> list:
         List of valid metadata keys
     """
     # NOTE: When updating one of these keys, one need to update the yaml in/at:
-    # - the disdrodb-data repository
+    # - the DISDRODB-METADATA repository
     # - disdrodb/data/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/metadata/*.yml
     # - disdrodb/tests/data/check_readers/DISDRODB/Raw/*/*/metadata/10.yml
     # - disdrodb/tests/data/test_dir_structure/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml
@@ -38,7 +38,9 @@ def get_valid_metadata_keys() -> list:
         "campaign_name",
         "station_name",
         "sensor_name",
+        # DISDRODB reader info
         "reader",
+        "raw_data_glob_pattern",
         "raw_data_format",  # 'txt', 'netcdf'
         "platform_type",  # 'fixed', 'mobile'
         ## DISDRODB keys
