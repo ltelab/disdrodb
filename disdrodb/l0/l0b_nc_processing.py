@@ -200,6 +200,8 @@ def replace_custom_nan_flags(ds, dict_nan_flags, logger=None, verbose=False):
     """
     # Loop over the needed variable, and replace nan_flags values with np.nan
     for var, nan_flags in dict_nan_flags.items():
+        # Ensure nan_flags is a list
+        nan_flags = [nan_flags] if not isinstance(nan_flags, list) else nan_flags
         # If the variable is in the dataframe
         if var in ds:
             # Get occurrence of nan_flags

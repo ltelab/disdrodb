@@ -106,7 +106,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
         },
     )
     # Create a sample attrs dictionary
-    attrs = {
+    metadata = {
         "sensor_name": "test",
         "latitude": 46.52130,
         "longitude": 6.56786,
@@ -115,7 +115,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
     }
 
     # Call the function
-    ds = create_l0b_from_l0a(df, attrs)
+    ds = create_l0b_from_l0a(df, metadata=metadata)
 
     # Check the output dataset has the correct variables and dimensions
     expected_variables = [
@@ -147,7 +147,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
     # Assert that raise error if any raw_* columns present
     df_bad = df.drop(columns=["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"])
     with pytest.raises(ValueError):
-        create_l0b_from_l0a(df_bad, attrs)
+        create_l0b_from_l0a(df_bad, metadata=metadata)
 
 
 def test_add_dataset_crs_coords():

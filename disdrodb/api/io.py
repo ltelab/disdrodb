@@ -21,8 +21,6 @@
 import shutil
 from typing import Optional
 
-import xarray as xr
-
 from disdrodb.api.path import define_data_dir
 from disdrodb.utils.directories import list_files
 from disdrodb.utils.logger import (
@@ -171,10 +169,15 @@ def open_dataset(
     xr.Dataset
 
     """
+    import xarray as xr
+
+    from disdrodb.l0.l0a_processing import read_l0a_dataframe
+
     # Check product validity
     if product == "RAW":
         raise ValueError("It's not possible to open the raw data with this function.")
     product_kwargs = product_kwargs if product_kwargs else {}
+
     # List product files
     filepaths = find_files(
         base_dir=base_dir,
@@ -185,10 +188,10 @@ def open_dataset(
         debugging_mode=debugging_mode,
         **product_kwargs,
     )
+
     # Open L0A Parquet files
     if product == "L0A":
-        # TODO: with pandas?
-        raise NotImplementedError
+        return read_l0a_dataframe(filepaths)
 
     # Open DISDRODB netCDF files using xarray
     # - TODO: parallel option and add closers !

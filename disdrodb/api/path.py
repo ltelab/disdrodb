@@ -920,11 +920,11 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     Parameters
     ----------
     ds  : xarray.Dataset
-        L0B xarray Dataset
+        L0B xarray Dataset.
     campaign_name : str
-        Name of the campaign
+        Name of the campaign.
     station_name : str
-        Name of the station
+        Name of the station.
 
     Returns
     -------
@@ -952,11 +952,11 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
     Parameters
     ----------
     ds  : xarray.Dataset
-        L1 xarray Dataset
-    processed_dir : str
-        Path of the processed directory
+        L1 xarray Dataset.
+    campaign_name : str
+        Name of the campaign.
     station_name : str
-        Name of the station
+        Name of the station.
 
     Returns
     -------
@@ -985,8 +985,8 @@ def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interv
     ----------
     ds  : xarray.Dataset
         L1 xarray Dataset
-    processed_dir : str
-        Path of the processed directory
+    campaign_name : str
+        Name of the campaign.
     station_name : str
         Name of the station
 
@@ -1022,8 +1022,8 @@ def define_l2m_filename(
     ----------
     ds  : xarray.Dataset
         L1 xarray Dataset
-    processed_dir : str
-        Path of the processed directory
+    campaign_name : str
+        Name of the campaign.
     station_name : str
         Name of the station
 

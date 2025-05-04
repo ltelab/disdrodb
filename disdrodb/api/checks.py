@@ -24,7 +24,6 @@ import warnings
 
 import numpy as np
 
-from disdrodb.api.info import infer_disdrodb_tree_path_components
 from disdrodb.api.path import (
     define_data_dir,
     define_issue_dir,
@@ -34,7 +33,6 @@ from disdrodb.api.path import (
 from disdrodb.utils.directories import (
     ensure_string_path,
     list_files,
-    remove_path_trailing_slash,
 )
 
 logger = logging.getLogger(__name__)
@@ -332,7 +330,6 @@ def check_data_availability(
         **product_kwargs,
     ):
         msg = f"The {product} station data directory of {data_source} {campaign_name} {station_name} is empty !"
-        logger.error(msg)
         raise ValueError(msg)
 
 
@@ -431,116 +428,3 @@ def check_issue_file(data_source, campaign_name, station_name, metadata_dir=None
         station_name=station_name,
     )
     return issue_filepath
-
-
-def check_is_within_raw_directory(path):
-    """Check the path is within the DISDRODB ``Raw`` directory."""
-    components = infer_disdrodb_tree_path_components(path)
-    if components[1] != "Raw":
-        msg = f"{path} is not within the 'Raw' directory."
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-def check_is_within_processed_directory(path):
-    """Check the path is within the DISDRODB ``Processed`` directory."""
-    components = infer_disdrodb_tree_path_components(path)
-    if components[1] != "Processed":
-        msg = f"{path} is not within the 'Processed' directory."
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-def check_valid_campaign_dir(campaign_dir):
-    """Check the validity of a campaign directory path.
-
-    Used to check validity of ``raw_dir`` and ``processed_dir``.
-
-    The path must be ``/DISDRODB/<Raw/Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
-    """
-    last_component = os.path.basename(campaign_dir)
-    tree_components = infer_disdrodb_tree_path_components(campaign_dir)
-    tree_path = "/".join(tree_components)
-    # Check that is not data_source or 'Raw'/Processed' directory
-    if len(tree_components) < 4:
-        msg = (
-            "Expecting the campaign directory path to comply with the pattern <...>/DISDRODB//<Raw or"
-            " Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>."
-        )
-        msg = msg + f"It only provides {tree_path}"
-        logger.error(msg)
-        raise ValueError(msg)
-    # Check that ends with the campaign_name
-    campaign_name = tree_components[3]
-    if last_component != campaign_name:
-        msg = (
-            "Expecting the campaign directory path to comply with the pattern  <...>/DISDRODB//<Raw or"
-            " Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>."
-        )
-        msg = msg + f"The 'campaign directory path {campaign_dir} does not end with '{campaign_name}'!"
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-def check_raw_dir(raw_dir: str) -> None:
-    """Check input, format and validity of the ``raw_dir`` directory path.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Input raw campaign directory.
-    verbose : bool, optional
-        Whether to verbose the processing.
-        The default is ``False``.
-    """
-    # Ensure valid path format
-    raw_dir = remove_path_trailing_slash(raw_dir)
-
-    # Check raw_dir is an existing directory
-    check_path_is_a_directory(raw_dir, path_name="raw_dir")
-
-    # Check is a valid campaign directory path
-    check_valid_campaign_dir(raw_dir)
-
-    # Check is inside the 'Raw' directory
-    check_is_within_raw_directory(raw_dir)
-
-    # Check there are directories in raw_dir
-    check_directories_inside(raw_dir)
-    return raw_dir
-
-
-def check_processed_dir(processed_dir):
-    """Check input, format and validity of the ``processed_dir`` directory path.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path to the campaign directory in the ``DISDRODB/Processed`` directory tree
-
-    Returns
-    -------
-    str
-        Path of the processed campaign directory
-    """
-    # Check path type
-    processed_dir = ensure_string_path(processed_dir, msg="Provide 'processed_dir' as a string", accepth_pathlib=True)
-
-    # Ensure valid path format
-    processed_dir = remove_path_trailing_slash(processed_dir)
-
-    # Check is a valid campaign directory path
-    # - <...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>
-    check_valid_campaign_dir(processed_dir)
-
-    # Check is inside the 'Processed' directory
-    check_is_within_processed_directory(processed_dir)
-
-    # Retrieve data_source and campaign_name
-    base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(processed_dir)
-
-    # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
-    check_campaign_name(campaign_name)
-    check_data_source(data_source)
-
-    return processed_dir

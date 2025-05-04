@@ -267,7 +267,7 @@ The guidelines for the definition of ``<READER_NAME>`` are:
 The ``<READER_DATA_SOURCE>`` name typically coincides with the station ``<DATA_SOURCE>`` name.
 
 Since you aim to design a new reader, you can start by copy-pasting
-`the reader_template.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/reader_template.py>`_
+`the template_reader_raw_text_data.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py>`_
 python file into the relevant ``disdrodb.l0.reader.<READER_DATA_SOURCE>`` directory and rename it as ``<READER_NAME>.py``.
 
 If the ``<READER_DATA_SOURCE>`` for your reader does not yet exist, create a new directory.

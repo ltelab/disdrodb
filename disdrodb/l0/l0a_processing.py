@@ -19,7 +19,6 @@
 """Functions to process raw text files into DISDRODB L0A Apache Parquet."""
 
 
-import inspect
 import logging
 import os
 from typing import Union
@@ -39,7 +38,7 @@ from disdrodb.utils.directories import create_directory, remove_if_exists
 
 # Logger
 from disdrodb.utils.logger import (
-    log_debug,
+    log_error,
     log_info,
     log_warning,
 )
@@ -54,7 +53,7 @@ pd.set_option("mode.chained_assignment", None)  # Avoid SettingWithCopyWarning
 #### Raw file readers
 
 
-def _preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
+def preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     """Preprocess arguments required to read raw text file into Pandas.
 
     Parameters
@@ -85,6 +84,15 @@ def _preprocess_reader_kwargs(reader_kwargs: dict) -> dict:
     return reader_kwargs
 
 
+def check_matching_column_number(df, column_names):
+    """Check the number of columns in the dataframe matches the length of column names."""
+    n_columns = len(df.columns)
+    n_expected_columns = len(column_names)
+    if n_columns != n_expected_columns:
+        msg = f" - The dataframe has {n_columns} columns, while {n_expected_columns} are expected !."
+        raise ValueError(msg)
+
+
 def read_raw_text_file(
     filepath: str,
     column_names: list,
@@ -101,6 +109,11 @@ def read_raw_text_file(
         Column names.
     reader_kwargs : dict
         Pandas ``pd.read_csv`` arguments.
+    logger : logging.Logger
+        Logger object.
+        The default is ``None``.
+        If ``None``, the logger is created using the module name.
+        If ``logger`` is passed, it will be used to log messages.
 
     Returns
     -------
@@ -108,7 +121,7 @@ def read_raw_text_file(
         Pandas dataframe.
     """
     # Preprocess reader_kwargs
-    reader_kwargs = _preprocess_reader_kwargs(reader_kwargs)
+    reader_kwargs = preprocess_reader_kwargs(reader_kwargs)
 
     # Enforce all raw files columns with dtype = 'object'
     dtype = "object"
@@ -120,11 +133,13 @@ def read_raw_text_file(
         msg = f" - The following file is empty: {filepath}"
         raise ValueError(msg)
 
-    # - Check if file empty
-    _check_not_empty_dataframe(df=df)
+    # Check the dataframe is not empty
+    if len(df.index) == 0:
+        msg = f" - The following file is empty: {filepath}"
+        raise ValueError(msg)
 
     # - Check dataframe column number matches columns_names
-    _check_matching_column_number(df, column_names)
+    check_matching_column_number(df, column_names)
 
     # Return dataframe
     return df
@@ -132,30 +147,6 @@ def read_raw_text_file(
 
 ####---------------------------------------------------------------------------.
 #### L0A checks and homogenization
-
-
-def _check_df_sanitizer_fun(df_sanitizer_fun):
-    """Check that ``df`` is the only argument of ``df_sanitizer_fun``."""
-    if df_sanitizer_fun is None:
-        return
-    if not callable(df_sanitizer_fun):
-        raise ValueError("'df_sanitizer_fun' must be a function.")
-    if not np.all(np.isin(inspect.getfullargspec(df_sanitizer_fun).args, ["df"])):
-        raise ValueError("The `df_sanitizer_fun` must have only `df` as input argument!")
-
-
-def _check_not_empty_dataframe(df):
-    if len(df.index) == 0:
-        msg = " - The file is empty and has been skipped."
-        raise ValueError(msg)
-
-
-def _check_matching_column_number(df, column_names):
-    n_columns = len(df.columns)
-    n_expected_columns = len(column_names)
-    if n_columns != n_expected_columns:
-        msg = f" - The dataframe has {n_columns} columns, while {n_expected_columns} are expected !."
-        raise ValueError(msg)
 
 
 def remove_rows_with_missing_time(df: pd.DataFrame, logger=logger, verbose: bool = False):
@@ -392,7 +383,8 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
     return df
 
 
-def _strip_delimiter(string):
+def strip_delimiter(string):
+    """Remove the first and last delimiter occurrence from a string."""
     if not isinstance(string, str):
         return string
     split_str = infer_split_str(string=string)
@@ -411,12 +403,12 @@ def strip_delimiter_from_raw_arrays(df):
     available_fields = list(df.columns[np.isin(df.columns, possible_fields)])
     # Loop over the fields and strip away the delimiter
     for field in available_fields:
-        df[field] = df[field].apply(_strip_delimiter)
+        df[field] = df[field].apply(strip_delimiter)
     # Return the dataframe
     return df
 
 
-def _is_not_corrupted(string):
+def is_raw_array_string_not_corrupted(string):
     """Check if the raw array is corrupted."""
     if not isinstance(string, str):
         return False
@@ -441,7 +433,7 @@ def remove_corrupted_rows(df):
     # Loop over the fields and remove corrupted ones
     for field in available_fields:
         if len(df) != 0:
-            df = df[df[field].apply(_is_not_corrupted)]
+            df = df[df[field].apply(is_raw_array_string_not_corrupted)]
     # Check if there are rows left
     if len(df) == 0:
         raise ValueError("No remaining rows after data corruption checks.")
@@ -742,25 +734,21 @@ def concatenate_dataframe(list_df: list, logger=None, verbose: bool = False) -> 
         return df
 
     # Log
-    msg = " - Concatenation of dataframes started."
+    msg = "Concatenation of dataframes started."
     log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Concatenate the dataframe
     try:
         df = pd.concat(list_df, axis=0, ignore_index=True)
-
-        # Drop duplicated values
-        df = df.drop_duplicates(subset="time")
-
         # Sort by increasing time
         df = df.sort_values(by="time")
 
     except (AttributeError, TypeError) as e:
-        msg = f" - Can not concatenate the files. \n Error: {e}"
+        msg = f"Can not concatenate the files. \n Error: {e}"
         raise ValueError(msg)
 
     # Log
-    msg = " - Concatenation of dataframes has finished."
+    msg = "Concatenation of dataframes has finished."
     log_info(logger=logger, msg=msg, verbose=verbose)
 
     # Return dataframe
@@ -769,14 +757,14 @@ def concatenate_dataframe(list_df: list, logger=None, verbose: bool = False) -> 
 
 def _read_l0a(filepath: str, verbose: bool = False, logger=None, debugging_mode: bool = False) -> pd.DataFrame:
     # Log
-    msg = f" - Reading L0 Apache Parquet file at {filepath} started."
+    msg = f"Reading L0 Apache Parquet file at {filepath} started."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # Open file
     df = pd.read_parquet(filepath)
     if debugging_mode:
         df = df.iloc[0:100]
     # Log
-    msg = f" - Reading L0 Apache Parquet file at {filepath} ended."
+    msg = f"Reading L0 Apache Parquet file at {filepath} ended."
     log_info(logger=logger, msg=msg, verbose=verbose)
     return df
 
@@ -847,7 +835,9 @@ def read_l0a_dataframe(
 
 def read_raw_text_files(
     filepaths: Union[list, str],
-    verbose: bool,
+    reader,
+    sensor_name,
+    verbose=True,
     logger=None,
 ) -> pd.DataFrame:
     """Read and parse a list for raw files into a dataframe.
@@ -856,16 +846,13 @@ def read_raw_text_files(
     ----------
     filepaths : Union[list,str]
         File(s) path(s)
-    column_names : list
-        Columns names.
-    reader_kwargs : dict
-         Pandas ``read_csv`` arguments.
+    reader:
+        DISDRODB reader function.
+        Format: reader(filepath, logger=None)
     sensor_name : str
         Name of the sensor.
     verbose : bool
-        Whether to verbose the processing. The default is ``False``.
-    df_sanitizer_fun : object, optional
-        Sanitizer function to format the datafame.
+        Whether to verbose the processing. The default is ``True``.
 
     Returns
     -------
@@ -886,48 +873,50 @@ def read_raw_text_files(
         raise ValueError("'filepaths' must contains at least 1 filepath.")
 
     # ------------------------------------------------------.
-    ### - Loop over all raw files
+    # Loop over all raw files
     n_files = len(filepaths)
     processed_file_counter = 0
     list_skipped_files_msg = []
     list_df = []
     for filepath in filepaths:
+        # Try read the raw text file
         try:
-            # Try to process a raw file
+            df = reader(filepath, logger=logger)
+            # Sanitize the dataframe
             df = sanitize_df(
-                filepath=filepath,
+                df=df,
+                sensor_name=sensor_name,
+                logger=logger,
                 verbose=verbose,
             )
-
             # Append dataframe to the list
             list_df.append(df)
-
             # Update the logger
             processed_file_counter += 1
-            msg = f"{processed_file_counter} / {n_files} processed successfully. File name: {filepath}"
-            log_debug(logger=logger, msg=msg, verbose=verbose)
+            msg = f"Raw file '{filepath}' processed successfully ({processed_file_counter}/{n_files})."
+            log_info(logger=logger, msg=msg, verbose=verbose)
 
-        # If processing of raw file fails
+        # Skip the file if the processing fails
         except Exception as e:
             # Update the logger
-            msg = f" - {filepath} has been skipped. \n -- The error is: {e}."
-            log_warning(logger=logger, msg=msg, verbose=verbose)
+            msg = f"{filepath} has been skipped. The error is: {e}."
+            log_error(logger=logger, msg=msg, verbose=verbose)
             list_skipped_files_msg.append(msg)
 
     # Update logger
-    msg = f" - {len(list_skipped_files_msg)} of {n_files} have been skipped."
+    msg = f"{len(list_skipped_files_msg)} of {n_files} have been skipped."
     log_info(logger=logger, msg=msg, verbose=verbose)
-    log_info(logger=logger, msg="---", verbose=verbose)
 
     ##----------------------------------------------------------------.
-    #### - Concatenate the dataframe
+    # Concatenate the dataframe
     if len(list_df) == 0:
-        raise ValueError(f"No dataframe to return. Impossible to parse {filepaths}.")
+        raise ValueError("Any raw file could be read!")
     df = concatenate_dataframe(list_df, verbose=verbose, logger=logger)
 
-    # - Remove rows with duplicate timestep (keep the first)
-    df = df.drop_duplicates(subset=["time"], keep="first")
-
     # ------------------------------------------------------.
+    # Enforce output time to be [ns]
+    # --> For compatibility with xarray
+    df["time"] = df["time"].astype("M8[ns]")
+
     # Return the dataframe
     return df

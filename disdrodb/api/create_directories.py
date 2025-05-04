@@ -18,8 +18,8 @@
 # -----------------------------------------------------------------------------.
 """Tools to create Raw, L0A and L0B DISDRODB directories."""
 
-# L0A and L0B from raw NC: create_l0_directory_structure(raw_dir, processed_dir)
-# L0B: create_product_directory(processed_dir)
+# L0A and L0B from raw NC: create_l0_directory_structure(...)
+# L0B: create_product_directory(...)
 
 import logging
 import os
@@ -32,16 +32,9 @@ from disdrodb.api.checks import (
     check_data_source,
     check_issue_file,
     check_metadata_file,
-    check_processed_dir,
     check_product,
-    check_raw_dir,
     has_available_data,
     select_required_product_kwargs,
-)
-from disdrodb.api.info import (
-    infer_campaign_name_from_path,
-    infer_data_source_from_path,
-    infer_disdrodb_tree_path_components,
 )
 from disdrodb.api.path import (
     define_campaign_dir,
@@ -55,7 +48,6 @@ from disdrodb.api.path import (
 from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.utils.directories import (
     create_directory,
-    create_required_directory,
     remove_if_exists,
 )
 
@@ -63,62 +55,6 @@ logger = logging.getLogger(__name__)
 
 
 #### DISDRODB Products directories
-def _check_data_source_consistency(raw_dir: str, processed_dir: str) -> str:
-    """Check that ``raw_dir`` and ``processed_dir`` have same ``data_source``.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Path of the raw campaign directory
-    processed_dir : str
-        Path of the processed campaign directory
-
-    Returns
-    -------
-    str
-        ``data_source`` in capital letter.
-
-    Raises
-    ------
-    ValueError
-        Error if the ``data_source`` of the two directory paths does not match.
-    """
-    raw_data_source = infer_data_source_from_path(raw_dir)
-    processed_data_source = infer_data_source_from_path(processed_dir)
-    if raw_data_source != processed_data_source:
-        msg = f"'raw_dir' and 'processed_dir' must ends with same <DATA_SOURCE>: {raw_data_source}"
-        logger.error(msg)
-        raise ValueError(msg)
-    return raw_data_source.upper()
-
-
-def _check_campaign_name_consistency(raw_dir: str, processed_dir: str) -> str:
-    """Check that ``raw_dir`` and ``processed_dir`` have same campaign_name.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Path of the raw campaign directory
-    processed_dir : str
-        Path of the processed campaign directory
-
-    Returns
-    -------
-    str
-        ``campaign_name`` in capital letter.
-
-    Raises
-    ------
-    ValueError
-        Error if the ``campaign_name`` of the two directory paths does not match.
-    """
-    raw_campaign_name = infer_campaign_name_from_path(raw_dir)
-    processed_campaign_name = infer_campaign_name_from_path(processed_dir)
-    if raw_campaign_name != processed_campaign_name:
-        msg = f"'raw_dir' and 'processed_dir' must ends with same <CAMPAIGN_NAME>: {raw_campaign_name}"
-        logger.error(msg)
-        raise ValueError(msg)
-    return raw_campaign_name.upper()
 
 
 def ensure_empty_data_dir(data_dir, force):
@@ -135,9 +71,10 @@ def ensure_empty_data_dir(data_dir, force):
 
 
 def create_l0_directory_structure(
-    raw_dir,
-    processed_dir,
+    base_dir,
     metadata_dir,
+    data_source,
+    campaign_name,
     station_name,
     force,
     product,
@@ -150,27 +87,17 @@ def create_l0_directory_structure(
     ``product = "L0A"`` will call ``run_l0a``.
     ``product = "L0B"`` will call ``run_l0b_nc``.
     """
-    from disdrodb.configs import get_metadata_dir
+    from disdrodb.configs import get_base_dir, get_metadata_dir
 
     # Retrieve the DISDRODB Metadata Archive directory
+    base_dir = get_base_dir(base_dir)
     metadata_dir = get_metadata_dir(metadata_dir)
-
-    # Retrieve base_dir data_source and campaign_name
-    base_dir, _, data_source, campaign_name = infer_disdrodb_tree_path_components(raw_dir)
 
     # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
     check_campaign_name(campaign_name)
     check_data_source(data_source)
 
-    # Check input-output directories
-    raw_dir = check_raw_dir(raw_dir=raw_dir)
-    processed_dir = check_processed_dir(processed_dir=processed_dir)
-
-    # Check consistent data_source and campaign name
-    _ = _check_data_source_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
-    _ = _check_campaign_name_consistency(raw_dir=raw_dir, processed_dir=processed_dir)
-
-    # Check there is data in the station directory
+    # Check raw station data are available
     check_data_availability(
         product="RAW",
         base_dir=base_dir,
@@ -180,12 +107,12 @@ def create_l0_directory_structure(
     )
 
     # Check there is a valid metadata YAML file
-    # check_metadata_file(
-    #     metadata_dir=metadata_dir,
-    #     data_source=data_source,
-    #     campaign_name=campaign_name,
-    #     station_name=station_name,
-    # )
+    check_metadata_file(
+        metadata_dir=metadata_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
 
     # Check there is valid issue YAML file
     check_issue_file(
@@ -195,11 +122,7 @@ def create_l0_directory_structure(
         station_name=station_name,
     )
 
-    # Create required directories (if they don't exist)
-    create_required_directory(processed_dir, dir_name="metadata")
-    create_required_directory(processed_dir, dir_name="info")
-
-    # Define and create product directory
+    # Define product output data directory
     data_dir = define_data_dir(
         product=product,
         base_dir=base_dir,
@@ -208,7 +131,7 @@ def create_l0_directory_structure(
         station_name=station_name,
     )
 
-    # Create required directory (if it doesn't exist)
+    # Create product output data directory (if it doesn't exist)
     create_directory(data_dir)
 
     # Check if product files are already available
@@ -281,7 +204,7 @@ def create_product_directory(
         station_name=station_name,
     )
 
-    # Define product output directory
+    # Define product output data directory
     data_dir = define_data_dir(
         product=product,
         base_dir=base_dir,
@@ -292,7 +215,7 @@ def create_product_directory(
         **product_kwargs,
     )
 
-    # Create required directory (if it doesn't exist)
+    # Create product output data directory (if it doesn't exist)
     create_directory(data_dir)
 
     # Check if product files are already available

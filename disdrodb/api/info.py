@@ -174,18 +174,18 @@ def get_sample_interval_from_filepaths(filepaths):
 
 
 def infer_disdrodb_tree_path_components(path: str) -> list:
-    """Return a list with the component of the ``disdrodb_path``.
+    """Return a list with the component of a DISDRODB path ``disdrodb_path``.
 
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
     list
         Path element of the DISDRODB archive.
-        Format: [``base_dir``, ``<Raw or Processed>``, ``data_source`, ``campaign_name``, ...]
+        Format: [``base_dir``, ``product_version``, ``data_source`, ``campaign_name``, ...]
     """
     # Retrieve path elements (os-specific)
     p = Path(path)
@@ -211,7 +211,7 @@ def infer_path_info_dict(path: str) -> dict:
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -235,7 +235,7 @@ def infer_path_info_tuple(path: str) -> tuple:
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -255,7 +255,7 @@ def infer_disdrodb_tree_path(path: str) -> str:
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -276,7 +276,7 @@ def infer_base_dir_from_path(path: str) -> str:
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -294,7 +294,7 @@ def infer_campaign_name_from_path(path: str) -> str:
     Parameters
     ----------
     path : str
-       ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+       Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -316,7 +316,7 @@ def infer_data_source_from_path(path: str) -> str:
     Parameters
     ----------
     path : str
-       ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+       Directory or file path within the DISDRODB archive.
 
     Returns
     -------

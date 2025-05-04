@@ -23,7 +23,8 @@ from disdrodb.api.io import find_files
 from disdrodb.tests.conftest import create_fake_raw_data_file
 
 # import pathlib
-# tmp_path = pathlib.Path("/tmp/1")
+# tmp_path = pathlib.Path("/tmp/17")
+
 
 class TestFindFiles:
 
@@ -138,15 +139,15 @@ class TestFindFiles:
                 filename=filename,
             )
         filepaths = find_files(
-               base_dir=base_dir,
-               data_source=data_source,
-               campaign_name=campaign_name,
-               station_name=station_name,
-               product="RAW",
-               glob_pattern=["*txt",  "*.csv"],
-               debugging_mode=False,
-           )
-        assert len(filepaths) == 4
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product="RAW",
+            glob_pattern=["*txt", "*.csv"],
+            debugging_mode=False,
+        )
+        assert len(filepaths) == 5
 
     def test_find_l0a_files(self, tmp_path):
         """Test finding L0A files."""
@@ -155,7 +156,7 @@ class TestFindFiles:
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
         station_name = "STATION_NAME"
-        product="L0A"
+        product = "L0A"
 
         # Test that the function raises an error if no files presenet
         with pytest.raises(ValueError):
@@ -206,7 +207,7 @@ class TestFindFiles:
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
         station_name = "STATION_NAME"
-        product="L0B"
+        product = "L0B"
 
         # Test that the function raises an error if no files presenet
         with pytest.raises(ValueError):

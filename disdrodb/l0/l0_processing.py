@@ -36,7 +36,6 @@ from disdrodb.api.create_directories import (
 )
 from disdrodb.api.io import find_files, remove_product
 from disdrodb.api.path import (
-    define_campaign_dir,
     define_file_folder_path,
     define_l0a_filename,
     define_l0b_filename,
@@ -216,7 +215,7 @@ def _generate_l0b(
 
         # -----------------------------------------------------------------.
         # Create xarray Dataset
-        ds = create_l0b_from_l0a(df=df, attrs=metadata, logger=logger, verbose=verbose)
+        ds = create_l0b_from_l0a(df=df, metadata=metadata, logger=logger, verbose=verbose)
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
@@ -503,27 +502,13 @@ def run_l0a_station(
     log_info(logger=logger, msg=msg, verbose=verbose)
 
     # ------------------------------------------------------------------------.
-    # TODO: REFACTOR THIS  --> REMOVE raw_dir, processed_dir !
-    # Define campaign raw_dir and process_dir
-    raw_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
     # Create directory structure
     data_dir = create_l0_directory_structure(
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
+        base_dir=base_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
         metadata_dir=metadata_dir,
-        product=product,
+        product=product,  # L0A or L0B
         station_name=station_name,
         force=force,
     )

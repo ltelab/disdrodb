@@ -386,7 +386,7 @@ def _define_dataset_variables(df, sensor_name, logger=None, verbose=False):
 
 def create_l0b_from_l0a(
     df: pd.DataFrame,
-    attrs: dict,
+    metadata: dict,
     logger=None,
     verbose: bool = False,
 ) -> xr.Dataset:
@@ -398,10 +398,10 @@ def create_l0b_from_l0a(
         DISDRODB L0A dataframe.
         The raw drop number spectrum is reshaped to a 2D(+time) array.
         The raw drop concentration and velocity are reshaped to 1D(+time) arrays.
-    attrs : dict
-        Station metadata.
+    metadata : dict
+        DISDRODB station metadata.
         To use this function outside the DISDRODB routines, the dictionary must
-        contain the fields: sensor_name, latitude, longitude, altitude.
+        contain the fields: ``sensor_name``, ``latitude``, ``longitude``, ``altitude``, ``platform_type``.
     verbose : bool, optional
         Whether to verbose the processing. The default is ``False``.
 
@@ -416,7 +416,7 @@ def create_l0b_from_l0a(
         Error if the DISDRODB L0B xarray dataset can not be created.
     """
     # Retrieve sensor name
-    attrs = attrs.copy()
+    attrs = metadata.copy()
     sensor_name = attrs["sensor_name"]
 
     # Define Dataset variables and coordinates

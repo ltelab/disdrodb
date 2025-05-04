@@ -221,23 +221,23 @@ def test_log_error(caplog, test_logger, capfd):
 
 @pytest.fixture
 def log_environment(tmp_path):
-    processed_dir = tmp_path / "processed"
-    os.makedirs(processed_dir, exist_ok=True)
+    campaign_dir = tmp_path / "processed"
+    os.makedirs(campaign_dir, exist_ok=True)
     product = "test_product"
     station_name = "test_station"
     filename = "test"
-    return processed_dir, product, station_name, filename
+    return campaign_dir, product, station_name, filename
 
 
 def test_create_logger_file_paralle_false(log_environment):
-    processed_dir, product, station_name, filename = log_environment
-    logs_dir = os.path.join(str(processed_dir), "logs", product, station_name)
+    campaign_dir, product, station_name, filename = log_environment
+    logs_dir = os.path.join(str(campaign_dir), "logs", product, station_name)
     logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
 
     assert isinstance(logger, logging.Logger)
 
     # Check if log file is created
-    log_file_path = os.path.join(processed_dir, "logs", product, station_name, f"logs_{filename}.log")
+    log_file_path = os.path.join(campaign_dir, "logs", product, station_name, f"logs_{filename}.log")
     assert os.path.exists(log_file_path)
 
     # Test logging
@@ -257,8 +257,8 @@ def test_create_logger_file_paralle_false(log_environment):
 
 
 def test_close_logger(log_environment):
-    processed_dir, product, station_name, filename = log_environment
-    logs_dir = os.path.join(str(processed_dir), "logs", product, station_name)
+    campaign_dir, product, station_name, filename = log_environment
+    logs_dir = os.path.join(str(campaign_dir), "logs", product, station_name)
     logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
     close_logger(logger)
     assert not logger.handlers

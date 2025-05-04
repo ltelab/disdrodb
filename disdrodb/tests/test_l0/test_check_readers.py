@@ -84,7 +84,7 @@ def _check_station_reader_results(
     campaign_name,
     station_name,
 ):
-    raw_dir = define_campaign_dir(
+    raw_station_dir = define_campaign_dir(
         base_dir=base_dir,
         product="RAW",
         data_source=data_source,
@@ -119,7 +119,7 @@ def _check_station_reader_results(
         check_identical_files = _check_identical_parquet_files
         product = "L0A"
 
-    ground_truth_station_dir = os.path.join(raw_dir, "ground_truth", station_name)
+    ground_truth_station_dir = os.path.join(raw_station_dir, "ground_truth", station_name)
     processed_station_dir = define_station_dir(
         base_dir=base_dir,
         product=product,

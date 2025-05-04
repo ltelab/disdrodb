@@ -23,8 +23,6 @@ import pytest
 from click.testing import CliRunner
 
 from disdrodb.api.create_directories import (
-    _check_campaign_name_consistency,
-    _check_data_source_consistency,
     create_initial_station_structure,
     create_issue_directory,
     create_l0_directory_structure,
@@ -32,7 +30,6 @@ from disdrodb.api.create_directories import (
     create_test_archive,
 )
 from disdrodb.api.path import (
-    define_campaign_dir,
     define_data_dir,
     define_issue_filepath,
     define_metadata_dir,
@@ -58,19 +55,6 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
-    raw_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
 
     dst_metadata_dir = define_metadata_dir(
         metadata_dir=metadata_dir,
@@ -79,10 +63,10 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     )
     dst_station_dir = define_station_dir(
         base_dir=base_dir,
-        product=product,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        product=product,
     )
 
     dst_metadata_filepath = define_metadata_filepath(
@@ -125,22 +109,24 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     # Test that if station_name is unexisting in data, raise error
     with pytest.raises(ValueError):
         create_l0_directory_structure(
+            metadata_dir=metadata_dir,
+            base_dir=base_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="INEXISTENT_STATION",
             product=product,
             force=False,
-            raw_dir=raw_dir,
-            processed_dir=processed_dir,
-            metadata_dir=metadata_dir,
-            station_name="INEXISTENT_STATION",
         )
 
     # Execute create_l0_directory_structure
     data_dir = create_l0_directory_structure(
+        base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
         product=product,
         force=False,
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
-        metadata_dir=metadata_dir,
-        station_name=station_name,
     )
 
     # Test product, metadata and station directories have been created
@@ -164,23 +150,25 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
 
     with pytest.raises(ValueError):
         create_l0_directory_structure(
+            base_dir=base_dir,
+            metadata_dir=metadata_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product=product,
             force=False,
-            raw_dir=raw_dir,
-            processed_dir=processed_dir,
-            metadata_dir=metadata_dir,
-            station_name=station_name,
         )
     assert os.path.exists(product_filepath)
 
     # Test delete file if already data in L0A (if force=True)
     data_dir = create_l0_directory_structure(
+        base_dir=base_dir,
+        metadata_dir=metadata_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
         product=product,
         force=True,
-        raw_dir=raw_dir,
-        processed_dir=processed_dir,
-        metadata_dir=metadata_dir,
-        station_name=station_name,
     )
     assert not os.path.exists(product_filepath)
     assert os.path.exists(data_dir)
@@ -458,70 +446,6 @@ def test_create_test_archive(tmp_path):
     # )
     # assert os.path.exists(metadata_filepath)
     # assert os.path.exists(issue_filepath)
-
-
-def test_check_campaign_name_consistency(tmp_path):
-    base_dir = tmp_path / "data" / "DISDRODB"
-    campaign_name = "CAMPAIGN_NAME"
-    data_source = "DATA_SOURCE"
-
-    raw_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
-    # Test when consistent
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="L0A",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-    assert _check_campaign_name_consistency(raw_dir, processed_dir) == campaign_name
-
-    # Test when is not consistent
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="L0A",
-        data_source=data_source,
-        campaign_name="ANOTHER_CAMPAIGN_NAME",
-    )
-    with pytest.raises(ValueError):
-        _check_campaign_name_consistency(raw_dir, processed_dir)
-
-
-def test_check_data_source_consistency(tmp_path):
-    base_dir = tmp_path / "data" / "DISDRODB"
-    campaign_name = "CAMPAIGN_NAME"
-    data_source = "DATA_SOURCE"
-    raw_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="RAW",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
-    # Test when consistent
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="L0A",
-        data_source=data_source,
-        campaign_name=campaign_name,
-    )
-
-    assert _check_data_source_consistency(raw_dir, processed_dir) == data_source
-
-    # Test when is not consistent
-    processed_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product="L0A",
-        data_source="ANOTHER_DATA_SOURCE",
-        campaign_name=campaign_name,
-    )
-    with pytest.raises(ValueError):
-        _check_data_source_consistency(raw_dir, processed_dir)
 
 
 def test_create_issue_directory(tmp_path):
