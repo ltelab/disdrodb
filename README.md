@@ -124,7 +124,7 @@ we highly recommend to join the [**DISDRODB Slack Workspace**](https://join.slac
 Feel free to also open a [GitHub Issue](https://github.com/ltelab/disdrodb/issues) or a
 [GitHub Discussion](https://github.com/ltelab/disdrodb/discussions) specific to your questions or ideas.
 
-## ✍️  Contributors
+## ✍️ Contributors
 
 - [Gionata Ghiggi](https://people.epfl.ch/gionata.ghiggi)
 - [Kim Candolfi](https://github.com/KimCandolfi)
@@ -137,7 +137,7 @@ Feel free to also open a [GitHub Issue](https://github.com/ltelab/disdrodb/issue
 
 You can cite the DISDRODB software by:
 
-> Gionata Ghiggi, Kim Candolfi, Régis Longchamp, Charlotte Weil, Alexis Berne (2023). ltelab/disdrodb  Zenodo. https://doi.org/10.5281/zenodo.7680581
+> Gionata Ghiggi, Kim Candolfi, Régis Longchamp, Charlotte Weil, Alexis Berne (2023). ltelab/disdrodb Zenodo. https://doi.org/10.5281/zenodo.7680581
 
 If you want to cite a specific version, have a look at the [Zenodo site](https://doi.org/10.5281/zenodo.7680581)
 

@@ -54,21 +54,21 @@ IMPACT_SENSORS = ["RD_80"]
 
 
 __all__ = [
-    "define_configs",
-    "available_stations",
     "available_campaigns",
     "available_data_sources",
     "available_sensor_names",
-    "find_files",
-    "open_dataset",
+    "available_stations",
     "check_archive_metadata_compliance",
     "check_archive_metadata_geolocation",
-    "open_documentation",
-    "open_sensor_documentation",
-    "open_documentation",
-    "read_station_metadata",
+    "define_configs",
     "download_archive",
     "download_station",
+    "find_files",
+    "open_dataset",
+    "open_documentation",
+    "open_documentation",
+    "open_sensor_documentation",
+    "read_station_metadata",
 ]
 
 __root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))

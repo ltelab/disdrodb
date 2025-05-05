@@ -28,11 +28,11 @@ from disdrodb.psd.models import (
 )
 
 __all__ = [
+    "ExponentialPSD",
+    "GammaPSD",
+    "LognormalPSD",
+    "NormalizedGammaPSD",
     "available_psd_models",
     "create_psd",
     "estimate_model_parameters",
-    "LognormalPSD",
-    "ExponentialPSD",
-    "GammaPSD",
-    "NormalizedGammaPSD",
 ]

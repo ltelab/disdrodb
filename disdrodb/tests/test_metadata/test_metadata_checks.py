@@ -112,7 +112,7 @@ def test_check_archive_metadata_keys(tmp_path):
 
     # Test 1: Correct metadata key
     valid_metadata_keys = get_valid_metadata_keys()
-    metadata_dict = {i: "value1" for i in valid_metadata_keys}
+    metadata_dict = dict.fromkeys(valid_metadata_keys, "value1")
     _ = create_fake_metadata_file(base_dir=base_dir, metadata_dict=metadata_dict)
 
     is_valid = check_archive_metadata_keys(str(base_dir))
@@ -321,7 +321,7 @@ def test_check_archive_metadata_geolocation(tmp_path, latlon_value, platform_typ
         metadata_dict=metadata_dict,
     )
     is_valid = check_archive_metadata_geolocation(base_dir)
-    if platform_type == "mobile" and latlon_value == -9999 or platform_type != "mobile" and latlon_value == 0:
+    if (platform_type == "mobile" and latlon_value == -9999) or (platform_type != "mobile" and latlon_value == 0):
         assert is_valid
     else:
         assert not is_valid

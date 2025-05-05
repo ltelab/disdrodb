@@ -36,7 +36,7 @@ def get_default_metadata_dict() -> dict:
     """
     # Get valid metadata keys
     list_attrs = get_valid_metadata_keys()
-    attrs = {key: "" for key in list_attrs}
+    attrs = dict.fromkeys(list_attrs, "")
 
     # Add default values for certain keys
     attrs["latitude"] = -9999

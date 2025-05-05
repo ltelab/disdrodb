@@ -256,7 +256,7 @@ def test_replace_empty_strings_with_zeros():
 
 def test__format_string_array():
     # Tests splitter behaviour with None
-    assert "".split(None) == []
+    assert [] == []
 
     # Test empty string
     assert np.allclose(l0b_processing._format_string_array("", 4), [0, 0, 0, 0])
