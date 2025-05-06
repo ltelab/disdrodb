@@ -20,32 +20,12 @@
 
 
 import os
+import pathlib
 
 import pytest
 
-from disdrodb.tests.conftest import create_fake_raw_data_file
+from disdrodb.tests.conftest import create_fake_data_dir, create_fake_raw_data_file
 from disdrodb.utils.compression import _zip_dir, compress_station_files, unzip_file
-
-
-def create_fake_data_dir(base_dir, data_source, campaign_name, station_name):
-    """Create a station data directory with files inside it.
-
-    station_name
-    |-- 2020
-        |-- file1.txt
-        |-- Jan
-            |-- file2.txt
-    """
-    data_dir = base_dir / "Raw" / data_source / campaign_name / "data" / station_name
-    dir1 = data_dir / "2020"
-    dir2 = dir1 / "Jan"
-    if not dir2.exists():
-        dir2.mkdir(parents=True)
-
-    file1_txt = dir1 / "file1.txt"
-    file1_txt.touch()
-    file2_txt = dir2 / "file2.txt"
-    file2_txt.touch()
 
 
 @pytest.mark.parametrize("method", ["zip", "gzip", "bzip2"])
@@ -67,12 +47,23 @@ def test_files_compression(tmp_path, method):
         )
 
     # Create fake data
-    create_fake_data_dir(
+    data_dir = create_fake_data_dir(
         base_dir=base_dir,
+        product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
+    data_dir = pathlib.Path(data_dir)
+    dir1 = data_dir / "2020"
+    dir2 = dir1 / "Jan"
+    if not dir2.exists():
+        dir2.mkdir(parents=True)
+
+    file1_txt = dir1 / "file1.txt"
+    file1_txt.touch()
+    file2_txt = dir2 / "file2.txt"
+    file2_txt.touch()
 
     # Compress files
     compress_station_files(

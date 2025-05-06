@@ -41,7 +41,7 @@ BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_reade
 def test_check_l0a_standards(capfd):
     filepath = os.path.join(
         BASE_DIR,
-        "Raw",
+        "RAW",
         "EPFL",
         "PARSIVEL_2007",
         "ground_truth",

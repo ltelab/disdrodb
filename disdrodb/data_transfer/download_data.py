@@ -163,8 +163,8 @@ def download_archive(
                 metadata_dir=metadata_dir,
                 force=force,
             )
-        except Exception as e:
-            print(f" - Download error: {e}")
+        except Exception:
+            print(" - Download error: {e}")
             print(" ")
 
 

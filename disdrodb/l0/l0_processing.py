@@ -43,8 +43,6 @@ from disdrodb.api.path import (
     define_metadata_filepath,
 )
 from disdrodb.api.search import get_required_product
-
-# get_disdrodb_path,
 from disdrodb.configs import get_base_dir, get_folder_partitioning, get_metadata_dir
 from disdrodb.issue import read_station_issue
 from disdrodb.l0.l0_reader import get_reader

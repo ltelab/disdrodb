@@ -24,7 +24,7 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import __root_path__
+from disdrodb import ARCHIVE_VERSION, __root_path__
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
 from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
@@ -42,7 +42,6 @@ DEBUGGING_MODE = True
 VERBOSE = False
 FORCE = False
 PARALLEL = False
-VERSION = "Processed"
 
 # from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
@@ -60,7 +59,7 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_dir, parallel, cli)
     test_base_dir = tmp_path / "data" / "DISDRODB"
     test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
 
-    dst_dir = test_base_dir / VERSION
+    dst_dir = test_base_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
 
     # Produce data
@@ -121,7 +120,7 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_dir, cli):
     """Test the disdrodb_run_l1 command."""
     test_base_dir = tmp_path / "data" / "DISDRODB"
     test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
-    dst_dir = test_base_dir / VERSION
+    dst_dir = test_base_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
 
     # Produce data

@@ -93,6 +93,7 @@ def test_set_nan_invalid_values(create_test_config_files):
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_set_nan_outside_data_range(create_test_config_files):
+    """Test that values outside the allowed data range are converted to NaN."""
     # Test case 1: Check if the function sets values outside the data range to NaN
     data = {"key_1": [1, 2, 3, 4, 5], "key_2": [0.1, 0.3, 0.5, 0.7, 0.2]}
 
@@ -105,6 +106,7 @@ def test_set_nan_outside_data_range(create_test_config_files):
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_replace_nan_flags(create_test_config_files):
+    """Test that specified nan_flags are replaced by NaN in the dataframe."""
     # Create a sample dataframe with nan flags
     data = {
         "key_1": [6, 7, 1, 9, -9999],
@@ -122,45 +124,51 @@ def test_replace_nan_flags(create_test_config_files):
     assert df.equals(pd.DataFrame(expected_data))
 
 
-def test_remove_corrupted_rows():
-    data = {
-        "raw_drop_number": ["1", "2", "3", "a", "5"],
-        "raw_drop_concentration": ["0.1", "0.3", "0.5", "b", "0.2"],
-        "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
-    }
+class TestRemoveCorruptedRows:
+    def test_remove_corrupted_rows_with_all_raw_columns(self):
+        """Rows with non-numeric raw-array entries are dropped."""
+        data = {
+            "raw_drop_number": ["1", "2", "3", "a", "5"],
+            "raw_drop_concentration": ["0.1", "0.3", "0.5", "b", "0.2"],
+            "raw_drop_average_velocity": ["a", "1.2", "1.8", "c", "2.0"],
+        }
+        df = pd.DataFrame(data)
+        output = remove_corrupted_rows(df)
+        # Only the 4 fully numeric rows remain
+        assert output.shape == (3, 3)
 
-    data = pd.DataFrame(data)
-    output = remove_corrupted_rows(data)
-    assert output.shape[1] == 3
+    def test_remove_corrupted_rows_with_mixed_columns(self):
+        """Dropping works even if some columns are not raw arrays."""
+        data = {
+            "raw_drop_number": ["1", "2", "3", "a", "5"],
+            "other": ["0.1", "a", "c", "b", "0.2"],
+            "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
+        }
+        df = pd.DataFrame(data)
+        output = remove_corrupted_rows(df)
+        # Non-raw 'other' column is still kept, but corrupted rows are removed
+        assert output.shape == (4, 3)
 
-    # Test case 1: Check if the function removes corrupted rows
-    data = {
-        "raw_drop_number": ["1", "2", "3", "a", "5"],
-        "other": ["0.1", "0.3", "0.5", "b", "0.2"],
-        "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
-    }
+    def test_no_rows_remaining_raises(self):
+        """ValueError if no rows remain after corruption filtering."""
+        with pytest.raises(ValueError, match=r"No remaining rows after data corruption checks."):
+            remove_corrupted_rows(pd.DataFrame())
 
-    data = pd.DataFrame(data)
-    output = remove_corrupted_rows(data)
-    assert output.shape[1] == 3
-
-    # Test case 2: Check if the function raises ValueError when there are no remaining rows
-    with pytest.raises(ValueError, match=r"No remaining rows after data corruption checks."):
-        remove_corrupted_rows(pd.DataFrame())
-
-    # Test case 3: Check if the function raises ValueError when only one row remains
-    msg = r"Only 1 row remains after data corruption checks. Check the raw file and maybe delete it."
-    with pytest.raises(ValueError, match=msg):
-        remove_corrupted_rows(pd.DataFrame({"raw_drop_number": ["1"]}))
+    def test_single_row_remaining_raises(self):
+        """ValueError if only one row remains after corruption filtering."""
+        df = pd.DataFrame({"raw_drop_number": ["1"]})
+        msg = r"Only 1 row remains after data corruption checks. Check the raw file and maybe delete it."
+        with pytest.raises(ValueError, match=msg):
+            remove_corrupted_rows(df)
 
 
 def test_strip_delimiter_from_raw_arrays():
+    """Test that leading/trailing delimiters are stripped only from raw arrays."""
     data = {"raw_drop_number": ["  value1", "value2 ", "value3  "], "key_3": [" value4", "value5", "value6"]}
     df = pd.DataFrame(data)
     result = strip_delimiter_from_raw_arrays(df)
     expected_data = {"raw_drop_number": ["value1", "value2", "value3"], "key_3": [" value4", "value5", "value6"]}
     expected = pd.DataFrame(expected_data)
-
     # Check if result matches expected result
     assert result.equals(expected)
 
@@ -174,34 +182,41 @@ l0a_encoding_dict = {
 config_dict = {"l0a_encodings.yml": l0a_encoding_dict}
 
 
-@pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
-def test_strip_string_spaces(create_test_config_files):
-    data = {"key_1": ["  value1", "value2 ", "value3  "], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
-    df = pd.DataFrame(data)
+class TestStripStringSpaces:
+    @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+    def test_removes_whitespace_from_string_columns(self, create_test_config_files):
+        """Test that whitespace is removed from string columns per encoding config."""
+        data = {
+            "key_1": ["  value1", "value2 ", "value3  "],
+            "key_2": [1, 2, 3],
+            "key_3": ["value4", "value5", "value6"],
+        }
+        df = pd.DataFrame(data)
+        result = strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
+        expected_data = {
+            "key_1": ["value1", "value2", "value3"],
+            "key_2": [1, 2, 3],
+            "key_3": ["value4", "value5", "value6"],
+        }
+        expected = pd.DataFrame(expected_data)
+        assert result.equals(expected)
 
-    # Call function
-    result = strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
-
-    # Define expected result
-    expected_data = {
-        "key_1": ["value1", "value2", "value3"],
-        "key_2": [1, 2, 3],
-        "key_3": ["value4", "value5", "value6"],
-    }
-    expected = pd.DataFrame(expected_data)
-
-    # Check if result matches expected result
-    assert result.equals(expected)
-
-    # Assert raiser error if an expected string column is not string
-    data = {"key_1": [1, 2, 3], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
-    df = pd.DataFrame(data)
-    with pytest.raises(AttributeError):
-        strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
+    @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+    def test_raises_error_for_non_string_column(self, create_test_config_files):
+        """Assert AttributeError when a configured string column is not of string dtype."""
+        data = {
+            "key_1": [1, 2, 3],
+            "key_2": [1, 2, 3],
+            "key_3": ["value4", "value5", "value6"],
+        }
+        df = pd.DataFrame(data)
+        with pytest.raises(AttributeError):
+            strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
 
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_coerce_corrupted_values_to_nan(create_test_config_files):
+    """Test that non-convertible strings in numeric columns become NaN."""
     # Test with a valid dataframe
     df = pd.DataFrame({"key_4": ["1"]})
     df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME)
@@ -214,41 +229,44 @@ def test_coerce_corrupted_values_to_nan(create_test_config_files):
     assert pd.isna(df_out["key_4"][0])
 
 
-def test_remove_issue_timesteps():
-    # Create dummy dataframe
-    df = pd.DataFrame({"time": [1, 2, 3, 4, 5], "col1": [0, 1, 2, 3, 4]})
+class RemoveIssueTimesteps:
+    def test_remove_issue_timesteps(self):
+        """Test removal of timesteps listed in the issue dictionary."""
+        # Create dummy dataframe
+        df = pd.DataFrame({"time": [1, 2, 3, 4, 5], "col1": [0, 1, 2, 3, 4]})
 
-    # Create dummy issue dictionary with timesteps to remove
-    issue_dict = {"timesteps": [2, 4]}
+        # Create dummy issue dictionary with timesteps to remove
+        issue_dict = {"timesteps": [2, 4]}
 
-    # Call function to remove problematic timesteps
-    df_cleaned = remove_issue_timesteps(df, issue_dict)
+        # Call function to remove problematic timesteps
+        df_cleaned = remove_issue_timesteps(df, issue_dict)
 
-    # Check that problematic timesteps were removed
-    assert set(df_cleaned["time"]) == {1, 3, 5}
+        # Check that problematic timesteps were removed
+        assert set(df_cleaned["time"]) == {1, 3, 5}
 
+    def test_remove_issue_time_periods(self):
+        """Test removal of time ranges specified in the issue dictionary."""
+        # Create an array of datetime values for the time column
+        timesteps = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
 
-def test_remove_issue_time_periods():
-    # Create an array of datetime values for the time column
-    timesteps = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
+        # Define issue timesteps and time_periods
+        issue_time_periods = [timesteps[[10, 20]]]
+        issue_timesteps = timesteps[10:20]
 
-    # Define issue timesteps and time_periods
-    issue_time_periods = [timesteps[[10, 20]]]
-    issue_timesteps = timesteps[10:20]
+        # Create dummy issue dictionary with timesteps to remove
+        issue_dict = {"time_periods": issue_time_periods}
 
-    # Create dummy issue dictionary with timesteps to remove
-    issue_dict = {"time_periods": issue_time_periods}
+        # Create the dataframe with the two columns
+        dummy = np.random.rand(len(timesteps))
+        df = pd.DataFrame({"time": timesteps, "dummy": dummy})
 
-    # Create the dataframe with the two columns
-    dummy = np.random.rand(len(timesteps))
-    df = pd.DataFrame({"time": timesteps, "dummy": dummy})
-
-    # Call function to remove problematic time_periods
-    df_cleaned = remove_issue_timesteps(df, issue_dict)
-    assert np.all(~df_cleaned["time"].isin(issue_timesteps))
+        # Call function to remove problematic time_periods
+        df_cleaned = remove_issue_timesteps(df, issue_dict)
+        assert np.all(~df_cleaned["time"].isin(issue_timesteps))
 
 
 def test_preprocess_reader_kwargs():
+    """Test cleanup of unsupported kwargs and required presence of delimiter."""
     # Test that the function removes the 'dtype' key from the reader_kwargs dict
     reader_kwargs = {"dtype": "int64", "other_key": "other_value", "delimiter": ","}
     preprocessed_kwargs = preprocess_reader_kwargs(reader_kwargs)
@@ -277,6 +295,7 @@ def test_preprocess_reader_kwargs():
 
 
 def test_concatenate_dataframe():
+    """Test concatenation behavior and error handling for invalid inputs."""
     # Test that the function returns a Pandas dataframe
     df1 = pd.DataFrame({"time": [1, 2, 3], "value": [4, 5, 6]})
     df2 = pd.DataFrame({"time": [7, 8, 9], "value": [10, 11, 12]})
@@ -294,46 +313,59 @@ def test_concatenate_dataframe():
         concatenate_dataframe(["not a dataframe", "not a dataframe"])
 
 
-def test_strip_delimiter():
-    # Test it strips all external  delimiters
-    s = ",,,,,"
-    assert strip_delimiter(s) == ""
-    s = "0000,00,"
-    assert strip_delimiter(s) == "0000,00"
-    s = ",0000,00,"
-    assert strip_delimiter(s) == "0000,00"
-    s = ",,,0000,00,,"
-    assert strip_delimiter(s) == "0000,00"
-    # Test if empty string, return the empty string
-    s = ""
-    assert strip_delimiter(s) == ""
-    # Test if None returns None
-    s = None
-    assert isinstance(strip_delimiter(s), type(None))
-    # Test if np.nan returns np.nan
-    s = np.nan
-    assert np.isnan(strip_delimiter(s))
+class TestStripDelimiter:
+    def test_strips_external_delimiters(self):
+        """Test that leading/trailing delimiters are stripped."""
+        # strips all leading/trailing commas
+        assert strip_delimiter(",,,,,") == ""
+        assert strip_delimiter("0000,00,") == "0000,00"
+        assert strip_delimiter(",0000,00,") == "0000,00"
+        assert strip_delimiter(",,,0000,00,,") == "0000,00"
+
+    def test_empty_string_returns_empty(self):
+        """Test that empty strings return empty strings."""
+        assert strip_delimiter("") == ""
+
+    def test_none_returns_none(self):
+        """Test that None returns None."""
+        result = strip_delimiter(None)
+        assert result is None
+
+    def test_nan_returns_nan(self):
+        """Test that NaN returns NaN."""
+        result = strip_delimiter(np.nan)
+        assert np.isnan(result)
 
 
-def test_is_raw_array_string_not_corrupted():
-    # Test empty string
-    s = ""
-    assert is_raw_array_string_not_corrupted(s)
-    # Test valid string (convertible to numeric, after split by ,)
-    s = "000,001,000"
-    assert is_raw_array_string_not_corrupted(s)
-    # Test corrupted string (not convertible to numeric, after split by ,)
-    s = "000,xa,000"
-    assert not is_raw_array_string_not_corrupted(s)
-    # Test None is considered corrupted
-    s = None
-    assert not is_raw_array_string_not_corrupted(s)
-    # Test np.nan is considered corrupted
-    s = np.nan
-    assert not is_raw_array_string_not_corrupted(s)
+class TestIsRawArrayStringNotCorrupted:
+    def test_empty_string(self):
+        """Test that empty strings are not corrupted."""
+        s = ""
+        assert is_raw_array_string_not_corrupted(s)
+
+    def test_valid_string(self):
+        """Test that valid strings are not corrupted."""
+        s = "000,001,000"
+        assert is_raw_array_string_not_corrupted(s)
+
+    def test_corrupted_string(self):
+        """Test that corrupted strings are detected."""
+        s = "000,xa,000"
+        assert not is_raw_array_string_not_corrupted(s)
+
+    def test_none_is_corrupted(self):
+        """Test that None is treated as corrupted."""
+        s = None
+        assert not is_raw_array_string_not_corrupted(s)
+
+    def test_nan_is_corrupted(self):
+        """Test that NaN is treated as corrupted."""
+        s = np.nan
+        assert not is_raw_array_string_not_corrupted(s)
 
 
 def test_cast_column_dtypes():
+    """Test casting of dataframe columns based on sensor dtype configuration."""
     # Create a test dataframe with object columns
     df = pd.DataFrame(
         {
@@ -357,6 +389,7 @@ def test_cast_column_dtypes():
 
 
 def test_remove_rows_with_missing_time():
+    """Test removal of NaT timestamps and error on all-missing time column."""
     # Create dataframe
     n_rows = 3
     time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
@@ -378,6 +411,7 @@ def test_remove_rows_with_missing_time():
 
 
 def test_check_matching_column_number():
+    """Test validation of dataframe column count against expected list."""
     # Test with a matching number of columns
     df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
     assert check_matching_column_number(df, ["A", "B"]) is None
@@ -389,6 +423,7 @@ def test_check_matching_column_number():
 
 
 def test_remove_duplicated_timesteps():
+    """Test dropping of duplicated time entries from the dataframe."""
     # Create dataframe
     n_rows = 3
     time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
@@ -404,6 +439,7 @@ def test_remove_duplicated_timesteps():
 
 
 def test_drop_timesteps():
+    """Test exclusion of specified timesteps and error on full drop."""
     # Number last timesteps to drop
     n = 2
     # Create an array of datetime values for the time column
@@ -434,6 +470,7 @@ def test_drop_timesteps():
 
 
 def test_drop_time_periods():
+    """Test exclusion of specified time intervals and proper error flows."""
     # Create an array of datetime values for the time column
     time = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
 
@@ -480,6 +517,7 @@ def create_fake_csv(filename, data):
 
 
 def test_read_raw_text_file(tmp_path):
+    """Test reading of raw text into DataFrame and handling of empty files."""
     # Create a valid test file
     filepath = os.path.join(tmp_path, "test.csv")
     data = {"att_1": ["11", "21"], "att_2": ["12", "22"]}
@@ -528,6 +566,7 @@ def test_read_raw_text_file(tmp_path):
 
 
 def test_write_l0a(tmp_path):
+    """Test writing and reading L0A parquet files and type validation."""
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")

@@ -87,7 +87,9 @@ def print_valid_l0_column_names(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    print(list(get_l0a_dtype(sensor_name)))
+    from pprint import pprint
+
+    pprint(list(get_l0a_dtype(sensor_name)))
 
 
 def _print_column_index(i, column_name, print_column_names):
@@ -359,10 +361,12 @@ def get_natural_ndigits(string: str) -> int:
     int
         The number of natural digits.
     """
+    count_minus = int(string.startswith("-"))  # 0 if not start with -, else 1
+    string = string.replace("-", "")
     if str_is_integer(string):
-        return len(string.replace("-", ""))
+        return len(string) + count_minus
     if str_has_decimal_digits(string):
-        return len(string.split(".")[0].replace("-", ""))
+        return len(string.split(".")[0]) + count_minus
     return 0
 
 
@@ -381,10 +385,11 @@ def get_ndigits(string: str) -> int:
     """
     if not str_is_number(string):
         return 0
+    count_minus = int(string.startswith("-"))  # 0 if not start with -, else 1
     string = string.replace("-", "")
     if str_has_decimal_digits(string):
-        return len(string) - 1  # remove .
-    return len(string)
+        return len(string) - 1 + count_minus  # remove .
+    return len(string) + count_minus
 
 
 def get_nchar(string: str) -> int:
@@ -554,9 +559,9 @@ def check_column_names(column_names: list, sensor_name: str) -> None:
     invalid_columns = list(column_names.difference(valid_columns))
     if len(invalid_columns) > 0:
         print(f"The following columns do no met the DISDRODB standards: {invalid_columns}.")
-        print("Please remove such columns within the df_sanitizer_fun")
+        print("Please remove such columns in the reader function !")
     # --------------------------------------------
     # Check time column is present
     if "time" not in column_names:
-        print("Please be sure to create the 'time' column within the df_sanitizer_fun.")
+        print("Please be sure to create the 'time' column within the reader function !")
         print("The 'time' column must be datetime with resolution in seconds (dtype='M8[s]').")

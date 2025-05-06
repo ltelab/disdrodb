@@ -1,11 +1,12 @@
 .. _metadata_archive:
 
 ==========================
-DISDRODB Metadata Archive
+Metadata Archive
 ==========================
 
 The `DISDRODB metadata repository <https://github.com/ltelab/DISDRODB-METADATA>`__ is hosted on GitHub and serves as a central hub for tracking available stations,
 the potential malfunctioning of the sensors, and to list the URLs of the remote data repositories where the raw disdrometer data are stored.
+
 The GitHub platform facilitates community collaboration to continuously enhance station metadata using best open-source practices.
 This approach also enables recursive data quality improvements, while keeping the DISDRODB product chain transparent and fully reproducible.
 
@@ -17,8 +18,8 @@ The DISDRODB Metadata Repository is therefore updated on a regular basis to refl
 Here below we detail the necessary step to add/update the information of the DISDRODB Metadata Archive.
 
 
-Fork and download the DISDRODB Metadata Archive
----------------------------------------------------
+Download the Metadata Archive
+----------------------------------
 
 If you plan to add new data to the DISDRODB Decentralized Data Archive or you want to just update
 some station metadata/issues information, go to the
@@ -30,8 +31,8 @@ fork the repository on your GitHub account and then clone the forked repository:
    git clone https://github.com/<your_username>/DISDRODB-METADATA.git
 
 
-Update the DISDRODB Metadata Archive
-----------------------------------------
+Update the Metadata Archive
+-------------------------------
 
 To update the DISDRODB Metadata Archive follow these steps:
 
@@ -54,11 +55,11 @@ To update the DISDRODB Metadata Archive follow these steps:
 
    .. code:: bash
 
-      export DISDRODB_BASE_DIR="<path_to_local_data_archive>/DISDRODB"
+      export DISDRODB_METADATA_ARCHIVE_DIR="<path_to>/DISDRODB-METADATA/DISDRODB"
       disdrodb_check_metadata_archive
 
    .. note::
-      The ``DISDRODB_BASE_DIR`` environment variable has to be specified only if the DISDRODB base directory has not been specified before in the DISDRODB configuration file.
+      The ``DISDRODB_METADATA_ARCHIVE_DIR`` environment variable has to be specified only if the DISDRODB Metadata Archive directory has not been specified before in the DISDRODB Configuration File.
 
 5. Commit your changes and push your branch to GitHub:
 
@@ -73,3 +74,37 @@ To update the DISDRODB Metadata Archive follow these steps:
    `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
 
 7.  If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/DISDRODB-METADATA/issues/new/choose>`__ so we can help!
+
+
+Check the Metadata Archive
+--------------------------------
+
+You can check that all stations metadata adhere to the enforced DISDRODB standards by running the following command in python:
+
+.. code:: python
+
+    import disdrodb
+
+    check_archive_metadata_compliance()
+
+
+Alternatively you can type into the terminal:
+
+.. code:: bash
+
+   disdrodb_check_metadata_archive
+
+
+Explore the Metadata Archive
+--------------------------------
+
+The disdrodb software provides the ``read_metadata_database`` function to read entire metadata archive
+into a ``pandas.DataFrame``:
+
+
+.. code:: python
+
+    import disdrodb
+
+    df = disdrodb.read_metadata_database()
+    print(df)

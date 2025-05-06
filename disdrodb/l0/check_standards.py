@@ -191,7 +191,7 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, logger=None, verbose
     # - TODO: this should be removed and raise error if not platform_type: mobile
     if "latitude" in df.columns:
         msg = (
-            " - The L0A dataframe has column 'latitude'. "
+            "The L0A dataframe has column 'latitude'. "
             + "This should be included only if the sensor is moving. "
             + "Otherwise, specify the 'latitude' in the metadata !"
         )
@@ -199,7 +199,7 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, logger=None, verbose
 
     if "longitude" in df.columns:
         msg = (
-            " - The L0A dataframe has column 'longitude'. "
+            "The L0A dataframe has column 'longitude'. "
             + "This should be included only if the sensor is moving. "
             + "Otherwise, specify the 'longitude' in the metadata !"
         )

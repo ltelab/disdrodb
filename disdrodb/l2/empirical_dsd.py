@@ -1361,7 +1361,7 @@ def get_kinetic_energy_variables(
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
@@ -1438,7 +1438,7 @@ def get_kinetic_energy_variables_from_drop_number(
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.

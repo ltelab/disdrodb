@@ -17,11 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routines to list and open DISDRODB products."""
-
+import os
 import shutil
+import subprocess
+import sys
+from pathlib import Path
 from typing import Optional
 
-from disdrodb.api.path import define_data_dir
+from disdrodb.api.path import define_campaign_dir, define_data_dir
 from disdrodb.utils.directories import list_files
 from disdrodb.utils.logger import (
     log_info,
@@ -166,7 +169,7 @@ def open_dataset(
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
 
     """
     import xarray as xr
@@ -231,3 +234,44 @@ def remove_product(
     shutil.rmtree(data_dir)
     if logger is not None:
         log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)
+
+
+####--------------------------------------------------------------------------.
+#### Open directories
+
+
+def open_file_explorer(path):
+    """Open the native file-browser showing 'path'."""
+    p = Path(path).resolve()
+    if not p.exists():
+        raise FileNotFoundError(f"{p} does not exist")
+
+    if sys.platform.startswith("win"):
+        # Windows
+        os.startfile(str(p))
+    elif sys.platform == "darwin":
+        # macOS
+        subprocess.run(["open", str(p)], check=False)
+    else:
+        # Linux (most desktop environments)
+        subprocess.run(["xdg-open", str(p)], check=False)
+
+
+def open_logs_directory(
+    data_source,
+    campaign_name,
+    base_dir=None,
+):
+    """Open the logs directory."""
+    from disdrodb.configs import get_base_dir
+
+    base_dir = get_base_dir(base_dir)
+    campaign_dir = define_campaign_dir(
+        base_dir=base_dir,
+        product="L0A",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=False,
+    )
+    logs_dir = os.path.join(campaign_dir, "logs")
+    open_file_explorer(logs_dir)

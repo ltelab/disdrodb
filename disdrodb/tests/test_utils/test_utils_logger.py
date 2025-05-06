@@ -22,6 +22,7 @@ import os
 
 import pytest
 
+from disdrodb import ARCHIVE_VERSION
 from disdrodb.api.path import define_campaign_dir, define_logs_dir
 from disdrodb.utils.logger import (
     close_logger,
@@ -221,7 +222,7 @@ def test_log_error(caplog, test_logger, capfd):
 
 @pytest.fixture
 def log_environment(tmp_path):
-    campaign_dir = tmp_path / "processed"
+    campaign_dir = tmp_path / ARCHIVE_VERSION
     os.makedirs(campaign_dir, exist_ok=True)
     product = "test_product"
     station_name = "test_station"

@@ -106,6 +106,69 @@ def check_metadata_dir(metadata_dir: str):
     return metadata_dir
 
 
+def check_measurement_interval(measurement_interval):
+    """Check measurement interval validity."""
+    if isinstance(measurement_interval, str) and measurement_interval == "":
+        raise ValueError("measurement_interval' must be specified as an integer value.")
+    if isinstance(measurement_interval, type(None)):
+        raise ValueError("measurement_interval' can not be None.")
+    if isinstance(measurement_interval, str) and not measurement_interval.isdigit():
+        raise ValueError("measurement_interval' is not a positive digit.")
+    return int(measurement_interval)
+
+
+def check_measurement_intervals(measurement_intervals):
+    """Check measurement interval.
+
+    Can be a list. It must be a positive natural number
+    """
+    if isinstance(measurement_intervals, (int, float, str)):
+        measurement_intervals = [measurement_intervals]
+    measurement_intervals = [check_measurement_interval(v) for v in measurement_intervals]
+    return measurement_intervals
+
+
+def check_sample_interval(sample_interval):
+    """Check sample_interval argument validity."""
+    if not isinstance(sample_interval, int):
+        raise ValueError("'sample_interval' must be an integer.")
+
+
+def check_rolling(rolling):
+    """Check rolling argument validity."""
+    if not isinstance(rolling, bool):
+        raise ValueError("'rolling' must be a boolean.")
+
+
+def check_folder_partitioning(folder_partitioning):
+    """
+    Check if the given folder partitioning scheme is valid.
+
+    Parameters
+    ----------
+    folder_partitioning : str or None
+        Defines the subdirectory structure based on the dataset's start time.
+        Allowed values are:
+          - "": No additional subdirectories, files are saved directly in data_dir.
+          - "year": Files are stored under a subdirectory for the year (<data_dir>/2025).
+          - "year/month": Files are stored under subdirectories by year and month (<data_dir>/2025/04).
+          - "year/month/day": Files are stored under subdirectories by year, month and day (<data_dir>/2025/04/01).
+          - "year/month_name": Files are stored under subdirectories by year and month name (<data_dir>/2025/April).
+          - "year/quarter": Files are stored under subdirectories by year and quarter (<data_dir>/2025/Q2).
+
+    Returns
+    -------
+    folder_partitioning
+        The verified folder partitioning scheme.
+    """
+    valid_options = ["", "year", "year/month", "year/month/day", "year/month_name", "year/quarter"]
+    if folder_partitioning not in valid_options:
+        raise ValueError(
+            f"Invalid folder_partitioning scheme '{folder_partitioning}'. Valid options are: {valid_options}.",
+        )
+    return folder_partitioning
+
+
 def check_sensor_name(sensor_name: str) -> None:
     """Check sensor name.
 
@@ -331,22 +394,6 @@ def check_data_availability(
     ):
         msg = f"The {product} station data directory of {data_source} {campaign_name} {station_name} is empty !"
         raise ValueError(msg)
-
-
-# def check_metadata_dir(product, data_source, campaign_name, base_dir=None):
-#     """Check existence of the metadata directory. If does not exists, raise an error."""
-#     metadata_dir = define_metadata_dir(
-#         product=product,
-#         base_dir=base_dir,
-#         data_source=data_source,
-#         campaign_name=campaign_name,
-#         check_exists=False,
-#     )
-#     if not os.path.exists(metadata_dir) and os.path.isdir(metadata_dir):
-#         msg = f"The metadata directory does not exist at {metadata_dir}."
-#         logger.error(msg)
-#         raise ValueError(msg)
-#     return metadata_dir
 
 
 def check_metadata_file(metadata_dir, data_source, campaign_name, station_name, check_validity=True):

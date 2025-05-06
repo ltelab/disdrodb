@@ -1,7 +1,7 @@
-.. _l0_processing:
+.. _processing:
 
 ============================
-DISDRODB L0 processing
+Archive Processing
 ============================
 
 DISDROB enables to process the data from the command line or by calling a python function.
@@ -177,3 +177,31 @@ Example :
         force=force,
         debugging_mode=debugging_mode,
     )
+
+
+.. note::
+
+    This documentation section is in preparation and will be updated soon ! 
+
+Other arguments to describe
+
+* ``station_name`` : str - Name of the station to be processed.
+
+
+* ``force`` : bool [true\| **false** ] - Whether to overwrite existing data.
+
+    *  If ``True``, overwrite existing data into destination directories.
+    *  If ``False``, raise an error if there are already data into destination directories.
+
+
+* ``verbose`` : bool [true\| **false** ] - Whether to print detailed processing information into terminal.
+
+
+* ``debugging_mode`` : bool [true\| **false** ] -  If ``True``, it reduces the amount of data to process.
+
+    * It processes just 3 raw data files.
+
+* ``parallel`` : bool [true\| **false** ] - Whether to process multiple files simultaneously.
+
+    * If ``parallel=False``, the raw files are processed sequentially.
+    * If ``parallel=True``, each file is processed in a separate core.

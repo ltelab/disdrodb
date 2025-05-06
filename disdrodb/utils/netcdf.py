@@ -423,7 +423,7 @@ def xr_concat_datasets(filepaths: str, verbose=False) -> xr.Dataset:
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         A single xarray dataset.
 
     Raises

@@ -261,7 +261,8 @@ def infer_disdrodb_tree_path(path: str) -> str:
     -------
     str
         Path inside the DISDRODB archive.
-        Format: ``DISDRODB/<Raw or Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>/...``
+        Format: ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/...``
+        Format: ``DISDRODB/<ARCHIVE_VERSION>/<DATA_SOURCE>/<CAMPAIGN_NAME>/...``
     """
     components = infer_disdrodb_tree_path_components(path=path)
     tree_filepath = os.path.join("DISDRODB", *components[1:])

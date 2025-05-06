@@ -775,9 +775,9 @@ def run_l2m_station(
             optimization = model_options["optimization"]
 
             # -----------------------------------------------------------------.
-            msg = f" - Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."
+            msg = f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."
             log_info(logger=logger, msg=msg, verbose=verbose)
-            msg = f" - Estimating {psd_model} parameters using {optimization}."
+            msg = f"Estimating {psd_model} parameters using {optimization}."
             log_info(logger=logger, msg=msg, verbose=verbose)
 
             # -------------------------------------------------------------.

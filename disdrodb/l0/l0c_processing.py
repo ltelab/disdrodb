@@ -22,6 +22,7 @@ import logging
 import numpy as np
 import pandas as pd
 
+from disdrodb.api.checks import check_measurement_intervals
 from disdrodb.api.info import get_start_end_time_from_filepaths
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.utils.logger import log_warning  # , log_info
@@ -95,11 +96,8 @@ def get_files_per_days(filepaths):
 
 def retrieve_possible_measurement_intervals(metadata):
     """Retrieve list of possible measurements intervals."""
-    measurement_interval = metadata.get("measurement_interval", [])
-    if isinstance(measurement_interval, (int, float, str)):
-        measurement_interval = [measurement_interval]
-    measurement_intervals = [int(v) for v in measurement_interval]
-    return measurement_intervals
+    measurement_intervals = metadata.get("measurement_interval", [])
+    return check_measurement_intervals(measurement_intervals)
 
 
 def drop_timesteps_with_invalid_sample_interval(ds, measurement_intervals, verbose=True, logger=None):

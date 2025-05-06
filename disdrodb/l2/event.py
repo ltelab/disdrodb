@@ -88,7 +88,7 @@ def identify_events(
     if parallel:
         list_ds = dask.compute([_delayed_open_dataset(filepath) for filepath in filepaths])[0]
     else:
-        list_ds = [xr.open_dataset(filepath, chunks={}, cache=False) for filepath in filepaths]
+        list_ds = [xr.open_dataset(filepath, chunks={}, cache=False, decode_timedelta=False) for filepath in filepaths]
     # Filter dataset for requested variables
     variables = ["time", "n_drops_selected"]
     list_ds = [ds[variables] for ds in list_ds]

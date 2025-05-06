@@ -27,17 +27,16 @@ def get_valid_metadata_keys() -> list:
     list
         List of valid metadata keys
     """
-    # NOTE: When updating one of these keys, one need to update the yaml in/at:
+    # NOTE: When updating one of these keys, one need to update the yaml files in/at:
     # - the DISDRODB-METADATA repository
-    # - disdrodb/data/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/metadata/*.yml
-    # - disdrodb/tests/data/check_readers/DISDRODB/Raw/*/*/metadata/10.yml
-    # - disdrodb/tests/data/test_dir_structure/DISDRODB/Raw/DATA_SOURCE/CAMPAIGN_NAME/metadata/STATION_NAME.yml
+    # - disdrodb/data/DISDRODB/RAW/DATA_SOURCE/CAMPAIGN_NAME/metadata/*.yml
     list_attrs = [
         ## Mandatory fields
         "data_source",
         "campaign_name",
         "station_name",
         "sensor_name",
+        "measurement_interval",  # sampling_interval ? [in seconds]
         # DISDRODB reader info
         "reader",
         "raw_data_glob_pattern",
@@ -79,9 +78,7 @@ def get_valid_metadata_keys() -> list:
         "firmware_version",
         "sensor_beam_length",
         "sensor_beam_width",
-        "sensor_nominal_width",  # ?
-        ## effective_measurement_area ?  # 0.54 m^2
-        "measurement_interval",  # sampling_interval ? [in seconds]
+        "sensor_nominal_width",
         "calibration_sensitivity",
         "calibration_certification_date",
         "calibration_certification_url",

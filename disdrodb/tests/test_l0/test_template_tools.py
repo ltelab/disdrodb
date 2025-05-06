@@ -93,17 +93,17 @@ def test_get_decimal_ndigits():
 
 def test_get_natural_ndigits():
     assert get_natural_ndigits("123.456") == 3
-    assert get_natural_ndigits("-123.456") == 3
+    assert get_natural_ndigits("-123.456") == 4
     assert get_natural_ndigits("123") == 3
-    assert get_natural_ndigits("-123") == 3
+    assert get_natural_ndigits("-123") == 4
     assert get_natural_ndigits("abc") == 0
 
 
 def test_get_ndigits():
     assert get_ndigits("123.456") == 6
-    assert get_ndigits("-123.456") == 6
+    assert get_ndigits("-123.456") == 7
     assert get_ndigits("123") == 3
-    assert get_ndigits("-123") == 3
+    assert get_ndigits("-123") == 4
     assert get_ndigits("abc") == 0
 
 

@@ -659,12 +659,12 @@ class TestCopyFile:
 class TestRemovePathTrailingSlash:
     def test_windows_path(self):
         """Should strip trailing slash from a Windows path string."""
-        path_windows_in = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME\\"
-        path_windows_out = "\\DISDRODB\\Processed\\DATA_SOURCE\\CAMPAIGN_NAME"
+        path_windows_in = "\\DISDRODB\\ARCHIVE_VERSION\\DATA_SOURCE\\CAMPAIGN_NAME\\"
+        path_windows_out = "\\DISDRODB\\ARCHIVE_VERSION\\DATA_SOURCE\\CAMPAIGN_NAME"
         assert remove_path_trailing_slash(path_windows_in) == path_windows_out
 
     def test_linux_path(self):
         """Should strip trailing slash from a Linux/Unix path string."""
-        path_linux_in = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME/"
-        path_linux_out = "/DISDRODB/Processed/DATA_SOURCE/CAMPAIGN_NAME"
+        path_linux_in = "/DISDRODB/ARCHIVE_VERSION/DATA_SOURCE/CAMPAIGN_NAME/"
+        path_linux_out = "/DISDRODB/ARCHIVE_VERSION/DATA_SOURCE/CAMPAIGN_NAME"
         assert remove_path_trailing_slash(path_linux_in) == path_linux_out

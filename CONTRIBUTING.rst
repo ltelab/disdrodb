@@ -9,7 +9,7 @@ You can contribute in many ways:
 - Report software `issues <#issue-reporting-guidelines>`__
 - Help us developing new readers
 - Add new data to the DISDRODB Decentralized Data Archive
-- Implement new products (e.g. L1, L2, L3)
+- Implement new products
 - ...
 - Any code improvements are welcome !
 

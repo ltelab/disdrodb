@@ -10,6 +10,7 @@ from disdrodb.api.checks import (
 )
 from disdrodb.api.path import (
     define_data_dir,
+    define_data_source_dir,
     define_metadata_dir,
     define_metadata_filepath,
     define_station_dir,
@@ -17,22 +18,6 @@ from disdrodb.api.path import (
 from disdrodb.configs import get_base_dir, get_metadata_dir
 from disdrodb.utils.directories import contains_files, contains_netcdf_or_parquet_files
 from disdrodb.utils.yaml import read_yaml
-
-
-def define_data_source_path(metadata_dir):
-    return os.path.join(
-        metadata_dir,
-        "Raw",  # TODO: "METADATA",
-    )  # TODO: dir_path = get_disdrodb_path(metadata_dir=metadata_dir, product=product)
-
-
-def define_campaign_name_path(metadata_dir, data_source):
-    data_source_path = define_data_source_path(metadata_dir)
-    campaign_path = os.path.join(
-        data_source_path,
-        data_source,
-    )  # TODO: dir_path = get_disdrodb_path(metadata_dir=metadata_dir, product=product, data_source=data_source)
-    return campaign_path
 
 
 def get_required_product(product):
@@ -47,12 +32,12 @@ def get_required_product(product):
 
 
 ####-------------------------------------------------------------------------
+#### List DISDRODB infrastructure directories
 
 
 def list_data_sources(metadata_dir, data_sources=None, invalid_fields_policy="raise"):
     """List data sources names in the DISDRODB Metadata Archive."""
-    data_source_path = define_data_source_path(metadata_dir=metadata_dir)
-    available_data_sources = os.listdir(data_source_path)
+    available_data_sources = os.listdir(os.path.join(metadata_dir, "METADATA"))
     # Filter by optionally specified data_sources
     if data_sources is not None:
         available_data_sources = check_valid_fields(
@@ -66,8 +51,8 @@ def list_data_sources(metadata_dir, data_sources=None, invalid_fields_policy="ra
 
 
 def _list_campaign_names(metadata_dir, data_source):
-    campaign_path = define_campaign_name_path(metadata_dir=metadata_dir, data_source=data_source)
-    campaign_names = os.listdir(campaign_path)
+    data_source_dir = define_data_source_dir(metadata_dir, product="METADATA", data_source=data_source)
+    campaign_names = os.listdir(data_source_dir)
     return campaign_names
 
 

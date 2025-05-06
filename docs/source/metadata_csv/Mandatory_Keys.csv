@@ -3,5 +3,8 @@ data_source, Station data source.
 campaign_name, Station campaign name.
 station_name, Name of the stations (and the metadata file).
 sensor_name, Sensor name. It defines the processing chain in DISDRODB.
+measurement_interval, Sensor measurement sampling interval(s) in seconds
 raw_data_format, File format of the raw data. Either 'txt' or 'netcdf'.
+raw_data_glob_pattern, Glob pattern to search for raw files
 platform_type, Type of station. Either 'fixed' or 'mobile'.
+deployment_status, Deployment status. Either ‘ongoing’ or ‘terminated’

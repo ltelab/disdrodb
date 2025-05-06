@@ -124,6 +124,16 @@ def _check_metadata_station_name(metadata, expected_name):
         )
 
 
+def _check_metadata_measurement_interval(metadata):
+    """Check metadata ``measurement_interval``."""
+    from disdrodb.api.checks import check_measurement_intervals
+
+    if "measurement_interval" not in metadata:
+        raise ValueError("The metadata file does not contain the 'measurement_interval' key.")
+    measurement_intervals = metadata["measurement_interval"]
+    _ = check_measurement_intervals(measurement_intervals)
+
+
 def _check_metadata_sensor_name(metadata):
     from disdrodb.api.checks import check_sensor_name
 
@@ -147,6 +157,7 @@ def check_metadata_compliance(data_source, campaign_name, station_name, metadata
     _check_metadata_data_source(metadata, expected_name=data_source)
     _check_metadata_station_name(metadata, expected_name=station_name)
     _check_metadata_sensor_name(metadata)
+    _check_metadata_measurement_interval(metadata)
     check_metadata_reader(metadata)
 
 

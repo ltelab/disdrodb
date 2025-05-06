@@ -14,6 +14,7 @@ from disdrodb.utils.yaml import write_yaml
 
 
 def create_fake_metadata_directory(metadata_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
+    """Create metadata directory."""
     from disdrodb.api.create_directories import create_metadata_directory
 
     return create_metadata_directory(
@@ -23,21 +24,24 @@ def create_fake_metadata_directory(metadata_dir, data_source="DATA_SOURCE", camp
     )
 
 
-def create_fake_station_dir(
+def create_fake_data_dir(
     base_dir,
     product,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
     station_name="station_name",
+    **product_kwargs,
 ):
-    from disdrodb.api.create_directories import create_station_directory
+    """Create data directory."""
+    from disdrodb.api.create_directories import create_data_directory
 
-    return create_station_directory(
+    return create_data_directory(
         base_dir=base_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        **product_kwargs,
     )
 
 

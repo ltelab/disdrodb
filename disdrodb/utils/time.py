@@ -402,7 +402,7 @@ def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
 
     Duplicated timesteps are removed before inferring the sample interval.
 
-    NOTE: This function is not used in the DISDRODB processing chain.
+    NOTE: This function is used only for the reader preparation.
     """
     # Check sorted by time and sort if necessary
     ds = ensure_sorted_by_time(ds)
@@ -526,7 +526,7 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
     ds = ensure_sorted_by_time(ds)
 
     # Convert time to pandas.DatetimeIndex for easier manipulation
-    times = pd.to_datetime(ds["time"].values)
+    times = pd.to_datetime(ds["time"].to_numpy())
 
     # Determine the start and end times
     start_time = times[0].floor(f"{sample_interval}s")

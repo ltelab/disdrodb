@@ -25,14 +25,13 @@ import pytest
 import xarray as xr
 
 from disdrodb.api.path import (
-    # define_campaign_dir,
     define_l0a_filename,
     define_l0b_filename,
     define_l0c_filename,
 )
 
-# PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\Processed"
-# PROCESSED_FOLDER_LINUX = "/DISDRODB/Processed"
+# PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\RAW"
+# PROCESSED_FOLDER_LINUX = "/DISDRODB/RAW"
 
 
 # @pytest.mark.parametrize("processed_folder", [PROCESSED_FOLDER_WINDOWS, PROCESSED_FOLDER_LINUX])
@@ -47,7 +46,7 @@ from disdrodb.api.path import (
 
 
 def test_define_l0a_filename():
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     # Set variables
     product = "L0A"
@@ -60,7 +59,7 @@ def test_define_l0a_filename():
     df = pd.DataFrame({"time": pd.date_range(start=start_date, end=end_date)})
 
     # Define expected results
-    expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.parquet"
+    expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.parquet"
 
     # Test the function
     res = define_l0a_filename(df, campaign_name, station_name)
@@ -69,7 +68,7 @@ def test_define_l0a_filename():
 
 @pytest.mark.parametrize("product", ["L0B", "L0C"])
 def test_define_l0b_filename(product):
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     # Set variables
     campaign_name = "CAMPAIGN_NAME"
@@ -91,9 +90,9 @@ def test_define_l0b_filename(product):
     # Define expected results
     # TODO: MODIFY !
     if product == "L0B":
-        expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"
+        expected_name = f"{product}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
     else:
-        expected_name = f"{product}.{sample_interval_str}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{PRODUCT_VERSION}.nc"  # noqa: E501
+        expected_name = f"{product}.{sample_interval_str}.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"  # noqa: E501
 
     # Test the function
     define_filename_func = define_l0b_filename if product == "L0B" else define_l0c_filename

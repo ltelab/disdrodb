@@ -19,7 +19,7 @@
 """DISDRODB netCDF4 attributes utilities."""
 import datetime
 
-from disdrodb import CONVENTIONS, PRODUCT_VERSION, SOFTWARE_VERSION
+from disdrodb import ARCHIVE_VERSION, CONVENTIONS, SOFTWARE_VERSION
 
 ####---------------------------------------------------------------------.
 #### Variable attributes
@@ -202,7 +202,7 @@ def update_disdrodb_attrs(ds, product: str):
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
     ds.attrs["disdrodb_processing_date"] = current_time
     # - Add DISDRODB product and version
-    ds.attrs["disdrodb_product_version"] = PRODUCT_VERSION
+    ds.attrs["disdrodb_product_version"] = ARCHIVE_VERSION
     ds.attrs["disdrodb_software_version"] = SOFTWARE_VERSION
     ds.attrs["disdrodb_product"] = product
     return ds

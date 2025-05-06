@@ -28,17 +28,20 @@ from disdrodb.utils.time import (
 )
 
 ####--------------------------------------------------------------------------.
-#### Paths from BASE_DIR
+#### DISDRODB Metadata and Data Archive directories and file paths
 
 
-def get_disdrodb_path(
+def define_disdrodb_path(
     base_dir,
     product,
     data_source="",
     campaign_name="",
     check_exists=True,
 ):
-    """Return the directory in the DISDRODB infrastructure.
+    """Return the directory path in the DISDRODB Metadata and Data Archive.
+
+    If ``product="METADATA"``, it returns the path in the DISDRODB Metadata Archive.
+    Otherwise, it returns the path in the DISDRODB Data Archive.
 
     If ``data_source`` and ``campaign_name`` are not specified it return the product directory.
 
@@ -51,7 +54,8 @@ def get_disdrodb_path(
     base_dir : str
         The disdrodb base directory
     product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
+        The DISDRODB product. See ``disdrodb.available_products()``.
+        If "METADATA" is specified, it returns the path in the DISDRODB Metadata Archive.
     data_source : str, optional
         The data source. Must be specified if ``campaign_name`` is specified.
     campaign_name : str, optional
@@ -64,39 +68,78 @@ def get_disdrodb_path(
     dir_path : str
         Directory path
     """
-    from disdrodb.api.checks import check_base_dir
+    from disdrodb import ARCHIVE_VERSION
 
-    # Check base_dir validity
-    base_dir = check_base_dir(base_dir)  # TODO: REMOVE HERE !
     if len(campaign_name) > 0 and len(data_source) == 0:
         raise ValueError("If campaign_name is specified, data_source must be specified.")
 
     # Get directory
     if product.upper() == "METADATA":
-        # TODO: "METADATA",
-        dir_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
+        dir_path = os.path.join(base_dir, "METADATA", data_source, campaign_name)
     elif product.upper() == "RAW":
-        dir_path = os.path.join(base_dir, "Raw", data_source, campaign_name)
+        dir_path = os.path.join(base_dir, "RAW", data_source, campaign_name)
     else:
-        dir_path = os.path.join(base_dir, "Processed", data_source, campaign_name)
+        dir_path = os.path.join(base_dir, ARCHIVE_VERSION, data_source, campaign_name)
     if check_exists:
         check_directory_exists(dir_path)
     return dir_path
 
 
-def define_campaign_dir(
+def define_data_source_dir(
+    base_dir,
     product,
     data_source,
-    campaign_name,
-    base_dir=None,
     check_exists=False,
 ):
-    """Return the campaign directory in the DISDRODB infrastructure.
+    """Return the data source directory in the DISDRODB infrastructure.
+
+    If ``product="METADATA"``, it returns the path in the DISDRODB Metadata Archive.
+    Otherwise, it returns the path in the DISDRODB Data Archive.
 
     Parameters
     ----------
     product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
+        The DISDRODB product. See ``disdrodb.available_products()``.
+        If "METADATA" is specified, it returns the path in the DISDRODB Metadata Archive.
+    data_source : str
+        The data source.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default ``False``.
+
+    Returns
+    -------
+    station_dir : str
+        Station data directory path
+    """
+    data_source_dir = define_disdrodb_path(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        check_exists=check_exists,
+    )
+    return str(data_source_dir)
+
+
+def define_campaign_dir(
+    base_dir,
+    product,
+    data_source,
+    campaign_name,
+    check_exists=False,
+):
+    """Return the campaign directory in the DISDRODB infrastructure.
+
+    If ``product="METADATA"``, it returns the path in the DISDRODB Metadata Archive.
+    Otherwise, it returns the path in the DISDRODB Data Archive.
+
+    Parameters
+    ----------
+    product : str
+        The DISDRODB product. See ``disdrodb.available_products()``.
+        If "METADATA" is specified, it returns the path in the DISDRODB Metadata Archive.
     data_source : str
         The data source. Must be specified if ``campaign_name`` is specified.
     campaign_name : str
@@ -112,8 +155,7 @@ def define_campaign_dir(
     station_dir : str
         Station data directory path
     """
-    base_dir = get_base_dir(base_dir)
-    campaign_dir = get_disdrodb_path(
+    campaign_dir = define_disdrodb_path(
         base_dir=base_dir,
         product=product,
         data_source=data_source,
@@ -150,7 +192,7 @@ def define_metadata_dir(
     """
     metadata_dir = get_metadata_dir(metadata_dir)
     campaign_dir = define_campaign_dir(
-        base_dir=metadata_dir,  # TODO: REMOVE FUNCTION USAGE HERE FOR SECURITY
+        base_dir=metadata_dir,
         data_source=data_source,
         product="METADATA",
         campaign_name=campaign_name,
@@ -284,6 +326,10 @@ def define_issue_filepath(
     return str(issue_filepath)
 
 
+####--------------------------------------------------------------------------.
+#### DISDRODB software configuration directory
+
+
 def define_config_dir(product):
     """Define the config directory path of a given DISDRODB product."""
     from disdrodb import __root_path__
@@ -298,47 +344,6 @@ def define_config_dir(product):
 
 ####--------------------------------------------------------------------------.
 #### Directory/Filepaths L0A and L0B products
-
-
-def check_sample_interval(sample_interval):
-    """Check sample_interval argument validity."""
-    if not isinstance(sample_interval, int):
-        raise ValueError("'sample_interval' must be an integer.")
-
-
-def check_rolling(rolling):
-    """Check rolling argument validity."""
-    if not isinstance(rolling, bool):
-        raise ValueError("'rolling' must be a boolean.")
-
-
-def check_folder_partitioning(folder_partitioning):
-    """
-    Check if the given folder partitioning scheme is valid.
-
-    Parameters
-    ----------
-    folder_partitioning : str or None
-        Defines the subdirectory structure based on the dataset's start time.
-        Allowed values are:
-          - "": No additional subdirectories, files are saved directly in data_dir.
-          - "year": Files are stored under a subdirectory for the year (<data_dir>/2025).
-          - "year/month": Files are stored under subdirectories by year and month (<data_dir>/2025/04).
-          - "year/month/day": Files are stored under subdirectories by year, month and day (<data_dir>/2025/04/01).
-          - "year/month_name": Files are stored under subdirectories by year and month name (<data_dir>/2025/April).
-          - "year/quarter": Files are stored under subdirectories by year and quarter (<data_dir>/2025/Q2).
-
-    Returns
-    -------
-    folder_partitioning
-        The verified folder partitioning scheme.
-    """
-    valid_options = ["", "year", "year/month", "year/month/day", "year/month_name", "year/quarter"]
-    if folder_partitioning not in valid_options:
-        raise ValueError(
-            f"Invalid folder_partitioning scheme '{folder_partitioning}'. Valid options are: {valid_options}.",
-        )
-    return folder_partitioning
 
 
 def define_file_folder_path(obj, data_dir, folder_partitioning):
@@ -366,6 +371,8 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
     str
         A complete directory path where the file should be saved.
     """
+    from disdrodb.api.checks import check_folder_partitioning
+
     # Validate the folder partition parameter.
     check_folder_partitioning(folder_partitioning)
 
@@ -409,7 +416,7 @@ def define_product_dir_tree(
     Parameters
     ----------
     product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
+       The DISDRODB product. See ``disdrodb.available_products()``.
     sample_interval : int, optional
         The sampling interval in seconds of the product.
         It must be specified only for product L2E and L2M !
@@ -425,21 +432,21 @@ def define_product_dir_tree(
     data_dir : str
         Station data directory path
     """
-    from disdrodb.api.checks import check_product, check_product_kwargs
+    from disdrodb.api.checks import check_product, check_product_kwargs, check_rolling, check_sample_interval
 
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
     if product.upper() == "RAW":
         return ""
     if product.upper() in ["L0A", "L0B", "L0C", "L1"]:
-        return product
+        return ""
     if product == "L2E":
         rolling = product_kwargs.get("rolling")
         sample_interval = product_kwargs.get("sample_interval")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        return os.path.join(product, sample_interval_acronym)
+        return os.path.join(sample_interval_acronym)
     if product == "L2M":
         rolling = product_kwargs.get("rolling")
         sample_interval = product_kwargs.get("sample_interval")
@@ -447,24 +454,73 @@ def define_product_dir_tree(
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        return os.path.join(product, model_name, sample_interval_acronym)
+        return os.path.join(model_name, sample_interval_acronym)
     raise ValueError(f"The product {product} is not defined.")
 
 
-def define_station_dir_new(
+def define_logs_dir(
     product,
     data_source,
     campaign_name,
     station_name,
     base_dir=None,
     check_exists=False,
-):  # TODO: IN FUTURE without product --> campaign_dir/station_name/product !
+    **product_kwargs,
+):
+    """Return the station log directory in the DISDRODB infrastructure.
+
+    Parameters
+    ----------
+    product : str
+       The DISDRODB product. See ``disdrodb.available_products()``.
+    data_source : str
+        The data source.
+    campaign_name : str
+        The campaign name.
+    station_name : str
+        The station name.
+    base_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
+    check_exists : bool, optional
+        Whether to check if the directory exists. By default ``False``.
+
+    Returns
+    -------
+    station_dir : str
+        Station data directory path
+    """
+    campaign_dir = define_campaign_dir(
+        base_dir=base_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=check_exists,
+    )
+    product_dir_tree = define_product_dir_tree(
+        product=product,
+        **product_kwargs,
+    )
+    logs_dir = os.path.join(campaign_dir, "logs", "files", product, product_dir_tree, station_name)
+    if check_exists:
+        check_directory_exists(logs_dir)
+    return str(logs_dir)
+
+
+def define_station_dir(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    base_dir=None,
+    check_exists=False,
+):
     """Return the station data directory in the DISDRODB infrastructure.
 
     Parameters
     ----------
     product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
+       The DISDRODB product. See ``disdrodb.available_products()``.
     data_source : str
         The data source.
     campaign_name : str
@@ -483,7 +539,7 @@ def define_station_dir_new(
         Station data directory path
     """
     base_dir = get_base_dir(base_dir)
-    campaign_dir = get_disdrodb_path(
+    campaign_dir = define_disdrodb_path(
         base_dir=base_dir,
         product=product,
         data_source=data_source,
@@ -493,116 +549,10 @@ def define_station_dir_new(
     if product.upper() == "RAW":
         station_dir = os.path.join(campaign_dir, "data", station_name)
     else:
-        station_dir = os.path.join(campaign_dir, station_name, "data")
+        station_dir = os.path.join(campaign_dir, product, station_name)
     if check_exists:
         check_directory_exists(station_dir)
     return str(station_dir)
-
-
-def define_data_dir_new(
-    product,
-    data_source,
-    campaign_name,
-    station_name,
-    base_dir=None,
-    check_exists=False,
-    **product_kwargs,
-):
-    """Return the station data directory in the DISDRODB infrastructure.
-
-    Parameters
-    ----------
-    product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
-    data_source : str
-        The data source.
-    campaign_name : str
-        The campaign name.
-    station_name : str
-        The station name.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
-
-    Returns
-    -------
-    station_dir : str
-        Station data directory path
-    """
-    station_dir = define_station_dir_new(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        check_exists=check_exists,
-    )
-    product_dir_tree = define_product_dir_tree(
-        product=product,
-        **product_kwargs,
-    )
-    data_dir = os.path.join(station_dir, product_dir_tree)
-    if check_exists:
-        check_directory_exists(data_dir)
-    return str(data_dir)
-
-
-def define_logs_dir(
-    product,
-    data_source,
-    campaign_name,
-    station_name,
-    base_dir=None,
-    check_exists=False,
-    **product_kwargs,
-):
-    """Return the station log directory in the DISDRODB infrastructure.
-
-    Parameters
-    ----------
-    product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
-    data_source : str
-        The data source.
-    campaign_name : str
-        The campaign name.
-    station_name : str
-        The station name.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
-
-    Returns
-    -------
-    station_dir : str
-        Station data directory path
-    """
-    # station_dir = define_station_dir_new(
-    #     base_dir=base_dir,
-    #     product=product,
-    #     data_source=data_source,
-    #     campaign_name=campaign_name,
-    #     check_exists=check_exists,
-    # )
-    campaign_dir = define_campaign_dir(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exists=check_exists,
-    )
-    product_dir_tree = define_product_dir_tree(
-        product=product,
-        **product_kwargs,
-    )
-    logs_dir = os.path.join(campaign_dir, "logs", "files", product_dir_tree, station_name)
-    if check_exists:
-        check_directory_exists(logs_dir)
-    return str(logs_dir)
 
 
 def define_data_dir(
@@ -619,7 +569,7 @@ def define_data_dir(
     Parameters
     ----------
     product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
+       The DISDRODB product. See ``disdrodb.available_products()``.
     data_source : str
         The data source.
     campaign_name : str
@@ -650,7 +600,7 @@ def define_data_dir(
 
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
-
+    # Define station directory
     station_dir = define_station_dir(
         base_dir=base_dir,
         product=product,
@@ -658,89 +608,18 @@ def define_data_dir(
         campaign_name=campaign_name,
         station_name=station_name,
         check_exists=check_exists,
+    )  # <product>/<station_name>
+    # Define product directory directory (i.e. for L2E and L2M)
+    product_dir_tree = define_product_dir_tree(
+        product,
+        **product_kwargs,
     )
-    if product.upper() in ["RAW", "L0A", "L0B", "L0C", "L1"]:
-        data_dir = station_dir
-    elif product == "L2E":
-        rolling = product_kwargs.get("rolling")
-        sample_interval = product_kwargs.get("sample_interval")
-        check_rolling(rolling)
-        check_sample_interval(sample_interval)
-        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        data_dir = os.path.join(station_dir, sample_interval_acronym)
-    elif product == "L2M":
-        rolling = product_kwargs.get("rolling")
-        sample_interval = product_kwargs.get("sample_interval")
-        model_name = product_kwargs.get("model_name")
-        check_rolling(rolling)
-        check_sample_interval(sample_interval)
-        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        data_dir = os.path.join(station_dir, model_name, sample_interval_acronym)
-    else:
-        raise NotImplementedError
+    # Define data directory
+    data_dir = os.path.join(station_dir, product_dir_tree)
+    # Check if directory exists
     if check_exists:
         check_directory_exists(data_dir)
     return str(data_dir)
-
-
-def define_product_dir(campaign_dir: str, product: str) -> str:
-    """Define product directory."""
-    # TODO: this currently only works for L0A and L0B. Should be removed !
-    # - Raw: <campaign>/data/<...>
-    # - Processed: <campaign>/L0A/L0B>
-    if product.upper() == "RAW":
-        product_dir = os.path.join(campaign_dir, "data")
-    else:
-        product_dir = os.path.join(campaign_dir, product)
-    return product_dir
-
-
-def define_station_dir(
-    product,
-    data_source,
-    campaign_name,
-    station_name,
-    base_dir=None,
-    check_exists=False,
-):  # TODO: IN FUTURE without product --> campaign_dir/station_name/product !
-    """Return the station data directory in the DISDRODB infrastructure.
-
-    Parameters
-    ----------
-    product : str
-        The DISDRODB product. It can be ``"RAW"``, ``"L0A"``, or ``"L0B"``.
-    data_source : str
-        The data source.
-    campaign_name : str
-        The campaign name.
-    station_name : str
-        The station name.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
-
-    Returns
-    -------
-    station_dir : str
-        Station data directory path
-    """
-    base_dir = get_base_dir(base_dir)
-    campaign_dir = get_disdrodb_path(
-        base_dir=base_dir,
-        product=product,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exists=check_exists,
-    )
-    if product.upper() == "RAW":
-        station_dir = os.path.join(campaign_dir, "data", station_name)
-    else:
-        station_dir = os.path.join(campaign_dir, product, station_name)
-    if check_exists:
-        check_directory_exists(station_dir)
-    return str(station_dir)
 
 
 ####--------------------------------------------------------------------------.
@@ -803,7 +682,7 @@ def define_filename(
     str
         L0B file name.
     """
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
     from disdrodb.api.checks import check_product, check_product_kwargs
 
     product = check_product(product)
@@ -846,7 +725,7 @@ def define_filename(
     # -----------------------------------------.
     # Add product version
     if add_version:
-        filename = f"{filename}.{PRODUCT_VERSION}"
+        filename = f"{filename}.{ARCHIVE_VERSION}"
 
     # -----------------------------------------.
     # Add product extension
@@ -877,12 +756,12 @@ def define_l0a_filename(df, campaign_name: str, station_name: str) -> str:
     str
         L0A file name.
     """
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     starting_time, ending_time = get_file_start_end_time(df)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = PRODUCT_VERSION
+    version = ARCHIVE_VERSION
     filename = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
     return filename
 
@@ -904,12 +783,12 @@ def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
     str
         L0B file name.
     """
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = PRODUCT_VERSION
+    version = ARCHIVE_VERSION
     filename = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return filename
 
@@ -931,7 +810,7 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     str
         L0B file name.
     """
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
@@ -939,7 +818,7 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = PRODUCT_VERSION
+    version = ARCHIVE_VERSION
     filename = (
         f"L0C.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     )
@@ -963,7 +842,7 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
     str
         L1 file name.
     """
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
@@ -971,7 +850,7 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = PRODUCT_VERSION
+    version = ARCHIVE_VERSION
     filename = (
         f"L1.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     )
@@ -995,13 +874,13 @@ def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interv
     str
         L0B file name.
     """
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = PRODUCT_VERSION
+    version = ARCHIVE_VERSION
     filename = (
         f"L2E.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     )
@@ -1032,13 +911,13 @@ def define_l2m_filename(
     str
         L0B file name.
     """
-    from disdrodb import PRODUCT_VERSION
+    from disdrodb import ARCHIVE_VERSION
 
     sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = PRODUCT_VERSION
+    version = ARCHIVE_VERSION
     filename = (
         f"L2M_{model_name}.{sample_interval_acronym}.{campaign_name}."
         + f"{station_name}.s{starting_time}.e{ending_time}.{version}.nc"

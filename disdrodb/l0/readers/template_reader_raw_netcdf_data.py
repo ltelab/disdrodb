@@ -30,33 +30,33 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Open the netCDF
     ds = open_raw_netcdf_file(filepath=filepath, logger=logger)
-    
-    ##------------------------------------------------------------------------.
+
+    ##---------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Define dictionary mapping dataset variables and coordinates to keep and rename
+    # Define dictionary mapping dataset variables and coordinates to keep (and rename)
     # - If the platform is moving, keep longitude, latitude and altitude
-    # - If the platform is fixed, remove longitude, latitude and altitude coordinates 
+    # - If the platform is fixed, remove longitude, latitude and altitude coordinates
     #   --> The geolocation information must be specified in the station metadata !
     dict_names = {
         # Dimensions
-        "<raw_dataset_diameter_dimension>": "diameter_bin_center",
-        "<raw_dataset_velocity_dimension>": "velocity_bin_center",
+        "<raw_dataset_diameter_dimension>": "diameter_bin_center",  # [TO ADAPT]
+        "<raw_dataset_velocity_dimension>": "velocity_bin_center",  # [TO ADAPT]
         # Variables
         # - Add here other variables accepted by DISDRODB L0 standards
-        "<precipitation_spectrum>": "raw_drop_number",
+        "<precipitation_spectrum>": "raw_drop_number",  # [TO ADAPT]
     }
-    
+
     # Rename dataset variables and columns and infill missing variables
-    sensor_name = "Thies_LPM" # Specify here the sensor for which the reader is designed
+    sensor_name = "Thies_LPM"  # [SPECIFY HERE THE SENSOR FOR WHICH THE READER IS DESIGNED]
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
-    # Replace occurence of NaN flags with np.nan
+    # Replace occureence of NaN flags with np.nan
     # - Define a dictionary specifying the value(s) of NaN flags for each variable
-    # - The code here below is just an example that requires to be adapted ! 
+    # - The code here below is just an example that requires to be adapted !
     # - This step might not be required with your data !
-    dict_nan_flags = {"<raw_drop_number>",: [-9999, -999]}
+    dict_nan_flags = {"<raw_drop_number>": [-9999, -999]}
     ds = replace_custom_nan_flags(ds, dict_nan_flags=dict_nan_flags, logger=logger)
-    
+
     # [ADD ADDITIONAL REQUIRED CUSTOM CODE HERE]
 
     return ds

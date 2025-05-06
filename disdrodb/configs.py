@@ -55,8 +55,7 @@ def define_disdrodb_configs(
     The configuration file is used to run the various DISDRODB operations.
 
     """
-    from disdrodb.api.checks import check_base_dir, check_metadata_dir
-    from disdrodb.api.path import check_folder_partitioning
+    from disdrodb.api.checks import check_base_dir, check_folder_partitioning, check_metadata_dir
 
     # Define path to .config_disdrodb.yaml file
     filepath = _define_config_filepath()
@@ -148,7 +147,7 @@ def get_metadata_dir(metadata_dir=None):
 def get_folder_partitioning():
     """Return the folder partitioning."""
     import disdrodb
-    from disdrodb.api.path import check_folder_partitioning
+    from disdrodb.api.checks import check_folder_partitioning
 
     # Get the folder partitioning
     folder_partitioning = disdrodb.config.get("folder_partitioning", None)

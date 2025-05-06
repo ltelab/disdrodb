@@ -77,7 +77,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
         check_exists=False,
     )
 
-    # Create station Raw directory structure (with fake data)
+    # Create station RAW directory structure (with fake data)
     # - Add fake raw data file
     _ = create_fake_raw_data_file(
         base_dir=base_dir,
@@ -193,6 +193,7 @@ def test_create_product_directory(tmp_path):
     metadata_dict = {}
     metadata_dict["sensor_name"] = "OTT_Parsivel"
     metadata_dict["reader"] = "GPM/IFLOODS"
+    metadata_dict["measurement_interval"] = 60
 
     # Test raise error without data
     with pytest.raises(ValueError):
@@ -345,6 +346,7 @@ def test_create_initial_station_structure(tmp_path):
     with pytest.raises(ValueError):
         create_initial_station_structure(
             base_dir=base_dir,
+            metadata_dir=metadata_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -405,7 +407,7 @@ def test_create_test_archive(tmp_path):
             force=True,
         )
 
-    create_test_archive(
+    test_base_dir = create_test_archive(
         test_base_dir=test_base_dir,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -414,38 +416,8 @@ def test_create_test_archive(tmp_path):
         metadata_dir=metadata_dir,
         force=True,
     )
-
-    # TODO: REMOVE ! OUTDATED WITH SEPARATE METADATA DIRECTORY !
-    # # Create initial station structure
-    # create_initial_station_structure(
-    #     base_dir=base_dir,
-    #     data_source=data_source,
-    #     campaign_name=campaign_name,
-    #     station_name=station_name,
-    # )
-
-    # create_test_archive(
-    #     test_base_dir=test_base_dir,
-    #     base_dir=base_dir,
-    #     data_source=data_source,
-    #     campaign_name=campaign_name,
-    #     station_name=station_name,
-    # )
-    # # Check metadata and issue files have been created
-    # metadata_filepath = define_metadata_filepath(
-    #     metadata_dir=test_base_dir,
-    #     data_source=data_source,
-    #     campaign_name=campaign_name,
-    #     station_name=station_name,
-    # )
-    # issue_filepath = define_issue_filepath(
-    #     metadata_dir=test_base_dir,
-    #     data_source=data_source,
-    #     campaign_name=campaign_name,
-    #     station_name=station_name,
-    # )
-    # assert os.path.exists(metadata_filepath)
-    # assert os.path.exists(issue_filepath)
+    assert os.path.exists(test_base_dir)
+    assert os.path.isdir(test_base_dir)
 
 
 def test_create_issue_directory(tmp_path):

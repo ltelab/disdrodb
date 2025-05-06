@@ -216,7 +216,7 @@ def retrieve_l0b_arrays(
         Dictionary with data arrays.
 
     """
-    msg = " - Retrieval of L0B data arrays started."
+    msg = "Retrieval of L0B data arrays started."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
@@ -274,7 +274,7 @@ def retrieve_l0b_arrays(
 
     # -------------------------------------------------------------------------.
     # Log
-    msg = " - Retrieval of L0B data arrays ended."
+    msg = "Retrieval of L0B data arrays ended."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # Return
     return dict_data
@@ -294,7 +294,7 @@ def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Output dataset.
     """
     for var in ds.data_vars:
@@ -407,7 +407,7 @@ def create_l0b_from_l0a(
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         DISDRODB L0B dataset.
 
     Raises
@@ -498,7 +498,7 @@ def set_l0b_encodings(ds: xr.Dataset, sensor_name: str):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Output xarray dataset.
     """
     encoding_dict = get_l0b_encodings_dict(sensor_name)

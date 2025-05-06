@@ -89,7 +89,7 @@ def check_matching_column_number(df, column_names):
     n_columns = len(df.columns)
     n_expected_columns = len(column_names)
     if n_columns != n_expected_columns:
-        msg = f" - The dataframe has {n_columns} columns, while {n_expected_columns} are expected !."
+        msg = f"The dataframe has {n_columns} columns, while {n_expected_columns} are expected !."
         raise ValueError(msg)
 
 
@@ -130,16 +130,17 @@ def read_raw_text_file(
     try:
         df = pd.read_csv(filepath, names=column_names, dtype=dtype, **reader_kwargs)
     except pd.errors.EmptyDataError:
-        msg = f" - The following file is empty: {filepath}"
+        msg = f"The following file is empty: {filepath}"
         raise ValueError(msg)
 
     # Check the dataframe is not empty
     if len(df.index) == 0:
-        msg = f" - The following file is empty: {filepath}"
+        msg = f"The following file is empty: {filepath}"
         raise ValueError(msg)
 
-    # - Check dataframe column number matches columns_names
-    check_matching_column_number(df, column_names)
+    # Check dataframe column number matches columns_names
+    if column_names is not None:
+        check_matching_column_number(df, column_names)
 
     # Return dataframe
     return df
@@ -161,7 +162,7 @@ def remove_rows_with_missing_time(df: pd.DataFrame, logger=logger, verbose: bool
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe with valid timesteps.
     """
     # Get the number of rows of the dataframe
@@ -170,12 +171,12 @@ def remove_rows_with_missing_time(df: pd.DataFrame, logger=logger, verbose: bool
     df = df.dropna(subset="time", axis=0)
     # If no valid timesteps, raise error
     if len(df.index) == 0:
-        msg = " - There are not valid timestep."
+        msg = "There are not valid timestep."
         raise ValueError(msg)
     # Otherwise, report the number of invalid timesteps
     n_invalid_timesteps = n_rows - len(df)
     if n_invalid_timesteps > 0:
-        msg = f" - {n_invalid_timesteps} rows had invalid timesteps and were discarded."
+        msg = f"{n_invalid_timesteps} rows had invalid timesteps and were discarded."
         log_warning(logger=logger, msg=msg, verbose=verbose)
     return df
 
@@ -194,7 +195,7 @@ def remove_duplicated_timesteps(df: pd.DataFrame, logger=None, verbose: bool = F
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe with valid unique timesteps.
     """
     values, counts = np.unique(df["time"], return_counts=True)
@@ -208,7 +209,7 @@ def remove_duplicated_timesteps(df: pd.DataFrame, logger=None, verbose: bool = F
         df = df.drop_duplicates(subset="time", keep="first")
         # Report the values of duplicated timesteps
         msg = (
-            f" - The following timesteps occurred more than once: {values_duplicates}. Only the first occurrence"
+            f"The following timesteps occurred more than once: {values_duplicates}. Only the first occurrence"
             " selected."
         )
         log_warning(logger=logger, msg=msg, verbose=verbose)
@@ -254,7 +255,7 @@ def remove_issue_timesteps(df, issue_dict, logger=None, verbose=False):
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe with problematic timesteps removed.
 
     """
@@ -294,7 +295,7 @@ def cast_column_dtypes(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe with corrected columns types.
     """
     # Cast dataframe to dtypes
@@ -330,7 +331,7 @@ def coerce_corrupted_values_to_nan(df: pd.DataFrame, sensor_name: str) -> pd.Dat
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe with string columns without corrupted values.
     """
     # Cast dataframe to dtypes
@@ -361,7 +362,7 @@ def strip_string_spaces(df: pd.DataFrame, sensor_name: str) -> pd.DataFrame:
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe with string columns without leading/trailing spaces.
     """
     # Cast dataframe to dtypes
@@ -458,7 +459,7 @@ def replace_nan_flags(df, sensor_name, logger=None, verbose=False):
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe without nan_flags values.
     """
     # Get dictionary of nan flags
@@ -493,7 +494,7 @@ def set_nan_outside_data_range(df, sensor_name, logger=None, verbose=False):
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe without values outside the expected data range.
     """
     # Get dictionary of data_range
@@ -532,7 +533,7 @@ def set_nan_invalid_values(df, sensor_name, logger=None, verbose=False):
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe without invalid values.
     """
     # Get dictionary of valid values
@@ -581,10 +582,9 @@ def sanitize_df(
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe
     """
-    # TODO: PASS LOGGER HERE AS ARGUMENT !
     # Define the issue dictionary
     # - If None, set to empty dictionary
     issue_dict = {} if issue_dict is None else issue_dict
@@ -696,7 +696,7 @@ def write_l0a(
         msg = f"The Pandas Dataframe has been written as an Apache Parquet file to {filepath}."
         log_info(logger=logger, msg=msg, verbose=verbose)
     except Exception as e:
-        msg = f" - The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
+        msg = f"The Pandas DataFrame cannot be written as an Apache Parquet file. The error is: \n {e}."
         raise ValueError(msg)
     # -------------------------------------------------------------------------.
 
@@ -718,7 +718,7 @@ def concatenate_dataframe(list_df: list, logger=None, verbose: bool = False) -> 
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Concatenated dataframe.
 
     Raises
@@ -792,7 +792,7 @@ def read_l0a_dataframe(
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         L0A Dataframe.
 
     """
@@ -856,7 +856,7 @@ def read_raw_text_files(
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         Dataframe
 
     Raises

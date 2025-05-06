@@ -46,12 +46,12 @@ The software currently enable to:
 - read the raw measurements of more than 400 disdrometer stations and save them into a standard NetCDF format (DISDRODB L0 product).
 
 The disdrodb software is able to process data from various disdrometer sensors and manufacturers, and is designed to be easily extended to new ones.
-Currently, disdrodb enables to process data acquired from:
+Currently, disdrodb enables to process data acquired from the following disdrometer sensors:
 
-- the OTT Parsivel (``OTT_Parsivel``),
-- the OTT Parsivel2 (``OTT_Parsivel2``),
-- the Thies Laser Precipitation Monitor (``Thies_LPM``),
-- the RD-80 (``RD_80``) disdrometer.
+- OTT Parsivel (``OTT_Parsivel``),
+- OTT Parsivel2 (``OTT_Parsivel2``),
+- Thies Laser Precipitation Monitor (``Thies_LPM``),
+- Distromet RD-80 (``RD_80``).
 
 Data Archive
 ==============
@@ -74,7 +74,7 @@ Community
 
 The DISDRODB Working Group is a open community of scientists and engineers interested in advancing the DISDRODB initiative.
 
-We are currently planning the development of the DISDRODB L1 product,
+We are currently finalizing the development of the DISDRODB L1 product,
 featuring quality-checked disdrometer data, along with a suite of scientific-research-oriented DISDRODB L2 products.
 
 Your ideas, algorithms, data, and expertise could significantly shape the future of DISDRODB products,
@@ -93,18 +93,18 @@ Documentation
    :maxdepth: 2
 
    installation
-   data_download
-   l0_processing
+   quick_start
+   products
    metadata_archive
-   readers
    metadata
+   processing
+   readers
    sensor_configs
    contribute_data
    contributors_guidelines
    maintainers_guidelines
-   authors
    software_structure
-
+   authors
 
 .. toctree::
    :maxdepth: 2

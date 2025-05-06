@@ -1996,14 +1996,14 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods: str) -> xr.D
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds : xarray.Dataset
         An xarray Dataset with the required moments M0...M6 as data variables.
     mom_methods: str or list
         Valid MOM methods are {'M012', 'M234', 'M246', 'M456', 'M346'}.
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         A Dataset containing mu, Lambda, and N0 variables.
         If multiple mom_methods are specified, the dataset has the dimension mom_method.
 

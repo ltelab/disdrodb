@@ -211,7 +211,7 @@ def check_l0a_encoding(sensor_name: str) -> None:
 
 
 class RawDataFormatSchema(BaseModel):
-    """Pydantic model for the DISDRODB Raw Data Format YAML files."""
+    """Pydantic model for the DISDRODB RAW Data Format YAML files."""
 
     n_digits: Optional[int]
     n_characters: Optional[int]
