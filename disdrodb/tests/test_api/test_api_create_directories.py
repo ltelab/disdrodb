@@ -104,7 +104,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     )
 
     # Mock to pass metadata checks
-    mocker.patch("disdrodb.metadata.checks.check_metadata_compliance", return_value=None)
+    mocker.patch("disdrodb.metadata.checks.check_station_metadata", return_value=None)
 
     # Test that if station_name is unexisting in data, raise error
     with pytest.raises(ValueError):

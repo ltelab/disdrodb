@@ -38,10 +38,11 @@ from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation
 from disdrodb.l0.l0_reader import available_readers, get_reader, get_station_reader
-from disdrodb.metadata import read_metadata_database, read_station_metadata
+from disdrodb.metadata import read_metadata_archive, read_station_metadata
 from disdrodb.metadata.checks import (
-    check_archive_metadata_compliance,
-    check_archive_metadata_geolocation,
+    check_metadata_archive,
+    check_metadata_archive_geolocation,
+    check_station_metadata,
 )
 
 ARCHIVE_VERSION = "V0"
@@ -93,13 +94,14 @@ __all__ = [
     "get_data_archive_dir",
     "available_readers",
     "open_dataset",
-    "check_archive_metadata_compliance",
-    "check_archive_metadata_geolocation",
+    "check_station_metadata",
+    "check_metadata_archive",
+    "check_metadata_archive_geolocation",
     "open_documentation",
     "open_sensor_documentation",
     "open_logs_directory",
     "read_station_metadata",
-    "read_metadata_database",
+    "read_metadata_archive",
     "download_archive",
     "download_station",
 ]

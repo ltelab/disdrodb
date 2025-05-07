@@ -398,7 +398,7 @@ def check_data_availability(
 
 def check_metadata_file(metadata_archive_dir, data_source, campaign_name, station_name, check_validity=True):
     """Check existence of a valid metadata YAML file. If does not exists, raise an error."""
-    from disdrodb.metadata.checks import check_metadata_compliance
+    from disdrodb.metadata.checks import check_station_metadata
 
     metadata_filepath = define_metadata_filepath(
         metadata_archive_dir=metadata_archive_dir,
@@ -417,7 +417,7 @@ def check_metadata_file(metadata_archive_dir, data_source, campaign_name, statio
 
     # Check validity
     if check_validity:
-        check_metadata_compliance(
+        check_station_metadata(
             metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,

@@ -61,7 +61,7 @@ def read_station_metadata(data_source, campaign_name, station_name, metadata_arc
     return metadata_dict
 
 
-def read_metadata_database(
+def read_metadata_archive(
     metadata_archive_dir=None,
     data_sources=None,
     campaign_names=None,

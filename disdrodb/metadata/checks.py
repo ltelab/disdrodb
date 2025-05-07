@@ -141,7 +141,7 @@ def _check_metadata_sensor_name(metadata):
     check_sensor_name(sensor_name)
 
 
-def check_metadata_compliance(data_source, campaign_name, station_name, metadata_archive_dir=None):
+def check_station_metadata(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Check DISDRODB metadata compliance."""
     from disdrodb.l0.l0_reader import check_metadata_reader
 
@@ -185,7 +185,7 @@ def _check_lonlat_validity(longitude, latitude):
         raise ValueError("Invalid latitude (outside [-90, 90])")
 
 
-def check_metadata_geolocation(metadata) -> None:
+def check_station_metadata_geolocation(metadata) -> None:
     """Identify metadata with missing or wrong geolocation."""
     # Get longitude, latitude and platform type
     longitude = metadata.get("longitude")
@@ -219,7 +219,7 @@ def identify_missing_metadata_coords(metadata_filepaths: str) -> None:
     """
     for filepath in metadata_filepaths:
         metadata = read_yaml(filepath)
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
 
 def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list]) -> None:
@@ -246,7 +246,7 @@ def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list
 #### Check Metadata Archive
 
 
-def check_archive_metadata_keys(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_keys(metadata_archive_dir: Optional[str] = None) -> bool:
     """Check that all metadata files have valid keys.
 
     Parameters
@@ -293,7 +293,7 @@ def check_archive_metadata_keys(metadata_archive_dir: Optional[str] = None) -> b
     return is_valid
 
 
-def check_archive_metadata_campaign_name(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_campaign_name(metadata_archive_dir: Optional[str] = None) -> bool:
     """Check metadata ``campaign_name``.
 
     Parameters
@@ -339,7 +339,7 @@ def check_archive_metadata_campaign_name(metadata_archive_dir: Optional[str] = N
     return is_valid
 
 
-def check_archive_metadata_data_source(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_data_source(metadata_archive_dir: Optional[str] = None) -> bool:
     """Check metadata ``data_source``.
 
     Parameters
@@ -385,7 +385,7 @@ def check_archive_metadata_data_source(metadata_archive_dir: Optional[str] = Non
     return is_valid
 
 
-def check_archive_metadata_sensor_name(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_sensor_name(metadata_archive_dir: Optional[str] = None) -> bool:
     """Check metadata ``sensor_name``.
 
     Parameters
@@ -431,7 +431,7 @@ def check_archive_metadata_sensor_name(metadata_archive_dir: Optional[str] = Non
     return is_valid
 
 
-def check_archive_metadata_station_name(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_station_name(metadata_archive_dir: Optional[str] = None) -> bool:
     """Check metadata ``station_name``.
 
     Parameters
@@ -477,7 +477,7 @@ def check_archive_metadata_station_name(metadata_archive_dir: Optional[str] = No
     return is_valid
 
 
-def check_archive_metadata_reader(metadata_archive_dir: Optional[str] = None) -> bool:
+def check_metadata_archive_reader(metadata_archive_dir: Optional[str] = None) -> bool:
     """Check if the ``reader`` key is available and there is the associated reader.
 
     Parameters
@@ -525,7 +525,7 @@ def check_archive_metadata_reader(metadata_archive_dir: Optional[str] = None) ->
     return is_valid
 
 
-def check_archive_metadata_compliance(metadata_archive_dir: Optional[str] = None, raise_error=False):
+def check_metadata_archive(metadata_archive_dir: Optional[str] = None, raise_error=False):
     """Check the archive metadata compliance.
 
     Parameters
@@ -560,7 +560,7 @@ def check_archive_metadata_compliance(metadata_archive_dir: Optional[str] = None
         station_name = os.path.basename(filepath).replace(".yml", "")
         # Check compliance
         try:
-            check_metadata_compliance(
+            check_station_metadata(
                 metadata_archive_dir=metadata_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
@@ -577,7 +577,7 @@ def check_archive_metadata_compliance(metadata_archive_dir: Optional[str] = None
     return is_valid
 
 
-def check_archive_metadata_geolocation(metadata_archive_dir: Optional[str] = None):
+def check_metadata_archive_geolocation(metadata_archive_dir: Optional[str] = None):
     """Check the metadata files have missing or wrong geolocation..
 
     Parameters
@@ -615,7 +615,7 @@ def check_archive_metadata_geolocation(metadata_archive_dir: Optional[str] = Non
             station_name=station_name,
         )
         try:
-            check_metadata_geolocation(metadata)
+            check_station_metadata_geolocation(metadata)
         except Exception as e:
             is_valid = False
             print(f"Missing information for {data_source} {campaign_name} {station_name}.")

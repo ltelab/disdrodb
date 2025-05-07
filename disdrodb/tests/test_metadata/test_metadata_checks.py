@@ -23,15 +23,15 @@ from disdrodb.api.configs import available_sensor_names
 from disdrodb.l0.l0_reader import available_readers
 from disdrodb.metadata.checks import (
     _check_metadata_values,
-    check_archive_metadata_campaign_name,
-    check_archive_metadata_compliance,
-    check_archive_metadata_data_source,
-    check_archive_metadata_geolocation,
-    check_archive_metadata_keys,
-    check_archive_metadata_reader,
-    check_archive_metadata_sensor_name,
-    check_archive_metadata_station_name,
-    check_metadata_geolocation,
+    check_metadata_archive,
+    check_metadata_archive_campaign_name,
+    check_metadata_archive_data_source,
+    check_metadata_archive_geolocation,
+    check_metadata_archive_keys,
+    check_metadata_archive_reader,
+    check_metadata_archive_sensor_name,
+    check_metadata_archive_station_name,
+    check_station_metadata_geolocation,
     identify_empty_metadata_keys,
     identify_missing_metadata_coords,
 )
@@ -40,50 +40,50 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
 
-def test_check_metadata_geolocation():
+def test_check_station_metadata_geolocation():
     # Test missing longitude and latitude
     metadata = {"platform_type": "fixed"}
     with pytest.raises(ValueError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test non-numeric longitude
     metadata = {"longitude": "not_a_number", "latitude": 20, "platform_type": "fixed"}
     with pytest.raises(TypeError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test non-numeric latitude
     metadata = {"longitude": 10, "latitude": "not_a_number", "platform_type": "fixed"}
     with pytest.raises(TypeError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test mobile platform with wrong coordinates
     metadata = {"longitude": 10, "latitude": 20, "platform_type": "mobile"}
     with pytest.raises(ValueError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test fixed platform with missing latitude
     metadata = {"longitude": 10, "latitude": -9999, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test fixed platform with missing longitude
     metadata = {"longitude": -9999, "latitude": 20, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test invalid longitude value
     metadata = {"longitude": 200, "latitude": 20, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test invalid latitude value
     metadata = {"longitude": 10, "latitude": -100, "platform_type": "fixed"}
     with pytest.raises(ValueError):
-        check_metadata_geolocation(metadata)
+        check_station_metadata_geolocation(metadata)
 
     # Test valid metadata
     metadata = {"longitude": 10, "latitude": 20, "platform_type": "fixed"}
-    assert check_metadata_geolocation(metadata) is None
+    assert check_station_metadata_geolocation(metadata) is None
 
 
 def test_identify_empty_metadata_keys(tmp_path, capsys):
@@ -104,7 +104,7 @@ def test_identify_empty_metadata_keys(tmp_path, capsys):
     assert not captured.out
 
 
-def test_check_archive_metadata_keys(tmp_path):
+def test_check_metadata_archive_keys(tmp_path):
     """Test check on correct archive."""
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
@@ -113,13 +113,13 @@ def test_check_archive_metadata_keys(tmp_path):
     metadata_dict = {i: "value1" for i in valid_metadata_keys}
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
 
-    is_valid = check_archive_metadata_keys(metadata_archive_dir)
+    is_valid = check_metadata_archive_keys(metadata_archive_dir)
     assert is_valid
 
     # Test 2 : Wrong metadata key
     metadata_dict = {"should_not_be_found": "value"}
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_archive_metadata_keys(metadata_archive_dir)
+    is_valid = check_metadata_archive_keys(metadata_archive_dir)
     assert not is_valid
 
     # Test 3 : Check missing metadata key
@@ -131,18 +131,18 @@ def test_check_archive_metadata_keys(tmp_path):
     metadata_dict = read_yaml(metadata_filepath)
     metadata_dict.pop("data_source")
     write_yaml(metadata_dict, metadata_filepath)
-    is_valid = check_archive_metadata_keys(metadata_archive_dir)
+    is_valid = check_metadata_archive_keys(metadata_archive_dir)
     assert not is_valid
 
 
-def test_check_archive_metadata_valid_values(tmp_path):
+def test_check_metadata_archive_valid_values(tmp_path):
     """Test that None is an invalid value."""
     metadata_dict = {"key_is_None": None}
     with pytest.raises(ValueError):
         _check_metadata_values(metadata_dict)
 
 
-def test_check_archive_metadata_campaign_name(tmp_path):
+def test_check_metadata_archive_campaign_name(tmp_path):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct campaign_name metadata key
@@ -153,7 +153,7 @@ def test_check_archive_metadata_campaign_name(tmp_path):
         campaign_name=campaign_name,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_campaign_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_campaign_name(metadata_archive_dir)
     assert is_valid
 
     # Test 2 : Empty campaign_name
@@ -164,7 +164,7 @@ def test_check_archive_metadata_campaign_name(tmp_path):
         campaign_name=campaign_name,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_campaign_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_campaign_name(metadata_archive_dir)
     assert not is_valid
 
     # Test 3 : Wrong campaign_name
@@ -175,7 +175,7 @@ def test_check_archive_metadata_campaign_name(tmp_path):
         campaign_name=campaign_name,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_campaign_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_campaign_name(metadata_archive_dir)
     assert not is_valid
 
     # Test 4 : Missing campaign_name
@@ -187,11 +187,11 @@ def test_check_archive_metadata_campaign_name(tmp_path):
     metadata_dict = read_yaml(metadata_filepath)
     metadata_dict.pop("campaign_name", None)
     write_yaml(metadata_dict, metadata_filepath)
-    is_valid = check_archive_metadata_campaign_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_campaign_name(metadata_archive_dir)
     assert not is_valid
 
 
-def test_check_archive_metadata_data_source(tmp_path):
+def test_check_metadata_archive_data_source(tmp_path):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct data_source metadata key
@@ -202,7 +202,7 @@ def test_check_archive_metadata_data_source(tmp_path):
         data_source=data_source,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_data_source(metadata_archive_dir)
+    is_valid = check_metadata_archive_data_source(metadata_archive_dir)
     assert is_valid
 
     # Test 2 : Empty data_source metadata key
@@ -213,7 +213,7 @@ def test_check_archive_metadata_data_source(tmp_path):
         data_source=data_source,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_data_source(metadata_archive_dir)
+    is_valid = check_metadata_archive_data_source(metadata_archive_dir)
     assert not is_valid
 
     # Test 3 : Wrong data_source
@@ -224,7 +224,7 @@ def test_check_archive_metadata_data_source(tmp_path):
         data_source=data_source,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_data_source(metadata_archive_dir)
+    is_valid = check_metadata_archive_data_source(metadata_archive_dir)
     assert not is_valid
 
     # Test 4 : Missing data_source
@@ -233,28 +233,28 @@ def test_check_archive_metadata_data_source(tmp_path):
     metadata_dict = read_yaml(metadata_filepath)
     metadata_dict.pop("data_source", None)
     write_yaml(metadata_dict, metadata_filepath)
-    is_valid = check_archive_metadata_data_source(metadata_archive_dir)
+    is_valid = check_metadata_archive_data_source(metadata_archive_dir)
     assert not is_valid
 
 
 @pytest.mark.parametrize("sensor_name", available_sensor_names())
-def test_check_archive_metadata_sensor_name(tmp_path, sensor_name):
+def test_check_metadata_archive_sensor_name(tmp_path, sensor_name):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct sensor_name metadata key
     metadata_dict = {"sensor_name": sensor_name}
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_archive_metadata_sensor_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_sensor_name(metadata_archive_dir)
     assert is_valid
 
     # Test 2 : Wrong sensor_name metadata key
     metadata_dict = {"sensor_name": ""}
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_archive_metadata_sensor_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_sensor_name(metadata_archive_dir)
     assert not is_valid
 
 
-def test_check_archive_metadata_station_name(tmp_path):
+def test_check_metadata_archive_station_name(tmp_path):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1 : Correct station_name metadata key
@@ -265,7 +265,7 @@ def test_check_archive_metadata_station_name(tmp_path):
         metadata_dict=metadata_dict,
         station_name=station_name,
     )
-    is_valid = check_archive_metadata_station_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_station_name(metadata_archive_dir)
     assert is_valid
 
     # Test 2 : Empty station_name metadata key
@@ -275,7 +275,7 @@ def test_check_archive_metadata_station_name(tmp_path):
         metadata_dict=metadata_dict,
         station_name=station_name,
     )
-    is_valid = check_archive_metadata_station_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_station_name(metadata_archive_dir)
     assert not is_valid
 
     # Test 3 : Wrong station_name
@@ -286,7 +286,7 @@ def test_check_archive_metadata_station_name(tmp_path):
         station_name=station_name,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_station_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_station_name(metadata_archive_dir)
     assert not is_valid
 
     # Test 4 : Missing station_name
@@ -295,7 +295,7 @@ def test_check_archive_metadata_station_name(tmp_path):
     metadata_dict = read_yaml(metadata_filepath)
     metadata_dict.pop("station_name", None)
     write_yaml(metadata_dict, metadata_filepath)
-    is_valid = check_archive_metadata_station_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_station_name(metadata_archive_dir)
     assert not is_valid
 
     # Test 5 : Invalid station_name value type
@@ -305,12 +305,12 @@ def test_check_archive_metadata_station_name(tmp_path):
         metadata_dict=metadata_dict,
         station_name=station_name,
     )
-    is_valid = check_archive_metadata_station_name(metadata_archive_dir)
+    is_valid = check_metadata_archive_station_name(metadata_archive_dir)
     assert not is_valid
 
 
 @pytest.mark.parametrize("sensor_name", available_sensor_names())
-def test_check_archive_metadata_reader(tmp_path, sensor_name):
+def test_check_metadata_archive_reader(tmp_path, sensor_name):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     list_readers = available_readers(sensor_name)
@@ -319,23 +319,23 @@ def test_check_archive_metadata_reader(tmp_path, sensor_name):
     reader_reference = list_readers[0]
     metadata_dict = {"reader": f"{reader_reference}", "sensor_name": sensor_name}
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_archive_metadata_reader(metadata_archive_dir)
+    is_valid = check_metadata_archive_reader(metadata_archive_dir)
     assert is_valid
 
     # Test 2 : Wrong reader metadata key
     metadata_dict = {"reader": "", "sensor_name": sensor_name}
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_archive_metadata_reader(metadata_archive_dir)
+    is_valid = check_metadata_archive_reader(metadata_archive_dir)
     assert not is_valid
 
     # Test 3 : Wrong reader metadata key
     metadata_dict = {"reader": "dummy/dummy", "sensor_name": sensor_name}
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_archive_metadata_reader(metadata_archive_dir)
+    is_valid = check_metadata_archive_reader(metadata_archive_dir)
     assert not is_valid
 
 
-def test_check_archive_metadata_compliance(tmp_path):
+def test_check_metadata_archive(tmp_path):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     # We check only the failure, the success are tested in the above tests.
@@ -343,17 +343,17 @@ def test_check_archive_metadata_compliance(tmp_path):
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
 
     # Test does not raise error !
-    result = check_archive_metadata_compliance(metadata_archive_dir, raise_error=False)
+    result = check_metadata_archive(metadata_archive_dir, raise_error=False)
     assert result is False
 
     # Test it raise error
     with pytest.raises(ValueError):
-        result = check_archive_metadata_compliance(metadata_archive_dir, raise_error=True)
+        result = check_metadata_archive(metadata_archive_dir, raise_error=True)
 
 
 @pytest.mark.parametrize("platform_type", ["mobile", "fixed"])
 @pytest.mark.parametrize("latlon_value", [0, 500, -9999, -99991, "bad_type"])
-def test_check_archive_metadata_geolocation(tmp_path, latlon_value, platform_type):
+def test_check_metadata_archive_geolocation(tmp_path, latlon_value, platform_type):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     metadata_dict = {"longitude": latlon_value, "latitude": latlon_value, "platform_type": platform_type}
@@ -361,7 +361,7 @@ def test_check_archive_metadata_geolocation(tmp_path, latlon_value, platform_typ
         metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
     )
-    is_valid = check_archive_metadata_geolocation(metadata_archive_dir)
+    is_valid = check_metadata_archive_geolocation(metadata_archive_dir)
     if (platform_type == "mobile" and latlon_value == -9999) or (platform_type != "mobile" and latlon_value == 0):
         assert is_valid
     else:

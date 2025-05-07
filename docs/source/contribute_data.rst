@@ -44,7 +44,7 @@ Here below we provide a detailed description of the steps to follow to contribut
 * :ref:`Step 3 <step3>`: Define the DISDRODB Configuration File
 * :ref:`Step 4 <step4>`: Add station(s) metadata to the DISDRODB Metadata Archive
 * :ref:`Step 5 <step5>`: Add station(s) raw data to the DISDRODB Data Archive
-* :ref:`Step 6 <step6>`: Define the `raw_data_glob_pattern` metadata field
+* :ref:`Step 6 <step6>`: Define the ``raw_data_glob_pattern``
 * :ref:`Step 7 <step7>`: Define the reader name and add a prototype reader to the disdrodb python package
 * :ref:`Step 8 <step8>`: Implement the reader for your data
 * :ref:`Step 9 <step9>`: Test the reader by launching the DISDRODB L0 processing
@@ -307,8 +307,8 @@ You can organize them however you like, but for long-running deployments it's be
 
 .. _step6:
 
-Step 6: Define the `raw_data_glob_pattern` metadata field
--------------------------------------------------------------------
+Step 6: Define the ``raw_data_glob_pattern``
+----------------------------------------------
 
 After placing your raw files in the ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` directory,
 you need to fill the ``raw_data_glob_pattern`` entry in your station's metadata YAML file.

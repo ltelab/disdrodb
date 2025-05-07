@@ -85,7 +85,7 @@ You can check that all stations metadata adhere to the enforced DISDRODB standar
 
     import disdrodb
 
-    check_archive_metadata_compliance()
+    check_metadata_archive()
 
 
 Alternatively you can type into the terminal:
@@ -98,7 +98,7 @@ Alternatively you can type into the terminal:
 Explore the Metadata Archive
 --------------------------------
 
-The disdrodb software provides the ``read_metadata_database`` function to read entire metadata archive
+The disdrodb software provides the ``read_metadata_archive`` function to read entire metadata archive
 into a ``pandas.DataFrame``:
 
 
@@ -106,5 +106,5 @@ into a ``pandas.DataFrame``:
 
     import disdrodb
 
-    df = disdrodb.read_metadata_database()
+    df = disdrodb.read_metadata_archive()
     print(df)

@@ -163,9 +163,9 @@ This allow to directly jump to analysis disdrometer data without having to worry
 ### 💫 Explore the DISDRODB Metadata Archive
 
 If you wish to explore the metadata of the stations included in the DISDRODB Metadata Archive,
-the `read_metadata_database` function returns all stations metadata information into an easy to analyze `pandas.DataFrame`:
+the `read_metadata_archive` function returns all stations metadata information into an easy to analyze `pandas.DataFrame`:
 
-`python import disdrodb df = disdrodb.read_metadata_database() print(df) `
+`python import disdrodb df = disdrodb.read_metadata_archive() print(df) `
 
 ## 📖 Explore the DISDRODB documentation
 
