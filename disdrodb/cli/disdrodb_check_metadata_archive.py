@@ -19,13 +19,13 @@ import sys
 
 import click
 
-from disdrodb.utils.cli import click_metadata_dir_option, parse_root_dir
+from disdrodb.utils.cli import click_metadata_archive_dir_option, parse_archive_dir
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
-@click_metadata_dir_option
+@click_metadata_archive_dir_option
 @click.option(
     "--raise_error",
     type=bool,
@@ -33,9 +33,9 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
     default=True,
     help="Whether to raise error of finish the check",
 )
-def disdrodb_check_metadata_archive(metadata_dir=None, raise_error=True):
+def disdrodb_check_metadata_archive(metadata_archive_dir=None, raise_error=True):
     """Run the DISDRODB Metadata Archive Checks."""
     from disdrodb.metadata.checks import check_archive_metadata_compliance
 
-    metadata_dir = parse_root_dir(metadata_dir)
-    check_archive_metadata_compliance(metadata_dir=metadata_dir, raise_error=raise_error)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
+    check_archive_metadata_compliance(metadata_archive_dir=metadata_archive_dir, raise_error=raise_error)

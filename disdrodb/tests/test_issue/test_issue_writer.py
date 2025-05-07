@@ -104,19 +104,19 @@ def test_write_issue(tmpdir):
 
 def test_create_station_issue(tmp_path):
     """Test the creation of the default issue YAML file."""
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
 
     _ = create_station_issue(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     issue_dict = read_station_issue(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -128,7 +128,7 @@ def test_create_station_issue(tmp_path):
     # Test it raise error if creating when already existing
     with pytest.raises(ValueError):
         create_station_issue(
-            metadata_dir=metadata_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

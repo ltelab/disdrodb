@@ -33,15 +33,15 @@ TEST_ZIP_FPATH = (
 
 def test_disdrodb_upload_station(tmp_path):
     """Test the disdrodb_upload_station command."""
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
 
     # - Add fake metadata
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -50,14 +50,22 @@ def test_disdrodb_upload_station(tmp_path):
     runner = CliRunner()
     runner.invoke(
         disdrodb_upload_station,
-        [data_source, campaign_name, station_name, "--base_dir", base_dir, "--metadata_dir", metadata_dir],
+        [
+            data_source,
+            campaign_name,
+            station_name,
+            "--data_archive_dir",
+            data_archive_dir,
+            "--metadata_archive_dir",
+            metadata_archive_dir,
+        ],
     )
 
 
 def test_disdrodb_upload_archive(tmp_path):
     """Test the disdrodb_upload_archive command."""
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
@@ -65,7 +73,7 @@ def test_disdrodb_upload_archive(tmp_path):
 
     # - Add fake metadata
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -74,14 +82,14 @@ def test_disdrodb_upload_archive(tmp_path):
     runner = CliRunner()
     runner.invoke(
         disdrodb_upload_archive,
-        ["--base_dir", base_dir, "--metadata_dir", metadata_dir],
+        ["--data_archive_dir", data_archive_dir, "--metadata_archive_dir", metadata_archive_dir],
     )
 
 
 def test_disdrodb_download_station(tmp_path):
     """Test the disdrodb_download_station command."""
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
@@ -92,7 +100,7 @@ def test_disdrodb_download_station(tmp_path):
 
     # - Add fake metadata
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -102,14 +110,22 @@ def test_disdrodb_download_station(tmp_path):
     runner = CliRunner()
     runner.invoke(
         disdrodb_download_station,
-        [data_source, campaign_name, station_name, "--base_dir", base_dir, "--metadata_dir", metadata_dir],
+        [
+            data_source,
+            campaign_name,
+            station_name,
+            "--data_archive_dir",
+            data_archive_dir,
+            "--metadata_archive_dir",
+            metadata_archive_dir,
+        ],
     )
 
 
 def test_disdrodb_download_archive(tmp_path):
     """Test the disdrodb_download_archive command."""
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
@@ -120,7 +136,7 @@ def test_disdrodb_download_archive(tmp_path):
 
     # - Add fake metadata
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -130,5 +146,5 @@ def test_disdrodb_download_archive(tmp_path):
     runner = CliRunner()
     runner.invoke(
         disdrodb_download_archive,
-        ["--base_dir", base_dir, "--metadata_dir", metadata_dir],
+        ["--data_archive_dir", data_archive_dir, "--metadata_archive_dir", metadata_archive_dir],
     )

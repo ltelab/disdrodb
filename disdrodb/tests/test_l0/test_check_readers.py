@@ -78,22 +78,22 @@ def _check_identical_parquet_files(file1: str, file2: str) -> bool:
 
 
 def _check_station_reader_results(
-    base_dir,
-    metadata_dir,
+    data_archive_dir,
+    metadata_archive_dir,
     data_source,
     campaign_name,
     station_name,
 ):
     raw_station_dir = define_campaign_dir(
-        base_dir=base_dir,
+        archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
     )
 
     run_l0a_station(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -104,7 +104,7 @@ def _check_station_reader_results(
     )
 
     metadata = read_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -121,7 +121,7 @@ def _check_station_reader_results(
 
     ground_truth_station_dir = os.path.join(raw_station_dir, "ground_truth", station_name)
     processed_station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -153,14 +153,14 @@ def _check_station_reader_results(
 
 # tmp_path = pathlib.Path("/tmp/19/")
 # tmp_path.mkdir(parents=True)
-# test_base_dir = tmp_path / "data" / "DISDRODB"
-# shutil.copytree(TEST_BASE_DIR, test_base_dir)
+# test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+# shutil.copytree(TEST_BASE_DIR, test_data_archive_dir)
 
 # parallel = False
-# test_metadata_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+# test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
 
 
-def test_check_all_readers(tmp_path, disdrodb_metadata_dir) -> None:
+def test_check_all_readers(tmp_path, disdrodb_metadata_archive_dir) -> None:
     """Test all readers that have data samples and ground truth.
 
     Raises
@@ -168,13 +168,13 @@ def test_check_all_readers(tmp_path, disdrodb_metadata_dir) -> None:
     Exception
         If the reader validation has failed.
     """
-    test_base_dir = tmp_path / "data" / "DISDRODB"
-    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
-    shutil.copytree(TEST_BASE_DIR, test_base_dir)
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+    shutil.copytree(TEST_BASE_DIR, test_data_archive_dir)
 
     list_stations_info = available_stations(
-        base_dir=test_base_dir,
-        metadata_dir=test_metadata_dir,
+        data_archive_dir=test_data_archive_dir,
+        metadata_archive_dir=test_metadata_archive_dir,
         product="RAW",
         data_sources=None,
         campaign_names=None,
@@ -185,11 +185,10 @@ def test_check_all_readers(tmp_path, disdrodb_metadata_dir) -> None:
     # data_source, campaign_name, station_name = list_stations_info[0]
     # data_source, campaign_name, station_name = list_stations_info[1]
 
-    # TODO: add config metadata_dir / base_dir
     for data_source, campaign_name, station_name in list_stations_info:
         _check_station_reader_results(
-            base_dir=test_base_dir,
-            metadata_dir=test_metadata_dir,
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

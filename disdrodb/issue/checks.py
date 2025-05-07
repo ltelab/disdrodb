@@ -212,12 +212,12 @@ def check_issue_dict(issue_dict):
     return issue_dict
 
 
-def check_issue_compliance(data_source, campaign_name, station_name, metadata_dir=None):
+def check_issue_compliance(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Check DISDRODB issue compliance."""
     from disdrodb.issue.reader import read_station_issue
 
     issue_dict = read_station_issue(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

@@ -26,8 +26,8 @@ import os
 import shutil
 
 from disdrodb.api.checks import (
-    check_base_dir,
     check_campaign_name,
+    check_data_archive_dir,
     check_data_availability,
     check_data_source,
     check_issue_file,
@@ -43,7 +43,7 @@ from disdrodb.api.path import (
     define_metadata_dir,
     define_metadata_filepath,
 )
-from disdrodb.configs import get_base_dir, get_metadata_dir
+from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.utils.directories import (
     create_directory,
     remove_if_exists,
@@ -69,8 +69,8 @@ def ensure_empty_data_dir(data_dir, force):
 
 
 def create_l0_directory_structure(
-    base_dir,
-    metadata_dir,
+    data_archive_dir,
+    metadata_archive_dir,
     data_source,
     campaign_name,
     station_name,
@@ -85,11 +85,11 @@ def create_l0_directory_structure(
     ``product = "L0A"`` will call ``run_l0a``.
     ``product = "L0B"`` will call ``run_l0b_nc``.
     """
-    from disdrodb.configs import get_base_dir, get_metadata_dir
+    from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 
     # Retrieve the DISDRODB Metadata Archive directory
-    base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir(metadata_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
     check_campaign_name(campaign_name)
@@ -98,7 +98,7 @@ def create_l0_directory_structure(
     # Check raw station data are available
     check_data_availability(
         product="RAW",
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -106,7 +106,7 @@ def create_l0_directory_structure(
 
     # Check there is a valid metadata YAML file
     check_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -114,7 +114,7 @@ def create_l0_directory_structure(
 
     # Check there is valid issue YAML file
     check_issue_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -123,7 +123,7 @@ def create_l0_directory_structure(
     # Define product output data directory
     data_dir = define_data_dir(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -135,7 +135,7 @@ def create_l0_directory_structure(
     # Check if product files are already available
     available_data = has_available_data(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -156,8 +156,8 @@ def create_product_directory(
     station_name,
     product,
     force,
-    base_dir=None,
-    metadata_dir=None,
+    data_archive_dir=None,
+    metadata_archive_dir=None,
     # Product Options
     **product_kwargs,
 ):
@@ -173,8 +173,8 @@ def create_product_directory(
     from disdrodb.api.search import get_required_product
 
     # Get DISDRODB base directory
-    base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir(metadata_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # Check inputs
     check_product(product)
@@ -186,7 +186,7 @@ def create_product_directory(
     required_product_kwargs = select_required_product_kwargs(required_product, product_kwargs)
     check_data_availability(
         product=required_product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -196,7 +196,7 @@ def create_product_directory(
 
     # Check metadata file is available
     check_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -205,7 +205,7 @@ def create_product_directory(
     # Define product output data directory
     data_dir = define_data_dir(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -219,7 +219,7 @@ def create_product_directory(
     # Check if product files are already available
     available_data = has_available_data(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -242,7 +242,7 @@ def create_logs_directory(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
+    data_archive_dir=None,
     # Product options
     **product_kwargs,
 ):
@@ -250,7 +250,7 @@ def create_logs_directory(
     # Define logs directory
     logs_dir = define_logs_dir(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -273,10 +273,10 @@ def create_logs_directory(
 #### DISDRODB Station Initialization
 
 
-def create_data_directory(base_dir, product, data_source, campaign_name, station_name, **product_kwargs):
+def create_data_directory(data_archive_dir, product, data_source, campaign_name, station_name, **product_kwargs):
     """Create station product data directory."""
     data_dir = define_data_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -289,10 +289,10 @@ def create_data_directory(base_dir, product, data_source, campaign_name, station
     return str(data_dir)
 
 
-def create_metadata_directory(metadata_dir, data_source, campaign_name):
+def create_metadata_directory(metadata_archive_dir, data_source, campaign_name):
     """Create metadata directory."""
     metadata_dir = define_metadata_dir(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -302,10 +302,10 @@ def create_metadata_directory(metadata_dir, data_source, campaign_name):
     return str(metadata_dir)
 
 
-def create_issue_directory(metadata_dir, data_source, campaign_name):
+def create_issue_directory(metadata_archive_dir, data_source, campaign_name):
     """Create issue directory."""
     issue_dir = define_issue_dir(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -319,20 +319,20 @@ def create_initial_station_structure(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
-    metadata_dir=None,
+    data_archive_dir=None,
+    metadata_archive_dir=None,
 ):
     """Create the DISDRODB Data and Metadata Archive structure for a single station."""
     from disdrodb.issue.writer import create_station_issue
     from disdrodb.metadata.writer import create_station_metadata
 
-    base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir(metadata_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # Check if already been defined
     # - Check presence of metadata file
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -347,7 +347,7 @@ def create_initial_station_structure(
     # -----------------------.
     # Create station directory in the DISDRODB Data Archive
     data_dir = create_data_directory(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -358,22 +358,26 @@ def create_initial_station_structure(
     # Create issue and metadata files in the DISDRODB Metadata Archive
     # - Create /metadata and /issue directories in the DISDRODB Metadata Archive
     _ = create_metadata_directory(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
     )
-    _ = create_issue_directory(metadata_dir=metadata_dir, data_source=data_source, campaign_name=campaign_name)
+    _ = create_issue_directory(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+    )
 
     # - Add an empty/default metadata file (to be filled by data contributor)
     create_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     # - Add an empty issue file (to be filled by data contributor if necessary)
     create_station_issue(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -390,12 +394,12 @@ def create_initial_station_structure(
 ####--------------------------------------------------------------------------------.
 #### DISDRODB upload/download testing
 def create_test_archive(
-    test_base_dir,
+    test_data_archive_dir,
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
-    metadata_dir=None,
+    data_archive_dir=None,
+    metadata_archive_dir=None,
     force=False,
 ):
     """Create test DISDRODB Archive for a single existing station.
@@ -404,19 +408,21 @@ def create_test_archive(
     This enable to then test data download and DISDRODB processing.
     """
     # Check metadata repository is available
-    metadata_dir = get_metadata_dir(metadata_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
-    # Check test_base_dir is not equal to true base_dir
-    test_base_dir = check_base_dir(test_base_dir)
-    if test_base_dir == get_base_dir(base_dir):
-        raise ValueError("Provide a test_base_dir directory different from the true DISDRODB Data Archive directory !")
+    # Check test_data_archive_dir is not equal to true data_archive_dir
+    test_data_archive_dir = check_data_archive_dir(test_data_archive_dir)
+    if test_data_archive_dir == get_data_archive_dir(data_archive_dir):
+        raise ValueError(
+            "Provide a test_data_archive_dir directory different from the true DISDRODB Data Archive directory !",
+        )
 
     # Create test DISDRODB base directory
-    remove_if_exists(test_base_dir, force=force)
-    os.makedirs(test_base_dir, exist_ok=True)
+    remove_if_exists(test_data_archive_dir, force=force)
+    os.makedirs(test_data_archive_dir, exist_ok=True)
 
     tree = f"{data_source} {campaign_name} {station_name}"
     print(
-        f"The test DISDRODB Data Archive for {tree} has been set up at {test_base_dir} !",
+        f"The test DISDRODB Data Archive for {tree} has been set up at {test_data_archive_dir} !",
     )
-    return test_base_dir
+    return test_data_archive_dir

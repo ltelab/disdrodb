@@ -50,19 +50,19 @@ from disdrodb.tests.conftest import (
 @pytest.mark.parametrize("product", ["L0A", "L0B"])
 def test_create_l0_directory_structure(tmp_path, mocker, product):
     # Define station info
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
 
     dst_metadata_dir = define_metadata_dir(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
     )
     dst_station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -70,7 +70,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     )
 
     dst_metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -80,7 +80,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     # Create station RAW directory structure (with fake data)
     # - Add fake raw data file
     _ = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -89,7 +89,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
 
     # - Add fake metadata
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -97,7 +97,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
 
     # - Add fake issue file
     _ = create_fake_issue_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -109,8 +109,8 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
     # Test that if station_name is unexisting in data, raise error
     with pytest.raises(ValueError):
         create_l0_directory_structure(
-            metadata_dir=metadata_dir,
-            base_dir=base_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name="INEXISTENT_STATION",
@@ -120,8 +120,8 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
 
     # Execute create_l0_directory_structure
     data_dir = create_l0_directory_structure(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -141,7 +141,7 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
 
     # Test raise error if already data in L0A (if force=False)
     product_filepath = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -150,8 +150,8 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
 
     with pytest.raises(ValueError):
         create_l0_directory_structure(
-            base_dir=base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -162,8 +162,8 @@ def test_create_l0_directory_structure(tmp_path, mocker, product):
 
     # Test delete file if already data in L0A (if force=True)
     data_dir = create_l0_directory_structure(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -185,8 +185,8 @@ def test_create_product_directory(tmp_path):
     start_product = "L0A"
     dst_product = "L0B"
     # Define station info
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
@@ -198,8 +198,8 @@ def test_create_product_directory(tmp_path):
     # Test raise error without data
     with pytest.raises(ValueError):
         _ = create_product_directory(
-            base_dir=base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -209,7 +209,7 @@ def test_create_product_directory(tmp_path):
 
     # Add fake file
     _ = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=start_product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -219,8 +219,8 @@ def test_create_product_directory(tmp_path):
     # Test raise error without metadata file
     with pytest.raises(ValueError):
         _ = create_product_directory(
-            base_dir=base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -230,7 +230,7 @@ def test_create_product_directory(tmp_path):
 
     # Add metadata
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -239,8 +239,8 @@ def test_create_product_directory(tmp_path):
 
     # Execute create_product_directory
     data_dir = create_product_directory(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -250,7 +250,7 @@ def test_create_product_directory(tmp_path):
 
     # Test product data directory has been created
     expected_data_dir = define_data_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -262,7 +262,7 @@ def test_create_product_directory(tmp_path):
 
     # Test raise error if already data in dst_product (if force=False)
     dst_product_file_filepath = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=dst_product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -271,8 +271,8 @@ def test_create_product_directory(tmp_path):
 
     with pytest.raises(ValueError):
         _ = create_product_directory(
-            base_dir=base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -283,8 +283,8 @@ def test_create_product_directory(tmp_path):
 
     # Test delete file if already data in L0A (if force=True)
     data_dir = create_product_directory(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -299,8 +299,8 @@ def test_create_product_directory(tmp_path):
     # Test raise error if bad station_name
     with pytest.raises(ValueError):
         _ = create_product_directory(
-            base_dir=base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name="INEXISTENT_STATION",
@@ -311,16 +311,16 @@ def test_create_product_directory(tmp_path):
 
 def test_create_initial_station_structure(tmp_path):
     """Check creation of station initial files and directories."""
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     station_name = "station_name"
 
     # Create initial station structure
     create_initial_station_structure(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -328,13 +328,13 @@ def test_create_initial_station_structure(tmp_path):
 
     # Check metadata and issue files have been created
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     issue_filepath = define_issue_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -345,8 +345,8 @@ def test_create_initial_station_structure(tmp_path):
     # Check that if called once again, it raise error
     with pytest.raises(ValueError):
         create_initial_station_structure(
-            base_dir=base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -355,8 +355,8 @@ def test_create_initial_station_structure(tmp_path):
 
 def test_create_initial_station_structure_cmd(tmp_path):
     """Check creation of station initial files and directories."""
-    base_dir = tmp_path / "data" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     station_name = "station_name"
@@ -365,18 +365,26 @@ def test_create_initial_station_structure_cmd(tmp_path):
     runner = CliRunner()
     runner.invoke(
         disdrodb_initialize_station,
-        [data_source, campaign_name, station_name, "--base_dir", str(base_dir), "--metadata_dir", str(metadata_dir)],
+        [
+            data_source,
+            campaign_name,
+            station_name,
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--metadata_archive_dir",
+            str(metadata_archive_dir),
+        ],
     )
 
     # Check metadata and issue files have been created
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     issue_filepath = define_issue_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -387,43 +395,43 @@ def test_create_initial_station_structure_cmd(tmp_path):
 
 def test_create_test_archive(tmp_path):
     """Check creation of test archive."""
-    base_dir = tmp_path / "original" / "DISDRODB"
-    test_base_dir = tmp_path / "test" / "DISDRODB"
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "original" / "DISDRODB"
+    test_data_archive_dir = tmp_path / "test" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
     station_name = "STATION_NAME"
 
-    # Check that if raise error if test_base_dir equals base_dir
+    # Check that if raise error if test_data_archive_dir equals data_archive_dir
     with pytest.raises(ValueError):
         create_test_archive(
-            test_base_dir=test_base_dir,
+            test_data_archive_dir=test_data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            base_dir=test_base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             force=True,
         )
 
-    test_base_dir = create_test_archive(
-        test_base_dir=test_base_dir,
+    test_data_archive_dir = create_test_archive(
+        test_data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         force=True,
     )
-    assert os.path.exists(test_base_dir)
-    assert os.path.isdir(test_base_dir)
+    assert os.path.exists(test_data_archive_dir)
+    assert os.path.isdir(test_data_archive_dir)
 
 
 def test_create_issue_directory(tmp_path):
-    base_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     campaign_name = "CAMPAIGN_NAME"
     data_source = "DATA_SOURCE"
 
-    issue_dir = create_issue_directory(base_dir, data_source=data_source, campaign_name=campaign_name)
+    issue_dir = create_issue_directory(metadata_archive_dir, data_source=data_source, campaign_name=campaign_name)
     assert os.path.isdir(issue_dir)

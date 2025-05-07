@@ -31,7 +31,7 @@ from disdrodb.utils.compression import _zip_dir, compress_station_files, unzip_f
 @pytest.mark.parametrize("method", ["zip", "gzip", "bzip2"])
 def test_files_compression(tmp_path, method):
     """Test compression of files in a directory."""
-    base_dir = tmp_path / "data" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
     station_name = "station_name"
@@ -39,7 +39,7 @@ def test_files_compression(tmp_path, method):
     # Check raise an error if the directory does not yet exist
     with pytest.raises(ValueError):
         compress_station_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -48,7 +48,7 @@ def test_files_compression(tmp_path, method):
 
     # Create fake data
     data_dir = create_fake_data_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -67,7 +67,7 @@ def test_files_compression(tmp_path, method):
 
     # Compress files
     compress_station_files(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -76,7 +76,7 @@ def test_files_compression(tmp_path, method):
 
     # Try to compress directory with already compressed files (skip=True)
     compress_station_files(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -87,7 +87,7 @@ def test_files_compression(tmp_path, method):
     # Try to compress directory with already compressed files (skip=False)
     with pytest.raises(ValueError):
         compress_station_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -98,7 +98,7 @@ def test_files_compression(tmp_path, method):
     # Try to compress with invalid method
     with pytest.raises(ValueError):
         compress_station_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -107,7 +107,7 @@ def test_files_compression(tmp_path, method):
 
     # Try to compress a netCDF file
     create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -116,7 +116,7 @@ def test_files_compression(tmp_path, method):
     )
     with pytest.raises(ValueError):
         compress_station_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

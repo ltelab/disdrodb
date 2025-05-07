@@ -31,7 +31,7 @@ class TestFindFiles:
     def test_find_raw_files(self, tmp_path):
         """Test finding raw files."""
         # Define station info
-        base_dir = tmp_path / "data" / "DISDRODB"
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
         station_name = "STATION_NAME"
@@ -40,7 +40,7 @@ class TestFindFiles:
         # Test that the function raises an error if no files presenet
         with pytest.raises(ValueError, match="No RAW files are available in"):
             _ = find_files(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -51,7 +51,7 @@ class TestFindFiles:
         # Add fake data files
         for filename in ["file1.txt", "file2.txt"]:
             _ = create_fake_raw_data_file(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 product="RAW",
                 data_source=data_source,
                 campaign_name=campaign_name,
@@ -61,7 +61,7 @@ class TestFindFiles:
 
         # Test that the function returns the correct number of files in debugging mode
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -74,7 +74,7 @@ class TestFindFiles:
         # Add other fake data files
         for filename in ["file3.txt", "file4.txt"]:
             _ = create_fake_raw_data_file(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 product="RAW",
                 data_source=data_source,
                 campaign_name=campaign_name,
@@ -82,7 +82,7 @@ class TestFindFiles:
                 filename=filename,
             )
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -94,7 +94,7 @@ class TestFindFiles:
 
         # Test that the function returns the correct number of files in normal mode
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -107,7 +107,7 @@ class TestFindFiles:
         # Test that the function raises an error if the glob_patterns is not a str or list
         with pytest.raises(ValueError, match="'glob_patterns' must be a str or list of strings."):
             find_files(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -119,7 +119,7 @@ class TestFindFiles:
         # Test that the function raises an error if no files are found
         with pytest.raises(ValueError, match="No RAW files are available in"):
             find_files(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -131,7 +131,7 @@ class TestFindFiles:
         # Test with list of glob patterns
         for filename in ["file_new.csv"]:
             _ = create_fake_raw_data_file(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 product="RAW",
                 data_source=data_source,
                 campaign_name=campaign_name,
@@ -139,7 +139,7 @@ class TestFindFiles:
                 filename=filename,
             )
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -152,7 +152,7 @@ class TestFindFiles:
     def test_find_l0a_files(self, tmp_path):
         """Test finding L0A files."""
         # Define station info
-        base_dir = tmp_path / "data" / "DISDRODB"
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
         station_name = "STATION_NAME"
@@ -161,7 +161,7 @@ class TestFindFiles:
         # Test that the function raises an error if no files presenet
         with pytest.raises(ValueError):
             _ = find_files(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -171,7 +171,7 @@ class TestFindFiles:
         # Add fake data files
         for filename in ["file1.parquet", "file2.parquet"]:
             _ = create_fake_raw_data_file(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 product=product,
                 data_source=data_source,
                 campaign_name=campaign_name,
@@ -181,7 +181,7 @@ class TestFindFiles:
 
         # Test that the function returns the correct number of files in debugging mode
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -192,7 +192,7 @@ class TestFindFiles:
 
         # Test that the function returns the correct number of files in normal mode
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -203,7 +203,7 @@ class TestFindFiles:
     def test_find_l0b_files(self, tmp_path):
         """Test finding L0B files."""
         # Define station info
-        base_dir = tmp_path / "data" / "DISDRODB"
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
         station_name = "STATION_NAME"
@@ -212,7 +212,7 @@ class TestFindFiles:
         # Test that the function raises an error if no files presenet
         with pytest.raises(ValueError):
             _ = find_files(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -222,7 +222,7 @@ class TestFindFiles:
         # Add fake data files
         for filename in ["file1.nc", "file2.nc", "file3.nc", "file4.nc"]:
             _ = create_fake_raw_data_file(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 product=product,
                 data_source=data_source,
                 campaign_name=campaign_name,
@@ -232,7 +232,7 @@ class TestFindFiles:
 
         # Test that the function returns the correct number of files in debugging mode
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -243,7 +243,7 @@ class TestFindFiles:
 
         # Test that the function returns the correct number of files in normal mode
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -254,7 +254,7 @@ class TestFindFiles:
         # Test it does not return other files except netCDFs
         for filename in ["file1.dummy", "file2.log", "file3.parquet"]:
             _ = create_fake_raw_data_file(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 product=product,
                 data_source=data_source,
                 campaign_name=campaign_name,
@@ -262,7 +262,7 @@ class TestFindFiles:
                 filename=filename,
             )
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

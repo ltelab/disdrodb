@@ -28,10 +28,10 @@ def test_disdrodb_config_takes_environment_variable():
 
     import disdrodb
 
-    with mock.patch.dict("os.environ", {"DISDRODB_BASE_DIR": "/my_path_to/DISDRODB"}):
+    with mock.patch.dict("os.environ", {"DISDRODB_DATA_ARCHIVE_DIR": "/my_path_to/DISDRODB"}):
         reload(disdrodb._config)
         reload(disdrodb)
-        assert disdrodb.config.get("base_dir") == "/my_path_to/DISDRODB"
+        assert disdrodb.config.get("data_archive_dir") == "/my_path_to/DISDRODB"
 
 
 def test_disdrodb_config_takes_config_YAML(tmp_path, mocker):
@@ -44,14 +44,14 @@ def test_disdrodb_config_takes_config_YAML(tmp_path, mocker):
     mocker.patch("disdrodb.configs._define_config_filepath", return_value=config_fpath)
 
     # Initialize config YAML
-    disdrodb.configs.define_disdrodb_configs(base_dir="test_dir/DISDRODB", zenodo_token="test_token")
+    disdrodb.configs.define_disdrodb_configs(data_archive_dir="test_dir/DISDRODB", zenodo_token="test_token")
 
     reload(disdrodb._config)
     reload(disdrodb)
-    assert disdrodb.config.get("base_dir") == "test_dir/DISDRODB"
+    assert disdrodb.config.get("data_archive_dir") == "test_dir/DISDRODB"
 
 
-@pytest.mark.parametrize("key", ["base_dir", "metadata_dir", "zenodo_token", "zenodo_sandbox_token"])
+@pytest.mark.parametrize("key", ["data_archive_dir", "metadata_archive_dir", "zenodo_token", "zenodo_sandbox_token"])
 def test_disdrodb_config_donfig(key):
     import disdrodb
 

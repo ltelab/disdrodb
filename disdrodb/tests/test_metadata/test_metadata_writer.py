@@ -32,18 +32,18 @@ def test_get_default_metadata():
 
 
 def test_create_station_metadata(tmp_path):
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
     _ = create_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     metadata_dict = read_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -56,7 +56,7 @@ def test_create_station_metadata(tmp_path):
     # Test it raise error if creating when already existing
     with pytest.raises(ValueError):
         create_station_metadata(
-            metadata_dir=metadata_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

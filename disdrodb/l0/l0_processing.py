@@ -43,7 +43,7 @@ from disdrodb.api.path import (
     define_metadata_filepath,
 )
 from disdrodb.api.search import get_required_product
-from disdrodb.configs import get_base_dir, get_folder_partitioning, get_metadata_dir
+from disdrodb.configs import get_data_archive_dir, get_folder_partitioning, get_metadata_archive_dir
 from disdrodb.issue import read_station_issue
 from disdrodb.l0.l0_reader import get_reader
 from disdrodb.l0.l0a_processing import (
@@ -433,8 +433,8 @@ def run_l0a_station(
     debugging_mode: bool = False,
     parallel: bool = True,
     # DISDRODB root directories
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Run the L0A processing of a specific DISDRODB station when invoked from the terminal.
@@ -466,17 +466,17 @@ def run_l0a_station(
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
         Only the first 3 raw data files will be processed. By default, ``False``.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     """
     # Retrieve DISDRODB Metadata Archive and Data Archive root directories
-    base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir(metadata_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # Read metadata
     metadata = read_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -502,10 +502,10 @@ def run_l0a_station(
     # ------------------------------------------------------------------------.
     # Create directory structure
     data_dir = create_l0_directory_structure(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         product=product,  # L0A or L0B
         station_name=station_name,
         force=force,
@@ -515,7 +515,7 @@ def run_l0a_station(
     # Define logs directory
     logs_dir = create_logs_directory(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -524,7 +524,7 @@ def run_l0a_station(
     # -----------------------------------------------------------------.
     # Read issue YAML file
     issue_dict = read_station_issue(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -553,7 +553,7 @@ def run_l0a_station(
         station_name=station_name,
         product="RAW",
         debugging_mode=debugging_mode,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         glob_pattern=glob_pattern,
     )
 
@@ -594,7 +594,7 @@ def run_l0a_station(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         # Logs list
         list_logs=list_logs,
     )
@@ -620,8 +620,8 @@ def run_l0b_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Run the L0B processing of a specific DISDRODB station when invoked from the terminal.
@@ -655,7 +655,7 @@ def run_l0b_station(
         Only the first 100 rows of 3 L0A files will be processed. The default is ``False``.
     remove_l0a: bool, optional
         Whether to remove the processed L0A files. The default is ``False``.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
@@ -664,15 +664,15 @@ def run_l0b_station(
     product = "L0B"
 
     # Retrieve DISDRODB base directory
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir(metadata_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # -----------------------------------------------------------------.
     # Retrieve metadata
     metadata = read_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -693,7 +693,7 @@ def run_l0b_station(
     # Define logs directory
     logs_dir = create_logs_directory(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -701,8 +701,8 @@ def run_l0b_station(
 
     # Create product directory
     data_dir = create_product_directory(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -716,7 +716,7 @@ def run_l0b_station(
     flag_not_available_data = False
     try:
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -800,7 +800,7 @@ def run_l0b_station(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         # Logs list
         list_logs=list_logs,
     )
@@ -815,7 +815,7 @@ def run_l0b_station(
     # Option to remove L0A
     if remove_l0a:
         remove_product(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             product="L0A",
             data_source=data_source,
             campaign_name=campaign_name,
@@ -838,8 +838,8 @@ def run_l0c_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Run the L0C processing of a specific DISDRODB station when invoked from the terminal.
@@ -885,7 +885,7 @@ def run_l0c_station(
         Only the first 3 files will be processed. By default, ``False``.
     remove_l0b: bool, optional
         Whether to remove the processed L0B files. The default is ``False``.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
@@ -894,10 +894,10 @@ def run_l0c_station(
     product = "L0C"
 
     # Define base directory
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
 
     # Retrieve DISDRODB Metadata Archive directory
-    metadata_dir = get_metadata_dir(metadata_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # ------------------------------------------------------------------------.
     # Start processing
@@ -909,7 +909,7 @@ def run_l0c_station(
     # Define logs directory
     logs_dir = create_logs_directory(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -917,8 +917,8 @@ def run_l0c_station(
 
     # Create product directory
     data_dir = create_product_directory(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -929,7 +929,7 @@ def run_l0c_station(
     # ------------------------------------------------------------------------.
     # Define metadata filepath
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -941,7 +941,7 @@ def run_l0c_station(
     flag_not_available_data = False
     try:
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -996,7 +996,7 @@ def run_l0c_station(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         # Logs list
         list_logs=list_logs,
     )
@@ -1011,7 +1011,7 @@ def run_l0c_station(
     # Option to remove L0B
     if remove_l0b:
         remove_product(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             product="L0B",
             data_source=data_source,
             campaign_name=campaign_name,

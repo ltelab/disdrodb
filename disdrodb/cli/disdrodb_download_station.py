@@ -25,10 +25,10 @@ import click
 
 from disdrodb.data_transfer.download_data import click_download_options
 from disdrodb.utils.cli import (
-    click_base_dir_option,
-    click_metadata_dir_option,
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
     click_station_arguments,
-    parse_root_dir,
+    parse_archive_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -36,15 +36,15 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 @click.command()
 @click_station_arguments
-@click_base_dir_option
-@click_metadata_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 @click_download_options
 def disdrodb_download_station(
     data_source: str,
     campaign_name: str,
     station_name: str,
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
     force: bool = False,
 ):
     """
@@ -60,23 +60,23 @@ def disdrodb_download_station(
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     force: bool, optional
         If ``True``, overwrite the already existing raw data file.
         The default is ``False``.
-    base_dir : str (optional)
+    data_archive_dir : str (optional)
         Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
+        If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     """
     from disdrodb.data_transfer.download_data import download_station
 
-    base_dir = parse_root_dir(base_dir)
-    metadata_dir = parse_root_dir(metadata_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
     download_station(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

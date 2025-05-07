@@ -16,10 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-import pandas as pd # noqa
+import pandas as pd  # noqa
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
-from disdrodb.l0.l0a_processing import read_raw_text_file # noqa
+from disdrodb.l0.l0a_processing import read_raw_text_file  # noqa
 
 
 @is_documented_by(reader_generic_docstring)
@@ -29,5 +29,4 @@ def reader(
 ):
     """Reader."""
     ##------------------------------------------------------------------------.
-    raise NotImplementedError()
-
+    raise NotImplementedError

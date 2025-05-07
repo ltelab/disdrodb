@@ -47,14 +47,14 @@ def get_default_metadata_dict() -> dict:
     return attrs
 
 
-def create_station_metadata(metadata_dir, data_source, campaign_name, station_name):
+def create_station_metadata(metadata_archive_dir, data_source, campaign_name, station_name):
     """Write a default (semi-empty) YAML metadata file for a DISDRODB station.
 
     An error is raised if the file already exists !
 
     Parameters
     ----------
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     data_source : str
@@ -72,14 +72,14 @@ def create_station_metadata(metadata_dir, data_source, campaign_name, station_na
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
     )
     if os.path.exists(metadata_filepath):
         raise ValueError("A metadata YAML file already exists at {metadata_filepath}.")
 
     # Create metadata dir if not existing
-    metadata_dir = os.path.dirname(metadata_filepath)
-    os.makedirs(metadata_dir, exist_ok=True)
+    metadata_archive_dir = os.path.dirname(metadata_filepath)
+    os.makedirs(metadata_archive_dir, exist_ok=True)
 
     # Get default metadata dict
     metadata = get_default_metadata_dict()

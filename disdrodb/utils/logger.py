@@ -208,7 +208,7 @@ def create_product_logs(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
+    data_archive_dir=None,
     # Logs list
     list_logs=None,  # If none, list it !
     # Product options
@@ -237,7 +237,7 @@ def create_product_logs(
         The campaign name.
     station_name : str
         The station name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory path. Default is None.
     sample_interval : str, optional
         The sample interval for L2E option. Default is None.
@@ -262,7 +262,7 @@ def create_product_logs(
         # Define product logs directory within /files/....
         logs_dir = define_logs_dir(
             product=product,
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -279,7 +279,7 @@ def create_product_logs(
     # --------------------------------------------------------.
     # Define /summary and /problem directory
     campaign_dir = define_campaign_dir(
-        base_dir=base_dir,
+        archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,

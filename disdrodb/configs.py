@@ -19,8 +19,8 @@ def _define_config_filepath():
 
 
 def define_disdrodb_configs(
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
     folder_partitioning: Optional[str] = None,
     zenodo_token: Optional[str] = None,
     zenodo_sandbox_token: Optional[str] = None,
@@ -30,9 +30,9 @@ def define_disdrodb_configs(
 
     Parameters
     ----------
-    base_dir : str
+    data_archive_dir : str
         The directory path where the DISDRODB Data Archive is located.
-    metadata_dir : str
+    metadata_archive_dir : str
         The directory path where the DISDRODB Metadata Archive is located.
     folder_partitioning : str
         The folder partitioning scheme used in the DISDRODB Data Archive.
@@ -55,7 +55,7 @@ def define_disdrodb_configs(
     The configuration file is used to run the various DISDRODB operations.
 
     """
-    from disdrodb.api.checks import check_base_dir, check_folder_partitioning, check_metadata_dir
+    from disdrodb.api.checks import check_data_archive_dir, check_folder_partitioning, check_metadata_archive_dir
 
     # Define path to .config_disdrodb.yaml file
     filepath = _define_config_filepath()
@@ -69,11 +69,11 @@ def define_disdrodb_configs(
         action_msg = "written"
 
     # Add DISDRODB Base Directory
-    if base_dir is not None:
-        config_dict["base_dir"] = check_base_dir(base_dir)
+    if data_archive_dir is not None:
+        config_dict["data_archive_dir"] = check_data_archive_dir(data_archive_dir)
     # Add DISDRODB Metadata Archive Directory
-    if metadata_dir is not None:
-        config_dict["metadata_dir"] = check_metadata_dir(metadata_dir)
+    if metadata_archive_dir is not None:
+        config_dict["metadata_archive_dir"] = check_metadata_archive_dir(metadata_archive_dir)
     # Add DISDRODB Folder Partitioning
     if folder_partitioning is not None:
         config_dict["folder_partitioning"] = check_folder_partitioning(folder_partitioning)
@@ -118,30 +118,30 @@ def read_disdrodb_configs() -> dict[str, str]:
     return config_dict
 
 
-def get_base_dir(base_dir=None):
+def get_data_archive_dir(data_archive_dir=None):
     """Return the DISDRODB base directory."""
     import disdrodb
-    from disdrodb.api.checks import check_base_dir
+    from disdrodb.api.checks import check_data_archive_dir
 
-    if base_dir is None:
-        base_dir = disdrodb.config.get("base_dir", None)
-    if base_dir is None:
+    if data_archive_dir is None:
+        data_archive_dir = disdrodb.config.get("data_archive_dir", None)
+    if data_archive_dir is None:
         raise ValueError("The DISDRODB Base Directory is not specified.")
-    base_dir = check_base_dir(base_dir)  # ensure Path converted to str
-    return base_dir
+    data_archive_dir = check_data_archive_dir(data_archive_dir)  # ensure Path converted to str
+    return data_archive_dir
 
 
-def get_metadata_dir(metadata_dir=None):
+def get_metadata_archive_dir(metadata_archive_dir=None):
     """Return the DISDRODB Metadata Archive Directory."""
     import disdrodb
-    from disdrodb.api.checks import check_metadata_dir
+    from disdrodb.api.checks import check_metadata_archive_dir
 
-    if metadata_dir is None:
-        metadata_dir = disdrodb.config.get("metadata_dir", None)
-    if metadata_dir is None:
+    if metadata_archive_dir is None:
+        metadata_archive_dir = disdrodb.config.get("metadata_archive_dir", None)
+    if metadata_archive_dir is None:
         raise ValueError("The DISDRODB Metadata Archive Directory is not specified.")
-    metadata_dir = check_metadata_dir(metadata_dir)  # ensure Path converted to str
-    return metadata_dir
+    metadata_archive_dir = check_metadata_archive_dir(metadata_archive_dir)  # ensure Path converted to str
+    return metadata_archive_dir
 
 
 def get_folder_partitioning():

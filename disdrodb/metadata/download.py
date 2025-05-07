@@ -44,5 +44,5 @@ def download_metadata_archive(root_dir):
         raise ValueError("The DISDRODB Metadata Archive hosted on Github could not been download !")
 
     # Define metadata directory
-    metadata_dir = str(os.path.join(root_dir, "DISDRODB-METADATA-main", "DISDRODB"))
-    return metadata_dir
+    metadata_archive_dir = str(os.path.join(root_dir, "DISDRODB-METADATA-main", "DISDRODB"))
+    return metadata_archive_dir

@@ -92,8 +92,6 @@ def check_glob_patterns(patterns: Union[str, list]) -> list:
 
 def _recursive_glob(dir_path, glob_pattern):
     # ** search for in zero or all subdirectories recursively
-    # glob_pattern = os.path.join(base_dir, "**", "metadata", f"{station_name}.yml")
-    # metadata_filepaths = glob.glob(glob_pattern, recursive=True)
 
     dir_path = pathlib.Path(dir_path)
     return [str(path) for path in dir_path.rglob(glob_pattern)]

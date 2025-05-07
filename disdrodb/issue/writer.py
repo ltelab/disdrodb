@@ -90,7 +90,7 @@ def write_issue(filepath: str, timesteps: Optional[list] = None, time_periods: O
             yaml.dump(time_periods_dict, f, default_flow_style=None)
 
 
-def create_station_issue(data_source, campaign_name, station_name, metadata_dir=None):
+def create_station_issue(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Write an empty YAML issue YAML file for a DISDRODB station.
 
     An error is raised if the file already exists !
@@ -105,9 +105,9 @@ def create_station_issue(data_source, campaign_name, station_name, metadata_dir=
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        If not specified, the ``data_archive_dir`` path specified in the DISDRODB active configuration will be used.
 
     """
     # Define issue filepath
@@ -115,7 +115,7 @@ def create_station_issue(data_source, campaign_name, station_name, metadata_dir=
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         check_exists=False,
     )
     if os.path.exists(issue_filepath):

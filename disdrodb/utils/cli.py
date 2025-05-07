@@ -68,14 +68,14 @@ def parse_arg_to_list(args):
     return args
 
 
-def parse_root_dir(base_dir):
-    """Utility to parse base_dir provided by command line.
+def parse_archive_dir(archive_dir: str):
+    """Utility to parse archive directories provided by command line.
 
-    If ``base_dir = 'None'`` returns ``None``.
-    If ``base_dir = ''`` returns ``None``.
+    If ``archive_dir = 'None'`` returns ``None``.
+    If ``archive_dir = ''`` returns ``None``.
     """
     # If '', set to 'None'
-    return _parse_empty_string_and_none(base_dir)
+    return _parse_empty_string_and_none(archive_dir)
 
 
 def click_station_arguments(function: object):
@@ -92,8 +92,8 @@ def click_station_arguments(function: object):
     return function
 
 
-def click_base_dir_option(function: object):
-    """Click command line argument for DISDRODB ``base_dir``.
+def click_data_archive_dir_option(function: object):
+    """Click command line argument for DISDRODB ``data_archive_dir``.
 
     Parameters
     ----------
@@ -101,7 +101,7 @@ def click_base_dir_option(function: object):
         Function.
     """
     function = click.option(
-        "--base_dir",
+        "--data_archive_dir",
         type=str,
         show_default=True,
         default=None,
@@ -110,8 +110,8 @@ def click_base_dir_option(function: object):
     return function
 
 
-def click_metadata_dir_option(function: object):
-    """Click command line argument for DISDRODB ``metadata_dir``.
+def click_metadata_archive_dir_option(function: object):
+    """Click command line argument for DISDRODB ``metadata_archive_dir``.
 
     Parameters
     ----------
@@ -119,7 +119,7 @@ def click_metadata_dir_option(function: object):
         Function.
     """
     function = click.option(
-        "--metadata_dir",
+        "--metadata_archive_dir",
         type=str,
         show_default=True,
         default=None,

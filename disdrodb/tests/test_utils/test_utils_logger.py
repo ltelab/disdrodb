@@ -43,7 +43,7 @@ def create_dummy_log_file(filepath, contents):
 
 
 def test_create_product_logs(tmp_path):
-    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -52,7 +52,7 @@ def test_create_product_logs(tmp_path):
     # Define directory where logs files are saved
     logs_dir = define_logs_dir(
         product=product,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -65,7 +65,7 @@ def test_create_product_logs(tmp_path):
 
     # Define /summary and /problem directory
     campaign_dir = define_campaign_dir(
-        base_dir=test_base_dir,
+        archive_dir=test_data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -94,7 +94,7 @@ def test_create_product_logs(tmp_path):
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         # Logs list
         list_logs=list_logs,
     )
@@ -125,7 +125,7 @@ def test_create_product_logs(tmp_path):
 
 def test_define_summary_log_when_no_problems(tmp_path):
     """Test that not problem log file is created if no errors occurs."""
-    test_base_dir = tmp_path / "data" / "DISDRODB"
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -134,7 +134,7 @@ def test_define_summary_log_when_no_problems(tmp_path):
     # Define directory where logs files are saved
     logs_dir = define_logs_dir(
         product=product,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -147,7 +147,7 @@ def test_define_summary_log_when_no_problems(tmp_path):
 
     # Define /summary and /problem directory
     campaign_dir = define_campaign_dir(
-        base_dir=test_base_dir,
+        archive_dir=test_data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -173,7 +173,7 @@ def test_define_summary_log_when_no_problems(tmp_path):
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         list_logs=None,  # search for logs based on inputs
     )
 

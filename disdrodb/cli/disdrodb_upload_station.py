@@ -24,7 +24,12 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.upload_data import click_upload_options
-from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, click_station_arguments, parse_root_dir
+from disdrodb.utils.cli import (
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
+    click_station_arguments,
+    parse_archive_dir,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -32,8 +37,8 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_upload_options
-@click_base_dir_option
-@click_metadata_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 def disdrodb_upload_station(
     # Station arguments
     data_source: str,
@@ -43,8 +48,8 @@ def disdrodb_upload_station(
     platform: Optional[str] = None,
     force: bool = False,
     # DISDRODB root directories
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Upload data from a single DISDRODB station on a remote repository.
@@ -61,9 +66,11 @@ def disdrodb_upload_station(
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     platform: str, optional
         Name of the remote data storage platform.
         The default platform is ``"sandbox.zenodo"`` (for testing purposes).
@@ -75,12 +82,12 @@ def disdrodb_upload_station(
     """
     from disdrodb.data_transfer.upload_data import upload_station
 
-    base_dir = parse_root_dir(base_dir)
-    metadata_dir = parse_root_dir(metadata_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
     upload_station(
         # DISDRODB root directories
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         # Station argument
         data_source=data_source,
         campaign_name=campaign_name,

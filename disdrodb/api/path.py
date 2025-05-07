@@ -19,7 +19,7 @@
 """Define paths within the DISDRODB infrastructure."""
 import os
 
-from disdrodb.configs import get_base_dir, get_metadata_dir
+from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.utils.directories import check_directory_exists
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
@@ -32,7 +32,7 @@ from disdrodb.utils.time import (
 
 
 def define_disdrodb_path(
-    base_dir,
+    archive_dir,
     product,
     data_source="",
     campaign_name="",
@@ -51,8 +51,8 @@ def define_disdrodb_path(
 
     Parameters
     ----------
-    base_dir : str
-        The disdrodb base directory
+    archive_dir : str
+        The DISDRODB archive directory
     product : str
         The DISDRODB product. See ``disdrodb.available_products()``.
         If "METADATA" is specified, it returns the path in the DISDRODB Metadata Archive.
@@ -75,18 +75,18 @@ def define_disdrodb_path(
 
     # Get directory
     if product.upper() == "METADATA":
-        dir_path = os.path.join(base_dir, "METADATA", data_source, campaign_name)
+        dir_path = os.path.join(archive_dir, "METADATA", data_source, campaign_name)
     elif product.upper() == "RAW":
-        dir_path = os.path.join(base_dir, "RAW", data_source, campaign_name)
+        dir_path = os.path.join(archive_dir, "RAW", data_source, campaign_name)
     else:
-        dir_path = os.path.join(base_dir, ARCHIVE_VERSION, data_source, campaign_name)
+        dir_path = os.path.join(archive_dir, ARCHIVE_VERSION, data_source, campaign_name)
     if check_exists:
         check_directory_exists(dir_path)
     return dir_path
 
 
 def define_data_source_dir(
-    base_dir,
+    archive_dir,
     product,
     data_source,
     check_exists=False,
@@ -103,7 +103,7 @@ def define_data_source_dir(
         If "METADATA" is specified, it returns the path in the DISDRODB Metadata Archive.
     data_source : str
         The data source.
-    base_dir : str, optional
+    archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -115,7 +115,7 @@ def define_data_source_dir(
         Station data directory path
     """
     data_source_dir = define_disdrodb_path(
-        base_dir=base_dir,
+        archive_dir=archive_dir,
         product=product,
         data_source=data_source,
         check_exists=check_exists,
@@ -124,7 +124,7 @@ def define_data_source_dir(
 
 
 def define_campaign_dir(
-    base_dir,
+    archive_dir,
     product,
     data_source,
     campaign_name,
@@ -144,7 +144,7 @@ def define_campaign_dir(
         The data source. Must be specified if ``campaign_name`` is specified.
     campaign_name : str
         The campaign name.
-    base_dir : str, optional
+    archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -156,7 +156,7 @@ def define_campaign_dir(
         Station data directory path
     """
     campaign_dir = define_disdrodb_path(
-        base_dir=base_dir,
+        archive_dir=archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -168,7 +168,7 @@ def define_campaign_dir(
 def define_metadata_dir(
     data_source,
     campaign_name,
-    metadata_dir=None,
+    metadata_archive_dir=None,
     check_exists=False,
 ):
     """Return the metadata directory in the DISDRODB infrastructure.
@@ -179,7 +179,7 @@ def define_metadata_dir(
         The data source.
     campaign_name : str
         The campaign name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -187,12 +187,12 @@ def define_metadata_dir(
 
     Returns
     -------
-    metadata_dir : str
+    metadata_archive_dir : str
         Station data directory path
     """
-    metadata_dir = get_metadata_dir(metadata_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
     campaign_dir = define_campaign_dir(
-        base_dir=metadata_dir,
+        archive_dir=metadata_archive_dir,
         data_source=data_source,
         product="METADATA",
         campaign_name=campaign_name,
@@ -207,7 +207,7 @@ def define_metadata_dir(
 def define_issue_dir(
     data_source,
     campaign_name,
-    metadata_dir=None,
+    metadata_archive_dir=None,
     check_exists=False,
 ):
     """Return the issue directory in the DISDRODB infrastructure.
@@ -218,7 +218,7 @@ def define_issue_dir(
         The data source.
     campaign_name : str
         The campaign name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -229,9 +229,9 @@ def define_issue_dir(
     issue_dir : str
         Station data directory path
     """
-    metadata_dir = get_metadata_dir(metadata_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
     campaign_dir = define_campaign_dir(
-        base_dir=metadata_dir,
+        archive_dir=metadata_archive_dir,
         product="METADATA",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -247,7 +247,7 @@ def define_metadata_filepath(
     data_source,
     campaign_name,
     station_name,
-    metadata_dir=None,
+    metadata_archive_dir=None,
     check_exists=False,
 ):
     """Return the station metadata filepath in the DISDRODB infrastructure.
@@ -260,7 +260,7 @@ def define_metadata_filepath(
         The campaign name.
     station_name : str
         The station name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -268,12 +268,12 @@ def define_metadata_filepath(
 
     Returns
     -------
-    metadata_dir : str
+    metadata_archive_dir : str
         Station data directory path
     """
-    metadata_dir = get_metadata_dir(metadata_dir)
+    metadata_dir = get_metadata_archive_dir(metadata_archive_dir)
     metadata_dir = define_metadata_dir(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -289,7 +289,7 @@ def define_issue_filepath(
     data_source,
     campaign_name,
     station_name,
-    metadata_dir=None,
+    metadata_archive_dir=None,
     check_exists=False,
 ):
     """Return the station issue filepath in the DISDRODB infrastructure.
@@ -302,7 +302,7 @@ def define_issue_filepath(
         The campaign name.
     station_name : str
         The station name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -313,9 +313,9 @@ def define_issue_filepath(
     issue_dir : str
         Station data directory path
     """
-    metadata_dir = get_metadata_dir(metadata_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
     issue_dir = define_issue_dir(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -463,7 +463,7 @@ def define_logs_dir(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
+    data_archive_dir=None,
     check_exists=False,
     **product_kwargs,
 ):
@@ -479,7 +479,7 @@ def define_logs_dir(
         The campaign name.
     station_name : str
         The station name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -491,7 +491,7 @@ def define_logs_dir(
         Station data directory path
     """
     campaign_dir = define_campaign_dir(
-        base_dir=base_dir,
+        archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -512,7 +512,7 @@ def define_station_dir(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
+    data_archive_dir=None,
     check_exists=False,
 ):
     """Return the station data directory in the DISDRODB infrastructure.
@@ -527,7 +527,7 @@ def define_station_dir(
         The campaign name.
     station_name : str
         The station name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -538,9 +538,9 @@ def define_station_dir(
     station_dir : str
         Station data directory path
     """
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
     campaign_dir = define_disdrodb_path(
-        base_dir=base_dir,
+        archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -560,7 +560,7 @@ def define_data_dir(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
+    data_archive_dir=None,
     check_exists=False,
     **product_kwargs,
 ):
@@ -576,7 +576,7 @@ def define_data_dir(
         The campaign name.
     station_name : str
         The station name.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
@@ -602,7 +602,7 @@ def define_data_dir(
     product_kwargs = check_product_kwargs(product, product_kwargs)
     # Define station directory
     station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,

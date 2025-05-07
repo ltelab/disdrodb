@@ -4,4 +4,4 @@
 Products
 ============================
 
-This section is in preparation and will be updated soon ! 
+This section is in preparation and will be updated soon !

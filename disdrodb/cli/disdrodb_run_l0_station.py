@@ -21,12 +21,12 @@ from typing import Optional
 import click
 
 from disdrodb.utils.cli import (
-    click_base_dir_option,
+    click_data_archive_dir_option,
     click_l0_archive_options,
-    click_metadata_dir_option,
+    click_metadata_archive_dir_option,
     click_processing_options,
     click_station_arguments,
-    parse_root_dir,
+    parse_archive_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -39,8 +39,8 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_station_arguments
 @click_processing_options
 @click_l0_archive_options
-@click_base_dir_option
-@click_metadata_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 def disdrodb_run_l0_station(
     # Station arguments
     data_source: str,
@@ -58,8 +58,8 @@ def disdrodb_run_l0_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     r"""Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -107,19 +107,19 @@ def disdrodb_run_l0_station(
         For L0A, it processes just the first 3 raw data files for each station.\n
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.\n
         The default is False.\n
-    base_dir : str \n
+    data_archive_dir : str \n
         Base directory of DISDRODB \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     from disdrodb.routines import run_disdrodb_l0_station
 
-    base_dir = parse_root_dir(base_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
 
     run_disdrodb_l0_station(
         # DISDRODB root directories
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,

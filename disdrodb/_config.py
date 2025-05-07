@@ -36,7 +36,8 @@ def _get_disdrodb_default_configs():
 
 
 _CONFIG_DEFAULTS = {
-    "base_dir": None,
+    "data_archive_dir": None,
+    "metadata_archive_dir": None,
     "zenodo_sandbox_token": None,
     "zenodo_token": None,
     "folder_partitioning": "year/month",

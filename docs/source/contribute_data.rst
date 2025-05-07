@@ -803,7 +803,7 @@ We provide this python script that should enable you to test safely the whole pr
 
     # Download the data (you just uploaded on Zenodo)
     disdrodb.download_station(
-        base_dir=test_data_archive_dir,
+        data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -813,7 +813,7 @@ We provide this python script that should enable you to test safely the whole pr
     # Test that the DISDRODB L0 processing works
     # - Start with a small sample and check it works
     run_disdrodb_l0_station(
-        base_dir=test_data_archive_dir,
+        data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -825,7 +825,7 @@ We provide this python script that should enable you to test safely the whole pr
     # Now run over all data
     # - If parallel=True, you can visualize progress at http://localhost:8787/status
     run_disdrodb_l0_station(
-        base_dir=test_data_archive_dir,
+        data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

@@ -34,7 +34,7 @@ from disdrodb.api.search import (
     available_stations,
 )
 from disdrodb.configs import define_disdrodb_configs as define_configs
-from disdrodb.configs import get_base_dir, get_metadata_dir
+from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation
 from disdrodb.l0.l0_reader import available_readers, get_reader, get_station_reader
@@ -89,8 +89,8 @@ __all__ = [
     "find_files",
     "get_reader",
     "get_station_reader",
-    "get_metadata_dir",
-    "get_base_dir",
+    "get_metadata_archive_dir",
+    "get_data_archive_dir",
     "available_readers",
     "open_dataset",
     "check_archive_metadata_compliance",

@@ -46,20 +46,20 @@ PARALLEL = False
 # from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
 # tmp_path = pathlib.Path("/tmp/10")
-# test_base_dir = os.path.join(tmp_path, "DISDRODB")
-# dst_dir = os.path.join(test_base_dir, VERSION)
+# test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
+# dst_dir = os.path.join(test_data_archive_dir, VERSION)
 # shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
-# test_metadata_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+# test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
 
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
-def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_dir, parallel, cli):
+def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_archive_dir, parallel, cli):
     """Test the disdrodb_run_l1_station command."""
-    test_base_dir = tmp_path / "data" / "DISDRODB"
-    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
 
-    dst_dir = test_base_dir / ARCHIVE_VERSION
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
 
     # Produce data
@@ -73,10 +73,10 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_dir, parallel, cli)
                 CAMPAIGN_NAME,
                 STATION_NAME,
                 # DISDRODB root directories
-                "--base_dir",
-                test_base_dir,
-                "--metadata_dir",
-                test_metadata_dir,
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
                 # Processing options
                 "--parallel",
                 parallel,
@@ -91,8 +91,8 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_dir, parallel, cli)
     else:
         run_disdrodb_l1_station(
             # DISDRODB root directories
-            base_dir=test_base_dir,
-            metadata_dir=test_metadata_dir,
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -106,7 +106,7 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_dir, parallel, cli)
 
     # Check product files are produced
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L1",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -116,11 +116,11 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_dir, parallel, cli)
 
 
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_dir, cli):
+def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_archive_dir, cli):
     """Test the disdrodb_run_l1 command."""
-    test_base_dir = tmp_path / "data" / "DISDRODB"
-    test_metadata_dir = disdrodb_metadata_dir  # fixture for the original DISDRODB Archive
-    dst_dir = test_base_dir / ARCHIVE_VERSION
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L0C_DIR, dst_dir)
 
     # Produce data
@@ -130,10 +130,10 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_dir, cli):
             disdrodb_run_l1,
             [
                 # DISDRODB root directories
-                "--base_dir",
-                test_base_dir,
-                "--metadata_dir",
-                test_metadata_dir,
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
                 # Stations arguments
                 "--data_sources",
                 DATA_SOURCE,
@@ -155,8 +155,8 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_dir, cli):
     else:
         run_disdrodb_l1(
             # DISDRODB root directories
-            base_dir=test_base_dir,
-            metadata_dir=test_metadata_dir,
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
             # Station arguments
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
@@ -170,7 +170,7 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_dir, cli):
 
     # Check products files are produced
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L1",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,

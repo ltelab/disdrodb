@@ -247,13 +247,13 @@ def get_reader(reader_reference, sensor_name):
     return reader
 
 
-def get_station_reader(data_source, campaign_name, station_name, metadata_dir=None):
+def get_station_reader(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Retrieve the reader function of a specific DISDRODB station."""
     from disdrodb.metadata import read_station_metadata
 
     # Get metadata
     metadata = read_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

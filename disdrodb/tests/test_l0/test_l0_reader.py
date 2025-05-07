@@ -187,20 +187,20 @@ class TestCheckMetadataReader:
 # tmp_path = pathlib.Path("/tmp/10")
 def test_get_station_reader(tmp_path):
     """Test retrieve reader from metadata file."""
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     station_name = "station_name"
 
     metadata_dict = {"reader": READER_REFERENCE, "sensor_name": SENSOR_NAME}
 
     metadata_filepath = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=station_name,
     )
     result = get_station_reader(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=station_name,
@@ -209,7 +209,7 @@ def test_get_station_reader(tmp_path):
 
     # Check function available from package root
     result = disdrodb.get_station_reader(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=station_name,
@@ -223,7 +223,7 @@ def test_get_station_reader(tmp_path):
 
     with pytest.raises(ValueError, match="The `reader` key is not specified in the metadata"):
         get_station_reader(
-            metadata_dir=metadata_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
             station_name=station_name,

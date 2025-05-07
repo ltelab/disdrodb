@@ -26,9 +26,9 @@ import tempfile
 import zipfile
 from typing import Optional
 
-from disdrodb.api.checks import check_base_dir
+from disdrodb.api.checks import check_data_archive_dir
 from disdrodb.api.path import define_station_dir
-from disdrodb.configs import get_base_dir
+from disdrodb.configs import get_data_archive_dir
 from disdrodb.utils.directories import list_files
 from disdrodb.utils.yaml import read_yaml
 
@@ -81,7 +81,7 @@ def check_consistent_station_name(metadata_filepath, station_name):
     return station_name
 
 
-def archive_station_data(metadata_filepath: str, base_dir: str) -> str:
+def archive_station_data(metadata_filepath: str, data_archive_dir: str) -> str:
     """Archive station data into a zip file for subsequent data upload.
 
     It create a zip file into a temporary directory !
@@ -95,14 +95,14 @@ def archive_station_data(metadata_filepath: str, base_dir: str) -> str:
     # Open metadata file
     metadata_dict = read_yaml(metadata_filepath)
     # Retrieve station information
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
     data_source = metadata_dict["data_source"]
     campaign_name = metadata_dict["campaign_name"]
     station_name = metadata_dict["station_name"]
     station_name = check_consistent_station_name(metadata_filepath, station_name)
     # Define the destination local filepath path
     station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -114,7 +114,7 @@ def archive_station_data(metadata_filepath: str, base_dir: str) -> str:
 
 
 def compress_station_files(
-    base_dir: str,
+    data_archive_dir: str,
     data_source: str,
     campaign_name: str,
     station_name: str,
@@ -125,7 +125,7 @@ def compress_station_files(
 
     Parameters
     ----------
-    base_dir : str
+    data_archive_dir : str
         Base directory of DISDRODB
     data_source : str
         Name of data source of interest.
@@ -144,9 +144,9 @@ def compress_station_files(
     if method not in COMPRESSION_OPTIONS:
         raise ValueError(f"Invalid compression method {method}. Valid methods are {list(COMPRESSION_OPTIONS.keys())}")
 
-    base_dir = check_base_dir(base_dir)
+    data_archive_dir = check_data_archive_dir(data_archive_dir)
     station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,

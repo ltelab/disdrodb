@@ -24,7 +24,7 @@ from disdrodb.api.path import define_metadata_filepath
 from disdrodb.utils.yaml import read_yaml
 
 
-def read_station_metadata(data_source, campaign_name, station_name, metadata_dir=None):
+def read_station_metadata(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Open the station metadata YAML file into a dictionary.
 
     Parameters
@@ -37,7 +37,7 @@ def read_station_metadata(data_source, campaign_name, station_name, metadata_dir
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    metadata_dir : str, optional
+    metadata_archive_dir : str, optional
         The directory path where the DISDRODB Metadata Archive is located.
         If not specified, the path specified in the DISDRODB active configuration will be used.
         Expected path format: ``<...>/DISDRODB``.
@@ -50,7 +50,7 @@ def read_station_metadata(data_source, campaign_name, station_name, metadata_dir
     """
     # Retrieve metadata filepath
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -62,7 +62,7 @@ def read_station_metadata(data_source, campaign_name, station_name, metadata_dir
 
 
 def read_metadata_database(
-    metadata_dir=None,
+    metadata_archive_dir=None,
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -72,7 +72,7 @@ def read_metadata_database(
 
     Parameters
     ----------
-    metadata_dir : str or Path-like, optional
+    metadata_archive_dir : str or Path-like, optional
         Path to the root of the DISDRODB Metadata Archive. If None, the
         default metadata base directory is used. Default is None.
     data_sources : str or sequence of str, optional
@@ -95,13 +95,13 @@ def read_metadata_database(
     pandas.DataFrame
 
     """
-    from disdrodb.configs import get_metadata_dir
+    from disdrodb.configs import get_metadata_archive_dir
     from disdrodb.metadata.search import get_list_metadata
 
-    metadata_dir = get_metadata_dir(metadata_dir=metadata_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir=metadata_archive_dir)
 
     list_metadata_paths = get_list_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

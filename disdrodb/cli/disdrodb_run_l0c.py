@@ -22,13 +22,13 @@ from typing import Optional
 import click
 
 from disdrodb.utils.cli import (
-    click_base_dir_option,
-    click_metadata_dir_option,
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
     click_processing_options,
     click_remove_l0b_option,
     click_stations_options,
+    parse_archive_dir,
     parse_arg_to_list,
-    parse_root_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -38,8 +38,8 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_stations_options
 @click_processing_options
 @click_remove_l0b_option
-@click_base_dir_option
-@click_metadata_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 def disdrodb_run_l0c(
     # Stations options
     data_sources: Optional[str] = None,
@@ -53,8 +53,8 @@ def disdrodb_run_l0c(
     parallel: bool = True,
     debugging_mode: bool = False,
     # DISDRODB root directories
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Run the L0C processing of DISDRODB stations.
@@ -97,7 +97,7 @@ def disdrodb_run_l0c(
         The default is False.
     remove_l0b: bool, optional
         Whether to remove the processed L0B files. The default is ``False``.
-    base_dir : str
+    data_archive_dir : str
         Base directory of DISDRODB
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
@@ -105,8 +105,8 @@ def disdrodb_run_l0c(
     from disdrodb.routines import run_disdrodb_l0c
 
     # Parse data_sources, campaign_names and station arguments
-    base_dir = parse_root_dir(base_dir)
-    metadata_dir = parse_root_dir(metadata_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
@@ -114,8 +114,8 @@ def disdrodb_run_l0c(
     # Run processing
     run_disdrodb_l0c(
         # DISDRODB root directories
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         # Stations options
         data_sources=data_sources,
         campaign_names=campaign_names,

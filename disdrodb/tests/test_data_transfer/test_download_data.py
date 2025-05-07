@@ -59,8 +59,8 @@ def test_download_file_from_url(tmp_path):
 
 def test_download_station_data(tmp_path):
     # Define project paths
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
-    base_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
@@ -71,7 +71,7 @@ def test_download_station_data(tmp_path):
 
     # Create metadata file
     metadata_filepath = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -79,11 +79,11 @@ def test_download_station_data(tmp_path):
     )
 
     # Download data
-    _download_station_data(metadata_filepath=metadata_filepath, base_dir=base_dir, force=True)
+    _download_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir, force=True)
 
     # Define expected station directory
     station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -105,8 +105,8 @@ def test_download_station_data(tmp_path):
 def test_download_without_any_remote_url(tmp_path, requests_mock, mocker, disdrodb_data_url, force):
     """Test download station data without url."""
     # Define project paths
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
-    base_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
 
     # Create metadata file
     data_source = "test_data_source"
@@ -117,7 +117,7 @@ def test_download_without_any_remote_url(tmp_path, requests_mock, mocker, disdro
     metadata_dict["disdrodb_data_url"] = disdrodb_data_url
 
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -127,8 +127,8 @@ def test_download_without_any_remote_url(tmp_path, requests_mock, mocker, disdro
     # Check download station raise error
     with pytest.raises(ValueError):
         download_station(
-            base_dir=base_dir,
-            metadata_dir=metadata_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -137,8 +137,8 @@ def test_download_without_any_remote_url(tmp_path, requests_mock, mocker, disdro
 
     # Check download archive run
     download_archive(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
         station_names=station_name,
@@ -149,8 +149,8 @@ def test_download_without_any_remote_url(tmp_path, requests_mock, mocker, disdro
 def test_download_station_only_with_valid_metadata(tmp_path):
     """Test download of archive stations is not stopped by single stations download errors."""
     # Define project paths
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
-    base_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
 
     # Create metadata file
     data_source = "test_data_source"
@@ -161,7 +161,7 @@ def test_download_station_only_with_valid_metadata(tmp_path):
     metadata_dict["station_name"] = "ANOTHER_STATION_NAME"
     metadata_dict["disdrodb_data_url"] = TEST_ZIP_FPATH
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -169,9 +169,9 @@ def test_download_station_only_with_valid_metadata(tmp_path):
     )
 
     # Test raise error if metadata file is not valid
-    with disdrodb.config.set({"metadata_dir": metadata_dir}), pytest.raises(ValueError):
+    with disdrodb.config.set({"metadata_archive_dir": metadata_archive_dir}), pytest.raises(ValueError):
         download_station(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -182,8 +182,8 @@ def test_download_station_only_with_valid_metadata(tmp_path):
 def test_download_station(tmp_path, force):
     """Test download station data."""
     # Define project paths
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
-    base_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
 
     # Create metadata file
     data_source = "test_data_source"
@@ -194,7 +194,7 @@ def test_download_station(tmp_path, force):
     metadata_dict["disdrodb_data_url"] = TEST_ZIP_FPATH
 
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -202,18 +202,18 @@ def test_download_station(tmp_path, force):
     )
     # Create raw data file
     raw_file_filepath = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
 
-    with disdrodb.config.set({"metadata_dir": metadata_dir}):
+    with disdrodb.config.set({"metadata_archive_dir": metadata_archive_dir}):
         # Check download_station raise error if existing data and force=False
         if not force:
             with pytest.raises(ValueError):
                 download_station(
-                    base_dir=base_dir,
+                    data_archive_dir=data_archive_dir,
                     data_source=data_source,
                     campaign_name=campaign_name,
                     station_name=station_name,
@@ -227,7 +227,7 @@ def test_download_station(tmp_path, force):
         # Check download_station overwrite existing files if force=True
         else:
             download_station(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -243,8 +243,8 @@ def test_download_station(tmp_path, force):
 def test_download_archive(tmp_path, force, existing_data):
     """Test download station data."""
     # Define project paths
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
-    base_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
 
     # Create metadata file
     data_source = "test_data_source"
@@ -255,7 +255,7 @@ def test_download_archive(tmp_path, force, existing_data):
     metadata_dict["disdrodb_data_url"] = TEST_ZIP_FPATH
 
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -265,16 +265,16 @@ def test_download_archive(tmp_path, force, existing_data):
     # Create raw data file
     if existing_data:
         raw_file_filepath = create_fake_raw_data_file(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
         )
 
     # Check download_archive does not raise error if existing data and force=False
-    with disdrodb.config.set({"metadata_dir": metadata_dir}):
+    with disdrodb.config.set({"metadata_archive_dir": metadata_archive_dir}):
         download_archive(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_sources=data_source,
             campaign_names=campaign_name,
             station_names=station_name,

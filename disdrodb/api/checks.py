@@ -88,22 +88,22 @@ def check_directories_inside(dir_path):
         raise ValueError(f"There are not directories within {dir_path}")
 
 
-def check_base_dir(base_dir: str):
+def check_data_archive_dir(data_archive_dir: str):
     """Raise an error if the path does not end with ``DISDRODB``."""
-    base_dir = str(base_dir)  # convert Pathlib to string
-    base_dir = os.path.normpath(base_dir)
-    if not base_dir.endswith("DISDRODB"):
-        raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
-    return base_dir
+    data_archive_dir = str(data_archive_dir)  # convert Pathlib to string
+    data_archive_dir = os.path.normpath(data_archive_dir)
+    if not data_archive_dir.endswith("DISDRODB"):
+        raise ValueError(f"The path {data_archive_dir} does not end with DISDRODB. Please check the path.")
+    return data_archive_dir
 
 
-def check_metadata_dir(metadata_dir: str):
+def check_metadata_archive_dir(metadata_archive_dir: str):
     """Raise an error if the path does not end with ``DISDRODB``."""
-    metadata_dir = str(metadata_dir)  # convert Pathlib to string
-    metadata_dir = os.path.normpath(metadata_dir)
-    if not metadata_dir.endswith("DISDRODB"):
-        raise ValueError(f"The path {metadata_dir} does not end with DISDRODB. Please check the path.")
-    return metadata_dir
+    metadata_archive_dir = str(metadata_archive_dir)  # convert Pathlib to string
+    metadata_archive_dir = os.path.normpath(metadata_archive_dir)
+    if not metadata_archive_dir.endswith("DISDRODB"):
+        raise ValueError(f"The path {metadata_archive_dir} does not end with DISDRODB. Please check the path.")
+    return metadata_archive_dir
 
 
 def check_measurement_interval(measurement_interval):
@@ -346,7 +346,7 @@ def has_available_data(
     campaign_name,
     station_name,
     product,
-    base_dir=None,
+    data_archive_dir=None,
     # Product Options
     **product_kwargs,
 ):
@@ -354,7 +354,7 @@ def has_available_data(
     # Define product directory
     data_dir = define_data_dir(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -378,14 +378,14 @@ def check_data_availability(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
+    data_archive_dir=None,
     # Product Options
     **product_kwargs,
 ):
     """Check the station product data directory has files inside. If not, raise an error."""
     if not has_available_data(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -396,12 +396,12 @@ def check_data_availability(
         raise ValueError(msg)
 
 
-def check_metadata_file(metadata_dir, data_source, campaign_name, station_name, check_validity=True):
+def check_metadata_file(metadata_archive_dir, data_source, campaign_name, station_name, check_validity=True):
     """Check existence of a valid metadata YAML file. If does not exists, raise an error."""
     from disdrodb.metadata.checks import check_metadata_compliance
 
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -418,7 +418,7 @@ def check_metadata_file(metadata_dir, data_source, campaign_name, station_name, 
     # Check validity
     if check_validity:
         check_metadata_compliance(
-            metadata_dir=metadata_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -426,10 +426,10 @@ def check_metadata_file(metadata_dir, data_source, campaign_name, station_name, 
     return metadata_filepath
 
 
-def check_issue_dir(data_source, campaign_name, metadata_dir=None):
+def check_issue_dir(data_source, campaign_name, metadata_archive_dir=None):
     """Check existence of the issue directory. If does not exists, raise an error."""
     issue_dir = define_issue_dir(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -441,18 +441,18 @@ def check_issue_dir(data_source, campaign_name, metadata_dir=None):
     return issue_dir
 
 
-def check_issue_file(data_source, campaign_name, station_name, metadata_dir=None):
+def check_issue_file(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Check existence of a valid issue YAML file. If does not exists, raise an error."""
     from disdrodb.issue.checks import check_issue_compliance
     from disdrodb.issue.writer import create_station_issue
 
     _ = check_issue_dir(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
     )
     issue_filepath = define_issue_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -461,7 +461,7 @@ def check_issue_file(data_source, campaign_name, station_name, metadata_dir=None
     # Check existence
     if not os.path.exists(issue_filepath):
         create_station_issue(
-            metadata_dir=metadata_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -469,7 +469,7 @@ def check_issue_file(data_source, campaign_name, station_name, metadata_dir=None
 
     # Check validity
     check_issue_compliance(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

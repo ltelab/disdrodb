@@ -23,7 +23,7 @@ from typing import Optional
 import click
 
 from disdrodb.api.path import define_metadata_filepath
-from disdrodb.configs import get_base_dir, get_metadata_dir
+from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.data_transfer.zenodo import upload_station_to_zenodo
 from disdrodb.metadata.search import get_list_metadata
 from disdrodb.utils.compression import archive_station_data
@@ -127,8 +127,8 @@ def upload_station(
     station_name: str,
     platform: Optional[str] = "sandbox.zenodo",
     force: bool = False,
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ) -> None:
     """
     Upload data from a single DISDRODB station on a remote repository.
@@ -145,9 +145,11 @@ def upload_station(
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     platform: str, optional
         Name of the remote data storage platform.
         The default platform is ``"sandbox.zenodo"`` (for testing purposes).
@@ -158,15 +160,15 @@ def upload_station(
 
     """
     # Retrieve the DISDRODB Metadata and Data Archive Directories
-    base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir(metadata_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # Check valid platform
     _check_valid_platform(platform)
 
     # Define metadata_filepath
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -177,7 +179,7 @@ def upload_station(
 
     # Zip station data
     print(f" - Zipping station data  of {data_source} {campaign_name} {station_name}")
-    station_zip_filepath = archive_station_data(metadata_filepath, base_dir=base_dir)
+    station_zip_filepath = archive_station_data(metadata_filepath, data_archive_dir=data_archive_dir)
 
     print(f" - Start uploading of {data_source} {campaign_name} {station_name}")
     # Upload the data
@@ -191,8 +193,8 @@ def upload_station(
 def upload_archive(
     platform: Optional[str] = None,
     force: bool = False,
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
     **fields_kwargs,
 ) -> None:
     """Find all stations containing local data and upload them to a remote repository.
@@ -206,9 +208,11 @@ def upload_archive(
     force: bool, optional
         If ``True``, upload even if data already exists on another remote location.
         The default is ``force=False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
 
     Other Parameters
     ----------------
@@ -228,13 +232,13 @@ def upload_archive(
     _check_valid_platform(platform)
 
     # Retrieve the DISDRODB Metadata and Data Archive Directories
-    base_dir = get_base_dir(base_dir)
-    metadata_dir = get_metadata_dir(metadata_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # Retrieve only metadata_filepaths of stations with RAW data in the local DISDRODB Data Archive
     metadata_filepaths = get_list_metadata(
-        metadata_dir=metadata_dir,
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        data_archive_dir=data_archive_dir,
         product="RAW",  # --> Search in local DISDRODB Data Archive
         available_data=True,  # --> Select only stations with raw data
         raise_error_if_empty=False,  # Do not raise error if no matching metadata file found
@@ -259,8 +263,8 @@ def upload_archive(
         station_name = metadata["station_name"]
         try:
             upload_station(
-                base_dir=base_dir,
-                metadata_dir=metadata_dir,
+                data_archive_dir=data_archive_dir,
+                metadata_archive_dir=metadata_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,

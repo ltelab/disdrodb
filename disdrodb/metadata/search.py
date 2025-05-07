@@ -31,8 +31,8 @@ def get_list_metadata(
     available_data=False,
     raise_error_if_empty=False,
     invalid_fields_policy="raise",
-    base_dir=None,
-    metadata_dir=None,
+    data_archive_dir=None,
+    metadata_archive_dir=None,
     **product_kwargs,
 ):
     """
@@ -93,14 +93,14 @@ def get_list_metadata(
           - 'raise' : raise a ``ValueError`` (default)
           - 'warn'  : emit a warning, then ignore invalid entries
           - 'ignore': silently drop invalid entries
-    base_dir : str or Path-like, optional
+    data_archive_dir : str or Path-like, optional
         Path to the root of the local DISDRODB Data Archive. Format: ``<...>/DISDRODB``
         Required only if ``product``is specified.
-        If None, the``base_dir`` path specified in the DISDRODB active configuration file is used.
+        If None, the``data_archive_dir`` path specified in the DISDRODB active configuration file is used.
         The default is None.
-    metadata_dir : str or Path-like, optional
+    metadata_archive_dir : str or Path-like, optional
         Path to the root of the DISDRODB Metadata Archive. Format: ``<...>/DISDRODB``
-        If None, the``metadata_dir`` path specified in the DISDRODB active configuratio. The default is None.
+        If None, the``metadata_archive_dir`` path specified in the DISDRODB active configuratio. The default is None.
     **product_kwargs : dict, optional
         Additional arguments required for some products.
         For example, for the "L2E" product, you need to specify ``rolling`` and
@@ -121,8 +121,8 @@ def get_list_metadata(
         available_data=available_data,
         raise_error_if_empty=raise_error_if_empty,
         invalid_fields_policy=invalid_fields_policy,
-        metadata_dir=metadata_dir,
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        data_archive_dir=data_archive_dir,
         return_tuple=True,
         **product_kwargs,
     )
@@ -130,7 +130,7 @@ def get_list_metadata(
     # Define metadata filepath
     metadata_filepaths = [
         define_metadata_filepath(
-            metadata_dir=metadata_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

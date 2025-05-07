@@ -22,22 +22,27 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.download_data import click_download_archive_options, click_download_options
-from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, parse_arg_to_list, parse_root_dir
+from disdrodb.utils.cli import (
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
+    parse_archive_dir,
+    parse_arg_to_list,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
 @click_download_archive_options
-@click_base_dir_option
-@click_metadata_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 @click_download_options
 def disdrodb_download_archive(
     data_sources: Optional[str] = None,
     campaign_names: Optional[str] = None,
     station_names: Optional[str] = None,
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
     force: bool = False,
 ):
     """Download DISDRODB stations with the ``disdrodb_data_url`` in the metadata.
@@ -59,21 +64,21 @@ def disdrodb_download_archive(
     force : bool, optional
         If ``True``, overwrite the already existing raw data file.
         The default is ``False``.
-    base_dir : str (optional)
+    data_archive_dir : str (optional)
         Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
+        If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     """
     from disdrodb.data_transfer.download_data import download_archive
 
-    base_dir = parse_root_dir(base_dir)
-    metadata_dir = parse_root_dir(metadata_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
     download_archive(
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

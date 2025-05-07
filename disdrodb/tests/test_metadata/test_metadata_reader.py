@@ -24,19 +24,19 @@ from disdrodb.tests.conftest import create_fake_metadata_file
 
 
 def test_read_station_metadata(tmp_path):
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
 
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     metadata_dict = read_station_metadata(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -46,19 +46,19 @@ def test_read_station_metadata(tmp_path):
 
 
 def test_read_station_metadata_with_default_config(tmp_path):
-    metadata_dir = tmp_path / "metadata" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
 
     _ = create_fake_metadata_file(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
 
-    with disdrodb.config.set({"metadata_dir": metadata_dir}):
+    with disdrodb.config.set({"metadata_archive_dir": metadata_archive_dir}):
         metadata_dict = read_station_metadata(
             data_source=data_source,
             campaign_name=campaign_name,

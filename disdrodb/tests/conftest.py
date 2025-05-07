@@ -13,19 +13,19 @@ from disdrodb import __root_path__
 from disdrodb.utils.yaml import write_yaml
 
 
-def create_fake_metadata_directory(metadata_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
+def create_fake_metadata_directory(metadata_archive_dir, data_source="DATA_SOURCE", campaign_name="CAMPAIGN_NAME"):
     """Create metadata directory."""
     from disdrodb.api.create_directories import create_metadata_directory
 
     return create_metadata_directory(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
     )
 
 
 def create_fake_data_dir(
-    base_dir,
+    data_archive_dir,
     product,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
@@ -36,7 +36,7 @@ def create_fake_data_dir(
     from disdrodb.api.create_directories import create_data_directory
 
     return create_data_directory(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -46,7 +46,7 @@ def create_fake_data_dir(
 
 
 def create_fake_metadata_file(
-    metadata_dir,
+    metadata_archive_dir,
     metadata_dict=None,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
@@ -59,7 +59,7 @@ def create_fake_metadata_file(
     if metadata_dict is None:
         metadata_dict = {}
     metadata_filepath = define_metadata_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -89,7 +89,7 @@ def create_fake_metadata_file(
 
 
 def create_fake_issue_file(
-    metadata_dir,
+    metadata_archive_dir,
     issue_dict=None,
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
@@ -102,7 +102,7 @@ def create_fake_issue_file(
     if issue_dict is None:
         issue_dict = {}
     issue_filepath = define_issue_filepath(
-        metadata_dir=metadata_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -140,7 +140,7 @@ def get_default_product_kwargs(product, product_kwargs=None):
 
 
 def create_fake_raw_data_file(
-    base_dir,
+    data_archive_dir,
     product="RAW",
     data_source="DATA_SOURCE",
     campaign_name="CAMPAIGN_NAME",
@@ -154,7 +154,7 @@ def create_fake_raw_data_file(
 
     # Define station data directory
     data_dir = create_data_directory(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -210,7 +210,7 @@ def create_test_config_files(request):  # noqa: PT004
 
 
 @pytest.fixture(scope="session")
-def disdrodb_metadata_dir(tmp_path_factory):
+def disdrodb_metadata_archive_dir(tmp_path_factory):
     """Download the DISDRODB Metadata Archive once per pytest session.
 
     It return the metadata root directory pointing to it.

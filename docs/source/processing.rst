@@ -45,9 +45,9 @@ Example :
 .. code-block:: python
 
     from disdrodb.l0 import run_disdrodb_l0_station
-    from disdrodb.configs import get_base_dir
+    from disdrodb.configs import get_data_archive_dir
 
-    base_dir = get_base_dir()
+    data_archive_dir = get_data_archive_dir()
     data_source = "EPFL"
     campaign_name = "EPFL_2008"
     station_name = "10"
@@ -67,7 +67,7 @@ Example :
 
     # Run the processing
     run_disdrodb_l0_station(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -142,9 +142,9 @@ Example :
 .. code-block:: python
 
     from disdrodb.l0 import run_disdrodb_l0
-    from disdrodb.configs import get_base_dir
+    from disdrodb.configs import get_data_archive_dir
 
-    base_dir = get_base_dir()
+    data_archive_dir = get_data_archive_dir()
     data_sources = ["EPFL"]
     campaign_names = ["EPFL_2008"]
 
@@ -161,7 +161,7 @@ Example :
     parallel = False
 
     run_disdrodb_l0(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         # station_names=station_names,
@@ -181,7 +181,7 @@ Example :
 
 .. note::
 
-    This documentation section is in preparation and will be updated soon ! 
+    This documentation section is in preparation and will be updated soon !
 
 Other arguments to describe
 

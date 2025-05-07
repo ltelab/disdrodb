@@ -20,7 +20,12 @@ from typing import Optional
 
 import click
 
-from disdrodb.utils.cli import click_base_dir_option, click_metadata_dir_option, click_station_arguments, parse_root_dir
+from disdrodb.utils.cli import (
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
+    click_station_arguments,
+    parse_archive_dir,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -30,16 +35,16 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 @click.command()
 @click_station_arguments
-@click_base_dir_option
-@click_metadata_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 def disdrodb_initialize_station(
     # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
     # DISDRODB root directories
-    base_dir: Optional[str] = None,
-    metadata_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     r"""Initialize the DISDRODB directory structure for a station.
 
@@ -55,20 +60,20 @@ def disdrodb_initialize_station(
         Campaign name. Must be UPPER CASE.\n
     station_name : str \n
         Station name \n
-    base_dir : str \n
+    data_archive_dir : str \n
         Base directory of DISDRODB \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
     from disdrodb.api.create_directories import create_initial_station_structure
 
-    base_dir = parse_root_dir(base_dir)
-    metadata_dir = parse_root_dir(metadata_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
 
     create_initial_station_structure(
         # DISDRODB root directories
-        base_dir=base_dir,
-        metadata_dir=metadata_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         # Station arguments
         data_source=data_source,
         campaign_name=campaign_name,

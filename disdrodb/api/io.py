@@ -48,7 +48,7 @@ def find_files(
     station_name,
     product,
     debugging_mode: bool = False,
-    base_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
     glob_pattern="*",
     **product_kwargs,
 ):
@@ -69,7 +69,7 @@ def find_files(
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
         The default is ``False``.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     glob_pattern: str, optional
@@ -96,7 +96,7 @@ def find_files(
     """
     # Retrieve data directory
     data_dir = define_data_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -134,7 +134,7 @@ def open_dataset(
     product,
     product_kwargs=None,
     debugging_mode: bool = False,
-    base_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
     **open_kwargs,
 ):
     """Retrieve DISDRODB product files for a give station.
@@ -163,7 +163,7 @@ def open_dataset(
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
         The default is ``False``.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
@@ -183,7 +183,7 @@ def open_dataset(
 
     # List product files
     filepaths = find_files(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -209,7 +209,7 @@ def open_dataset(
 
 
 def remove_product(
-    base_dir,
+    data_archive_dir,
     product,
     data_source,
     campaign_name,
@@ -222,7 +222,7 @@ def remove_product(
     if product.upper() == "RAW":
         raise ValueError("Removal of 'RAW' files is not allowed.")
     data_dir = define_data_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -260,14 +260,14 @@ def open_file_explorer(path):
 def open_logs_directory(
     data_source,
     campaign_name,
-    base_dir=None,
+    data_archive_dir=None,
 ):
     """Open the logs directory."""
-    from disdrodb.configs import get_base_dir
+    from disdrodb.configs import get_data_archive_dir
 
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
     campaign_dir = define_campaign_dir(
-        base_dir=base_dir,
+        archive_dir=data_archive_dir,
         product="L0A",
         data_source=data_source,
         campaign_name=campaign_name,
