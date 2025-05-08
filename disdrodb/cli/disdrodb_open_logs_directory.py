@@ -22,6 +22,7 @@ import sys
 from typing import Optional
 
 import click
+
 from disdrodb.utils.cli import (
     click_data_archive_dir_option,
     click_station_arguments,
@@ -66,4 +67,3 @@ def disdrodb_open_logs_directory(
         campaign_name=campaign_name,
         station_name=station_name,
     )
- 

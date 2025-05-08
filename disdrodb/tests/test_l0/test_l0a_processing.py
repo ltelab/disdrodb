@@ -375,7 +375,7 @@ def test_cast_column_dtypes():
         },
     )
     # Call the function
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     df_out = cast_column_dtypes(df, sensor_name)
     # Check that the output dataframe has the correct column types
     assert str(df_out["time"].dtype) == "datetime64[s]"
@@ -595,7 +595,7 @@ class TestReadRawTextFiles:
         verbose = False
 
         # Define sensor name
-        sensor_name = "OTT_Parsivel"
+        sensor_name = "PARSIVEL"
 
         # Define a dummy reader
         def reader(filepath, logger=None):
@@ -616,7 +616,7 @@ class TestReadRawTextFiles:
         verbose = False
 
         # Define sensor name
-        sensor_name = "OTT_Parsivel"
+        sensor_name = "PARSIVEL"
 
         # Create dummy DataFrames
         raw_str = ",".join(["000"] * 1024)
@@ -662,7 +662,7 @@ class TestReadRawTextFiles:
         verbose = False
 
         # Define sensor name
-        sensor_name = "OTT_Parsivel"
+        sensor_name = "PARSIVEL"
 
         # Create dummy DataFrame
         raw_str = ",".join(["000"] * 1024)
@@ -699,7 +699,7 @@ class TestReadRawTextFiles:
         verbose = False
 
         # Define sensor name
-        sensor_name = "OTT_Parsivel"
+        sensor_name = "PARSIVEL"
 
         # Create dummy DataFrames
         raw_str = ",".join(["000"] * 1024)
@@ -745,7 +745,7 @@ class TestReadRawTextFiles:
         verbose = False
 
         # Define sensor name
-        sensor_name = "OTT_Parsivel"
+        sensor_name = "PARSIVEL"
 
         # Define a dummy reader that always fails
         def reader(filepath, logger=None):

@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
-"""
-Created on Fri Feb 17 20:47:10 2023.
 
-@author: ghiggi
-"""
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -22,6 +16,7 @@ Created on Fri Feb 17 20:47:10 2023.
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for the VORTEX SE 2016 PARSIVEL2 NCAR data."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring

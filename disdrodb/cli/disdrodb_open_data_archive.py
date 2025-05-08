@@ -22,6 +22,7 @@ import sys
 from typing import Optional
 
 import click
+
 from disdrodb.utils.cli import (
     click_data_archive_dir_option,
     parse_archive_dir,
@@ -48,4 +49,3 @@ def disdrodb_open_data_archive(
     data_archive_dir = parse_archive_dir(data_archive_dir)
 
     open_data_archive(data_archive_dir=data_archive_dir)
- 

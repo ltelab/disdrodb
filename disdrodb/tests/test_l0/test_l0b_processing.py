@@ -283,9 +283,9 @@ def test__reshape_raw_spectrum():
         get_raw_array_dims_order,
     )
 
-    list_sensor_name = ["Thies_LPM", "OTT_Parsivel"]
-    # sensor_name = "Thies_LPM"
-    # sensor_name = "OTT_Parsivel"
+    list_sensor_name = ["LPM", "PARSIVEL"]
+    # sensor_name = "LPM"
+    # sensor_name = "PARSIVEL"
 
     for sensor_name in list_sensor_name:
         # Retrieve number of bins
@@ -306,9 +306,9 @@ def test__reshape_raw_spectrum():
         # Define flattened raw spectrum
         # - OTT: first all diameters bins for velocity bin 1, ...
         # - Thies: first al velocity bins for diameter bin 1, ...
-        if sensor_name in ["Thies_LPM"]:
+        if sensor_name in ["LPM"]:
             flat_spectrum = expected_spectrum.flatten(order="F")
-        elif sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+        elif sensor_name in ["PARSIVEL", "PARSIVEL2"]:
             flat_spectrum = expected_spectrum.flatten(order="C")
         else:
             raise NotImplementedError(f"Unavailable test for {sensor_name}")
@@ -353,9 +353,9 @@ def test_retrieve_l0b_arrays():
         get_dims_size_dict,
     )
 
-    list_sensor_name = ["Thies_LPM", "OTT_Parsivel"]
-    # sensor_name = "Thies_LPM"
-    # sensor_name = "OTT_Parsivel"
+    list_sensor_name = ["LPM", "PARSIVEL"]
+    # sensor_name = "LPM"
+    # sensor_name = "PARSIVEL"
 
     for sensor_name in list_sensor_name:
         # Retrieve number of bins
@@ -378,9 +378,9 @@ def test_retrieve_l0b_arrays():
         # Define flattened raw spectrum
         # - OTT: first all diameters bins for velocity bin 1, ...
         # - Thies: first al velocity bins for diameter bin 1, ...
-        if sensor_name in ["Thies_LPM"]:
+        if sensor_name in ["LPM"]:
             flat_spectrum = expected_spectrum.flatten(order="F")
-        elif sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+        elif sensor_name in ["PARSIVEL", "PARSIVEL2"]:
             flat_spectrum = expected_spectrum.flatten(order="C")
         else:
             raise NotImplementedError(f"Unavailable test for {sensor_name}")

@@ -39,20 +39,20 @@ TEST_ZIP_FPATH = (
 
 def test_download_file_from_url(tmp_path):
     # Test download case when empty directory
-    # url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/README.md"
-    url = "https://httpbin.org/stream-bytes/1024"
+    url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/README.md"
+    # url = "https://httpbin.org/stream-bytes/1024"
     dst_filepath = _download_file_from_url(url, tmp_path, force=False)
     assert os.path.isfile(dst_filepath)
 
     # Test download case when directory is not empty and force=False --> avoid download
-    # url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
-    url = "https://httpbin.org/stream-bytes/1025"
+    url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
+    # url = "https://httpbin.org/stream-bytes/1025"
     with pytest.raises(ValueError):
         _download_file_from_url(url, tmp_path, force=False)
 
     # Test download case when directory is not empty and force=True --> it download
-    # url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
-    url = "https://httpbin.org/stream-bytes/1026"
+    url = "https://raw.githubusercontent.com/ltelab/disdrodb/main/CODE_OF_CONDUCT.md"
+    # url = "https://httpbin.org/stream-bytes/1026"
     dst_filepath = _download_file_from_url(url, tmp_path, force=True)
     assert os.path.isfile(dst_filepath)
 

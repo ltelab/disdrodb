@@ -87,7 +87,7 @@ By specifying the optional ``data_sources`` argument, only the readers reference
 
     from disdrodb.l0 import available_readers
 
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     available_readers(sensor_name)
     available_readers(sensor_name=sensor_name, data_sources=["EPFL", "GPM"])
 
@@ -98,7 +98,7 @@ When you know the reader reference, you can easily retrieve the reader function 
 
     import disdrodb
 
-    reader = disdrodb.get_reader(reader_reference="EPFL/LOCARNO_2018", sensor_name="OTT_Parsivel")
+    reader = disdrodb.get_reader(reader_reference="EPFL/LOCARNO_2018", sensor_name="PARSIVEL")
 
 
 Alternatively, if you are looking for the reader of a specific station, you can use the ``get_station_reader`` function:
@@ -212,7 +212,7 @@ you can simply pass the ``pandas.DataFrame`` returned by the reader to the ``san
     from disdrodb.l0.l0a_processing import sanitize_df
 
     filepath = "path/to/your/raw/text/file.txt"  # [ADAPT TO YOUR FILEPATH]
-    sensor_name = sensor_name = "OTT_Parsivel"  # [ADAPT TO YOUR SENSOR_NAME]
+    sensor_name = "PARSIVEL"  # [ADAPT TO YOUR SENSOR_NAME]
     reader_reference = "EPFL/LOCARNO_2018"  # [ADAPT TO YOUR READER]
     reader = disdrodb.get_reader(reader_reference=reader_reference, sensor_name=sensor_name)
     df = reader(filepath)
@@ -252,7 +252,7 @@ The reader function for ingesting raw netCDF files is typically structured as fo
         }
 
         # Rename dataset variables and columns and infill missing variables
-        sensor_name = "Thies_LPM"  # [SPECIFY HERE THE SENSOR FOR WHICH THE READER IS DESIGNED]
+        sensor_name = "LPM"  # [SPECIFY HERE THE SENSOR FOR WHICH THE READER IS DESIGNED]
         ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
         # Replace occureence of NaN flags with np.nan
@@ -297,7 +297,7 @@ you can simply pass the ``xarray.Dataset`` returned by the reader to the ``sanit
     from disdrodb.l0.l0b_nc_processing import sanitize_ds
 
     filepath = "path/to/your/raw/text/file.nc"  # [ADAPT TO YOUR FILEPATH]
-    sensor_name = sensor_name = "OTT_Parsivel"  # [ADAPT TO YOUR SENSOR_NAME]
+    sensor_name = "PARSIVEL"  # [ADAPT TO YOUR SENSOR_NAME]
     reader_reference = "EPFL/LOCARNO_2018"  # [ADAPT TO YOUR READER]
     reader = disdrodb.get_reader(reader_reference=reader_reference, sensor_name=sensor_name)
     ds = reader(filepath)

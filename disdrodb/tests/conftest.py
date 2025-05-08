@@ -75,7 +75,7 @@ def create_fake_metadata_file(
     if "station_name" not in metadata_dict:
         metadata_dict["station_name"] = station_name
     if "sensor_name" not in metadata_dict:
-        metadata_dict["sensor_name"] = "OTT_Parsivel"
+        metadata_dict["sensor_name"] = "PARSIVEL"
 
     # Update over default metadata dict
     default_metadata_dict = get_default_metadata_dict()
@@ -215,7 +215,7 @@ def disdrodb_metadata_archive_dir(tmp_path_factory):
 
     It return the metadata root directory pointing to it.
     """
-    return "/home/ghiggi/Projects/DISDRODB-METADATA/DISDRODB"
-    # TODO: UNCOMMENT THIS WHEN THE METADATA ARCHIVE IS READY
+    from disdrodb import download_metadata_archive
+
     # Define directory where to download repository
-    # return download_metadata_archive(tmp_path_factory.mktemp("original_metadata_archive_repo"))
+    return download_metadata_archive(tmp_path_factory.mktemp("original_metadata_archive_repo"))

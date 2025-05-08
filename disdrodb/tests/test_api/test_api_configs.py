@@ -44,4 +44,4 @@ def test_invalid_sensor_name():
         get_sensor_configs_dir(sensor_name="NOT_EXIST", product="L0A")
 
     with pytest.raises(ValueError):
-        read_config_file(sensor_name="OTT_Parsivel", product="L0A", filename="UNEXISTENT.yml")
+        read_config_file(sensor_name="PARSIVEL", product="L0A", filename="UNEXISTENT.yml")

@@ -102,7 +102,7 @@ def reader(
     }
 
     # Rename dataset variables and columns and infill missing variables
-    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="Thies_LPM")
+    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="LPM")
 
     # Replace nan flags with np.nan
     # - ARM use the -9999 flags

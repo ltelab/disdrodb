@@ -16,10 +16,13 @@
 # -----------------------------------------------------------------------------.
 """Routine to download the DISDRODB Metadata Data Archive."""
 import sys
+
 import click
+
 from disdrodb.utils.cli import parse_archive_dir
- 
+
 sys.tracebacklimit = 0  # avoid full traceback error if occur
+
 
 @click.command()
 @click.argument("directory_path", metavar="<station>")
@@ -37,7 +40,7 @@ def disdrodb_download_metadata_archive(
     force : bool, optional
          If ``True``, the existing DISDRODB-METADATA directory will be removed
          and a new one will be downloaded. The default value is ``False``.
-    
+
     Returns
     -------
     metadata_archive_dir
@@ -46,8 +49,5 @@ def disdrodb_download_metadata_archive(
     from disdrodb import download_metadata_archive
 
     directory_path = parse_archive_dir(directory_path)
- 
+
     download_metadata_archive(directory_path, force=force)
-
-
-

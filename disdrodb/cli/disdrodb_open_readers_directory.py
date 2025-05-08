@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Routine to open the disdrodb software readers directory."""
 import sys
+
 import click
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -27,5 +28,5 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 def disdrodb_open_readers_directory():
     """Open the disdrodb software readers directory."""
     from disdrodb.api.io import open_readers_directory
+
     open_readers_directory()
- 

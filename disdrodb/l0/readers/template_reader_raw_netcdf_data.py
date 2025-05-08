@@ -47,7 +47,7 @@ def reader(
     }
 
     # Rename dataset variables and columns and infill missing variables
-    sensor_name = "Thies_LPM"  # [SPECIFY HERE THE SENSOR FOR WHICH THE READER IS DESIGNED]
+    sensor_name = "LPM"  # [SPECIFY HERE THE SENSOR FOR WHICH THE READER IS DESIGNED]
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
     # Replace occureence of NaN flags with np.nan

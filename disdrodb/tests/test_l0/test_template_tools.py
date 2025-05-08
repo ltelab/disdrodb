@@ -178,7 +178,7 @@ def test_print_df_column_names(capfd):
 
 
 def test_print_allowed_column_names(capfd):
-    print_allowed_column_names(sensor_name="OTT_Parsivel")
+    print_allowed_column_names(sensor_name="PARSIVEL")
     out, _ = capfd.readouterr()
     assert "['rainfall_rate_32bit'," in out
 
@@ -363,7 +363,7 @@ class Test_Has_Constant_Character:
 
 
 def test_infer_column_names(capfd):
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     df = pd.DataFrame(
         {
             "0": [123.345, 123.345],  # same number of character
@@ -377,7 +377,7 @@ def test_infer_column_names(capfd):
 
 
 def test_check_column_names(capfd):
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
 
     # Test correct type
     with pytest.raises(TypeError):

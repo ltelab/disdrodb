@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for the EROSION campaign in Denmark."""
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0b_nc_processing import open_raw_netcdf_file, standardize_raw_dataset
 
@@ -35,28 +34,36 @@ def reader(
     # Define dictionary mapping dataset variables to select and rename
     dict_names = {
         ### Dimensions
-        "particle_diameter": "diameter_bin_center",
-        "particle_fall_speed": "velocity_bin_center",
+        "diameter": "diameter_bin_center",
+        "fallspeed": "velocity_bin_center",
         ### Variables
-        "rain_rate": "rainfall_rate_32bit",
-        "rain_amount": "rainfall_accumulated_32bit",
-        "SYNOP_4680": "weather_code_synop_4680",
-        "SYNOP_4677": "weather_code_synop_4677",
-        "reflectivity": "reflectivity_32bit",
-        "visibility": "mor_visibility",
-        "particles": "number_particles",
-        "laser_amplitude": "laser_amplitude",
-        "sample_interval": "sample_interval",
-        "power_voltage": "sensor_battery_voltage",
-        "temp_sensor": "sensor_temperature",
-        "heat_status": "sensor_heating_current",
-        "status": "sensor_status",
-        "rain_kinetic_energy": "rain_kinetic_energy",
-        "number_of_particles_classified": "raw_drop_number",
+        "precipitation_flux": "precipitation_rate",
+        "solid_precipitation_flux": "snowfall_rate",
+        "precipitation_visibility": "mor_visibility",
+        "reflectivity": "reflectivity",
+        "present_weather_1m": "weather_code_synop_4680",
+        "present_weather_5m": "weather_code_synop_4680_5min",
+        "max_hail_diameter": "max_hail_diameter",
+        "particle_count": "number_particles",
+        # "measurement_quality": "quality_index",
+        ### Arrays
+        # "drop_size_distribution": "raw_drop_concentration",
+        # "drop_velocity_distribution": "raw_drop_average_velocity",
+        "size_velocity_distribution": "raw_drop_number",
+        ### Variables to discard
+        # 'year'
+        # 'month'
+        # 'day'
+        # 'hour'
+        # 'minute'
+        # 'second'
+        # 'day_of_year'
+        # 'hydrometeor_type_1m' # Pickering et al., 2019
+        # 'hydrometeor_type_5m' # Pickering et al., 2019
     }
 
     # Rename dataset variables and columns and infill missing variables
-    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="OTT_Parsivel2")
+    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="LPM")
 
     # Return the dataset adhering to DISDRODB L0B standards
     return ds

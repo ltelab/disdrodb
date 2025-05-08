@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for ARM OTT Parsivel sensor."""
+"""Reader for ARM OTT PARSIVEL2 sensor."""
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0b_nc_processing import open_raw_netcdf_file, replace_custom_nan_flags, standardize_raw_dataset
 
@@ -86,7 +86,7 @@ def reader(
     }
 
     # Rename dataset variables and columns and infill missing variables
-    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="OTT_Parsivel2")
+    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
 
     # Replace nan flags with np.nan
     # - ARM use the -9999 flags

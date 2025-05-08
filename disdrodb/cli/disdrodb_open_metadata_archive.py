@@ -22,6 +22,7 @@ import sys
 from typing import Optional
 
 import click
+
 from disdrodb.utils.cli import (
     click_metadata_archive_dir_option,
     parse_archive_dir,
@@ -48,4 +49,3 @@ def disdrodb_open_metadata_archive(
     metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
 
     open_metadata_archive(metadata_archive_dir=metadata_archive_dir)
- 

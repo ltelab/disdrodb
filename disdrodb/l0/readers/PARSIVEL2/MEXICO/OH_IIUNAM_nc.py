@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for MEXICO OH_IIUNAM OTT PARSIVEL2 Mexico City Network."""
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0b_nc_processing import open_raw_netcdf_file, standardize_raw_dataset
 
@@ -35,35 +36,21 @@ def reader(
     dict_names = {
         ### Dimensions
         "diameter": "diameter_bin_center",
-        "fallspeed": "velocity_bin_center",
+        "velocity": "velocity_bin_center",
         ### Variables
-        "precipitation_flux": "precipitation_rate",
-        "solid_precipitation_flux": "snowfall_rate",
-        "precipitation_visibility": "mor_visibility",
-        "reflectivity": "reflectivity",
-        "present_weather_1m": "weather_code_synop_4680",
-        "present_weather_5m": "weather_code_synop_4680_5min",
-        "max_hail_diameter": "max_hail_diameter",
-        "particle_count": "number_particles",
-        # "measurement_quality": "quality_index",
-        ### Arrays
-        # "drop_size_distribution": "raw_drop_concentration",
-        # "drop_velocity_distribution": "raw_drop_average_velocity",
-        "size_velocity_distribution": "raw_drop_number",
-        ### Variables to discard
-        # 'year'
-        # 'month'
-        # 'day'
-        # 'hour'
-        # 'minute'
-        # 'second'
-        # 'day_of_year'
-        # 'hydrometeor_type_1m' # Pickering et al., 2019
-        # 'hydrometeor_type_5m' # Pickering et al., 2019
+        "intensity": "rainfall_rate_32bit",
+        "rain": "rainfall_accumulated_32bit",
+        "reflectivity": "reflectivity_32bit",
+        "visibility": "mor_visibility",
+        "particles": "number_particles",
+        # "energy": "rain_kinetic_energy",   #KJ, OTT PARSIVEL2 log in J/mh
+        # "velocity_avg": only depend on time
+        # "diameter_avg": only depend on time
+        "spectrum": "raw_drop_number",
     }
 
     # Rename dataset variables and columns and infill missing variables
-    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="Thies_LPM")
+    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
 
     # Return the dataset adhering to DISDRODB L0B standards
     return ds

@@ -50,8 +50,8 @@ def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
 
     # Remove attributes that depends on processing time
     attrs_varying = ["disdrodb_processing_date", "disdrodb_software_version"]
-    attrs_added_recently = ["raw_data_glob_pattern"]
-    attr_to_remove = attrs_varying + attrs_added_recently
+    attrs_modified_recently = ["raw_data_glob_pattern", "sensor_name"]
+    attr_to_remove = attrs_varying + attrs_modified_recently
     for key in attr_to_remove:
         ds1.attrs.pop(key, None)
         ds2.attrs.pop(key, None)

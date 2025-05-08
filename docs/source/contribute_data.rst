@@ -378,7 +378,7 @@ The guidelines for the definition of ``<READER_NAME>`` are:
 * The ``<READER_NAME>`` must be defined UPPER CASE, without spaces.
 
 * If for a given campaign, different type of sensors have been deployed, define the reader name as ``<CAMPAIGN_NAME>_<SENSOR_NAME>``.
-  As an example, for the RELAMPAGO campaign, the readers ``RELAMPAGO_OTT.py`` and ``RELAMPAGO_RD80.py`` have been defined.
+  As an example, for the RELAMPAGO campaign, the readers ``RELAMPAGO_PARSIVEL2.py`` and ``RELAMPAGO_RD80.py`` have been defined.
 
 * If for a given campaign, different stations require different readers, define the reader name as ``<CAMPAIGN_NAME>_<a_differentiating_suffix>``.
 
@@ -411,7 +411,7 @@ The ``reader`` reference points the disdrodb software to the correct reader to u
 
 The reeader reference is defined as ``<DATA_SOURCE>/<READER_NAME>``.
 
-For example, to use the `disdrodb.l0.readers.OTT_Parsivel.GPM.IFLOODS.py reader <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/OTT_Parsivel/GPM/IFLOODS.py>`_
+For example, to use the `disdrodb.l0.readers.PARSIVEL.GPM.IFLOODS.py reader <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/PARSIVEL/GPM/IFLOODS.py>`_
 to process the data, you specify the ``reader`` reference as ``GPM/IFLOODS``.
 
 To check you are specifying the correct ``reader`` reference in the metadata,
@@ -422,7 +422,7 @@ the ``get_reader`` function: it should return a reader function !
 
     import disdrodb
 
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     reader_reference = "GPM/IFLOODS"  # <READER_DATA_SOURCE>/<READER_NAME>
     reader = disdrodb.get_reader(reader_reference, sensor_name=sensor_name)
     print(reader)

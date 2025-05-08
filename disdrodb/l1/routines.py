@@ -61,7 +61,7 @@ def get_l1_options():
     # - TODO: as function of sensor name
 
     # minimum_diameter
-    # --> OTT_Parsivel: 0.2495
+    # --> PARSIVEL: 0.2495
     # --> RD80: 0.313
     # --> LPM: 0.125 (we currently discard first bin with this setting)
 
@@ -74,7 +74,7 @@ def get_l1_options():
         # Fall velocity option
         "fall_velocity_method": "Beard1976",
         # Diameter-Velocity Filtering Options
-        "minimum_diameter": 0.2495,  # OTT Parsivel first two bin no data !
+        "minimum_diameter": 0.2495,  # OTT PARSIVEL first two bin no data !
         "maximum_diameter": 8,
         "minimum_velocity": 0,
         "maximum_velocity": 12,

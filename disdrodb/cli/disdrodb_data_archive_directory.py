@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Routine to print the DISDRODB Data Archive directory."""
 import sys
+
 import click
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -26,9 +27,6 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 def disdrodb_data_archive_directory():
     """Print the DISDRODB Data Archive directory."""
- 
-    import disdrodb 
+    import disdrodb
 
     print("The DISDRODB Data Archive Directory is: ", disdrodb.get_data_archive_dir(None))
-
-

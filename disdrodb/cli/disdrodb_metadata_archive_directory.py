@@ -1,12 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Wed May  7 15:53:38 2025
-
-@author: ghiggi
-"""
-
-#!/usr/bin/env python3
 
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
@@ -26,6 +18,7 @@ Created on Wed May  7 15:53:38 2025
 # -----------------------------------------------------------------------------.
 """Routine to print the DISDRODB Data Archive directory."""
 import sys
+
 import click
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -34,9 +27,6 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 def disdrodb_metadata_archive_directory():
     """Print the DISDRODB Metadata Archive directory."""
- 
-    import disdrodb 
+    import disdrodb
 
     print("The DISDRODB Metadata Archive Directory is: ", disdrodb.get_metadata_archive_dir(None))
-
-

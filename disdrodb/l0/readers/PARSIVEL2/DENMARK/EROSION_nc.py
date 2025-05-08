@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for MEXICO OH_IIUNAM OTT Parsivel2 Mexico City Network."""
+"""Reader for the EROSION campaign in Denmark."""
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0b_nc_processing import open_raw_netcdf_file, standardize_raw_dataset
 
@@ -35,22 +35,28 @@ def reader(
     # Define dictionary mapping dataset variables to select and rename
     dict_names = {
         ### Dimensions
-        "diameter": "diameter_bin_center",
-        "velocity": "velocity_bin_center",
+        "particle_diameter": "diameter_bin_center",
+        "particle_fall_speed": "velocity_bin_center",
         ### Variables
-        "intensity": "rainfall_rate_32bit",
-        "rain": "rainfall_accumulated_32bit",
+        "rain_rate": "rainfall_rate_32bit",
+        "rain_amount": "rainfall_accumulated_32bit",
+        "SYNOP_4680": "weather_code_synop_4680",
+        "SYNOP_4677": "weather_code_synop_4677",
         "reflectivity": "reflectivity_32bit",
         "visibility": "mor_visibility",
         "particles": "number_particles",
-        # "energy": "rain_kinetic_energy",   #KJ, Parsivel log in J/mh
-        # "velocity_avg": only depend on time
-        # "diameter_avg": only depend on time
-        "spectrum": "raw_drop_number",
+        "laser_amplitude": "laser_amplitude",
+        "sample_interval": "sample_interval",
+        "power_voltage": "sensor_battery_voltage",
+        "temp_sensor": "sensor_temperature",
+        "heat_status": "sensor_heating_current",
+        "status": "sensor_status",
+        "rain_kinetic_energy": "rain_kinetic_energy",
+        "number_of_particles_classified": "raw_drop_number",
     }
 
     # Rename dataset variables and columns and infill missing variables
-    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="OTT_Parsivel2")
+    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
 
     # Return the dataset adhering to DISDRODB L0B standards
     return ds

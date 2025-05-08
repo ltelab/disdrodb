@@ -134,11 +134,12 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
     valid_columns = set(allowed_l0_variables(sensor_name))
 
     # Get dataframe column names
-    df_columns = list(df.columns)
-    df_columns = set(df_columns)
+    df_columns = set(df.columns)
 
-    # Check there aren't valid columns
-    invalid_columns = list(df_columns.difference(valid_columns))
+    # Find any columns in df that aren't in the valid list
+    invalid_columns = df_columns - valid_columns
+
+    # Raise error in case
     if len(invalid_columns) > 0:
         msg = f"The following columns do no met the DISDRODB standards: {invalid_columns}"
         raise ValueError(msg)

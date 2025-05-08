@@ -191,7 +191,7 @@ def test_create_product_directory(tmp_path):
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
     metadata_dict = {}
-    metadata_dict["sensor_name"] = "OTT_Parsivel"
+    metadata_dict["sensor_name"] = "PARSIVEL"
     metadata_dict["reader"] = "GPM/IFLOODS"
     metadata_dict["measurement_interval"] = 60
 

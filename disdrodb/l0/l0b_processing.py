@@ -160,15 +160,15 @@ def _reshape_raw_spectrum(
 
     Examples
     --------
-        - OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
+        - OTT PARSIVEL spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
         --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
         - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
         --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
     dims_size_dict : dict
         Dictionary with the number of bins for each dimension.
-        For OTT_Parsivel:
+        For PARSIVEL and PARSIVEL2:
         {"diameter_bin_center": 32, "velocity_bin_center": 32}
-        For This_LPM
+        For LPM
         {"diameter_bin_center": 22, "velocity_bin_center": 20}
     n_timesteps : int
         Number of timesteps.
@@ -256,8 +256,8 @@ def retrieve_l0b_arrays(
 
         # For key='raw_drop_number', if 2D spectrum, reshape to 2D matrix
         # Example:
-        # - This applies i.e for OTT_Parsivel* and Thies_LPM
-        # - This does not apply to RD_80
+        # - This applies i.e for PARSIVEL* and LPM
+        # - This does not apply to RD80
         if key == "raw_drop_number" and len(dims_order) == 2:
             arr, dims = _reshape_raw_spectrum(
                 arr=arr,

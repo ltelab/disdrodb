@@ -38,7 +38,7 @@ from disdrodb.utils.yaml import read_yaml, write_yaml
 DATA_SOURCE = "EPFL"
 CAMPAIGN_NAME = "EPFL_2009"
 READER_REFERENCE = f"{DATA_SOURCE}/{CAMPAIGN_NAME}"
-SENSOR_NAME = "OTT_Parsivel"
+SENSOR_NAME = "PARSIVEL"
 
 
 def test_check_reader_reference():
@@ -154,7 +154,7 @@ class TestCheckMetadataReader:
 
     def test_invalid_reader_reference_does_not_exist(self):
         """Should raise ValueError when reader_reference does not exist."""
-        with pytest.raises(ValueError, match="OTT_Parsivel reader 'invalid_reader' does not exists."):
+        with pytest.raises(ValueError, match="PARSIVEL reader 'invalid_reader' does not exists."):
             check_metadata_reader({"reader": "invalid_reader", "sensor_name": SENSOR_NAME})
 
     def test_reader_key_is_none(self):

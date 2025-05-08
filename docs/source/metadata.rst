@@ -36,7 +36,7 @@ There are 7 metadata keys for which it is mandatory to specify the value :
   To point the disdrodb software to the correct reader, the ``reader`` reference must be defined as ``<DATA_SOURCE>/<READER_NAME>``.
 
   For example, to select the OTT Parsivel GPM IFLOODS reader (defined at
-  `disdrodb.l0.readers.OTT_Parsivel.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/OTT_Parsivel/GPM/IFLOODS.py>`_)
+  `disdrodb.l0.readers.PARSIVEL.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/PARSIVEL/GPM/IFLOODS.py>`_)
   the ``reader`` reference ``GPM/IFLOODS`` must be used.
 
 
