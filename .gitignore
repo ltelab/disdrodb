@@ -7,7 +7,7 @@
 
 # Folders
 /dask-worker-space/
-/data/DISDRODB/Processed
+/data/DISDRODB/V*
 
 # Test coverage
 coverage.xml
