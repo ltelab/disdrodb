@@ -85,7 +85,7 @@ def disdrodb_run_l2e_station(
         It processes just the first 3 raw data files.
         The default is False.
     data_archive_dir : str
-        Base directory of DISDRODB.
+        DISDRODB Data Archive directory.
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """

@@ -79,7 +79,7 @@ def log_debug(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is ``False``.
+        The default value is ``False``.
     """
     if verbose:
         print(" - " + msg)
@@ -98,7 +98,7 @@ def log_info(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is ``False``.
+        The default value is ``False``.
     """
     if verbose:
         print(" - " + msg)
@@ -117,7 +117,7 @@ def log_warning(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is ``False``.
+        The default value is ``False``.
     """
     if verbose:
         print(" - " + msg)
@@ -136,7 +136,7 @@ def log_error(logger: logger, msg: str, verbose: bool = False) -> None:
         Message.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is ``False``.
+        The default value is ``False``.
     """
     if verbose:
         print(" - " + msg)

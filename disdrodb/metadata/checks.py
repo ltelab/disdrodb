@@ -537,7 +537,7 @@ def check_metadata_archive(metadata_archive_dir: Optional[str] = None, raise_err
         in the DISDRODB active configuration.
     raise_error: bool (optional)
         Whether to raise an error and interrupt the archive check if a
-        metadata is not compliant. The default is ``False``.
+        metadata is not compliant. The default value is ``False``.
 
     Returns
     -------

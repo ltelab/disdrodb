@@ -33,11 +33,11 @@ from disdrodb.cli.disdrodb_run_l0a_station import disdrodb_run_l0a_station
 from disdrodb.cli.disdrodb_run_l0b import disdrodb_run_l0b
 from disdrodb.cli.disdrodb_run_l0b_station import disdrodb_run_l0b_station
 from disdrodb.routines import (
-    run_disdrodb_l0_station,
-    run_disdrodb_l0a,
-    run_disdrodb_l0a_station,
-    run_disdrodb_l0b,
-    run_disdrodb_l0b_station,
+    run_l0_station,
+    run_l0a,
+    run_l0a_station,
+    run_l0b,
+    run_l0b_station,
 )
 from disdrodb.utils.directories import count_files
 
@@ -96,7 +96,7 @@ def test_disdrodb_run_l0a_station(tmp_path, disdrodb_metadata_archive_dir, paral
             ],
         )
     else:
-        run_disdrodb_l0a_station(
+        run_l0a_station(
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -178,7 +178,7 @@ def test_disdrodb_run_l0b_station(tmp_path, disdrodb_metadata_archive_dir, paral
             ],
         )
     else:
-        run_disdrodb_l0a_station(
+        run_l0a_station(
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -193,7 +193,7 @@ def test_disdrodb_run_l0b_station(tmp_path, disdrodb_metadata_archive_dir, paral
             metadata_archive_dir=test_metadata_archive_dir,
         )
 
-        run_disdrodb_l0b_station(
+        run_l0b_station(
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -255,7 +255,7 @@ def test_disdrodb_run_l0_nc_station(tmp_path, disdrodb_metadata_archive_dir, ver
             ],
         )
     else:
-        run_disdrodb_l0_station(
+        run_l0_station(
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -317,7 +317,7 @@ def test_disdrodb_run_l0_station(tmp_path, disdrodb_metadata_archive_dir, verbos
             ],
         )
     else:
-        run_disdrodb_l0_station(
+        run_l0_station(
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -381,7 +381,7 @@ def test_disdrodb_run_l0a(tmp_path, disdrodb_metadata_archive_dir, cli):
             ],
         )
     else:
-        run_disdrodb_l0a(
+        run_l0a(
             # Station options
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
@@ -472,7 +472,7 @@ def test_disdrodb_run_l0b(tmp_path, disdrodb_metadata_archive_dir, cli):
             ],
         )
     else:
-        run_disdrodb_l0a(
+        run_l0a(
             # Stations options
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
@@ -486,7 +486,7 @@ def test_disdrodb_run_l0b(tmp_path, disdrodb_metadata_archive_dir, cli):
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,
         )
-        run_disdrodb_l0b(
+        run_l0b(
             # Station options
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,

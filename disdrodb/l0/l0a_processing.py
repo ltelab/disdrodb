@@ -677,7 +677,7 @@ def write_l0a(
     # Check if the file already exists
     # - If force=True --> Remove it
     # - If force=False --> Raise error
-    remove_if_exists(filepath, force=force)
+    remove_if_exists(filepath, force=force, logger=logger)
 
     # -------------------------------------------------------------------------.
     # Define writing options

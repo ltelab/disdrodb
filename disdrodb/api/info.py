@@ -450,7 +450,7 @@ def group_filepaths(filepaths, groups=None):
         ``month_name``, ``quarter``, ``season``.
         The time components are extracted from ``start_time`` !
         If groups is ``None`` returns the input filepaths list.
-        The default is ``None``.
+        The default value is ``None``.
 
     Returns
     -------

@@ -34,9 +34,9 @@ Type ``disdrodb_run_l0_station --help`` in the terminal to get more information 
 
 .. code-block::
 
-    from disdrodb.l0 import run_disdrodb_l0_station
+    import disdrodb
 
-    run_disdrodb_l0_station(data_source, campaign_name, station_name, **kwargs)
+    disdrodb.run_l0_station(data_source, campaign_name, station_name, **kwargs)
 
 
 Example :
@@ -44,10 +44,8 @@ Example :
 
 .. code-block:: python
 
-    from disdrodb.l0 import run_disdrodb_l0_station
-    from disdrodb.configs import get_data_archive_dir
+    import disdrodb
 
-    data_archive_dir = get_data_archive_dir()
     data_source = "EPFL"
     campaign_name = "EPFL_2008"
     station_name = "10"
@@ -66,7 +64,7 @@ Example :
     parallel = False
 
     # Run the processing
-    run_disdrodb_l0_station(
+    disdrodb.run_l0_station(
         data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -132,19 +130,17 @@ Type ``disdrodb_run_l0 --help`` in the terminal to get more information on the p
 
 .. code-block::
 
-    from disdrodb.l0 import run_disdrodb_l0
+    import disdrodb
 
-    run_disdrodb_l0(data_source, campaign_name, **kwargs)
+    disdrodb.run_l0(data_source, campaign_name, **kwargs)
 
 
 Example :
 
 .. code-block:: python
 
-    from disdrodb.l0 import run_disdrodb_l0
-    from disdrodb.configs import get_data_archive_dir
+    import disdrodb
 
-    data_archive_dir = get_data_archive_dir()
     data_sources = ["EPFL"]
     campaign_names = ["EPFL_2008"]
 
@@ -160,7 +156,7 @@ Example :
     debugging_mode = True
     parallel = False
 
-    run_disdrodb_l0(
+    disdrodb.run_l0(
         data_archive_dir=data_archive_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,

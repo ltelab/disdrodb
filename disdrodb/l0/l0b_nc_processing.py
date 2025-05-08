@@ -191,7 +191,7 @@ def replace_custom_nan_flags(ds, dict_nan_flags, logger=None, verbose=False):
     dict_nan_flags : dict
         Dictionary with nan flags value to set as ``np.nan``.
     verbose : bool
-        Whether to verbose the processing. The default is ``False``.
+        Whether to verbose the processing. The default value is ``False``.
 
     Returns
     -------

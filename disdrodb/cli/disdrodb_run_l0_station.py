@@ -108,15 +108,15 @@ def disdrodb_run_l0_station(
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.\n
         The default is False.\n
     data_archive_dir : str \n
-        Base directory of DISDRODB \n
+        DISDRODB Data Archive directory \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """
-    from disdrodb.routines import run_disdrodb_l0_station
+    from disdrodb.routines import run_l0_station
 
     data_archive_dir = parse_archive_dir(data_archive_dir)
 
-    run_disdrodb_l0_station(
+    run_l0_station(
         # DISDRODB root directories
         data_archive_dir=data_archive_dir,
         metadata_archive_dir=metadata_archive_dir,

@@ -87,11 +87,11 @@ def disdrodb_run_l0b_station(
         It processes just the first 100 rows of 3 L0A files.
         The default is False.
     data_archive_dir : str
-        Base directory of DISDRODB
+        DISDRODB Data Archive directory
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.l0_processing import run_l0b_station
+    from disdrodb.l0.routines import run_l0b_station
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

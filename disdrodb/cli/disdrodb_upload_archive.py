@@ -61,7 +61,7 @@ def disdrodb_upload_archive(
         Switch to ``"zenodo"`` for final data dissemination.
     force: bool, optional
         If ``True``, upload even if data already exists on another remote location.
-        The default is ``force=False``.
+        The default value is ``force=False``.
     data_archive_dir : str (optional)
         The directory path where the DISDRODB Data Archive is located.
         The directory path must end with ``<...>/DISDRODB``.
@@ -73,15 +73,15 @@ def disdrodb_upload_archive(
     data_sources: str or list of str, optional
         Data source name (eg: EPFL).
         If not provided (``None``), all data sources will be uploaded.
-        The default is ``data_source=None``.
+        The default value is ``data_source=None``.
     campaign_names: str or list of str, optional
         Campaign name (eg:  EPFL_ROOF_2012).
         If not provided (``None``), all campaigns will be uploaded.
-        The default is ``campaign_name=None``.
+        The default value is ``campaign_name=None``.
     station_names: str or list of str, optional
         Station name.
         If not provided (``None``), all stations will be uploaded.
-        The default is ``station_name=None``.
+        The default value is ``station_name=None``.
     """
     from disdrodb.data_transfer.upload_data import upload_archive
 

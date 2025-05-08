@@ -77,7 +77,7 @@ def disdrodb_upload_station(
         Switch to ``"zenodo"`` for final data dissemination.
     force: bool, optional
         If ``True``, upload the data and overwrite the ``disdrodb_data_url``.
-        The default is ``force=False``.
+        The default value is ``force=False``.
 
     """
     from disdrodb.data_transfer.upload_data import upload_station

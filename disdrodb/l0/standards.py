@@ -506,6 +506,17 @@ def get_n_velocity_bins(sensor_name):
 
 
 ####-------------------------------------------------------------------------.
+
+
+def allowed_l0_variables(sensor_name: str) -> list:
+    """Get the list of allowed L0 variables for a given sensor."""
+    sensor_variables = list(get_l0a_dtype(sensor_name))
+    allowed_variables = [*sensor_variables, "time", "latitude", "longitude", "altitude"]
+    # TODO: add air_temperature, relative_humidity, wind_speed, wind_direction
+    return allowed_variables
+
+
+####-------------------------------------------------------------------------.
 #### Encodings
 
 

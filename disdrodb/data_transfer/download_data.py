@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """Routines to download data from the DISDRODB Decentralized Data Archive."""
 
+import logging
 import os
 import shutil
 from typing import Optional, Union
@@ -110,20 +111,20 @@ def download_archive(
     data_sources : str or list of str, optional
         Data source name (eg : EPFL).
         If not provided (``None``), all data sources will be downloaded.
-        The default is ``data_source=None``.
+        The default value is ``data_source=None``.
     campaign_names : str or list of str, optional
         Campaign name (eg :  EPFL_ROOF_2012).
         If not provided (``None``), all campaigns will be downloaded.
-        The default is ``campaign_name=None``.
+        The default value is ``campaign_name=None``.
     station_names : str or list of str, optional
         Station name.
         If not provided (``None``), all stations will be downloaded.
-        The default is ``station_name=None``.
+        The default value is ``station_name=None``.
     force : bool, optional
         If ``True``, overwrite the already existing raw data file.
-        The default is ``False``.
+        The default value is ``False``.
     data_archive_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
         If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     """
     # Retrieve the DISDRODB Metadata and Data Archive Directories
@@ -194,16 +195,15 @@ def download_station(
         If not specified, the path specified in the DISDRODB active configuration will be used.
     force: bool, optional
         If ``True``, overwrite the already existing raw data file.
-        The default is ``False``.
+        The default value is ``False``.
     data_archive_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
         If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     """
     print(f"Start download of {data_source} {campaign_name} {station_name} station data")
     # Retrieve the DISDRODB Metadata and Data Archive Directories
     data_archive_dir = get_data_archive_dir(data_archive_dir)
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
-
     # Define metadata_filepath
     metadata_filepath = define_metadata_filepath(
         metadata_archive_dir=metadata_archive_dir,
@@ -212,7 +212,6 @@ def download_station(
         station_name=station_name,
         check_exists=True,
     )
-
     # Download data
     _download_station_data(metadata_filepath, data_archive_dir=data_archive_dir, force=force)
 
@@ -237,7 +236,7 @@ def _download_station_data(metadata_filepath: str, data_archive_dir: str, force:
     metadata_filepaths : str
         Metadata file path.
     force : bool, optional
-        If ``True``, delete existing files and redownload it. The default is ``False``.
+        If ``True``, delete existing files and redownload it. The default value is ``False``.
 
     """
     # Open metadata file
@@ -285,7 +284,7 @@ def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
     dst_dir : str
         Local directory where to download the file (DISDRODB station data directory).
     force : bool, optional
-        Overwrite the raw data file if already existing. The default is ``False``.
+        Overwrite the raw data file if already existing. The default value is ``False``.
 
     Returns
     -------
@@ -303,12 +302,21 @@ def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
             os.makedirs(dst_dir)  # station directory
         else:
             raise ValueError(
-                f"There are already raw files within {dst_dir}. Download is suspended. "
+                f"There are already raw files within the DISDRODB Data Archive at {dst_dir}. Download is suspended. "
                 "Use force=True to force the download and overwrite existing raw files.",
             )
 
     os.makedirs(dst_dir, exist_ok=True)
 
+    # Grab Pooch's logger and remember its current level
+    logger = pooch.get_logger()
+    orig_level = logger.level
+    # Silence INFO messages (including the SHA256 print)
+    logger.setLevel(logging.WARNING)
+    # Define pooch downloader
     downloader = pooch.HTTPDownloader(progressbar=True)
+    # Download the file
     pooch.retrieve(url=url, known_hash=None, path=dst_dir, fname=dst_filename, downloader=downloader, progressbar=tqdm)
+    # Restore the previous logging level
+    logger.setLevel(orig_level)
     return dst_filepath

@@ -26,6 +26,7 @@ import shutil
 from typing import Union
 
 from disdrodb.utils.list import flatten_list
+from disdrodb.utils.logger import log_info
 
 logger = logging.getLogger(__name__)
 
@@ -162,12 +163,10 @@ def create_directory(path: str, exist_ok=True) -> None:
     path = ensure_string_path(path, msg="'path' must be a string", accepth_pathlib=True)
     try:
         os.makedirs(path, exist_ok=exist_ok)
-        logger.debug(f"Created directory {path}.")
     except Exception as e:
         dir_path = os.path.dirname(path)
         dir_name = os.path.basename(path)
         msg = f"Can not create directory {dir_name} inside {dir_path}. Error: {e}"
-        logger.exception(msg)
         raise FileNotFoundError(msg)
 
 
@@ -193,7 +192,7 @@ def is_empty_directory(path):
     return len(paths) == 0
 
 
-def _remove_file_or_directories(path):
+def _remove_file_or_directories(path, logger=None):
     """Return the file/directory or subdirectories tree of ``path``.
 
     Use this function with caution.
@@ -201,18 +200,18 @@ def _remove_file_or_directories(path):
     # If file
     if os.path.isfile(path):
         os.remove(path)
-        logger.info(f"Deleted the file {path}")
+        log_info(logger, msg=f"Deleted the file {path}")
     # If empty directory
     elif is_empty_directory(path):
         os.rmdir(path)
-        logger.info(f"Deleted the empty directory {path}")
+        log_info(logger, msg=f"Deleted the empty directory {path}")
     # If not empty directory
     else:
         shutil.rmtree(path)
-        logger.info(f"Deleted directories within {path}")
+        log_info(logger, msg=f"Deleted directories within {path}")
 
 
-def remove_if_exists(path: str, force: bool = False) -> None:
+def remove_if_exists(path: str, force: bool = False, logger=None) -> None:
     """Remove file or directory if exists and ``force=True``.
 
     If ``force=False``, it raises an error.
@@ -224,15 +223,13 @@ def remove_if_exists(path: str, force: bool = False) -> None:
     # If the path exists and force=False, raise Error
     if not force:
         msg = f"--force is False and a file already exists at: {path}"
-        logger.error(msg)
         raise ValueError(msg)
 
     # If force=True, remove the file/directory or subdirectories and files !
     try:
-        _remove_file_or_directories(path)
+        _remove_file_or_directories(path, logger=logger)
     except Exception as e:
         msg = f"Can not delete file(s) at {path}. The error is: {e}"
-        logger.error(msg)
         raise ValueError(msg)
 
 
@@ -246,7 +243,6 @@ def copy_file(src_filepath, dst_filepath):
         logger.info(msg)
     except Exception as e:
         msg = f"Something went wrong when copying {filename} into {dst_dir}.\n The error is: {e}."
-        logger.error(msg)
         raise ValueError(msg)
 
 

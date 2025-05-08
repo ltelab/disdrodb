@@ -61,7 +61,7 @@ def define_disdrodb_path(
     campaign_name : str, optional
         The campaign name.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``True``.
+        Whether to check if the directory exists. The default value is ``True``.
 
     Returns
     -------
@@ -107,7 +107,7 @@ def define_data_source_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -148,7 +148,7 @@ def define_campaign_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -183,7 +183,7 @@ def define_metadata_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -222,7 +222,7 @@ def define_issue_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -264,7 +264,7 @@ def define_metadata_filepath(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -280,7 +280,10 @@ def define_metadata_filepath(
     )
     metadata_filepath = os.path.join(metadata_dir, f"{station_name}.yml")
     if check_exists and not os.path.exists(metadata_filepath):
-        raise ValueError(f"The metadata file for {station_name} at {metadata_filepath} does not exists.")
+        raise ValueError(
+            f"The station {data_source} {campaign_name} {station_name} does not exist. "
+            f"No metadata file is available at {metadata_filepath}.",
+        )
 
     return str(metadata_filepath)
 
@@ -306,7 +309,7 @@ def define_issue_filepath(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -355,7 +358,7 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
     ds : xarray.Dataset or pandas.DataFrame
         The object containing time information.
     data_dir : str
-        Base directory where files are to be saved.
+        Directory within the DISDRODB Data Archive where DISDRODB product files are to be saved.
     folder_partitioning : str or None
         Define the subdirectory structure where saving files.
         Allowed values are:
@@ -483,7 +486,7 @@ def define_logs_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -515,7 +518,7 @@ def define_station_dir(
     data_archive_dir=None,
     check_exists=False,
 ):
-    """Return the station data directory in the DISDRODB infrastructure.
+    """Return the station product directory in the DISDRODB infrastructure.
 
     Parameters
     ----------
@@ -531,7 +534,7 @@ def define_station_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
 
     Returns
     -------
@@ -564,7 +567,7 @@ def define_data_dir(
     check_exists=False,
     **product_kwargs,
 ):
-    """Return the station data directory in the DISDRODB infrastructure.
+    """Return the station product data directory in the DISDRODB infrastructure.
 
     Parameters
     ----------
@@ -580,7 +583,7 @@ def define_data_dir(
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
-        Whether to check if the directory exists. By default ``False``.
+        Whether to check if the directory exists. The default value is ``False``.
     sample_interval : int, optional
         The sampling interval in seconds of the product.
         It must be specified only for product L2E and L2M !

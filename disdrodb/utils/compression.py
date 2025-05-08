@@ -126,7 +126,7 @@ def compress_station_files(
     Parameters
     ----------
     data_archive_dir : str
-        Base directory of DISDRODB
+        DISDRODB Data Archive directory
     data_source : str
         Name of data source of interest.
     campaign_name : str
@@ -139,7 +139,7 @@ def compress_station_files(
         Whether to raise an error if a file is already compressed.
         If ``True``, it does not raise an error and try to compress the other files.
         If ``False``, it raise an error and stop the compression routine.
-        The default is ``True``.
+        The default value is ``True``.
     """
     if method not in COMPRESSION_OPTIONS:
         raise ValueError(f"Invalid compression method {method}. Valid methods are {list(COMPRESSION_OPTIONS.keys())}")

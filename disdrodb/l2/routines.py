@@ -282,7 +282,7 @@ def run_l2e_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 3 files will be processed. By default, ``False``.
+        Only the first 3 files will be processed. The default value is ``False``.
     data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
@@ -665,7 +665,7 @@ def run_l2m_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 3 files will be processed. By default, ``False``.
+        Only the first 3 files will be processed. The default value is ``False``.
     data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.

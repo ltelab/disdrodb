@@ -29,8 +29,8 @@ from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
 from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
 from disdrodb.routines import (
-    run_disdrodb_l1,
-    run_disdrodb_l1_station,
+    run_l1,
+    run_l1_station,
 )
 from disdrodb.utils.directories import count_files
 
@@ -89,7 +89,7 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_archive_dir, parall
             ],
         )
     else:
-        run_disdrodb_l1_station(
+        run_l1_station(
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,
@@ -153,7 +153,7 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_archive_dir, cli):
             ],
         )
     else:
-        run_disdrodb_l1(
+        run_l1(
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,

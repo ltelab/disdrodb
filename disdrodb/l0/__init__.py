@@ -1,24 +1,17 @@
-from disdrodb.l0.l0_reader import available_readers
-from disdrodb.routines import (
-    run_disdrodb_l0,
-    run_disdrodb_l0_station,
-    run_disdrodb_l0a,
-    run_disdrodb_l0a_station,
-    run_disdrodb_l0b,
-    run_disdrodb_l0b_station,
-    run_disdrodb_l0c,
-    run_disdrodb_l0c_station,
-)
-
-__all__ = [
-    "available_readers",
-    # Functions invoking the disdrodb_run_* scripts in the terminal
-    "run_disdrodb_l0a_station",
-    "run_disdrodb_l0b_station",
-    "run_disdrodb_l0c_station",
-    "run_disdrodb_l0_station",
-    "run_disdrodb_l0",
-    "run_disdrodb_l0a",
-    "run_disdrodb_l0b",
-    "run_disdrodb_l0c",
-]
+# -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2023 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
+"""DISDRODB L0 software."""

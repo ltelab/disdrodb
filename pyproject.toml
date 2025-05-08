@@ -73,8 +73,19 @@ include = ["disdrodb*"]
 [project.scripts]
 # Initialization
 disdrodb_initialize_station="disdrodb.cli.disdrodb_initialize_station:disdrodb_initialize_station"
+disdrodb_data_archive_directory="disdrodb.cli.disdrodb_data_archive_directory:disdrodb_data_archive_directory"
+disdrodb_metadata_archive_directory="disdrodb.cli.disdrodb_metadata_archive_directory:disdrodb_metadata_archive_directory"
+
 # Metadata archive
+disdrodb_download_metadata_archive="disdrodb.cli.disdrodb_download_metadata_archive:disdrodb_download_metadata_archive"
 disdrodb_check_metadata_archive="disdrodb.cli.disdrodb_check_metadata_archive:disdrodb_check_metadata_archive"
+# Open directories
+disdrodb_open_metadata_archive="disdrodb.cli.disdrodb_open_metadata_archive:disdrodb_open_metadata_archive"
+disdrodb_open_data_archive="disdrodb.cli.disdrodb_open_data_archive:disdrodb_open_data_archive"
+disdrodb_open_logs_directory="disdrodb.cli.disdrodb_open_logs_directory:disdrodb_open_logs_directory"
+disdrodb_open_metadata_directory="disdrodb.cli.disdrodb_open_metadata_directory:disdrodb_open_metadata_directory"
+disdrodb_open_product_directory="disdrodb.cli.disdrodb_open_product_directory:disdrodb_open_product_directory"
+disdrodb_open_readers_directory="disdrodb.cli.disdrodb_open_readers_directory:disdrodb_open_readers_directory"
 # Data transfer
 disdrodb_download_archive="disdrodb.cli.disdrodb_download_archive:disdrodb_download_archive"
 disdrodb_download_station="disdrodb.cli.disdrodb_download_station:disdrodb_download_station"
@@ -101,7 +112,6 @@ disdrodb_run_l2e="disdrodb.cli.disdrodb_run_l2e_station:disdrodb_run_l2e_station
 # L2M
 disdrodb_run_l2m_station="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
 disdrodb_run_l2m="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
-
 
 
 [tool.pytest.ini_options]

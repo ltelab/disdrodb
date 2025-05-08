@@ -24,6 +24,7 @@ import numpy as np
 import pandas as pd
 
 from disdrodb.l0.standards import (
+    allowed_l0_variables,
     get_field_nchar_dict,
     get_field_ndigits_decimals_dict,
     get_field_ndigits_dict,
@@ -79,7 +80,7 @@ def print_df_column_names(df: pd.DataFrame) -> None:
         print(" - Column", i, ":", column)
 
 
-def print_valid_l0_column_names(sensor_name: str) -> None:
+def print_allowed_column_names(sensor_name: str) -> None:
     """Print valid columns names from the standard.
 
     Parameters
@@ -89,7 +90,7 @@ def print_valid_l0_column_names(sensor_name: str) -> None:
     """
     from pprint import pprint
 
-    pprint(list(get_l0a_dtype(sensor_name)))
+    pprint(allowed_l0_variables(sensor_name))
 
 
 def _print_column_index(i, column_name, print_column_names):
@@ -148,7 +149,7 @@ def print_df_random_n_rows(df: pd.DataFrame, n: int = 5, print_column_names: boo
     n : int, optional
         The number of row to print. The default is 5.
     print_column_names : bool, optional
-        If true, print the column names. The default is ``True``.
+        If true, print the column names. The default value is ``True``.
     """
     columns = list(df.columns)
     df_sample = df.sample(n=n)
@@ -185,7 +186,7 @@ def print_df_summary_stats(
     column_indices : Union[int,slice,list], optional
         Column indices. If ``None``, select all columns.
     print_column_names : bool, optional
-        If ``True``, print the column names. The default is ``True``.
+        If ``True``, print the column names. The default value is ``True``.
 
     Raises
     ------
@@ -212,6 +213,17 @@ def print_df_summary_stats(
     _print_df_summary(df=df, indices=indices, columns=columns, print_column_names=print_column_names)
 
 
+def get_unique_sorted_values(array):
+    """Return unique sorted values.
+
+    It deals with np.nan within an array of string by converting object dtype to str.
+    """
+    arr = np.asanyarray(array)
+    if arr.dtype == object:
+        arr = arr.astype(str)
+    return np.unique(arr).tolist()
+
+
 def print_df_columns_unique_values(
     df: pd.DataFrame,
     column_indices: Optional[Union[int, slice, list]] = None,
@@ -226,14 +238,14 @@ def print_df_columns_unique_values(
     column_indices : Union[int,slice,list], optional
         Column indices. If ``None``, select all columns.
     column_names : bool, optional
-        If ``True``, print the column names. The default is ``True``.
+        If ``True``, print the column names. The default value is ``True``.
 
     """
     column_indices, columns = _get_selected_column_names(df, column_indices)
     # Printing
     for i, column in zip(column_indices, columns):
         _print_column_index(i, column_name=column, print_column_names=print_column_names)
-        _print_value(sorted(df[column].unique().tolist()))
+        _print_value(get_unique_sorted_values(df[column]))
 
 
 ####--------------------------------------------------------------------------.
@@ -254,7 +266,7 @@ def get_df_columns_unique_values_dict(
     column_indices : Union[int,slice,list], optional
         Column indices. If ``None``, select all columns.
     column_names : bool, optional
-        If ``True``, the dictionary key are the column names. The default is ``True``.
+        If ``True``, the dictionary key are the column names. The default value is ``True``.
 
     """
     column_indices, columns = _get_selected_column_names(df, column_indices)
@@ -262,7 +274,7 @@ def get_df_columns_unique_values_dict(
     d = {}
     for i, column in zip(column_indices, columns):
         key = column if column_names else "Column " + str(i)
-        d[key] = sorted(df[column].unique().tolist())
+        d[key] = get_unique_sorted_values(df[column])
     # Return
     return d
 
@@ -511,12 +523,11 @@ def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
         # Get string array
         arr = df.iloc[:, i]
         arr = np.asarray(arr).astype(str)
-
         # Check is the array contains a constant number of character
         if not _has_constant_characters(arr):
             print(
-                f"ATTENTION: Column {i} values have non-unique number of characters. "
-                f"Selecting row {row_idx} to infer possible columns.",
+                f"WARNING: The number of characters of column {i} values is not constant. "
+                f"Column names are currently inferred using 'row_idx={row_idx}'.",
             )
 
         # Subset a single string

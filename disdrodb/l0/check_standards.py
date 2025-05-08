@@ -25,8 +25,8 @@ import numpy as np
 import pandas as pd
 
 from disdrodb.l0.standards import (
+    allowed_l0_variables,
     get_data_range_dict,
-    get_l0a_dtype,
     get_valid_values_dict,
 )
 
@@ -131,25 +131,22 @@ def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:
 
     """
     # Get valid columns
-    dtype_dict = get_l0a_dtype(sensor_name)
-    valid_columns = list(dtype_dict)
-    valid_columns = [*valid_columns, "time", "latitude", "longitude"]
-    valid_columns = set(valid_columns)
+    valid_columns = set(allowed_l0_variables(sensor_name))
+
     # Get dataframe column names
     df_columns = list(df.columns)
     df_columns = set(df_columns)
-    # --------------------------------------------
+
     # Check there aren't valid columns
     invalid_columns = list(df_columns.difference(valid_columns))
     if len(invalid_columns) > 0:
         msg = f"The following columns do no met the DISDRODB standards: {invalid_columns}"
         raise ValueError(msg)
-    # --------------------------------------------
+
     # Check time column is present
     if "time" not in df_columns:
         msg = "The 'time' column is missing in the dataframe."
         raise ValueError(msg)
-    # --------------------------------------------
 
 
 def check_l0a_standards(df: pd.DataFrame, sensor_name: str, logger=None, verbose: bool = True) -> None:
@@ -163,7 +160,7 @@ def check_l0a_standards(df: pd.DataFrame, sensor_name: str, logger=None, verbose
         Name of the sensor.
     verbose : bool, optional
         Whether to verbose the processing.
-        The default is ``True``.
+        The default value is ``True``.
 
     Raises
     ------

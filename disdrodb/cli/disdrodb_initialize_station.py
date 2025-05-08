@@ -61,7 +61,7 @@ def disdrodb_initialize_station(
     station_name : str \n
         Station name \n
     data_archive_dir : str \n
-        Base directory of DISDRODB \n
+        DISDRODB Data Archive directory \n
         Format: <...>/DISDRODB \n
         If not specified, uses path specified in the DISDRODB active configuration. \n
     """

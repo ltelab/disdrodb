@@ -27,6 +27,8 @@ from disdrodb.api.io import (
     find_files,
     open_dataset,
     open_logs_directory,
+    open_metadata_directory,
+    open_product_directory,
 )
 from disdrodb.api.search import (
     available_campaigns,
@@ -38,11 +40,27 @@ from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation
 from disdrodb.l0.l0_reader import available_readers, get_reader, get_station_reader
-from disdrodb.metadata import read_metadata_archive, read_station_metadata
+from disdrodb.metadata import download_metadata_archive, read_metadata_archive, read_station_metadata
 from disdrodb.metadata.checks import (
     check_metadata_archive,
     check_metadata_archive_geolocation,
     check_station_metadata,
+)
+from disdrodb.routines import (
+    run_l0,
+    run_l0_station,
+    run_l0a,
+    run_l0a_station,
+    run_l0b,
+    run_l0b_station,
+    run_l0c,
+    run_l0c_station,
+    run_l1,
+    run_l1_station,
+    run_l2e,
+    run_l2e_station,
+    run_l2m,
+    run_l2m_station,
 )
 
 ARCHIVE_VERSION = "V0"
@@ -83,28 +101,47 @@ PRODUCTS_REQUIREMENTS = {
 
 __all__ = [
     "define_configs",
-    "available_stations",
     "available_campaigns",
     "available_data_sources",
+    "available_readers",
     "available_sensor_names",
+    "available_stations",
+    "check_metadata_archive",
+    "check_metadata_archive_geolocation",
+    "check_station_metadata",
+    "download_archive",
+    "download_metadata_archive",
+    "download_station",
     "find_files",
     "get_reader",
     "get_station_reader",
     "get_metadata_archive_dir",
     "get_data_archive_dir",
-    "available_readers",
     "open_dataset",
-    "check_station_metadata",
-    "check_metadata_archive",
-    "check_metadata_archive_geolocation",
     "open_documentation",
     "open_sensor_documentation",
+    "open_product_directory",
+    "open_metadata_directory",
     "open_logs_directory",
     "read_station_metadata",
     "read_metadata_archive",
-    "download_archive",
-    "download_station",
+    # Functions invoking the disdrodb_run_* scripts in the terminals
+    "run_l0a_station",
+    "run_l0b_station",
+    "run_l0c_station",
+    "run_l0_station",
+    "run_l0",
+    "run_l0a",
+    "run_l0b",
+    "run_l0c",
+    "run_l1",
+    "run_l1_station",
+    "run_l2e",
+    "run_l2e_station",
+    "run_l2m",
+    "run_l2m_station",
 ]
+
 
 __root_path__ = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 

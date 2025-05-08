@@ -73,7 +73,14 @@ In the disdrodb software, the readers are organized by sensor name and data sour
 You can have a look on how the readers looks like by exploring
 the `DISDRODB.l0.readers directory <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_.
 
-The function ``available_readers`` returns a list with all readers available for a given sensor.
+You can open the local disdrodb software readers directory typing in the terminal:
+
+.. code:: bash
+
+    disdrodb_open_readers_directory
+
+
+In python, the function ``available_readers`` returns a list with all readers available for a given sensor.
 By specifying the optional ``data_sources`` argument, only the readers references for the specified data sources are returned.
 
 .. code-block:: python
@@ -202,7 +209,7 @@ you can simply pass the ``pandas.DataFrame`` returned by the reader to the ``san
 .. code-block:: python
 
     import disdrodb
-    from disdrodb.l0.l0_processing import sanitize_df
+    from disdrodb.l0.l0a_processing import sanitize_df
 
     filepath = "path/to/your/raw/text/file.txt"  # [ADAPT TO YOUR FILEPATH]
     sensor_name = sensor_name = "OTT_Parsivel"  # [ADAPT TO YOUR SENSOR_NAME]
@@ -287,7 +294,7 @@ you can simply pass the ``xarray.Dataset`` returned by the reader to the ``sanit
 .. code-block:: python
 
     import disdrodb
-    from disdrodb.l0.l0_processing import sanitize_ds
+    from disdrodb.l0.l0b_nc_processing import sanitize_ds
 
     filepath = "path/to/your/raw/text/file.nc"  # [ADAPT TO YOUR FILEPATH]
     sensor_name = sensor_name = "OTT_Parsivel"  # [ADAPT TO YOUR SENSOR_NAME]

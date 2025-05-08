@@ -52,20 +52,20 @@ def disdrodb_download_archive(
     data_sources : str or list of str, optional
         Data source name (eg : EPFL).
         If not provided (``None``), all data sources will be downloaded.
-        The default is ``data_source=None``.
+        The default value is ``data_source=None``.
     campaign_names : str or list of str, optional
         Campaign name (eg :  EPFL_ROOF_2012).
         If not provided (``None``), all campaigns will be downloaded.
-        The default is ``campaign_name=None``.
+        The default value is ``campaign_name=None``.
     station_names : str or list of str, optional
         Station name.
         If not provided (``None``), all stations will be downloaded.
-        The default is ``station_name=None``.
+        The default value is ``station_name=None``.
     force : bool, optional
         If ``True``, overwrite the already existing raw data file.
-        The default is ``False``.
+        The default value is ``False``.
     data_archive_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
         If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     """
     from disdrodb.data_transfer.download_data import download_archive

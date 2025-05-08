@@ -69,7 +69,7 @@ def disdrodb_run_l0(
     Parameters
     ----------
     data_archive_dir : str
-        Base directory of DISDRODB
+        DISDRODB Data Archive directory
         Format: <...>/DISDRODB
     data_sources : str
         Name of data source(s) to process.
@@ -118,11 +118,11 @@ def disdrodb_run_l0(
         For L0B, it processes just the first 100 rows of 3 L0A files.
         The default is False.
     data_archive_dir : str
-        Base directory of DISDRODB
+        DISDRODB Data Archive directory
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.routines import run_disdrodb_l0
+    from disdrodb.routines import run_l0
 
     # Parse data_sources, campaign_names and station arguments
     data_archive_dir = parse_archive_dir(data_archive_dir)
@@ -132,7 +132,7 @@ def disdrodb_run_l0(
     station_names = parse_arg_to_list(station_names)
 
     # Run processing
-    run_disdrodb_l0(
+    run_l0(
         # DISDRODB root directories
         data_archive_dir=data_archive_dir,
         metadata_archive_dir=metadata_archive_dir,

@@ -41,7 +41,7 @@ def get_archive_metadata_key_value(key: str, return_tuple: bool = True, metadata
     return_tuple : bool, optional
        If ``True``, returns a tuple (``data_source``,``campaign_name``,``station_name``, ``key_value``)
        If ``False``, returns a list of the key values.
-       The default is ``True``.
+       The default value is ``True``.
     metadata_archive_dir : str (optional)
         The directory path where the DISDRODB Metadata Archive is located.
         The directory path must end with ``<...>/DISDRODB``.

@@ -24,7 +24,13 @@ import sys
 from pathlib import Path
 from typing import Optional
 
-from disdrodb.api.path import define_campaign_dir, define_data_dir
+from disdrodb.api.path import (
+    define_campaign_dir,
+    define_data_dir,
+    define_metadata_dir,
+    define_station_dir,
+)
+from disdrodb.l0.l0_reader import define_readers_directory
 from disdrodb.utils.directories import list_files
 from disdrodb.utils.logger import (
     log_info,
@@ -68,7 +74,7 @@ def find_files(
         The name DISDRODB product.
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
-        The default is ``False``.
+        The default value is ``False``.
     data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
@@ -162,7 +168,7 @@ def open_dataset(
         It must be specified only for product L2M !
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
-        The default is ``False``.
+        The default value is ``False``.
     data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
@@ -260,9 +266,10 @@ def open_file_explorer(path):
 def open_logs_directory(
     data_source,
     campaign_name,
+    station_name=None,  # noqa
     data_archive_dir=None,
 ):
-    """Open the logs directory."""
+    """Open the DISDRODB Data Archive logs directory of a station."""
     from disdrodb.configs import get_data_archive_dir
 
     data_archive_dir = get_data_archive_dir(data_archive_dir)
@@ -271,7 +278,75 @@ def open_logs_directory(
         product="L0A",
         data_source=data_source,
         campaign_name=campaign_name,
-        check_exists=False,
+        check_exists=True,
     )
     logs_dir = os.path.join(campaign_dir, "logs")
     open_file_explorer(logs_dir)
+
+
+def open_product_directory(
+    product,
+    data_source,
+    campaign_name,
+    station_name,
+    data_archive_dir=None,
+):
+    """Open the DISDRODB Data Archive station product directory."""
+    from disdrodb.configs import get_data_archive_dir
+
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    station_dir = define_station_dir(
+        data_archive_dir=data_archive_dir,
+        product=product,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        check_exists=True,
+    )
+    open_file_explorer(station_dir)
+
+
+def open_metadata_directory(
+    data_source,
+    campaign_name,
+    station_name=None,  # noqa
+    metadata_archive_dir=None,
+):
+    """Open the DISDRODB Metadata Archive station(s) metadata directory."""
+    from disdrodb.configs import get_metadata_archive_dir
+
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
+    metadata_dir = define_metadata_dir(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        check_exists=True,
+    )
+    open_file_explorer(metadata_dir)
+
+
+def open_readers_directory():
+    """Open the disdrodb software readers directory."""
+    readers_directory = define_readers_directory()
+
+    open_file_explorer(readers_directory)
+
+
+def open_metadata_archive(
+    metadata_archive_dir=None,
+):
+    """Open the DISDRODB Metadata Archive."""
+    from disdrodb.configs import get_metadata_archive_dir
+
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
+    open_file_explorer(metadata_archive_dir)
+
+
+def open_data_archive(
+    data_archive_dir=None,
+):
+    """Open the DISDRODB Data Archive."""
+    from disdrodb.configs import get_data_archive_dir
+
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    open_file_explorer(data_archive_dir)

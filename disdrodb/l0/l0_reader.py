@@ -33,16 +33,7 @@ logger = logging.getLogger(__name__)
 #### Search readers
 
 
-def define_reader_path(sensor_name, reader_reference):
-    """Define the reader path based on the reader reference name."""
-    # Retrieve path to directory with sensor readers
-    reader_dir = get_readers_directory(sensor_name)
-    # Define reader path
-    reader_path = os.path.join(reader_dir, f"{reader_reference}.py")
-    return reader_path
-
-
-def get_readers_directory(sensor_name="") -> str:
+def define_readers_directory(sensor_name="") -> str:
     """Returns the path to the ``disdrodb.l0.readers`` directory within the disdrodb package."""
     from disdrodb import __root_path__
 
@@ -50,10 +41,19 @@ def get_readers_directory(sensor_name="") -> str:
     return reader_dir
 
 
+def define_reader_path(sensor_name, reader_reference):
+    """Define the reader path based on the reader reference name."""
+    # Retrieve path to directory with sensor readers
+    reader_dir = define_readers_directory(sensor_name)
+    # Define reader path
+    reader_path = os.path.join(reader_dir, f"{reader_reference}.py")
+    return reader_path
+
+
 def list_readers_paths(sensor_name) -> list:
     """Returns the file paths of the available readers for a given sensor in ``disdrodb.l0.readers.{sensor_name}``."""
     # Retrieve path to directory with sensor readers
-    reader_dir = get_readers_directory(sensor_name)
+    reader_dir = define_readers_directory(sensor_name)
     # List readers
     readers_paths = list_files(reader_dir, glob_pattern="*.py", recursive=True)
     return readers_paths
@@ -62,7 +62,7 @@ def list_readers_paths(sensor_name) -> list:
 def list_readers_references(sensor_name):
     """Returns the readers references available for a given sensor in ``disdrodb.l0.readers.{sensor_name}``."""
     # Retrieve path to directory with sensor readers
-    reader_dir = get_readers_directory(sensor_name)
+    reader_dir = define_readers_directory(sensor_name)
     # List readers paths
     readers_paths = list_readers_paths(sensor_name)
     # Derive readers references

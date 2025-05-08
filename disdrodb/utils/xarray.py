@@ -38,7 +38,7 @@ def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
         The name of the dimension along which to find the last True index.
     fill_value : int or float
         The fill value when all values are False or NaN along the specified dimension.
-        The default is ``dim_size - 1``.
+        The default value is ``dim_size - 1``.
 
     Returns
     -------

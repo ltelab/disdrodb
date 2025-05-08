@@ -61,10 +61,10 @@ def write_issue(filepath: str, timesteps: Optional[list] = None, time_periods: O
         Filepath of the issue YAML to write.
     timesteps : list, optional
         List of timesteps (to be dropped in L0 processing).
-        The default is ``None``..
+        The default value is ``None``..
     time_periods : list, optional
         A list of time periods (to be dropped in L0 processing).
-        The default is ``None``..
+        The default value is ``None``..
     """
     # Preprocess timesteps and time_periods (to plain list of strings)
     if timesteps is not None:

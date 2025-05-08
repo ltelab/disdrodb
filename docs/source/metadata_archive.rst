@@ -51,6 +51,19 @@ To update the DISDRODB Metadata Archive follow these steps:
 
 3. Edit or add the metadata files that you are interested in.
 
+   To quickly open the metadata data archive, you can type in the terminal:
+
+   .. code:: bash
+
+      disdrodb_open_metadata_archive
+
+   To quickly open the metadata directory of a specific station, you can type in the terminal:
+
+   .. code:: bash
+
+      disdrodb_open_metadata_directory <DATA_SOURCE> <CAMPAIGN_NAME> <STATION_NAME>
+
+
 4. When you are done, please run the following command to check that the metadata files are valid:
 
    .. code:: bash

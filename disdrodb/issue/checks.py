@@ -60,7 +60,7 @@ def _check_timestep_datetime_accuracy(timesteps, unit="s"):
     timesteps : numpy array
         Numpy array to check.
     unit : str, optional
-        Unit, by default "s".
+        Time unit. The default value is "s".
 
     Returns
     -------

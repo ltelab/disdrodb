@@ -31,10 +31,10 @@ from disdrodb.cli.disdrodb_run_l2e_station import disdrodb_run_l2e_station
 from disdrodb.cli.disdrodb_run_l2m import disdrodb_run_l2m
 from disdrodb.cli.disdrodb_run_l2m_station import disdrodb_run_l2m_station
 from disdrodb.routines import (
-    run_disdrodb_l2e,
-    run_disdrodb_l2e_station,
-    run_disdrodb_l2m,
-    run_disdrodb_l2m_station,
+    run_l2e,
+    run_l2e_station,
+    run_l2m,
+    run_l2m_station,
 )
 from disdrodb.utils.directories import count_files
 
@@ -96,7 +96,7 @@ def test_disdrodb_run_l2e_station(tmp_path, disdrodb_metadata_archive_dir, paral
             ],
         )
     else:
-        run_disdrodb_l2e_station(
+        run_l2e_station(
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,
@@ -184,7 +184,7 @@ def test_disdrodb_run_l2m_station(tmp_path, disdrodb_metadata_archive_dir, paral
             ],
         )
     else:
-        run_disdrodb_l2m_station(
+        run_l2m_station(
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,
@@ -265,7 +265,7 @@ def test_disdrodb_run_l2e(tmp_path, disdrodb_metadata_archive_dir, cli):
             ],
         )
     else:
-        run_disdrodb_l2e(
+        run_l2e(
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,
@@ -355,7 +355,7 @@ def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
             ],
         )
     else:
-        run_disdrodb_l2m(
+        run_l2m(
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,

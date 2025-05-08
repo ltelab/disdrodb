@@ -403,7 +403,7 @@ def create_l0b_from_l0a(
         To use this function outside the DISDRODB routines, the dictionary must
         contain the fields: ``sensor_name``, ``latitude``, ``longitude``, ``altitude``, ``platform_type``.
     verbose : bool, optional
-        Whether to verbose the processing. The default is ``False``.
+        Whether to verbose the processing. The default value is ``False``.
 
     Returns
     -------

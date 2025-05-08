@@ -68,7 +68,7 @@ def define_disdrodb_configs(
         config_dict = {}
         action_msg = "written"
 
-    # Add DISDRODB Base Directory
+    # Add DISDRODB Data Archive Directory
     if data_archive_dir is not None:
         config_dict["data_archive_dir"] = check_data_archive_dir(data_archive_dir)
     # Add DISDRODB Metadata Archive Directory
@@ -126,7 +126,7 @@ def get_data_archive_dir(data_archive_dir=None):
     if data_archive_dir is None:
         data_archive_dir = disdrodb.config.get("data_archive_dir", None)
     if data_archive_dir is None:
-        raise ValueError("The DISDRODB Base Directory is not specified.")
+        raise ValueError("The DISDRODB Data Archive Directory is not specified.")
     data_archive_dir = check_data_archive_dir(data_archive_dir)  # ensure Path converted to str
     return data_archive_dir
 

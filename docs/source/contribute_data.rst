@@ -7,7 +7,7 @@ Do you want to contribute your own data to DISDRODB ? Great! You are in the righ
 The data contributor is asked to perform the following 5 tasks:
 
 1. add the station(s) metadata he/she wish to contribute to the DISDRODB Metadata Archive,
-2. add to the disdrodb software the reader enabling the ingestion of the station(s) raw data,
+2. add to the disdrodb software the reader function enabling the ingestion of the station(s) raw data files,
 3. test that the DISDRODB L0 processing chain works correctly for the station(s) he/she contributed,
 4. upload the station(s) raw data on an online data repository (e.g., Zenodo, Figshare, etc.),
 5. test that the disdrodb software correctly download the station(s) he/she contributed.
@@ -47,7 +47,7 @@ Here below we provide a detailed description of the steps to follow to contribut
 * :ref:`Step 6 <step6>`: Define the ``raw_data_glob_pattern``
 * :ref:`Step 7 <step7>`: Define the reader name and add a prototype reader to the disdrodb python package
 * :ref:`Step 8 <step8>`: Implement the reader for your data
-* :ref:`Step 9 <step9>`: Test the reader by launching the DISDRODB L0 processing
+* :ref:`Step 9 <step9>`: Test launching the DISDRODB L0 processing
 * :ref:`Step 10 <step10>`: Compress the raw text files
 * :ref:`Step 11 <step11>`: Add reader testing files to the disdrodb python package
 * :ref:`Step 12 <step12>`: Upload your raw data on an online data repository
@@ -201,6 +201,14 @@ should get the ``metadata_archive_dir`` and ``data_archive_dir`` paths you just 
 
     print("DISDRODB Metadata Archive Directory: ", disdrodb.get_metadata_archive_dir())
     print("DISDRODB Data Archive Directory: ", disdrodb.get_data_archive_dir())
+
+
+You can also print the default DISDRODB Metadata Archive and Data Archive directories by typing the following command in the terminal:
+
+.. code:: bash
+
+   disdrodb_data_archive_directory
+   disdrodb_metadata_archive_directory
 
 
 .. _step4:
@@ -380,7 +388,14 @@ If necessary, have a look at the `existing DISDRODB readers <https://github.com/
 
 Since you aim to design a new reader, you can start by copy-pasting the script
 `template_reader_raw_text_data.py <https://github.com/ltelab/disdrodb/blob/main/disdrodb/l0/readers/template_reader_raw_text_data.py>`_
-into the relevant ``disdrodb.l0.reader.<SENSOR_NAME>/<DATA_SOURCE>`` directory and rename it as ``<READER_NAME>.py``.
+into the relevant ``disdrodb.l0.readers.<SENSOR_NAME>/<DATA_SOURCE>`` directory and rename it as ``<READER_NAME>.py``.
+You can open the software readers directory typing into the terminal:
+
+.. code:: bash
+
+   disdrodb_open_readers_directory
+
+Then enter the correct ``<SENSOR_NAME>/<DATA_SOURCE>`` directory and copy the template script.
 If the ``<DATA_SOURCE>`` directory does not yet exist, create a new directory.
 
 .. note::
@@ -396,7 +411,7 @@ The ``reader`` reference points the disdrodb software to the correct reader to u
 
 The reeader reference is defined as ``<DATA_SOURCE>/<READER_NAME>``.
 
-For example, to use the `disdrodb.l0.reader.OTT_Parsivel.GPM.IFLOODS.py reader <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/OTT_Parsivel/GPM/IFLOODS.py>`_
+For example, to use the `disdrodb.l0.readers.OTT_Parsivel.GPM.IFLOODS.py reader <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/OTT_Parsivel/GPM/IFLOODS.py>`_
 to process the data, you specify the ``reader`` reference as ``GPM/IFLOODS``.
 
 To check you are specifying the correct ``reader`` reference in the metadata,
@@ -510,7 +525,7 @@ Now you can start the start the step-by-step tutorial and implement the reader f
 
 .. _step9:
 
-Step 9: Test the reader by launching the DISDRODB L0 processing
+Step 9: Test launching the DISDRODB L0 processing
 -------------------------------------------------------------------
 
 To test if the reader works properly, the easiest way is to run the DISDRODB L0 processing of the stations for which you added the reader.
@@ -783,7 +798,6 @@ We provide this python script that should enable you to test safely the whole pr
 .. code:: python
 
     import disdrodb
-    from disdrodb.l0 import run_disdrodb_l0_station
     from disdrodb.api.create_directories import create_test_archive
 
     test_data_archive_dir = "/tmp/DISDRODB"
@@ -812,7 +826,7 @@ We provide this python script that should enable you to test safely the whole pr
 
     # Test that the DISDRODB L0 processing works
     # - Start with a small sample and check it works
-    run_disdrodb_l0_station(
+    disdrodb.run_l0_station(
         data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -824,7 +838,7 @@ We provide this python script that should enable you to test safely the whole pr
 
     # Now run over all data
     # - If parallel=True, you can visualize progress at http://localhost:8787/status
-    run_disdrodb_l0_station(
+    disdrodb.run_l0_station(
         data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,

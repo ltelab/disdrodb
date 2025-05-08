@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Routines to download station data from the DISDRODB Decentralized Data Archive."""
+"""Routine to download station data from the DISDRODB Decentralized Data Archive."""
 
 import sys
 from typing import Optional
@@ -65,9 +65,9 @@ def disdrodb_download_station(
         If not specified, the path specified in the DISDRODB active configuration will be used.
     force: bool, optional
         If ``True``, overwrite the already existing raw data file.
-        The default is ``False``.
+        The default value is ``False``.
     data_archive_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
+        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
         If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     """
     from disdrodb.data_transfer.download_data import download_station

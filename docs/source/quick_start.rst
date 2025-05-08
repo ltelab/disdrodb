@@ -82,9 +82,18 @@ should get the ``metadata_archive_dir`` and ``data_archive_dir`` paths you just 
     print("DISDRODB Data Archive Directory: ", disdrodb.get_data_archive_dir())
 
 
-Alternatively, you can also define the DISDRODB Data and Metadata Archive directories as environment variables by
-specifying the ``DISDRODB_DATA_ARCHIVE_DIR`` and ``DISDRODB_METADATA_ARCHIVE_DIR`` variables in your terminal or ``.bashrc`` script.
-In the terminal, you can type the following command:
+You can also verify and print the default DISDRODB Metadata Archive and Data Archive directories by typing the following command in the terminal:
+
+.. code:: bash
+
+   disdrodb_data_archive_directory
+   disdrodb_metadata_archive_directory
+
+
+Although not recommended for beginner users, you also have the option to define the DISDRODB Data and Metadata Archive directories using environment variables.
+This can be done by setting the ``DISDRODB_DATA_ARCHIVE_DIR`` and ``DISDRODB_METADATA_ARCHIVE_DIR`` variables either directly in your terminal or by adding them to your
+``.bashrc`` (or equivalent shell configuration) script.
+To set them in the terminal, you can use the following commands:
 
 .. code:: bash
 
