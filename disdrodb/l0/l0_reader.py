@@ -46,7 +46,7 @@ def define_reader_path(sensor_name, reader_reference):
     # Retrieve path to directory with sensor readers
     reader_dir = define_readers_directory(sensor_name)
     # Define reader path
-    reader_path = os.path.join(reader_dir, f"{reader_reference}.py")
+    reader_path = os.path.join(reader_dir, *reader_reference.split("/")) + ".py"
     return reader_path
 
 
@@ -66,7 +66,8 @@ def list_readers_references(sensor_name):
     # List readers paths
     readers_paths = list_readers_paths(sensor_name)
     # Derive readers references
-    readers_references = [path.replace(reader_dir, "").lstrip(os.path.sep).rstrip(".py") for path in readers_paths]
+    readers_references = [path.replace(reader_dir, "").lstrip(os.path.sep).rstrip(".py").replace("\\", "/")
+                          for path in readers_paths]
     return readers_references
 
 
