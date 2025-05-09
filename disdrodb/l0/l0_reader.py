@@ -66,8 +66,9 @@ def list_readers_references(sensor_name):
     # List readers paths
     readers_paths = list_readers_paths(sensor_name)
     # Derive readers references
-    readers_references = [path.replace(reader_dir, "").lstrip(os.path.sep).rstrip(".py").replace("\\", "/")
-                          for path in readers_paths]
+    readers_references = [
+        path.replace(reader_dir, "").lstrip(os.path.sep).rstrip(".py").replace("\\", "/") for path in readers_paths
+    ]
     return readers_references
 
 

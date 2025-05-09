@@ -382,7 +382,7 @@ class TestListAndCountFiles:
 
         result = list_files(tmp_path, "*/*", recursive=False)
         assert set(result) == {str(file1), str(file2)}
-        assert count_files(tmp_path,"*/*", recursive=False) == 2
+        assert count_files(tmp_path, "*/*", recursive=False) == 2
 
     def test_list_non_recursive_extension_filter(self, tmp_path):
         """Should list only files matching extension with '*.ext' pattern non-recursively."""
@@ -442,7 +442,7 @@ class TestListAndCountFiles:
         file1.touch()
         file2.touch()
 
-        pattern =f"**/*.{ext}"
+        pattern = f"**/*.{ext}"
         result = list_files(tmp_path, pattern, recursive=True)
         assert set(result) == {str(file1), str(file2)}
         assert count_files(tmp_path, pattern, recursive=True) == 2
@@ -451,8 +451,6 @@ class TestListAndCountFiles:
         result = list_files(tmp_path, pattern, recursive=True)
         assert set(result) == {str(file1)}
         assert count_files(tmp_path, pattern, recursive=True) == 1
-
-
 
 
 class TestCheckDirectoryExists:
