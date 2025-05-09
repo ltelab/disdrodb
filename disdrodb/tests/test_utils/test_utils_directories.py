@@ -442,14 +442,22 @@ class TestListAndCountFiles:
         file1.touch()
         file2.touch()
 
+        # List files in all subdirectories
         pattern = f"**/*.{ext}"
         result = list_files(tmp_path, pattern, recursive=True)
         assert set(result) == {str(file1), str(file2)}
         assert count_files(tmp_path, pattern, recursive=True) == 2
 
+        # List files only in the next subdirectories
         pattern = f"*/*.{ext}"
         result = list_files(tmp_path, pattern, recursive=True)
         assert set(result) == {str(file1)}
+        assert count_files(tmp_path, pattern, recursive=True) == 1
+
+        # List files only in 2-level subdirectories
+        pattern = f"*/*/*.{ext}"
+        result = list_files(tmp_path, pattern, recursive=True)
+        assert set(result) == {str(file2)}
         assert count_files(tmp_path, pattern, recursive=True) == 1
 
 

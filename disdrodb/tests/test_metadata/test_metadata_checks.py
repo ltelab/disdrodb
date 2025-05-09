@@ -110,7 +110,7 @@ def test_check_metadata_archive_keys(tmp_path):
 
     # Test 1: Correct metadata key
     valid_metadata_keys = get_valid_metadata_keys()
-    metadata_dict = {i: "value1" for i in valid_metadata_keys}
+    metadata_dict = dict.fromkeys(valid_metadata_keys, "value1")
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
 
     is_valid = check_metadata_archive_keys(metadata_archive_dir)

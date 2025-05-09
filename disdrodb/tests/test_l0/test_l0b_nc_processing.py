@@ -69,7 +69,7 @@ raw_data_format_dict = {
 }
 
 mock_valid_names = ["var1", "var2", "var3", "var_not_in_ds"]
-l0b_encoding_dict = {k: "dummy" for k in mock_valid_names}
+l0b_encoding_dict = dict.fromkeys(mock_valid_names, "dummy")
 
 
 config_dict = {"raw_data_format.yml": raw_data_format_dict, "l0b_encodings.yml": l0b_encoding_dict}

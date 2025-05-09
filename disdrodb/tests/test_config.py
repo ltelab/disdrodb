@@ -29,7 +29,10 @@ def test_define_disdrodb_configs(tmp_path, mocker):
     mocker.patch("disdrodb.configs._define_config_filepath", return_value=str(tmp_path / ".config_disdrodb.yml"))
 
     # Define config YAML
-    disdrodb.configs.define_disdrodb_configs(data_archive_dir="test_path_to/DISDRODB", zenodo_token="test_token")
+    disdrodb.configs.define_disdrodb_configs(
+        data_archive_dir=os.path.join("test_path_to", "DISDRODB"),
+        zenodo_token="test_token",
+    )
     assert os.path.exists(tmp_path / ".config_disdrodb.yml")
 
 
@@ -40,7 +43,7 @@ def test_read_disdrodb_configs(tmp_path, mocker):
     mocker.patch("disdrodb.configs._define_config_filepath", return_value=str(tmp_path / ".config_disdrodb.yml"))
 
     # Define config YAML
-    define_disdrodb_configs(data_archive_dir="test_path_to/DISDRODB", zenodo_token="test_token")
+    define_disdrodb_configs(data_archive_dir=os.path.join("test_path_to", "DISDRODB"), zenodo_token="test_token")
     assert os.path.exists(tmp_path / ".config_disdrodb.yml")
 
     # Read config YAML
@@ -57,20 +60,22 @@ def test_update_disdrodb_configs(tmp_path, mocker):
     mocker.patch("disdrodb.configs._define_config_filepath", return_value=config_fpath)
 
     # Initialize
-    disdrodb.configs.define_disdrodb_configs(data_archive_dir="test_path_to/DISDRODB", zenodo_token="test_token")
+    data_archive_dir = os.path.join("test_path_to", "DISDRODB")
+    disdrodb.configs.define_disdrodb_configs(data_archive_dir=data_archive_dir, zenodo_token="test_token")
     assert os.path.exists(config_fpath)
 
     config_dict = read_yaml(config_fpath)
-    assert config_dict["data_archive_dir"] == "test_path_to/DISDRODB"
+    assert config_dict["data_archive_dir"] == data_archive_dir
 
     # Update
+    new_data_archive_dir = os.path.join("new_test_path_to", "DISDRODB")
     disdrodb.configs.define_disdrodb_configs(
-        data_archive_dir="new_test_path_to/DISDRODB",
+        data_archive_dir=new_data_archive_dir,
         zenodo_sandbox_token="new_token",
     )
     assert os.path.exists(config_fpath)
     config_dict = read_yaml(config_fpath)
-    assert config_dict["data_archive_dir"] == "new_test_path_to/DISDRODB"
+    assert config_dict["data_archive_dir"] == new_data_archive_dir
     assert config_dict["zenodo_token"] == "test_token"
     assert config_dict["zenodo_sandbox_token"] == "new_token"
 
@@ -80,22 +85,27 @@ def test_get_data_archive_dir():
     from disdrodb.configs import get_data_archive_dir
 
     # Check that if input is not None, return the specified data_archive_dir
-    assert get_data_archive_dir(data_archive_dir="test_path_to/DISDRODB") == "test_path_to/DISDRODB"
+    data_archive_dir = os.path.join("test_path_to", "DISDRODB")
+
+    assert get_data_archive_dir(data_archive_dir=data_archive_dir) == data_archive_dir
 
     # Check that if no config YAML file specified (data_archive_dir=None), raise error
     with disdrodb.config.set({"data_archive_dir": None}), pytest.raises(ValueError):
         get_data_archive_dir()
 
     # Set data_archive_dir in the donfig config and check it return it !
-    disdrodb.config.set({"data_archive_dir": "another_test_dir/DISDRODB"})
-    assert get_data_archive_dir() == "another_test_dir/DISDRODB"
+    another_test_dir = os.path.join("another_test_path_to", "DISDRODB")
+    disdrodb.config.set({"data_archive_dir": another_test_dir})
+    assert get_data_archive_dir() == another_test_dir
 
     # Now test that return the one from the temporary disdrodb.config donfig object
-    with disdrodb.config.set({"data_archive_dir": "new_test_dir/DISDRODB"}):
-        assert get_data_archive_dir() == "new_test_dir/DISDRODB"
+    new_data_archive_dir = os.path.join("new_test_path_to", "DISDRODB")
+
+    with disdrodb.config.set({"data_archive_dir": new_data_archive_dir}):
+        assert get_data_archive_dir() == new_data_archive_dir
 
     # And check it return the default one
-    assert get_data_archive_dir() == "another_test_dir/DISDRODB"
+    assert get_data_archive_dir() == another_test_dir
 
 
 @pytest.mark.parametrize(("sandbox", "expected_token"), [(False, "my_zenodo_token"), (True, "my_sandbox_zenodo_token")])

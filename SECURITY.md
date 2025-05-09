@@ -10,7 +10,7 @@ backported more regularly.
 | Version        | Supported          |
 | -------------- | ------------------ |
 | 0.x.x (latest) | :white_check_mark: |
-| \< 0.0.17      | :x:                |
+| < 0.0.17       | :x:                |
 
 ## Unsafe YAML Loading
 

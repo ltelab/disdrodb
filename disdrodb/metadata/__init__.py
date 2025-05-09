@@ -4,9 +4,9 @@ from disdrodb.metadata.reader import read_metadata_archive, read_station_metadat
 from disdrodb.metadata.search import get_list_metadata
 
 __all__ = [
-    "read_station_metadata",
-    "read_metadata_archive",
-    "get_list_metadata",
     "download_metadata_archive",
     "get_archive_metadata_key_value",
+    "get_list_metadata",
+    "read_metadata_archive",
+    "read_station_metadata",
 ]

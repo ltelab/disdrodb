@@ -13,8 +13,8 @@ The following people have made contributions to this project:
 - [Alexis Berne](https://people.epfl.ch/alexis.berne?lang=en) - EPFL
 - [Gionata Ghiggi (ghiggi)](https://github.com/ghiggi) - EPFL
 - [Jacopo Grazioli (jacgraz)](https://github.com/jacgraz) - EPFL
-- [Saverio Guzzo  (saveriogzz)](https://github.com/saveriogzz) - TU DELFT
+- [Saverio Guzzo (saveriogzz)](https://github.com/saveriogzz) - TU DELFT
 - [Kim Candolfi (KimCandolfi)](https://github.com/KimCandolfi) - EPFL
 - [Régis Longchamp (regislon)](https://github.com/regislon) - EPFL
 - [Son Pham-Ba (sphamba)](https://github.com/sphamba) - EPFL
-- [Charlotte Gisèle Weil  (charlottegiseleweil)](https://github.com/charlottegiseleweil) - EPFL
+- [Charlotte Gisèle Weil (charlottegiseleweil)](https://github.com/charlottegiseleweil) - EPFL

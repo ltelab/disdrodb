@@ -21,8 +21,8 @@ from disdrodb.scattering.axis_ratio import available_axis_ratio, get_axis_ratio
 from disdrodb.scattering.routines import available_radar_bands, get_radar_parameters
 
 __all__ = [
-    "available_radar_bands",
     "available_axis_ratio",
+    "available_radar_bands",
     "get_axis_ratio",
     "get_radar_parameters",
 ]
