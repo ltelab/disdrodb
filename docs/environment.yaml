@@ -2,10 +2,15 @@ name: build-doc-disdrodb
 channels:
   - conda-forge
 dependencies:
-  - python>=3.9
-  - disdrodb
+  - python>=3.11
+  - netcdf4
+  - pyarrow
+  - pandas
+  - dask
+  - xarray
   - jupyter
   - pydantic>=2.0.0
+  - pip
   - pre-commit
   - pandoc
   - nbsphinx==0.9.3
@@ -14,3 +19,5 @@ dependencies:
   - sphinx-mdinclude==0.5.3
   - sphinx-gallery
   - docutils
+  - pip:
+      - git+https://github.com/ltelab/disdrodb.git
