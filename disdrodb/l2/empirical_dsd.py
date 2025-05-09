@@ -111,19 +111,19 @@ def get_effective_sampling_area(sensor_name, diameter):
     The diameter must be provided in meters !
     """
     check_sensor_name(sensor_name)
-    if sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+    if sensor_name in ["PARSIVEL", "PARSIVEL2"]:
         # Calculate sampling area for each diameter bin (S_i)
         L = 180 / 1000  # Length of the Parsivel beam in m (180 mm)
         B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
         sampling_area = L * (B - diameter / 2)
         return sampling_area
-    if sensor_name in "Thies_LPM":
+    if sensor_name in "LPM":
         # Calculate sampling area for each diameter bin (S_i)
         L = 228 / 1000  # Length of the Parsivel beam in m (228 mm)
         B = 20 / 1000  # Width of the Parsivel beam in m (20 mm)
         sampling_area = L * (B - diameter / 2)
         return sampling_area
-    if sensor_name in "RD_80":
+    if sensor_name in "RD80":
         sampling_area = 0.005  # m2
         return sampling_area
     raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")
@@ -1361,7 +1361,7 @@ def get_kinetic_energy_variables(
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.
@@ -1438,7 +1438,7 @@ def get_kinetic_energy_variables_from_drop_number(
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Xarray Dataset with relevant rainfall kinetic energy variables:
         - TKE: Total Kinetic Energy [J/m2]
         - KED: Kinetic Energy per unit rainfall Depth [J·m⁻²·mm⁻¹]. Typical values range between 0 and 40 J·m⁻²·mm⁻¹.

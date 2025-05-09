@@ -28,6 +28,34 @@ from disdrodb.api.configs import read_config_file
 logger = logging.getLogger(__name__)
 
 
+####-------------------------------------------------------------------------.
+#### Sensor variables
+
+
+def get_sensor_logged_variables(sensor_name: str) -> list:
+    """Get the sensor logged variables list.
+
+    Parameters
+    ----------
+    sensor_name : str
+         Name of the sensor.
+
+    Returns
+    -------
+    list
+        List of the variables logged by the sensor.
+    """
+    return list(get_data_format_dict(sensor_name).keys())
+
+
+def allowed_l0_variables(sensor_name: str) -> list:
+    """Get the list of allowed L0 variables for a given sensor."""
+    sensor_variables = list(get_l0a_dtype(sensor_name))
+    allowed_variables = [*sensor_variables, "time", "latitude", "longitude", "altitude"]
+    # TODO: add air_temperature, relative_humidity, wind_speed, wind_direction
+    return allowed_variables
+
+
 ####--------------------------------------------------------------------------.
 #### Variables validity dictionary
 
@@ -53,22 +81,6 @@ def get_data_format_dict(sensor_name: str) -> dict:
         Data format of each sensor variable.
     """
     return read_config_file(sensor_name=sensor_name, product="L0A", filename="raw_data_format.yml")
-
-
-def get_sensor_logged_variables(sensor_name: str) -> list:
-    """Get the sensor logged variables list.
-
-    Parameters
-    ----------
-    sensor_name : str
-         Name of the sensor.
-
-    Returns
-    -------
-    list
-        List of the variables logged by the sensor.
-    """
-    return list(get_data_format_dict(sensor_name).keys())
 
 
 def get_data_range_dict(sensor_name: str) -> dict:
@@ -452,7 +464,7 @@ def get_bin_coords_dict(sensor_name: str) -> dict:
     dict
         Dictionary with coordinates arrays.
     """
-    check_sensor_name(sensor_name=sensor_name)
+    check_sensor_name(sensor_name)
     coords = {}
     # Retrieve diameter coords
     coords["diameter_bin_center"] = get_diameter_bin_center(sensor_name=sensor_name)

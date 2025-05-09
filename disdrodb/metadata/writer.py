@@ -36,7 +36,7 @@ def get_default_metadata_dict() -> dict:
     """
     # Get valid metadata keys
     list_attrs = get_valid_metadata_keys()
-    attrs = {key: "" for key in list_attrs}
+    attrs = dict.fromkeys(list_attrs, "")
 
     # Add default values for certain keys
     attrs["latitude"] = -9999
@@ -47,13 +47,16 @@ def get_default_metadata_dict() -> dict:
     return attrs
 
 
-def create_station_metadata(data_source, campaign_name, station_name, base_dir=None, product="RAW"):
+def create_station_metadata(metadata_archive_dir, data_source, campaign_name, station_name):
     """Write a default (semi-empty) YAML metadata file for a DISDRODB station.
 
     An error is raised if the file already exists !
 
     Parameters
     ----------
+    data_archive_dir : str, optional
+        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
+        If not specified, the path specified in the DISDRODB active configuration will be used.
     data_source : str
         The name of the institution (for campaigns spanning multiple countries) or
         the name of the country (for campaigns or sensor networks within a single country).
@@ -62,12 +65,6 @@ def create_station_metadata(data_source, campaign_name, station_name, base_dir=N
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the path specified in the DISDRODB active configuration will be used.
-    product : str, optional
-        The DISDRODB product in which to search for the metadata file.
-        The default is ``"RAW"``.
 
     """
     # Define metadata filepath
@@ -75,16 +72,14 @@ def create_station_metadata(data_source, campaign_name, station_name, base_dir=N
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
-        product=product,
-        check_exists=False,
+        metadata_archive_dir=metadata_archive_dir,
     )
     if os.path.exists(metadata_filepath):
         raise ValueError("A metadata YAML file already exists at {metadata_filepath}.")
 
     # Create metadata dir if not existing
-    metadata_dir = os.path.dirname(metadata_filepath)
-    os.makedirs(metadata_dir, exist_ok=True)
+    metadata_archive_dir = os.path.dirname(metadata_filepath)
+    os.makedirs(metadata_archive_dir, exist_ok=True)
 
     # Get default metadata dict
     metadata = get_default_metadata_dict()

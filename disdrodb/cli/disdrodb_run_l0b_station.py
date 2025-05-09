@@ -21,11 +21,12 @@ from typing import Optional
 import click
 
 from disdrodb.utils.cli import (
-    click_base_dir_option,
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
     click_processing_options,
     click_remove_l0a_option,
     click_station_arguments,
-    parse_base_dir,
+    parse_archive_dir,
 )
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
@@ -38,7 +39,8 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_station_arguments
 @click_processing_options
 @click_remove_l0a_option
-@click_base_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 def disdrodb_run_l0b_station(
     # Station arguments
     data_source: str,
@@ -50,7 +52,9 @@ def disdrodb_run_l0b_station(
     parallel: bool = True,
     debugging_mode: bool = False,
     remove_l0a: bool = False,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0B processing of a specific DISDRODB station from the terminal.
 
@@ -82,15 +86,16 @@ def disdrodb_run_l0b_station(
         If True, it reduces the amount of data to process.
         It processes just the first 100 rows of 3 L0A files.
         The default is False.
-    base_dir : str
-        Base directory of DISDRODB
+    data_archive_dir : str
+        DISDRODB Data Archive directory
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.l0_processing import run_l0b_station
+    from disdrodb.l0.routines import run_l0b_station
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 
-    base_dir = parse_base_dir(base_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
 
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
@@ -109,7 +114,9 @@ def disdrodb_run_l0b_station(
         debugging_mode=debugging_mode,
         parallel=parallel,
         remove_l0a=remove_l0a,
-        base_dir=base_dir,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
     )
 
     # -------------------------------------------------------------------------.

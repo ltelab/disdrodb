@@ -48,7 +48,6 @@ from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.logger import (
     # log_warning,
     # log_debug,
-    log_error,
     log_info,
 )
 from disdrodb.utils.time import ensure_sorted_by_time
@@ -161,15 +160,15 @@ def _reshape_raw_spectrum(
 
     Examples
     --------
-        - OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
+        - OTT PARSIVEL spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
         --> dims_order = ["diameter_bin_center", "velocity_bin_center"]
         - Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
         --> dims_order = ["velocity_bin_center", "diameter_bin_center"]
     dims_size_dict : dict
         Dictionary with the number of bins for each dimension.
-        For OTT_Parsivel:
+        For PARSIVEL and PARSIVEL2:
         {"diameter_bin_center": 32, "velocity_bin_center": 32}
-        For This_LPM
+        For LPM
         {"diameter_bin_center": 22, "velocity_bin_center": 20}
     n_timesteps : int
         Number of timesteps.
@@ -192,7 +191,6 @@ def _reshape_raw_spectrum(
         arr = arr.reshape(reshape_dims)
     except Exception as e:
         msg = f"Impossible to reshape the raw_spectrum matrix. The error is: \n {e}"
-        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
     return arr, dims
 
@@ -200,6 +198,7 @@ def _reshape_raw_spectrum(
 def retrieve_l0b_arrays(
     df: pd.DataFrame,
     sensor_name: str,
+    logger=None,
     verbose: bool = False,
 ) -> dict:
     """Retrieves the L0B data matrix.
@@ -217,11 +216,11 @@ def retrieve_l0b_arrays(
         Dictionary with data arrays.
 
     """
-    msg = " - Retrieval of L0B data arrays started."
+    msg = "Retrieval of L0B data arrays started."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # ----------------------------------------------------------.
     # Check L0 raw field availability
-    _check_raw_fields_available(df=df, sensor_name=sensor_name)
+    _check_raw_fields_available(df=df, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Retrieve the number of values expected for each array
     n_values_dict = get_raw_array_nvalues(sensor_name=sensor_name)
@@ -257,8 +256,8 @@ def retrieve_l0b_arrays(
 
         # For key='raw_drop_number', if 2D spectrum, reshape to 2D matrix
         # Example:
-        # - This applies i.e for OTT_Parsivel* and Thies_LPM
-        # - This does not apply to RD_80
+        # - This applies i.e for PARSIVEL* and LPM
+        # - This does not apply to RD80
         if key == "raw_drop_number" and len(dims_order) == 2:
             arr, dims = _reshape_raw_spectrum(
                 arr=arr,
@@ -275,7 +274,7 @@ def retrieve_l0b_arrays(
 
     # -------------------------------------------------------------------------.
     # Log
-    msg = " - Retrieval of L0B data arrays ended."
+    msg = "Retrieval of L0B data arrays ended."
     log_info(logger=logger, msg=msg, verbose=verbose)
     # Return
     return dict_data
@@ -295,7 +294,7 @@ def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Output dataset.
     """
     for var in ds.data_vars:
@@ -361,13 +360,13 @@ def add_dataset_crs_coords(ds):
 #### L0B Raw DataFrame Preprocessing
 
 
-def _define_dataset_variables(df, sensor_name, verbose):
+def _define_dataset_variables(df, sensor_name, logger=None, verbose=False):
     """Define DISDRODB L0B netCDF variables."""
     # Preprocess raw_spectrum, diameter and velocity arrays if available
     raw_fields = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
     if np.any(np.isin(raw_fields, df.columns)):
         # Retrieve dictionary of raw data matrices for xarray Dataset
-        data_vars = retrieve_l0b_arrays(df, sensor_name, verbose=verbose)
+        data_vars = retrieve_l0b_arrays(df, sensor_name=sensor_name, logger=logger, verbose=verbose)
     else:
         raise ValueError("No raw fields available.")
 
@@ -387,7 +386,8 @@ def _define_dataset_variables(df, sensor_name, verbose):
 
 def create_l0b_from_l0a(
     df: pd.DataFrame,
-    attrs: dict,
+    metadata: dict,
+    logger=None,
     verbose: bool = False,
 ) -> xr.Dataset:
     """Transform the L0A dataframe to the L0B xr.Dataset.
@@ -396,14 +396,18 @@ def create_l0b_from_l0a(
     ----------
     df : pandas.DataFrame
         DISDRODB L0A dataframe.
-    attrs : dict
-        Station metadata.
+        The raw drop number spectrum is reshaped to a 2D(+time) array.
+        The raw drop concentration and velocity are reshaped to 1D(+time) arrays.
+    metadata : dict
+        DISDRODB station metadata.
+        To use this function outside the DISDRODB routines, the dictionary must
+        contain the fields: ``sensor_name``, ``latitude``, ``longitude``, ``altitude``, ``platform_type``.
     verbose : bool, optional
-        Whether to verbose the processing. The default is ``False``.
+        Whether to verbose the processing. The default value is ``False``.
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         DISDRODB L0B dataset.
 
     Raises
@@ -412,11 +416,11 @@ def create_l0b_from_l0a(
         Error if the DISDRODB L0B xarray dataset can not be created.
     """
     # Retrieve sensor name
-    attrs = attrs.copy()
+    attrs = metadata.copy()
     sensor_name = attrs["sensor_name"]
 
     # Define Dataset variables and coordinates
-    data_vars = _define_dataset_variables(df, sensor_name=sensor_name, verbose=verbose)
+    data_vars = _define_dataset_variables(df, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Create xarray Dataset
     ds = xr.Dataset(data_vars=data_vars)
@@ -494,7 +498,7 @@ def set_l0b_encodings(ds: xr.Dataset, sensor_name: str):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Output xarray dataset.
     """
     encoding_dict = get_l0b_encodings_dict(sensor_name)

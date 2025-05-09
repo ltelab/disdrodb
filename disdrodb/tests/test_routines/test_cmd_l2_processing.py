@@ -24,17 +24,17 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import __root_path__
+from disdrodb import ARCHIVE_VERSION, __root_path__
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l2e import disdrodb_run_l2e
 from disdrodb.cli.disdrodb_run_l2e_station import disdrodb_run_l2e_station
 from disdrodb.cli.disdrodb_run_l2m import disdrodb_run_l2m
 from disdrodb.cli.disdrodb_run_l2m_station import disdrodb_run_l2m_station
 from disdrodb.routines import (
-    run_disdrodb_l2e,
-    run_disdrodb_l2e_station,
-    run_disdrodb_l2m,
-    run_disdrodb_l2m_station,
+    run_l2e,
+    run_l2e_station,
+    run_l2m,
+    run_l2m_station,
 )
 from disdrodb.utils.directories import count_files
 
@@ -47,22 +47,29 @@ STATION_NAME = "10"
 DEBUGGING_MODE = True
 VERBOSE = False
 FORCE = False
-VERSION = "Processed"
 
+
+# from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
-# tmp_path = pathlib.Path("/tmp")
-# test_base_dir = os.path.join(tmp_path, "DISDRODB")
-# dst_dir = os.path.join(test_base_dir, VERSION)
+# tmp_path = pathlib.Path("/tmp/12")
+# test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
+# dst_dir = os.path.join(test_data_archive_dir, ARCHIVE_VERSION)
 # shutil.copytree(TEST_DATA_L1_DIR, dst_dir, dirs_exist_ok=True)
-# shutil.copytree(TEST_DATA_L2E_DIR, dst_dir, dirs_exist_ok=True)
+# # shutil.copytree(TEST_DATA_L2E_DIR, dst_dir, dirs_exist_ok=True)
+# parallel=False
+# VERBOSE=True
+# test_metadata_archive_dir = "/home/ghiggi/Projects/DISDRODB-METADATA/DISDRODB"
+# test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
 
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
-def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
+def test_disdrodb_run_l2e_station(tmp_path, disdrodb_metadata_archive_dir, parallel, cli):
     """Test the disdrodb_run_l2e_station command."""
-    test_base_dir = tmp_path / "DISDRODB"
-    dst_dir = test_base_dir / VERSION
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L1_DIR, dst_dir)
 
     # Produce data
@@ -71,11 +78,11 @@ def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
         runner.invoke(
             disdrodb_run_l2e_station,
             [
+                # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
-                "--base_dir",
-                test_base_dir,
+                # Processing options
                 "--parallel",
                 parallel,
                 "--debugging_mode",
@@ -84,10 +91,18 @@ def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
                 VERBOSE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
             ],
         )
     else:
-        run_disdrodb_l2e_station(
+        run_l2e_station(
+            # DISDRODB root directories
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -97,13 +112,12 @@ def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
-            base_dir=test_base_dir,
         )
 
     # Check products at different sampling intervals are produced
     # - 1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -114,7 +128,7 @@ def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
     assert count_files(data_dir, glob_pattern="L2E.1MIN.*.nc", recursive=True) == 2
     # - 10MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -125,7 +139,7 @@ def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
     assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
     # - ROLL1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -138,10 +152,12 @@ def test_disdrodb_run_l2e_station(tmp_path, parallel, cli):
 
 @pytest.mark.parametrize("cli", [True, False])
 @pytest.mark.parametrize("parallel", [True, False])
-def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
+def test_disdrodb_run_l2m_station(tmp_path, disdrodb_metadata_archive_dir, parallel, cli):
     """Test the disdrodb_run_l2m_station command."""
-    test_base_dir = tmp_path / "DISDRODB"
-    dst_dir = test_base_dir / VERSION
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L2E_DIR, dst_dir)
 
     # Produce data
@@ -150,11 +166,11 @@ def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
         runner.invoke(
             disdrodb_run_l2m_station,
             [
+                # Station arguments
                 DATA_SOURCE,
                 CAMPAIGN_NAME,
                 STATION_NAME,
-                "--base_dir",
-                test_base_dir,
+                # Processing options
                 "--parallel",
                 parallel,
                 "--debugging_mode",
@@ -163,10 +179,18 @@ def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
                 VERBOSE,
                 "--force",
                 FORCE,
+                # DISDRODB root directories
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
             ],
         )
     else:
-        run_disdrodb_l2m_station(
+        run_l2m_station(
+            # DISDRODB root directories
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -176,13 +200,12 @@ def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
-            base_dir=test_base_dir,
         )
 
     # Check products at different sampling intervals are produced
     # - 1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -194,7 +217,7 @@ def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.1MIN.*.nc", recursive=True) == 2
     # - ROLL1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -207,10 +230,12 @@ def test_disdrodb_run_l2m_station(tmp_path, parallel, cli):
 
 
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_run_l2e(tmp_path, cli):
+def test_disdrodb_run_l2e(tmp_path, disdrodb_metadata_archive_dir, cli):
     """Test the disdrodb_run_l2e command."""
-    test_base_dir = tmp_path / "DISDRODB"
-    dst_dir = test_base_dir / VERSION
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L1_DIR, dst_dir)
 
     # Produce data
@@ -219,14 +244,19 @@ def test_disdrodb_run_l2e(tmp_path, cli):
         runner.invoke(
             disdrodb_run_l2e,
             [
-                "--base_dir",
-                test_base_dir,
+                # DISDRODB root directories
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
+                # Station arguments
                 "--data_sources",
                 DATA_SOURCE,
                 "--campaign_names",
                 CAMPAIGN_NAME,
                 "--station_names",
                 STATION_NAME,
+                # Processing options
                 "--verbose",
                 VERBOSE,
                 "--parallel",
@@ -238,8 +268,11 @@ def test_disdrodb_run_l2e(tmp_path, cli):
             ],
         )
     else:
-        run_disdrodb_l2e(
-            # Station arguments
+        run_l2e(
+            # DISDRODB root directories
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
+            # Stations arguments
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
             station_names=STATION_NAME,
@@ -248,13 +281,12 @@ def test_disdrodb_run_l2e(tmp_path, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
-            base_dir=test_base_dir,
         )
 
     # Check products at different sampling intervals are produced
     # - 1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -265,7 +297,7 @@ def test_disdrodb_run_l2e(tmp_path, cli):
     assert count_files(data_dir, glob_pattern="L2E.1MIN.*.nc", recursive=True) == 2
     # - 10MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -276,7 +308,7 @@ def test_disdrodb_run_l2e(tmp_path, cli):
     assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
     # - ROLL1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -288,10 +320,12 @@ def test_disdrodb_run_l2e(tmp_path, cli):
 
 
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_run_l2m(tmp_path, cli):
+def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
     """Test the disdrodb_run_l2m command."""
-    test_base_dir = tmp_path / "DISDRODB"
-    dst_dir = test_base_dir / VERSION
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L2E_DIR, dst_dir)
 
     # Produce data
@@ -300,14 +334,19 @@ def test_disdrodb_run_l2m(tmp_path, cli):
         runner.invoke(
             disdrodb_run_l2m,
             [
-                "--base_dir",
-                test_base_dir,
+                # DISDRODB root directories
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
+                # Stations arguments
                 "--data_sources",
                 DATA_SOURCE,
                 "--campaign_names",
                 CAMPAIGN_NAME,
                 "--station_names",
                 STATION_NAME,
+                # Processing options
                 "--verbose",
                 VERBOSE,
                 "--parallel",
@@ -319,7 +358,10 @@ def test_disdrodb_run_l2m(tmp_path, cli):
             ],
         )
     else:
-        run_disdrodb_l2m(
+        run_l2m(
+            # DISDRODB root directories
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
             # Station arguments
             data_sources=DATA_SOURCE,
             campaign_names=CAMPAIGN_NAME,
@@ -329,13 +371,12 @@ def test_disdrodb_run_l2m(tmp_path, cli):
             force=FORCE,
             verbose=VERBOSE,
             debugging_mode=DEBUGGING_MODE,
-            base_dir=test_base_dir,
         )
 
     # Check products at different sampling intervals are produced
     # - 1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
@@ -347,7 +388,7 @@ def test_disdrodb_run_l2m(tmp_path, cli):
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.1MIN.*.nc", recursive=True) == 2
     # - ROLL1MIN
     data_dir = define_data_dir(
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,

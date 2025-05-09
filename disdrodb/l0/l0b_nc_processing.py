@@ -22,6 +22,7 @@ import logging
 
 import numpy as np
 
+from disdrodb.api.checks import check_sensor_name
 from disdrodb.l0.l0b_processing import finalize_dataset
 from disdrodb.l0.standards import (
     get_bin_coords_dict,
@@ -34,7 +35,6 @@ from disdrodb.l0.standards import (
 from disdrodb.utils.logger import (
     # log_warning,
     # log_debug,
-    log_error,
     log_info,
 )
 
@@ -54,7 +54,6 @@ def _check_dict_names_validity(dict_names, sensor_name):
         # Report invalid keys and raise error
         invalid_dict = {k: dict_names[k] for k in invalid_keys}
         msg = f"The following dict_names values are not valid: {invalid_dict}"
-        log_error(logger=logger, msg=msg, verbose=False)
         raise ValueError(msg)
 
 
@@ -133,7 +132,7 @@ def add_dataset_missing_variables(ds, missing_vars, sensor_name):
     return ds
 
 
-def preprocess_raw_netcdf(ds, dict_names, sensor_name):
+def standardize_raw_dataset(ds, dict_names, sensor_name):
     """This function preprocess raw netCDF to improve compatibility with DISDRODB standards.
 
     This function checks validity of the ``dict_names``, rename and subset the data accordingly.
@@ -152,9 +151,12 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     Returns
     -------
     ds  : xarray.Dataset
-        xarray Dataset with variables compliant to DISDRODB conventions.
+        xarray Dataset with variables compliant with DISDRODB conventions.
 
     """
+    # Check if the sensor name is valid
+    check_sensor_name(sensor_name)
+
     # Check variable_dict has valid values
     # - Check valid DISDRODB variables + dimensions + coords
     _check_dict_names_validity(dict_names=dict_names, sensor_name=sensor_name)
@@ -177,7 +179,7 @@ def preprocess_raw_netcdf(ds, dict_names, sensor_name):
     return ds
 
 
-def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
+def replace_custom_nan_flags(ds, dict_nan_flags, logger=None, verbose=False):
     """Set values corresponding to ``nan_flags`` to ``np.nan``.
 
     This function must be used in a reader, if necessary.
@@ -189,15 +191,17 @@ def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
     dict_nan_flags : dict
         Dictionary with nan flags value to set as ``np.nan``.
     verbose : bool
-        Whether to verbose the processing. The default is ``False``.
+        Whether to verbose the processing. The default value is ``False``.
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Dataset without ``nan_flags`` values.
     """
     # Loop over the needed variable, and replace nan_flags values with np.nan
     for var, nan_flags in dict_nan_flags.items():
+        # Ensure nan_flags is a list
+        nan_flags = [nan_flags] if not isinstance(nan_flags, list) else nan_flags
         # If the variable is in the dataframe
         if var in ds:
             # Get occurrence of nan_flags
@@ -212,7 +216,7 @@ def replace_custom_nan_flags(ds, dict_nan_flags, verbose=False):
     return ds
 
 
-def replace_nan_flags(ds, sensor_name, verbose):
+def replace_nan_flags(ds, sensor_name, verbose, logger=None):
     """Set values corresponding to ``nan_flags`` to ``np.nan``.
 
     Parameters
@@ -226,17 +230,17 @@ def replace_nan_flags(ds, sensor_name, verbose):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Dataset without ``nan_flags`` values.
     """
     # Get dictionary of nan flags
     dict_nan_flags = get_nan_flags_dict(sensor_name)
     # Replace nan flags with nan
-    ds = replace_custom_nan_flags(ds, dict_nan_flags, verbose=verbose)
+    ds = replace_custom_nan_flags(ds, dict_nan_flags=dict_nan_flags, logger=logger, verbose=verbose)
     return ds
 
 
-def set_nan_outside_data_range(ds, sensor_name, verbose):
+def set_nan_outside_data_range(ds, sensor_name, verbose, logger=None):
     """Set values outside the data range as ``np.nan``.
 
     Parameters
@@ -250,7 +254,7 @@ def set_nan_outside_data_range(ds, sensor_name, verbose):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Dataset without values outside the expected data range.
     """
     # Get dictionary of data_range
@@ -274,7 +278,7 @@ def set_nan_outside_data_range(ds, sensor_name, verbose):
     return ds
 
 
-def set_nan_invalid_values(ds, sensor_name, verbose):
+def set_nan_invalid_values(ds, sensor_name, verbose, logger=None):
     """Set invalid (class) values to ``np.nan``.
 
     Parameters
@@ -288,7 +292,7 @@ def set_nan_invalid_values(ds, sensor_name, verbose):
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Dataset without invalid values.
     """
     # Get dictionary of valid values
@@ -310,25 +314,146 @@ def set_nan_invalid_values(ds, sensor_name, verbose):
     return ds
 
 
-def create_l0b_from_raw_nc(
+def drop_timesteps(ds, timesteps: list):
+    """
+    Drop specific time steps from a Dataset.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset with a 'time' dimension.
+    timesteps : list
+        List of datetime-like values to remove.
+
+    Returns
+    -------
+    xarray.Dataset
+        Dataset with specified timesteps removed.
+
+    Raises
+    ------
+    ValueError
+        If no timesteps remain after removal.
+    """
+    # Create a boolean mask of valid timesteps
+    times = ds["time"].to_numpy()
+    mask = ~np.isin(times, np.array(timesteps, dtype=times.dtype))
+    ds_filtered = ds.isel(time=mask)
+
+    # Ensure there's at least one timestep left
+    if ds_filtered.sizes.get("time", 0) == 0:
+        raise ValueError(
+            "No timesteps left after removing problematic timesteps. " "Maybe you need to adjust the issue YAML file.",
+        )
+    return ds_filtered
+
+
+def drop_time_periods(ds, time_periods: list):
+    """
+    Drop all time steps within any of the specified time intervals.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset with a 'time' dimension.
+    time_periods : list of tuple
+        Each tuple is (start_time, end_time), datetime-like, inclusive.
+
+    Returns
+    -------
+    xarray.Dataset
+        Dataset with all times within the given periods removed.
+
+    Raises
+    ------
+    ValueError
+        If no timesteps remain after removal.
+    """
+    times = ds["time"].to_numpy()
+    mask = np.ones_like(times, dtype=bool)
+
+    for start, end in time_periods:
+        start_np = np.datetime64(start)
+        end_np = np.datetime64(end)
+        # exclude times in the inclusive interval [start, end]
+        mask &= ~((times >= start_np) & (times <= end_np))
+
+    ds_filtered = ds.isel(time=mask)
+
+    if ds_filtered.sizes.get("time", 0) == 0:
+        raise ValueError(
+            "No timesteps left after removing problematic time_periods. "
+            "Maybe you need to adjust the issue YAML file.",
+        )
+    return ds_filtered
+
+
+def remove_issue_timesteps(
     ds,
-    dict_names,
-    ds_sanitizer_fun,
+    issue_dict: dict,
+    logger=None,
+    verbose: bool = False,
+):
+    """
+    Remove bad timesteps and time periods from an xarray Dataset according to issue definitions.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset with a 'time' dimension.
+    issue_dict : dict
+        Dictionary with optional keys 'timesteps' (list of datetimes) and
+        'time_periods' (list of (start, end) tuples).
+    logger : any, optional
+        Logger instance to record dropped steps, by default None.
+    verbose : bool, optional
+        Whether to log informational messages, by default False.
+
+    Returns
+    -------
+    xarray.Dataset
+        Cleaned dataset.
+
+    Raises
+    ------
+    ValueError
+        If after removing specified timesteps/periods no data remains.
+    """
+    n_initial = ds.sizes.get("time", 0)
+    timesteps = issue_dict.get("timesteps", []) or []
+    time_periods = issue_dict.get("time_periods", []) or []
+
+    # Drop individual timesteps
+    if timesteps:
+        ds = drop_timesteps(ds, timesteps)
+
+    # Drop intervals of time
+    if time_periods:
+        ds = drop_time_periods(ds, time_periods)
+
+    # Report number dropped
+    n_remaining = ds.sizes.get("time", 0)
+    dropped = n_initial - n_remaining
+    if dropped > 0:
+        msg = f"{dropped} timesteps were dropped according to the issue YAML file content."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+    return ds
+
+
+def sanitize_ds(
+    ds,
     sensor_name,
-    verbose,
-    attrs,
+    metadata,
+    issue_dict=None,
+    verbose=False,
+    logger=None,
 ):
     """Convert a raw ``xr.Dataset`` into a DISDRODB L0B netCDF.
 
     Parameters
     ----------
-    ds  : xarray.Dataset
+    ds : xarray.Dataset
         Raw xarray dataset
-    dict_names : dict
-        Dictionary mapping raw netCDF variables/coordinates/dimension names
-        to DISDRODB standards.
-    ds_sanitizer_fun : function
-        Sanitizer function to do ad-hoc processing of the xr.Dataset.
     attrs: dict
         Global metadata to attach as global attributes to the xr.Dataset.
     sensor_name : str
@@ -339,26 +464,64 @@ def create_l0b_from_raw_nc(
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         L0B xr.Dataset
     """
-    # Preprocess netcdf
-    ds = preprocess_raw_netcdf(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
-
-    # Apply dataset sanitizer function
-    ds = ds_sanitizer_fun(ds)
-
     # Replace nan flags values with np.nans
-    ds = replace_nan_flags(ds, sensor_name=sensor_name, verbose=verbose)
+    ds = replace_nan_flags(ds, sensor_name=sensor_name, logger=logger, verbose=verbose)
+
+    # Filter out problematic tiemsteps reported in the issue YAML file
+    ds = remove_issue_timesteps(ds, issue_dict=issue_dict, logger=logger, verbose=verbose)
 
     # Set values outside the data range to np.nan
-    ds = set_nan_outside_data_range(ds, sensor_name=sensor_name, verbose=verbose)
+    ds = set_nan_outside_data_range(ds, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Replace invalid values with np.nan
-    ds = set_nan_invalid_values(ds, sensor_name=sensor_name, verbose=verbose)
+    ds = set_nan_invalid_values(ds, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Finalize dataset
-    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=attrs)
+    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=metadata)
 
     # Return dataset
+    return ds
+
+
+def open_raw_netcdf_file(
+    filepath,
+    logger=None,
+    engine="netcdf4",
+    cache=False,
+    chunks=None,
+    decode_timedelta=False,
+    **kwargs,
+):
+    """Open a raw netCDF file.
+
+    Parameters
+    ----------
+    filepath : str
+        Path to the raw netCDF file.
+
+    Returns
+    -------
+    xarray.Dataset
+        Raw netCDF file as an xarray Dataset.
+    """
+    import xarray as xr
+
+    # Note: chunks=None avoid usage of Dask
+
+    # Open the raw netCDF
+    with xr.open_dataset(
+        filepath,
+        decode_timedelta=decode_timedelta,
+        cache=cache,
+        engine=engine,
+        chunks=chunks,
+        **kwargs,
+    ) as data:
+        ds = data.load()
+
+    # Log information
+    log_info(logger=logger, msg=f"netCDF file {filepath} has been loaded successively into xarray.", verbose=False)
     return ds

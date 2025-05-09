@@ -17,23 +17,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB Checks Functions."""
-
 import logging
 import os
 import re
+import warnings
 
-from disdrodb.api.info import infer_disdrodb_tree_path_components
+import numpy as np
+
 from disdrodb.api.path import (
     define_data_dir,
     define_issue_dir,
     define_issue_filepath,
-    define_metadata_dir,
     define_metadata_filepath,
 )
 from disdrodb.utils.directories import (
     ensure_string_path,
     list_files,
-    remove_path_trailing_slash,
 )
 
 logger = logging.getLogger(__name__)
@@ -89,16 +88,88 @@ def check_directories_inside(dir_path):
         raise ValueError(f"There are not directories within {dir_path}")
 
 
-def check_base_dir(base_dir: str):
+def check_data_archive_dir(data_archive_dir: str):
     """Raise an error if the path does not end with ``DISDRODB``."""
-    base_dir = str(base_dir)  # convert Pathlib to string
-    base_dir = os.path.normpath(base_dir)
-    if not base_dir.endswith("DISDRODB"):
-        raise ValueError(f"The path {base_dir} does not end with DISDRODB. Please check the path.")
-    return base_dir
+    data_archive_dir = str(data_archive_dir)  # convert Pathlib to string
+    data_archive_dir = os.path.normpath(data_archive_dir)
+    if not data_archive_dir.endswith("DISDRODB"):
+        raise ValueError(f"The path {data_archive_dir} does not end with DISDRODB. Please check the path.")
+    return data_archive_dir
 
 
-def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
+def check_metadata_archive_dir(metadata_archive_dir: str):
+    """Raise an error if the path does not end with ``DISDRODB``."""
+    metadata_archive_dir = str(metadata_archive_dir)  # convert Pathlib to string
+    metadata_archive_dir = os.path.normpath(metadata_archive_dir)
+    if not metadata_archive_dir.endswith("DISDRODB"):
+        raise ValueError(f"The path {metadata_archive_dir} does not end with DISDRODB. Please check the path.")
+    return metadata_archive_dir
+
+
+def check_measurement_interval(measurement_interval):
+    """Check measurement interval validity."""
+    if isinstance(measurement_interval, str) and measurement_interval == "":
+        raise ValueError("measurement_interval' must be specified as an integer value.")
+    if isinstance(measurement_interval, type(None)):
+        raise ValueError("measurement_interval' can not be None.")
+    if isinstance(measurement_interval, str) and not measurement_interval.isdigit():
+        raise ValueError("measurement_interval' is not a positive digit.")
+    return int(measurement_interval)
+
+
+def check_measurement_intervals(measurement_intervals):
+    """Check measurement interval.
+
+    Can be a list. It must be a positive natural number
+    """
+    if isinstance(measurement_intervals, (int, float, str)):
+        measurement_intervals = [measurement_intervals]
+    measurement_intervals = [check_measurement_interval(v) for v in measurement_intervals]
+    return measurement_intervals
+
+
+def check_sample_interval(sample_interval):
+    """Check sample_interval argument validity."""
+    if not isinstance(sample_interval, int):
+        raise ValueError("'sample_interval' must be an integer.")
+
+
+def check_rolling(rolling):
+    """Check rolling argument validity."""
+    if not isinstance(rolling, bool):
+        raise ValueError("'rolling' must be a boolean.")
+
+
+def check_folder_partitioning(folder_partitioning):
+    """
+    Check if the given folder partitioning scheme is valid.
+
+    Parameters
+    ----------
+    folder_partitioning : str or None
+        Defines the subdirectory structure based on the dataset's start time.
+        Allowed values are:
+          - "": No additional subdirectories, files are saved directly in data_dir.
+          - "year": Files are stored under a subdirectory for the year (<data_dir>/2025).
+          - "year/month": Files are stored under subdirectories by year and month (<data_dir>/2025/04).
+          - "year/month/day": Files are stored under subdirectories by year, month and day (<data_dir>/2025/04/01).
+          - "year/month_name": Files are stored under subdirectories by year and month name (<data_dir>/2025/April).
+          - "year/quarter": Files are stored under subdirectories by year and quarter (<data_dir>/2025/Q2).
+
+    Returns
+    -------
+    folder_partitioning
+        The verified folder partitioning scheme.
+    """
+    valid_options = ["", "year", "year/month", "year/month/day", "year/month_name", "year/quarter"]
+    if folder_partitioning not in valid_options:
+        raise ValueError(
+            f"Invalid folder_partitioning scheme '{folder_partitioning}'. Valid options are: {valid_options}.",
+        )
+    return folder_partitioning
+
+
+def check_sensor_name(sensor_name: str) -> None:
     """Check sensor name.
 
     Parameters
@@ -117,11 +188,11 @@ def check_sensor_name(sensor_name: str, product: str = "L0A") -> None:
     """
     from disdrodb.api.configs import available_sensor_names
 
-    sensor_names = available_sensor_names(product=product)
+    sensor_names = available_sensor_names()
     if not isinstance(sensor_name, str):
         raise TypeError("'sensor_name' must be a string.")
     if sensor_name not in sensor_names:
-        msg = f"{sensor_name} not valid {sensor_name}. Valid values are {sensor_names}."
+        msg = f"'{sensor_name}' is not a valid sensor_name. Valid values are {sensor_names}."
         raise ValueError(msg)
 
 
@@ -145,9 +216,11 @@ def check_data_source(data_source):
 
 def check_product(product):
     """Check DISDRODB product."""
+    from disdrodb import PRODUCTS
+
     if not isinstance(product, str):
         raise TypeError("`product` must be a string.")
-    valid_products = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M", "L2S"]
+    valid_products = PRODUCTS
     if product.upper() not in valid_products:
         msg = f"Valid `products` are {valid_products}."
         logger.error(msg)
@@ -155,33 +228,140 @@ def check_product(product):
     return product
 
 
+def check_product_kwargs(product, product_kwargs):
+    """Validate that product_kwargs for a given product contains exactly the required parameters.
+
+    Parameters
+    ----------
+    product : str
+        The product name (e.g., "L2E", "L2M").
+    product_kwargs : dict
+        Keyword arguments provided for this product.
+
+    Returns
+    -------
+    dict
+        The validated product_kwargs.
+
+    Raises
+    ------
+    ValueError
+        If required arguments are missing or if there are unexpected extra arguments.
+    """
+    from disdrodb import PRODUCTS_ARGUMENTS
+
+    required = set(PRODUCTS_ARGUMENTS.get(product, []))
+    provided = set(product_kwargs.keys())
+    missing = required - provided
+    extra = provided - required
+    if missing and extra:
+        raise ValueError(
+            f"For product '{product}', missing arguments: {sorted(missing)}, " f"unexpected arguments: {sorted(extra)}",
+        )
+    if missing:
+        raise ValueError(f"For product '{product}', missing arguments: {sorted(missing)}")
+    if extra:
+        raise ValueError(f"For product '{product}', unexpected arguments: {sorted(extra)}")
+    return product_kwargs
+
+
+def select_required_product_kwargs(product, product_kwargs):
+    """Select the required product arguments."""
+    from disdrodb import PRODUCTS_ARGUMENTS
+
+    required = set(PRODUCTS_ARGUMENTS.get(product, []))
+    provided = set(product_kwargs.keys())
+    missing = required - provided
+    # If missing, raise error
+    if missing:
+        raise ValueError(f"For product '{product}', missing arguments: {sorted(missing)}")
+    # Else return just required arguments
+    # --> e.g. for L0 no product arguments
+    return {k: product_kwargs[k] for k in required}
+
+
+def _check_fields(fields):
+    if fields is None:  # isinstance(fields, type(None)):
+        return fields
+    # Ensure is a list
+    if isinstance(fields, str):
+        fields = [fields]
+    # Remove duplicates
+    fields = np.unique(np.array(fields))
+    return fields
+
+
+def check_data_sources(data_sources):
+    """Check DISDRODB data sources."""
+    return _check_fields(data_sources)
+
+
+def check_campaign_names(campaign_names):
+    """Check DISDRODB campaign names."""
+    return _check_fields(campaign_names)
+
+
+def check_station_names(station_names):
+    """Check DISDRODB station names."""
+    return _check_fields(station_names)
+
+
+def check_invalid_fields_policy(invalid_fields):
+    """Check invalid fields policy."""
+    if invalid_fields not in ["raise", "warn", "ignore"]:
+        raise ValueError(
+            f"Invalid value for invalid_fields: {invalid_fields}. " "Valid values are 'raise', 'warn', or 'ignore'.",
+        )
+    return invalid_fields
+
+
+def check_valid_fields(fields, available_fields, field_name, invalid_fields_policy="raise"):
+    """Check if fields are valid."""
+    if fields is None:
+        return fields
+    if isinstance(fields, str):
+        fields = [fields]
+    fields = np.unique(np.array(fields))
+    invalid_fields_policy = check_invalid_fields_policy(invalid_fields_policy)
+    # Check for invalid fields
+    fields = np.array(fields)
+    is_valid = np.isin(fields, available_fields)
+    invalid_fields_values = fields[~is_valid].tolist()
+    fields = fields[is_valid].tolist()
+    # Error handling for invalid fields were found
+    if invalid_fields_policy == "warn" and invalid_fields_values:
+        warnings.warn(f"Ignoring invalid {field_name}: {invalid_fields_values}", UserWarning, stacklevel=2)
+    elif invalid_fields_policy == "raise" and invalid_fields_values:
+        raise ValueError(f"These {field_name} does not exist: {invalid_fields_values}.")
+    else:  # "ignore" silently drop invalid entries
+        pass
+    # If no valid fields left, raise error
+    if len(fields) == 0:
+        raise ValueError(f"All specified {field_name} do not exist !.")
+    return fields
+
+
 def has_available_data(
     data_source,
     campaign_name,
     station_name,
     product,
-    base_dir=None,
-    # Option for L2E
-    sample_interval=None,
-    rolling=None,
-    # Option for L2M
-    model_name=None,
+    data_archive_dir=None,
+    # Product Options
+    **product_kwargs,
 ):
     """Return ``True`` if data are available for the given product and station."""
     # Define product directory
     data_dir = define_data_dir(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
         # Directory options
         check_exists=False,
+        # Product Options
+        **product_kwargs,
     )
     # If the product directory does not exists, return False
     if not os.path.isdir(data_dir):
@@ -198,59 +378,33 @@ def check_data_availability(
     data_source,
     campaign_name,
     station_name,
-    base_dir=None,
-    # Option for L2E
-    sample_interval=None,
-    rolling=None,
-    # Option for L2M
-    model_name=None,
+    data_archive_dir=None,
+    # Product Options
+    **product_kwargs,
 ):
     """Check the station product data directory has files inside. If not, raise an error."""
     if not has_available_data(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        # Option for L2E
-        sample_interval=sample_interval,
-        rolling=rolling,
-        # Option for L2M
-        model_name=model_name,
+        # Product Options
+        **product_kwargs,
     ):
         msg = f"The {product} station data directory of {data_source} {campaign_name} {station_name} is empty !"
-        logger.error(msg)
         raise ValueError(msg)
 
 
-def check_metadata_dir(product, data_source, campaign_name, base_dir=None):
-    """Check existence of the metadata directory. If does not exists, raise an error."""
-    metadata_dir = define_metadata_dir(
-        product=product,
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        check_exists=False,
-    )
-    if not os.path.exists(metadata_dir) and os.path.isdir(metadata_dir):
-        msg = f"The metadata directory does not exist at {metadata_dir}."
-        logger.error(msg)
-        raise ValueError(msg)
-    return metadata_dir
-
-
-def check_metadata_file(product, data_source, campaign_name, station_name, base_dir=None, check_validity=True):
+def check_metadata_file(metadata_archive_dir, data_source, campaign_name, station_name, check_validity=True):
     """Check existence of a valid metadata YAML file. If does not exists, raise an error."""
-    from disdrodb.metadata.checks import check_metadata_compliance
+    from disdrodb.metadata.checks import check_station_metadata
 
-    _ = check_metadata_dir(product=product, base_dir=base_dir, data_source=data_source, campaign_name=campaign_name)
     metadata_filepath = define_metadata_filepath(
-        product=product,
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        check_exists=False,
     )
     # Check existence
     if not os.path.exists(metadata_filepath):
@@ -263,20 +417,19 @@ def check_metadata_file(product, data_source, campaign_name, station_name, base_
 
     # Check validity
     if check_validity:
-        check_metadata_compliance(
-            base_dir=base_dir,
+        check_station_metadata(
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            product=product,
         )
     return metadata_filepath
 
 
-def check_issue_dir(data_source, campaign_name, base_dir=None):
+def check_issue_dir(data_source, campaign_name, metadata_archive_dir=None):
     """Check existence of the issue directory. If does not exists, raise an error."""
     issue_dir = define_issue_dir(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         check_exists=False,
@@ -288,18 +441,18 @@ def check_issue_dir(data_source, campaign_name, base_dir=None):
     return issue_dir
 
 
-def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
+def check_issue_file(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Check existence of a valid issue YAML file. If does not exists, raise an error."""
     from disdrodb.issue.checks import check_issue_compliance
     from disdrodb.issue.writer import create_station_issue
 
     _ = check_issue_dir(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
     )
     issue_filepath = define_issue_filepath(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -308,7 +461,7 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
     # Check existence
     if not os.path.exists(issue_filepath):
         create_station_issue(
-            base_dir=base_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -316,170 +469,9 @@ def check_issue_file(data_source, campaign_name, station_name, base_dir=None):
 
     # Check validity
     check_issue_compliance(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     return issue_filepath
-
-
-def check_is_within_raw_directory(path):
-    """Check the path is within the DISDRODB ``Raw`` directory."""
-    components = infer_disdrodb_tree_path_components(path)
-    if components[1] != "Raw":
-        msg = f"{path} is not within the 'Raw' directory."
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-def check_is_within_processed_directory(path):
-    """Check the path is within the DISDRODB ``Processed`` directory."""
-    components = infer_disdrodb_tree_path_components(path)
-    if components[1] != "Processed":
-        msg = f"{path} is not within the 'Processed' directory."
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-def check_valid_campaign_dir(campaign_dir):
-    """Check the validity of a campaign directory path.
-
-    Used to check validity of ``raw_dir`` and ``processed_dir``.
-
-    The path must be ``/DISDRODB/<Raw/Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>``.
-    """
-    last_component = os.path.basename(campaign_dir)
-    tree_components = infer_disdrodb_tree_path_components(campaign_dir)
-    tree_path = "/".join(tree_components)
-    # Check that is not data_source or 'Raw'/Processed' directory
-    if len(tree_components) < 4:
-        msg = (
-            "Expecting the campaign directory path to comply with the pattern <...>/DISDRODB//<Raw or"
-            " Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>."
-        )
-        msg = msg + f"It only provides {tree_path}"
-        logger.error(msg)
-        raise ValueError(msg)
-    # Check that ends with the campaign_name
-    campaign_name = tree_components[3]
-    if last_component != campaign_name:
-        msg = (
-            "Expecting the campaign directory path to comply with the pattern  <...>/DISDRODB//<Raw or"
-            " Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>."
-        )
-        msg = msg + f"The 'campaign directory path {campaign_dir} does not end with '{campaign_name}'!"
-        logger.error(msg)
-        raise ValueError(msg)
-
-
-def check_raw_dir(raw_dir: str, station_name: str) -> None:
-    """Check validity of raw_dir content.
-
-    Steps:
-
-        1. Check that ``raw_dir`` is a valid directory path
-
-        2. Check that ``raw_dir`` follows the expect directory structure
-
-        3. Check that each ``station_name`` directory contains data
-
-        4. Check that for each station_name the mandatory ``metadata.yml`` is specified.
-
-        5. Check that for each station_name the mandatory ``issue.yml`` is specified.
-
-    Parameters
-    ----------
-    raw_dir : str
-        Input raw campaign directory.
-    station_name : str
-        Station name.
-    verbose : bool, optional
-        Whether to verbose the processing.
-        The default is ``False``.
-
-    """
-    # Ensure valid path format
-    raw_dir = remove_path_trailing_slash(raw_dir)
-
-    # Check raw_dir is an existing directory
-    check_path_is_a_directory(raw_dir, path_name="raw_dir")
-
-    # Check is a valid campaign directory path
-    check_valid_campaign_dir(raw_dir)
-
-    # Check is inside the 'Raw' directory
-    check_is_within_raw_directory(raw_dir)
-
-    # Retrieve data_source and campaign_name
-    base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(raw_dir)
-
-    # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
-    check_campaign_name(campaign_name)
-    check_data_source(data_source)
-
-    # Check there are directories in raw_dir
-    check_directories_inside(raw_dir)
-
-    # Check there is data in the station directory
-    check_data_availability(
-        product="RAW",
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
-    # Check there is a valid metadata YAML file
-    check_metadata_file(
-        product="RAW",
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
-    # Check there is valid issue YAML file
-    check_issue_file(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    return raw_dir
-
-
-def check_processed_dir(processed_dir):
-    """Check input, format and validity of the ``processed_dir`` directory path.
-
-    Parameters
-    ----------
-    processed_dir : str
-        Path to the campaign directory in the ``DISDRODB/Processed`` directory tree
-
-    Returns
-    -------
-    str
-        Path of the processed campaign directory
-    """
-    # Check path type
-    processed_dir = ensure_string_path(processed_dir, msg="Provide 'processed_dir' as a string", accepth_pathlib=True)
-
-    # Ensure valid path format
-    processed_dir = remove_path_trailing_slash(processed_dir)
-
-    # Check is a valid campaign directory path
-    # - <...>/DISDRODB/Processed/<DATA_SOURCE>/<CAMPAIGN_NAME>
-    check_valid_campaign_dir(processed_dir)
-
-    # Check is inside the 'Processed' directory
-    check_is_within_processed_directory(processed_dir)
-
-    # Retrieve data_source and campaign_name
-    base_dir, product_type, data_source, campaign_name = infer_disdrodb_tree_path_components(processed_dir)
-
-    # Check <DATA_SOURCE> and <CAMPAIGN_NAME> are upper case
-    check_campaign_name(campaign_name)
-    check_data_source(data_source)
-
-    return processed_dir

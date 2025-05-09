@@ -276,15 +276,15 @@ def estimate_lognormal_parameters(
     bin_edges : array-like
         The edges of the bins.
     probability_method : str, optional
-        The method to compute probabilities, either ``"cdf"`` or ``"pdf"``. The default is ``"cdf"``.
+        The method to compute probabilities, either ``"cdf"`` or ``"pdf"``. The default value is ``"cdf"``.
     likelihood : str, optional
         The likelihood function to use, either ``"multinomial"`` or ``"poisson"``.
-        The default is ``"multinomial"``.
+        The default value is ``"multinomial"``.
     truncated_likelihood : bool, optional
-        Whether to use truncated likelihood. The default is ``True``.
+        Whether to use truncated likelihood. The default value is ``True``.
     output_dictionary : bool, optional
         Whether to return the output as a dictionary.
-        If False, returns a numpy array. The default is ``True``
+        If False, returns a numpy array. The default value is ``True``
     optimizer : str, optional
         The optimization method to use. Default is ``"Nelder-Mead"``.
 
@@ -392,15 +392,15 @@ def estimate_exponential_parameters(
     bin_edges : array-like
         The edges of the bins.
     probability_method : str, optional
-        The method to compute probabilities, either ``"cdf"`` or ``"pdf"``. The default is ``"cdf"``.
+        The method to compute probabilities, either ``"cdf"`` or ``"pdf"``. The default value is ``"cdf"``.
     likelihood : str, optional
         The likelihood function to use, either ``"multinomial"`` or ``"poisson"``.
-        The default is ``"multinomial"``.
+        The default value is ``"multinomial"``.
     truncated_likelihood : bool, optional
-        Whether to use truncated likelihood. The default is ``True``.
+        Whether to use truncated likelihood. The default value is ``True``.
     output_dictionary : bool, optional
         Whether to return the output as a dictionary.
-        If False, returns a numpy array. The default is ``True``
+        If False, returns a numpy array. The default value is ``True``
     optimizer : str, optional
         The optimization method to use. Default is ``"Nelder-Mead"``.
 
@@ -510,15 +510,15 @@ def estimate_gamma_parameters(
     bin_edges : array-like
         The edges of the bins.
     probability_method : str, optional
-        The method to compute probabilities, either ``"cdf"`` or ``"pdf"``. The default is ``"cdf"``.
+        The method to compute probabilities, either ``"cdf"`` or ``"pdf"``. The default value is ``"cdf"``.
     likelihood : str, optional
         The likelihood function to use, either ``"multinomial"`` or ``"poisson"``.
-        The default is ``"multinomial"``.
+        The default value is ``"multinomial"``.
     truncated_likelihood : bool, optional
-        Whether to use truncated likelihood. The default is ``True``.
+        Whether to use truncated likelihood. The default value is ``True``.
     output_dictionary : bool, optional
         Whether to return the output as a dictionary.
-        If False, returns a numpy array. The default is ``True``
+        If False, returns a numpy array. The default value is ``True``
     optimizer : str, optional
         The optimization method to use. Default is ``"Nelder-Mead"``.
 
@@ -665,13 +665,13 @@ def get_gamma_parameters(
         The method(s) of moments used to initialize the gamma parameters.
         If None, the scale parameter is set to 1 and mu to 0 (a=1).
     probability_method : str, optional
-        Method to compute probabilities. The default is ``cdf``.
+        Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
-        Likelihood function to use for fitting. The default is ``multinomial``.
+        Likelihood function to use for fitting. The default value is ``multinomial``.
     truncated_likelihood : bool, optional
-        Whether to use truncated likelihood. The default is ``True``.
+        Whether to use truncated likelihood. The default value is ``True``.
     optimizer : str, optional
-        Optimization method to use. The default is ``Nelder-Mead``.
+        Optimization method to use. The default value is ``Nelder-Mead``.
 
     Returns
     -------
@@ -754,13 +754,13 @@ def get_lognormal_parameters(
     - ``diameter_bin_upper``: The upper bounds of the diameter bins.
     - ``diameter_bin_center``: The center values of the diameter bins.
     probability_method : str, optional
-        Method to compute probabilities. The default is ``cdf``.
+        Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
-        Likelihood function to use for fitting. The default is ``multinomial``.
+        Likelihood function to use for fitting. The default value is ``multinomial``.
     truncated_likelihood : bool, optional
-        Whether to use truncated likelihood. The default is ``True``.
+        Whether to use truncated likelihood. The default value is ``True``.
     optimizer : str, optional
-        Optimization method to use. The default is ``Nelder-Mead``.
+        Optimization method to use. The default value is ``Nelder-Mead``.
 
     Returns
     -------
@@ -840,13 +840,13 @@ def get_exponential_parameters(
         - ``diameter_bin_upper``: The upper bounds of the diameter bins.
         - ``diameter_bin_center``: The center values of the diameter bins.
     probability_method : str, optional
-        Method to compute probabilities. The default is ``cdf``.
+        Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
-        Likelihood function to use for fitting. The default is ``multinomial``.
+        Likelihood function to use for fitting. The default value is ``multinomial``.
     truncated_likelihood : bool, optional
-        Whether to use truncated likelihood. The default is ``True``.
+        Whether to use truncated likelihood. The default value is ``True``.
     optimizer : str, optional
-        Optimization method to use. The default is ``Nelder-Mead``.
+        Optimization method to use. The default value is ``Nelder-Mead``.
 
     Returns
     -------
@@ -1996,14 +1996,14 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods: str) -> xr.D
 
     Parameters
     ----------
-    ds : xr.Dataset
+    ds : xarray.Dataset
         An xarray Dataset with the required moments M0...M6 as data variables.
     mom_methods: str or list
         Valid MOM methods are {'M012', 'M234', 'M246', 'M456', 'M346'}.
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         A Dataset containing mu, Lambda, and N0 variables.
         If multiple mom_methods are specified, the dataset has the dimension mom_method.
 
@@ -2054,13 +2054,13 @@ def get_ml_parameters(
         The method(s) of moments used to initialize the PSD model parameters.
         See ``available_mom_methods(psd_model)``.
     probability_method : str, optional
-        Method to compute probabilities. The default is ``cdf``.
+        Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
-        Likelihood function to use for fitting. The default is ``multinomial``.
+        Likelihood function to use for fitting. The default value is ``multinomial``.
     truncated_likelihood : bool, optional
-        Whether to use Truncated Maximum Likelihood (TML). The default is ``True``.
+        Whether to use Truncated Maximum Likelihood (TML). The default value is ``True``.
     optimizer : str, optional
-        Optimization method to use. The default is ``Nelder-Mead``.
+        Optimization method to use. The default value is ``Nelder-Mead``.
 
     Returns
     -------

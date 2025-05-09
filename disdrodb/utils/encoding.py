@@ -34,7 +34,7 @@ def set_encodings(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Output xarray dataset.
     """
     # Subset encoding dictionary
@@ -100,7 +100,7 @@ def rechunk_dataset(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
 
     Returns
     -------
-    xr.Dataset
+    xarray.Dataset
         Output xarray dataset
     """
     for var in ds.data_vars:

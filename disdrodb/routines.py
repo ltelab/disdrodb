@@ -19,14 +19,14 @@ import datetime
 import time
 from typing import Optional
 
-from disdrodb.api.io import available_stations, get_required_product
+from disdrodb.api.search import available_stations, get_required_product
 from disdrodb.utils.cli import _execute_cmd
 
 ####--------------------------------------------------------------------------.
 #### Run DISDRODB Station Processing
 
 
-def run_disdrodb_l0_station(
+def run_l0_station(
     data_source,
     campaign_name,
     station_name,
@@ -41,7 +41,9 @@ def run_disdrodb_l0_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0 processing of a specific DISDRODB station from the terminal.
 
@@ -57,29 +59,29 @@ def run_disdrodb_l0_station(
         Station name
     l0a_processing : bool
         Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-        The default is ``True``.
+        The default value is ``True``.
     l0b_processing : bool
         Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-        The default is ``True``.
+        The default value is ``True``.
     l0b_processing : bool
         Whether to launch processing to generate L0C netCDF4 file(s) from L0B data.
-        The default is ``True``.
+        The default value is ``True``.
     l0c_processing : bool
         Whether to launch processing to generate L0C netCDF4 file(s) from L0C data.
         The default is True.
     remove_l0a : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is ``False``.
+        The default value is ``False``.
     remove_l0b : bool
         Whether to remove the L0B files after having produced L0C netCDF files.
         The default is False.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``True``.
+        The default value is ``True``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
@@ -90,10 +92,12 @@ def run_disdrodb_l0_station(
         If ``True``, it reduces the amount of data to process.
         For L0A, it processes just the first 3 raw data files for each station.
         For L0B, it processes just the first 100 rows of 3 L0A files for each station.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     # ---------------------------------------------------------------------.
     t_i = time.time()
@@ -102,9 +106,11 @@ def run_disdrodb_l0_station(
     # ------------------------------------------------------------------.
     # L0A processing
     if l0a_processing:
-        run_disdrodb_l0a_station(
+        run_l0a_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             # Station arguments
-            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -117,9 +123,11 @@ def run_disdrodb_l0_station(
     # ------------------------------------------------------------------.
     # L0B processing
     if l0b_processing:
-        run_disdrodb_l0b_station(
+        run_l0b_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             # Station arguments
-            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -135,9 +143,11 @@ def run_disdrodb_l0_station(
     # ------------------------------------------------------------------.
     # L0C processing
     if l0c_processing:
-        run_disdrodb_l0c_station(
+        run_l0c_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             # Station arguments
-            base_dir=base_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -156,7 +166,7 @@ def run_disdrodb_l0_station(
     print(f"L0 processing of stations {station_name} completed in {timedelta_str}")
 
 
-def run_disdrodb_l0a_station(
+def run_l0a_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -166,7 +176,9 @@ def run_disdrodb_l0a_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0A processing of a station calling the disdrodb_l0a_station in the terminal."""
     # Define command
@@ -177,6 +189,11 @@ def run_disdrodb_l0a_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--metadata_archive_dir",
+            str(metadata_archive_dir),
             # Processing options
             "--force",
             str(force),
@@ -186,15 +203,13 @@ def run_disdrodb_l0a_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
     _execute_cmd(cmd)
 
 
-def run_disdrodb_l0b_station(
+def run_l0b_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -206,7 +221,9 @@ def run_disdrodb_l0b_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0B processing of a station calling disdrodb_run_l0b_station in the terminal."""
     # Define command
@@ -217,6 +234,11 @@ def run_disdrodb_l0b_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--metadata_archive_dir",
+            str(metadata_archive_dir),
             # L0B processing options
             "--remove_l0a",
             str(remove_l0a),
@@ -229,15 +251,13 @@ def run_disdrodb_l0b_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
     _execute_cmd(cmd)
 
 
-def run_disdrodb_l0c_station(
+def run_l0c_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -249,7 +269,9 @@ def run_disdrodb_l0c_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0C processing of a station calling the disdrodb_l0c_station in the terminal."""
     # TODO: implement remove_l0b!
@@ -262,6 +284,11 @@ def run_disdrodb_l0c_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--metadata_archive_dir",
+            str(metadata_archive_dir),
             # L0C processing options
             "--remove_l0b",
             str(remove_l0b),
@@ -274,15 +301,13 @@ def run_disdrodb_l0c_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
     _execute_cmd(cmd)
 
 
-def run_disdrodb_l1_station(
+def run_l1_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -292,7 +317,9 @@ def run_disdrodb_l1_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L1 processing of a station calling the disdrodb_l1_station in the terminal."""
     # Define command
@@ -303,6 +330,11 @@ def run_disdrodb_l1_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--metadata_archive_dir",
+            str(metadata_archive_dir),
             # Processing options
             "--force",
             str(force),
@@ -312,15 +344,13 @@ def run_disdrodb_l1_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
     _execute_cmd(cmd)
 
 
-def run_disdrodb_l2e_station(
+def run_l2e_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -330,7 +360,9 @@ def run_disdrodb_l2e_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L2E processing of a station calling the disdrodb_l1_station in the terminal."""
     # Define command
@@ -341,6 +373,11 @@ def run_disdrodb_l2e_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--metadata_archive_dir",
+            str(metadata_archive_dir),
             # Processing options
             "--force",
             str(force),
@@ -350,15 +387,13 @@ def run_disdrodb_l2e_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
     _execute_cmd(cmd)
 
 
-def run_disdrodb_l2m_station(
+def run_l2m_station(
     # Station arguments
     data_source,
     campaign_name,
@@ -368,7 +403,9 @@ def run_disdrodb_l2m_station(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L2M processing of a station calling the disdrodb_l2m_station in the terminal."""
     # Define command
@@ -379,6 +416,11 @@ def run_disdrodb_l2m_station(
             data_source,
             campaign_name,
             station_name,
+            # DISDRODB root directories
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--metadata_archive_dir",
+            str(metadata_archive_dir),
             # Processing options
             "--force",
             str(force),
@@ -388,8 +430,6 @@ def run_disdrodb_l2m_station(
             str(debugging_mode),
             "--parallel",
             str(parallel),
-            "--base_dir",
-            str(base_dir),
         ],
     )
     # Execute command
@@ -400,7 +440,7 @@ def run_disdrodb_l2m_station(
 #### Run DISDRODB Archive Processing
 
 
-def run_disdrodb_l0a(
+def run_l0a(
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -409,7 +449,9 @@ def run_disdrodb_l0a(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0A processing of DISDRODB stations.
 
@@ -423,21 +465,21 @@ def run_disdrodb_l0a(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        The default is ``None``.
+        The default value is ``None``.
     campaign_names : list
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
+        The default value is ``None``.
     station_names : list
         Station names to process.
-        The default is ``None``.
+        The default value is ``None``.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``True``.
+        The default value is ``True``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         By default, the number of process is defined with ``os.cpu_count()``.
@@ -445,10 +487,12 @@ def run_disdrodb_l0a(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L0A, it processes just the first 3 raw data files.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     # Define products
     product = "L0A"
@@ -456,11 +500,15 @@ def run_disdrodb_l0a(
 
     # Get list of available stations
     list_info = available_stations(
-        base_dir=base_dir,
-        product=required_product,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -472,8 +520,11 @@ def run_disdrodb_l0a(
     for data_source, campaign_name, station_name in list_info:
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
-        run_disdrodb_l0a_station(
-            base_dir=base_dir,
+        run_l0a_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -486,7 +537,7 @@ def run_disdrodb_l0a(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
-def run_disdrodb_l0b(
+def run_l0b(
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -497,7 +548,9 @@ def run_disdrodb_l0b(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0B processing of DISDRODB stations.
 
@@ -511,24 +564,24 @@ def run_disdrodb_l0b(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        The default is ``None``.
+        The default value is ``None``.
     campaign_names : list
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
+        The default value is ``None``.
     station_names : list
         Station names to process.
-        The default is ``None``.
+        The default value is ``None``.
     remove_l0a : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is ``False``.
+        The default value is ``False``.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``True``.
+        The default value is ``True``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         By default, the number of process is defined with ``os.cpu_count()``.
@@ -536,10 +589,12 @@ def run_disdrodb_l0b(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L0B, it processes just the first 100 rows of 3 L0A files.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     # Define products
     product = "L0B"
@@ -547,11 +602,15 @@ def run_disdrodb_l0b(
 
     # Get list of available stations
     list_info = available_stations(
-        base_dir=base_dir,
-        product=required_product,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -563,8 +622,11 @@ def run_disdrodb_l0b(
     for data_source, campaign_name, station_name in list_info:
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
-        run_disdrodb_l0b_station(
-            base_dir=base_dir,
+        run_l0b_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -579,7 +641,7 @@ def run_disdrodb_l0b(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
-def run_disdrodb_l0c(
+def run_l0c(
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -590,7 +652,9 @@ def run_disdrodb_l0c(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0C processing of DISDRODB stations.
 
@@ -604,24 +668,24 @@ def run_disdrodb_l0c(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        The default is ``None``.
+        The default value is ``None``.
     campaign_names : list
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
+        The default value is ``None``.
     station_names : list
         Station names to process.
-        The default is ``None``.
+        The default value is ``None``.
     remove_l0b : bool
          Whether to remove the L0B files after having produced L0C netCDF files.
          The default is False.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``False``.
+        The default value is ``False``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
@@ -631,10 +695,12 @@ def run_disdrodb_l0c(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L1B, it processes just 3 L0B files.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     # Define products
     product = "L0C"
@@ -642,11 +708,15 @@ def run_disdrodb_l0c(
 
     # Get list of available stations
     list_info = available_stations(
-        base_dir=base_dir,
-        product=required_product,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -658,8 +728,11 @@ def run_disdrodb_l0c(
     for data_source, campaign_name, station_name in list_info:
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
-        run_disdrodb_l0c_station(
-            base_dir=base_dir,
+        run_l0c_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -674,7 +747,7 @@ def run_disdrodb_l0c(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
-def run_disdrodb_l0(
+def run_l0(
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -689,7 +762,9 @@ def run_disdrodb_l0(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L0 processing of DISDRODB stations.
 
@@ -703,36 +778,36 @@ def run_disdrodb_l0(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        The default is ``None``.
+        The default value is ``None``.
     campaign_names : list
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
+        The default value is ``None``.
     station_names : list
         Station names to process.
-        The default is ``None``.
+        The default value is ``None``.
     l0a_processing : bool
         Whether to launch processing to generate L0A Apache Parquet file(s) from raw data.
-        The default is ``True``.
+        The default value is ``True``.
     l0b_processing : bool
         Whether to launch processing to generate L0B netCDF4 file(s) from L0A data.
-        The default is ``True``.
+        The default value is ``True``.
     l0c_processing : bool
         Whether to launch processing to generate L0C netCDF4 file(s) from L0B data.
-        The default is ``True``.
+        The default value is ``True``.
     remove_l0a : bool
         Whether to keep the L0A files after having generated the L0B netCDF products.
-        The default is ``False``.
+        The default value is ``False``.
     remove_l0b : bool
         Whether to remove the L0B files after having produced all L0C netCDF files.
-        The default is ``False``.
+        The default value is ``False``.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``False``.
+        The default value is ``False``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
@@ -743,10 +818,12 @@ def run_disdrodb_l0(
         If ``True``, it reduces the amount of data to process.
         For L0A, it processes just the first 3 raw data files.
         For L0B, it processes just the first 100 rows of 3 L0A files.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     # Define starting product
     if l0c_processing:
@@ -758,11 +835,15 @@ def run_disdrodb_l0(
 
     # Get list of available stations
     list_info = available_stations(
-        base_dir=base_dir,
-        product=required_product,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -774,8 +855,11 @@ def run_disdrodb_l0(
     for data_source, campaign_name, station_name in list_info:
         print(f"L0 processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
-        run_disdrodb_l0_station(
-            base_dir=base_dir,
+        run_l0_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -794,7 +878,7 @@ def run_disdrodb_l0(
         print(f"L0 processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
-def run_disdrodb_l1(
+def run_l1(
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -803,7 +887,9 @@ def run_disdrodb_l1(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L1 processing of DISDRODB stations.
 
@@ -817,21 +903,21 @@ def run_disdrodb_l1(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        The default is ``None``.
+        The default value is ``None``.
     campaign_names : list
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
+        The default value is ``None``.
     station_names : list
         Station names to process.
-        The default is ``None``.
+        The default value is ``None``.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``False``.
+        The default value is ``False``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
@@ -841,21 +927,28 @@ def run_disdrodb_l1(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L1B, it processes just 3 L0B files.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     product = "L1"
     required_product = get_required_product(product)
 
     # Get list of available stations
     list_info = available_stations(
-        base_dir=base_dir,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
         product=required_product,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        available_data=False,  # Check for station product directory is present only
         raise_error_if_empty=True,
     )
 
@@ -867,8 +960,11 @@ def run_disdrodb_l1(
     for data_source, campaign_name, station_name in list_info:
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
-        run_disdrodb_l1_station(
-            base_dir=base_dir,
+        run_l1_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -881,7 +977,7 @@ def run_disdrodb_l1(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
-def run_disdrodb_l2e(
+def run_l2e(
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -890,7 +986,9 @@ def run_disdrodb_l2e(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L2E processing of DISDRODB stations.
 
@@ -904,21 +1002,21 @@ def run_disdrodb_l2e(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        The default is ``None``.
+        The default value is ``None``.
     campaign_names : list
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
+        The default value is ``None``.
     station_names : list
         Station names to process.
-        The default is ``None``.
+        The default value is ``None``.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``False``.
+        The default value is ``False``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
@@ -928,21 +1026,27 @@ def run_disdrodb_l2e(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L2E, it processes just 3 L1 files.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     product = "L2E"
     required_product = get_required_product(product)
 
     # Get list of available stations
     list_info = available_stations(
-        base_dir=base_dir,
-        product=required_product,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -954,8 +1058,11 @@ def run_disdrodb_l2e(
     for data_source, campaign_name, station_name in list_info:
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
-        run_disdrodb_l2e_station(
-            base_dir=base_dir,
+        run_l2e_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -968,7 +1075,7 @@ def run_disdrodb_l2e(
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
 
 
-def run_disdrodb_l2m(
+def run_l2m(
     data_sources=None,
     campaign_names=None,
     station_names=None,
@@ -977,7 +1084,9 @@ def run_disdrodb_l2m(
     verbose: bool = False,
     debugging_mode: bool = False,
     parallel: bool = True,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """Run the L2M processing of DISDRODB stations.
 
@@ -991,21 +1100,21 @@ def run_disdrodb_l2m(
         Name of data source(s) to process.
         The name(s) must be UPPER CASE.
         If campaign_names and station are not specified, process all stations.
-        The default is ``None``.
+        The default value is ``None``.
     campaign_names : list
         Name of the campaign(s) to process.
         The name(s) must be UPPER CASE.
-        The default is ``None``.
+        The default value is ``None``.
     station_names : list
         Station names to process.
-        The default is ``None``.
+        The default value is ``None``.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
-        The default is ``False``.
+        The default value is ``False``.
     verbose : bool
         Whether to print detailed processing information into terminal.
-        The default is ``False``.
+        The default value is ``False``.
     parallel : bool
         If ``True``, the files are processed simultaneously in multiple processes.
         Each process will use a single thread to avoid issues with the HDF/netCDF library.
@@ -1015,21 +1124,27 @@ def run_disdrodb_l2m(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L2MB, it processes just 3 L0B files.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     product = "L2M"
     required_product = get_required_product(product)
 
     # Get list of available stations
     list_info = available_stations(
-        base_dir=base_dir,
-        product=required_product,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
+        # Search options
+        product=required_product,
         raise_error_if_empty=True,
     )
 
@@ -1041,8 +1156,11 @@ def run_disdrodb_l2m(
     for data_source, campaign_name, station_name in list_info:
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station started.")
         # Run processing
-        run_disdrodb_l2m_station(
-            base_dir=base_dir,
+        run_l2m_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            # Station arguments
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

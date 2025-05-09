@@ -24,11 +24,13 @@ import pandas as pd
 import xarray as xr
 
 from disdrodb import __root_path__
-from disdrodb.api.io import available_stations
 from disdrodb.api.path import define_campaign_dir, define_station_dir
-from disdrodb.l0.l0_processing import run_l0a_station
+from disdrodb.api.search import available_stations
+from disdrodb.l0.routines import run_l0a_station
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.directories import list_files
+
+TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
 
 def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
@@ -47,8 +49,10 @@ def _check_identical_netcdf_files(file1: str, file2: str) -> bool:
     ds2 = xr.open_dataset(file2, decode_timedelta=False)
 
     # Remove attributes that depends on processing time
-    attrs_to_remove = ["disdrodb_processing_date", "disdrodb_software_version"]
-    for key in attrs_to_remove:
+    attrs_varying = ["disdrodb_processing_date", "disdrodb_software_version"]
+    attrs_modified_recently = ["raw_data_glob_pattern", "sensor_name"]
+    attr_to_remove = attrs_varying + attrs_modified_recently
+    for key in attr_to_remove:
         ds1.attrs.pop(key, None)
         ds2.attrs.pop(key, None)
 
@@ -74,20 +78,22 @@ def _check_identical_parquet_files(file1: str, file2: str) -> bool:
 
 
 def _check_station_reader_results(
-    base_dir,
+    data_archive_dir,
+    metadata_archive_dir,
     data_source,
     campaign_name,
     station_name,
 ):
-    raw_dir = define_campaign_dir(
-        base_dir=base_dir,
+    raw_station_dir = define_campaign_dir(
+        archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
     )
 
     run_l0a_station(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -98,8 +104,7 @@ def _check_station_reader_results(
     )
 
     metadata = read_station_metadata(
-        base_dir=base_dir,
-        product="L0A",
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -114,9 +119,9 @@ def _check_station_reader_results(
         check_identical_files = _check_identical_parquet_files
         product = "L0A"
 
-    ground_truth_station_dir = os.path.join(raw_dir, "ground_truth", station_name)
+    ground_truth_station_dir = os.path.join(raw_station_dir, "ground_truth", station_name)
     processed_station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -143,7 +148,19 @@ def _check_station_reader_results(
             )
 
 
-def test_check_all_readers(tmp_path) -> None:
+# from disdrodb.metadata.download import download_metadata_archive
+# import pathlib
+
+# tmp_path = pathlib.Path("/tmp/19/")
+# tmp_path.mkdir(parents=True)
+# test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+# shutil.copytree(TEST_BASE_DIR, test_data_archive_dir)
+
+# parallel = False
+# test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+
+
+def test_check_all_readers(tmp_path, disdrodb_metadata_archive_dir) -> None:
     """Test all readers that have data samples and ground truth.
 
     Raises
@@ -151,24 +168,27 @@ def test_check_all_readers(tmp_path) -> None:
     Exception
         If the reader validation has failed.
     """
-    TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
-
-    test_base_dir = tmp_path / "DISDRODB"
-    shutil.copytree(TEST_BASE_DIR, test_base_dir)
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+    shutil.copytree(TEST_BASE_DIR, test_data_archive_dir)
 
     list_stations_info = available_stations(
+        data_archive_dir=test_data_archive_dir,
+        metadata_archive_dir=test_metadata_archive_dir,
         product="RAW",
         data_sources=None,
         campaign_names=None,
         return_tuple=True,
-        base_dir=test_base_dir,
+        available_data=True,
     )
 
     # data_source, campaign_name, station_name = list_stations_info[0]
     # data_source, campaign_name, station_name = list_stations_info[1]
+
     for data_source, campaign_name, station_name in list_stations_info:
         _check_station_reader_results(
-            base_dir=test_base_dir,
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,

@@ -67,7 +67,8 @@ def mock_zenodo_api(requests_mock, zenodo_host):
 @pytest.mark.parametrize("platform", ["sandbox.zenodo", "zenodo"])
 def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, platform):
     """Test upload of station data."""
-    base_dir = tmp_path / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
     station_name = "test_station_name"
@@ -76,14 +77,14 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
     metadata_dict["disdrodb_data_url"] = station_url
 
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     _ = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -100,7 +101,8 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
             with pytest.raises(ValueError):
                 upload_station(
                     platform=platform,
-                    base_dir=str(base_dir),
+                    data_archive_dir=data_archive_dir,
+                    metadata_archive_dir=metadata_archive_dir,
                     data_source=data_source,
                     campaign_name=campaign_name,
                     station_name=station_name,
@@ -109,7 +111,8 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
         else:
             upload_station(
                 platform=platform,
-                base_dir=str(base_dir),
+                data_archive_dir=data_archive_dir,
+                metadata_archive_dir=metadata_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -118,8 +121,7 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
 
             # Check metadata has changed
             metadata_dict = read_station_metadata(
-                base_dir=base_dir,
-                product="RAW",
+                metadata_archive_dir=metadata_archive_dir,
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -130,7 +132,9 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
 
 def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
     """Test upload of station data."""
-    base_dir = tmp_path / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
     station_name = "test_station_name"
@@ -140,14 +144,14 @@ def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
     metadata_dict["disdrodb_data_url"] = "existing_url"
 
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
     )
     _ = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -157,7 +161,8 @@ def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
     with pytest.raises(NotImplementedError):
         upload_station(
             platform="invalid_platform",
-            base_dir=str(base_dir),
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -167,7 +172,8 @@ def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
     with pytest.raises(NotImplementedError):
         upload_archive(
             platform="invalid_platform",
-            base_dir=str(base_dir),
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_sources=data_source,
             campaign_names=campaign_name,
             station_names=station_name,
@@ -180,7 +186,8 @@ def test_upload_with_invalid_platform(tmp_path, requests_mock, mocker):
 @pytest.mark.parametrize("platform", ["sandbox.zenodo", "zenodo"])
 def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, platform):
     """Test upload of archive stations data."""
-    base_dir = tmp_path / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
     station_name = "test_station_name"
@@ -189,7 +196,7 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
     metadata_dict["disdrodb_data_url"] = station_url
 
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -197,7 +204,7 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
     )
 
     _ = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -212,7 +219,8 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
         mocker.patch("disdrodb.data_transfer.zenodo._define_disdrodb_data_url", return_value="dummy_url")
         upload_archive(
             platform=platform,
-            base_dir=str(base_dir),
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_sources=data_source,
             campaign_names=campaign_name,
             station_names=station_name,
@@ -221,8 +229,7 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
 
     # Check metadata has changed
     metadata_dict = read_station_metadata(
-        base_dir=base_dir,
-        product="RAW",
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -239,7 +246,8 @@ def test_upload_archive(tmp_path, requests_mock, mocker, station_url, force, pla
 @pytest.mark.parametrize("platform", ["sandbox.zenodo", "zenodo"])
 def test_upload_archive_do_not_stop(tmp_path, requests_mock, mocker, platform):
     """Test upload of archive stations is not stopped by station errors."""
-    base_dir = tmp_path / "DISDRODB"
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
     data_source = "test_data_source"
     campaign_name = "test_campaign_name"
     station_name = "test_station_name"
@@ -248,7 +256,7 @@ def test_upload_archive_do_not_stop(tmp_path, requests_mock, mocker, platform):
     metadata_dict["disdrodb_data_url"] = "dummy_url"
 
     _ = create_fake_metadata_file(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -256,7 +264,7 @@ def test_upload_archive_do_not_stop(tmp_path, requests_mock, mocker, platform):
     )
 
     _ = create_fake_raw_data_file(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -265,7 +273,8 @@ def test_upload_archive_do_not_stop(tmp_path, requests_mock, mocker, platform):
     mocker.patch("disdrodb.data_transfer.upload_data.upload_station", side_effect=Exception("Whatever error occurred"))
     upload_archive(
         platform=platform,
-        base_dir=str(base_dir),
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_sources=data_source,
         campaign_names=campaign_name,
         station_names=station_name,

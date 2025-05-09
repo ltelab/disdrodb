@@ -19,6 +19,7 @@
 """Test DISDRODB L0B (from raw netCDFs) processing routines."""
 
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 
@@ -26,6 +27,7 @@ from disdrodb.l0.l0b_nc_processing import (
     _check_dict_names_validity,
     _get_missing_variables,
     add_dataset_missing_variables,
+    remove_issue_timesteps,
     rename_dataset,
     replace_custom_nan_flags,
     replace_nan_flags,
@@ -67,7 +69,7 @@ raw_data_format_dict = {
 }
 
 mock_valid_names = ["var1", "var2", "var3", "var_not_in_ds"]
-l0b_encoding_dict = {k: "dummy" for k in mock_valid_names}
+l0b_encoding_dict = dict.fromkeys(mock_valid_names, "dummy")
 
 
 config_dict = {"raw_data_format.yml": raw_data_format_dict, "l0b_encodings.yml": l0b_encoding_dict}
@@ -131,6 +133,83 @@ def test_set_nan_outside_data_range(create_test_config_files):
     ), "Key 3 data range not applied correctly"
     assert result_ds["key_4"].equals(ds["key_4"]), "If data_range for key4 is None, data should remain unchanged"
     assert result_ds["key_not_in_dict"].equals(ds["key_not_in_dict"]), "Unrelated keys should remain unchanged"
+
+
+class TestRemoveIssueTimesteps:
+
+    def test_no_issues_returns_same(self):
+        """Should return identical dataset when no issues provided."""
+        times = pd.date_range("2025-01-01T00:00", periods=10, freq="1min")
+        ds = xr.Dataset({"value": ("time", range(10))}, coords={"time": times})
+        ds_out = remove_issue_timesteps(ds, issue_dict={})
+        assert ds_out.sizes["time"] == ds.sizes["time"]
+        pd.testing.assert_index_equal(ds_out["time"].to_index(), ds["time"].to_index())
+
+    def test_drop_timesteps(self):
+        """Should drop specific timesteps from the dataset."""
+        timesteps = pd.date_range("2025-01-01T00:00", periods=10, freq="1min")
+        ds = xr.Dataset({"value": ("time", range(10))}, coords={"time": timesteps})
+        # Pick two times to drop and define issue dict
+        timesteps_to_drop = timesteps.to_numpy()[[2, 5]]
+        timesteps_to_drop_str = timesteps_to_drop.astype("M8[s]").astype(str).tolist()
+        issue_dict = {"timesteps": timesteps_to_drop_str}
+
+        # Test remaining timesteps
+        ds_filtered = remove_issue_timesteps(ds, issue_dict=issue_dict)
+        assert all(t not in timesteps_to_drop for t in ds_filtered["time"].to_numpy())
+        assert ds_filtered.sizes["time"] == 8
+
+    def test_drop_time_periods(self):
+        """Should drop all timesteps within given periods."""
+        timesteps = pd.date_range("2025-01-01T00:00", periods=10, freq="1min")
+        ds = xr.Dataset({"value": ("time", range(10))}, coords={"time": timesteps})
+        # Define time period from index 3 to 6 inclusive
+        timesteps_str = timesteps.to_numpy().astype("M8[s]").astype(str)
+        start_time = timesteps.to_numpy()[3]
+        end_time = timesteps.to_numpy()[6]
+        start_time_str = timesteps_str[3]
+        end_time_str = timesteps_str[6]
+        issue_dict = {"time_periods": [(start_time_str, end_time_str)]}
+        # Test remaining timesteps
+        ds_filtered = remove_issue_timesteps(ds, issue_dict=issue_dict)
+        remaining_timesteps = ds_filtered["time"].to_numpy()
+        assert all((t < start_time) or (t > end_time) for t in remaining_timesteps)
+        assert ds_filtered.sizes["time"] == 6
+
+    def test_combined_issues(self):
+        """Should apply both timesteps and periods removal."""
+        timesteps = pd.date_range("2025-01-01T00:00", periods=10, freq="1min")
+        ds = xr.Dataset({"value": ("time", range(10))}, coords={"time": timesteps})
+
+        # Define issue dict
+        drop_ts = [ds["time"].to_numpy()[1], ds["time"].to_numpy()[8]]
+        start = ds["time"].to_numpy()[4]
+        end = ds["time"].to_numpy()[5]
+        issue_dict = {"timesteps": drop_ts, "time_periods": [(start, end)]}
+
+        # Test remaining timesteps
+        ds_filtered = remove_issue_timesteps(ds, issue_dict=issue_dict)
+        remaining_timesteps = ds_filtered["time"].to_numpy()
+        # ensure none of the drop_ts or period times remain
+        for t in drop_ts:
+            assert t not in remaining_timesteps
+        assert all((t < start) or (t > end) for t in remaining_timesteps)
+        # expected size = original 10 - 2 timesteps - 2 period entries = 6
+        assert ds_filtered.sizes["time"] == 6
+
+    def test_error_if_all_removed(self):
+        """Should raise ValueError when all timesteps are removed."""
+        timesteps = pd.date_range("2025-01-01T00:00", periods=10, freq="1min")
+        ds = xr.Dataset({"value": ("time", range(10))}, coords={"time": timesteps})
+
+        # Define issue dict that covers entire time period
+        start = ds["time"].to_numpy()[0]
+        end = ds["time"].to_numpy()[-1]
+        issue_dict = {"time_periods": [(start, end)]}
+
+        # Test raise error
+        with pytest.raises(ValueError, match="No timesteps left after removing problematic"):
+            remove_issue_timesteps(ds, issue_dict=issue_dict)
 
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)

@@ -77,7 +77,7 @@ def read_issue(filepath: str) -> dict:
     return issue_dict
 
 
-def read_station_issue(data_source, campaign_name, station_name, base_dir=None):
+def read_station_issue(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Open the station issue YAML file into a dictionary.
 
     Parameters
@@ -90,9 +90,9 @@ def read_station_issue(data_source, campaign_name, station_name, base_dir=None):
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    base_dir : str, optional
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If not specified, the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+        If not specified, the ``data_archive_dir`` path specified in the DISDRODB active configuration will be used.
 
     Returns
     -------
@@ -102,7 +102,7 @@ def read_station_issue(data_source, campaign_name, station_name, base_dir=None):
     """
     # Retrieve metadata filepath
     issue_filepath = define_issue_filepath(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,

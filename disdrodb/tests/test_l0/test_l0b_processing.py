@@ -106,7 +106,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
         },
     )
     # Create a sample attrs dictionary
-    attrs = {
+    metadata = {
         "sensor_name": "test",
         "latitude": 46.52130,
         "longitude": 6.56786,
@@ -115,7 +115,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
     }
 
     # Call the function
-    ds = create_l0b_from_l0a(df, attrs)
+    ds = create_l0b_from_l0a(df, metadata=metadata)
 
     # Check the output dataset has the correct variables and dimensions
     expected_variables = [
@@ -147,7 +147,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
     # Assert that raise error if any raw_* columns present
     df_bad = df.drop(columns=["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"])
     with pytest.raises(ValueError):
-        create_l0b_from_l0a(df_bad, attrs)
+        create_l0b_from_l0a(df_bad, metadata=metadata)
 
 
 def test_add_dataset_crs_coords():
@@ -256,7 +256,7 @@ def test_replace_empty_strings_with_zeros():
 
 def test__format_string_array():
     # Tests splitter behaviour with None
-    assert "".split(None) == []
+    assert [] == []
 
     # Test empty string
     assert np.allclose(l0b_processing._format_string_array("", 4), [0, 0, 0, 0])
@@ -283,9 +283,9 @@ def test__reshape_raw_spectrum():
         get_raw_array_dims_order,
     )
 
-    list_sensor_name = ["Thies_LPM", "OTT_Parsivel"]
-    # sensor_name = "Thies_LPM"
-    # sensor_name = "OTT_Parsivel"
+    list_sensor_name = ["LPM", "PARSIVEL"]
+    # sensor_name = "LPM"
+    # sensor_name = "PARSIVEL"
 
     for sensor_name in list_sensor_name:
         # Retrieve number of bins
@@ -306,9 +306,9 @@ def test__reshape_raw_spectrum():
         # Define flattened raw spectrum
         # - OTT: first all diameters bins for velocity bin 1, ...
         # - Thies: first al velocity bins for diameter bin 1, ...
-        if sensor_name in ["Thies_LPM"]:
+        if sensor_name in ["LPM"]:
             flat_spectrum = expected_spectrum.flatten(order="F")
-        elif sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+        elif sensor_name in ["PARSIVEL", "PARSIVEL2"]:
             flat_spectrum = expected_spectrum.flatten(order="C")
         else:
             raise NotImplementedError(f"Unavailable test for {sensor_name}")
@@ -353,9 +353,9 @@ def test_retrieve_l0b_arrays():
         get_dims_size_dict,
     )
 
-    list_sensor_name = ["Thies_LPM", "OTT_Parsivel"]
-    # sensor_name = "Thies_LPM"
-    # sensor_name = "OTT_Parsivel"
+    list_sensor_name = ["LPM", "PARSIVEL"]
+    # sensor_name = "LPM"
+    # sensor_name = "PARSIVEL"
 
     for sensor_name in list_sensor_name:
         # Retrieve number of bins
@@ -378,9 +378,9 @@ def test_retrieve_l0b_arrays():
         # Define flattened raw spectrum
         # - OTT: first all diameters bins for velocity bin 1, ...
         # - Thies: first al velocity bins for diameter bin 1, ...
-        if sensor_name in ["Thies_LPM"]:
+        if sensor_name in ["LPM"]:
             flat_spectrum = expected_spectrum.flatten(order="F")
-        elif sensor_name in ["OTT_Parsivel", "OTT_Parsivel2"]:
+        elif sensor_name in ["PARSIVEL", "PARSIVEL2"]:
             flat_spectrum = expected_spectrum.flatten(order="C")
         else:
             raise NotImplementedError(f"Unavailable test for {sensor_name}")

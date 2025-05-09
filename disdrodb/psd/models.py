@@ -108,7 +108,7 @@ def get_required_parameters(psd_model):
 
 def is_scalar(value):
     """Determines if the input value is a scalar."""
-    return isinstance(value, (float, int)) or isinstance(value, (np.ndarray, xr.DataArray)) and value.size == 1
+    return isinstance(value, (float, int)) or (isinstance(value, (np.ndarray, xr.DataArray)) and value.size == 1)
 
 
 class XarrayPSD(PSD):

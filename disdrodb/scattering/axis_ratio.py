@@ -297,8 +297,7 @@ def get_axis_ratio_thurai_2005(diameter):
 
 
 def get_axis_ratio_thurai_2007(diameter):
-    """
-    Compute the axis ratio of raindrops using the Thurai et al. (2007) method.
+    """Compute the axis ratio of raindrops using the Thurai et al. (2007) method.
 
     Parameters
     ----------
@@ -314,7 +313,7 @@ def get_axis_ratio_thurai_2007(diameter):
     ----------
     Thurai, M., G. J. Huang, V. N. Bringi, W. L. Randeu, and M. Schönhuber, 2007:
     Drop Shapes, Model Comparisons, and Calculations of Polarimetric Radar Parameters in Rain.
-     J. Atmos. Oceanic Technol., 24, 1019-1032, https://doi.org/10.1175/JTECH2051.1
+    J. Atmos. Oceanic Technol., 24, 1019-1032, https://doi.org/10.1175/JTECH2051.1
 
     """
     # Assume spherical drop when diameter < 0.7 mm

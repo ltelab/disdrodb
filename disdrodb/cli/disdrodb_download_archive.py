@@ -22,20 +22,27 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.download_data import click_download_archive_options, click_download_options
-from disdrodb.utils.cli import click_base_dir_option, parse_arg_to_list, parse_base_dir
+from disdrodb.utils.cli import (
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
+    parse_archive_dir,
+    parse_arg_to_list,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
 
 @click.command()
 @click_download_archive_options
-@click_base_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 @click_download_options
 def disdrodb_download_archive(
     data_sources: Optional[str] = None,
     campaign_names: Optional[str] = None,
     station_names: Optional[str] = None,
-    base_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
     force: bool = False,
 ):
     """Download DISDRODB stations with the ``disdrodb_data_url`` in the metadata.
@@ -45,31 +52,33 @@ def disdrodb_download_archive(
     data_sources : str or list of str, optional
         Data source name (eg : EPFL).
         If not provided (``None``), all data sources will be downloaded.
-        The default is ``data_source=None``.
+        The default value is ``data_source=None``.
     campaign_names : str or list of str, optional
         Campaign name (eg :  EPFL_ROOF_2012).
         If not provided (``None``), all campaigns will be downloaded.
-        The default is ``campaign_name=None``.
+        The default value is ``campaign_name=None``.
     station_names : str or list of str, optional
         Station name.
         If not provided (``None``), all stations will be downloaded.
-        The default is ``station_name=None``.
+        The default value is ``station_name=None``.
     force : bool, optional
         If ``True``, overwrite the already existing raw data file.
-        The default is ``False``.
-    base_dir : str (optional)
-        Base directory of DISDRODB. Format: ``<...>/DISDRODB``.
-        If ``None`` (the default), the disdrodb config variable ``base_dir`` is used.
+        The default value is ``False``.
+    data_archive_dir : str (optional)
+        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     """
     from disdrodb.data_transfer.download_data import download_archive
 
-    base_dir = parse_base_dir(base_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
     data_sources = parse_arg_to_list(data_sources)
     campaign_names = parse_arg_to_list(campaign_names)
     station_names = parse_arg_to_list(station_names)
 
     download_archive(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,

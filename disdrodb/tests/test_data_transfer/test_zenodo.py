@@ -180,6 +180,6 @@ def test_if_upload_raise_error_remove_zip_file(tmp_path, mocker):
 
     # Test it remove the file if something fail
     with pytest.raises(ValueError):
-        upload_station_to_zenodo(metadata_filepath=f"{station_name}.yml")
+        upload_station_to_zenodo(metadata_filepath=f"{station_name}.yml", station_zip_filepath=station_zip_fpath)
 
     assert not os.path.exists(station_zip_fpath)

@@ -22,6 +22,7 @@ import os
 
 import pytest
 
+from disdrodb import ARCHIVE_VERSION
 from disdrodb.api.path import define_campaign_dir, define_logs_dir
 from disdrodb.utils.logger import (
     close_logger,
@@ -42,7 +43,7 @@ def create_dummy_log_file(filepath, contents):
 
 
 def test_create_product_logs(tmp_path):
-    test_base_dir = tmp_path / "DISDRODB"
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -51,7 +52,7 @@ def test_create_product_logs(tmp_path):
     # Define directory where logs files are saved
     logs_dir = define_logs_dir(
         product=product,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -64,7 +65,7 @@ def test_create_product_logs(tmp_path):
 
     # Define /summary and /problem directory
     campaign_dir = define_campaign_dir(
-        base_dir=test_base_dir,
+        archive_dir=test_data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -93,7 +94,7 @@ def test_create_product_logs(tmp_path):
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         # Logs list
         list_logs=list_logs,
     )
@@ -124,7 +125,7 @@ def test_create_product_logs(tmp_path):
 
 def test_define_summary_log_when_no_problems(tmp_path):
     """Test that not problem log file is created if no errors occurs."""
-    test_base_dir = tmp_path / "DISDRODB"
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
@@ -133,7 +134,7 @@ def test_define_summary_log_when_no_problems(tmp_path):
     # Define directory where logs files are saved
     logs_dir = define_logs_dir(
         product=product,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -146,7 +147,7 @@ def test_define_summary_log_when_no_problems(tmp_path):
 
     # Define /summary and /problem directory
     campaign_dir = define_campaign_dir(
-        base_dir=test_base_dir,
+        archive_dir=test_data_archive_dir,
         product=product,
         data_source=data_source,
         campaign_name=campaign_name,
@@ -172,7 +173,7 @@ def test_define_summary_log_when_no_problems(tmp_path):
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=test_base_dir,
+        data_archive_dir=test_data_archive_dir,
         list_logs=None,  # search for logs based on inputs
     )
 
@@ -221,23 +222,23 @@ def test_log_error(caplog, test_logger, capfd):
 
 @pytest.fixture
 def log_environment(tmp_path):
-    processed_dir = tmp_path / "processed"
-    os.makedirs(processed_dir, exist_ok=True)
+    campaign_dir = tmp_path / ARCHIVE_VERSION
+    os.makedirs(campaign_dir, exist_ok=True)
     product = "test_product"
     station_name = "test_station"
     filename = "test"
-    return processed_dir, product, station_name, filename
+    return campaign_dir, product, station_name, filename
 
 
 def test_create_logger_file_paralle_false(log_environment):
-    processed_dir, product, station_name, filename = log_environment
-    logs_dir = os.path.join(str(processed_dir), "logs", product, station_name)
+    campaign_dir, product, station_name, filename = log_environment
+    logs_dir = os.path.join(str(campaign_dir), "logs", product, station_name)
     logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
 
     assert isinstance(logger, logging.Logger)
 
     # Check if log file is created
-    log_file_path = os.path.join(processed_dir, "logs", product, station_name, f"logs_{filename}.log")
+    log_file_path = os.path.join(campaign_dir, "logs", product, station_name, f"logs_{filename}.log")
     assert os.path.exists(log_file_path)
 
     # Test logging
@@ -257,8 +258,8 @@ def test_create_logger_file_paralle_false(log_environment):
 
 
 def test_close_logger(log_environment):
-    processed_dir, product, station_name, filename = log_environment
-    logs_dir = os.path.join(str(processed_dir), "logs", product, station_name)
+    campaign_dir, product, station_name, filename = log_environment
+    logs_dir = os.path.join(str(campaign_dir), "logs", product, station_name)
     logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
     close_logger(logger)
     assert not logger.handlers

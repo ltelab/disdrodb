@@ -24,21 +24,18 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from disdrodb.l0.io import read_l0a_dataframe
 from disdrodb.l0.l0a_processing import (
-    _check_df_sanitizer_fun,
-    _check_matching_column_number,
-    _check_not_empty_dataframe,
-    _is_not_corrupted,
-    _preprocess_reader_kwargs,
-    _strip_delimiter,
     cast_column_dtypes,
+    check_matching_column_number,
     coerce_corrupted_values_to_nan,
     concatenate_dataframe,
     drop_time_periods,
     drop_timesteps,
-    read_raw_file,
-    read_raw_files,
+    is_raw_array_string_not_corrupted,
+    preprocess_reader_kwargs,
+    read_l0a_dataframe,
+    read_raw_text_file,
+    read_raw_text_files,
     remove_corrupted_rows,
     remove_duplicated_timesteps,
     remove_issue_timesteps,
@@ -46,6 +43,7 @@ from disdrodb.l0.l0a_processing import (
     replace_nan_flags,
     set_nan_invalid_values,
     set_nan_outside_data_range,
+    strip_delimiter,
     strip_delimiter_from_raw_arrays,
     strip_string_spaces,
     write_l0a,
@@ -95,6 +93,7 @@ def test_set_nan_invalid_values(create_test_config_files):
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_set_nan_outside_data_range(create_test_config_files):
+    """Test that values outside the allowed data range are converted to NaN."""
     # Test case 1: Check if the function sets values outside the data range to NaN
     data = {"key_1": [1, 2, 3, 4, 5], "key_2": [0.1, 0.3, 0.5, 0.7, 0.2]}
 
@@ -107,6 +106,7 @@ def test_set_nan_outside_data_range(create_test_config_files):
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_replace_nan_flags(create_test_config_files):
+    """Test that specified nan_flags are replaced by NaN in the dataframe."""
     # Create a sample dataframe with nan flags
     data = {
         "key_1": [6, 7, 1, 9, -9999],
@@ -124,45 +124,51 @@ def test_replace_nan_flags(create_test_config_files):
     assert df.equals(pd.DataFrame(expected_data))
 
 
-def test_remove_corrupted_rows():
-    data = {
-        "raw_drop_number": ["1", "2", "3", "a", "5"],
-        "raw_drop_concentration": ["0.1", "0.3", "0.5", "b", "0.2"],
-        "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
-    }
+class TestRemoveCorruptedRows:
+    def test_remove_corrupted_rows_with_all_raw_columns(self):
+        """Rows with non-numeric raw-array entries are dropped."""
+        data = {
+            "raw_drop_number": ["1", "2", "3", "a", "5"],
+            "raw_drop_concentration": ["0.1", "0.3", "0.5", "b", "0.2"],
+            "raw_drop_average_velocity": ["a", "1.2", "1.8", "c", "2.0"],
+        }
+        df = pd.DataFrame(data)
+        output = remove_corrupted_rows(df)
+        # Only the 4 fully numeric rows remain
+        assert output.shape == (3, 3)
 
-    data = pd.DataFrame(data)
-    output = remove_corrupted_rows(data)
-    assert output.shape[1] == 3
+    def test_remove_corrupted_rows_with_mixed_columns(self):
+        """Dropping works even if some columns are not raw arrays."""
+        data = {
+            "raw_drop_number": ["1", "2", "3", "a", "5"],
+            "other": ["0.1", "a", "c", "b", "0.2"],
+            "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
+        }
+        df = pd.DataFrame(data)
+        output = remove_corrupted_rows(df)
+        # Non-raw 'other' column is still kept, but corrupted rows are removed
+        assert output.shape == (4, 3)
 
-    # Test case 1: Check if the function removes corrupted rows
-    data = {
-        "raw_drop_number": ["1", "2", "3", "a", "5"],
-        "other": ["0.1", "0.3", "0.5", "b", "0.2"],
-        "raw_drop_average_velocity": ["2.1", "1.2", "1.8", "c", "2.0"],
-    }
+    def test_no_rows_remaining_raises(self):
+        """ValueError if no rows remain after corruption filtering."""
+        with pytest.raises(ValueError, match=r"No remaining rows after data corruption checks."):
+            remove_corrupted_rows(pd.DataFrame())
 
-    data = pd.DataFrame(data)
-    output = remove_corrupted_rows(data)
-    assert output.shape[1] == 3
-
-    # Test case 2: Check if the function raises ValueError when there are no remaining rows
-    with pytest.raises(ValueError, match=r"No remaining rows after data corruption checks."):
-        remove_corrupted_rows(pd.DataFrame())
-
-    # Test case 3: Check if the function raises ValueError when only one row remains
-    msg = r"Only 1 row remains after data corruption checks. Check the raw file and maybe delete it."
-    with pytest.raises(ValueError, match=msg):
-        remove_corrupted_rows(pd.DataFrame({"raw_drop_number": ["1"]}))
+    def test_single_row_remaining_raises(self):
+        """ValueError if only one row remains after corruption filtering."""
+        df = pd.DataFrame({"raw_drop_number": ["1"]})
+        msg = r"Only 1 row remains after data corruption checks. Check the raw file and maybe delete it."
+        with pytest.raises(ValueError, match=msg):
+            remove_corrupted_rows(df)
 
 
 def test_strip_delimiter_from_raw_arrays():
+    """Test that leading/trailing delimiters are stripped only from raw arrays."""
     data = {"raw_drop_number": ["  value1", "value2 ", "value3  "], "key_3": [" value4", "value5", "value6"]}
     df = pd.DataFrame(data)
     result = strip_delimiter_from_raw_arrays(df)
     expected_data = {"raw_drop_number": ["value1", "value2", "value3"], "key_3": [" value4", "value5", "value6"]}
     expected = pd.DataFrame(expected_data)
-
     # Check if result matches expected result
     assert result.equals(expected)
 
@@ -176,34 +182,41 @@ l0a_encoding_dict = {
 config_dict = {"l0a_encodings.yml": l0a_encoding_dict}
 
 
-@pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
-def test_strip_string_spaces(create_test_config_files):
-    data = {"key_1": ["  value1", "value2 ", "value3  "], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
-    df = pd.DataFrame(data)
+class TestStripStringSpaces:
+    @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+    def test_removes_whitespace_from_string_columns(self, create_test_config_files):
+        """Test that whitespace is removed from string columns per encoding config."""
+        data = {
+            "key_1": ["  value1", "value2 ", "value3  "],
+            "key_2": [1, 2, 3],
+            "key_3": ["value4", "value5", "value6"],
+        }
+        df = pd.DataFrame(data)
+        result = strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
+        expected_data = {
+            "key_1": ["value1", "value2", "value3"],
+            "key_2": [1, 2, 3],
+            "key_3": ["value4", "value5", "value6"],
+        }
+        expected = pd.DataFrame(expected_data)
+        assert result.equals(expected)
 
-    # Call function
-    result = strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
-
-    # Define expected result
-    expected_data = {
-        "key_1": ["value1", "value2", "value3"],
-        "key_2": [1, 2, 3],
-        "key_3": ["value4", "value5", "value6"],
-    }
-    expected = pd.DataFrame(expected_data)
-
-    # Check if result matches expected result
-    assert result.equals(expected)
-
-    # Assert raiser error if an expected string column is not string
-    data = {"key_1": [1, 2, 3], "key_2": [1, 2, 3], "key_3": ["value4", "value5", "value6"]}
-    df = pd.DataFrame(data)
-    with pytest.raises(AttributeError):
-        strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
+    @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
+    def test_raises_error_for_non_string_column(self, create_test_config_files):
+        """Assert AttributeError when a configured string column is not of string dtype."""
+        data = {
+            "key_1": [1, 2, 3],
+            "key_2": [1, 2, 3],
+            "key_3": ["value4", "value5", "value6"],
+        }
+        df = pd.DataFrame(data)
+        with pytest.raises(AttributeError):
+            strip_string_spaces(df, sensor_name=TEST_SENSOR_NAME)
 
 
 @pytest.mark.parametrize("create_test_config_files", [config_dict], indirect=True)
 def test_coerce_corrupted_values_to_nan(create_test_config_files):
+    """Test that non-convertible strings in numeric columns become NaN."""
     # Test with a valid dataframe
     df = pd.DataFrame({"key_4": ["1"]})
     df_out = coerce_corrupted_values_to_nan(df, sensor_name=TEST_SENSOR_NAME)
@@ -216,44 +229,47 @@ def test_coerce_corrupted_values_to_nan(create_test_config_files):
     assert pd.isna(df_out["key_4"][0])
 
 
-def test_remove_issue_timesteps():
-    # Create dummy dataframe
-    df = pd.DataFrame({"time": [1, 2, 3, 4, 5], "col1": [0, 1, 2, 3, 4]})
+class RemoveIssueTimesteps:
+    def test_remove_issue_timesteps(self):
+        """Test removal of timesteps listed in the issue dictionary."""
+        # Create dummy dataframe
+        df = pd.DataFrame({"time": [1, 2, 3, 4, 5], "col1": [0, 1, 2, 3, 4]})
 
-    # Create dummy issue dictionary with timesteps to remove
-    issue_dict = {"timesteps": [2, 4]}
+        # Create dummy issue dictionary with timesteps to remove
+        issue_dict = {"timesteps": [2, 4]}
 
-    # Call function to remove problematic timesteps
-    df_cleaned = remove_issue_timesteps(df, issue_dict)
+        # Call function to remove problematic timesteps
+        df_cleaned = remove_issue_timesteps(df, issue_dict)
 
-    # Check that problematic timesteps were removed
-    assert set(df_cleaned["time"]) == {1, 3, 5}
+        # Check that problematic timesteps were removed
+        assert set(df_cleaned["time"]) == {1, 3, 5}
+
+    def test_remove_issue_time_periods(self):
+        """Test removal of time ranges specified in the issue dictionary."""
+        # Create an array of datetime values for the time column
+        timesteps = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
+
+        # Define issue timesteps and time_periods
+        issue_time_periods = [timesteps[[10, 20]]]
+        issue_timesteps = timesteps[10:20]
+
+        # Create dummy issue dictionary with timesteps to remove
+        issue_dict = {"time_periods": issue_time_periods}
+
+        # Create the dataframe with the two columns
+        dummy = np.random.rand(len(timesteps))
+        df = pd.DataFrame({"time": timesteps, "dummy": dummy})
+
+        # Call function to remove problematic time_periods
+        df_cleaned = remove_issue_timesteps(df, issue_dict)
+        assert np.all(~df_cleaned["time"].isin(issue_timesteps))
 
 
-def test_remove_issue_time_periods():
-    # Create an array of datetime values for the time column
-    timesteps = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
-
-    # Define issue timesteps and time_periods
-    issue_time_periods = [timesteps[[10, 20]]]
-    issue_timesteps = timesteps[10:20]
-
-    # Create dummy issue dictionary with timesteps to remove
-    issue_dict = {"time_periods": issue_time_periods}
-
-    # Create the dataframe with the two columns
-    dummy = np.random.rand(len(timesteps))
-    df = pd.DataFrame({"time": timesteps, "dummy": dummy})
-
-    # Call function to remove problematic time_periods
-    df_cleaned = remove_issue_timesteps(df, issue_dict)
-    assert np.all(~df_cleaned["time"].isin(issue_timesteps))
-
-
-def test__preprocess_reader_kwargs():
+def test_preprocess_reader_kwargs():
+    """Test cleanup of unsupported kwargs and required presence of delimiter."""
     # Test that the function removes the 'dtype' key from the reader_kwargs dict
     reader_kwargs = {"dtype": "int64", "other_key": "other_value", "delimiter": ","}
-    preprocessed_kwargs = _preprocess_reader_kwargs(reader_kwargs)
+    preprocessed_kwargs = preprocess_reader_kwargs(reader_kwargs)
     assert "dtype" not in preprocessed_kwargs
     assert "other_key" in preprocessed_kwargs
 
@@ -265,7 +281,7 @@ def test__preprocess_reader_kwargs():
         "other_key": "other_value",
         "delimiter": ",",
     }
-    preprocessed_kwargs = _preprocess_reader_kwargs(
+    preprocessed_kwargs = preprocess_reader_kwargs(
         reader_kwargs,
     )
     assert "blocksize" not in preprocessed_kwargs
@@ -275,10 +291,11 @@ def test__preprocess_reader_kwargs():
     # Test raise error if delimiter is not specified
     reader_kwargs = {"dtype": "int64", "other_key": "other_value"}
     with pytest.raises(ValueError):
-        _preprocess_reader_kwargs(reader_kwargs)
+        preprocess_reader_kwargs(reader_kwargs)
 
 
 def test_concatenate_dataframe():
+    """Test concatenation behavior and error handling for invalid inputs."""
     # Test that the function returns a Pandas dataframe
     df1 = pd.DataFrame({"time": [1, 2, 3], "value": [4, 5, 6]})
     df2 = pd.DataFrame({"time": [7, 8, 9], "value": [10, 11, 12]})
@@ -296,46 +313,59 @@ def test_concatenate_dataframe():
         concatenate_dataframe(["not a dataframe", "not a dataframe"])
 
 
-def test_strip_delimiter():
-    # Test it strips all external  delimiters
-    s = ",,,,,"
-    assert _strip_delimiter(s) == ""
-    s = "0000,00,"
-    assert _strip_delimiter(s) == "0000,00"
-    s = ",0000,00,"
-    assert _strip_delimiter(s) == "0000,00"
-    s = ",,,0000,00,,"
-    assert _strip_delimiter(s) == "0000,00"
-    # Test if empty string, return the empty string
-    s = ""
-    assert _strip_delimiter(s) == ""
-    # Test if None returns None
-    s = None
-    assert isinstance(_strip_delimiter(s), type(None))
-    # Test if np.nan returns np.nan
-    s = np.nan
-    assert np.isnan(_strip_delimiter(s))
+class TestStripDelimiter:
+    def test_strips_external_delimiters(self):
+        """Test that leading/trailing delimiters are stripped."""
+        # strips all leading/trailing commas
+        assert strip_delimiter(",,,,,") == ""
+        assert strip_delimiter("0000,00,") == "0000,00"
+        assert strip_delimiter(",0000,00,") == "0000,00"
+        assert strip_delimiter(",,,0000,00,,") == "0000,00"
+
+    def test_empty_string_returns_empty(self):
+        """Test that empty strings return empty strings."""
+        assert strip_delimiter("") == ""
+
+    def test_none_returns_none(self):
+        """Test that None returns None."""
+        result = strip_delimiter(None)
+        assert result is None
+
+    def test_nan_returns_nan(self):
+        """Test that NaN returns NaN."""
+        result = strip_delimiter(np.nan)
+        assert np.isnan(result)
 
 
-def test_is_not_corrupted():
-    # Test empty string
-    s = ""
-    assert _is_not_corrupted(s)
-    # Test valid string (convertible to numeric, after split by ,)
-    s = "000,001,000"
-    assert _is_not_corrupted(s)
-    # Test corrupted string (not convertible to numeric, after split by ,)
-    s = "000,xa,000"
-    assert not _is_not_corrupted(s)
-    # Test None is considered corrupted
-    s = None
-    assert not _is_not_corrupted(s)
-    # Test np.nan is considered corrupted
-    s = np.nan
-    assert not _is_not_corrupted(s)
+class TestIsRawArrayStringNotCorrupted:
+    def test_empty_string(self):
+        """Test that empty strings are not corrupted."""
+        s = ""
+        assert is_raw_array_string_not_corrupted(s)
+
+    def test_valid_string(self):
+        """Test that valid strings are not corrupted."""
+        s = "000,001,000"
+        assert is_raw_array_string_not_corrupted(s)
+
+    def test_corrupted_string(self):
+        """Test that corrupted strings are detected."""
+        s = "000,xa,000"
+        assert not is_raw_array_string_not_corrupted(s)
+
+    def test_none_is_corrupted(self):
+        """Test that None is treated as corrupted."""
+        s = None
+        assert not is_raw_array_string_not_corrupted(s)
+
+    def test_nan_is_corrupted(self):
+        """Test that NaN is treated as corrupted."""
+        s = np.nan
+        assert not is_raw_array_string_not_corrupted(s)
 
 
 def test_cast_column_dtypes():
+    """Test casting of dataframe columns based on sensor dtype configuration."""
     # Create a test dataframe with object columns
     df = pd.DataFrame(
         {
@@ -345,7 +375,7 @@ def test_cast_column_dtypes():
         },
     )
     # Call the function
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     df_out = cast_column_dtypes(df, sensor_name)
     # Check that the output dataframe has the correct column types
     assert str(df_out["time"].dtype) == "datetime64[s]"
@@ -359,6 +389,7 @@ def test_cast_column_dtypes():
 
 
 def test_remove_rows_with_missing_time():
+    """Test removal of NaT timestamps and error on all-missing time column."""
     # Create dataframe
     n_rows = 3
     time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
@@ -379,29 +410,20 @@ def test_remove_rows_with_missing_time():
         remove_rows_with_missing_time(df=df)
 
 
-def test_check_not_empty_dataframe():
-    # Test with empty dataframe
-    with pytest.raises(ValueError) as excinfo:
-        _check_not_empty_dataframe(pd.DataFrame())
-    assert "The file is empty and has been skipped." in str(excinfo.value)
-
-    # Test with non-empty dataframe
-    df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    assert _check_not_empty_dataframe(df) is None
-
-
 def test_check_matching_column_number():
+    """Test validation of dataframe column count against expected list."""
     # Test with a matching number of columns
     df = pd.DataFrame({"A": [1, 2], "B": [3, 4]})
-    assert _check_matching_column_number(df, ["A", "B"]) is None
+    assert check_matching_column_number(df, ["A", "B"]) is None
 
     # Test with a non-matching number of columns
     with pytest.raises(ValueError) as excinfo:
-        _check_matching_column_number(df, ["A"])
+        check_matching_column_number(df, ["A"])
     assert "The dataframe has 2 columns, while 1 are expected !" in str(excinfo.value)
 
 
 def test_remove_duplicated_timesteps():
+    """Test dropping of duplicated time entries from the dataframe."""
     # Create dataframe
     n_rows = 3
     time = pd.date_range(start="2023-01-01", periods=n_rows, freq="D")
@@ -417,6 +439,7 @@ def test_remove_duplicated_timesteps():
 
 
 def test_drop_timesteps():
+    """Test exclusion of specified timesteps and error on full drop."""
     # Number last timesteps to drop
     n = 2
     # Create an array of datetime values for the time column
@@ -447,6 +470,7 @@ def test_drop_timesteps():
 
 
 def test_drop_time_periods():
+    """Test exclusion of specified time intervals and proper error flows."""
     # Create an array of datetime values for the time column
     time = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 01:00:00", freq="1 min").to_numpy()
 
@@ -487,7 +511,13 @@ def create_fake_csv(filename, data):
     df.to_csv(filename, index=False)
 
 
-def test_read_raw_file(tmp_path):
+# import pathlib
+# tmp_path = pathlib.Path("/tmp/18")
+# tmp_path.mkdir(parents=True)
+
+
+def test_read_raw_text_file(tmp_path):
+    """Test reading of raw text into DataFrame and handling of empty files."""
     # Create a valid test file
     filepath = os.path.join(tmp_path, "test.csv")
     data = {"att_1": ["11", "21"], "att_2": ["12", "22"]}
@@ -498,13 +528,13 @@ def test_read_raw_file(tmp_path):
     reader_kwargs["header"] = 0
     reader_kwargs["engine"] = "python"
 
-    r = read_raw_file(
+    df = read_raw_text_file(
         filepath=filepath,
         column_names=["att_1", "att_2"],
         reader_kwargs=reader_kwargs,
     )
-    expected_output = pd.DataFrame(data)
-    assert r.equals(expected_output)
+    df_expected = pd.DataFrame(data)
+    assert df.equals(df_expected)
 
     # Test with an empty file without column
     filepath = os.path.join(tmp_path, "test_empty.csv")
@@ -513,8 +543,8 @@ def test_read_raw_file(tmp_path):
     create_fake_csv(filepath, data)
 
     # Call the function and catch the exception
-    with pytest.raises(UnboundLocalError):
-        r = read_raw_file(
+    with pytest.raises(ValueError, match="The following file is empty"):
+        read_raw_text_file(
             filepath=filepath,
             column_names=[],
             reader_kwargs=reader_kwargs,
@@ -527,46 +557,16 @@ def test_read_raw_file(tmp_path):
     create_fake_csv(filepath, data)
 
     # Call the function and catch the exception
-    r = read_raw_file(
-        filepath=filepath,
-        column_names=["att_1", "att_2"],
-        reader_kwargs=reader_kwargs,
-    )
-
-    # Check that an empty dataframe is returned
-    assert r.empty
-
-
-def test_check_df_sanitizer_fun():
-    # Test with valid df_sanitizer_fun
-    def df_sanitizer_fun(df):
-        return df
-
-    assert _check_df_sanitizer_fun(df_sanitizer_fun) is None
-
-    # Test with None argument
-    assert _check_df_sanitizer_fun(None) is None
-
-    # Test with non-callable argument
-    with pytest.raises(ValueError, match="'df_sanitizer_fun' must be a function."):
-        _check_df_sanitizer_fun(123)
-
-    # Test with argument that has more than one parameter
-    def bad_fun(x, y):
-        pass
-
-    with pytest.raises(ValueError, match="The `df_sanitizer_fun` must have only `df` as input argument!"):
-        _check_df_sanitizer_fun(bad_fun)
-
-    # Test with argument that has wrong parameter name
-    def bad_fun2(d):
-        pass
-
-    with pytest.raises(ValueError, match="The `df_sanitizer_fun` must have only `df` as input argument!"):
-        _check_df_sanitizer_fun(bad_fun2)
+    with pytest.raises(ValueError, match="The following file is empty"):
+        read_raw_text_file(
+            filepath=filepath,
+            column_names=["att_1", "att_2"],
+            reader_kwargs=reader_kwargs,
+        )
 
 
 def test_write_l0a(tmp_path):
+    """Test writing and reading L0A parquet files and type validation."""
     # create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")
@@ -574,10 +574,10 @@ def test_write_l0a(tmp_path):
 
     # Write parquet file
     filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
-    write_l0a(df, filepath, True, False)
+    write_l0a(df, filepath, force=True, verbose=False)
 
     # Read parquet file
-    df_written = read_l0a_dataframe([filepath], False)
+    df_written = read_l0a_dataframe([filepath], verbose=False)
 
     # Check if parquet file are similar
     is_equal = df.equals(df_written)
@@ -585,87 +585,231 @@ def test_write_l0a(tmp_path):
 
     # Test error is raised when bad parquet file
     with pytest.raises(ValueError):
-        write_l0a("dummy_object", filepath, True, False)
+        write_l0a("dummy_object", filepath, force=True, verbose=False)
 
 
-def test_read_raw_files():
-    from disdrodb.l0 import l0a_processing
+class TestReadRawTextFiles:
+    def test_empty_filepaths_raises(self, tmp_path):
+        """Should raise ValueError when no filepaths are provided."""
+        # Define verbose argument
+        verbose = False
 
-    # Set up the inputs
-    filepaths = ["test_file1.csv", "test_file2.csv"]
-    column_names = ["time", "value"]
-    reader_kwargs = {"delimiter": ","}
-    sensor_name = "my_sensor"
-    verbose = False
+        # Define sensor name
+        sensor_name = "PARSIVEL"
 
-    # Create a test dataframe
-    df1 = pd.DataFrame(
-        {"time": pd.date_range(start="2022-01-01", end="2022-01-02", freq="h"), "value": np.random.rand(25)},
-    )
-    df2 = pd.DataFrame(
-        {"time": pd.date_range(start="2022-01-03", end="2022-01-04", freq="h"), "value": np.random.rand(25)},
-    )
-    df_list = [df1, df2]
+        # Define a dummy reader
+        def reader(filepath, logger=None):
+            return pd.read_parquet(filepath)
 
-    # Test raise value error if empty filepaths list is passed
-    with pytest.raises(ValueError):
-        read_raw_files(
-            filepaths=[],
-            column_names=column_names,
-            reader_kwargs=reader_kwargs,
+        # Test raise value error if empty filepaths list is passed
+        with pytest.raises(ValueError, match="'filepaths' must contains at least 1 filepath"):
+            read_raw_text_files(
+                filepaths=[],
+                reader=reader,
+                sensor_name=sensor_name,
+                verbose=verbose,
+            )
+
+    def test_multiple_files_concatenated(self, tmp_path):
+        """Should return concatenated DataFrame for multiple valid filepaths."""
+        # Define verbose argument
+        verbose = False
+
+        # Define sensor name
+        sensor_name = "PARSIVEL"
+
+        # Create dummy DataFrames
+        raw_str = ",".join(["000"] * 1024)
+        df1 = pd.DataFrame(
+            {
+                "time": pd.date_range(start="2025-01-01", periods=3, freq="1min"),
+                "raw_drop_number": [raw_str] * 3,
+            },
+        )
+        df2 = pd.DataFrame(
+            {
+                "time": pd.date_range(start="2025-01-02", periods=3, freq="1min"),
+                "raw_drop_number": [raw_str] * 3,
+            },
+        )
+
+        # Define raw filepaths
+        file1 = tmp_path / "test_file1.csv"
+        file2 = tmp_path / "test_file2.csv"
+
+        # Create raw files
+        df1.to_parquet(str(file1))
+        df2.to_parquet(str(file2))
+
+        # Define a dummy reader
+        def reader(filepath, logger=None):
+            return pd.read_parquet(filepath)
+
+        # Test the function returns the expected dataframe
+        df_output = read_raw_text_files(
+            filepaths=[file1, file2],
+            reader=reader,
             sensor_name=sensor_name,
             verbose=verbose,
         )
+        df_expected = pd.concat([df1, df2]).reset_index(drop=True)
+        df_expected["time"] = df_expected["time"].astype("M8[ns]")
+        pd.testing.assert_frame_equal(df_output, df_expected)
 
-    # Mock the process_raw_file function
-    # The code block is defining a mock function called mock_process_raw_file
-    # which will be used in unit testing to replace the original process_raw_file function.
-    def mock_process_raw_file(filepath, column_names, reader_kwargs, df_sanitizer_fun, sensor_name, verbose):
-        if filepath == "test_file1.csv":
-            return df1
-        if filepath == "test_file2.csv":
-            return df2
-        return None
+    def test_single_filepath_string(self, tmp_path):
+        """Should accept a single filepath string and return its DataFrame."""
+        # Define verbose argument
+        verbose = False
 
-    # Monkey patch the function
-    l0a_processing.process_raw_file = mock_process_raw_file
+        # Define sensor name
+        sensor_name = "PARSIVEL"
 
-    # Call the function
-    result = read_raw_files(
-        filepaths=filepaths,
-        column_names=column_names,
-        reader_kwargs=reader_kwargs,
-        sensor_name=sensor_name,
-        verbose=verbose,
-    )
+        # Create dummy DataFrame
+        raw_str = ",".join(["000"] * 1024)
+        df1 = pd.DataFrame(
+            {
+                "time": pd.date_range(start="2025-01-01", periods=3, freq="1min"),
+                "raw_drop_number": [raw_str] * 3,
+            },
+        )
 
-    # Check the result
-    expected_result = pd.concat(df_list).reset_index(drop=True)
-    assert result.equals(expected_result)
+        # Define raw filepath
+        file1 = tmp_path / "test_file1.csv"
 
-    # Assert that it can also process a single filepath (as string)
-    df1_out = read_raw_files(
-        filepaths=filepaths[0],
-        column_names=column_names,
-        reader_kwargs=reader_kwargs,
-        sensor_name=sensor_name,
-        verbose=verbose,
-    )
-    assert df1_out.equals(df1)
+        # Create raw file
+        df1.to_parquet(str(file1))
 
+        # Define a dummy reader
+        def reader(filepath, logger=None):
+            return pd.read_parquet(filepath)
 
-def test_read_raw_files_failure():
-    filepaths = ["test1.csv", "test2.csv"]
-    column_names = ["time", "value"]
-    reader_kwargs = {"delimiter": ","}
-    sensor_name = "my_sensor"
-    verbose = False
-
-    with pytest.raises(ValueError):
-        read_raw_files(
-            filepaths=filepaths,
-            column_names=column_names,
-            reader_kwargs=reader_kwargs,
+        # Test the function accept a single filepath (as string)
+        df_output = read_raw_text_files(
+            filepaths=str(file1),
+            reader=reader,
             sensor_name=sensor_name,
             verbose=verbose,
         )
+        df1["time"] = df1["time"].astype("M8[ns]")
+        pd.testing.assert_frame_equal(df_output, df1)
+
+    def test_skips_bad_filepaths(self, tmp_path):
+        """Should skip invalid filepaths and concatenate only valid ones."""
+        # Define verbose argument
+        verbose = False
+
+        # Define sensor name
+        sensor_name = "PARSIVEL"
+
+        # Create dummy DataFrames
+        raw_str = ",".join(["000"] * 1024)
+        df1 = pd.DataFrame(
+            {
+                "time": pd.date_range(start="2025-01-01", periods=3, freq="1min"),
+                "raw_drop_number": [raw_str] * 3,
+            },
+        )
+        df2 = pd.DataFrame(
+            {
+                "time": pd.date_range(start="2025-01-02", periods=3, freq="1min"),
+                "raw_drop_number": [raw_str] * 3,
+            },
+        )
+
+        # Define raw filepaths
+        file1 = tmp_path / "test_file1.csv"
+        file2 = tmp_path / "test_file2.csv"
+
+        # Create raw files
+        df1.to_parquet(str(file1))
+        df2.to_parquet(str(file2))
+
+        # Define a dummy reader
+        def reader(filepath, logger=None):
+            return pd.read_parquet(filepath)
+
+        # Test bad filepath is skipped
+        df_output = read_raw_text_files(
+            filepaths=[file1, file2, "dummy_path"],
+            reader=reader,
+            sensor_name=sensor_name,
+            verbose=verbose,
+        )
+        df_expected = pd.concat([df1, df2]).reset_index(drop=True)
+        df_expected["time"] = df_expected["time"].astype("M8[ns]")
+        pd.testing.assert_frame_equal(df_output, df_expected)
+
+    def test_all_bad_filepaths_raise(self, tmp_path):
+        """Should raise ValueError if no file is successfully read."""
+        # Define verbose argument
+        verbose = False
+
+        # Define sensor name
+        sensor_name = "PARSIVEL"
+
+        # Define a dummy reader that always fails
+        def reader(filepath, logger=None):
+            raise ValueError("fail")
+
+        # Test bad filepath is skipped
+        with pytest.raises(ValueError, match="Any raw file could be read"):
+            read_raw_text_files(
+                filepaths=["dummy1", "dummy2"],
+                reader=reader,
+                sensor_name=sensor_name,
+                verbose=verbose,
+            )
+
+
+class TestReadL0ADataFrame:
+    def test_read_single_l0a_file(self, tmp_path):
+        """Test reading a single L0A parquet file."""
+        # Create dummy dataframe
+        data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
+        df = pd.DataFrame(data)
+        df["time"] = pd.Timestamp.now()
+
+        # Save dataframe to parquet file
+        filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
+        df.to_parquet(filepath, compression="gzip")
+
+        # Read written parquet file
+        df_written = read_l0a_dataframe(filepath, False)
+        df["time"] = df["time"].astype("M8[ns]")
+        pd.testing.assert_frame_equal(df_written, df)
+
+    def test_read_multiple_l0a_files(self, tmp_path):
+        """Test reading multiple L0A parquet files."""
+        filepaths = []
+        list_df = []
+        for i in [0, 1]:
+            # create dummy dataframe
+            data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
+            df = pd.DataFrame(data).set_index("a")
+            df["time"] = pd.Timestamp.now()
+
+            # save dataframe to parquet file
+            filepath = os.path.join(
+                tmp_path,
+                f"fake_data_sample_{i}.parquet",
+            )
+            df.to_parquet(filepath, compression="gzip")
+            filepaths.append(filepath)
+            list_df.append(df)
+
+        # Create concatenate dataframe
+        df_concatenated = pd.concat(list_df, axis=0, ignore_index=True)
+
+        # Sort by increasing time
+        df_concatenated = df_concatenated.sort_values(by="time")
+
+        # Read written parquet files
+        df_written = read_l0a_dataframe(filepaths, verbose=False)
+        df_concatenated["time"] = df_concatenated["time"].astype("M8[ns]")
+        pd.testing.assert_frame_equal(df_written, df_concatenated)
+
+    def test_raise_type_filepaths(self, tmp_path):
+        """Test raise error with bad filepaths type."""
+        # Assert raise error if filepaths is not a list or string
+        with pytest.raises(TypeError, match="Expecting filepaths to be a string or a list of strings."):
+            read_l0a_dataframe(1, verbose=False)

@@ -35,7 +35,7 @@ from disdrodb.api.info import (
     get_start_time_from_filepaths,
     get_station_name_from_filepaths,
     get_version_from_filepaths,
-    infer_base_dir_from_path,
+    infer_archive_dir_from_path,
     infer_campaign_name_from_path,
     infer_data_source_from_path,
     infer_disdrodb_tree_path,
@@ -86,10 +86,10 @@ def invalid_filepath(tmp_path):
 
 def test_infer_disdrodb_tree_path_components():
     """Test retrieve correct disdrodb path components."""
-    base_dir = os.path.join("whatever_path", "DISDRODB")
+    archive_dir = os.path.join("whatever_path", "DISDRODB")
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
-    path_components = [base_dir, "Raw", data_source, campaign_name]
+    path_components = [archive_dir, "RAW", data_source, campaign_name]
     path = os.path.join(*path_components)
     assert infer_disdrodb_tree_path_components(path) == path_components
 
@@ -99,58 +99,62 @@ def test_infer_disdrodb_tree_path_components():
 
 def test_infer_disdrodb_tree_path():
     # Assert retrieve correct disdrodb path
-    disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    disdrodb_path = os.path.join("DISDRODB", "RAW", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
     assert infer_disdrodb_tree_path(path) == disdrodb_path
 
     # Assert raise error if not disdrodb path
-    disdrodb_path = os.path.join("no_disdro_dir", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    disdrodb_path = os.path.join("no_disdro_dir", "RAW", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
     with pytest.raises(ValueError):
         infer_disdrodb_tree_path(path)
 
     # Assert raise error if not valid DISDRODB directory
-    disdrodb_path = os.path.join("DISDRODB_UNVALID", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    disdrodb_path = os.path.join("DISDRODB_UNVALID", "RAW", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_path", disdrodb_path)
     with pytest.raises(ValueError):
         infer_disdrodb_tree_path(path)
 
     # Assert it takes the right most DISDRODB occurrence
-    disdrodb_path = os.path.join("DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    disdrodb_path = os.path.join("DISDRODB", "RAW", "DATA_SOURCE", "CAMPAIGN_NAME")
     path = os.path.join("whatever_occurrence", "DISDRODB", "DISDRODB", "directory", disdrodb_path)
     assert infer_disdrodb_tree_path(path) == disdrodb_path
 
-    # Assert behaviour when path == base_dir
-    base_dir = os.path.join("home", "DISDRODB")
-    assert infer_disdrodb_tree_path(base_dir) == "DISDRODB"
+    # Assert behaviour when path == archive_dir
+    archive_dir = os.path.join("home", "DISDRODB")
+    assert infer_disdrodb_tree_path(archive_dir) == "DISDRODB"
 
 
-def test_infer_base_dir_from_path():
+def test_infer_archive_dir_from_path():
     # Assert retrieve correct disdrodb path
-    base_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
-    disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join(base_dir, disdrodb_path)
-    assert infer_base_dir_from_path(path) == base_dir
+    archive_dir = os.path.join("whatever_path", "is", "before", "DISDRODB")
+    disdrodb_path = os.path.join("RAW", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join(archive_dir, disdrodb_path)
+    assert infer_archive_dir_from_path(path) == archive_dir
 
     # Assert raise error if not disdrodb path
-    base_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
-    disdrodb_path = os.path.join("Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
-    path = os.path.join(base_dir, disdrodb_path)
+    archive_dir = os.path.join("whatever_path", "is", "before", "NO_DISDRODB")
+    disdrodb_path = os.path.join("RAW", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join(archive_dir, disdrodb_path)
     with pytest.raises(ValueError):
-        infer_base_dir_from_path(path)
+        infer_archive_dir_from_path(path)
 
-    # Assert behaviour when path == base_dir
-    base_dir = os.path.join("home", "DISDRODB")
-    assert infer_base_dir_from_path(base_dir) == base_dir
+    # Assert behaviour when path == archive_dir
+    archive_dir = os.path.join("home", "DISDRODB")
+    assert infer_archive_dir_from_path(archive_dir) == archive_dir
 
 
 def test_infer_data_source_from_path():
     # Assert retrieve correct
-    path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME")
+    path = os.path.join("whatever_path", "DISDRODB", "RAW", "DATA_SOURCE", "CAMPAIGN_NAME")
     assert infer_data_source_from_path(path) == "DATA_SOURCE"
 
-    # Assert raise error if path stop at Raw or Processed
-    path = os.path.join("whatever_path", "DISDRODB", "Raw")
+    # Assert raise error if path stop at RAW or ARCHIVE_VERSION
+    path = os.path.join("whatever_path", "DISDRODB", "RAW")
+    with pytest.raises(ValueError):
+        infer_data_source_from_path(path)
+
+    path = os.path.join("whatever_path", "DISDRODB", "ARCHIVE_VERSION")
     with pytest.raises(ValueError):
         infer_data_source_from_path(path)
 
@@ -162,11 +166,15 @@ def test_infer_data_source_from_path():
 
 def test_infer_campaign_name_from_path():
     # Assert retrieve correct
-    path = os.path.join("whatever_path", "DISDRODB", "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
+    path = os.path.join("whatever_path", "DISDRODB", "RAW", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
     assert infer_campaign_name_from_path(path) == "CAMPAIGN_NAME"
 
-    # Assert raise error if path stop at Raw or Processed
-    path = os.path.join("whatever_path", "DISDRODB", "Raw")
+    # Assert raise error if path stop at RAW or ARCHIVE_VERSION
+    path = os.path.join("whatever_path", "DISDRODB", "RAW")
+    with pytest.raises(ValueError):
+        infer_campaign_name_from_path(path)
+
+    path = os.path.join("whatever_path", "DISDRODB", "ARCHIVE_VERSION")
     with pytest.raises(ValueError):
         infer_campaign_name_from_path(path)
 
@@ -178,15 +186,19 @@ def test_infer_campaign_name_from_path():
 
 def test_infer_path_info_dict():
     # Assert retrieve correct
-    base_dir = os.path.join("whatever_path", "DISDRODB")
-    path = os.path.join(base_dir, "Raw", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
+    archive_dir = os.path.join("whatever_path", "DISDRODB")
+    path = os.path.join(archive_dir, "RAW", "DATA_SOURCE", "CAMPAIGN_NAME", "...")
     info_dict = infer_path_info_dict(path)
     assert info_dict["campaign_name"] == "CAMPAIGN_NAME"
     assert info_dict["data_source"] == "DATA_SOURCE"
-    assert info_dict["base_dir"] == base_dir
+    assert info_dict["data_archive_dir"] == archive_dir
 
-    # Assert raise error if path stop at Raw or Processed
-    path = os.path.join("whatever_path", "DISDRODB", "Raw")
+    # Assert raise error if path stop at RAW or ARCHIVE_VERSION
+    path = os.path.join("whatever_path", "DISDRODB", "RAW")
+    with pytest.raises(ValueError):
+        infer_path_info_dict(path)
+
+    path = os.path.join("whatever_path", "DISDRODB", "ARCHIVE_VERSION")
     with pytest.raises(ValueError):
         infer_path_info_dict(path)
 

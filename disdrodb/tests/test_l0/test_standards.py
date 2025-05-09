@@ -106,11 +106,11 @@ def test_get_valid_names(sensor_name):
 
 def test_get_n_velocity_bins():
     # Impact disdrometer
-    sensor_name = "RD_80"
+    sensor_name = "RD80"
     assert get_n_velocity_bins(sensor_name) == 0
 
     # Optical disdrometer
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     assert get_n_velocity_bins(sensor_name) > 1
 
 

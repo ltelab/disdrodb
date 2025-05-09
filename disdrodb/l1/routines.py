@@ -32,12 +32,13 @@ from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
-from disdrodb.api.io import find_files, get_required_product
+from disdrodb.api.io import find_files
 from disdrodb.api.path import (
     define_file_folder_path,
     define_l1_filename,
 )
-from disdrodb.configs import get_base_dir, get_folder_partitioning
+from disdrodb.api.search import get_required_product
+from disdrodb.configs import get_data_archive_dir, get_folder_partitioning, get_metadata_archive_dir
 from disdrodb.l1.processing import generate_l1
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
@@ -60,7 +61,7 @@ def get_l1_options():
     # - TODO: as function of sensor name
 
     # minimum_diameter
-    # --> OTT_Parsivel: 0.2495
+    # --> PARSIVEL: 0.2495
     # --> RD80: 0.313
     # --> LPM: 0.125 (we currently discard first bin with this setting)
 
@@ -73,7 +74,7 @@ def get_l1_options():
         # Fall velocity option
         "fall_velocity_method": "Beard1976",
         # Diameter-Velocity Filtering Options
-        "minimum_diameter": 0.2495,  # OTT Parsivel first two bin no data !
+        "minimum_diameter": 0.2495,  # OTT PARSIVEL first two bin no data !
         "maximum_diameter": 8,
         "minimum_velocity": 0,
         "maximum_velocity": 12,
@@ -149,7 +150,7 @@ def _generate_l1(
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"{product} processing of {filename} has started."
-    log_info(logger, msg, verbose=verbose)
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     # Retrieve L1 configurations
@@ -180,7 +181,7 @@ def _generate_l1(
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
-        log_info(logger, msg, verbose=verbose)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -206,7 +207,9 @@ def run_l1_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Run the L1 processing of a specific DISDRODB station when invoked from the terminal.
@@ -240,8 +243,8 @@ def run_l1_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 3 files will be processed. By default, ``False``.
-    base_dir : str, optional
+        Only the first 3 files will be processed. The default value is ``False``.
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
@@ -250,12 +253,15 @@ def run_l1_station(
     product = "L1"
 
     # Define base directory
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # Define logs directory
     logs_dir = create_logs_directory(
         product=product,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -271,7 +277,8 @@ def run_l1_station(
     # ------------------------------------------------------------------------.
     # Create directory structure
     data_dir = create_product_directory(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -285,7 +292,7 @@ def run_l1_station(
     flag_not_available_data = False
     try:
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -334,7 +341,7 @@ def run_l1_station(
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         # Logs list
         list_logs=list_logs,
     )

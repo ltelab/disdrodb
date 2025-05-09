@@ -33,7 +33,7 @@ from disdrodb.l0.check_standards import (
     check_l0a_column_names,
     check_l0a_standards,
 )
-from disdrodb.l0.standards import get_raw_array_nvalues, get_sensor_logged_variables
+from disdrodb.l0.standards import allowed_l0_variables, get_raw_array_nvalues
 
 BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")
 
@@ -41,7 +41,7 @@ BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_reade
 def test_check_l0a_standards(capfd):
     filepath = os.path.join(
         BASE_DIR,
-        "Raw",
+        "RAW",
         "EPFL",
         "PARSIVEL_2007",
         "ground_truth",
@@ -51,12 +51,12 @@ def test_check_l0a_standards(capfd):
 
     # Read apache parquet file and check that check pass
     df = pd.read_parquet(filepath)
-    assert check_l0a_standards(df, sensor_name="OTT_Parsivel") is None
+    assert check_l0a_standards(df, sensor_name="PARSIVEL") is None
 
     # Now add longitude and latitude columns and check it logs info
     df["longitude"] = 1
     df["latitude"] = 1
-    check_l0a_standards(df, sensor_name="OTT_Parsivel", verbose=True)
+    check_l0a_standards(df, sensor_name="PARSIVEL", verbose=True)
     # Capture the stdout
     out, _ = capfd.readouterr()
     assert "L0A dataframe has column 'latitude'" in out
@@ -112,12 +112,12 @@ def test_check_valid_values():
 def test_check_raw_fields_available():
     # Test case 1: Missing 'raw_drop_number' column
     df = pd.DataFrame({"other_column": [1, 2, 3]})
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     with pytest.raises(ValueError):
         _check_raw_fields_available(df, sensor_name)
 
     # Test case 2: All required columns present
-    sensor_names = available_sensor_names(product="L0A")
+    sensor_names = available_sensor_names()
     for sensor_name in sensor_names:
         n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
         raw_vars = np.array(list(n_bins_dict.keys()))
@@ -126,25 +126,28 @@ def test_check_raw_fields_available():
         assert _check_raw_fields_available(df, sensor_name) is None
 
 
-def test_check_l0a_column_names(capsys):
-    sensor_names = available_sensor_names(product="L0A")
-    sensor_name = sensor_names[0]
+@pytest.mark.parametrize("sensor_name", available_sensor_names())
+def test_check_l0a_column_names(capsys, sensor_name):
+    # Test 1 : Check only valid columns presents do not raise error
+    column_names = ["raw_drop_number", "time", "latitude", "longitude"]
+    dict_data = {i: [1, 2] for i in column_names}
+    df = pd.DataFrame.from_dict(dict_data)
+    assert check_l0a_column_names(df, sensor_name=sensor_name) is None
 
-    # Test 1 : All columns are present
-    column_names = [*get_sensor_logged_variables(sensor_name), "time", "latitude", "longitude"]
+    column_names = [*allowed_l0_variables(sensor_name)]
     dict_data = {i: [1, 2] for i in column_names}
     df = pd.DataFrame.from_dict(dict_data)
     assert check_l0a_column_names(df, sensor_name=sensor_name) is None
 
     # Test 2 : Missing columns time
-    column_names = [*get_sensor_logged_variables(sensor_name), "latitude", "longitude"]
+    column_names = ["raw_drop_number", "latitude", "longitude"]
     dict_data = {i: [1, 2] for i in column_names}
     df = pd.DataFrame.from_dict(dict_data)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="The 'time' column is missing"):
         check_l0a_column_names(df, sensor_name=sensor_name)
 
-    # Test 3 : fake panda dataframe
+    # Test 3 : Fake panda dataframe
     data = {"wrong_column_name": ["John", "Jane", "Bob", "Sara"]}
     df = pd.DataFrame(data)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="The following columns do no met the DISDRODB standards"):
         check_l0a_column_names(df, sensor_name=sensor_name)

@@ -45,13 +45,24 @@ The software currently enable to:
 - upload raw disdrometer data from the user to the DISDRODB Decentralized Data Archive,
 - read the raw measurements of more than 400 disdrometer stations and save them into a standard NetCDF format (DISDRODB L0 product).
 
-The disdrodb software is able to process data from various disdrometer sensors and manufacturers, and is designed to be easily extended to new ones.
-Currently, disdrodb enables to process data acquired from:
+The disdrodb software can ingest data from various disdrometer sensors and manufacturers, and it is designed so that everyone
+can easily add support for new instruments.
 
-- the OTT Parsivel (``OTT_Parsivel``),
-- the OTT Parsivel2 (``OTT_Parsivel2``),
-- the Thies Laser Precipitation Monitor (``Thies_LPM``),
-- the RD-80 (``RD_80``) disdrometer.
+Currently, disdrodb enable to process data acquired from the following disdrometer sensors:
+
+- Distromet RD-80 (``RD80``).
+- OTT Parsivel (``PARSIVEL``),
+- OTT Parsivel2 (``PARSIVEL2``),
+- Thies Laser Precipitation Monitor (``LPM``),
+
+If you have data from other disdrometers types and you would like to contribute to the DISDRODB project,
+we'd love your help. We're especially interested in adding support for:
+
+- Campbell Present Weather Sensor 100 (``PWS100``),
+- Eigenbrot Optical Disdrometer 470 (``ODM470``),
+- Vaisala Forward Scatter Sensor FD70 (``FD70``),
+- Joanneum Research Two Dimensional Video Disdrometer (``2DVD``).
+
 
 Data Archive
 ==============
@@ -60,7 +71,7 @@ The DISDRODB Decentralized Data Archive collects disdrometer data from all aroun
 
 The data are stored in remote data repositories but are easily accessible through the disdrodb software.
 
-The metadata of each stations are stored in a `centralized repository hosted on GitHub <https://github.com/ltelab/disdrodb-data>`__.
+The metadata of each stations are stored in a `centralized repository hosted on GitHub <https://github.com/ltelab/DISDRODB-METADATA>`__.
 
 The currently available disdrometer stations are depicted in the figure below.
 
@@ -74,7 +85,7 @@ Community
 
 The DISDRODB Working Group is a open community of scientists and engineers interested in advancing the DISDRODB initiative.
 
-We are currently planning the development of the DISDRODB L1 product,
+We are currently finalizing the development of the DISDRODB L1 product,
 featuring quality-checked disdrometer data, along with a suite of scientific-research-oriented DISDRODB L2 products.
 
 Your ideas, algorithms, data, and expertise could significantly shape the future of DISDRODB products,
@@ -93,18 +104,18 @@ Documentation
    :maxdepth: 2
 
    installation
-   data_download
-   l0_processing
+   quick_start
+   products
    metadata_archive
-   readers
    metadata
+   processing
+   readers
    sensor_configs
    contribute_data
    contributors_guidelines
    maintainers_guidelines
-   authors
    software_structure
-
+   authors
 
 .. toctree::
    :maxdepth: 2

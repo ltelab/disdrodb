@@ -31,14 +31,15 @@ from disdrodb.l0.template_tools import (
     get_natural_ndigits,
     get_nchar,
     get_ndigits,
+    get_unique_sorted_values,
     infer_column_names,
+    print_allowed_column_names,
     print_df_column_names,
     print_df_columns_unique_values,
     print_df_first_n_rows,
     print_df_random_n_rows,
     print_df_summary_stats,
     print_df_with_any_nan_rows,
-    print_valid_l0_column_names,
     str_has_decimal_digits,
     str_is_integer,
     str_is_number,
@@ -93,17 +94,17 @@ def test_get_decimal_ndigits():
 
 def test_get_natural_ndigits():
     assert get_natural_ndigits("123.456") == 3
-    assert get_natural_ndigits("-123.456") == 3
+    assert get_natural_ndigits("-123.456") == 4
     assert get_natural_ndigits("123") == 3
-    assert get_natural_ndigits("-123") == 3
+    assert get_natural_ndigits("-123") == 4
     assert get_natural_ndigits("abc") == 0
 
 
 def test_get_ndigits():
     assert get_ndigits("123.456") == 6
-    assert get_ndigits("-123.456") == 6
+    assert get_ndigits("-123.456") == 7
     assert get_ndigits("123") == 3
-    assert get_ndigits("-123") == 3
+    assert get_ndigits("-123") == 4
     assert get_ndigits("abc") == 0
 
 
@@ -176,8 +177,8 @@ def test_print_df_column_names(capfd):
     assert "Column 1 : B" in out
 
 
-def test_print_valid_l0_column_names(capfd):
-    print_valid_l0_column_names(sensor_name="OTT_Parsivel")
+def test_print_allowed_column_names(capfd):
+    print_allowed_column_names(sensor_name="PARSIVEL")
     out, _ = capfd.readouterr()
     assert "['rainfall_rate_32bit'," in out
 
@@ -275,6 +276,37 @@ class Test_Print_Df_With_Any_Nan_Rows:
         assert "Column 1 ( B ):\n      [None None None]" in out
 
 
+class TestGetUniqueSortedValues:
+    def test_returns_unique_sorted_values(self):
+        """Return sorted unique values from a list with duplicates."""
+        input_data = ["c", "b", "a", "b", "d"]
+        expected = ["a", "b", "c", "d"]
+        result = get_unique_sorted_values(input_data)
+        assert isinstance(result, list)
+        assert result == expected
+
+    def test_handles_nan_in_object_array(self):
+        """Convert nan to 'nan' and include in sorted result."""
+        arr = np.array(["4610.3512", "4610.3513", np.nan, "4610.3514"], dtype=object)
+        result = get_unique_sorted_values(arr)
+        expected = ["4610.3512", "4610.3513", "4610.3514", "nan"]
+        assert result == expected
+
+    @pytest.mark.parametrize(
+        ("input_data", "expected"),
+        [
+            (["1", "3", "2"], ["1", "2", "3"]),  # already sorted
+            ([3.0, 1.0, 2.0, 1.0], [1.0, 2.0, 3.0]),  # mixed numeric types
+            (["only"], ["only"]),  # single element
+            ([], []),  # empty input
+        ],
+    )
+    def test_various_inputs(self, input_data, expected):
+        """Handle varied inputs including numeric, single, and empty."""
+        result = get_unique_sorted_values(input_data)
+        assert result == expected
+
+
 def test_print_df_columns_unique_values(capfd):
     df = pd.DataFrame({"A": [1, 2, 2, 3], "B": ["a", "b", "b", "c"]})
     print_df_columns_unique_values(df)
@@ -331,7 +363,7 @@ class Test_Has_Constant_Character:
 
 
 def test_infer_column_names(capfd):
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
     df = pd.DataFrame(
         {
             "0": [123.345, 123.345],  # same number of character
@@ -341,11 +373,11 @@ def test_infer_column_names(capfd):
     dict_possible_columns = infer_column_names(df=df, sensor_name=sensor_name, row_idx=0)
     assert dict_possible_columns[0] == ["rainfall_amount_absolute_32bit"]
     out, _ = capfd.readouterr()
-    assert "ATTENTION: Column 1 values have non-unique number of characters" in out
+    assert "WARNING: The number of characters of column 1 values is not constant" in out
 
 
 def test_check_column_names(capfd):
-    sensor_name = "OTT_Parsivel"
+    sensor_name = "PARSIVEL"
 
     # Test correct type
     with pytest.raises(TypeError):

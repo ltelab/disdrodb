@@ -24,7 +24,6 @@ import os
 import requests
 
 from disdrodb.configs import get_zenodo_token
-from disdrodb.utils.compression import archive_station_data
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
 
@@ -183,7 +182,7 @@ def _define_zenodo_metadata(metadata):
     description = f"Disdrometer measurements of the {name} station. "
     description += "This dataset is part of the DISDRODB project. "
     description += "Station metadata are available at "
-    description += f"https://github.com/ltelab/disdrodb-data/blob/main/DISDRODB/Raw/{data_source}/{campaign_name}/metadata/{station_name}.yml . "  # noqa: E501
+    description += f"https://github.com/ltelab/DISDRODB-METADATA/blob/main/DISDRODB/METADATA/{data_source}/{campaign_name}/metadata/{station_name}.yml . "  # noqa: E501
     description += "The software to easily process and standardize the raw data into netCDF files is available at "
     description += "https://github.com/ltelab/disdrodb ."
 
@@ -204,7 +203,7 @@ def _update_metadata_with_zenodo_url(metadata_filepath: str, disdrodb_data_url: 
     Parameters
     ----------
     metadata_filepath: str
-        Metadata file path.
+        Path to the station metadata file.
     disdrodb_data_url: str
         Remote URL where the station data are stored.
     """
@@ -213,21 +212,19 @@ def _update_metadata_with_zenodo_url(metadata_filepath: str, disdrodb_data_url: 
     write_yaml(metadata_dict, metadata_filepath)
 
 
-def upload_station_to_zenodo(metadata_filepath: str, sandbox: bool = True) -> str:
+def upload_station_to_zenodo(metadata_filepath: str, station_zip_filepath: str, sandbox: bool = True) -> str:
     """Zip station data, upload data to Zenodo and update the metadata disdrodb_data_url.
 
     Parameters
     ----------
     metadata_filepath: str
-        Metadata file path.
+        Path to the station metadata file.
+    station_zip_filepath: str
+        Path to the zip file containing the station data.
     sandbox: bool
         If ``True``, upload to Zenodo Sandbox (for testing purposes).
         If ``False``, upload to Zenodo.
     """
-    # Zip station data
-    print(" - Zipping station data")
-    station_zip_filepath = archive_station_data(metadata_filepath)
-
     # Upload the station data zip file on Zenodo
     # - After upload, it removes the zip file !
     print(" - Uploading station data")

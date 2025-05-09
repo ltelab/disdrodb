@@ -71,17 +71,17 @@ def generate_l1(
     above_velocity_fraction : float, optional
         Fraction of drops above velocity threshold. The default value is 0.5.
     above_velocity_tolerance : float or None, optional
-        Tolerance for above velocity filtering. The default is ``None``.
+        Tolerance for above velocity filtering. The default value is ``None``.
     below_velocity_fraction : float, optional
         Fraction of drops below velocity threshold. The default value is 0.5.
     below_velocity_tolerance : float or None, optional
-        Tolerance for below velocity filtering. The default is ``None``.
+        Tolerance for below velocity filtering. The default value is ``None``.
     small_diameter_threshold : float, optional
         Threshold for small diameter drops. The default value is 1.
     small_velocity_threshold : float, optional
         Threshold for small velocity drops. The default value is 2.5.
     maintain_smallest_drops : bool, optional
-        Whether to maintain the smallest drops. The default is ``True``.
+        Whether to maintain the smallest drops. The default value is ``True``.
 
     Returns
     -------

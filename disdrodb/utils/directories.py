@@ -23,6 +23,10 @@ import logging
 import os
 import pathlib
 import shutil
+from typing import Union
+
+from disdrodb.utils.list import flatten_list
+from disdrodb.utils.logger import log_info
 
 logger = logging.getLogger(__name__)
 
@@ -35,20 +39,91 @@ def ensure_string_path(path, msg, accepth_pathlib=False):
     return str(path)
 
 
+def contains_netcdf_or_parquet_files(dir_path: str) -> bool:
+    """Check (recursively) if a directory has any Parquet or netCDF file.
+
+    os.walk under the hood uses os.scandir
+    os.walk file generator + any() avoid use of while loop
+
+    The function returns True as soon as one file is found (short-circuit)^; False otherwise.
+    """
+    suffixes = (".nc", ".parquet")
+    return any(fname.endswith(suffixes) for _, _, files in os.walk(dir_path) for fname in files)
+
+
+def contains_files(dir_path: str) -> bool:
+    """Check (recursively) if a directory contains any file.
+
+    os.walk under the hood uses os.scandir
+    os.walk file generator + any() avoid use of while loop
+
+    The function returns True as soon as one file is found (short-circuit); False otherwise.
+    """
+    return any(fname for _, _, files in os.walk(dir_path) for fname in files)
+
+
+def check_glob_pattern(pattern: str) -> None:
+    """Check if glob pattern is a string and is a valid pattern.
+
+    Parameters
+    ----------
+    pattern : str
+        String to be checked.
+    """
+    if not isinstance(pattern, str):
+        raise TypeError("Expect pattern as a string.")
+    if pattern[0] == "/":
+        raise ValueError("glob_pattern should not start with /")
+    if "//" in pattern:
+        raise ValueError("glob_pattern expects path with single separators: /, not //")
+    if "\\" in pattern:
+        raise ValueError("glob_pattern expects path separators to be /, not \\")
+    return pattern
+
+
+def check_glob_patterns(patterns: Union[str, list]) -> list:
+    """Check if glob patterns are valids."""
+    if not isinstance(patterns, (str, list)):
+        raise ValueError("'glob_patterns' must be a str or list of strings.")
+    if isinstance(patterns, str):
+        patterns = [patterns]
+    patterns = [check_glob_pattern(pattern) for pattern in patterns]
+    return patterns
+
+
 def _recursive_glob(dir_path, glob_pattern):
-    # ** search for all files recursively
-    # glob_pattern = os.path.join(base_dir, "**", "metadata", f"{station_name}.yml")
-    # metadata_filepaths = glob.glob(glob_pattern, recursive=True)
+    # ** search for in zero or all subdirectories recursively
 
     dir_path = pathlib.Path(dir_path)
     return [str(path) for path in dir_path.rglob(glob_pattern)]
 
 
-def list_paths(dir_path, glob_pattern, recursive=False):
-    """Return a list of filepaths and directory paths."""
+def _list_paths(dir_path, glob_pattern, recursive=False):
+    """Return a list of filepaths and directory paths based on a single glob pattern."""
+    # If glob pattern has separators, disable recursive option
+    if "/" in glob_pattern and "**" not in glob_pattern:
+        recursive = False
+    # Search paths
     if not recursive:
         return glob.glob(os.path.join(dir_path, glob_pattern))
     return _recursive_glob(dir_path, glob_pattern)
+
+
+def list_paths(dir_path, glob_pattern, recursive=False):
+    """Return a list of filepaths and directory paths.
+
+    This function accept also a list of glob patterns !
+    """
+    # Check validity of glob pattern(s)
+    glob_patterns = check_glob_patterns(glob_pattern)
+    # Search path for specified glob patterns
+    paths = flatten_list(
+        [
+            _list_paths(dir_path=dir_path, glob_pattern=glob_pattern, recursive=recursive)
+            for glob_pattern in glob_patterns
+        ],
+    )
+    return paths
 
 
 def list_files(dir_path, glob_pattern, recursive=False):
@@ -88,12 +163,10 @@ def create_directory(path: str, exist_ok=True) -> None:
     path = ensure_string_path(path, msg="'path' must be a string", accepth_pathlib=True)
     try:
         os.makedirs(path, exist_ok=exist_ok)
-        logger.debug(f"Created directory {path}.")
     except Exception as e:
         dir_path = os.path.dirname(path)
         dir_name = os.path.basename(path)
         msg = f"Can not create directory {dir_name} inside {dir_path}. Error: {e}"
-        logger.exception(msg)
         raise FileNotFoundError(msg)
 
 
@@ -119,7 +192,7 @@ def is_empty_directory(path):
     return len(paths) == 0
 
 
-def _remove_file_or_directories(path):
+def _remove_file_or_directories(path, logger=None):
     """Return the file/directory or subdirectories tree of ``path``.
 
     Use this function with caution.
@@ -127,18 +200,18 @@ def _remove_file_or_directories(path):
     # If file
     if os.path.isfile(path):
         os.remove(path)
-        logger.info(f"Deleted the file {path}")
+        log_info(logger, msg=f"Deleted the file {path}")
     # If empty directory
     elif is_empty_directory(path):
         os.rmdir(path)
-        logger.info(f"Deleted the empty directory {path}")
+        log_info(logger, msg=f"Deleted the empty directory {path}")
     # If not empty directory
     else:
         shutil.rmtree(path)
-        logger.info(f"Deleted directories within {path}")
+        log_info(logger, msg=f"Deleted directories within {path}")
 
 
-def remove_if_exists(path: str, force: bool = False) -> None:
+def remove_if_exists(path: str, force: bool = False, logger=None) -> None:
     """Remove file or directory if exists and ``force=True``.
 
     If ``force=False``, it raises an error.
@@ -150,15 +223,13 @@ def remove_if_exists(path: str, force: bool = False) -> None:
     # If the path exists and force=False, raise Error
     if not force:
         msg = f"--force is False and a file already exists at: {path}"
-        logger.error(msg)
         raise ValueError(msg)
 
     # If force=True, remove the file/directory or subdirectories and files !
     try:
-        _remove_file_or_directories(path)
+        _remove_file_or_directories(path, logger=logger)
     except Exception as e:
         msg = f"Can not delete file(s) at {path}. The error is: {e}"
-        logger.error(msg)
         raise ValueError(msg)
 
 
@@ -172,7 +243,6 @@ def copy_file(src_filepath, dst_filepath):
         logger.info(msg)
     except Exception as e:
         msg = f"Something went wrong when copying {filename} into {dst_dir}.\n The error is: {e}."
-        logger.error(msg)
         raise ValueError(msg)
 
 

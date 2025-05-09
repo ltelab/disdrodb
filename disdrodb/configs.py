@@ -1,9 +1,23 @@
 #!/usr/bin/env python3
-"""
-Created on Thu Nov  2 15:39:01 2023.
 
-@author: ghiggi
-"""
+# -----------------------------------------------------------------------------.
+# Copyright (c) 2021-2023 DISDRODB developers
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# -----------------------------------------------------------------------------.
+"""DISDRODB Configuration File functions."""
+
 import os
 from typing import Optional
 
@@ -19,7 +33,9 @@ def _define_config_filepath():
 
 
 def define_disdrodb_configs(
-    base_dir: Optional[str] = None,
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
+    folder_partitioning: Optional[str] = None,
     zenodo_token: Optional[str] = None,
     zenodo_sandbox_token: Optional[str] = None,
 ):
@@ -28,8 +44,19 @@ def define_disdrodb_configs(
 
     Parameters
     ----------
-    base_dir : str
-        The base directory where DISDRODB Metadata Archive is located.
+    data_archive_dir : str
+        The directory path where the DISDRODB Data Archive is located.
+    metadata_archive_dir : str
+        The directory path where the DISDRODB Metadata Archive is located.
+    folder_partitioning : str
+        The folder partitioning scheme used in the DISDRODB Data Archive.
+        Allowed values are:
+        - "": No additional subdirectories, files are saved directly in <station_dir>.
+        - "year": Files are stored under a subdirectory for the year (<station_dir>/2025).
+        - "year/month": Files are stored under subdirectories by year and month (<station_dir>/2025/04).
+        - "year/month/day": Files are stored under subdirectories by year, month and day (<station_dir>/2025/04/01).
+        - "year/month_name": Files are stored under subdirectories by year and month name (<station_dir>/2025/April).
+        - "year/quarter": Files are stored under subdirectories by year and quarter (<station_dir>/2025/Q2).
     zenodo__token: str
         Zenodo Access Token. It is required to upload stations data to Zenodo.
     zenodo_sandbox_token: str
@@ -42,6 +69,8 @@ def define_disdrodb_configs(
     The configuration file is used to run the various DISDRODB operations.
 
     """
+    from disdrodb.api.checks import check_data_archive_dir, check_folder_partitioning, check_metadata_archive_dir
+
     # Define path to .config_disdrodb.yaml file
     filepath = _define_config_filepath()
 
@@ -53,9 +82,15 @@ def define_disdrodb_configs(
         config_dict = {}
         action_msg = "written"
 
-    # Add DISDRODB Base Directory
-    if base_dir is not None:
-        config_dict["base_dir"] = base_dir
+    # Add DISDRODB Data Archive Directory
+    if data_archive_dir is not None:
+        config_dict["data_archive_dir"] = check_data_archive_dir(data_archive_dir)
+    # Add DISDRODB Metadata Archive Directory
+    if metadata_archive_dir is not None:
+        config_dict["metadata_archive_dir"] = check_metadata_archive_dir(metadata_archive_dir)
+    # Add DISDRODB Folder Partitioning
+    if folder_partitioning is not None:
+        config_dict["folder_partitioning"] = check_folder_partitioning(folder_partitioning)
 
     # Add Zenodo Access Tokens
     if zenodo_token is not None:
@@ -97,22 +132,36 @@ def read_disdrodb_configs() -> dict[str, str]:
     return config_dict
 
 
-def get_base_dir(base_dir=None):
+def get_data_archive_dir(data_archive_dir=None):
     """Return the DISDRODB base directory."""
     import disdrodb
+    from disdrodb.api.checks import check_data_archive_dir
 
-    if base_dir is None:
-        base_dir = disdrodb.config.get("base_dir", None)
-    if base_dir is None:
-        raise ValueError("The DISDRODB Base Directory is not specified.")
-    base_dir = str(base_dir)  # convert Path to str
-    return base_dir
+    if data_archive_dir is None:
+        data_archive_dir = disdrodb.config.get("data_archive_dir", None)
+    if data_archive_dir is None:
+        raise ValueError("The DISDRODB Data Archive Directory is not specified.")
+    data_archive_dir = check_data_archive_dir(data_archive_dir)  # ensure Path converted to str
+    return data_archive_dir
+
+
+def get_metadata_archive_dir(metadata_archive_dir=None):
+    """Return the DISDRODB Metadata Archive Directory."""
+    import disdrodb
+    from disdrodb.api.checks import check_metadata_archive_dir
+
+    if metadata_archive_dir is None:
+        metadata_archive_dir = disdrodb.config.get("metadata_archive_dir", None)
+    if metadata_archive_dir is None:
+        raise ValueError("The DISDRODB Metadata Archive Directory is not specified.")
+    metadata_archive_dir = check_metadata_archive_dir(metadata_archive_dir)  # ensure Path converted to str
+    return metadata_archive_dir
 
 
 def get_folder_partitioning():
     """Return the folder partitioning."""
     import disdrodb
-    from disdrodb.api.path import check_folder_partitioning
+    from disdrodb.api.checks import check_folder_partitioning
 
     # Get the folder partitioning
     folder_partitioning = disdrodb.config.get("folder_partitioning", None)

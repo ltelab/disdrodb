@@ -34,13 +34,14 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import group_filepaths
-from disdrodb.api.io import find_files, get_required_product
+from disdrodb.api.io import find_files
 from disdrodb.api.path import (
     define_accumulation_acronym,
     define_l2e_filename,
     define_l2m_filename,
 )
-from disdrodb.configs import get_base_dir
+from disdrodb.api.search import get_required_product
+from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
 from disdrodb.l1.resampling import resample_dataset
 from disdrodb.l2.event import get_events_info, identify_events
 from disdrodb.l2.processing import (
@@ -51,6 +52,7 @@ from disdrodb.l2.processing import (
 from disdrodb.l2.processing_options import get_l2_processing_options
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
+from disdrodb.utils.list import flatten_list
 
 # Logger
 from disdrodb.utils.logger import (
@@ -110,7 +112,7 @@ def _generate_l2e(
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"{product} processing of {filename} has started."
-    log_info(logger, msg, verbose=verbose)
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     ### Core computation
@@ -198,7 +200,7 @@ def _generate_l2e(
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
-        log_info(logger, msg, verbose=verbose)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -226,16 +228,6 @@ def is_possible_product(accumulation_interval, sample_interval, rolling):
     return accumulation_interval % sample_interval == 0
 
 
-def flatten_list(nested_list):
-    """Flatten a nested list into a single-level list."""
-    if isinstance(nested_list, list) and len(nested_list) == 0:
-        return nested_list
-    # If list is already flat, return as is to avoid flattening to chars
-    if isinstance(nested_list, list) and not isinstance(nested_list[0], list):
-        return nested_list
-    return [item for sublist in nested_list for item in sublist] if isinstance(nested_list, list) else [nested_list]
-
-
 def run_l2e_station(
     # Station arguments
     data_source,
@@ -246,7 +238,9 @@ def run_l2e_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Generate the L2E product of a specific DISDRODB station when invoked from the terminal.
@@ -288,8 +282,8 @@ def run_l2e_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 3 files will be processed. By default, ``False``.
-    base_dir : str, optional
+        Only the first 3 files will be processed. The default value is ``False``.
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
@@ -298,7 +292,10 @@ def run_l2e_station(
     product = "L2E"
 
     # Define base directory
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir=metadata_archive_dir)
 
     # ------------------------------------------------------------------------.
     # Start processing
@@ -313,7 +310,7 @@ def run_l2e_station(
     flag_not_available_data = False
     try:
         filepaths = find_files(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -427,7 +424,8 @@ def run_l2e_station(
         # ------------------------------------------------------------------.
         # Create product directory
         data_dir = create_product_directory(
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -441,7 +439,7 @@ def run_l2e_station(
         # Define logs directory
         logs_dir = create_logs_directory(
             product=product,
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
@@ -486,7 +484,7 @@ def run_l2e_station(
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            base_dir=base_dir,
+            data_archive_dir=data_archive_dir,
             # Product options
             sample_interval=accumulation_interval,
             rolling=rolling,
@@ -550,7 +548,7 @@ def _generate_l2m(
     ##------------------------------------------------------------------------.
     # Log start processing
     msg = f"{product} processing of {filename} has started."
-    log_info(logger, msg, verbose=verbose)
+    log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##------------------------------------------------------------------------.
     ### Core computation
@@ -608,7 +606,7 @@ def _generate_l2m(
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
-        log_info(logger, msg, verbose=verbose)
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -634,7 +632,9 @@ def run_l2m_station(
     verbose: bool = True,
     parallel: bool = True,
     debugging_mode: bool = False,
-    base_dir: Optional[str] = None,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Run the L2M processing of a specific DISDRODB station when invoked from the terminal.
@@ -665,8 +665,8 @@ def run_l2m_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 3 files will be processed. By default, ``False``.
-    base_dir : str, optional
+        Only the first 3 files will be processed. The default value is ``False``.
+    data_archive_dir : str, optional
         The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
         If not specified, the path specified in the DISDRODB active configuration will be used.
 
@@ -675,7 +675,10 @@ def run_l2m_station(
     product = "L2M"
 
     # Define base directory
-    base_dir = get_base_dir(base_dir)
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+
+    # Retrieve DISDRODB Metadata Archive directory
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
     # ------------------------------------------------------------------------.
     # Start processing
@@ -693,11 +696,10 @@ def run_l2m_station(
     # Retrieve source sampling interval
     # - If a station has varying measurement interval over time, choose the smallest one !
     metadata = read_station_metadata(
-        base_dir=base_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        product="L2M",  # TODO: remove when using metadata_dir !
     )
     sample_interval = metadata["measurement_interval"]
     if isinstance(sample_interval, list):
@@ -737,10 +739,12 @@ def run_l2m_station(
         flag_not_available_data = False
         try:
             filepaths = find_files(
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
+                # Product options
                 product=required_product,
                 sample_interval=accumulation_interval,
                 rolling=rolling,
@@ -771,18 +775,22 @@ def run_l2m_station(
             optimization = model_options["optimization"]
 
             # -----------------------------------------------------------------.
-            msg = f" - Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."
+            msg = f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."
             log_info(logger=logger, msg=msg, verbose=verbose)
-            msg = f" - Estimating {psd_model} parameters using {optimization}."
+            msg = f"Estimating {psd_model} parameters using {optimization}."
             log_info(logger=logger, msg=msg, verbose=verbose)
 
             # -------------------------------------------------------------.
             # Create product directory
             data_dir = create_product_directory(
-                base_dir=base_dir,
+                # DISDRODB root directories
+                data_archive_dir=data_archive_dir,
+                metadata_archive_dir=metadata_archive_dir,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
+                # Processing options
                 product=product,
                 force=force,
                 # Option for L2E
@@ -795,7 +803,8 @@ def run_l2m_station(
             # Define logs directory
             logs_dir = create_logs_directory(
                 product=product,
-                base_dir=base_dir,
+                data_archive_dir=data_archive_dir,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -837,10 +846,12 @@ def run_l2m_station(
             # Define L2M summary logs
             create_product_logs(
                 product=product,
+                # Station arguments
                 data_source=data_source,
                 campaign_name=campaign_name,
                 station_name=station_name,
-                base_dir=base_dir,
+                # DISDRODB root directory
+                data_archive_dir=data_archive_dir,
                 # Product options
                 model_name=model_name,
                 sample_interval=sample_interval,

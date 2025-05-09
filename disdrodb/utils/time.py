@@ -242,13 +242,13 @@ def regularize_dataset(
     xr_obj : xarray.Dataset or xr.DataArray
         xarray object with time dimension.
     time_dim : str, optional
-        The time dimension in the xarray object. The default is ``"time"``.
+        The time dimension in the xarray object. The default value is ``"time"``.
     freq : str
         The ``freq`` string to pass to `pd.date_range()` to define the new time coordinates.
         Examples: ``freq="2min"``.
     method : str, optional
         Method to use for filling missing timesteps.
-        If ``None``, fill with ``fill_value``. The default is ``None``.
+        If ``None``, fill with ``fill_value``. The default value is ``None``.
         For other possible methods, see xarray.Dataset.reindex()`.
     fill_value : (float, dict), optional
         Fill value to fill missing timesteps.
@@ -402,7 +402,7 @@ def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
 
     Duplicated timesteps are removed before inferring the sample interval.
 
-    NOTE: This function is not used in the DISDRODB processing chain.
+    NOTE: This function is used only for the reader preparation.
     """
     # Check sorted by time and sort if necessary
     ds = ensure_sorted_by_time(ds)
@@ -526,7 +526,7 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
     ds = ensure_sorted_by_time(ds)
 
     # Convert time to pandas.DatetimeIndex for easier manipulation
-    times = pd.to_datetime(ds["time"].values)
+    times = pd.to_datetime(ds["time"].to_numpy())
 
     # Determine the start and end times
     start_time = times[0].floor(f"{sample_interval}s")

@@ -1,15 +1,14 @@
-Keys,Description
-sensor_long_name,Sensor long name
-sensor_manufacturer,"Sensor manufacturer. Examples: Thies Clima, OTT Hydromet, Vaisala, Campbell, …"
-sensor_wavelength,Sensor wavelength
-sensor_serial_number,Sensor serial number
-firmware_iop,Input/Output Processor Firmware [Available for OTT Parsivels]
-firmware_dsp,Digital Signal Processor Firmware [Available for OTT Parsivels]
-firmware_version,Firmware version
-sensor_beam_length,Length of the laser beam's measurement area in mm
-sensor_beam_width,Width of the laser beam's measurement area in mm
-sensor_nominal_width,Expected width of the sensor beam under typical operating conditions
-measurement_interval,Number of seconds over which measurements are taken.
-calibration_sensitivity,Sensor sensitivity
-calibration_certification_date,Sensor calibration date(s)
-calibration_certification_url,Sensor calibration certification url
+Keys, Description
+sensor_long_name, Sensor long name
+sensor_manufacturer, "Sensor manufacturer. Examples: Thies Clima, OTT Hydromet, Vaisala, Campbell, …"
+sensor_wavelength, Sensor wavelength
+sensor_serial_number, Sensor serial number
+firmware_iop, Input/Output Processor Firmware [Available for OTT Parsivels]
+firmware_dsp, Digital Signal Processor Firmware [Available for OTT Parsivels]
+firmware_version, Firmware version
+sensor_beam_length, Length of the laser beam's measurement area in mm
+sensor_beam_width, Width of the laser beam's measurement area in mm
+sensor_nominal_width, Expected width of the sensor beam under typical operating conditions
+calibration_sensitivity, Sensor sensitivity
+calibration_certification_date, Sensor calibration date(s)
+calibration_certification_url, Sensor calibration certification url

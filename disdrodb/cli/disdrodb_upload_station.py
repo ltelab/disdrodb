@@ -24,7 +24,12 @@ from typing import Optional
 import click
 
 from disdrodb.data_transfer.upload_data import click_upload_options
-from disdrodb.utils.cli import click_base_dir_option, click_station_arguments, parse_base_dir
+from disdrodb.utils.cli import (
+    click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
+    click_station_arguments,
+    parse_archive_dir,
+)
 
 sys.tracebacklimit = 0  # avoid full traceback error if occur
 
@@ -32,14 +37,19 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_station_arguments
 @click_upload_options
-@click_base_dir_option
+@click_data_archive_dir_option
+@click_metadata_archive_dir_option
 def disdrodb_upload_station(
+    # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
+    # Upload options
     platform: Optional[str] = None,
-    base_dir: Optional[str] = None,
     force: bool = False,
+    # DISDRODB root directories
+    data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     """
     Upload data from a single DISDRODB station on a remote repository.
@@ -56,26 +66,33 @@ def disdrodb_upload_station(
         The name of the campaign. Must be provided in UPPER CASE.
     station_name : str
         The name of the station.
-    base_dir : str, optional
-        The base directory of DISDRODB, expected in the format ``<...>/DISDRODB``.
-        If ``None`` (the default), the ``base_dir`` path specified in the DISDRODB active configuration will be used.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
     platform: str, optional
         Name of the remote data storage platform.
         The default platform is ``"sandbox.zenodo"`` (for testing purposes).
         Switch to ``"zenodo"`` for final data dissemination.
     force: bool, optional
         If ``True``, upload the data and overwrite the ``disdrodb_data_url``.
-        The default is ``force=False``.
+        The default value is ``force=False``.
 
     """
     from disdrodb.data_transfer.upload_data import upload_station
 
-    base_dir = parse_base_dir(base_dir)
+    data_archive_dir = parse_archive_dir(data_archive_dir)
+    metadata_archive_dir = parse_archive_dir(metadata_archive_dir)
     upload_station(
-        base_dir=base_dir,
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
+        # Station argument
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Upload options
         platform=platform,
         force=force,
     )

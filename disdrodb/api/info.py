@@ -174,18 +174,18 @@ def get_sample_interval_from_filepaths(filepaths):
 
 
 def infer_disdrodb_tree_path_components(path: str) -> list:
-    """Return a list with the component of the ``disdrodb_path``.
+    """Return a list with the component of a DISDRODB path ``disdrodb_path``.
 
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
     list
         Path element of the DISDRODB archive.
-        Format: [``base_dir``, ``<Raw or Processed>``, ``data_source`, ``campaign_name``, ...]
+        Format: [``data_archive_dir``, ``product_version``, ``data_source`, ``campaign_name``, ...]
     """
     # Retrieve path elements (os-specific)
     p = Path(path)
@@ -197,78 +197,79 @@ def infer_disdrodb_tree_path_components(path: str) -> list:
         raise ValueError(f"The DISDRODB directory is not present in the path '{path}'")
     # Find the rightermost occurrence
     right_most_occurrence = max(idx_occurrence)
-    # Define base_dir and tree components
-    base_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
+    # Define archive_dir and tree components
+    archive_dir = os.path.join(*list_path_elements[: right_most_occurrence + 1])
     tree_components = list_path_elements[right_most_occurrence + 1 :]
     # Return components
-    components = [base_dir, *tree_components]
+    components = [archive_dir, *tree_components]
     return components
 
 
 def infer_path_info_dict(path: str) -> dict:
-    """Return a dictionary with the ``base_dir``, ``data_source`` and ``campaign_name`` of the disdrodb_path.
+    """Return a dictionary with the ``data_archive_dir``, ``data_source`` and ``campaign_name`` of the disdrodb_path.
 
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
     dict
         Dictionary with the path element of the DISDRODB archive.
-        Valid keys: ``"base_dir"``, ``"data_source"``, ``"campaign_name"``
+        Valid keys: ``"data_archive_dir"``, ``"data_source"``, ``"campaign_name"``
     """
     components = infer_disdrodb_tree_path_components(path=path)
     if len(components) <= 3:
         raise ValueError(f"Impossible to determine data_source and campaign_name from {path}")
     path_dict = {}
-    path_dict["base_dir"] = components[0]
+    path_dict["data_archive_dir"] = components[0]
     path_dict["data_source"] = components[2]
     path_dict["campaign_name"] = components[3]
     return path_dict
 
 
 def infer_path_info_tuple(path: str) -> tuple:
-    """Return a tuple with the ``base_dir``, ``data_source`` and ``campaign_name`` of the disdrodb_path.
+    """Return a tuple with the ``data_archive_dir``, ``data_source`` and ``campaign_name`` of the disdrodb_path.
 
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
     tuple
         Dictionary with the path element of the DISDRODB archive.
-        Valid keys: ``"base_dir"``, ``"data_source"``, ``"campaign_name"``
+        Valid keys: ``"data_archive_dir"``, ``"data_source"``, ``"campaign_name"``
     """
     path_dict = infer_path_info_dict(path)
-    return path_dict["base_dir"], path_dict["data_source"], path_dict["campaign_name"]
+    return path_dict["data_archive_dir"], path_dict["data_source"], path_dict["campaign_name"]
 
 
 def infer_disdrodb_tree_path(path: str) -> str:
-    """Return the directory tree path from the base_dir directory.
+    """Return the directory tree path from the archive directory.
 
     Current assumption: no ``data_source``, ``campaign_name``, ``station_name`` or file contain the word DISDRODB!
 
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
     str
         Path inside the DISDRODB archive.
-        Format: ``DISDRODB/<Raw or Processed>/<DATA_SOURCE>/<CAMPAIGN_NAME>/...``
+        Format: ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/...``
+        Format: ``DISDRODB/<ARCHIVE_VERSION>/<DATA_SOURCE>/<CAMPAIGN_NAME>/...``
     """
     components = infer_disdrodb_tree_path_components(path=path)
     tree_filepath = os.path.join("DISDRODB", *components[1:])
     return tree_filepath
 
 
-def infer_base_dir_from_path(path: str) -> str:
+def infer_archive_dir_from_path(path: str) -> str:
     """Return the disdrodb base directory from a file or directory path.
 
     Assumption: no data_source, campaign_name, station_name or file contain the word DISDRODB!
@@ -276,7 +277,7 @@ def infer_base_dir_from_path(path: str) -> str:
     Parameters
     ----------
     path : str
-        ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+        Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -294,7 +295,7 @@ def infer_campaign_name_from_path(path: str) -> str:
     Parameters
     ----------
     path : str
-       ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+       Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -316,7 +317,7 @@ def infer_data_source_from_path(path: str) -> str:
     Parameters
     ----------
     path : str
-       ``path`` can be a ``campaign_dir`` (``raw_dir`` or ``processed_dir``), or a DISDRODB file path.
+       Directory or file path within the DISDRODB archive.
 
     Returns
     -------
@@ -449,7 +450,7 @@ def group_filepaths(filepaths, groups=None):
         ``month_name``, ``quarter``, ``season``.
         The time components are extracted from ``start_time`` !
         If groups is ``None`` returns the input filepaths list.
-        The default is ``None``.
+        The default value is ``None``.
 
     Returns
     -------

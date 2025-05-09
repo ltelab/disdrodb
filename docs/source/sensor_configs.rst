@@ -1,13 +1,14 @@
 .. _sensor_configurations:
 
 =========================
-Sensor Configurations
+Sensors Configurations
 =========================
 
-DISDRODB tailor the processing of the disdrometer measurements according
-to the instrument type and characteristics.
+DISDRODB tailor the processing of the disdrometer measurements according to the instrument type and characteristics.
 
-Currently, disdrodb enables to process data acquired from the OTT Parsivel (``OTT_Parsivel``), OTT Parsivel2 (``OTT_Parsivel2``), Thies Laser Precipitation Monitor (``Thies_LPM``) and RD-80 (``RD_80``) disdrometers.
+Currently, disdrodb enables to process data acquired from the
+OTT Parsivel (``PARSIVEL``), OTT Parsivel2 (``PARSIVEL2``),
+Thies Laser Precipitation Monitor (``LPM``) and Disdromet RD-80 (``RD80``) disdrometers.
 
 
 The sensor configurations already implemented can be listed by typing the command:
@@ -20,15 +21,15 @@ The sensor configurations already implemented can be listed by typing the comman
 
 
 The sensor configurations are stored within the disdrodb software
-`disdrodb.l0.configs <https://github.com/ltelab/disdrodb/tree/main/disdrodb/L0/readers/GPM/IFLOODS.py>`_ directory.
-In this directory, the name of the subdirectories correspond to ``the sensor_name``.
+`disdrodb.l0.configs <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/configs>`_ directory.
+In this directory, the name of the subdirectories correspond to the ``sensor_name``.
 
 For each sensor, the following list of configuration YAML files are required:
 
 |   📁 disdrodb/
 |   ├── 📁 l0 : Contains the software to produce the DISDRODB L0 products
 |       ├── 📁 configs : Contains the specifications of various types of disdrometers
-|           ├── 📁 *<sensor_name>* : e.g. OTT_Parsivel, OTT_Parsivel2, Thies_LPM, RD_80
+|           ├── 📁 *<sensor_name>* : e.g. PARSIVEL, PARSIVEL2, LPM, RD80
 |               ├── 📜 \*.yml  : YAML files defining sensor characteristics (e.g. diameter and velocity bins)
 |               ├── 📜 bins_diameter.yml : Information related to sensor diameter bins
 |               ├── 📜 bins_velocity.yml : Information related to sensor velocity bins
@@ -47,28 +48,24 @@ Once you added a new sensor configuration, check the validity with the following
 
     from disdrodb.l0.check_configs import check_sensor_configs
 
-    sensor_name = "OTT_Parsivel"  # Change with your sensor_name
+    sensor_name = "PARSIVEL"  # Change with your sensor_name
     check_sensor_configs(sensor_name)
 
-Here below we detail further information related to each of the configuration
-YAML files.
+Here below we detail further information related to each of the configuration YAML files.
 
 
 Sensor diameter bins
 ---------------------
 
 The ``bins_diameter.yml`` file contains the information related to the drop diameter bins.
-Within the YAML file, the bins ``center``, ``width`` and lower and upper ``bounds``
-must be specified.
+Within the YAML file, the bins ``center``, ``width`` and lower and upper ``bounds`` must be specified.
 
 Sensor velocity bins
 ---------------------
 
 The ``bins_velocity.yml`` file contains the information related to the drop fall velocity bins.
-Within the YAML file, the bins ``center``, ``width`` and lower and upper ``bounds``
-must be specified.
-If the sensor (i.e. impact disdrometers) does not measure the drop fall velocity,
-the YAML files must be defined empty!
+Within the YAML file, the bins ``center``, ``width`` and lower and upper ``bounds`` must be specified.
+If the sensor (i.e. impact disdrometers) does not measure the drop fall velocity, the YAML files must be defined empty!
 
 
 Sensor logged variables
@@ -101,13 +98,13 @@ For the variables which values do not depend only on the time dimension, it is n
 to specify 2 additional keys: ``n_values`` and ``dimension_order``
 
 The ``n_values`` key corresponds to the total number of variable values in the array.
-For example, for the precipitation spectrum of the OTT Parsivel sensor,
+For example, for the precipitation spectrum of the OTT PARSIVEL sensor,
 characterized by 32 diameter and 32 velocity bins, ``n_values = 1024`` (32*32).
 
 The ``dimension_order`` controls how the precipitation spectrum counts logged by the
 sensor have to be reshaped into a 2D matrix.
 
-For example, the OTT Parsivel logs the precipitation spectrum by first providing
+For example, the OTT PARSIVEL logs the precipitation spectrum by first providing
 the drop count in each bin diameters for the velocity bin 1, then for velocity bin 2 and so on.
 The flattened array looks like ``[v1d1 ... v1d32, v2d1, ..., v2d32, ...]`` and therefore
 ``dimension_order = ["velocity_bin_center", "diameter_bin_center"]``

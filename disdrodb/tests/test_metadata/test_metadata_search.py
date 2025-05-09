@@ -17,182 +17,491 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB API metadata utility."""
+import os
+import shutil
 
 import pytest
 
+import disdrodb
+from disdrodb.api.path import define_station_dir
 from disdrodb.metadata.search import (
-    _get_list_all_metadata,
-    _get_list_metadata_with_data,
     get_list_metadata,
 )
 from disdrodb.tests.conftest import (
     create_fake_metadata_file,
     create_fake_raw_data_file,
+    get_default_product_kwargs,
 )
 
-
-def test__get_list_all_metadata(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
-
-    expected_result = []
-
-    # Test 1 : one metadata file
-    key_name = "key1"
-    metadata_dict = {key_name: "value1"}
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "station_1"
-
-    metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
-        metadata_dict=metadata_dict,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
-    expected_result.append(metadata_filepath)
-    result = _get_list_all_metadata(
-        base_dir=str(base_dir),
-        data_sources=data_source,
-        campaign_names=campaign_name,
-    )
-
-    assert expected_result == result
-
-    # Test 2 : two metadata files
-    station_name = "station_2"
-    metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
-        metadata_dict=metadata_dict,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    expected_result.append(metadata_filepath)
-    result = _get_list_all_metadata(
-        base_dir=str(base_dir),
-        data_sources=data_source,
-        campaign_names=campaign_name,
-    )
-
-    assert result == expected_result
+# import pathlib
+# tmp_path = pathlib.Path("/tmp/dummy7")
 
 
-def test__get_list_metadata_with_data(tmp_path):
-    expected_result = []
+class TestGetListMetadata:
 
-    base_dir = tmp_path / "DISDRODB"
+    def test_list_all_metadata(self, tmp_path):
+        """Test return metadata filepaths of all stations in the DISDRODB Metadata Archive."""
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
-    # Test 1 : one metadata file + one data file
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "station_1"
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
 
-    key_name = "key1"
-    metadata_dict = {key_name: "value1"}
-    metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
-        metadata_dict=metadata_dict,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    _ = create_fake_raw_data_file(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
+        expected_result = []
 
-    expected_result.append(metadata_filepath)
+        # Test with one metadata file
+        metadata_filepath = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+        )
+        expected_result.append(metadata_filepath)
+        assert expected_result == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_sources=data_source,
+            campaign_names=campaign_name,
+        )
+        assert expected_result == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+        )
 
-    result = _get_list_metadata_with_data(
-        base_dir=str(base_dir),
-        data_sources=data_source,
-        campaign_names=campaign_name,
-    )
+        # Test with two metadata files
+        metadata_filepath = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+        )
+        expected_result.append(metadata_filepath)
+        assert expected_result == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_sources=data_source,
+            campaign_names=campaign_name,
+        )
+        assert expected_result == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+        )
 
-    assert result == expected_result
+    def test_filtering_metadata(self, tmp_path):
+        """Test return metadata filepaths of stations matching the filtering criteria."""
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
-    # Test 1 : two metadata files + one data file
-    station_name = "station_2"
-    key_name = "key1"
-    metadata_dict = {key_name: "value1"}
+        # Create metadata files with different data source
+        metadata_filepath1 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source="DATA_SOURCE_1",
+            campaign_name="CAMPAIGN_NAME_1",
+            station_name="station_1",
+        )
+        metadata_filepath2 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source="DATA_SOURCE_2",
+            campaign_name="CAMPAIGN_NAME_2",
+            station_name="station_2",
+        )
 
-    metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
-        metadata_dict=metadata_dict,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    result = _get_list_metadata_with_data(
-        base_dir=str(base_dir),
-        data_sources=data_source,
-        campaign_names=campaign_name,
-    )
-    assert result == expected_result
+        # Check filtering works
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_sources="DATA_SOURCE_1",
+        )
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            campaign_names="CAMPAIGN_NAME_1",
+        )
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            station_names="station_1",
+        )
+        assert [metadata_filepath1, metadata_filepath2] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_sources=["DATA_SOURCE_1", "DATA_SOURCE_2"],
+        )
 
-    # Test 3 : two metadata files + two data files
-    _ = create_fake_raw_data_file(
-        base_dir=base_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    expected_result.append(metadata_filepath)
+        # Check filtering with invalid filtering criteria
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_sources=["DATA_SOURCE_1", "INVALID_DATA_SOURCE"],
+            invalid_fields_policy="ignore",
+        )
+        with pytest.raises(ValueError):
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_sources=["DATA_SOURCE_1", "INVALID_DATA_SOURCE"],
+                invalid_fields_policy="raise",
+            )
+        # Check raise error if no stations left
+        with pytest.raises(ValueError):
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_sources=["INVALID_DATA_SOURCE"],
+                invalid_fields_policy="ignore",
+            )
 
-    result = _get_list_metadata_with_data(
-        base_dir=str(base_dir),
-        data_sources=data_source,
-        campaign_names=campaign_name,
-    )
+    def test_list_metadata_with_disdrodb_data_url(self, tmp_path):
+        """Test return metadata filepaths of metadata with disdrodb_data_url specified."""
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
-    assert sorted(result) == sorted(expected_result)
+        # Create metadata files without disdrodb_data_url
+        metadata_dict = {"disdrodb_data_url": ""}
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        metadata_filepath1 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            metadata_dict=metadata_dict,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+        )
 
+        # Create metadata files without disdrodb_data_url
+        metadata_dict = {"disdrodb_data_url": None}
+        metadata_filepath2 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            metadata_dict=metadata_dict,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+        )
 
-def test_get_list_metadata_file(tmp_path):
-    base_dir = tmp_path / "DISDRODB"
-    data_source = "DATA_SOURCE"
-    campaign_name = "CAMPAIGN_NAME"
-    station_name = "station_name"
-    metadata_filepath = create_fake_metadata_file(
-        base_dir=base_dir,
-        metadata_dict={},
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
+        # Create metadata file with disdrodb_data_url
+        metadata_dict = {"disdrodb_data_url": "valid_url"}
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        metadata_filepath3 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            metadata_dict=metadata_dict,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_3",
+        )
 
-    # Test 1 : Retrieve specific station name
-    result = get_list_metadata(
-        base_dir=str(base_dir),
-        data_sources=data_source,
-        campaign_names=campaign_name,
-        station_names=station_name,
-        with_stations_data=False,
-    )
-    assert result == [metadata_filepath]
+        # Check metadata file list
+        metadata_filepaths = get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            available_data=True,
+        )
 
-    # Test 2: Retrieve all metadata
-    result = get_list_metadata(base_dir=str(base_dir), with_stations_data=False)
-    assert result == [metadata_filepath]
+        assert metadata_filepath1 not in metadata_filepaths
+        assert metadata_filepath2 not in metadata_filepaths
+        assert metadata_filepath3 in metadata_filepaths
 
-    # Test 3: Retrieve all metadata with data
-    with pytest.raises(ValueError):  # raise error if None
-        get_list_metadata(base_dir=str(base_dir), with_stations_data=True)
+    def test_list_metadata_with_raw_data(self, tmp_path):
+        """Test return metadata filepaths of stations with raw data."""
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
-    # Test 4: Check return [] if no metadata
-    result = get_list_metadata(base_dir=str(base_dir), data_sources="unexisting", with_stations_data=False)
-    assert result == []
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
 
-    result = get_list_metadata(base_dir=str(base_dir), station_names="unexisting", with_stations_data=False)
-    assert result == []
+        # Create metadata and data for one station
+        metadata_filepath1 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+        )
+        _ = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+            filename="test_data.txt",
+        )
 
-    result = get_list_metadata(base_dir=str(base_dir), campaign_names="unexisting", with_stations_data=False)
-    assert result == []
+        # Create only metadata for another station
+        metadata_filepath2 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+        )
 
-    # Test 5: Check by station names
-    result = get_list_metadata(base_dir=str(base_dir), station_names=station_name, with_stations_data=False)
-    assert [metadata_filepath] == result
+        # Check metadata file list
+        metadata_filepaths = get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_archive_dir=data_archive_dir,
+            product="RAW",
+            available_data=True,
+        )
+
+        assert metadata_filepath1 in metadata_filepaths
+        assert metadata_filepath2 not in metadata_filepaths
+
+    @pytest.mark.parametrize("product", disdrodb.PRODUCTS)
+    def test_list_metadata_with_product_data(self, tmp_path, product):
+        """Test return metadata filepaths of stations with product data."""
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+
+        # Define required product arguments (using some defaults for testing)
+        product_kwargs = get_default_product_kwargs(product)
+
+        # Create metadata and data for one station
+        metadata_filepath1 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+        )
+        _ = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+            filename="test_data.nc",
+            **product_kwargs,
+        )
+
+        # Create only metadata for another station
+        metadata_filepath2 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+        )
+
+        # Check metadata file list
+        metadata_filepaths = get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_archive_dir=data_archive_dir,
+            available_data=True,
+            product=product,
+            **product_kwargs,
+        )
+
+        assert metadata_filepath1 in metadata_filepaths
+        assert metadata_filepath2 not in metadata_filepaths
+
+    def test_list_metadata_with_raw_data_directory(self, tmp_path):
+        """Test return metadata filepaths of stations with product data."""
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        product = "RAW"
+
+        # Create metadata and data for two station
+        metadata_filepath1 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+        )
+        filepath1 = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+            filename="test_data.txt",
+        )
+        _ = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+        )
+        filepath2 = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+            filename="test_data.txt",
+        )
+        # Remove files
+        os.remove(filepath1)
+        os.remove(filepath2)
+
+        # Remove also station directory for station 2
+        shutil.rmtree(os.path.dirname(filepath2))
+
+        # Check only station 1 metadata filepath is returned if available_data=False (default)
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_archive_dir=data_archive_dir,
+            available_data=False,
+            product=product,
+        )
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_archive_dir=data_archive_dir,
+            product=product,
+        )
+        # Check no station is returned if available_data=True
+        assert (
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_archive_dir=data_archive_dir,
+                product=product,
+                available_data=True,
+            )
+            == []
+        )
+
+    @pytest.mark.parametrize("product", disdrodb.PRODUCTS)
+    def test_list_metadata_with_product_directory(self, tmp_path, product):
+        """Test return metadata filepaths of stations with product data."""
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+
+        # Define required product arguments (using some defaults for testing)
+        product_kwargs = get_default_product_kwargs(product)
+
+        # Create metadata and data for two station
+        metadata_filepath1 = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+        )
+        filepath1 = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_1",
+            filename="test_data.nc",
+            **product_kwargs,
+        )
+        _ = create_fake_metadata_file(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+        )
+        filepath2 = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+            filename="test_data.nc",
+            **product_kwargs,
+        )
+        # Remove files
+        os.remove(filepath1)
+        os.remove(filepath2)
+
+        # Remove also product station directory for station 2
+        product_dir_station_dir = define_station_dir(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name="station_2",
+        )
+        shutil.rmtree(product_dir_station_dir)
+
+        # Check only station 1 metadata filepath is returned if available_data=False (default)
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_archive_dir=data_archive_dir,
+            available_data=False,
+            product=product,
+            **product_kwargs,
+        )
+        assert [metadata_filepath1] == get_list_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_archive_dir=data_archive_dir,
+            product=product,
+            **product_kwargs,
+        )
+        # Check no station is returned if available_data=True
+        assert (
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_archive_dir=data_archive_dir,
+                product=product,
+                available_data=True,
+                **product_kwargs,
+            )
+            == []
+        )
+
+    def test_empty_metadata_archive_case(self, tmp_path):
+        """Test return empty list of raise error if no metadata available."""
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+        # Create metadata file and remove it
+        # - Initialize DISDRODB Metadata Archive
+        metadata_filepath = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir)
+        os.remove(metadata_filepath)
+
+        # Check return empty list
+        assert get_list_metadata(metadata_archive_dir=metadata_archive_dir) == []
+
+        # Check raise error if raise_error_if_empty=True
+        with pytest.raises(ValueError):
+            get_list_metadata(metadata_archive_dir=metadata_archive_dir, raise_error_if_empty=True)
+
+    def test_empty_data_archive_case(self, tmp_path):
+        """Test return empty list of raise error if no data available."""
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
+        metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+        # Create DISDRODB Metadata Archive
+        _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir)
+
+        # Create DISDRODB Data Archive
+        # - Just initialize directory structure
+        file_filepath = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product="RAW",
+            filename="test_data.txt",
+        )
+        os.remove(file_filepath)
+        file_filepath = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product="L0C",
+            filename="test_data.nc",
+        )
+        os.remove(file_filepath)
+
+        # Check return empty list
+        assert (
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_archive_dir=data_archive_dir,
+                product="RAW",
+                available_data=True,
+            )
+            == []
+        )
+        assert (
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_archive_dir=data_archive_dir,
+                product="L0C",
+                available_data=True,
+            )
+            == []
+        )
+
+        with pytest.raises(ValueError):
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_archive_dir=data_archive_dir,
+                product="RAW",
+                available_data=True,
+                raise_error_if_empty=True,
+            )
+
+        with pytest.raises(ValueError):
+            get_list_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_archive_dir=data_archive_dir,
+                product="L0C",
+                available_data=True,
+                raise_error_if_empty=True,
+            )

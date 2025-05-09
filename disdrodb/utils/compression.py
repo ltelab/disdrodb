@@ -26,9 +26,11 @@ import tempfile
 import zipfile
 from typing import Optional
 
-from disdrodb.api.checks import check_base_dir
+from disdrodb.api.checks import check_data_archive_dir
 from disdrodb.api.path import define_station_dir
+from disdrodb.configs import get_data_archive_dir
 from disdrodb.utils.directories import list_files
+from disdrodb.utils.yaml import read_yaml
 
 COMPRESSION_OPTIONS = {
     "zip": ".zip",
@@ -46,7 +48,6 @@ def unzip_file(filepath: str, dest_path: str) -> None:
         Path of the file to unzip.
     dest_path : str
         Path of the destination directory.
-
     """
     with zipfile.ZipFile(filepath, "r") as zip_ref:
         zip_ref.extractall(dest_path)
@@ -71,7 +72,16 @@ def _zip_dir(dir_path: str) -> str:
     return output_path
 
 
-def archive_station_data(metadata_filepath: str) -> str:
+def check_consistent_station_name(metadata_filepath, station_name):
+    """Check consistent station_name between YAML file name and metadata key."""
+    # Check consistent station name
+    expected_station_name = os.path.basename(metadata_filepath).replace(".yml", "")
+    if station_name and str(station_name) != str(expected_station_name):
+        raise ValueError(f"Inconsistent station_name values in the {metadata_filepath} file. Download aborted.")
+    return station_name
+
+
+def archive_station_data(metadata_filepath: str, data_archive_dir: str) -> str:
     """Archive station data into a zip file for subsequent data upload.
 
     It create a zip file into a temporary directory !
@@ -82,14 +92,29 @@ def archive_station_data(metadata_filepath: str) -> str:
         Metadata file path.
 
     """
-    station_data_path = metadata_filepath.replace("metadata", "data")
-    station_data_path = os.path.splitext(station_data_path)[0]  # remove trailing ".yml"
-    station_zip_filepath = _zip_dir(station_data_path)
+    # Open metadata file
+    metadata_dict = read_yaml(metadata_filepath)
+    # Retrieve station information
+    data_archive_dir = get_data_archive_dir(data_archive_dir)
+    data_source = metadata_dict["data_source"]
+    campaign_name = metadata_dict["campaign_name"]
+    station_name = metadata_dict["station_name"]
+    station_name = check_consistent_station_name(metadata_filepath, station_name)
+    # Define the destination local filepath path
+    station_dir = define_station_dir(
+        data_archive_dir=data_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="RAW",
+    )
+    # Zip station directory
+    station_zip_filepath = _zip_dir(station_dir)
     return station_zip_filepath
 
 
 def compress_station_files(
-    base_dir: str,
+    data_archive_dir: str,
     data_source: str,
     campaign_name: str,
     station_name: str,
@@ -100,8 +125,8 @@ def compress_station_files(
 
     Parameters
     ----------
-    base_dir : str
-        Base directory of DISDRODB
+    data_archive_dir : str
+        DISDRODB Data Archive directory
     data_source : str
         Name of data source of interest.
     campaign_name : str
@@ -114,14 +139,14 @@ def compress_station_files(
         Whether to raise an error if a file is already compressed.
         If ``True``, it does not raise an error and try to compress the other files.
         If ``False``, it raise an error and stop the compression routine.
-        The default is ``True``.
+        The default value is ``True``.
     """
     if method not in COMPRESSION_OPTIONS:
         raise ValueError(f"Invalid compression method {method}. Valid methods are {list(COMPRESSION_OPTIONS.keys())}")
 
-    base_dir = check_base_dir(base_dir)
+    data_archive_dir = check_data_archive_dir(data_archive_dir)
     station_dir = define_station_dir(
-        base_dir=base_dir,
+        data_archive_dir=data_archive_dir,
         product="RAW",
         data_source=data_source,
         campaign_name=campaign_name,
