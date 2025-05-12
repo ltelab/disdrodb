@@ -65,10 +65,10 @@ reflectivity_32bit:
   nan_flags: null
   field_number: "07"
 mor_visibility:
-  n_digits: 4
-  n_characters: 4
+  n_digits: 5
+  n_characters: 5
   n_decimals: 0
-  n_naturals: 4
+  n_naturals: 5
   data_range:
     - 0
     - 20000
