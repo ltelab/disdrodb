@@ -2,22 +2,22 @@
 Quick Start
 =========================
 
-In this section, we describe how to quickly start to download disdrometer raw data
+In this section, we show how to quickly download raw disdrometer data
 from the DISDRODB Decentralized Data Archive and generate DISDRODB products on your local machine.
 
-First, is however necessary to download on your local machine the DISDRODB Metadata Archive,
-which list the available stations and contains the pointers to the online data repositiores where
-the raw data of the DISDRODB stations are stored.
+However, before you begin, you need to download the DISDRODB Metadata Archive on your local machine.
+This archive lists the available stations and contains pointers to the online repositories
+that store each station's raw data.
 
-Additionally, to follow this tutorial, you should be in a virtual environment with the disdrodb package installed!
-Refers to the `Installation <https://disdrodb.readthedocs.io/en/latest/installation.html>`_ section for more details
-on how to set-up and activate the virtual environment.
+Also, to follow this tutorial, activate a virtual environment with the disdrodb package installed.
+Refer to the `Installation <https://disdrodb.readthedocs.io/en/latest/installation.html>`_ section
+for details on setting up and activating the environment.
 
 
 1. Download the DISDRODB Metadata Archive
 -----------------------------------------------
 
-First travel to the directory where you want to store the DISDRODB Metadata Archive with:
+Navigate to the directory where you want to store the DISDRODB Metadata Archive:
 
 .. code:: bash
 
@@ -40,9 +40,9 @@ This will create a directory called ``DISDRODB-METADATA``.
 2. Define the DISDRODB Configuration File
 ------------------------------------------
 
-The disdrodb software needs to know where the local DISDRODB Metadata Archive
-is stored on your local machine, as well as where you want to download the raw stations data
-as well as where to save the DISDRODB products you will generate.
+The disdrodb software requires two directory paths:
+the local DISDRODB Metadata Archive and the local DISDRODB Data Archive,
+where raw station data and generated products will be stored.
 
 The disdrodb software will look for a configuration file called ``.config_disdrodb.yml``
 in your home directory (i.e. ``~/.config_disdrodb.yml``).
@@ -57,8 +57,10 @@ all DISDRODB products will be saved.
 
 
 
-To facilitate the creation of the DISDRODB Configuration File, you can adapt and run in python the following code snippet.
-Please note that on Windows, these paths must end with ``"\DISDRODB"``,  while on Mac/Linux they must end with ``"/DISDRODB"``.
+To facilitate the creation of the DISDRODB Configuration File, you can adapt and
+run in python the following code snippet.
+Note that on Windows paths must end with ``\DISDRODB``,
+while on macOS/Linux they must end with ``/DISDRODB``.
 
 .. code:: python
 
@@ -68,11 +70,11 @@ Please note that on Windows, these paths must end with ``"\DISDRODB"``,  while o
     data_archive_dir = "<path_of_choice_to_the_local_data_archive>/DISDRODB"
     disdrodb.define_configs(metadata_archive_dir=metadata_archive_dir, data_archive_dir=data_archive_dir)
 
-By running this command, the disdrodb software will write a ``.config_disdrodb.yml`` file into your home directory (i.e. ``~/.config_disdrodb.yml``)
-that will be used as default configuration file when running the disdrodb software.
+Running this code snippet writes a ``.config_disdrodb.yml`` file to your home directory
+(for example ``~/.config_disdrodb.yml``), which disdrodb uses as the default configuration.
 
-If you **now close your python session and reopen a new one**, if you will run the following code snippet, you
-should get the ``metadata_archive_dir`` and ``data_archive_dir`` paths you just defined in the DISDRODB Configuration File:
+After closing and reopening your Python session,
+running the following code should display the paths you defined in the configuration file:
 
 .. code:: python
 
@@ -120,9 +122,10 @@ You can check the stations currently available for download by running the follo
     disdrodb.available_stations(available_data=True)
 
 
-By updating from time-to-time the DISDRODB Metadata Archive, you will be able to download new stations as they become available.
+By periodically updating the DISDRODB Metadata Archive,
+you can download new stations as they become available.
 
-To download all raw data stored into the DISDRODB Decentralized Data Archive, you just have to run the following command:
+To download all raw data in the DISDRODB Decentralized Data Archive, run:
 
 .. code:: bash
 
@@ -163,41 +166,40 @@ Please note that ``EPFL HYMEX_LTE_SOP3 10`` arguments refers to the ``data_sourc
 
 Once the data are downloaded, we can start the generation of the DISDRODB L0 and L1 products.
 
-The DISDRODB L0 processing chain convert the raw data into a standardized format, saving the raw data into a NetCDF file per day.
+The DISDRODB L0 processing chain converts raw data into a standardized format,
+saving each day's data in a NetCDF file.
 
-The DISDRODB L1 processing chain ingest the DISDRODB L0C product files and perform quality checks, data homogenization
-and data filtering.
+The DISDRODB L1 processing chain ingests the L0C product files,
+performing quality checks, data homogenization, and filtering.
 
 To know more about the various DISDRODB products, please refer to the `DISDRODB Products <https://disdrodb.readthedocs.io/en/latest/products.html>`_ section.
 
-The procedure to generate such products is very simple and just require typing the following two commands:
+Generating these products requires only two simple commands:
 
 .. code:: bash
 
    disdrodb_run_l0_station EPFL HYMEX_LTE_SOP3 10 --debugging_mode True --parallel False --verbose True
    disdrodb_run_l1_station EPFL HYMEX_LTE_SOP3 10 --debugging_mode True --parallel False --verbose True
 
-For illustratory purposes, here we just process 3 raw files (``--debugging_mode True``).
-We also apply ``verbose`` processing, which requires disabling parallelism (``--parallel False``).
+For illustrative purposes, this example processes 3 raw files (``--debugging_mode True``)
+with disabled parallelism (``--parallel False``) and verbose output  (``--verbose True``).
 
 Please note that parallel (multi)processing is enabled by default (``--parallel True``).
 If you want to keep track of the processing, the ``logs`` directory in the DISDRODB Data Archive
 allows you to check the processing status of each file.
 
-You can open the ``logs`` directory using the following command in python:
+You can open the ``logs`` directory typing the following command in the terminal:
 
-.. code:: python
+.. code:: bash
 
-    import disdrodb
-
-    disdrodb.open_logs_directory(data_source="EPFL", campaign_name="HYMEX_LTE_SOP3", station_name="10")
+    disdrodb_open_logs_directory EPFL HYMEX_LTE_SOP3 10
 
 
 5. Open and analyze the DISDRODB product files
 ----------------------------------------------
 
-The disdrodb software ``open_dataset`` function enable to lazy open all station files of
-a DISDRODB product into a ``xarray.Dataset`` (or ``pandas.DataFrame`` for the DISDRODB L0A product).
+The disdrodb ``open_dataset`` function lets you lazily open all station files for
+a DISDRODB product as an ``xarray.Dataset`` (or ``pandas.DataFrame`` for the L0A product).
 
 .. code:: python
 
@@ -218,8 +220,8 @@ a DISDRODB product into a ``xarray.Dataset`` (or ``pandas.DataFrame`` for the DI
     )
     ds
 
-Alternatively, the disdrodb software ``find_files`` function allows to easily list all station files of a
-given DISDRODB product and then open the data as the user wish.
+Alternatively, ``find_files`` lists all station files for a given product,
+letting you open them as you wish.
 
 .. code:: python
 
@@ -243,12 +245,10 @@ given DISDRODB product and then open the data as the user wish.
     ds
 
 
-With this tutorial we hope you will be able to quickly start using the disdrodb software.
+We hope this tutorial helps you get started quickly with the disdrodb software.
 
-If you wish to contribute new stations to the DISDRODB Decentralized Data Archive, please
-read the `how to contribute new data <https://disdrodb.readthedocs.io/en/latest/contribute_data.html>`_" guideline.
+To contribute new stations to the DISDRODB Decentralized Data Archive,
+see the `How to contribute new data <https://disdrodb.readthedocs.io/en/latest/contribute_data.html>`_ guidelines.
 
-To know more about the various DISDRODB products, please refer to the
-DISDRODB `Products <https://disdrodb.readthedocs.io/en/latest/products.html>`_ section,
-while to learn on how to customize the product processing chain,
-please refer to the `DISDRODB Archive Processing <https://disdrodb.readthedocs.io/en/latest/processing.html>`_ section.
+To learn more about DISDRODB products, see the `Products <https://disdrodb.readthedocs.io/en/latest/products.html>`_ section.
+To customize the processing chain, see the `DISDRODB Archive Processing <https://disdrodb.readthedocs.io/en/latest/processing.html>`_ section.

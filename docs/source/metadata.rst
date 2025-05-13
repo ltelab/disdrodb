@@ -4,44 +4,20 @@
 Station Metadata
 =========================
 
-The metadata for each station are defined in a YAML file.
-The metadata YAML file expects a standardized set of keys.
+The metadata for each station are defined in a YAML file that uses a standardized set of keys.
 
-There are 7 metadata keys for which it is mandatory to specify the value :
+It is mandatory to at least specify values for the following 7 metadata keys:
 
-* the ``data_source`` must be the same as the data_source where the metadata are located.
-* the ``campaign_name`` must be the same as the campaign_name where the metadata are located.
-* the ``station_name`` must be the same as the name of the metadata YAML file without the .yml extension.
-* the ``sensor_name`` must be one of the implemented sensor configurations. See ``disdrodb.available_sensor_names()``.
-  If the sensor which produced your data is not within the available sensors, you first need to add the sensor
-  configurations. For this task, read the section :ref:`Add new sensor configs <sensor_configurations>`.
-* the ``platform_type`` must be either ``'fixed'`` or ``'mobile'``. If ``'mobile'``, the DISDRODB L0 processing accepts latitude/longitude/altitude coordinates to vary with time.
-* the ``raw_data_format`` must be either ``'txt'`` or ``'netcdf'``. ``'txt'`` if the source raw data are text/ASCII files. ``'netcdf'`` if source raw data are netCDFs.
-* the ``raw_data_glob_pattern`` defines which raw data files in the ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` directory will be ingested
-  in the DISDRODB L0 processing chain.
-  For instance, if every station raw files ends with ``.txt`` you can specify the glob pattern as  ``*.txt``.
-  Because you're not including any path separators (``/``), this simple glob pattern will recurse through all subfolders
-  (e.g. ``<year>/<month>/``) under ``data/`` and pick up every ``.txt`` file.
-  If there are other ``.txt`` files in ``data/`` that you don't want to process (e.g. some geolocation information for mobile platforms or some auxiliary weather data),
-  you can narrow the match by adding the filename prefix of the file you aim to process to the glob pattern (e.g. ``SPECTRUM_*.txt``).
+* ``data_source``: must match the data source where the metadata reside.
+* ``campaign_name``: must match the campaign name where the metadata reside.
+* ``station_name``: must match the YAML filename (excluding the ``.yml`` extension).
+* ``sensor_name``: must be one of the configured sensors (see ``disdrodb.available_sensor_names()``). If your sensor is not listed, follow :ref:`Add new sensor configs <sensor_configurations>`.
+* ``platform_type``: choose ``fixed`` or ``mobile``. Use ``mobile`` if the platform's latitude, longitude, or altitude changes over time.
+* ``raw_data_format``: choose ``txt`` for text/ASCII files or ``netcdf`` for netCDF files.
+* ``raw_data_glob_pattern``: a glob pattern that selects which files in ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` are ingested. For example, ``*.txt`` matches all ``.txt`` files recursively. To match only files with a specific prefix, use ``SPECTRUM_*.txt``. To limit to a subfolder, include its name: ``custom/*.txt`` (direct files only) or ``custom/**/*.txt`` (including nested folders).
+* ``reader``: indicates which function ingests the raw data. Readers live in ``disdrodb/l0/readers/<sensor_name>/<DATA_SOURCE>/<READER_NAME>.py``. Set ``reader`` to ``<DATA_SOURCE>/<READER_NAME>`` (e.g. ``GPM/IFLOODS`` for the OTT Parsivel GPM IFLOODS reader).
 
-  Finally, to restrict the search to a particular ``data/`` subdirectory, include that folder name in your pattern.
-  Specifying ``"<custom>/*.txt`` will return only files directly inside the ``data/<custom>`` directory,
-  while ``"<custom>/**/*.txt`` will return all files in the ``data/<custom>`` directory and all its (e.g. ``/<year>/<month>``) subdirectories.
-
-* the ``reader`` reference tells the disdrodb software which reader function to use to correctly ingest the station's raw data files.
-  Under the hood, a reader is simply a python function that knows how to read a raw data file and make it compliant with the DISDRODB standards.
-  All reader scripts live in the `disdrodb/l0/readers <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers>`_ directory,
-  organized by sensor name and data source: ``disdrodb/l0/readers/<sensor_name>/<DATA_SOURCE>/<READER_NAME>.py``.
-  To point the disdrodb software to the correct reader, the ``reader`` reference must be defined as ``<DATA_SOURCE>/<READER_NAME>``.
-
-  For example, to select the OTT Parsivel GPM IFLOODS reader (defined at
-  `disdrodb.l0.readers.PARSIVEL.GPM.IFLOODS.py <https://github.com/ltelab/disdrodb/tree/main/disdrodb/l0/readers/PARSIVEL/GPM/IFLOODS.py>`_)
-  the ``reader`` reference ``GPM/IFLOODS`` must be used.
-
-
-The ``disdrodb_data_url`` metadata key references to the remote/online repository where station's raw data are stored.
-At this URL, a single zip file provides all data available for a given station.
+The ``disdrodb_data_url`` metadata key specifies the URL of the remote repository where raw data are stored. This link should point to a zip file containing all data for the station.
 
 To check the validity of the metadata YAML files, run the following code:
 
@@ -53,7 +29,7 @@ To check the validity of the metadata YAML files, run the following code:
     check_metadata_archive_geolocation()
 
 
-The list and description of the DISDRODB metadata is provided here below:
+Below is the list and description of DISDRODB metadata keys:
 
 
 .. csv-table:: Mandatory keys

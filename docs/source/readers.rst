@@ -25,42 +25,40 @@ What is a reader
 A DISDRODB reader is a python function responsible for reading one raw data file and converting it into a DISDRODB-compliant object.
 
 Depending on the raw data file format, the reader will produce either an L0A ``pandas.DataFrame`` or an L0B ``xarray.Dataset``.
-When it ingest a raw text file, the reader has to output a DISDRODB L0A ``pandas.Dataframe``,
-while when it ingest a raw netCDF file, the reader has to output a DISDRODB L0B ``xarray.Dataset``.
+When it ingests a raw text file, the reader must return a DISDRODB L0A ``pandas.DataFrame``,
+while when it ingests a raw netCDF file, the reader must return a DISDRODB L0B ``xarray.Dataset``.
 
 For raw text files, the reader function:
 
-1. defines the appropriate options (i.e delimiter, header row, and encoding) required to read the raw text file into a ``pandas.Dataframe``;
+1. defines the appropriate options (i.e., delimiter, header row, encoding) to read the raw text file into a ``pandas.DataFrame``;
 
-2. loads the the raw text file into a ``pandas.Dataframe``, assigning the correct variable names to the columns of the dataframe;
+2. loads the raw text file into a ``pandas.DataFrame``, assigning correct column names;
 
-3. adapts the ``pandas.Dataframe`` to the DISDRODB L0A standards, which involves for example dropping columns not part of the DISDRODB variables set and
-   ensuring the presence of a UTC ``time`` column in datetime type format;
+3. adapts the ``pandas.DataFrame`` to DISDRODB L0A standards (e.g., drops non-DISDRODB columns, ensures a UTC ``time`` column in datetime format);
 
-4. outputs the ``pandas.Dataframe`` in the DISDRODB L0A format.
+4. returns the ``pandas.DataFrame`` in DISDRODB L0A format.
 
 
 In the case of raw netCDF files, the reader function:
 
-1. opens the netCDF file into an ``xarray.Dataset`` object;
+1. opens the file into an ``xarray.Dataset``;
 
-2. rename the dataset variables to the expected DISDRODB variables set;
+2. renames dataset variables to match DISDRODB conventions;
 
-3. adapts the ``xarray.Dataset`` to the DISDRODB L0B standards, which involves for example dropping
-   variables not included in the expected set of DISDRODB variables.
+3. adapts the ``xarray.Dataset`` to DISDRODB L0B standards (e.g., drops variables not in the expected set);
 
-4. outputs the ``xarray.Dataset`` in the DISDRODB L0B format.
+4. returns the ``xarray.Dataset`` in DISDRODB L0B format.
 
 
-In both cases, the reader encapsulates both the parsing logic for a single-file format and the cleanup rules needed
-to bring raw measurements into the standardized DISDRODB format.
+In both cases, the reader encapsulates file parsing logic and cleanup rules to standardize
+raw measurements to the DISDRODB format.
 
 
 In the DISDRODB metadata of each station:
 
-* the ``reader`` reference points the disdrodb software to the reader required to process the station raw data.
+* the ``reader`` reference points DISDRODB to the reader required to process the station's raw data.
 
-* the ``raw_data_format`` variable specifies whether the source raw data is in the form of ``txt`` or ``netcdf``  files.
+* the ``raw_data_format`` variable specifies whether the source data are text (``txt``) or netCDF files.
 
 * the ``raw_data_glob_pattern`` defines which raw data files in the ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` directory will be ingested
   in the DISDRODB L0 processing chain.
@@ -125,7 +123,7 @@ for ingesting raw text files and raw netCDF files.
 
 
 Reader for raw text files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The reader function for ingesting raw text files is typically structured as follow:
 
@@ -134,7 +132,7 @@ The reader function for ingesting raw text files is typically structured as foll
     def reader(filepath, logger=None):
         """Reader."""
         ##-------------------------------------------------------------.
-        #### - Define the column names
+        #### Define the column names
         column_names = []  # [ADD THE COLUMN NAMES LIST HERE]
 
         ##-------------------------------------------------------------.
@@ -176,7 +174,7 @@ In the reader function:
    processing to make the ``pandas.DataFrame`` compliant with the DISDRODB L0A standards.
    Typically, the reader include code to drop columns not compliant with the expected set of DISDRODB variables
    and to create a UTC ``time`` column into datetime type format.
-   In the returned ``pandas.DataFrame``, each row must correspond to a timestep !
+   In the returned ``pandas.DataFrame``, each row must correspond to one timestep.
 
 In the DISDRODB L0A format, the raw precipitation spectrum, named ``raw_drop_number`` ,
 it is expected to be defined as a string with a series of values separated by a delimiter like ``,`` or ``;``.
@@ -223,7 +221,7 @@ The raw text files reader template is available `here <https://github.com/ltelab
 
 
 Reader for raw netCDF files
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The reader function for ingesting raw netCDF files is typically structured as follow:
 
@@ -232,11 +230,11 @@ The reader function for ingesting raw netCDF files is typically structured as fo
     def reader(filepath, logger=None):
         """Reader."""
         ##---------------------------------------------------------------------.
-        #### Open the netCDF
+        #### Open the netCDF file
         ds = open_raw_netcdf_file(filepath=filepath, logger=logger)
 
         ##---------------------------------------------------------------------.
-        #### Adapt the dataframe to adhere to DISDRODB L0 standards
+        #### Adapt the dataset to DISDRODB L0 standards
         # Define dictionary mapping dataset variables and coordinates to keep (and rename)
         # - If the platform is moving, keep longitude, latitude and altitude
         # - If the platform is fixed, remove longitude, latitude and altitude coordinates

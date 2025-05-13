@@ -1,5 +1,4 @@
-
-Welcome to DISDRODB !
+Welcome to DISDRODB!
 ======================
 
 
@@ -8,7 +7,7 @@ Motivation
 
 The raindrop size distribution (DSD) describes the concentration and size
 distributions of raindrops in a volume of air.
-It is a crucial piece of  information to model the propagation of microwave signals
+It is crucial for modeling the propagation of microwave signals
 through the atmosphere (key for telecommunication and weather radar remote sensing calibration),
 to improve microphysical schemes in numerical weather prediction models, and
 to understand land surface processes (rainfall interception, soil erosion).
@@ -39,24 +38,24 @@ The goal of the DISDRODB initiative is to:
 Software
 ===========
 
-The software currently enable to:
+The software currently enables you to:
 
-- download the raw disdrometer data from stations included in the DISDRODB Decentralized Data Archive,
-- upload raw disdrometer data from the user to the DISDRODB Decentralized Data Archive,
-- read the raw measurements of more than 400 disdrometer stations and save them into a standard NetCDF format (DISDRODB L0 product).
+- download raw disdrometer data from stations in the DISDRODB Decentralized Data Archive,
+- upload raw disdrometer data to the DISDRODB Decentralized Data Archive,
+- read raw measurements from over 400 disdrometer stations and save them in a standard NetCDF format (DISDRODB L0 product).
 
 The disdrodb software can ingest data from various disdrometer sensors and manufacturers, and it is designed so that everyone
 can easily add support for new instruments.
 
-Currently, disdrodb enable to process data acquired from the following disdrometer sensors:
+Currently, disdrodb enables processing of data acquired from the following disdrometer sensors:
 
-- Distromet RD-80 (``RD80``).
+- Distromet RD-80 (``RD80``),
 - OTT Parsivel (``PARSIVEL``),
 - OTT Parsivel2 (``PARSIVEL2``),
-- Thies Laser Precipitation Monitor (``LPM``),
+- Thies Laser Precipitation Monitor (``LPM``).
 
-If you have data from other disdrometers types and you would like to contribute to the DISDRODB project,
-we'd love your help. We're especially interested in adding support for:
+If you have data from other disdrometer types and would like to contribute to the DISDRODB project,
+we welcome your help. We're especially interested in adding support for:
 
 - Campbell Present Weather Sensor 100 (``PWS100``),
 - Eigenbrot Optical Disdrometer 470 (``ODM470``),

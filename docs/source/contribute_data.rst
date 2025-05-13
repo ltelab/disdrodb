@@ -2,42 +2,32 @@
 How to Contribute New Data
 ==============================
 
-Do you want to contribute your own data to DISDRODB ? Great! You are in the right place !
+Want to contribute your data to DISDRODB? You're in the right place!
 
-The data contributor is asked to perform the following 5 tasks:
+Follow these five steps:
 
-1. add the station(s) metadata he/she wish to contribute to the DISDRODB Metadata Archive,
-2. add to the disdrodb software the reader function enabling the ingestion of the station(s) raw data files,
-3. test that the DISDRODB L0 processing chain works correctly for the station(s) he/she contributed,
-4. upload the station(s) raw data on an online data repository (e.g., Zenodo, Figshare, etc.),
-5. test that the disdrodb software correctly download the station(s) he/she contributed.
+1. Add metadata for the station(s) you wish to contribute to the DISDRODB Metadata Archive
+2. Add a reader function to disdrodb to ingest the station(s) raw data files
+3. Test the DISDRODB L0 processing chain for the contributed station(s)
+4. Upload the raw station data to an online repository (e.g., Zenodo, Figshare)
+5. Verify that disdrodb can correctly download the contributed station data
 
-Before starting contributing your data,
-you need to start thinking about the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` names of your stations.
-The name you adopt for the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` will be used to define:
+Before you begin, decide on the ``<DATA_SOURCE>`` and ``<CAMPAIGN_NAME>`` for your stations.
+These names will determine:
+- the directory names for storing your stations' raw data and metadata in the DISDRODB archive
+- the name of the DISDRODB reader you will implement
 
--  the name of the directories where the raw data and the metadata of your stations will be stored in the DISDRODB Archive.
--  the name of the DISDRODB reader you will implement for your data.
+.. note:: Guidelines for naming ``<DATA_SOURCE>``:
+   * Use the institution name when the campaign spans multiple countries.
+   * Use the country name when all campaigns (or sensor networks) are within a single country.
+   * Define ``<DATA_SOURCE>`` in uppercase without spaces.
 
-.. note:: Guidelines for the naming of the ``<DATA_SOURCE>``:
+.. note:: Guidelines for naming ``<CAMPAIGN_NAME>``:
+   * Define ``<CAMPAIGN_NAME>`` in uppercase without spaces.
+   * Avoid dashes (``-``) and dots (``.``) to separate words; use underscores (``_``) instead.
+   * For short-term campaigns, we suggest adding the year (e.g., ``EPFL_2009``).
 
-   * We use the institution name when campaign data spans more than 1 country.
-
-   * We use country when all campaigns (or sensor networks) are inside a given country.
-
-   * The ``<DATA_SOURCE>`` must be defined upper case without spaces.
-
-
-.. note:: Guidelines for the naming of the ``<CAMPAIGN_NAME>``:
-
-   * The ``<CAMPAIGN_NAME>`` must be defined upper case and without spaces.
-
-   * Avoid the usage of dash ( - ) and dots ( . ) to separate words. Use the underscore ( _ ) instead!
-
-   * For short-term campaigns, we suggest adding the year of the campaign at the end (i.e. ``EPFL_2009``)
-
-
-Here below we provide a detailed description of the steps to follow to contribute your data to DISDRODB:
+Below is a detailed list of the steps to contribute your data to DISDRODB:
 
 * :ref:`Step 1 <step1>`: Fork and clone the DISDRODB Metadata Archive
 * :ref:`Step 2 <step2>`: Install the disdrodb software in editable mode

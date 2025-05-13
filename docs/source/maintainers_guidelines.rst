@@ -2,28 +2,24 @@
 Maintainers Guidelines
 ========================
 
-
-The section is dedicated to the DISDRODB core developers (maintainers).
-
+This section is dedicated to the DISDRODB core developers (maintainers).
 
 Core contributors
 =================================
 
-* Current Release Manager : Ghiggi Gionata
-* Testing Team : Ghiggi Gionata
-
+* Current Release Manager: Ghiggi Gionata
+* Testing Team: Ghiggi Gionata
 
 Versions Guidelines
 ========================
 
 DISDRODB uses `Semantic <https://semver.org/>`_ Versioning. Each release is associated with a git tag of the form X.Y.Z.
 
-Given a version number in the MAJOR.MINOR.PATCH (eg., X.Y.Z) format, here are the differences in these terms:
+For a version number in the MAJOR.MINOR.PATCH format (e.g., X.Y.Z), the segments have the following meanings:
 
 - MAJOR version - make breaking/incompatible API changes
-- MINOR version - add functionality in a backwards compatible manner. Adding new reader
+- MINOR version - add functionality in a backwards compatible manner (e.g., adding a new reader)
 - PATCH version - make backwards compatible bug fixes
-
 
 Breaking vs. non-breaking changes
 -----------------------------------
@@ -38,26 +34,23 @@ Examples of breaking changes include:
 - Changing the output format/structure of DISDRODB netCDF product.
 - Adding new functionalities to the DISDRODB that affect the behavior of the software directly.
 
+Examples of non-breaking changes include:
 
-Examples of non-breaking changes include :
-
-- Fix a bug.
-- Adding the configuration files to process a new sensor.
-- Adding a new DISDRODB L0 reader.
-- Adding new functionalities to the DISDRODB API that do not affect the behavior of the API directly.
-- Updating the documentation.
-- Internal function refactoring that does not affect the behavior of the software directly.
-
+- Fixing a bug
+- Adding configuration files to process a new sensor
+- Adding a new DISDRODB L0 reader
+- Adding new functionalities to the DISDRODB API that do not directly affect its behavior
+- Updating documentation
+- Refactoring internal functions without changing software behavior
 
 Ongoing version support
 -----------------------------------
 
-DISDRODB major releases aims to move the community forward, focusing on specifications stabilization and major feature additions, rather than backwards-compatibility.
-DISDRODB minor releases will be backwards compatible.
-We strongly recommend adopting the latest release of DISDRODB into production within 6 months for major releases, and 4 months for minor releases.
+Major releases of DISDRODB aim to move the community forward by stabilizing specifications and adding major features, rather than focusing on backwards compatibility.
+Minor releases of DISDRODB remain backwards compatible.
+We strongly recommend adopting a new DISDRODB major release in production within six months, and minor releases within four months.
 
 The `LTE <https://www.epfl.ch/labs/lte/>`_ does not guarantee any period of support or maintenance.
-
 
 Documentation
 ===============
@@ -66,7 +59,6 @@ DISDRODB's documentation is built using the powerful `Sphinx <https://www.sphinx
 styled with `Book Theme <https://sphinx-book-theme.readthedocs.io/en/stable/index.html>`_.
 
 All documentation source files are neatly organized in the ``docs/`` directory within the project's repository.
-
 
 Documentation Generation
 ---------------------------
@@ -110,7 +102,6 @@ To build the documentation locally, follow the next three steps.
 By following these steps, you should have a local version of the DISDRODB documentation
 in the ``docs/build/html/`` directory, ready for review or deployment!
 
-
 Documentation Deployment
 --------------------------
 
@@ -122,7 +113,6 @@ This webhook is linked to the DISDRODB core developer.
 .. image:: /static/documentation_release.png
 
 Ghiggi Gionata owns the `ReadTheDoc <https://readthedocs.org/>`__ account.
-
 
 Package Release
 ==================
@@ -142,7 +132,6 @@ Upon the release of the package on PyPI, a conda-forge bot attempts to automatic
 Once the conda-forge recipe is updated, a new conda-forge package is released.
 
 The PyPI project and the conda-forge recipes are collaboratively maintained by core contributors of the project.
-
 
 Release Process
 ----------------
@@ -173,10 +162,8 @@ Create a new tag to trigger the release process.
 
 On GitHub, edit the release description to add the list of changes from the ``CHANGELOG.md`` file.
 
-
 Reviewing Process
 ====================
-
 
 The main branch is protected and requires at least one review before merging.
 
@@ -188,8 +175,6 @@ The review process is the following:
 #. The contributor updates the PR according to the review.
 #. The core contributor reviews the PR again and merge it if the changes are ok.
 
-
-
 Continuous Integration
 =======================
 
@@ -198,8 +183,6 @@ With CI, each commit or pull request triggers an automated process that verifies
 and performs various checks to catch issues early in the development lifecycle.
 
 The table below summarizes the software tools utilized in our CI pipeline, describes their respective aims and project pages.
-
-
 
 +----------------------------------------------------------------------------------------------------+------------------------------------------------------------------+----------------------------------------------------------------------------------------------+
 |  Tools                                                                                             | Aim                                                              | Project page                                                                                 |

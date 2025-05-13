@@ -4,66 +4,59 @@
 Installation
 =========================
 
+This section describes two type of installation:
 
-We define here two types of installation:
+- `Installation for standard users`_: for processing and analyze disdrometer data.
+- `Installation for contributors`_: who want to enrich the project (e.g., adding a new reader, data, ...).
 
-- `Installation for standard users`_: for users who want to process data.
-
-- `Installation for contributors`_: for contributors who want to enrich the project (eg. add a new reader).
-
-We recommend users and contributors to first set up a virtual environment where to install DISDRODB.
+We recommend setting up a virtual environment before installing DISDRODB.
 
 
 .. _virtual_environment:
 
 Virtual Environment Creation
-===============================
+============================
 
-While not mandatory, utilizing a virtual environment when installing DISDRODB is recommended.
+Although optional, using a virtual environment when installing DISDRODB is recommended.
 
-Using a virtual environment for installing packages provides isolation of dependencies,
-easier package management, easier maintenance, improved security, and improved development workflow.
+Virtual environments isolate dependencies, simplify package management, improve maintainability,
+enhance security, and streamline your development workflow.
 
-Here below we provide two options to set up a virtual environment,
-using `venv <https://docs.python.org/3/library/venv.html>`__
-or `conda <https://docs.conda.io/en/latest/>`__ (recommended).
+Below are two options for creating a virtual environment,
+using `venv <https://docs.python.org/3/library/venv.html>`__ or
+`conda <https://docs.conda.io/en/latest/>`__ (recommended).
 
 **With conda:**
 
-* Install `miniconda <https://docs.conda.io/en/latest/miniconda.html>`__
-  or `anaconda <https://docs.anaconda.com/anaconda/install/>`__
-  if you don't have it already installed.
-
-* Create the *disdrodb-py311* (or any other custom name) conda environment:
+* Install `mamba <https://mamba.readthedocs.io/en/latest/installation/mamba-installation.html>`_, `miniconda <https://docs.conda.io/en/latest/miniconda.html>`__ or `anaconda <https://docs.anaconda.com/anaconda/install/>`__ if you haven't already installed.
+* Create a new conda environment (e.g., *disdrodb-py311*):
 
 .. code-block:: bash
 
-	conda create --name disdrodb-py311 python=3.11 --no-default-packages
+    conda create --name disdrodb-py311 python=3.11 --no-default-packages
 
-* Activate the *disdrodb-py311* conda environment:
+* Activate the environment:
 
 .. code-block:: bash
 
-	conda activate disdrodb-py311
-
+    conda activate disdrodb-py311
 
 **With venv:**
 
-* Windows: Create a virtual environment with venv:
+* On Windows, create and activate a virtual environment:
 
 .. code-block:: bash
 
-   python -m venv disdrodb-pyXXX
-   cd disdrodb-pyXXX/Scripts
-   activate
+    python -m venv disdrodb-pyXXX
+    cd disdrodb-pyXXX/Scripts
+    activate
 
-
-* Mac/Linux: Create a virtual environment with venv:
+* On macOS/Linux, create and activate a virtual environment:
 
 .. code-block:: bash
 
-   virtualenv -p python3 disdrodb-pyXXX
-   source disdrodb-pyXXX/bin/activate
+    python3 -m venv disdrodb-pyXXX
+    source disdrodb-pyXXX/bin/activate
 
 
 .. _installation_standard:

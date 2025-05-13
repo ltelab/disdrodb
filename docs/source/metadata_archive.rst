@@ -4,27 +4,31 @@
 Metadata Archive
 ==========================
 
-The `DISDRODB metadata repository <https://github.com/ltelab/DISDRODB-METADATA>`__ is hosted on GitHub and serves as a central hub for tracking available stations,
-the potential malfunctioning of the sensors, and to list the URLs of the remote data repositories where the raw disdrometer data are stored.
+The `DISDRODB metadata repository <https://github.com/ltelab/DISDRODB-METADATA>`__ is hosted
+on GitHub and serves as a central hub for tracking available stations, potential sensor malfunctions,
+and listing the URLs of remote repositories storing raw disdrometer data.
 
-The GitHub platform facilitates community collaboration to continuously enhance station metadata using best open-source practices.
-This approach also enables recursive data quality improvements, while keeping the DISDRODB product chain transparent and fully reproducible.
+This platform facilitates community collaboration to continuously enhance station metadata
+using best open-source practices.
+It also enables iterative data quality improvements while keeping the DISDRODB
+ product chain transparent and fully reproducible.
 
-To ensure quality and consistency of metadata, a comprehensive standard set of metadata keys has been established.
-The DISDRODB community is empowered to pinpoint specific timestamps or periods when sensors might have malfunctioned or generated erroneous data logs through specific issues YAML files.
+To ensure the quality and consistency of metadata, a comprehensive standard set of metadata keys
+has been established.
+The DISDRODB community can pinpoint timestamps or periods when sensors may have malfunctioned
+or produced erroneous data using dedicated YAML issue files.
 
-The DISDRODB Metadata Repository is therefore updated on a regular basis to reflect the latest status of the stations and the data availability.
+Consequently, the DISDRODB Metadata Repository is regularly updated to reflect station status
+and data availability.
 
-Here below we detail the necessary step to add/update the information of the DISDRODB Metadata Archive.
+Below we detail the steps required to add or update information in the DISDRODB Metadata Archive.
 
 
 Download the Metadata Archive
 ----------------------------------
 
-If you plan to add new data to the DISDRODB Decentralized Data Archive or you want to just update
-some station metadata/issues information, go to the
-`DISDRODB metadata repository <https://github.com/ltelab/DISDRODB-METADATA>`__,
-fork the repository on your GitHub account and then clone the forked repository:
+If you plan to add new data to the DISDRODB Decentralized Data Archive or simply want
+to update station metadata or issue information, fork the repository on GitHub and then clone your fork:
 
 .. code:: bash
 
@@ -34,9 +38,9 @@ fork the repository on your GitHub account and then clone the forked repository:
 Update the Metadata Archive
 -------------------------------
 
-To update the DISDRODB Metadata Archive follow these steps:
+Follow these steps to update the DISDRODB Metadata Archive:
 
-1. Go inside the ``DISDRODB-METADATA`` directory where you have cloned the repository:
+1. Navigate to the ``DISDRODB-METADATA`` directory where you cloned the repository.
 
 2. Create a new branch.
 
@@ -45,26 +49,24 @@ To update the DISDRODB Metadata Archive follow these steps:
       git checkout -b "add-metadata-<data_source>-<campaign_name>"
 
    .. note::
-      If you are adding information regarding a new station, please name the branch as follows: ``add-metadata-<data_source>-<campaign_name>``.
+      If you are adding information about a new station, name the branch ``add-metadata-<data_source>-<campaign_name>``.
+      If you are improving data for an existing station, name it ``update-metadata-<data_source>-<campaign_name>-<station_name>``.
 
-      If you are just improving some specific information of an existing station, please name the branch as follows: ``update-metadata-<data_source>-<campaign_name>-<station_name>``.
+3. Edit or add the desired metadata files.
 
-3. Edit or add the metadata files that you are interested in.
-
-   To quickly open the metadata data archive, you can type in the terminal:
+   To open the DISDRODB Metadata Archive directory, type in the terminal:
 
    .. code:: bash
 
       disdrodb_open_metadata_archive
 
-   To quickly open the metadata directory of a specific station, you can type in the terminal:
+   To open a specific station directory:
 
    .. code:: bash
 
       disdrodb_open_metadata_directory <DATA_SOURCE> <CAMPAIGN_NAME> <STATION_NAME>
 
-
-4. When you are done, please run the following command to check that the metadata files are valid:
+4. When done, run this command to verify the metadata files:
 
    .. code:: bash
 
@@ -72,9 +74,9 @@ To update the DISDRODB Metadata Archive follow these steps:
       disdrodb_check_metadata_archive
 
    .. note::
-      The ``DISDRODB_METADATA_ARCHIVE_DIR`` environment variable has to be specified only if the DISDRODB Metadata Archive directory has not been specified before in the DISDRODB Configuration File.
+      You only need to set ``DISDRODB_METADATA_ARCHIVE_DIR`` if you have not already specified the archive directory in your DISDRODB configuration.
 
-5. Commit your changes and push your branch to GitHub:
+5. Commit and push your changes to GitHub:
 
    .. code:: bash
 
@@ -82,17 +84,16 @@ To update the DISDRODB Metadata Archive follow these steps:
       git commit -m "Add/update metadata for <data_source> <campaign_name>"
       git push origin <branch_name>
 
-6. Go to the `GitHub DISDRODB Metadata Repository <https://github.com/ltelab/DISDRODB-METADATA>`__, open the Pull Request and wait for a maintainer to accept it!
-   For more information on GitHub Pull Requests, read the
-   `"Create a pull request documentation" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__.
+6. Open a pull request on the GitHub DISDRODB Metadata Repository and wait for a maintainer to review and merge it.
+   For more details, see the `"Creating a pull request" <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request>`__ documentation.
 
-7.  If you struggle with this process, do not hesitate to raise an `issue <https://github.com/ltelab/DISDRODB-METADATA/issues/new/choose>`__ so we can help!
+7.  If you encounter any issues, feel free to `raise one <https://github.com/ltelab/DISDRODB-METADATA/issues/new/choose>`_ so we can assist!
 
 
 Check the Metadata Archive
 --------------------------------
 
-You can check that all stations metadata adhere to the enforced DISDRODB standards by running the following command in python:
+You can verify that all station metadata adhere to DISDRODB standards by running the following command in Python:
 
 .. code:: python
 
@@ -101,7 +102,7 @@ You can check that all stations metadata adhere to the enforced DISDRODB standar
     check_metadata_archive()
 
 
-Alternatively you can type into the terminal:
+Alternatively, run the following command in the terminal:
 
 .. code:: bash
 
@@ -111,9 +112,8 @@ Alternatively you can type into the terminal:
 Explore the Metadata Archive
 --------------------------------
 
-The disdrodb software provides the ``read_metadata_archive`` function to read entire metadata archive
-into a ``pandas.DataFrame``:
-
+The disdrodb software provides the ``read_metadata_archive`` function to load the
+entire metadata archive into a ``pandas.DataFrame``:
 
 .. code:: python
 

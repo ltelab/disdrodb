@@ -1,4 +1,4 @@
-# 📦 DISDRODB - A package to standardize, process and analyze global disdrometer data.
+# 📦 DISDRODB - A package to standardize, process and analyze global disdrometer data
 
 |                   |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,7 +20,7 @@
 DISDRODB is part of an international joint effort to index, collect and homogenize drop size distribution (DSD) data from around the world.
 
 The DISDRODB project also aims to establish a global standard for sharing disdrometer observations.
-Built on FAIR data principles and Climate & Forecast (CF) conventions, DISDRODB standards facilitates the processing, analysis, and visualization of disdrometer data.
+Built on FAIR data principles and Climate & Forecast (CF) conventions, DISDRODB standards facilitate the processing, analysis and visualization of disdrometer data.
 
 ## ℹ️ Software Overview
 
@@ -37,13 +37,13 @@ The software enables you to:
 - Compute empirical and model-based drop size distribution parameters and derive geophysical and polarimetric radar variables of interest (DISDRODB L2 product)
 
 Currently, the DISDRODB Working Group is finalizing the development of the L1 and L2 scientific products.
-If you have ideas, algorithms, data or expertise to share, or you want to contribute to the future DISDRODB products, do not hesitate to get in touch !!!
+If you have ideas, algorithms, data, or expertise to share, or you want to contribute to the future DISDRODB products, do not hesitate to get in touch!!!
 
-Join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) to meet the DISDRODB Community !
+Join the [**DISDRODB Slack Workspace**](https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA) to meet the DISDRODB Community!
 
 ## 🚀 Quick Start
 
-You're about to create your very own DISDRODB Local Data Archive.
+Create your own DISDRODB Local Data Archive.
 
 ### 📚 Download the DISDRODB Metadata Archive
 
@@ -52,76 +52,62 @@ The DISDRODB Metadata Archive is a collection of metadata files that describe th
 To download the DISDRODB Metadata Archive, navigate to the desired directory and run:
 
 ```bash
-
 git clone https://github.com/ltelab/DISDRODB-METADATA.git
-
 ```
 
-This command will download a directory called `DISDRODB-METADATA`.
-
-Alternatively, you can download a static version of the DISDRODB Metadata Archive using:
+Or download a static snapshot without using git:
 
 ```bash
-disdrodb_download_metadata_archive /custom/path/where/to/download/DISDRODB-METADATA
+disdrodb_download_metadata_archive /path/to/DISDRODB-METADATA
 ```
 
 ### 📚 Define the DISDRODB Configuration File
 
-The disdrodb software needs to know where the local DISDRODB Metadata Archive
-is stored on your local machine, as well as where you want to download the raw stations data
-as well as where to save the DISDRODB products you will generate.
+The disdrodb software requires to know two directories:
 
-Within the `disdrodb` package, the argument `metadata_archive_dir` refers to the base directory of your local DISDRODB Metadata Archive, while `data_archive_dir` refers to the base directory of your local DISDRODB Data Archive.
+- `metadata_archive_dir`: the base of your local DISDRODB Metadata Archive
+- `data_archive_dir`: the base of your local DISDRODB Data Archive
 
-The `metadata_archive_dir` path corresponds to the `DISDRODB` directory within the `DISDRODB-METADATA` archive.
-The `data_archive_dir` path corresponds to `DISDRODB` directory of choice where
-all DISDRODB products will be saved.
-
-To facilitate the creation of the DISDRODB Configuration File, you can adapt and run in python the following code snippet.
-Please note that on Windows these paths must end with `\DISDRODB`, while on macOS/Linux they must end with `/DISDRODB`.
+On Windows, paths must end with `\DISDRODB`; on macOS/Linux, they must end with `/DISDRODB`.
 
 ```python
 import disdrodb
 
 metadata_archive_dir = "/<path_to>/DISDRODB-METADATA/DISDRODB"
-data_archive_dir = "/<path_of_choice_to_the_local_data_archive>/DISDRODB"
+data_archive_dir = "/<path_to>/DISDRODB"
 disdrodb.define_configs(
     metadata_archive_dir=metadata_archive_dir, data_archive_dir=data_archive_dir
 )
 ```
 
-By running this command, the disdrodb software will write a `.config_disdrodb.yml` file into your home directory (i.e. `~/.config_disdrodb.yml`)
-that will be used as default configuration file when running the disdrodb software.
+This creates a `.config_disdrodb.yml` file in your home directory (e.g., `~/.config_disdrodb.yml`).
 
-If you **now close your python session and reopen a new one**, if you will run the following code snippet, you
-should get the `metadata_archive_dir` and `data_archive_dir` paths you just defined in the DISDRODB Configuration File:
+To verify the configuration, open a new Python session and run:
 
 ```python
 import disdrodb
 
-print("DISDRODB Metadata Archive Directory: ", disdrodb.get_metadata_archive_dir())
-print("DISDRODB Data Archive Directory: ", disdrodb.get_data_archive_dir())
+print("Metadata Archive Directory:", disdrodb.get_metadata_archive_dir())
+print("Data Archive Directory:", disdrodb.get_data_archive_dir())
 ```
 
-You can also verify and print the default DISDRODB Metadata Archive and Data Archive directories
-by typing the following command in the terminal:
+Or in the shell:
 
 ```bash
-
-   disdrodb_data_archive_directory
-   disdrodb_metadata_archive_directory
-
+disdrodb_metadata_archive_directory
+disdrodb_data_archive_directory
 ```
 
 ### 📥 Download the DISDRODB Raw Data Archive
 
-To download all data stored into the DISDRODB Decentralized Data Archive, you just have to run the following command:
+To download all data stored into the DISDRODB Decentralized Data Archive,
+you just have to run the following command:
 
 ```bash
 disdrodb_download_archive
 ```
 
-If you aim to download data from a specific source (e.g., EPFL), run:
+To download from a specific source (e.g., EPFL):
 
 ```bash
 disdrodb_download_archive --data-sources EPFL
@@ -135,7 +121,7 @@ To open the local DISDRODB Data Archive directory, type:
 disdrodb_open_data_archive
 ```
 
-### 💫 Transform the raw data to standardized netCDF files
+### 💫 Transform Raw Data to Standardized netCDFs
 
 If you want to convert all stations raw data into standardized netCDF4 files, run the following command in the terminal:
 
@@ -145,42 +131,28 @@ disdrodb_run_l0
 
 Type `disdrodb_run_l0 --help` to see further options.
 
-### 💫 Generate the DISDRODB L1 and L2 products
+### 💫 Generate DISDRODB L1 and p2 products
 
-To generate the DISDRODB L1 and L2 products, run the following commands in the terminal:
+To generate DISDRODB L1 and L2 products, run the following commands in the terminal:
 
 ```bash
 disdrodb_run_l1
-```
-
-```bash
 disdrodb_run_l2e
-```
-
-```bash
 disdrodb_run_l2m
 ```
 
-### 💫 Open analysis-ready DISDRODB products
+### 💫 Analyze Analysis‐Ready Products
 
-The disdrodb software `open_dataset` function enable to lazy open all station files of
-a DISDRODB product into a `xarray.Dataset` (or `pandas.DataFrame` for the DISDRODB L0A product).
+The software’s `open_dataset` function **lazily** opens all station files of a given product:
 
 ```python
 import disdrodb
 
-# Define station arguments
-data_source = "EPFL"
-campaign_name = "HYMEX_LTE_SOP3"
-station_name = "10"
-
-# Open all station files of a specific product
 ds = disdrodb.open_dataset(
     product="L0C",
-    # Station arguments
-    data_source=data_source,
-    campaign_name=campaign_name,
-    station_name=station_name,
+    data_source="EPFL",
+    campaign_name="HYMEX_LTE_SOP3",
+    station_name="10",
 )
 ds
 ```

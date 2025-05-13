@@ -1,43 +1,43 @@
 Contributors Guidelines
 ===========================
 
-Hi! Thanks for taking the time to contribute to DISDRODB.
+Hi! Thank you for taking the time to contribute to DISDRODB.
 
 You can contribute in many ways:
 
 - Join the `GitHub discussions <https://github.com/ltelab/disdrodb/discussions>`__
 - Report software `issues <#issue-reporting-guidelines>`__
-- Help us developing new readers
+- Help us develop new readers
 - Add new data to the DISDRODB Decentralized Data Archive
 - Implement new products
 - ...
-- Any code improvements are welcome !
+- Any code improvements are welcome!
 
-**We Develop with GitHub !**
+**We develop with GitHub!**
 
 We use GitHub to host code, to track issues and feature requests, as well as accept Pull Requests.
 We use `GitHub flow <https://docs.github.com/en/get-started/quickstart/github-flow>`__.
 So all code changes happen through Pull Requests (PRs).
 
 
-**First Time Contributors ?**
+**First-Time Contributors?**
 
-Before adding your contribution, please take a moment to read through the following sections:
+Before contributing, please take a moment to read through the following sections:
 
 - The `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ help you to set up the developing environment and the pre-commit hooks.
 - The section `Contributing process <#contributing-process>`__ provides you with a brief overview of the steps that each DISDRODB developer must follow to contribute to the repository.
 - The `Code review checklist <#code-review-checklist>`__ enable to speed up the code review process.
 - The `Code of conduct <https://github.com/ltelab/disdrodb/blob/main/CODE_OF_CONDUCT.md>`__ details the expected behavior of all contributors.
 
-Initiating a discussion about your ideas or proposed implementations is a vital step before starting your contribution !
+Initiating a discussion about your ideas or proposed implementations is a vital step before starting your contribution!
 Engaging with the community early on can provide valuable insights, ensure alignment with the project's goals, and prevent potential overlap with existing work.
 Here are some guidelines to facilitate this process:
 
 1. Start with a conversation
 
-   Before start coding, open a `GitHub Discussion <https://github.com/ltelab/disdrodb/discussions>`__, a `GitHub Feature Request Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ or
+   Before you start coding, open a `GitHub Discussion <https://github.com/ltelab/disdrodb/discussions>`__, a `GitHub Feature Request Issue <https://github.com/ltelab/disdrodb/issues/new/choose>`__ or
    just start a discussion in the `DISDRODB Slack Workspace <https://join.slack.com/t/disdrodbworkspace/shared_invite/zt-25l4mvgo7-cfBdXalzlWGd4Pt7H~FqoA>`__.
-   These channels of communication provides an opportunity to gather feedback, understand the project's current state, and improve your contributions.
+   These channels of communication provide an opportunity to gather feedback, understand the project's current state, and improve your contributions.
 
 2. Seek guidance and suggestions
 
@@ -91,8 +91,7 @@ If you do not have yet Git installed on your computer, please install it followi
 Then, please follow the guidelines in the `Installation for contributors <https://disdrodb.readthedocs.io/en/latest/installation.html#installation-for-contributors>`__ section
 to create the local copy of the disdrodb repository, set up the developing environment and the pre-commit hooks.
 
-Once you have have a local copy of the disdrodb repository on your machine, you are ready to
-contribute to the project!
+Once you have a local copy of the disdrodb repository on your machine, you're ready to contribute!
 
 
 2. Create a new branch
@@ -244,7 +243,7 @@ Refer to the table below for a comprehensive summary of all CI tools employed to
 5. Code testing with pytest
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. Every code change must be tested !
+DISDRODB tests are written using the third-party `pytest <https://docs.pytest.org>`_ package. Every code change must be tested!
 
 The tests are organized within the ``/disdrodb/tests`` directory and are structured to comprehensively assess various aspects of the code.
 
