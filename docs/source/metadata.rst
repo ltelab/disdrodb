@@ -12,10 +12,13 @@ It is mandatory to at least specify values for the following 7 metadata keys:
 * ``campaign_name``: must match the campaign name where the metadata reside.
 * ``station_name``: must match the YAML filename (excluding the ``.yml`` extension).
 * ``sensor_name``: must be one of the configured sensors (see ``disdrodb.available_sensor_names()``). If your sensor is not listed, follow :ref:`Add new sensor configs <sensor_configurations>`.
-* ``platform_type``: choose ``fixed`` or ``mobile``. Use ``mobile`` if the platform's latitude, longitude, or altitude changes over time.
+* ``reader``: indicates which function ingests the raw data. Readers live in ``disdrodb/l0/readers/<sensor_name>/<DATA_SOURCE>/<READER_NAME>.py``. Set ``reader`` to ``<DATA_SOURCE>/<READER_NAME>`` (e.g. ``GPM/IFLOODS`` for the OTT Parsivel GPM IFLOODS reader).
 * ``raw_data_format``: choose ``txt`` for text/ASCII files or ``netcdf`` for netCDF files.
 * ``raw_data_glob_pattern``: a glob pattern that selects which files in ``DISDRODB/RAW/<DATA_SOURCE>/<CAMPAIGN_NAME>/<STATION_NAME>/data`` are ingested. For example, ``*.txt`` matches all ``.txt`` files recursively. To match only files with a specific prefix, use ``SPECTRUM_*.txt``. To limit to a subfolder, include its name: ``custom/*.txt`` (direct files only) or ``custom/**/*.txt`` (including nested folders).
-* ``reader``: indicates which function ingests the raw data. Readers live in ``disdrodb/l0/readers/<sensor_name>/<DATA_SOURCE>/<READER_NAME>.py``. Set ``reader`` to ``<DATA_SOURCE>/<READER_NAME>`` (e.g. ``GPM/IFLOODS`` for the OTT Parsivel GPM IFLOODS reader).
+* ``measurement_interval``: the sensor measurement sampling interval in seconds.
+* ``deployment_status``: either ``'ongoing'`` or ``'terminated'``.
+* ``deployment_mode``: possible values are ``'land'``, ``'ship'``, ``'truck'`` or ``'cable'``.
+* ``platform_type``: choose ``fixed`` or ``mobile``. Use ``mobile`` if the platform's latitude, longitude, or altitude changes over time.
 
 The ``disdrodb_data_url`` metadata key specifies the URL of the remote repository where raw data are stored. This link should point to a zip file containing all data for the station.
 
@@ -39,16 +42,16 @@ Below is the list and description of DISDRODB metadata keys:
    :header-rows: 1
 
 
-.. csv-table:: Station description
+.. csv-table:: Deployment info
    :align: left
-   :file: ./metadata_csv/Description.csv
+   :file: ./metadata_csv/Deployment_Info.csv
    :widths: auto
    :header-rows: 1
 
 
-.. csv-table:: Deployment info
+.. csv-table:: Station description
    :align: left
-   :file: ./metadata_csv/Deployment_Info.csv
+   :file: ./metadata_csv/Description.csv
    :widths: auto
    :header-rows: 1
 

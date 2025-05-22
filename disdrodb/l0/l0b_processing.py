@@ -416,15 +416,15 @@ def create_l0b_from_l0a(
         Error if the DISDRODB L0B xarray dataset can not be created.
     """
     # Retrieve sensor name
-    attrs = metadata.copy()
-    sensor_name = attrs["sensor_name"]
+    metadata = metadata.copy()
+    sensor_name = metadata["sensor_name"]
 
     # Define Dataset variables and coordinates
     data_vars = _define_dataset_variables(df, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Create xarray Dataset
     ds = xr.Dataset(data_vars=data_vars)
-    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=attrs)
+    ds = finalize_dataset(ds, sensor_name=sensor_name, metadata=metadata)
     return ds
 
 
@@ -432,7 +432,7 @@ def create_l0b_from_l0a(
 #### L0B netCDF4 Writer
 
 
-def set_geolocation_coordinates(ds, attrs):
+def set_geolocation_coordinates(ds, metadata):
     """Add geolocation coordinates to dataset."""
     # Assumption
     # - If coordinate is present in L0A, overrides the one specified in the attributes
@@ -443,22 +443,22 @@ def set_geolocation_coordinates(ds, attrs):
     for coord in coords:
         # If coordinate not present, add it from dictionary
         if coord not in ds:
-            ds = ds.assign_coords({coord: attrs.pop(coord, np.nan)})
+            ds = ds.assign_coords({coord: metadata.pop(coord, np.nan)})
         # Else if set coordinates the variable in the dataset (present in the raw data)
         else:
             ds = ds.set_coords(coord)
-            _ = attrs.pop(coord, None)
+            _ = metadata.pop(coord, None)
 
     # Set -9999 flag value to np.nan
     for coord in coords:
         ds[coord] = xr.where(ds[coord] == -9999, np.nan, ds[coord])
 
     # Set attributes without geolocation coordinates
-    ds.attrs = attrs
+    ds.attrs = metadata
     return ds
 
 
-def finalize_dataset(ds, sensor_name, attrs):
+def finalize_dataset(ds, sensor_name, metadata):
     """Finalize DISDRODB L0B Dataset."""
     # Ensure sorted by time
     ds = ensure_sorted_by_time(ds)
@@ -467,7 +467,7 @@ def finalize_dataset(ds, sensor_name, attrs):
     ds = ds.assign_coords(get_bin_coords_dict(sensor_name=sensor_name))
 
     # Set geolocation coordinates and attributes
-    ds = set_geolocation_coordinates(ds, attrs=attrs)
+    ds = set_geolocation_coordinates(ds, metadata=metadata)
 
     # Add dataset CRS coordinate
     ds = add_dataset_crs_coords(ds)
