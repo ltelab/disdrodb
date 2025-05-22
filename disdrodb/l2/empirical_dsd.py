@@ -101,6 +101,101 @@ def count_bins_with_drops(ds):
     return da
 
 
+def _compute_qc_bins_metrics(arr):
+    # Find indices of non-zero elements
+    arr = arr.copy()
+    arr[np.isnan(arr)] = 0
+    non_zero_indices = np.nonzero(arr)[0]
+    if non_zero_indices.size == 0:
+        return np.array([0, len(arr), 1, len(arr)])
+
+    # Define bins interval with drops
+    start_idx, end_idx = non_zero_indices[0], non_zero_indices[-1]
+    segment = arr[start_idx : end_idx + 1]
+
+    # Compute number of bins with drops
+    total_bins = segment.size
+
+    # Compute number of missing bins (zeros)
+    n_missing_bins = int(np.sum(segment == 0))
+
+    # Compute fraction of bins with missing drops
+    fraction_missing = n_missing_bins / total_bins
+
+    # Identify longest with with consecutive zeros
+    zero_mask = (segment == 0).astype(int)
+    # - Pad with zeros at both ends to detect edges
+    padded = np.pad(zero_mask, (1, 1), "constant", constant_values=0)
+    diffs = np.diff(padded)
+    # - Start and end indices of runs
+    run_starts = np.where(diffs == 1)[0]
+    run_ends = np.where(diffs == -1)[0]
+    run_lengths = run_ends - run_starts
+    max_consecutive_missing = run_lengths.max() if run_lengths.size > 0 else 0
+
+    # Define output
+    output = np.array([total_bins, n_missing_bins, fraction_missing, max_consecutive_missing])
+    return output
+
+
+def compute_qc_bins_metrics(ds):
+    """
+    Compute quality-control metrics for drop-count bins along the diameter dimension.
+
+    This function selects the first available drop-related variable from the dataset,
+    optionally collapses over velocity methods and the velocity dimension, then
+    computes four metrics per time step:
+
+      1. Nbins: total number of diameter bins between the first and last non-zero count
+      2. Nbins_missing: number of bins with zero or NaN counts in that interval
+      3. Nbins_missing_fraction: fraction of missing bins (zeros) in the interval
+      4. Nbins_missing_consecutive: maximum length of consecutive missing bins
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset containing one of the following variables:
+        'drop_counts', 'drop_number_concentration', or 'drop_number'.
+        If a 'velocity_method' dimension exists, only the first method is used.
+        If a velocity dimension (specified by VELOCITY_DIMENSION) exists, it is summed over.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with a new 'metric' dimension of size 4 and coordinates:
+        ['Nbins', 'Nbins_missing', 'Nbins_missing_fraction', 'Nbins_missing_consecutive'],
+        indexed by 'time'.
+    """
+    # Select useful variable
+    candidate_variables = ["drop_counts", "drop_number_concentration", "drop_number"]
+    available_variables = [var for var in candidate_variables if var in ds]
+    if len(available_variables) == 0:
+        raise ValueError(f"One of these variables is required: {candidate_variables}")
+    da = ds[available_variables[0]]
+    if "velocity_method" in da.dims:
+        da = da.isel(velocity_method=0)
+        da = da.drop_vars("velocity_method")
+    if VELOCITY_DIMENSION in da.dims:
+        da = da.sum(dim=VELOCITY_DIMENSION)
+
+    # Compute QC metrics
+    da_qc_bins = xr.apply_ufunc(
+        _compute_qc_bins_metrics,
+        da,
+        input_core_dims=[[DIAMETER_DIMENSION]],
+        output_core_dims=[["metric"]],
+        vectorize=True,
+        dask="parallelized",
+        output_dtypes=[float],
+        dask_gufunc_kwargs={"output_sizes": {"metric": 4}},
+    )
+
+    # Assign meaningful labels to the qc 'metric' dimension
+    variables = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
+    ds_qc_bins = da_qc_bins.assign_coords(metric=variables).to_dataset(dim="metric")
+    return ds_qc_bins
+
+
 ####-------------------------------------------------------------------------------------------------------------------.
 #### DSD Spectrum, Concentration, Moments
 

@@ -75,7 +75,7 @@ def get_l1_options():
         "fall_velocity_method": "Beard1976",
         # Diameter-Velocity Filtering Options
         "minimum_diameter": 0.2495,  # OTT PARSIVEL first two bin no data !
-        "maximum_diameter": 8,
+        "maximum_diameter": 10,
         "minimum_velocity": 0,
         "maximum_velocity": 12,
         "above_velocity_fraction": 0.5,

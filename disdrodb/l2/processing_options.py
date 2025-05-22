@@ -7,16 +7,16 @@ DEFAULT_CONFIG = {
     "global_settings": {
         "time_integration": [
             "1MIN",
+            "5MIN",
             "10MIN",
             "ROLL1MIN",
-            "ROLL10MIN",
         ],  # ["10S", "30S", "1MIN",  "5MIN", "10MIN", "15MIN", "30MIN", "1H", "ROLL5MIN", "ROLL10MIN"],
         # Radar options
         "radar_simulation_enabled": False,
         "radar_simulation_options": {
             "radar_band": ["S", "C", "X", "Ku", "Ka", "W"],
             "canting_angle_std": 7,
-            "diameter_max": 8,
+            "diameter_max": 10,
             "axis_ratio": "Thurai2007",
         },
         # L2E options
@@ -25,10 +25,10 @@ DEFAULT_CONFIG = {
         "l2m_options": {
             "fall_velocity_method": "Beard1976",
             "diameter_min": 0,
-            "diameter_max": 8,
+            "diameter_max": 10,
             "diameter_spacing": 0.05,
             "gof_metrics": True,
-            "min_bins_with_drops": 4,
+            "min_nbins": 4,
             "remove_timesteps_with_few_bins": False,
             "mask_timesteps_with_few_bins": False,
             "models": {
@@ -112,7 +112,7 @@ TEST_CONFIG = {
         "radar_simulation_options": {
             "radar_band": ["S", "C", "X", "Ku", "Ka", "W"],
             "canting_angle_std": 7,
-            "diameter_max": 8,
+            "diameter_max": 10,
             "axis_ratio": "Thurai2007",
         },
         # L2E options
@@ -121,10 +121,10 @@ TEST_CONFIG = {
         "l2m_options": {
             "fall_velocity_method": "Beard1976",
             "diameter_min": 0,
-            "diameter_max": 8,
+            "diameter_max": 10,
             "diameter_spacing": 0.05,
             "gof_metrics": True,
-            "min_bins_with_drops": 4,
+            "min_nbins": 4,
             "remove_timesteps_with_few_bins": False,
             "mask_timesteps_with_few_bins": False,
             "models": {
