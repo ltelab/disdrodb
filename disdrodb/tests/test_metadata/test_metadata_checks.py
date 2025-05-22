@@ -35,7 +35,7 @@ from disdrodb.metadata.checks import (
     identify_empty_metadata_keys,
     identify_missing_metadata_coords,
 )
-from disdrodb.metadata.standards import get_valid_metadata_keys
+from disdrodb.metadata.standards import METADATA_KEYS
 from disdrodb.tests.conftest import create_fake_metadata_file
 from disdrodb.utils.yaml import read_yaml, write_yaml
 
@@ -109,7 +109,7 @@ def test_check_metadata_archive_keys(tmp_path):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     # Test 1: Correct metadata key
-    valid_metadata_keys = get_valid_metadata_keys()
+    valid_metadata_keys = METADATA_KEYS
     metadata_dict = dict.fromkeys(valid_metadata_keys, "value1")
     _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
 

@@ -141,6 +141,7 @@ def open_dataset(
     product_kwargs=None,
     debugging_mode: bool = False,
     data_archive_dir: Optional[str] = None,
+    parallel=False,
     **open_kwargs,
 ):
     """Retrieve DISDRODB product files for a give station.
@@ -205,8 +206,17 @@ def open_dataset(
     # Open DISDRODB netCDF files using xarray
     # - TODO: parallel option and add closers !
     # - decode_timedelta -- > sample_interval not decoded to timedelta !
-    list_ds = [xr.open_dataset(fpath, decode_timedelta=False, **open_kwargs) for fpath in filepaths]
-    ds = xr.concat(list_ds, dim="time")
+    # list_ds = [xr.open_dataset(fpath, decode_timedelta=False, **open_kwargs) for fpath in filepaths]
+    # ds = xr.concat(list_ds, dim="time")
+    ds = xr.open_mfdataset(
+        filepaths,
+        engine="netcdf4",
+        combine="nested",  # 'by_coords',
+        concat_dim="time",
+        decode_timedelta=False,
+        parallel=parallel,
+        **open_kwargs,
+    )
     return ds
 
 

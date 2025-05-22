@@ -26,7 +26,7 @@ from disdrodb.l1.filters import define_spectrum_mask, filter_diameter_bins, filt
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (  # TODO: maybe move out of L2
-    count_bins_with_drops,
+    compute_qc_bins_metrics,
     get_min_max_diameter,
 )
 from disdrodb.utils.attrs import set_attrs
@@ -172,9 +172,11 @@ def generate_l1(
     # Add drop statistics
     ds_l1["Dmin"] = min_drop_diameter
     ds_l1["Dmax"] = max_drop_diameter
-    ds_l1["n_drops_selected"] = drop_counts.sum(dim=DIAMETER_DIMENSION)
-    ds_l1["n_drops_discarded"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION) - ds_l1["n_drops_selected"]
-    ds_l1["n_bins_with_drops"] = count_bins_with_drops(ds_l1)
+    ds_l1["N"] = drop_counts.sum(dim=DIAMETER_DIMENSION)
+    ds_l1["Nremoved"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION) - ds_l1["N"]
+
+    # Add bins statistics
+    ds_l1.update(compute_qc_bins_metrics(ds_l1))
 
     # -------------------------------------------------------------------------------------------
     # Add quality flags
