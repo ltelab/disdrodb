@@ -469,7 +469,12 @@ def generate_l2_model(
 
 @check_pytmatrix_availability
 def generate_l2_radar(
-    ds, radar_band=None, canting_angle_std=7, diameter_max=10, axis_ratio="Thurai2007", parallel=True
+    ds,
+    radar_band=None,
+    canting_angle_std=7,
+    diameter_max=10,
+    axis_ratio="Thurai2007",
+    parallel=True,
 ):
     """Simulate polarimetric radar variables from empirical drop number concentration or the estimated PSD.
 
