@@ -828,3 +828,43 @@ raw_drop_number:
     - velocity_bin_center
   n_values: 440
   field_number: "81"
+air_temperature:
+  n_digits: 4
+  n_characters: 5
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+    - -40
+    - 70
+  nan_flags: 99999
+  field_number: "521"
+relative_humidity:
+  n_digits: 5
+  n_characters: 5
+  n_decimals: 0
+  n_naturals: 5
+  data_range:
+    - 0
+    - 99999
+  nan_flags: 99999
+  field_number: "522"
+wind_speed:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 1
+  n_naturals: 2
+  data_range:
+    - 0
+    - 60
+  nan_flags: null
+  field_number: "523"
+wind_direction:
+  n_digits: 3
+  n_characters: 3
+  n_decimals: 0
+  n_naturals: 3
+  data_range:
+    - 0
+    - 360
+  nan_flags: null
+  field_number: "524"
