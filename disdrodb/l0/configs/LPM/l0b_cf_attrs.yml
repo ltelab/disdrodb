@@ -127,13 +127,13 @@ reserve_status:
   long_name: Reserve status
   units: ""
 temperature_interior:
-  description: "Interior temperature [\xB0C] (NNN)"
+  description: "Interior temperature [C] (NNN)"
   long_name: Interior temperature
-  units: "\xB0C"
+  units: "C"
 laser_temperature:
-  description: "Temperature of laser driver 0-80\xB0C (NN)"
+  description: "Temperature of laser driver 0-80C (NN)"
   long_name: Temperature of laser driver
-  units: "\xB0C"
+  units: "C"
 laser_current_average:
   description: Mean value laser current [1/100 mA] (NNNN)
   long_name: Mean value laser current
@@ -159,9 +159,9 @@ current_heating_pane_receiver_head:
   long_name: Current pane heating receiver head
   units: mA
 temperature_ambient:
-  description: "Ambient temperature [\xB0C] (NNN.N)"
+  description: "Ambient temperature [C] (NNN.N)"
   long_name: Ambient temperature
-  units: "\xB0C"
+  units: "C"
 current_heating_voltage_supply:
   description:
     Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise "999")
@@ -308,3 +308,19 @@ raw_drop_number:
   description: Precipitation spectrum
   long_name: Precipitation spectrum
   units: ""
+air_temperature:
+  description: "Air temperature in degrees Celsius (C)"
+  long_name: Air temperature
+  units: "C"
+relative_humidity:
+  description: "Relative humidity in percent (%)"
+  long_name: Relative humidity
+  units: "%"
+wind_speed:
+  description: "Wind speed in m/s"
+  long_name: Wind speed
+  units: "m/s"
+wind_direction:
+  description: "Wind direction in degrees (0-360)"
+  long_name: Wind direction
+  units: "degrees"

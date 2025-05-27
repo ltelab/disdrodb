@@ -89,9 +89,11 @@ def reader(
     if len(df) == 0 or len(df) == 1:
         raise ValueError("No data to process.")
 
-    # Retrieve time
+    # Retrieve time column and format in datetime64
     df_time = df[::2]
     df_time = df_time.reset_index(drop=True)
+    df_time = df_time["TO_BE_PARSED"].str.replace("-", "", n=1)
+    df_time = pd.to_datetime(df_time, format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     # Retrieve data
     df_data = df[1::2]
@@ -99,12 +101,6 @@ def reader(
 
     if len(df_time) != len(df_data):
         raise ValueError("Likely corrupted data. Not same number of timesteps and data.")
-
-    # Remove starting - from timestep
-    df_time = df_time["TO_BE_PARSED"].str.replace("-", "", n=1)
-
-    # Format time in datetime64
-    df_time = pd.to_datetime(df_time, format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
     # Create dataframe
     df_data["time"] = df_time.to_numpy()
@@ -199,19 +195,31 @@ def reader(
         "number_particles_class_8_internal_data",
         "number_particles_class_9",
         "number_particles_class_9_internal_data",
-        "raw_drop_number",
+        "TO_BE_FURTHER_PROCESSED",
     ]
     df.columns = column_names
+
+    # Extract the last variables remained in raw_drop_number
+    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=6, expand=True)
+    df_parsed.columns = [
+        "raw_drop_number",
+        "air_temperature",
+        "relative_humidity",
+        "wind_speed",
+        "wind_direction",
+        "checksum",
+        "dummy",
+    ]
+
+    # Assign columns to the original dataframe
+    df[df_parsed.columns] = df_parsed
 
     # Drop row if start_identifier different than 00
     df["time"] = df_data["time"]
     df = df[df["start_identifier"].astype(str) == "00"]
 
-    # Clean raw_drop_number (ignore last 5 column)
-    df["raw_drop_number"] = df["raw_drop_number"].str[:1760]
-
     # Drop rows with invalid raw_drop_number
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1760]
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
@@ -220,7 +228,9 @@ def reader(
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
+        "TO_BE_FURTHER_PROCESSED",
+        "checksum",
+        "dummy",
     ]
     df = df.drop(columns=columns_to_drop)
-
     return df

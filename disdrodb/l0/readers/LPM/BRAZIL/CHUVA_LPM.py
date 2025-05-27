@@ -167,11 +167,11 @@ def reader(
     # Drop row if start_identifier different than 00
     df = df[df["start_identifier"].astype(str) == "00"]
 
-    # Clean raw_drop_number (ignore last "AC" character)
-    df["raw_drop_number"] = df["raw_drop_number"].str[:1760]
+    # Remove checksum from raw_drop_number
+    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
 
     # Drop rows with invalid raw_drop_number
-    df = df[df["raw_drop_number"].astype(str).str.len() == 1760]
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [

@@ -24,8 +24,8 @@ from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (
     compute_integral_parameters,
+    compute_qc_bins_metrics,
     compute_spectrum_parameters,
-    count_bins_with_drops,
     get_drop_average_velocity,
     get_drop_number_concentration,
     get_effective_sampling_area,
@@ -140,11 +140,12 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
     # Discard all timesteps without measured drops
     # - This allow to speed up processing
     # - Regularization can be done at the end
-    ds = ds.isel(time=ds["n_drops_selected"] > 0)
+    ds = ds.isel(time=ds["N"] > 0)
 
     # Count number of diameter bins with data
-    if "n_bins_with_drops" not in ds:
-        ds["n_bins_with_drops"] = count_bins_with_drops(ds)
+    if "Nbins" not in ds:
+        # Add bins statistics
+        ds.update(compute_qc_bins_metrics(ds))
 
     # Retrieve ENV dataset or take defaults
     # --> Used for fall velocity and water density estimates
@@ -174,8 +175,8 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
         "drop_number",  # 2D V x D
         "drop_counts",  # 1D D
         "sample_interval",
-        "n_drops_selected",
-        "n_drops_discarded",
+        "N",
+        "Nremoved",
         "Dmin",
         "Dmax",
         "fall_velocity",
@@ -291,14 +292,14 @@ def generate_l2_model(
     fall_velocity_method="Beard1976",
     # PSD discretization
     diameter_min=0,
-    diameter_max=8,
+    diameter_max=10,
     diameter_spacing=0.05,
     # Fitting options
     psd_model=None,
     optimization=None,
     optimization_kwargs=None,
     # Filtering options
-    min_bins_with_drops=4,
+    min_nbins=4,
     remove_timesteps_with_few_bins=False,
     mask_timesteps_with_few_bins=False,
     # GOF metrics options
@@ -357,11 +358,12 @@ def generate_l2_model(
     ####------------------------------------------------------.
     #### Preprocessing
     # Count number of diameter bins with data
-    if "n_bins_with_drops" not in ds:
-        ds["n_bins_with_drops"] = count_bins_with_drops(ds)
+    if "Nbins" not in ds:
+        # Add bins statistics
+        ds.update(compute_qc_bins_metrics(ds))
 
     # Identify timesteps with enough diameter bins with counted trops
-    valid_timesteps = ds["n_bins_with_drops"] >= min_bins_with_drops
+    valid_timesteps = ds["Nbins"] >= min_nbins
 
     # Drop such timesteps if asked
     if remove_timesteps_with_few_bins:
@@ -466,7 +468,14 @@ def generate_l2_model(
 
 
 @check_pytmatrix_availability
-def generate_l2_radar(ds, radar_band=None, canting_angle_std=7, diameter_max=8, axis_ratio="Thurai2007", parallel=True):
+def generate_l2_radar(
+    ds,
+    radar_band=None,
+    canting_angle_std=7,
+    diameter_max=10,
+    axis_ratio="Thurai2007",
+    parallel=True,
+):
     """Simulate polarimetric radar variables from empirical drop number concentration or the estimated PSD.
 
     Parameters

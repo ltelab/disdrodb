@@ -30,7 +30,7 @@ from disdrodb.api.info import (
 from disdrodb.configs import get_metadata_archive_dir
 from disdrodb.metadata.reader import read_station_metadata
 from disdrodb.metadata.search import get_list_metadata
-from disdrodb.metadata.standards import get_valid_metadata_keys
+from disdrodb.metadata.standards import METADATA_KEYS, METADATA_VALUES
 from disdrodb.utils.yaml import read_yaml
 
 #### --------------------------------------------------------------------------.
@@ -40,19 +40,17 @@ from disdrodb.utils.yaml import read_yaml
 def get_metadata_missing_keys(metadata):
     """Return the DISDRODB metadata keys which are missing."""
     keys = list(metadata.keys())
-    valid_keys = get_valid_metadata_keys()
     # Identify missing keys
-    idx_missing_keys = np.where(np.isin(valid_keys, keys, invert=True))[0]
-    missing_keys = np.array(valid_keys)[idx_missing_keys].tolist()
+    idx_missing_keys = np.where(np.isin(METADATA_KEYS, keys, invert=True))[0]
+    missing_keys = np.array(METADATA_KEYS)[idx_missing_keys].tolist()
     return missing_keys
 
 
 def get_metadata_invalid_keys(metadata):
     """Return the DISDRODB metadata keys which are not valid."""
     keys = list(metadata.keys())
-    valid_keys = get_valid_metadata_keys()
     # Identify invalid keys
-    idx_invalid_keys = np.where(np.isin(keys, valid_keys, invert=True))[0]
+    idx_invalid_keys = np.where(np.isin(keys, METADATA_KEYS, invert=True))[0]
     invalid_keys = np.array(keys)[idx_invalid_keys].tolist()
     return invalid_keys
 
@@ -73,10 +71,21 @@ def _check_metadata_values(metadata):
     """Check validity of metadata values.
 
     If null is specified in the YAML files (or None in the dict) raise error.
+    For specific keys, check that values match one of the allowed options in METADATA_VALUES.
     """
     for key, value in metadata.items():
+        # Check for None/null values
         if isinstance(value, type(None)):
             raise ValueError(f"The metadata key {key} has None or null value. Use '' instead.")
+
+        # Check that values match allowed options for specific keys
+        if key in METADATA_VALUES:
+            allowed_values = METADATA_VALUES[key]
+            if value not in allowed_values:
+                allowed_str = ", ".join([f"'{v}'" for v in allowed_values])
+                raise ValueError(
+                    f"Invalid value '{value}' for metadata key '{key}'. " f"Allowed values are: {allowed_str}.",
+                )
 
 
 def _check_metadata_campaign_name(metadata, expected_name):

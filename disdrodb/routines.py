@@ -180,7 +180,40 @@ def run_l0a_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L0A processing of a station calling the disdrodb_l0a_station in the terminal."""
+    """
+    Run the L0A processing of a station by invoking the disdrodb_run_l0a_station command in the terminal.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the data source.
+    campaign_name : str
+        The name of the campaign.
+    station_name : str
+        The name of the station.
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        The default value is ``False``.
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        The default value is ``False``.
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data to process for debugging.
+        The default value is ``False``.
+    parallel : bool, optional
+        If ``True``, process files in multiple processes simultaneously.
+        The default value is ``True``.
+    data_archive_dir
+        The directory path where the local DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
     # Define command
     cmd = " ".join(
         [
@@ -225,7 +258,43 @@ def run_l0b_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L0B processing of a station calling disdrodb_run_l0b_station in the terminal."""
+    """
+    Run the L0B processing of a station by invoking the disdrodb_run_l0b_station command in the terminal.
+
+    Parameters
+    ----------
+    data_archive_dir
+        The directory path where the local DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    data_source : str
+        The name of the data source.
+    campaign_name : str
+        The name of the campaign.
+    station_name : str
+        The name of the station.
+    remove_l0a : bool, optional
+        Whether to keep the L0A files after generating L0B netCDF files.
+        The default value is ``False``.
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        The default value is ``False``.
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        The default value is ``False``.
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data processed for debugging.
+        The default value is ``False``.
+    parallel : bool, optional
+        If ``True``, process files in multiple processes simultaneously.
+        The default value is ``True``.
+    """
     # Define command
     cmd = " ".join(
         [
@@ -273,9 +342,43 @@ def run_l0c_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L0C processing of a station calling the disdrodb_l0c_station in the terminal."""
-    # TODO: implement remove_l0b!
+    """
+    Run the L0C processing of a station by invoking the disdrodb_run_l0c_station command in the terminal.
 
+    Parameters
+    ----------
+    data_source : str
+        The name of the data source.
+    campaign_name : str
+        The name of the campaign.
+    station_name : str
+        The name of the station.
+    remove_l0b : bool, optional
+        Whether to remove the L0B files after generating L0C netCDF files.
+        The default value is ``False``.
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        The default value is ``False``.
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        The default value is ``False``.
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data processed for debugging.
+        The default value is ``False``.
+    parallel : bool, optional
+        If ``True``, process files in multiple processes simultaneously.
+        The default value is ``True``.
+    data_archive_dir
+        The directory path where the local DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
     # Define command
     cmd = " ".join(
         [
@@ -321,7 +424,40 @@ def run_l1_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L1 processing of a station calling the disdrodb_l1_station in the terminal."""
+    """
+    Run the L1 processing of a station by invoking the disdrodb_run_l1_station command in the terminal.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the data source.
+    campaign_name : str
+        The name of the campaign.
+    station_name : str
+        The name of the station.
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        The default value is ``False``.
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        The default value is ``False``.
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data processed for debugging.
+        The default value is ``False``.
+    parallel : bool, optional
+        If ``True``, process files in multiple processes simultaneously.
+        The default value is ``True``.
+    data_archive_dir
+        The directory path where the local DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
     # Define command
     cmd = " ".join(
         [
@@ -364,7 +500,40 @@ def run_l2e_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L2E processing of a station calling the disdrodb_l1_station in the terminal."""
+    """
+    Run the L2E processing of a station by invoking the disdrodb_run_l2e_station command in the terminal.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the data source.
+    campaign_name : str
+        The name of the campaign.
+    station_name : str
+        The name of the station.
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        The default value is ``False``.
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        The default value is ``False``.
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data processed for debugging.
+        The default value is ``False``.
+    parallel : bool, optional
+        If ``True``, process files in multiple processes simultaneously.
+        The default value is ``True``.
+    data_archive_dir
+        The directory path where the local DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
     # Define command
     cmd = " ".join(
         [
@@ -407,7 +576,40 @@ def run_l2m_station(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
 ):
-    """Run the L2M processing of a station calling the disdrodb_l2m_station in the terminal."""
+    """
+    Run the L2M processing of a station by invoking the disdrodb_run_l2m_station command in the terminal.
+
+    Parameters
+    ----------
+    data_source : str
+        The name of the data source.
+    campaign_name : str
+        The name of the campaign.
+    station_name : str
+        The name of the station.
+    force : bool, optional
+        If ``True``, overwrite existing data in destination directories.
+        The default value is ``False``.
+    verbose : bool, optional
+        If ``True``, print detailed processing information to the terminal.
+        The default value is ``False``.
+    debugging_mode : bool, optional
+        If ``True``, reduce the amount of data processed for debugging.
+        The default value is ``False``.
+    parallel : bool, optional
+        If ``True``, process files in multiple processes simultaneously.
+        The default value is ``True``.
+    data_archive_dir
+        The directory path where the local DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
     # Define command
     cmd = " ".join(
         [
@@ -485,13 +687,17 @@ def run_l0a(
         By default, the number of process is defined with ``os.cpu_count()``.
         If ``False``, the files are processed sequentially in a single process.
     debugging_mode : bool
-        If ``True``, it reduces the amount of data to process.
-        For L0A, it processes just the first 3 raw data files.
+        If ``True``, it processes just the first 3 raw data files.
         The default value is ``False``.
     data_archive_dir : str (optional)
         The directory path where the DISDRODB Data Archive is located.
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
         in the DISDRODB active configuration.
     """
     # Define products
@@ -595,6 +801,11 @@ def run_l0b(
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
         in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     # Define products
     product = "L0B"
@@ -678,7 +889,7 @@ def run_l0c(
         The default value is ``None``.
     remove_l0b : bool
          Whether to remove the L0B files after having produced L0C netCDF files.
-         The default is False.
+         The default value is ``False``.
     force : bool
         If ``True``, overwrite existing data into destination directories.
         If ``False``, raise an error if there are already data into destination directories.
@@ -700,6 +911,11 @@ def run_l0c(
         The directory path where the DISDRODB Data Archive is located.
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
         in the DISDRODB active configuration.
     """
     # Define products
@@ -824,6 +1040,11 @@ def run_l0(
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
         in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     # Define starting product
     if l0c_processing:
@@ -933,6 +1154,11 @@ def run_l1(
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
         in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     product = "L1"
     required_product = get_required_product(product)
@@ -1032,6 +1258,11 @@ def run_l2e(
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
         in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
     """
     product = "L2E"
     required_product = get_required_product(product)
@@ -1129,6 +1360,11 @@ def run_l2m(
         The directory path where the DISDRODB Data Archive is located.
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
         in the DISDRODB active configuration.
     """
     product = "L2M"

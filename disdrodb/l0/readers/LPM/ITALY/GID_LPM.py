@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -15,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for the GID LPM network."""
+"""DISDRODB reader for GID LPM sensors not measuring wind."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -29,32 +30,43 @@ def reader(
 ):
     """Reader."""
     ##------------------------------------------------------------------------.
-    #### Define column names
+    #### - Define raw data headers
     column_names = ["TO_BE_SPLITTED"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
+    # - For more info: https://pandas.pydata.org/docs/reference/api/pandas.read_csv.html
     reader_kwargs = {}
+
     # - Define delimiter
-    reader_kwargs["delimiter"] = "\n"
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    # - Avoid first column to become df index
+    reader_kwargs["delimiter"] = "\\n"
+
+    # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
+    # Since column names are expected to be passed explicitly, header is set to None
+    reader_kwargs["header"] = None
+
+    # - Number of rows to be skipped at the beginning of the file
+    reader_kwargs["skiprows"] = None
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
+    reader_kwargs["na_values"] = ["na", "", "error"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -67,14 +79,17 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Split columns
-    df = df["TO_BE_SPLITTED"].str.split(";", n=79, expand=True)
+    # Count number of delimiters to identify valid rows
+    df = df[df["TO_BE_SPLITTED"].str.count(";") == 519]
+
+    # Split by ; delimiter (before raw drop number)
+    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
 
     # Assign column names
     column_names = [
         "start_identifier",
+        "device_address",
         "sensor_serial_number",
-        "software_version",
         "sensor_date",
         "sensor_time",
         "weather_code_synop_4677_5min",
@@ -155,25 +170,26 @@ def reader(
     ]
     df.columns = column_names
 
-    # Remove checksum at end of raw_drop_number
-    df["raw_drop_number"] = df["raw_drop_number"].str.slice(stop=1760)
+    # Remove checksum from raw_drop_number
+    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=1, expand=True)[0]
 
-    # Define 'time column
-    df["time"] = df["sensor_date"].astype(str) + " " + df["sensor_time"].astype(str)
+    # Define datetime "time" column
+    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
+    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
 
-    # Convert time column to datetime
-    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y %H:%M:%S", errors="coerce")
+    # Drop row if start_identifier different than 00
+    df = df[df["start_identifier"].astype(str) == "00"]
+
+    # Drop rows with invalid raw_drop_number
+    df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
         "start_identifier",
-        "software_version",
+        "device_address",
         "sensor_serial_number",
         "sensor_date",
         "sensor_time",
     ]
     df = df.drop(columns=columns_to_drop)
-    df = df.drop(columns=["sensor_date", "sensor_time"])
-
-    # Return the dataframe adhering to DISDRODB L0 standards
     return df

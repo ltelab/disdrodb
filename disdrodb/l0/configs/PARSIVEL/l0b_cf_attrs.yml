@@ -47,7 +47,7 @@ number_particles:
 sensor_temperature:
   description: Temperature in sensor housing
   long_name: Temperature of the sensor
-  units: "\xB0C"
+  units: "C"
 sensor_serial_number:
   description: Sensor serial number
   long_name: Serial number of the sensor

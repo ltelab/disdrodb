@@ -156,11 +156,11 @@ def _generate_l2e(
 
         ##------------------------------------------------------------------------.
         # Remove timesteps with no drops or NaN (from L2E computations)
-        # timestep_zero_drops = ds["time"].data[ds["n_drops_selected"].data == 0]
-        # timestep_nan = ds["time"].data[np.isnan(ds["n_drops_selected"].data)]
+        # timestep_zero_drops = ds["time"].data[ds["N"].data == 0]
+        # timestep_nan = ds["time"].data[np.isnan(ds["N"].data)]
         # TODO: Make it a choice !
         indices_valid_timesteps = np.where(
-            ~np.logical_or(ds["n_drops_selected"].data == 0, np.isnan(ds["n_drops_selected"].data)),
+            ~np.logical_or(ds["N"].data == 0, np.isnan(ds["N"].data)),
         )[0]
         ds = ds.isel(time=indices_valid_timesteps)
 

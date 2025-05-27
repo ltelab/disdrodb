@@ -190,10 +190,13 @@ def test_create_product_directory(tmp_path):
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_1"
+    # Define mandatory metadata
     metadata_dict = {}
     metadata_dict["sensor_name"] = "PARSIVEL"
     metadata_dict["reader"] = "GPM/IFLOODS"
     metadata_dict["measurement_interval"] = 60
+    metadata_dict["deployment_status"] = "terminated"
+    metadata_dict["deployment_mode"] = "land"
 
     # Test raise error without data
     with pytest.raises(ValueError):

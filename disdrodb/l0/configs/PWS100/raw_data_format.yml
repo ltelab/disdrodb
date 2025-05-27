@@ -1,0 +1,182 @@
+mor_visibility:
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 1
+  n_naturals: 4
+  data_range:
+    - 0
+    - 9999.9
+  nan_flags: null
+  field_number: "20"
+weather_code_synop_4680:
+  n_digits: 2
+  n_characters: 2
+  n_decimals: 0
+  n_naturals: 2
+  data_range:
+    - 0
+    - 89
+  nan_flags: null
+  field_number: "21"
+weather_code_metar_4678:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+  field_number: "22"
+weather_code_nws:
+  n_digits: null
+  n_characters: null
+  n_decimals: null
+  n_naturals: null
+  data_range: null
+  nan_flags: null
+  field_number: "23"
+alarms:
+  n_digits: 0
+  n_characters: 31
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  field_number: "24"
+sensor_status:
+  n_digits: 1
+  n_characters: 1
+  n_decimals: 0
+  n_naturals: 1
+  data_range:
+    - 0
+    - 4
+  nan_flags: null
+  valid_values:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+  field_number: "25"
+air_temperature:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 2
+  n_naturals: 1
+  data_range:
+    - -99.9
+    - 99.9
+  nan_flags: null
+  field_number: "30"
+relative_humidity:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 2
+  n_naturals: 2
+  data_range:
+    - 0
+    - 100
+  nan_flags: null
+  field_number: "30"
+wetbulb_temperature:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 2
+  n_naturals: 1
+  data_range:
+    - -99.9
+    - 99.9
+  nan_flags: null
+  field_number: "30"
+air_temperature_max:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 2
+  n_naturals: 1
+  data_range:
+    - -99.9
+    - 99.9
+  nan_flags: null
+  field_number: "31"
+air_temperature_min:
+  n_digits: 3
+  n_characters: 4
+  n_decimals: 2
+  n_naturals: 1
+  data_range:
+    - -99.9
+    - 99.9
+  nan_flags: null
+  field_number: "31"
+rainfall_rate:
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "40"
+rainfall_accumulated:
+  n_digits: 5
+  n_characters: 6
+  n_decimals: 4
+  n_naturals: 1
+  data_range:
+    - 0
+    - 99999
+  nan_flags: null
+  field_number: "41"
+drop_size_distribution:
+  n_digits: 0
+  n_characters: 300
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  field_number: "42"
+average_drop_velocity:
+  n_digits: 4
+  n_characters: 5
+  n_decimals: 3
+  n_naturals: 1
+  data_range: null
+  nan_flags: null
+  field_number: "43"
+average_drop_size:
+  n_digits: 4
+  n_characters: 5
+  n_decimals: 3
+  n_naturals: 1
+  data_range: null
+  nan_flags: null
+  field_number: "43"
+type_distribution:
+  n_digits: 0
+  n_characters: 11
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  field_number: "44"
+raw_drop_number:
+  n_digits: 0
+  n_characters: 4624
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  dimension_order:
+    - diameter_bin_center
+    - velocity_bin_center
+  n_values: 1156
+  field_number: "47"
+peak_to_pedestal_hist:
+  n_digits: 0
+  n_characters: 50
+  n_decimals: 0
+  n_naturals: 0
+  data_range: null
+  nan_flags: null
+  field_number: "48"
