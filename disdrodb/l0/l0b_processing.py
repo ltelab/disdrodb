@@ -170,6 +170,8 @@ def _reshape_raw_spectrum(
         {"diameter_bin_center": 32, "velocity_bin_center": 32}
         For LPM
         {"diameter_bin_center": 22, "velocity_bin_center": 20}
+        For PWS100
+        {"diameter_bin_center": 34, "velocity_bin_center": 34}
     n_timesteps : int
         Number of timesteps.
 
@@ -256,7 +258,7 @@ def retrieve_l0b_arrays(
 
         # For key='raw_drop_number', if 2D spectrum, reshape to 2D matrix
         # Example:
-        # - This applies i.e for PARSIVEL* and LPM
+        # - This applies i.e for PARSIVEL*, LPM, PWS100
         # - This does not apply to RD80
         if key == "raw_drop_number" and len(dims_order) == 2:
             arr, dims = _reshape_raw_spectrum(

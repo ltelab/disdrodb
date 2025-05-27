@@ -500,7 +500,7 @@ def _search_possible_columns(string: str, sensor_name: str) -> list:
 #### Infer column names and checks validity
 
 
-def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
+def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 0):
     """Try to guess the dataframe columns names based on string characteristics.
 
     Parameters
@@ -511,7 +511,7 @@ def infer_column_names(df: pd.DataFrame, sensor_name: str, row_idx: int = 1):
         name of the sensor.
     row_idx : int, optional
         The row index of the dataframe to use to infer the column names.
-        The default row index is 1.
+        The default row index is 0.
 
     Returns
     -------

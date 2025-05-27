@@ -270,8 +270,8 @@ sensor_temperature_trasmitter:
 rainfall_rate_16_bit_30:
   n_digits: 5
   n_characters: 6
-  n_decimals: 2
-  n_naturals: 3
+  n_decimals: 3
+  n_naturals: 2
   data_range:
     - 0
     - 30
@@ -280,8 +280,8 @@ rainfall_rate_16_bit_30:
 rainfall_rate_16_bit_1200:
   n_digits: 5
   n_characters: 6
-  n_decimals: 4
-  n_naturals: 1
+  n_decimals: 1
+  n_naturals: 4
   data_range:
     - 0
     - 1200
@@ -310,11 +310,11 @@ reflectivity_16bit:
 rain_kinetic_energy:
   n_digits: 6
   n_characters: 7
-  n_decimals: 3
-  n_naturals: 3
+  n_decimals: 2
+  n_naturals: 4
   data_range:
     - 0
-    - 999.999
+    - 9999.99
   nan_flags: null
   field_number: "34"
 snowfall_rate:

@@ -866,5 +866,5 @@ wind_direction:
   data_range:
     - 0
     - 360
-  nan_flags: null
+  nan_flags: 999
   field_number: "524"

@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for GID LPM sensors measuring also wind."""
-import pandas as pd 
+import pandas as pd
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
@@ -170,8 +171,15 @@ def reader(
     df.columns = column_names
 
     # Extract the last variables remained in raw_drop_number
-    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(';', n=5, expand=True)
-    df_parsed.columns = ["raw_drop_number", "air_temperature", "relative_humidity", "wind_speed", "wind_direction", "checksum"]
+    df_parsed = df["TO_BE_FURTHER_PROCESSED"].str.rsplit(";", n=5, expand=True)
+    df_parsed.columns = [
+        "raw_drop_number",
+        "air_temperature",
+        "relative_humidity",
+        "wind_speed",
+        "wind_direction",
+        "checksum",
+    ]
 
     # Assign columns to the original dataframe
     df[df_parsed.columns] = df_parsed
@@ -194,7 +202,7 @@ def reader(
         "sensor_date",
         "sensor_time",
         "checksum",
-        "relative_humidity", # TO DROP? ALWAYS NOT AVAILABLE? 
+        "relative_humidity",  # TO DROP? ALWAYS NOT AVAILABLE?
         "TO_BE_FURTHER_PROCESSED",
     ]
     df = df.drop(columns=columns_to_drop)

@@ -61,6 +61,7 @@ def get_l1_options():
     # - TODO: as function of sensor name
 
     # minimum_diameter
+    # --> PWS100: 0.05
     # --> PARSIVEL: 0.2495
     # --> RD80: 0.313
     # --> LPM: 0.125 (we currently discard first bin with this setting)

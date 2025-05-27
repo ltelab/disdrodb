@@ -212,13 +212,16 @@ def get_effective_sampling_area(sensor_name, diameter):
         B = 30 / 1000  # Width of the Parsivel beam in m (30mm)
         sampling_area = L * (B - diameter / 2)
         return sampling_area
-    if sensor_name in "LPM":
+    if sensor_name == "LPM":
         # Calculate sampling area for each diameter bin (S_i)
         L = 228 / 1000  # Length of the Parsivel beam in m (228 mm)
         B = 20 / 1000  # Width of the Parsivel beam in m (20 mm)
         sampling_area = L * (B - diameter / 2)
         return sampling_area
-    if sensor_name in "RD80":
+    if sensor_name == "PWS100":
+        sampling_area = 0.004  # m2  # TODO: L * (B - diameter / 2) ?
+        return sampling_area
+    if sensor_name == "RD80":
         sampling_area = 0.005  # m2
         return sampling_area
     raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")

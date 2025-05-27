@@ -17,7 +17,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for GID LPM sensors not measuring wind."""
-import pandas as pd 
+import pandas as pd
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
@@ -168,9 +169,9 @@ def reader(
         "raw_drop_number",
     ]
     df.columns = column_names
-    
-    # Remove checksum from raw_drop_number 
-    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(';', n=1, expand=True)[0]
+
+    # Remove checksum from raw_drop_number
+    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=1, expand=True)[0]
 
     # Define datetime "time" column
     df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
