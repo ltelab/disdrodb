@@ -105,13 +105,13 @@ disdrodb_run_l0_station="disdrodb.cli.disdrodb_run_l0_station:disdrodb_run_l0_st
 disdrodb_run_l0="disdrodb.cli.disdrodb_run_l0:disdrodb_run_l0"
 # L1
 disdrodb_run_l1_station="disdrodb.cli.disdrodb_run_l1_station:disdrodb_run_l1_station"
-disdrodb_run_l1="disdrodb.cli.disdrodb_run_l1_station:disdrodb_run_l1_station"
+disdrodb_run_l1="disdrodb.cli.disdrodb_run_l1:disdrodb_run_l1"
 # L2E
 disdrodb_run_l2e_station="disdrodb.cli.disdrodb_run_l2e_station:disdrodb_run_l2e_station"
-disdrodb_run_l2e="disdrodb.cli.disdrodb_run_l2e_station:disdrodb_run_l2e_station"
+disdrodb_run_l2e="disdrodb.cli.disdrodb_run_l2e:disdrodb_run_l2e"
 # L2M
 disdrodb_run_l2m_station="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
-disdrodb_run_l2m="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
+disdrodb_run_l2m="disdrodb.cli.disdrodb_run_l2m:disdrodb_run_l2m"
 
 
 [tool.pytest.ini_options]

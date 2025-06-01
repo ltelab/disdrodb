@@ -16,85 +16,89 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Define DISDRODB Metadata Standards."""
+"""Define the DISDRODB Metadata standards.
+
+When editing one of these variables, one need to update all YAML files in
+the DISDRODB-METADATA repository
+"""
+
+# Define valid values for specific metadata keys
+METADATA_VALUES = {
+    "deployment_status": ["ongoing", "terminated"],
+    "platform_type": ["fixed", "mobile"],
+    "deployment_mode": ["land", "ship", "truck", "cable"],
+    "platform_protection": ["shielded", "unshielded", ""],
+}
 
 
-def get_valid_metadata_keys() -> list:
-    """Get DISDRODB valid metadata list.
-
-    Returns
-    -------
-    list
-        List of valid metadata keys
-    """
-    # NOTE: When updating one of these keys, one need to update the yaml files in/at:
-    # - the DISDRODB-METADATA repository
-    # - disdrodb/data/DISDRODB/RAW/DATA_SOURCE/CAMPAIGN_NAME/metadata/*.yml
-    list_attrs = [
-        ## Mandatory fields
-        "data_source",
-        "campaign_name",
-        "station_name",
-        "sensor_name",
-        "measurement_interval",  # sampling_interval ? [in seconds]
-        # DISDRODB reader info
-        "reader",
-        "raw_data_glob_pattern",
-        "raw_data_format",  # 'txt', 'netcdf'
-        "platform_type",  # 'fixed', 'mobile'
-        ## DISDRODB keys
-        "disdrodb_data_url",
-        ## Source
-        "source",
-        "source_convention",
-        "source_processing_date",
-        ## Description
-        "title",
-        "description",
-        "project_name",
-        "keywords",
-        "summary",
-        "history",
-        "comment",
-        "station_id",
-        "location",
-        "country",
-        "continent",
-        ## Deployment Info
-        "latitude",  # in degrees North
-        "longitude",  # in degrees East
-        "altitude",  # in meter above sea level
-        "deployment_status",  # 'ended', 'ongoing'
-        "deployment mode",  # 'land', 'ship', 'truck', 'cable'
-        "platform_protection",  # 'shielded', 'unshielded'
-        "platform_orientation",  # [0-360] from N (clockwise)
-        ## Sensor info
-        "sensor_long_name",
-        "sensor_manufacturer",
-        "sensor_wavelength",
-        "sensor_serial_number",
-        "firmware_iop",
-        "firmware_dsp",
-        "firmware_version",
-        "sensor_beam_length",
-        "sensor_beam_width",
-        "sensor_nominal_width",
-        "calibration_sensitivity",
-        "calibration_certification_date",
-        "calibration_certification_url",
-        ## Attribution
-        "contributors",
-        "authors",
-        "authors_url",
-        "contact",
-        "contact_information",
-        "acknowledgement",  # acknowledgements?
-        "references",
-        "documentation",
-        "website",
-        "institution",
-        "source_repository",
-        "license",
-        "doi",
-    ]
-    return list_attrs
+METADATA_KEYS = [
+    ## Mandatory fields
+    "data_source",
+    "campaign_name",
+    "station_name",
+    "sensor_name",
+    # DISDRODB reader info
+    "reader",
+    "raw_data_glob_pattern",
+    "raw_data_format",  # 'txt', 'netcdf'
+    "measurement_interval",  # sampling_interval ? [in seconds]
+    ## Deployment Info
+    "deployment_status",  # 'terminated', 'ongoing'
+    "deployment_mode",  # 'land', 'ship', 'truck', 'cable'
+    "platform_type",  # 'fixed', 'mobile'
+    "latitude",  # in degrees North
+    "longitude",  # in degrees East
+    "altitude",  # in meter above sea level
+    # Platform info
+    "platform_protection",  # 'shielded', 'unshielded'
+    "platform_orientation",  # [0-360] from N (clockwise)
+    ## Time info
+    "time_coverage_start",  # YYYY-MM-DDTHH:MM:SS
+    "time_coverage_end",  # YYYY-MM-DDTHH:MM:SS
+    ## DISDRODB data url
+    "disdrodb_data_url",
+    ## Source
+    "source",
+    "source_convention",
+    "source_processing_date",
+    ## Description
+    "title",
+    "description",
+    "project_name",
+    "keywords",
+    "summary",
+    "history",
+    "comment",
+    "station_id",
+    "location",
+    "country",
+    "continent",
+    ## Sensor info
+    "sensor_long_name",
+    "sensor_manufacturer",
+    "sensor_wavelength",
+    "sensor_serial_number",
+    "firmware_iop",
+    "firmware_dsp",
+    "firmware_version",
+    "sensor_beam_length",
+    "sensor_beam_width",
+    "sensor_nominal_width",
+    "calibration_sensitivity",
+    "calibration_certification_date",
+    "calibration_certification_url",
+    ## Attribution
+    "contributors",
+    "authors",
+    "authors_url",
+    "contact",
+    "contact_information",
+    "acknowledgement",  # acknowledgements?
+    "references",
+    "documentation",
+    "website",
+    "institution",
+    "source_repository",
+    "license",
+    "doi",
+]

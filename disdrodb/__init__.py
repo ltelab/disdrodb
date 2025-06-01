@@ -73,7 +73,7 @@ DIAMETER_COORDS = ["diameter_bin_center", "diameter_bin_width", "diameter_bin_lo
 VELOCITY_COORDS = ["velocity_bin_center", "velocity_bin_width", "velocity_bin_lower", "velocity_bin_upper"]
 VELOCITY_DIMENSION = "velocity_bin_center"
 DIAMETER_DIMENSION = "diameter_bin_center"
-OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM"]
+OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "PWS100"]
 IMPACT_SENSORS = ["RD80"]
 
 

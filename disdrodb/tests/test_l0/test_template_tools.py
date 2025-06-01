@@ -180,7 +180,7 @@ def test_print_df_column_names(capfd):
 def test_print_allowed_column_names(capfd):
     print_allowed_column_names(sensor_name="PARSIVEL")
     out, _ = capfd.readouterr()
-    assert "['rainfall_rate_32bit'," in out
+    assert "['air_temperature'," in out
 
 
 def test_print_invalid_column_indices():

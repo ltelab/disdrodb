@@ -22,7 +22,7 @@ import os
 
 from disdrodb.api.path import define_metadata_filepath
 from disdrodb.metadata.manipulation import sort_metadata_dictionary
-from disdrodb.metadata.standards import get_valid_metadata_keys
+from disdrodb.metadata.standards import METADATA_KEYS
 from disdrodb.utils.yaml import write_yaml
 
 
@@ -35,7 +35,7 @@ def get_default_metadata_dict() -> dict:
         Dictionary of attributes standard
     """
     # Get valid metadata keys
-    list_attrs = get_valid_metadata_keys()
+    list_attrs = METADATA_KEYS
     attrs = dict.fromkeys(list_attrs, "")
 
     # Add default values for certain keys

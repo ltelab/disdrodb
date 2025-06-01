@@ -186,7 +186,7 @@ def get_model_radar_parameters(
     ds,
     radar_band,
     canting_angle_std=7,
-    diameter_max=8,
+    diameter_max=10,
     axis_ratio="Thurai2007",
 ):
     """Compute radar parameters from a PSD model.

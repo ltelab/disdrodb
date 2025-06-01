@@ -480,7 +480,7 @@ def sanitize_ds(
     ds = set_nan_invalid_values(ds, sensor_name=sensor_name, logger=logger, verbose=verbose)
 
     # Finalize dataset
-    ds = finalize_dataset(ds, sensor_name=sensor_name, attrs=metadata)
+    ds = finalize_dataset(ds, sensor_name=sensor_name, metadata=metadata)
 
     # Return dataset
     return ds

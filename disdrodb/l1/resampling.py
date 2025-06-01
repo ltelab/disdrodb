@@ -141,7 +141,7 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
 
     # Retrieve variables to average/sum
     var_to_average = ["fall_velocity"]
-    var_to_cumulate = ["raw_drop_number", "drop_number", "drop_counts", "n_drops_selected", "n_drops_discarded"]
+    var_to_cumulate = ["raw_drop_number", "drop_number", "drop_counts", "N", "Nremoved"]
     var_to_min = ["Dmin"]
     var_to_max = ["Dmax"]
 

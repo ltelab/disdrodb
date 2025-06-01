@@ -80,7 +80,12 @@ def _check_valid_values(df, dict_valid_values):
         raise ValueError(f"Columns {list_wrong_columns} have invalid values.")
 
 
-def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, logger=None, verbose: bool = False) -> None:
+def _check_raw_fields_available(
+    df: pd.DataFrame,
+    sensor_name: str,  # noqa: ARG001
+    logger=None,  # noqa: ARG001
+    verbose: bool = False,  # noqa: ARG001
+) -> None:
     """Check the presence of the raw spectrum data according to the type of sensor.
 
     Parameters
@@ -95,22 +100,22 @@ def _check_raw_fields_available(df: pd.DataFrame, sensor_name: str, logger=None,
     ValueError
         Error if the ``raw_drop_number`` field is missing.
     """
-    from disdrodb.l0.standards import get_raw_array_nvalues
-
-    # Retrieve raw arrays that could be available (based on sensor_name)
-    n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
-    raw_vars = np.array(list(n_bins_dict.keys()))
+    # from disdrodb.l0.standards import get_raw_array_nvalues
 
     # Check that raw_drop_number is present
     if "raw_drop_number" not in df.columns:
         msg = "The 'raw_drop_number' column is not present in the dataframe."
         raise ValueError(msg)
 
+    # Retrieve raw arrays that could be available (based on sensor_name)
+    #  n_bins_dict = get_raw_array_nvalues(sensor_name=sensor_name)
+
     # Report additional raw arrays that are missing
-    missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
-    if len(missing_vars) > 0:
-        msg = f"The following raw array variable are missing: {missing_vars}"
-        log_info(logger=logger, msg=msg, verbose=verbose)
+    # raw_vars = np.array(list(n_bins_dict.keys()))
+    # missing_vars = raw_vars[np.isin(raw_vars, list(df.columns), invert=True)]
+    # if len(missing_vars) > 0:
+    #     msg = f"The following raw array variable are missing: {missing_vars}"
+    #     log_info(logger=logger, msg=msg, verbose=verbose)
 
 
 def check_l0a_column_names(df: pd.DataFrame, sensor_name: str) -> None:

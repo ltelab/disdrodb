@@ -1,0 +1,176 @@
+mor_visibility:
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+weather_code_synop_4680:
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+weather_code_metar_4678:
+  dtype: str
+  zlib: false
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+weather_code_nws:
+  dtype: str
+  zlib: false
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+alarms:
+  dtype: str
+  zlib: false
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+sensor_status:
+  dtype: uint8
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 255
+air_temperature:
+  dtype: uint16
+  scale_factor: 0.01
+  add_offset: -99.99
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+  chunksizes: 5000
+relative_humidity:
+  dtype: uint16
+  scale_factor: 0.01
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+wetbulb_temperature:
+  dtype: uint16
+  scale_factor: 0.01
+  add_offset: -99.99
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+  chunksizes: 5000
+air_temperature_max:
+  dtype: uint16
+  scale_factor: 0.01
+  add_offset: -99.99
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+  chunksizes: 5000
+air_temperature_min:
+  dtype: uint16
+  scale_factor: 0.01
+  add_offset: -99.99
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+  chunksizes: 5000
+rainfall_rate:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+rainfall_accumulated:
+  dtype: float32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+raw_drop_number:
+  dtype: uint16
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 65535
+  chunksizes:
+    - 5000
+    - 34
+    - 34
+drop_size_distribution:
+  dtype: str
+  zlib: false
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+peak_to_pedestal_hist:
+  dtype: str
+  zlib: false
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+type_distribution:
+  dtype: str
+  zlib: false
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+average_drop_velocity:
+  dtype: uint16
+  scale_factor: 0.01
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535
+average_drop_size:
+  dtype: uint16
+  scale_factor: 0.01
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  chunksizes: 5000
+  _FillValue: 65535

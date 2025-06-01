@@ -43,7 +43,7 @@ def identify_events(
 ):
     """Return a list of rainy events.
 
-    Rainy timesteps are defined when n_drops_selected > min_n_drops.
+    Rainy timesteps are defined when N > min_n_drops.
     Any rainy isolated timesteps (based on neighborhood criteria) is removed.
     Then, consecutive rainy timesteps are grouped into the same event if the time gap between them does not
     exceed `intra_event_max_time_gap`. Finally, events that do not meet minimum size or duration
@@ -90,7 +90,7 @@ def identify_events(
     else:
         list_ds = [xr.open_dataset(filepath, chunks={}, cache=False, decode_timedelta=False) for filepath in filepaths]
     # Filter dataset for requested variables
-    variables = ["time", "n_drops_selected"]
+    variables = ["time", "N"]
     list_ds = [ds[variables] for ds in list_ds]
     # Concat datasets
     ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
@@ -102,7 +102,7 @@ def identify_events(
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
     # Define candidate timesteps to group into events
-    idx_valid = ds["n_drops_selected"].data > min_n_drops
+    idx_valid = ds["N"].data > min_n_drops
     timesteps = ds["time"].data[idx_valid]
     # Define event list
     event_list = group_timesteps_into_event(

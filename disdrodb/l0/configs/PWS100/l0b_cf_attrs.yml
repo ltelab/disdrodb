@@ -1,0 +1,76 @@
+mor_visibility:
+  description: Meteorological Optical Range in precipitation
+  long_name: MOR visibility
+  units: m
+weather_code_synop_4680:
+  description: SYNOP weather code according to table 4680
+  long_name: Weather code SYNOP 4680
+  units: ""
+weather_code_metar_4678:
+  description: METAR/SPECI weather code according to table 4678
+  long_name: Weather code METAR 4678
+  units: ""
+weather_code_nws:
+  description: NWS weather code according to Parsivel documentation
+  long_name: Weather code NWS
+  units: ""
+alarms:
+  description: PWS alarms flags
+  long_name: PWS alarms flags
+  units: ""
+sensor_status:
+  description: Sensor status
+  long_name: Sensor status
+  units: ""
+air_temperature:
+  description: "Air temperature in degrees Celsius"
+  long_name: Air temperature
+  units: "C"
+relative_humidity:
+  description: "Relative humidity in percent (%)"
+  long_name: Relative humidity
+  units: "%"
+wetbulb_temperature:
+  description: "Wet bulb temperature in degrees Celsius"
+  long_name: Wet bulb temperature
+  units: "C"
+air_temperature_max:
+  description: "Maximum air temperature in degrees Celsius"
+  long_name: Maximum air temperature
+  units: "C"
+air_temperature_min:
+  description: "Minimum air temperature in degrees Celsius"
+  long_name: Minimum air temperature
+  units: "C"
+rainfall_rate:
+  description: Rainfall rate
+  long_name: Rainfall rate
+  units: mm/h
+rainfall_accumulated:
+  description: Accumulated rain amount over the measurement interval
+  long_name: Rainfall accumulated
+  units: mm
+average_drop_velocity:
+  description: Average drop velocity
+  long_name: Average drop velocity
+  units: "m/s"
+average_drop_size:
+  description: Average drop size
+  long_name: Average drop size
+  units: "mm"
+raw_drop_number:
+  description: Drop counts per diameter and velocity class
+  long_name: Raw drop number
+  units: ""
+type_distribution:
+  description: Particle type distribution
+  long_name: Particle type distribution
+  units: ""
+drop_size_distribution:
+  description: Drop size distribution
+  long_name: Drop size distribution
+  units: ""
+peak_to_pedestal_hist:
+  description: Peak to pedestal histogram
+  long_name: Peak to pedestal histogram
+  units: ""

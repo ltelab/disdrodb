@@ -20,7 +20,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, OPTICAL_SENSORS, VELOCITY_DIMENSION
+from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.l2.empirical_dsd import (
     get_bin_dimensions,
@@ -147,7 +147,7 @@ class TestEffectiveSamplingArea:
         """Test Parsivel sampling area calculation."""
         diameter = template_dataset["diameter_bin_center"] / 1000  # meters
         sampling_area = get_effective_sampling_area(sensor_name, diameter)
-        if sensor_name in OPTICAL_SENSORS:
+        if sensor_name in ["PARSIVEL", "PARSIVEL2", "LPM"]:
             assert isinstance(sampling_area, xr.DataArray)
             assert np.all(sampling_area.to_numpy() > 0), "Sampling area should be positive"
         else:  # IMPACT_SENSORS

@@ -130,9 +130,7 @@ N0:
   n_characters: 9
   n_decimals: 4
   n_naturals: 4
-  data_range:
-    - 0
-    - 9999.9999
+  data_range: null
   nan_flags: null
   field_number: "34"
 slope:
@@ -140,9 +138,7 @@ slope:
   n_characters: 9
   n_decimals: 4
   n_naturals: 1
-  data_range:
-    - 0
-    - 9.9999
+  data_range: null
   nan_flags: null
   field_number: "35"
 Dmax:

@@ -51,8 +51,9 @@ def get_sensor_logged_variables(sensor_name: str) -> list:
 def allowed_l0_variables(sensor_name: str) -> list:
     """Get the list of allowed L0 variables for a given sensor."""
     sensor_variables = list(get_l0a_dtype(sensor_name))
-    allowed_variables = [*sensor_variables, "time", "latitude", "longitude", "altitude"]
-    # TODO: add air_temperature, relative_humidity, wind_speed, wind_direction
+    weather_variables = ["air_temperature", "relative_humidity", "wind_speed", "wind_direction"]
+    allowed_variables = [*sensor_variables, *weather_variables, "time", "latitude", "longitude", "altitude"]
+    allowed_variables = sorted(np.unique(allowed_variables).tolist())
     return allowed_variables
 
 
@@ -659,9 +660,11 @@ def get_raw_array_dims_order(sensor_name: str) -> dict:
 
     Examples
     --------
-        OTT Parsivel spectrum [v1d1 ... v1d32, v2d1, ..., v2d32]
+        OTT Parsivel spectrum [d1v1 ... d32v1, d1v2, ..., d32v2] (diameter increases first)
         --> dimension_order = ["velocity_bin_center", "diameter_bin_center"]
-        Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]
+        Thies LPM spectrum [v1d1 ... v20d1, v1d2, ..., v20d2]  (velocity increases first)
+        --> dimension_order = ["diameter_bin_center", "velocity_bin_center"]
+        PWS 100 spectrum [d1v1 ... d1v34, d2v1, ..., d2v34] (velocity increases first)
         --> dimension_order = ["diameter_bin_center", "velocity_bin_center"]
 
     Parameters

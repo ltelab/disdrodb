@@ -51,19 +51,34 @@ def get_attrs_dict():
             "long_name": "Measured average drop fall velocity",
             "units": "m s-1",
         },
-        "n_drops_selected": {
+        "N": {
             "description": "Total number of selected drops",
             "long_name": "Total number of selected drops",
             "units": "",
         },
-        "n_drops_discarded": {
+        "Nremoved": {
             "description": "Total number of discarded drops",
             "long_name": "Total number of discarded drops",
             "units": "",
         },
-        "n_bins_with_drops": {
+        "Nbins": {
             "description": "Number of diameter bins with drops",
             "long_name": "Number of diameter bins with drops",
+            "units": "",
+        },
+        "Nbins_missing": {
+            "description": "Number of diameter bins with no drops",
+            "long_name": "Number of diameter bins with no drops",
+            "units": "",
+        },
+        "Nbins_missing_fraction": {
+            "description": "Fraction of diameter bins with no drops",
+            "long_name": "Fraction of diameter bins with no drops",
+            "units": "",
+        },
+        "Nbins_missing_consecutive": {
+            "description": "Maximum number of consecutive diameter bins with no drops",
+            "long_name": "Maximum number of consecutive diameter bins with no drops",
             "units": "",
         },
         #### L2
@@ -436,7 +451,7 @@ def get_encoding_dict():
             "contiguous": False,
             "_FillValue": 4294967295,
         },
-        "n_drops_selected": {
+        "N": {
             "dtype": "uint32",
             "zlib": True,
             "complevel": 3,
@@ -445,7 +460,7 @@ def get_encoding_dict():
             "contiguous": False,
             "_FillValue": 4294967295,
         },
-        "n_drops_discarded": {
+        "Nremoved": {
             "dtype": "uint32",
             "zlib": True,
             "complevel": 3,
@@ -454,7 +469,7 @@ def get_encoding_dict():
             "contiguous": False,
             "_FillValue": 4294967295,
         },
-        "n_bins_with_drops": {
+        "Nbins": {
             "dtype": "uint8",
             "_FillValue": 255,
             "zlib": True,

@@ -50,7 +50,7 @@ def reader(
     sensor_name = "LPM"  # [SPECIFY HERE THE SENSOR FOR WHICH THE READER IS DESIGNED]
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name=sensor_name)
 
-    # Replace occureence of NaN flags with np.nan
+    # Replace occurrence of NaN flags with np.nan
     # - Define a dictionary specifying the value(s) of NaN flags for each variable
     # - The code here below is just an example that requires to be adapted !
     # - This step might not be required with your data !

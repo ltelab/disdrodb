@@ -1,0 +1,19 @@
+mor_visibility: "float32"
+weather_code_synop_4680: "float32" # 'uint32'
+weather_code_metar_4678: "str"
+weather_code_nws: "str"
+alarms: "str"
+sensor_status: "float32" #  'uint8'
+air_temperature: "float32" #  'uint16'
+relative_humidity: "float32" #  'uint16'
+wetbulb_temperature: "float32" #  'uint16'
+air_temperature_max: "float32" #  'uint16'
+air_temperature_min: "float32" #  'uint16'
+rainfall_rate: "float32" #  'uint16'
+rainfall_accumulated: "float32" #  'uint16'
+average_drop_velocity: "float32"
+average_drop_size: "float32"
+raw_drop_number: "str"
+type_distribution: "str"
+drop_size_distribution: "str"
+peak_to_pedestal_hist: "str"
