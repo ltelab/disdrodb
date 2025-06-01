@@ -15,8 +15,8 @@ weather_code_nws:
   long_name: Weather code NWS
   units: ""
 alarms:
-  description: PWS alarms flags  
-  long_name: PWS alarms flags 
+  description: PWS alarms flags
+  long_name: PWS alarms flags
   units: ""
 sensor_status:
   description: Sensor status
@@ -65,7 +65,7 @@ raw_drop_number:
 type_distribution:
   description: Particle type distribution
   long_name: Particle type distribution
-  units: ""  
+  units: ""
 drop_size_distribution:
   description: Drop size distribution
   long_name: Drop size distribution
@@ -74,4 +74,3 @@ peak_to_pedestal_hist:
   description: Peak to pedestal histogram
   long_name: Peak to pedestal histogram
   units: ""
-

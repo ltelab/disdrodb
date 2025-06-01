@@ -17,12 +17,14 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for ENPC PARSIVEL2 raw text data."""
+import zipfile
+
 import numpy as np
 import pandas as pd
-import zipfile
-from disdrodb.utils.logger import log_error
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
+from disdrodb.utils.logger import log_error
 
 
 @is_documented_by(reader_generic_docstring)
@@ -31,13 +33,15 @@ def reader(
     logger=None,
 ):
     """Reader."""
+
     ##------------------------------------------------------------------------.
     #### Define function to read each txt file inside each daily zip file
-    def read_txt_file(file, filename): 
+    def read_txt_file(file, filename):
+        """Parse a single txt file within the daily zip file."""
         ##------------------------------------------------------------------------.
         #### Define column names
         column_names = ["TO_PARSE"]
-        
+
         ##------------------------------------------------------------------------.
         #### Define reader options
         reader_kwargs = {}
@@ -62,43 +66,43 @@ def reader(
         #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
         #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
         reader_kwargs["na_values"] = ["na", "", "error"]
-        
-         ##------------------------------------------------------------------------.
+
+        ##------------------------------------------------------------------------.
         #### Read the data
         df = read_raw_text_file(
-            filepath=f,
+            filepath=file,
             column_names=column_names,
             reader_kwargs=reader_kwargs,
             logger=logger,
         )
-        
+
         ##------------------------------------------------------------------------.
         #### Adapt the dataframe to adhere to DISDRODB L0 standards
         # Create ID and Value columns
         df = df["TO_PARSE"].str.split(":", expand=True, n=1)
-        df.columns = ["ID", "Value"] 
-        
+        df.columns = ["ID", "Value"]
+
         # Select only rows with values
         df = df[df["Value"].apply(lambda x: x is not None)]
-        
+
         # Drop rows with invalid IDs
         valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
         df = df[df["ID"].astype(str).isin(valid_id_str)]
-        
+
         # Create the dataframe with each row corresponding to a timestep
         # - Group rows based on when ID values restart
         groups = df.groupby((df["ID"].astype(int).diff() <= 0).cumsum())
-        
+
         # Reshape the dataframe
         group_dfs = []
         for _, group in groups:
             group_df = group.set_index("ID").T
             group_dfs.append(group_df)
-        
+
         # Merge each timestep dataframe
         # --> Missing columns are infilled by NaN
         df = pd.concat(group_dfs, axis=0)
-        
+
         # Assign column names
         column_dict = {
             "01": "rainfall_rate_32bit",
@@ -132,55 +136,54 @@ def reader(
             "30": "rainfall_rate_16_bit_30",
             "31": "rainfall_rate_16_bit_1200",
             "32": "rainfall_accumulated_16bit",
-            "34": "rain_kinetic_energy", 
+            "34": "rain_kinetic_energy",
             "35": "snowfall_rate",
             "90": "raw_drop_concentration",
             "91": "raw_drop_average_velocity",
             "93": "raw_drop_number",
         }
-        
+
         df = df.rename(column_dict, axis=1)
-        
+
         # Keep only columns defined in the dictionary
         df = df[list(column_dict.values())]
-        
-        # Define datetime "time" column from filename 
-        datetime_str = ' '.join(filename.replace('.txt', '').split('_')[-6:])
-        df["time"] = pd.to_datetime(datetime_str, format='%Y %m %d %H %M %S')
-        
+
+        # Define datetime "time" column from filename
+        datetime_str = " ".join(filename.replace(".txt", "").split("_")[-6:])
+        df["time"] = pd.to_datetime(datetime_str, format="%Y %m %d %H %M %S")
+
         # # Drop columns not agreeing with DISDRODB L0 standards
         # columns_to_drop = [
         #     "sensor_date",
         #     "sensor_time",
-            # "firmware_iop",
-            # "firmware_dsp",
-            # "sensor_serial_number",
-            # "station_name",
-            # "station_number",
+        # "firmware_iop",
+        # "firmware_dsp",
+        # "sensor_serial_number",
+        # "station_name",
+        # "station_number",
         # ]
         # df = df.drop(columns=columns_to_drop)
-        return df 
-    
-    #---------------------------------------------------------------------.
+        return df
+
+    # ---------------------------------------------------------------------.
     #### Iterate over all files (aka timesteps) in the daily zip archive
     # - Each file contain a single timestep !
-    list_df = [] 
+    list_df = []
     with zipfile.ZipFile(filepath, "r") as zip_ref:
         filenames = sorted(zip_ref.namelist())
         for filename in filenames:
             if filename.endswith(".txt"):
                 # Open file
-                with zip_ref.open(filename) as f:
+                with zip_ref.open(filename) as file:
                     try:
-                        df = read_txt_file(file=f, filename=filename)
+                        df = read_txt_file(file=file, filename=filename)
                         list_df.append(df)
-                    except Exception as e: 
-                        msg = f"An error occured while reading {filename}. The error is: {e}." 
+                    except Exception as e:
+                        msg = f"An error occurred while reading {filename}. The error is: {e}."
                         log_error(logger=logger, msg=msg, verbose=True)
-    
+
     # Concatenate all dataframes into a single one
-    df = pd.concat(list_df)  
-    
-    #---------------------------------------------------------------------.      
-    return df 
- 
+    df = pd.concat(list_df)
+
+    # ---------------------------------------------------------------------.
+    return df

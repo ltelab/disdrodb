@@ -71,7 +71,7 @@ mor_visibility:
   n_naturals: 4
   data_range:
     - 0
-    - 5000
+    - 9999
   nan_flags: null
   field_number: 08
 sample_interval:

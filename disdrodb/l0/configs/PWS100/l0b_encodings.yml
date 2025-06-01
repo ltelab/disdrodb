@@ -39,7 +39,7 @@ alarms:
   shuffle: true
   fletcher32: false
   contiguous: false
-  chunksizes: 5000 
+  chunksizes: 5000
 sensor_status:
   dtype: uint8
   zlib: true
@@ -68,17 +68,6 @@ relative_humidity:
   shuffle: true
   fletcher32: false
   contiguous: false
-  chunksizes: 5000  
-air_temperature:
-  dtype: uint16
-  scale_factor: 0.01
-  add_offset: -99.99
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
-  _FillValue: 65535
   chunksizes: 5000
 wetbulb_temperature:
   dtype: uint16
@@ -148,7 +137,7 @@ drop_size_distribution:
   shuffle: true
   fletcher32: false
   contiguous: false
-  chunksizes: 5000 
+  chunksizes: 5000
 peak_to_pedestal_hist:
   dtype: str
   zlib: false
@@ -164,7 +153,7 @@ type_distribution:
   shuffle: true
   fletcher32: false
   contiguous: false
-  chunksizes: 5000   
+  chunksizes: 5000
 average_drop_velocity:
   dtype: uint16
   scale_factor: 0.01
@@ -185,4 +174,3 @@ average_drop_size:
   contiguous: false
   chunksizes: 5000
   _FillValue: 65535
-

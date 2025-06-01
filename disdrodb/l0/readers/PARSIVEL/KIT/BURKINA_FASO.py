@@ -80,25 +80,27 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove repeated headers (with length 301)
-    df = df[df["TO_SPLIT"].str.len() != 301]
+    # df = df[df["TO_SPLIT"].str.len() != 301]
 
     # Split into columns and assign name
-    df = df["TO_SPLIT"].str.split(",", expand=True, n=14)
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=16)
     columns = [
         "date",
         "time",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
+        "weather_code_metar_4678",
+        "weather_code_nws",
         "reflectivity_32bit",
         "mor_visibility",
         "laser_amplitude",
-        "sensor_temperature",
-        "weather_code_metar_4678",
-        "weather_code_nws",
         "number_particles",
-        "sensor_heating_current",
+        "sensor_temperature",
+        "sensor_status",
         "sensor_battery_voltage",
+        "unknown",  # "rainfall_amount_absolute_32bit", ?
+        "error_code",
         "raw_drop_number",
     ]
     df.columns = columns
@@ -119,7 +121,13 @@ def reader(
 
     # Add 0 before every , if , not preceded by a digit
     # Example: ',,1,,' --> '0,0,1,0,'
-    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d),", "0,", regex=True)
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
+
+    # Drop columns not agreeing with DISDRODB L0 standards
+    columns_to_drop = [
+        "unknown",
+    ]
+    df = df.drop(columns=columns_to_drop)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
