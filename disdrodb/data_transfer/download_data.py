@@ -21,6 +21,8 @@
 import logging
 import os
 import shutil
+import subprocess
+import urllib.parse
 from typing import Optional, Union
 
 import click
@@ -213,7 +215,7 @@ def download_station(
         check_exists=True,
     )
     # Download data
-    _download_station_data(metadata_filepath, data_archive_dir=data_archive_dir, force=force)
+    download_station_data(metadata_filepath, data_archive_dir=data_archive_dir, force=force)
 
 
 def _is_valid_disdrodb_data_url(disdrodb_data_url):
@@ -228,13 +230,25 @@ def _extract_station_files(zip_filepath, station_dir):
         os.remove(zip_filepath)
 
 
-def _download_station_data(metadata_filepath: str, data_archive_dir: str, force: bool = False) -> None:
+def check_consistent_station_name(metadata_filepath, station_name):
+    """Check consistent station_name between YAML file name and metadata key."""
+    # Check consistent station name
+    expected_station_name = os.path.basename(metadata_filepath).replace(".yml", "")
+    if station_name and str(station_name) != str(expected_station_name):
+        raise ValueError(f"Inconsistent station_name values in the {metadata_filepath} file. Download aborted.")
+    return station_name
+
+
+def download_station_data(metadata_filepath: str, data_archive_dir: str, force: bool = False) -> None:
     """Download and unzip the station data .
 
     Parameters
     ----------
     metadata_filepaths : str
         Metadata file path.
+    data_archive_dir : str (optional)
+        DISDRODB Data Archive directory. Format: ``<...>/DISDRODB``.
+        If ``None`` (the default), the disdrodb config variable ``data_archive_dir`` is used.
     force : bool, optional
         If ``True``, delete existing files and redownload it. The default value is ``False``.
 
@@ -247,7 +261,7 @@ def _download_station_data(metadata_filepath: str, data_archive_dir: str, force:
     campaign_name = metadata_dict["campaign_name"]
     station_name = metadata_dict["station_name"]
     station_name = check_consistent_station_name(metadata_filepath, station_name)
-    # Define the destination local filepath path
+    # Define the path to the station RAW data directory
     station_dir = define_station_dir(
         data_archive_dir=data_archive_dir,
         data_source=data_source,
@@ -259,19 +273,136 @@ def _download_station_data(metadata_filepath: str, data_archive_dir: str, force:
     disdrodb_data_url = metadata_dict.get("disdrodb_data_url", None)
     if not _is_valid_disdrodb_data_url(disdrodb_data_url):
         raise ValueError(f"Invalid disdrodb_data_url '{disdrodb_data_url}' for station {station_name}")
-    # Download file
-    zip_filepath = _download_file_from_url(disdrodb_data_url, dst_dir=station_dir, force=force)
+
+    # Download files
+    # - Option 1: Zip file from Zenodo containing all station raw data
+    if disdrodb_data_url.startswith("https://zenodo.org/"):
+        download_zenodo_zip_file(url=disdrodb_data_url, dst_dir=station_dir, force=force)
+    # - Option 2: Recursive download from a web server via HTTP or HTTPS.
+    elif disdrodb_data_url.startswith("http"):
+        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=force, verbose=True)
+    else:
+        raise NotImplementedError(f"Open a GitHub Issue to enable the download of data from {disdrodb_data_url}.")
+
+
+####-----------------------------------------------------------------------------------------.
+#### Download from Web Server via HTTP or HTTPS
+
+
+def download_web_server_data(url: str, dst_dir: str, force=True, verbose=True) -> None:
+    """Download data from a web server via HTTP or HTTPS.
+
+    Use the system's wget command to recursively download all files and subdirectories
+    under the given HTTPS “directory” URL. Works on both Windows and Linux, provided
+    that wget is installed and on the PATH.
+
+    1. Ensure wget is available.
+    2. Normalize URL to end with '/'.
+    3. Compute cut-dirs so that only the last segment of the path remains locally.
+    4. Build and run the wget command.
+
+    Example:
+        download_with_wget("https://ruisdael.citg.tudelft.nl/parsivel/PAR001_Cabauw/2021/202101/")
+        # → Creates a local folder "202101/" with all files and subfolders.
+    """
+    # 1. Ensure wget exists
+    ensure_wget_available()
+
+    # 2. Normalize URL
+    url = ensure_trailing_slash(url)
+
+    # 3. Compute cut-dirs so that only the last URL segment remains locally
+    cut_dirs = compute_cut_dirs(url)
+
+    # 4. Create destination directory if needed
+    os.makedirs(dst_dir, exist_ok=True)
+
+    # 5. Build wget command
+    cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, force=force, verbose=verbose)
+
+    # 6. Run wget command
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        raise subprocess.CalledProcessError(
+            returncode=e.returncode,
+            cmd=e.cmd,
+            output=e.output,
+            stderr=e.stderr,
+        )
+
+
+def ensure_wget_available() -> None:
+    """Raise FileNotFoundError if 'wget' is not on the system PATH."""
+    if shutil.which("wget") is None:
+        raise FileNotFoundError("The WGET software was not found. Please install WGET or add it to PATH.")
+
+
+def ensure_trailing_slash(url: str) -> str:
+    """Return `url` guaranteed to end with a slash."""
+    return url if url.endswith("/") else url.rstrip("/") + "/"
+
+
+def compute_cut_dirs(url: str) -> int:
+    """Compute the wget cut_dirs value to download directly in `dst_dir`.
+
+    Given a URL ending with '/', compute the total number of path segments.
+    By returning len(segments), we strip away all of them—so that files
+    within that final directory land directly in `dst_dir` without creating
+    an extra subfolder.
+    """
+    parsed = urllib.parse.urlparse(url)
+    path = parsed.path.strip("/")  # remove leading/trailing '/'
+    segments = path.split("/") if path else []
+    return len(segments)
+
+
+def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, force: bool, verbose: bool) -> list[str]:
+    """Construct the wget command list for subprocess.run.
+
+    Notes
+    -----
+    The following wget arguments are used
+      - -q         : quiet mode (no detailed progress)
+      - -r         : recursive
+      - -np        : no parent
+      - -nH        : no host directories
+      - --timestamping: download missing files or when remote version is newer
+      - --cut-dirs : strip all but the last path segment from the remote path
+      - -P dst_dir : download into `dst_dir`
+      - url
+    """
+    cmd = ["wget"]
+    if verbose:
+        cmd.append("-q")
+    cmd += [
+        "-r",
+        "-np",
+        "-nH",
+        f"--cut-dirs={cut_dirs}",
+    ]
+    if force:
+        cmd.append("--timestamping")  # -N
+
+    # Define source and destination directory
+    cmd += [
+        "-P",
+        dst_dir,
+        url,
+    ]
+    return cmd
+
+
+####--------------------------------------------------------------------.
+#### Download from Zenodo
+
+
+def download_zenodo_zip_file(url, dst_dir, force):
+    """Download zip file from zenodo and extract station raw data."""
+    # Download zip file
+    zip_filepath = _download_file_from_url(url, dst_dir=dst_dir, force=force)
     # Extract the stations files from the downloaded station.zip file
-    _extract_station_files(zip_filepath, station_dir=station_dir)
-
-
-def check_consistent_station_name(metadata_filepath, station_name):
-    """Check consistent station_name between YAML file name and metadata key."""
-    # Check consistent station name
-    expected_station_name = os.path.basename(metadata_filepath).replace(".yml", "")
-    if station_name and str(station_name) != str(expected_station_name):
-        raise ValueError(f"Inconsistent station_name values in the {metadata_filepath} file. Download aborted.")
-    return station_name
+    _extract_station_files(zip_filepath, station_dir=dst_dir)
 
 
 def _download_file_from_url(url: str, dst_dir: str, force: bool = False) -> str:
