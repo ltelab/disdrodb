@@ -30,23 +30,23 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Open the netCDF
     ds = open_raw_netcdf_file(filepath=filepath, logger=logger)
- 
+
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Add time coordinate 
+    # Add time coordinate
     ds["time"] = ds["time_as_string"].astype("M8[s]")
     ds = ds.set_coords("time")
-    
+
     # Define dictionary mapping dataset variables to select and rename
     dict_names = {
         ### Dimensions
         "diameter_classes": "diameter_bin_center",
         "velocity_classes": "velocity_bin_center",
         ### Variables
-        "rainfall_rate_32bit": "rainfall_rate_32bit",      
+        "rainfall_rate_32bit": "rainfall_rate_32bit",
         "weather_code_synop_4680": "weather_code_synop_4680",
         "weather_code_synop_4677": "weather_code_synop_4677",
-        "weather_code_metar_4678": "weather_code_metar_4678", 
+        "weather_code_metar_4678": "weather_code_metar_4678",
         "weather_code_nws": "weather_code_nws",
         "reflectivity_32bit": "reflectivity_32bit",
         "mor_visibility": "mor_visibility",
@@ -55,15 +55,13 @@ def reader(
         "sensor_temperature": "sensor_temperature",
         "error_code": "error_code",
         "kinetic_energy": "rain_kinetic_energy",
-        "fieldV": "raw_drop_average_velocity",  
+        "fieldV": "raw_drop_average_velocity",
         "fieldN": "raw_drop_concentration",
         "raw_data": "raw_drop_number",
     }
- 
+
     # Rename dataset variables and columns and infill missing variables
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
 
     # Return the dataset adhering to DISDRODB L0B standards
     return ds
-
-     

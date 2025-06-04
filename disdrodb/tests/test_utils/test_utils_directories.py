@@ -20,7 +20,6 @@
 
 import os
 import pathlib
-import platform
 
 import pytest
 
@@ -622,7 +621,7 @@ class TestRemoveIfExists:
         remove_if_exists(str(filepath), force=True)
         assert not os.path.exists(filepath)
 
-    @pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
+    # @pytest.mark.skipif(platform.system() == "Windows", reason="This test does not run on Windows")
     def test_with_shutil(self, tmp_path):
         """Should remove nested directories and files recursively when force=True."""
         tmp_sub_directory = tmp_path / "subdirectory"
