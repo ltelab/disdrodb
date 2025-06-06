@@ -24,9 +24,9 @@ import xarray as xr
 from xarray.core import dtypes
 
 from disdrodb.utils.xarray import (
-    unstack_datarray_dimension,
     define_dataarray_fill_value,
     define_fill_value_dictionary,
+    unstack_datarray_dimension,
     xr_get_last_valid_idx,
     # remove_diameter_coordinates,
     # remove_velocity_coordinates,

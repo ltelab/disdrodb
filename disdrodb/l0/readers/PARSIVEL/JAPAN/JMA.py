@@ -76,10 +76,10 @@ def reader(
         reader_kwargs=reader_kwargs,
         logger=logger,
     )
-    
+
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Remove rows with less than 97 characters (empty spectrum --> 97 characters)   
+    # Remove rows with less than 97 characters (empty spectrum --> 97 characters)
     df = df[df["TO_SPLIT"].str.len() >= 97]
 
     # Split into columns and assign name
@@ -94,15 +94,15 @@ def reader(
         "weather_code_nws",
         "reflectivity_32bit",
         "mor_visibility",
-        "laser_amplitude",  
+        "laser_amplitude",
         "number_particles",
-        "sensor_temperature", 
-        "sensor_heating_current",  
-        "sensor_battery_voltage",  
+        "sensor_temperature",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
         "raw_drop_number",
     ]
     df.columns = columns
- 
+
     # Add datetime time column
     df["time"] = df["date"] + "-" + df["time"]
     df["time"] = pd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce")

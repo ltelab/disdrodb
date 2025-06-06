@@ -97,6 +97,43 @@ def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
     return last_idx
 
 
+####-------------------------------------------------------------------
+#### Unstacking dimension
+
+
+def _check_coord_handling(coord_handling):
+    if coord_handling not in {"keep", "drop", "unstack"}:
+        raise ValueError("coord_handling must be one of 'keep', 'drop', or 'unstack'.")
+
+
+def _unstack_coordinates(xr_obj, dim, prefix, suffix):
+    # Identify coordinates that share the target dimension
+    coords_with_dim = _get_non_dimensional_coordinates(xr_obj, dim=dim)
+    ds = xr.Dataset()
+    for coord_name in coords_with_dim:
+        coord_da = xr_obj[coord_name]
+        # Split the coordinate DataArray along the target dimension, drop coordinate and merge
+        split_ds = unstack_datarray_dimension(coord_da, coord_handling="drop", dim=dim, prefix=prefix, suffix=suffix)
+        ds.update(split_ds)
+    return ds
+
+
+def _handle_unstack_non_dim_coords(ds, source_xr_obj, coord_handling, dim, prefix, suffix):
+    # Deal with coordinates sharing the target dimension
+    if coord_handling == "keep":
+        return ds
+    if coord_handling == "unstack":
+        ds_coords = _unstack_coordinates(source_xr_obj, dim=dim, prefix=prefix, suffix=suffix)
+        ds.update(ds_coords)
+    # Remove non dimensional coordinates (unstack and drop coord_handling)
+    ds = ds.drop_vars(_get_non_dimensional_coordinates(ds, dim=dim))
+    return ds
+
+
+def _get_non_dimensional_coordinates(xr_obj, dim):
+    return [coord_name for coord_name, coord_da in xr_obj.coords.items() if dim in coord_da.dims and coord_name != dim]
+
+
 def unstack_datarray_dimension(da, dim, coord_handling="keep", prefix="", suffix=""):
     """
     Split a DataArray along a specified dimension into a Dataset with separate prefixed and suffixed variables.
@@ -137,6 +174,10 @@ def unstack_datarray_dimension(da, dim, coord_handling="keep", prefix="", suffix
         prefix=prefix,
         suffix=suffix,
     )
+
+
+####--------------------------------------------------------------------------
+#### Fill Values Utilities
 
 
 def define_dataarray_fill_value(da):

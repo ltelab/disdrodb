@@ -122,7 +122,7 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
         if variables_specified:
             # Compute quantiles
             quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
-            df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)
+            df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)  # noqa: PD010
             df_stats_quantiles.columns = [f"{prefix}Q{int(q*100)}" for q in df_stats_quantiles.columns]
             df_stats_quantiles = df_stats_quantiles.rename(
                 columns={
@@ -276,7 +276,7 @@ def compute_2d_histogram(
         if variables_specified:
             # Compute quantiles
             quantiles = [0.01, 0.05, 0.10, 0.25, 0.50, 0.75, 0.90, 0.95, 0.99]
-            df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)
+            df_stats_quantiles = df_grouped[var].quantile(quantiles).unstack(level=-1)  # noqa: PD010
             df_stats_quantiles.columns = [f"{prefix}Q{int(q*100)}" for q in df_stats_quantiles.columns]
             df_stats_quantiles = df_stats_quantiles.rename(
                 columns={
