@@ -97,6 +97,48 @@ def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
     return last_idx
 
 
+def unstack_datarray_dimension(da, dim, coord_handling="keep", prefix="", suffix=""):
+    """
+    Split a DataArray along a specified dimension into a Dataset with separate prefixed and suffixed variables.
+
+    Parameters
+    ----------
+    da : xarray.DataArray
+        The DataArray to split.
+    dim : str
+        The dimension along which to split the DataArray.
+    coord_handling : str, optional
+        Option to handle coordinates sharing the target dimension.
+        Choices are 'keep', 'drop', or 'unstack'. Defaults to 'keep'.
+    prefix : str, optional
+        String to prepend to each new variable name.
+    suffix : str, optional
+        String to append to each new variable name.
+
+    Returns
+    -------
+    xarray.Dataset
+        A Dataset with each variable split along the specified dimension.
+        The Dataset variables are named  "{prefix}{name}{suffix}{dim_value}".
+        Coordinates sharing the target dimension are handled based on `coord_handling`.
+    """
+    # Retrieve DataArray name
+    name = da.name
+    # Unstack variables
+    ds = da.to_dataset(dim=dim)
+    rename_dict = {dim_value: f"{prefix}{name}{suffix}{dim_value}" for dim_value in list(ds.data_vars)}
+    ds = ds.rename_vars(rename_dict)
+    # Deal with coordinates sharing the target dimension
+    return _handle_unstack_non_dim_coords(
+        ds=ds,
+        source_xr_obj=da,
+        coord_handling=coord_handling,
+        dim=dim,
+        prefix=prefix,
+        suffix=suffix,
+    )
+
+
 def define_dataarray_fill_value(da):
     """Define the fill value for a numerical xarray.DataArray."""
     if np.issubdtype(da.dtype, np.floating):

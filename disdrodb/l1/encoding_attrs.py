@@ -112,13 +112,20 @@ def get_attrs_dict():
             "units": "J",
             "long_name": "Maximum Drop Kinetic Energy",
         },
-        "E": {
+        "TKE": {
+            "description": "Total Kinetic Energy",
+            "standard_name": "",
+            "units": "J m-2",
+            "long_name": "Total Kinetic Energy",
+        },
+        "KED": {
             "description": "Kinetic energy per unit rainfall depth",
             "standard_name": "",
             "units": "J m-2 mm-1",
             "long_name": "Rainfall Kinetic Energy",
         },
-        "KE": {
+        "KEF": {
+            "description": "Kinetic energy per unit time",
             "standard_name": "",
             "units": "J m-2 h-1",
             "long_name": "Kinetic Energy Density Flux",

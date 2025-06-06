@@ -24,12 +24,28 @@ import xarray as xr
 from xarray.core import dtypes
 
 from disdrodb.utils.xarray import (
+    unstack_datarray_dimension,
     define_dataarray_fill_value,
     define_fill_value_dictionary,
     xr_get_last_valid_idx,
     # remove_diameter_coordinates,
     # remove_velocity_coordinates,
 )
+
+
+def test_unstack_datarray_dimension_with_prefix_suffix():
+    """Test splitting a DataArray with prefix and suffix."""
+    da = xr.DataArray(
+        np.array([5, 6, 7]),
+        dims=("dim1",),
+        coords={"dim1": ["X", "Y", "Z"]},
+        name="var",
+    )
+    ds = unstack_datarray_dimension(da, dim="dim1", prefix="split_", suffix="_")
+    assert set(ds.data_vars) == {"split_var_X", "split_var_Y", "split_var_Z"}
+    np.testing.assert_array_equal(ds["split_var_X"].values, [5])
+    np.testing.assert_array_equal(ds["split_var_Y"].values, [6])
+    np.testing.assert_array_equal(ds["split_var_Z"].values, [7])
 
 
 class TestXrGetLastValidIdx:
