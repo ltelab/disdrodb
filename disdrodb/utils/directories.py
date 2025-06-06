@@ -17,12 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Define utilities for Directory/File Checks/Creation/Deletion."""
-
 import glob
 import logging
 import os
 import pathlib
 import shutil
+import subprocess
 from typing import Union
 
 from disdrodb.utils.list import flatten_list
@@ -207,8 +207,20 @@ def _remove_file_or_directories(path, logger=None):
         log_info(logger, msg=f"Deleted the empty directory {path}")
     # If not empty directory
     else:
-        shutil.rmtree(path)
+        # If not window use shutil.rmtree
+        if os.name != "nt":  # Check if not Windows
+            shutil.rmtree(path)
+        else:
+            rmtree_windows(path)
         log_info(logger, msg=f"Deleted directories within {path}")
+
+
+def rmtree_windows(path):
+    """Remove a directory tree on Windows."""
+    if not os.path.isdir(path):
+        raise FileNotFoundError(f"{path!r} is not a valid directory")
+    # Use rd (alias rmdir) with /S (remove all subdirectories/files) and /Q (quiet)
+    subprocess.check_call(["cmd", "/c", "rd", "/S", "/Q", path])
 
 
 def remove_if_exists(path: str, force: bool = False, logger=None) -> None:

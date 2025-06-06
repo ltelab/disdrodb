@@ -61,15 +61,16 @@ def get_l1_options():
     # - TODO: as function of sensor name
 
     # minimum_diameter
-    # --> PWS100: 0.05
-    # --> PARSIVEL: 0.2495
-    # --> RD80: 0.313
-    # --> LPM: 0.125 (we currently discard first bin with this setting)
+    # --> PWS100: 0 (0.05)
+    # --> PARSIVEL: 0.2495 (0.312)
+    # --> RD80: 0.313 (0.359)
+    # --> LPM: 0.125 (0.1875) (we currently discard first bin with default settings !)
 
     # maximum_diameter
-    # LPM: 8 mm
-    # RD80: 5.6 mm
-    # OTT: 26 mm
+    # LPM: 9 (10) mm
+    # RD80: 5.373 (5.6) mm
+    # OTT: 24.5 (26) mm
+    # PWS100: 27.2 (28.8) mm
 
     l1_options = {
         # Fall velocity option

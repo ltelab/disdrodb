@@ -160,6 +160,59 @@ If a hook identifies an issue (signified by the pre-commit script exiting with a
 Further details about pre-commit hooks can be found in the Contributors Guidelines, specifically in the provided in the :ref:`Code quality control <code_quality_control>` section.
 
 
+Installation of pyTMatrix
+================================
+
+To simulate radar polarimetric variables in the DISDRODB L2E and L2M products, you must install the pyTMatrix package.
+The original pyTMatrix can be difficult to install on recent Python versions.
+
+The instructions below describe how to install the LTE-maintained fork of pyTMatrix, which is compatible with modern Python interpreters.
+
+1. Install the GNU `Fortran <https://fortran-lang.org/>`__ Compiler (gfortran) and the `Meson Build system <https://mesonbuild.com/>`__.
+
+.. code-block:: bash
+
+   conda install -c conda-forge gfortran meson
+
+2. Clone the LTE-maintained pyTMatrix repository:
+
+.. code-block:: bash
+   git clone ttps://github.com/ltelab/pytmatrix-lte.git
+
+3. Enter the newly cloned ``pytmatrix-lte`` directory and install the package in editable mode:
+
+.. code-block:: bash
+   cd pytmatrix-lte
+   pip install -e .
+
+4. To confirm that everything was installed correctly, run the pytmatrix built-in test suite. Launch Python and execute:
+
+.. code-block:: python
+
+    from pytmatrix.test import test_tmatrix
+
+    test_tmatrix.run_tests()
+
+
+.. warning::
+
+   Installing pyTMatrix directly via ``pip install git+https://github.com/ltelab/pytmatrix-lte.git`` does *not* work at this time. We welcome contributions to enable this type of installation !
+
+
+Installation of Tectonic
+=============================
+
+`Tectonic <https://tectonic-typesetting.github.io/en-US/>`__ is a modern typesetting system
+that can be used to compile LaTeX documents and create PDF files.
+If you want to generate automatic summary tables of rain events or DSD parameters within the disdrodb software,
+Tectonic must be installed.
+
+You can install Tectonic using conda:
+
+.. code-block:: bash
+
+   conda install -c conda-forge tectonic
+
 
 Run DISDRODB on Jupyter Notebooks
 ==================================

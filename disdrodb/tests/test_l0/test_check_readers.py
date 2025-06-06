@@ -224,7 +224,7 @@ def test_check_all_readers(tmp_path, disdrodb_metadata_archive_dir) -> None:
 #         available_data=True,
 #     )
 
-#     # data_source, campaign_name, station_name = list_stations_info[0]
+#     # data_source, campaign_name, station_name = list_stations_info[1]
 #     for data_source, campaign_name, station_name in list_stations_info:
 #         # Produce expected test file
 #         run_l0a_station(

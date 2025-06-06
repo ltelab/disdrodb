@@ -18,11 +18,18 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB Reader for NOAA PSL RD80 stations."""
 import os
+import re
 
+# Convert ParserWarning into an error
+import warnings
+
+import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
+
+warnings.simplefilter("error", pd.errors.ParserWarning)
 
 
 def read_new_format(filepath, logger):
@@ -101,6 +108,14 @@ def read_new_format(filepath, logger):
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
+    # Retrieve date and hour information
+    with open(filepath) as f:
+        date_header = f.readline().strip()
+    match = re.search(r":\s*(\d+)\s*UTC", date_header)
+    if match:
+        date_hour_str = match.group(1)
+    else:
+        raise ValueError("Date information not found.")
 
     # Replace -99.9900 values with NaN
     columns_to_replace = ["Dmax", "RI", "RA", "Wg", "Z", "EF", "N0", "slope"]
@@ -116,27 +131,29 @@ def read_new_format(filepath, logger):
 
     # - Convert start/end MM:SS:SSS to timedelta
     def parse_time(t):
-        minutes, seconds, milliseconds = map(int, t.split(":"))
-        return pd.Timedelta(minutes=minutes, seconds=seconds, milliseconds=milliseconds)
+        try:
+            minutes, seconds, milliseconds = map(int, t.split(":"))
+            timedelta = pd.Timedelta(minutes=minutes, seconds=seconds, milliseconds=milliseconds)
+        except Exception:
+            timedelta = pd.Timedelta("NaT")
+        return timedelta
 
     df_time["start"] = df_time["start"].apply(parse_time)
     df_time["end"] = df_time["end"].apply(parse_time)
+
+    # Define time
+    date_hour = pd.to_datetime(date_hour_str, format="%y%j%H")
+    df["time"] = date_hour + df_time["start"]
+
+    # Drop invalid timesteps
+    df_time = df_time[~np.isnan(df["time"])]
+    df = df[~np.isnan(df["time"])]
+
+    # Compute sample_interval in seconds as integer
     # - Wrap end time if it's less than start time (i.e., crosses 60:00 boundary)
     # --> 00:00 --> 60:00
     df_time.loc[df_time["end"] < df_time["start"], "end"] += pd.Timedelta(minutes=60)
-
-    # Compute sample_interval in seconds as integer
     df["sample_interval"] = (df_time["end"] - df_time["start"]).dt.total_seconds().astype(int)
-
-    # Define time
-    # - Extract date-hour
-    filename = os.path.basename(filepath)
-    if filename.startswith("lab") or filename.startswith("bao0") or filename.startswith("mdt0"):
-        date_hour_str = filename[4:11]
-    else:
-        date_hour_str = filename[3:10]
-    date_hour = pd.to_datetime(date_hour_str, format="%y%j%H")
-    df["time"] = date_hour + df_time["start"]
 
     # Create raw_drop_number column
     bin_columns = ["n" + str(i) for i in range(1, 21)]

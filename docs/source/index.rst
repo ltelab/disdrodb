@@ -52,14 +52,15 @@ Currently, disdrodb enables processing of data acquired from the following disdr
 - Distromet RD-80 (``RD80``),
 - OTT Parsivel (``PARSIVEL``),
 - OTT Parsivel2 (``PARSIVEL2``),
-- Thies Laser Precipitation Monitor (``LPM``).
+- Thies Laser Precipitation Monitor (``LPM``),
+- Campbell Present Weather Sensor 100 (``PWS100``).
 
 If you have data from other disdrometer types and would like to contribute to the DISDRODB project,
 we welcome your help. We're especially interested in adding support for:
 
-- Campbell Present Weather Sensor 100 (``PWS100``),
 - Eigenbrot Optical Disdrometer 470 (``ODM470``),
 - Vaisala Forward Scatter Sensor FD70 (``FD70``),
+- Biral Visibility and Present Weather Sensors (``SW250``, ``VPF730``, ``VPF750``),
 - Joanneum Research Two Dimensional Video Disdrometer (``2DVD``).
 
 

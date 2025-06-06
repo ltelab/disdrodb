@@ -29,50 +29,29 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = [
-        "logger_time",
-        "record_number",
-        "battery_voltage",
-        "logger_temperature",
-        "wind_direction",
-        "wind_speed",
-        "wind_flag",
-        "fast_temperature",
-        "slow_temperature",
-        "relative_humidity",
-        "pressure",
-        "compass_direction",
-        "gps_time",
-        "gps_status",
-        "gps_latitude",  # DD.DM, DM = decimal minutes/100, DD = degrees
-        "gps_latitude_hemisphere",  # N/S
-        "gps_longitude",
-        "gps_longitude_hemisphere",  # W/E
-        "gps_speed",
-        "gps_direction",
-        "gps_date",
-        "gps_magnetic_version",
-        "gps_altitude",
-        "relative_wind_direction",
-        "dew_point_temperature",
-        "rh",
-        "disdrometer_data",
-    ]
+    column_names = ["TO_SPLIT"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
+
     # - Define delimiter
-    reader_kwargs["delimiter"] = ","
+    reader_kwargs["delimiter"] = "\\n"
+
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Skip header
+    reader_kwargs["skiprows"] = 0
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Define reader engine
     #   - C engine is faster
@@ -81,16 +60,13 @@ def reader(
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
+    # reader_kwargs['compression'] = 'xz'
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error"]
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
+    reader_kwargs["na_values"] = ["na", "error", "-.-", " NA"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -103,59 +79,47 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Drop timesteps without disdrometer data
-    df = df[~df["disdrometer_data"].isna()]
+    # Remove rows with less than 97 characters (empty spectrum --> 97 characters)
+    df = df[df["TO_SPLIT"].str.len() >= 97]
 
-    # Retrieve disdrometer data
-    df_data = df["disdrometer_data"].str.split(";", expand=True, n=11)
-
-    # Assign column names
-    column_names = [
-        "serial_number",
+    # Split into columns and assign name
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=14)
+    columns = [
+        "date",
+        "time",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "weather_code_metar_4678",
+        "weather_code_nws",
         "reflectivity_32bit",
-        "sample_interval",
+        "mor_visibility",
         "laser_amplitude",
         "number_particles",
         "sensor_temperature",
+        "sensor_heating_current",
         "sensor_battery_voltage",
-        "sensor_time",  # Note: logger_time is currently used !
-        "sensor_date",
         "raw_drop_number",
     ]
-    df_data.columns = column_names
+    df.columns = columns
 
-    # Add weather information
-    df_data["air_temperature"] = df["fast_temperature"]
-    df_data["relative_humidity"] = df["relative_humidity"]
-    df_data["wind_direction"] = df["wind_direction"]
-    df_data["wind_speed"] = df["wind_speed"]
+    # Add datetime time column
+    df["time"] = df["date"] + "-" + df["time"]
+    df["time"] = pd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce")
+    df = df.drop(columns=["date"])
 
-    # df_data["dew_point"] = df["dew_point"]
-    # df_data["air_pressure"] = df["pressure"]
+    # Preprocess the raw spectrum
+    # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+    # --> "" generates an array of zeros in L0B processing
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>ZERO</SPECTRUM>", "")
 
-    # Retrieve time and coordinates information
-    # --> Latitude in degrees_north
-    # --> Longitude in degrees_east
-    df_time = pd.to_datetime(df["logger_time"], errors="coerce")
-    df_lat_sign = df["gps_latitude_hemisphere"].str.replace("N", "1").str.replace("S", "-1")
-    df_lon_sign = df["gps_longitude_hemisphere"].str.replace("E", "1").str.replace("W", "-1")
-    df_lat_sign = df_lat_sign.astype(float)
-    df_lon_sign = df_lon_sign.astype(float)
-    df_lon = df["gps_longitude"].astype(float)
-    df_lat = df["gps_latitude"].astype(float)
-    df_lon = df_lon * df_lon_sign
-    df_lat = df_lat * df_lat_sign
+    # Remove <SPECTRUM> and </SPECTRUM>" acronyms from the raw_drop_number field
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
 
-    # Create dataframe
-    df = df_data
-    df["time"] = df_time
-    df["latitude"] = df_lat
-    df["longitude"] = df_lon
-
-    # Drop columns not agreeing with DISDRODB L0 standards
-    df = df.drop(columns=["serial_number", "sensor_time", "sensor_date", "serial_number"])
+    # Add 0 before every , if , not preceded by a digit
+    # Example: ',,1,,' --> '0,0,1,0,'
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

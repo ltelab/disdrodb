@@ -158,3 +158,19 @@ raw_drop_number:
   description: Drop counts per diameter and velocity class
   long_name: Raw drop number
   units: ""
+air_temperature:
+  description: "Air temperature in degrees Celsius (C)"
+  long_name: Air temperature
+  units: "C"
+relative_humidity:
+  description: "Relative humidity in percent (%)"
+  long_name: Relative humidity
+  units: "%"
+wind_speed:
+  description: "Wind speed in m/s"
+  long_name: Wind speed
+  units: "m/s"
+wind_direction:
+  description: "Wind direction in degrees (0-360)"
+  long_name: Wind direction
+  units: "degrees"
