@@ -69,6 +69,7 @@ def define_disdrodb_configs(
     The configuration file is used to run the various DISDRODB operations.
 
     """
+    import disdrodb
     from disdrodb.api.checks import check_data_archive_dir, check_folder_partitioning, check_metadata_archive_dir
 
     # Define path to .config_disdrodb.yaml file
@@ -102,6 +103,11 @@ def define_disdrodb_configs(
     write_yaml(config_dict, filepath, sort_keys=False)
 
     print(f"The DISDRODB config file has been {action_msg} successfully!")
+
+    # Now read the config file and set it as the active configuration
+    # - This avoid the need to restart a python session to take effect !
+    config_dict = read_disdrodb_configs()
+    disdrodb.config.update(config_dict)
 
 
 def read_disdrodb_configs() -> dict[str, str]:

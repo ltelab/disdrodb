@@ -24,9 +24,10 @@ the DISDRODB-METADATA repository
 
 # Define valid values for specific metadata keys
 METADATA_VALUES = {
+    "raw_data_format": ["txt", "netcdf"],
     "deployment_status": ["ongoing", "terminated"],
-    "platform_type": ["fixed", "mobile"],
     "deployment_mode": ["land", "ship", "truck", "cable"],
+    "platform_type": ["fixed", "mobile"],
     "platform_protection": ["shielded", "unshielded", ""],
 }
 

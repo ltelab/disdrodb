@@ -169,6 +169,8 @@ def standardize_raw_dataset(ds, dict_names, sensor_name):
 
     # If missing variables, infill with NaN array
     missing_vars = _get_missing_variables(ds, dict_names, sensor_name)
+    if "raw_drop_number" in missing_vars:
+        raise ValueError("The raw drop spectrum is not present in the netCDF file!")
     if len(missing_vars) > 0:
         ds = add_dataset_missing_variables(ds=ds, missing_vars=missing_vars, sensor_name=sensor_name)
 

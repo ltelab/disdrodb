@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for DELFT OTT PARSIVEL2 sensor in netCDF format."""
+"""Reader for DELFT Thies LPM sensor in netCDF format."""
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0b_nc_processing import open_raw_netcdf_file, standardize_raw_dataset
@@ -45,25 +45,22 @@ def reader(
         "diameter_classes": "diameter_bin_center",
         "velocity_classes": "velocity_bin_center",
         ### Variables
-        "rainfall_rate_32bit": "rainfall_rate_32bit",
+        "liquid_precip_intensity": "rainfall_rate",
+        "solid_precip_intensity": "snowfall_rate", 
+        "all_precip_intensity": "precipitation_rate",
         "weather_code_synop_4680": "weather_code_synop_4680",
         "weather_code_synop_4677": "weather_code_synop_4677",
-        "weather_code_metar_4678": "weather_code_metar_4678",
-        "weather_code_nws": "weather_code_nws",
-        "reflectivity_32bit": "reflectivity_32bit",
-        "mor_visibility": "mor_visibility",
-        "laser_amplitude": "laser_amplitude",
-        "number_particles_validated": "number_particles",
-        "sensor_temperature": "sensor_temperature",
-        "error_code": "error_code",
-        "kinetic_energy": "rain_kinetic_energy",
-        "fieldV": "raw_drop_average_velocity",
-        "fieldN": "raw_drop_concentration",
-        "raw_data": "raw_drop_number",
+        "reflectivity": "reflectivity",
+        "visibility": "mor_visibility",
+        "total_number_particles": "number_particles",
+        "ambient_temperature": "temperature_ambient",
+        "status_laser": "laser_status",
+        "measurement_quality": "quality_index",
+        "raw_spectrum": "raw_drop_number",
     }
 
     # Rename dataset variables and columns and infill missing variables
-    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
+    ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="LPM")
 
     # Return the dataset adhering to DISDRODB L0B standards
     return ds

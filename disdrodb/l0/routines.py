@@ -243,6 +243,8 @@ def _generate_l0b(
     return logger_filepath
 
 
+@delayed_if_parallel
+@single_threaded_if_parallel
 def _generate_l0b_from_nc(
     filepath,
     data_dir,

@@ -275,9 +275,9 @@ def download_station_data(metadata_filepath: str, data_archive_dir: str, force: 
         raise ValueError(f"Invalid disdrodb_data_url '{disdrodb_data_url}' for station {station_name}")
 
     # Download files
-    # - Option 1: Zip file from Zenodo containing all station raw data
-    if disdrodb_data_url.startswith("https://zenodo.org/"):
-        download_zenodo_zip_file(url=disdrodb_data_url, dst_dir=station_dir, force=force)
+    # - Option 1: Download Zip file containing all station raw data
+    if disdrodb_data_url.startswith("https://zenodo.org/") or disdrodb_data_url.startswith("https://cloudnet.fmi.fi/"):
+        download_zip_file(url=disdrodb_data_url, dst_dir=station_dir, force=force)
     # - Option 2: Recursive download from a web server via HTTP or HTTPS.
     elif disdrodb_data_url.startswith("http"):
         download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=force, verbose=True)
@@ -373,7 +373,7 @@ def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, force: b
       - url
     """
     cmd = ["wget"]
-    if verbose:
+    if not verbose:
         cmd.append("-q")
     cmd += [
         "-r",
@@ -397,7 +397,7 @@ def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, force: b
 #### Download from Zenodo
 
 
-def download_zenodo_zip_file(url, dst_dir, force):
+def download_zip_file(url, dst_dir, force):
     """Download zip file from zenodo and extract station raw data."""
     # Download zip file
     zip_filepath = _download_file_from_url(url, dst_dir=dst_dir, force=force)
