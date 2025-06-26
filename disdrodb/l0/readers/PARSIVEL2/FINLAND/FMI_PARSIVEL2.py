@@ -61,9 +61,9 @@ def reader(
 
     # Rename dataset variables and columns and infill missing variables
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
-    
-    # Ensure sensor_temperature in Celsius degree (as logged by sensor) 
+
+    # Ensure sensor_temperature in Celsius degree (as logged by sensor)
     ds["sensor_temperature"] = ds["sensor_temperature"] - 273.15
-    
+
     # Return the dataset adhering to DISDRODB L0B standards
     return ds

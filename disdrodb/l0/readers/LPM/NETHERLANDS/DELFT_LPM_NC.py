@@ -46,7 +46,7 @@ def reader(
         "velocity_classes": "velocity_bin_center",
         ### Variables
         "liquid_precip_intensity": "rainfall_rate",
-        "solid_precip_intensity": "snowfall_rate", 
+        "solid_precip_intensity": "snowfall_rate",
         "all_precip_intensity": "precipitation_rate",
         "weather_code_synop_4680": "weather_code_synop_4680",
         "weather_code_synop_4677": "weather_code_synop_4677",

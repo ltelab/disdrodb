@@ -72,10 +72,9 @@ def reader(
 
     # Split the columns
     df["TO_PARSE"].iloc[0:5].str.split(";", n=16, expand=True).iloc[0]
- 
 
     df = df["TO_PARSE"].str.split(";", n=16, expand=True)
-    
+
     # Assign column names
     names = [
         "sensor_serial_number",
@@ -83,21 +82,20 @@ def reader(
         "laser_amplitude",
         "sensor_heating_current",
         "sensor_battery_voltage",
-        "dummy_date", 
-        "sensor_time", 
-        "sensor_date", 
+        "dummy_date",
+        "sensor_time",
+        "sensor_date",
         "sensor_temperature",
         "number_particles",
         "rainfall_rate_32bit",
         "reflectivity_32bit",
-        "rainfall_accumulated_16bit", 
+        "rainfall_accumulated_16bit",
         "mor_visibility",
         "weather_code_synop_4680",
         "weather_code_synop_4677",
         "TO_SPLIT",
     ]
     df.columns = names
-
 
     # Derive raw drop arrays
     def split_string(s):
@@ -107,25 +105,29 @@ def reader(
         c3 = ";".join(vals[64:1088])
         c4 = vals[1088]
         c5 = vals[1089]
-        series = pd.Series({"raw_drop_concentration": c1,
-                            "raw_drop_average_velocity": c2, 
-                            "raw_drop_number": c3, 
-                            "rain_kinetic_energy": c4, 
-                            "CHECK_EMPTY": c5,
-                            })
-        return series 
+        series = pd.Series(
+            {
+                "raw_drop_concentration": c1,
+                "raw_drop_average_velocity": c2,
+                "raw_drop_number": c3,
+                "rain_kinetic_energy": c4,
+                "CHECK_EMPTY": c5,
+            }
+        )
+        return series
+
     splitted_string = df["TO_SPLIT"].apply(split_string)
     df["raw_drop_concentration"] = splitted_string["raw_drop_concentration"]
     df["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
     df["raw_drop_number"] = splitted_string["raw_drop_number"]
     df["rain_kinetic_energy"] = splitted_string["rain_kinetic_energy"]
     df["CHECK_EMPTY"] = splitted_string["CHECK_EMPTY"]
-    
+
     # Ensure valid observation
-    df = df[df["CHECK_EMPTY"] == '']
-    
+    df = df[df["CHECK_EMPTY"] == ""]
+
     # Add the time column
-    time_str = df["sensor_date"] + '-' + df["sensor_time"]
+    time_str = df["sensor_date"] + "-" + df["sensor_time"]
     df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
 
     # Drop columns not agreeing with DISDRODB L0 standards
@@ -134,11 +136,11 @@ def reader(
         "sensor_date",
         "sensor_time",
         "sensor_serial_number",
-        "rainfall_accumulated_16bit", # unexpected format
-        "CHECK_EMPTY", 
+        "rainfall_accumulated_16bit",  # unexpected format
+        "CHECK_EMPTY",
         "TO_SPLIT",
     ]
     df = df.drop(columns=columns_to_drop)
- 
+
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
