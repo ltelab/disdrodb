@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for the PERILS 2022 and 2023 MIPS and RADAPS files."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -34,28 +35,34 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    # Skip file with encoding errors
-    reader_kwargs["encoding_errors"] = "ignore"
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
+
     # - Define reader engine
     #   - C engine is faster
     #   - Python engine is more feature-complete
     reader_kwargs["engine"] = "python"
+
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error", "NA", "-.-"]
+    reader_kwargs["na_values"] = ["na", "", "error"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -68,50 +75,30 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Define 'time' datetime
-
-    # Split the columns
-    df["TO_PARSE"].iloc[0:5].str.split(";", n=16, expand=True).iloc[0]
-
-    df = df["TO_PARSE"].str.split(";", n=16, expand=True)
-
-    # Assign column names
+    # Split and assign integrated variables names
+    df = df["TO_PARSE"].str.split(",", expand=True, n=6)
     names = [
-        "sensor_serial_number",
-        "sensor_status",
-        "laser_amplitude",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "dummy_date",
-        "sensor_time",
-        "sensor_date",
+        "year",
+        "doy",
+        "time",
         "sensor_temperature",
         "number_particles",
         "rainfall_rate_32bit",
-        "reflectivity_32bit",
-        "rainfall_accumulated_16bit",
-        "mor_visibility",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
         "TO_SPLIT",
     ]
     df.columns = names
 
     # Derive raw drop arrays
     def split_string(s):
-        vals = [v.strip() for v in s.split(";")]
-        c1 = ";".join(vals[:32])
-        c2 = ";".join(vals[32:64])
-        c3 = ";".join(vals[64:1088])
-        c4 = vals[1088]
-        c5 = vals[1089]
+        vals = [v.strip() for v in s.split(",")]
+        c1 = ", ".join(vals[:32])
+        c2 = ", ".join(vals[32:64])
+        #    c3 = ", ".join(vals[64:])
         series = pd.Series(
             {
                 "raw_drop_concentration": c1,
                 "raw_drop_average_velocity": c2,
-                "raw_drop_number": c3,
-                "rain_kinetic_energy": c4,
-                "CHECK_EMPTY": c5,
+                # "raw_drop_number": c3,
             },
         )
         return series
@@ -119,25 +106,18 @@ def reader(
     splitted_string = df["TO_SPLIT"].apply(split_string)
     df["raw_drop_concentration"] = splitted_string["raw_drop_concentration"]
     df["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
-    df["raw_drop_number"] = splitted_string["raw_drop_number"]
-    df["rain_kinetic_energy"] = splitted_string["rain_kinetic_energy"]
-    df["CHECK_EMPTY"] = splitted_string["CHECK_EMPTY"]
 
-    # Ensure valid observation
-    df = df[df["CHECK_EMPTY"] == ""]
-
-    # Add the time column
-    time_str = df["sensor_date"] + "-" + df["sensor_time"]
-    df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y-%H:%M:%S", errors="coerce")
+    # Define datetime time column
+    df["year"] = df["year"].str.replace(".0", "")
+    df["doy"] = df["doy"].str.replace(".0", "")
+    df["time"] = df["time"].str.replace(".0", "")
+    df["time"] = df["year"].astype(str) + "-" + df["doy"].astype(str) + " " + df["time"].astype(str)
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%j %H%M%S", errors="coerce")
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "dummy_date",
-        "sensor_date",
-        "sensor_time",
-        "sensor_serial_number",
-        "rainfall_accumulated_16bit",  # unexpected format
-        "CHECK_EMPTY",
+        "doy",
+        "year",
         "TO_SPLIT",
     ]
     df = df.drop(columns=columns_to_drop)

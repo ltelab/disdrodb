@@ -174,10 +174,11 @@ The instructions below describe how to install the LTE-maintained fork of pyTMat
 
    conda install -c conda-forge gfortran meson
 
-2. Clone the LTE-maintained pyTMatrix repository:
+2. `Fork <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/fork-a-repo>`__ and clone `the LTE-maintained pyTMatrix repository <https://github.com/ltelab/pytmatrix-lte.git>`__:
 
 .. code-block:: bash
-   git clone ttps://github.com/ltelab/pytmatrix-lte.git
+
+   git clone https://github.com/<your-account>/pytmatrix-lte.git
 
 3. Enter the newly cloned ``pytmatrix-lte`` directory and install the package in editable mode:
 
