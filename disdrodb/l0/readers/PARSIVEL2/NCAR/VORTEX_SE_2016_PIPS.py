@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""Reader for the PERILS 2022 and 2023 PIPS files."""
+import os
+
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -62,6 +65,7 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
+
     # - Define delimiter
     reader_kwargs["delimiter"] = ","
 
@@ -91,6 +95,8 @@ def reader(
 
     # Skip first row as columns names
     reader_kwargs["header"] = None
+    if "FMCW" in os.path.basename(filepath):
+        reader_kwargs["skiprows"] = 1
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -135,24 +141,26 @@ def reader(
     # df_data["dew_point"] = df["dew_point"]
     # df_data["air_pressure"] = df["pressure"]
 
-    # Retrieve time and coordinates information
+    # Retrieve time
+    df_time = pd.to_datetime(df["logger_time"], errors="coerce")
+
+    # Retrieve coordinates information
     # --> Latitude in degrees_north
     # --> Longitude in degrees_east
-    df_time = pd.to_datetime(df["logger_time"], errors="coerce")
-    df_lat_sign = df["gps_latitude_hemisphere"].str.replace("N", "1").str.replace("S", "-1")
-    df_lon_sign = df["gps_longitude_hemisphere"].str.replace("E", "1").str.replace("W", "-1")
-    df_lat_sign = df_lat_sign.astype(float)
-    df_lon_sign = df_lon_sign.astype(float)
-    df_lon = df["gps_longitude"].astype(float)
-    df_lat = df["gps_latitude"].astype(float)
-    df_lon = df_lon * df_lon_sign
-    df_lat = df_lat * df_lat_sign
+    # df_lat_sign = df["gps_latitude_hemisphere"].str.replace("N", "1").str.replace("S", "-1")
+    # df_lon_sign = df["gps_longitude_hemisphere"].str.replace("E", "1").str.replace("W", "-1")
+    # df_lat_sign = df_lat_sign.astype(float)
+    # df_lon_sign = df_lon_sign.astype(float)
+    # df_lon = df["gps_longitude"].astype(float)
+    # df_lat = df["gps_latitude"].astype(float)
+    # df_lon = df_lon * df_lon_sign
+    # df_lat = df_lat * df_lat_sign
 
     # Create dataframe
     df = df_data
     df["time"] = df_time
-    df["latitude"] = df_lat
-    df["longitude"] = df_lon
+    # df["latitude"] = df_lat
+    # df["longitude"] = df_lon
 
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["serial_number", "sensor_time", "sensor_date", "serial_number"])
