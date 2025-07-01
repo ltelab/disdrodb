@@ -47,7 +47,7 @@ number_particles:
 sensor_temperature:
   description: Temperature in sensor housing
   long_name: Temperature of the sensor
-  units: "C"
+  units: "degC"
 sensor_serial_number:
   description: Sensor serial number
   long_name: Serial number of the sensor
@@ -105,15 +105,15 @@ error_code:
 sensor_temperature_pcb:
   description: Temperature in printed circuit board
   long_name: Sensor PCB temperature
-  units: "C"
+  units: "degC"
 sensor_temperature_receiver:
   description: Temperature in right sensor head
   long_name: Sensor receiver temperature
-  units: "C"
+  units: "degC"
 sensor_temperature_trasmitter:
   description: Temperature in left sensor head
   long_name: Sensor trasmitter temperature
-  units: "C"
+  units: "degC"
 rainfall_rate_16_bit_30:
   description: Rainfall rate
   long_name: Rainfall rate max 30 mm/h 16 bit
@@ -161,7 +161,7 @@ raw_drop_number:
 air_temperature:
   description: "Air temperature in degrees Celsius (C)"
   long_name: Air temperature
-  units: "C"
+  units: "degC"
 relative_humidity:
   description: "Relative humidity in percent (%)"
   long_name: Relative humidity

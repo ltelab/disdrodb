@@ -129,11 +129,11 @@ reserve_status:
 temperature_interior:
   description: "Interior temperature [C] (NNN)"
   long_name: Interior temperature
-  units: "C"
+  units: "degC"
 laser_temperature:
   description: "Temperature of laser driver 0-80C (NN)"
   long_name: Temperature of laser driver
-  units: "C"
+  units: "degC"
 laser_current_average:
   description: Mean value laser current [1/100 mA] (NNNN)
   long_name: Mean value laser current
@@ -161,7 +161,7 @@ current_heating_pane_receiver_head:
 temperature_ambient:
   description: "Ambient temperature [C] (NNN.N)"
   long_name: Ambient temperature
-  units: "C"
+  units: "degC"
 current_heating_voltage_supply:
   description:
     Voltage Heating supply [1/10 V] (only 5.4110.x1.xxx, otherwise "999")
@@ -311,7 +311,7 @@ raw_drop_number:
 air_temperature:
   description: "Air temperature in degrees Celsius (C)"
   long_name: Air temperature
-  units: "C"
+  units: "degC"
 relative_humidity:
   description: "Relative humidity in percent (%)"
   long_name: Relative humidity

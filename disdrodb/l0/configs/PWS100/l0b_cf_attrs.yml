@@ -25,7 +25,7 @@ sensor_status:
 air_temperature:
   description: "Air temperature in degrees Celsius"
   long_name: Air temperature
-  units: "C"
+  units: "degC"
 relative_humidity:
   description: "Relative humidity in percent (%)"
   long_name: Relative humidity
@@ -33,15 +33,15 @@ relative_humidity:
 wetbulb_temperature:
   description: "Wet bulb temperature in degrees Celsius"
   long_name: Wet bulb temperature
-  units: "C"
+  units: "degC"
 air_temperature_max:
   description: "Maximum air temperature in degrees Celsius"
   long_name: Maximum air temperature
-  units: "C"
+  units: "degC"
 air_temperature_min:
   description: "Minimum air temperature in degrees Celsius"
   long_name: Minimum air temperature
-  units: "C"
+  units: "degC"
 rainfall_rate:
   description: Rainfall rate
   long_name: Rainfall rate
