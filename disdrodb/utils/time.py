@@ -262,6 +262,7 @@ def regularize_dataset(
         Regularized dataset.
 
     """
+    attrs = xr_obj.attrs.copy()
     xr_obj = _check_time_sorted(xr_obj, time_dim=time_dim)
     start_time, end_time = get_dataset_start_end_time(xr_obj, time_dim=time_dim)
 
@@ -289,6 +290,9 @@ def regularize_dataset(
         # tolerance=tolerance,  # mismatch in seconds
         fill_value=fill_value,
     )
+
+    # Ensure attributes are preserved
+    xr_obj.attrs = attrs
     return xr_obj
 
 

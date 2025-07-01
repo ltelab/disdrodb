@@ -71,6 +71,7 @@ METADATA_KEYS = [
     "history",
     "comment",
     "station_id",
+    "koppen_geiger",
     "location",
     "country",
     "continent",

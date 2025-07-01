@@ -55,7 +55,7 @@ def find_files(
     product,
     debugging_mode: bool = False,
     data_archive_dir: Optional[str] = None,
-    glob_pattern="*",
+    glob_pattern=None,
     **product_kwargs,
 ):
     """Retrieve DISDRODB product files for a give station.
@@ -100,6 +100,8 @@ def find_files(
         List of file paths.
 
     """
+    from disdrodb.metadata import read_station_metadata
+
     # Retrieve data directory
     data_dir = define_data_dir(
         data_archive_dir=data_archive_dir,
@@ -110,6 +112,13 @@ def find_files(
         # Product options
         **product_kwargs,
     )
+    if product == "RAW" and glob_pattern is None:
+        metadata = read_station_metadata(
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        glob_pattern = metadata.get("raw_data_glob_pattern", "")
 
     # Define or check the specified glob pattern
     if product != "RAW":
