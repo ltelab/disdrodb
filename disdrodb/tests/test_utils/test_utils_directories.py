@@ -298,20 +298,25 @@ class TestListPaths:
 
 
 class TestListAndCountDirectories:
+
     def test_non_recursive_list_and_count(self, tmp_path):
         """Should list and count only top-level directories with a simple pattern."""
         dir1 = tmp_path / "dir1"
         dir1.mkdir()
+
+        # Directories to be ignored
         dir2 = dir1 / "dir2"
         dir2.mkdir()
+        dir3 = tmp_path / ".DS_Store"
+        dir3.mkdir()
 
         # Files to be ignored
         (tmp_path / "file1.txt").touch()
         (dir1 / "file2.txt").touch()
 
         # Test results
-        dirs = list_directories(tmp_path, "*", recursive=False)
-        count = count_directories(tmp_path, "*", recursive=False)
+        dirs = list_directories(tmp_path, recursive=False)
+        count = count_directories(tmp_path, recursive=False)
         assert set(dirs) == {str(dir1)}
         assert count == 1
 
@@ -327,13 +332,17 @@ class TestListAndCountDirectories:
         dir2 = dir1 / "dir2"
         dir2.mkdir()
 
+        # Directories to be ignored
+        dir3 = tmp_path / ".DS_Store"
+        dir3.mkdir()
+
         # Files to be ignored
         (tmp_path / "file1.txt").touch()
         (dir1 / "file2.txt").touch()
 
         # Test results
-        dirs = list_directories(tmp_path, "*", recursive=True)
-        count = count_directories(tmp_path, "*", recursive=True)
+        dirs = list_directories(tmp_path, recursive=True)  #  "*"
+        count = count_directories(tmp_path, recursive=True)  #  "*"
         assert set(dirs) == {str(dir1), str(dir2)}
         assert count == 2
 
@@ -342,9 +351,38 @@ class TestListAndCountDirectories:
         assert set(dirs) == {str(dir1), str(dir2)}
         assert count == 2
 
+    def test_non_recursive_list_and_count_within_hidden_directory(self, tmp_path):
+        """Should list and count only top-level directories with a simple pattern."""
+        base_dir = tmp_path / ".tmp_test_dir"  # To test path used by tmp_path when running tests
+        base_dir.mkdir()
+
+        dir1 = base_dir / "dir1"
+        dir1.mkdir()
+
+        # Directories to be ignored
+        dir2 = dir1 / "dir2"
+        dir2.mkdir()
+        dir3 = base_dir / ".DS_Store"
+        dir3.mkdir()
+
+        # Files to be ignored
+        (base_dir / "file1.txt").touch()
+        (dir1 / "file2.txt").touch()
+
+        # Test results
+        dirs = list_directories(base_dir, recursive=False)
+        count = count_directories(base_dir, recursive=False)
+        assert set(dirs) == {str(dir1)}
+        assert count == 1
+
+        dirs = list_directories(base_dir, "dir1/*", recursive=False)
+        count = count_directories(base_dir, "dir1/*", recursive=False)
+        assert set(dirs) == {str(dir2)}
+        assert count == 1
+
 
 # import pathlib
-# tmp_path = pathlib.Path("/tmp/11")
+# tmp_path = pathlib.Path("/tmp/13")
 # tmp_path.mkdir()
 
 
@@ -360,12 +398,13 @@ class TestListAndCountFiles:
         file1 = tmp_path / f"file1.{ext}"
         file2 = tmp_path / f"file2.{ext}"
         file3 = tmp_path / "file3.ANOTHER"
-        for f in (file1, file2, file3):
+        file4 = tmp_path / ".hidden_file"  # IGNORED BY DEFAULT
+        for f in (file1, file2, file3, file4):
             f.touch()
 
-        result = list_files(tmp_path, "*", recursive=False)
+        result = list_files(tmp_path, recursive=False)
         assert set(result) == {str(file1), str(file2), str(file3)}
-        assert count_files(tmp_path, "*", recursive=False) == 3
+        assert count_files(tmp_path, recursive=False) == 3
 
     def test_list_non_recursive_subdir_all(self, tmp_path):
         """Should list only files in a subdirectory with '*/*' pattern non-recursively."""

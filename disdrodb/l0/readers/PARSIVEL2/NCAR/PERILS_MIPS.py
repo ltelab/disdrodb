@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for CSWR FARM disdrometer data (used in PERILS and RELAMPAGO campaign)."""
+"""Reader for the PERILS 2022 and 2023 MIPS and RADAPS files."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -35,22 +35,19 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
-
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "ISO-8859-1"
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    reader_kwargs["skiprows"] = 2
-
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Define reader engine
     #   - C engine is faster
@@ -79,31 +76,14 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Split and assign integrated variables names
-    df = df["TO_PARSE"].str.split(",", expand=True, n=22)
-
+    df = df["TO_PARSE"].str.split(",", expand=True, n=6)
     names = [
+        "year",
+        "doy",
         "time",
-        "station_name",
-        "station_number",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "weather_code_metar_4678",
-        "weather_code_nws",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "sample_interval",
-        "laser_amplitude",
-        "number_particles",
         "sensor_temperature",
-        "sensor_serial_number",
-        "firmware_iop",
-        "firmware_dsp",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "sensor_status",
-        "rain_kinetic_energy",
+        "number_particles",
+        "rainfall_rate_32bit",
         "TO_SPLIT",
     ]
     df.columns = names
@@ -113,24 +93,31 @@ def reader(
         vals = [v.strip() for v in s.split(",")]
         c1 = ", ".join(vals[:32])
         c2 = ", ".join(vals[32:64])
-        c3 = ", ".join(vals[64:])
-        return pd.Series({"raw_drop_concentration": c1, "raw_drop_average_velocity": c2, "raw_drop_number": c3})
+        #    c3 = ", ".join(vals[64:])
+        series = pd.Series(
+            {
+                "raw_drop_concentration": c1,
+                "raw_drop_average_velocity": c2,
+                # "raw_drop_number": c3,
+            },
+        )
+        return series
 
     splitted_string = df["TO_SPLIT"].apply(split_string)
     df["raw_drop_concentration"] = splitted_string["raw_drop_concentration"]
     df["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
-    df["raw_drop_number"] = splitted_string["raw_drop_number"]
 
-    # Define datetime "time" column
-    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+    # Define datetime time column
+    df["year"] = df["year"].str.replace(".0", "")
+    df["doy"] = df["doy"].str.replace(".0", "")
+    df["time"] = df["time"].str.replace(".0", "")
+    df["time"] = df["year"].astype(str) + "-" + df["doy"].astype(str) + " " + df["time"].astype(str)
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%j %H%M%S", errors="coerce")
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "station_name",
-        "station_number",
-        "sensor_serial_number",
-        "firmware_iop",
-        "firmware_dsp",
+        "doy",
+        "year",
         "TO_SPLIT",
     ]
     df = df.drop(columns=columns_to_drop)

@@ -108,6 +108,9 @@ def reader(
     df["time"] = pd.to_datetime(df["time"], format="%Y/%m/%d-%H:%M:%S", errors="coerce")
     df = df.drop(columns=["date"])
 
+    # Convert timezone from JST to UTC
+    df = df.set_index("time").tz_localize("Asia/Tokyo").tz_convert(None).reset_index()
+
     # Preprocess the raw spectrum
     # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
     # --> "" generates an array of zeros in L0B processing

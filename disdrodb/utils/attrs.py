@@ -192,17 +192,39 @@ def update_disdrodb_attrs(ds, product: str):
     xarray dataset
         Dataset.
     """
-    # Add time_coverage_start and time_coverage_end
-    ds.attrs["time_coverage_start"] = str(ds["time"].data[0])
-    ds.attrs["time_coverage_end"] = str(ds["time"].data[-1])
+    attrs = ds.attrs.copy()
 
-    # DISDRODDB attributes
+    # ----------------------------------------------
+    # Drop metadata not relevant for DISDRODB products
+    keys_to_drop = [
+        "disdrodb_reader",
+        "disdrodb_data_url",
+        "raw_data_glob_pattern",
+        "raw_data_format",
+    ]
+    for key in keys_to_drop:
+        _ = attrs.pop(key, None)
+
+    # ----------------------------------------------
+    # Add time_coverage_start and time_coverage_end
+    attrs["time_coverage_start"] = str(ds["time"].data[0])
+    attrs["time_coverage_end"] = str(ds["time"].data[-1])
+
+    # ----------------------------------------------
+    # Set DISDRODDB attributes
     # - Add DISDRODB processing info
     now = datetime.datetime.utcnow()
     current_time = now.strftime("%Y-%m-%d %H:%M:%S")
-    ds.attrs["disdrodb_processing_date"] = current_time
+    attrs["disdrodb_processing_date"] = current_time
     # - Add DISDRODB product and version
-    ds.attrs["disdrodb_product_version"] = ARCHIVE_VERSION
-    ds.attrs["disdrodb_software_version"] = SOFTWARE_VERSION
-    ds.attrs["disdrodb_product"] = product
+    attrs["disdrodb_product_version"] = ARCHIVE_VERSION
+    attrs["disdrodb_software_version"] = SOFTWARE_VERSION
+    attrs["disdrodb_product"] = product
+
+    # ----------------------------------------------
+    # Finalize attributes dictionary
+    # - Sort attributes alphabetically
+    attrs = dict(sorted(attrs.items()))
+    # - Set attributes
+    ds.attrs = attrs
     return ds

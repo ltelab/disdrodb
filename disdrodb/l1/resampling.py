@@ -128,13 +128,27 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     - The function updates the dataset attributes and the sample_interval coordinate.
 
     """
-    # Retrieve attributes
-    attrs = ds.attrs.copy()
-
     # TODO: here infill NaN with zero if necessary before regularizing !
 
     # Ensure regular dataset without missing timesteps
     ds = regularize_dataset(ds, freq=f"{sample_interval}s")
+
+    # Define dataset attributes
+    attrs = ds.attrs.copy()
+    if rolling:
+        attrs["disdrodb_rolled_product"] = "True"
+    else:
+        attrs["disdrodb_rolled_product"] = "False"
+
+    if sample_interval == accumulation_interval:
+        attrs["disdrodb_aggregated_product"] = "False"
+        ds = add_sample_interval(ds, sample_interval=accumulation_interval)
+        ds.attrs = attrs
+        return ds
+
+    # --------------------------------------------------------------------------.
+    # Resample the dataset
+    attrs["disdrodb_aggregated_product"] = "True"
 
     # Initialize resample dataset
     ds_resampled = xr.Dataset()
@@ -199,10 +213,6 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
 
     # Add attributes
     ds_resampled.attrs = attrs
-    if rolling:
-        ds_resampled.attrs["rolled"] = "True"
-    else:
-        ds_resampled.attrs["rolled"] = "False"
 
     # Add accumulation_interval as new sample_interval coordinate
     ds_resampled = add_sample_interval(ds_resampled, sample_interval=accumulation_interval)

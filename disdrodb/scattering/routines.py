@@ -67,11 +67,13 @@ def initialize_scatterer(wavelength, canting_angle_std=7, D_max=8, axis_ratio="T
     # Retrieve water complex refractive index
     # - Here we currently assume 10 °C
     # - m_w_0C and m_w_20C are also available
+    # - As function of radar frequency !
     # TODO: should be another dimension ? Or use scatterer.psd_integrator.m_func?
     water_refractive_index = refractive.m_w_10C[wavelength]
 
     # ---------------------------------------------------------------.
     # Initialize Scatterer class
+    # - By specifying m, we assume same refractive index for all particles diameters
     scatterer = Scatterer(wavelength=wavelength, m=water_refractive_index)
     # - Define particle orientation PDF for orientational averaging
     # --> The standard deviation of the angle with respect to vertical orientation (the canting angle).

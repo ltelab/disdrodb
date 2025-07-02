@@ -16,8 +16,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Reader for the PERILS 2022 and 2023 PIPS files."""
-import os
-
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -95,8 +93,6 @@ def reader(
 
     # Skip first row as columns names
     reader_kwargs["header"] = None
-    if "FMCW" in os.path.basename(filepath):
-        reader_kwargs["skiprows"] = 1
 
     ##------------------------------------------------------------------------.
     #### Read the data

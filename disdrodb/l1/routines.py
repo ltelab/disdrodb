@@ -21,6 +21,7 @@
 import datetime
 import logging
 import os
+import shutil
 import time
 from typing import Optional
 
@@ -153,7 +154,7 @@ def _generate_l1(
     # Log start processing
     msg = f"{product} processing of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
-
+    success_flag = False
     ##------------------------------------------------------------------------.
     # Retrieve L1 configurations
     l1_options = get_l1_options()
@@ -178,12 +179,19 @@ def _generate_l1(
             write_product(ds, product=product, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
+        #### - Define logger file final directory
+        if folder_partitioning != "":
+            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
+            os.makedirs(log_dst_dir, exist_ok=True)
+
+        ##--------------------------------------------------------------------.
         # Clean environment
         del ds
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
+        success_flag = True
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -194,6 +202,13 @@ def _generate_l1(
 
     # Close the file logger
     close_logger(logger)
+
+    # Move logger file to correct partitioning directory
+    if success_flag and folder_partitioning != "" and logger_filepath is not None:
+        # Move logger file to correct partitioning directory
+        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
+        shutil.move(logger_filepath, dst_filepath)
+        logger_filepath = dst_filepath
 
     # Return the logger file path
     return logger_filepath

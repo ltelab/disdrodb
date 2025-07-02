@@ -33,37 +33,37 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Add time coordinate
-    ds["time"] = ds["time_as_string"].astype("M8[s]")
-    ds["time"].attrs.pop("comment", None)
-    ds["time"].attrs.pop("units", None)
-    ds = ds.set_coords("time")
-
     # Define dictionary mapping dataset variables to select and rename
     dict_names = {
         ### Dimensions
-        "diameter_classes": "diameter_bin_center",
-        "velocity_classes": "velocity_bin_center",
+        "diameter": "diameter_bin_center",
+        "velocity": "velocity_bin_center",
         ### Variables
         "rainfall_rate_32bit": "rainfall_rate_32bit",
-        "weather_code_synop_4680": "weather_code_synop_4680",
-        "weather_code_synop_4677": "weather_code_synop_4677",
-        "weather_code_metar_4678": "weather_code_metar_4678",
-        "weather_code_nws": "weather_code_nws",
-        "reflectivity_32bit": "reflectivity_32bit",
-        "mor_visibility": "mor_visibility",
-        "laser_amplitude": "laser_amplitude",
-        "number_particles_validated": "number_particles",
-        "sensor_temperature": "sensor_temperature",
+        "synop_WaWa": "weather_code_synop_4680",
+        "synop_WW": "weather_code_synop_4677",
+        "radar_reflectivity": "reflectivity_32bit",
+        "visibility": "mor_visibility",
+        "interval": "sample_interval",
+        "sig_laser": "laser_amplitude",
+        "n_particles": "number_particles",
+        "T_sensor": "sensor_temperature",
+        "I_heating": "sensor_heating_current",
+        "V_power_supply": "sensor_battery_voltage",
+        "state_sensor": "sensor_status",
         "error_code": "error_code",
         "kinetic_energy": "rain_kinetic_energy",
-        "fieldV": "raw_drop_average_velocity",
-        "fieldN": "raw_drop_concentration",
-        "raw_data": "raw_drop_number",
+        "snowfall_rate": "snowfall_rate",
+        "fall_velocity": "raw_drop_average_velocity",
+        "number_concentration": "raw_drop_concentration",
+        "data_raw": "raw_drop_number",
     }
 
     # Rename dataset variables and columns and infill missing variables
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
+
+    # Ensure sensor_temperature in Celsius degree (as logged by sensor)
+    ds["sensor_temperature"] = ds["sensor_temperature"] - 273.15
 
     # Return the dataset adhering to DISDRODB L0B standards
     return ds

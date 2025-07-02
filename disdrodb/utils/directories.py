@@ -98,18 +98,29 @@ def _recursive_glob(dir_path, glob_pattern):
     return [str(path) for path in dir_path.rglob(glob_pattern)]
 
 
-def _list_paths(dir_path, glob_pattern, recursive=False):
+def _is_hidden(path):
+    """Return True if any component of path is hidden."""
+    return any(part.startswith(".") for part in path.split(os.sep))
+
+
+def _list_paths(dir_path, glob_pattern, recursive=False, skip_hidden=True):
     """Return a list of filepaths and directory paths based on a single glob pattern."""
     # If glob pattern has separators, disable recursive option
     if "/" in glob_pattern and "**" not in glob_pattern:
         recursive = False
     # Search paths
     if not recursive:
-        return glob.glob(os.path.join(dir_path, glob_pattern))
-    return _recursive_glob(dir_path, glob_pattern)
+        matches = glob.glob(os.path.join(dir_path, glob_pattern))
+    else:
+        matches = _recursive_glob(dir_path, glob_pattern)
+
+    # Filter out anything with a hidden component
+    if skip_hidden:
+        matches = [p for p in matches if not _is_hidden(os.path.relpath(p, dir_path))]
+    return matches
 
 
-def list_paths(dir_path, glob_pattern, recursive=False):
+def list_paths(dir_path, glob_pattern, recursive=False, skip_hidden=True):
     """Return a list of filepaths and directory paths.
 
     This function accept also a list of glob patterns !
@@ -119,35 +130,41 @@ def list_paths(dir_path, glob_pattern, recursive=False):
     # Search path for specified glob patterns
     paths = flatten_list(
         [
-            _list_paths(dir_path=dir_path, glob_pattern=glob_pattern, recursive=recursive)
+            _list_paths(dir_path=dir_path, glob_pattern=glob_pattern, recursive=recursive, skip_hidden=skip_hidden)
             for glob_pattern in glob_patterns
         ],
     )
     return paths
 
 
-def list_files(dir_path, glob_pattern, recursive=False):
+def list_files(dir_path, glob_pattern="*", recursive=False, skip_hidden=True, return_paths=True):
     """Return a list of filepaths (exclude directory paths)."""
-    paths = list_paths(dir_path, glob_pattern, recursive=recursive)
+    paths = list_paths(dir_path, glob_pattern, recursive=recursive, skip_hidden=skip_hidden)
     filepaths = [f for f in paths if os.path.isfile(f)]
+    # If return_paths is False, return only files names
+    if not return_paths:
+        filepaths = [os.path.basename(f) for f in filepaths]
     return filepaths
 
 
-def list_directories(dir_path, glob_pattern, recursive=False):
+def list_directories(dir_path, glob_pattern="*", recursive=False, skip_hidden=True, return_paths=True):
     """Return a list of directory paths (exclude file paths)."""
-    paths = list_paths(dir_path, glob_pattern, recursive=recursive)
+    paths = list_paths(dir_path, glob_pattern, recursive=recursive, skip_hidden=skip_hidden)
     dir_paths = [f for f in paths if os.path.isdir(f)]
+    # If return_paths is False, return only directory names
+    if not return_paths:
+        dir_paths = [os.path.basename(f) for f in dir_paths]
     return dir_paths
 
 
-def count_files(dir_path, glob_pattern, recursive=False):
+def count_files(dir_path, glob_pattern="*", recursive=False, skip_hidden=True):
     """Return the number of files (exclude directories)."""
-    return len(list_files(dir_path, glob_pattern, recursive=recursive))
+    return len(list_files(dir_path, glob_pattern, recursive=recursive, skip_hidden=skip_hidden))
 
 
-def count_directories(dir_path, glob_pattern, recursive=False):
+def count_directories(dir_path, glob_pattern="*", recursive=False, skip_hidden=True):
     """Return the number of files (exclude directories)."""
-    return len(list_directories(dir_path, glob_pattern, recursive=recursive))
+    return len(list_directories(dir_path, glob_pattern, recursive=recursive, skip_hidden=skip_hidden))
 
 
 def check_directory_exists(dir_path):
@@ -177,7 +194,7 @@ def create_required_directory(dir_path, dir_name, exist_ok=True):
     create_directory(path=new_dir_path, exist_ok=exist_ok)
 
 
-def is_empty_directory(path):
+def is_empty_directory(path, skip_hidden=True):
     """Check if a directory path is empty.
 
     Return ``False`` if path is a file or non-empty directory.
@@ -187,8 +204,11 @@ def is_empty_directory(path):
         raise OSError(f"{path} does not exist.")
     if not os.path.isdir(path):
         return False
-
     paths = os.listdir(path)
+
+    # If skip_hidden is True, filter out hidden files/directories
+    if skip_hidden:
+        paths = [f for f in paths if not f.startswith(".")]
     return len(paths) == 0
 
 
