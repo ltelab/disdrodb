@@ -112,6 +112,7 @@ def find_files(
         # Product options
         **product_kwargs,
     )
+    # For the DISDRODB RAW product, retrieve glob_pattern from metadata if not specified
     if product == "RAW" and glob_pattern is None:
         metadata = read_station_metadata(
             data_source=data_source,
@@ -120,7 +121,7 @@ def find_files(
         )
         glob_pattern = metadata.get("raw_data_glob_pattern", "")
 
-    # Define or check the specified glob pattern
+    # For the others DISDRODB products, define the correct glob pattern
     if product != "RAW":
         glob_pattern = "*.parquet" if product == "L0A" else "*.nc"
 

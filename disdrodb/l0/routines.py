@@ -21,6 +21,7 @@
 import datetime
 import logging
 import os
+import shutil
 import time
 from typing import Optional
 
@@ -41,6 +42,7 @@ from disdrodb.api.path import (
     define_l0b_filename,
     define_l0c_filename,
     define_metadata_filepath,
+    define_partitioning_tree,
 )
 from disdrodb.api.search import get_required_product
 from disdrodb.configs import get_data_archive_dir, get_folder_partitioning, get_metadata_archive_dir
@@ -124,7 +126,7 @@ def _generate_l0a(
     # Log start processing
     msg = f"{product} processing of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
-
+    success_flag = False
     ##------------------------------------------------------------------------.
     ### - Read raw file into a dataframe and sanitize for L0A format
     try:
@@ -145,12 +147,19 @@ def _generate_l0a(
         write_l0a(df=df, filepath=filepath, force=force, logger=logger, verbose=verbose)
 
         ##--------------------------------------------------------------------.
+        #### - Define logger file final directory
+        if folder_partitioning != "":
+            log_dst_dir = define_file_folder_path(df, data_dir=logs_dir, folder_partitioning=folder_partitioning)
+            os.makedirs(log_dst_dir, exist_ok=True)
+
+        ##--------------------------------------------------------------------.
         # Clean environment
         del df
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
+        success_flag = True
 
     # Otherwise log the error
     except Exception as e:
@@ -160,6 +169,13 @@ def _generate_l0a(
 
     # Close the file logger
     close_logger(logger)
+
+    # Move logger file to correct partitioning directory
+    if success_flag and folder_partitioning != "" and logger_filepath is not None:
+        # Move logger file to correct partitioning directory
+        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
+        shutil.move(logger_filepath, dst_filepath)
+        logger_filepath = dst_filepath
 
     # Return the logger file path
     return logger_filepath
@@ -200,6 +216,7 @@ def _generate_l0b(
     # Log start processing
     msg = f"{product} processing of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
+    success_flag = False
 
     ##------------------------------------------------------------------------.
     # Retrieve sensor name
@@ -223,12 +240,19 @@ def _generate_l0b(
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
+        #### - Define logger file final directory
+        if folder_partitioning != "":
+            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
+            os.makedirs(log_dst_dir, exist_ok=True)
+
+        ##--------------------------------------------------------------------.
         # Clean environment
         del ds, df
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
+        success_flag = True
 
     # Otherwise log the error
     except Exception as e:
@@ -238,6 +262,13 @@ def _generate_l0b(
 
     # Close the file logger
     close_logger(logger)
+
+    # Move logger file to correct partitioning directory
+    if success_flag and folder_partitioning != "" and logger_filepath is not None:
+        # Move logger file to correct partitioning directory
+        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
+        shutil.move(logger_filepath, dst_filepath)
+        logger_filepath = dst_filepath
 
     # Return the logger file path
     return logger_filepath
@@ -284,6 +315,7 @@ def _generate_l0b_from_nc(
     # Log start processing
     msg = f"{product} processing of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
+    success_flag = False
 
     ##------------------------------------------------------------------------.
     ### - Read raw netCDF and sanitize for L0B format
@@ -306,12 +338,19 @@ def _generate_l0b_from_nc(
         write_l0b(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
+        #### - Define logger file final directory
+        if folder_partitioning != "":
+            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
+            os.makedirs(log_dst_dir, exist_ok=True)
+
+        ##--------------------------------------------------------------------.
         # Clean environment
         del ds
 
         # Log end processing
         msg = f"L0B processing of {filename} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
+        success_flag = True
 
     # Otherwise log the error
     except Exception as e:
@@ -321,6 +360,13 @@ def _generate_l0b_from_nc(
 
     # Close the file logger
     close_logger(logger)
+
+    # Move logger file to correct partitioning directory
+    if success_flag and folder_partitioning != "" and logger_filepath is not None:
+        # Move logger file to correct partitioning directory
+        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
+        shutil.move(logger_filepath, dst_filepath)
+        logger_filepath = dst_filepath
 
     # Return the logger file path
     return logger_filepath
@@ -360,6 +406,7 @@ def _generate_l0c(
     # Log start processing
     msg = f"{product} processing for {day} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
+    success_flag = False
 
     ##------------------------------------------------------------------------.
     ### Core computation
@@ -391,7 +438,7 @@ def _generate_l0c(
                 # Set encodings
                 ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
 
-                # Define filepath
+                # Define product filepath
                 filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
                 folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
                 filepath = os.path.join(folder_path, filename)
@@ -402,9 +449,21 @@ def _generate_l0c(
         # Clean environment
         del ds
 
+        ##--------------------------------------------------------------------.
+        #### - Define logger file final directory
+        if folder_partitioning != "":
+            print(day)
+            dirtree = define_partitioning_tree(
+                time=datetime.datetime.strptime("2022-03-22", "%Y-%m-%d"),
+                folder_partitioning=folder_partitioning,
+            )
+            log_dst_dir = os.path.join(logs_dir, dirtree)
+            os.makedirs(log_dst_dir, exist_ok=True)
+
         # Log end processing
         msg = f"{product} processing for {day} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
+        success_flag = True
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -415,6 +474,13 @@ def _generate_l0c(
 
     # Close the file logger
     close_logger(logger)
+
+    # Move logger file to correct partitioning directory
+    if success_flag and folder_partitioning != "" and logger_filepath is not None:
+        # Move logger file to correct partitioning directory
+        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
+        shutil.move(logger_filepath, dst_filepath)
+        logger_filepath = dst_filepath
 
     # Return the logger file path
     return logger_filepath

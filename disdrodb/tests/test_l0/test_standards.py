@@ -18,11 +18,10 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB L0 standards routines."""
 
-import os
 
 import pytest
 
-from disdrodb import __root_path__
+import disdrodb
 from disdrodb.l0.standards import (
     _ensure_valid_netcdf_encoding_dict,
     get_data_range_dict,
@@ -40,66 +39,66 @@ from disdrodb.l0.standards import (
     get_variables_dimension,
 )
 
-CONFIG_FOLDER = os.path.join(__root_path__, "disdrodb", "l0", "configs")
+SENSOR_NAMES = disdrodb.available_sensor_names()
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_field_ndigits_natural_dict(sensor_name):
     function_return = get_field_ndigits_natural_dict(sensor_name)
     assert isinstance(function_return, dict)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_field_ndigits_decimals_dict(sensor_name):
     function_return = get_field_ndigits_decimals_dict(sensor_name)
     assert isinstance(function_return, dict)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_field_ndigits_dict(sensor_name):
     function_return = get_field_ndigits_dict(sensor_name)
     assert isinstance(function_return, dict)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_field_nchar_dict(sensor_name):
     function_return = get_field_nchar_dict(sensor_name)
     assert isinstance(function_return, dict)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_data_range_dict(sensor_name):
     function_return = get_data_range_dict(sensor_name)
     assert isinstance(function_return, dict)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_nan_flags_dict(sensor_name):
     function_return = get_nan_flags_dict(sensor_name)
     assert isinstance(function_return, dict)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_variables_dimension(sensor_name):
     assert isinstance(get_variables_dimension(sensor_name), dict)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_valid_variable_names(sensor_name):
     assert isinstance(get_valid_variable_names(sensor_name), list)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_valid_dimension_names(sensor_name):
     assert isinstance(get_valid_dimension_names(sensor_name), list)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_valid_coordinates_names(sensor_name):
     assert isinstance(get_valid_coordinates_names(sensor_name), list)
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_valid_names(sensor_name):
     assert isinstance(get_valid_names(sensor_name), list)
 
@@ -150,7 +149,7 @@ def test_ensure_valid_netcdf_encoding_dict():
     assert output_dict["var"]["chunksizes"] == [1, 2]
 
 
-@pytest.mark.parametrize("sensor_name", os.listdir(CONFIG_FOLDER))
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
 def test_get_l0a_encodings_dict(sensor_name):
     function_return = get_l0a_encodings_dict(sensor_name)
     assert isinstance(function_return, dict)

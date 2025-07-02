@@ -32,6 +32,7 @@ from disdrodb.api.path import (
 )
 from disdrodb.utils.directories import (
     ensure_string_path,
+    list_directories,
     list_files,
 )
 
@@ -83,7 +84,7 @@ def check_path_is_a_directory(dir_path, path_name=""):
 
 def check_directories_inside(dir_path):
     """Check there are directories inside the specified ``dir_path``."""
-    dir_paths = os.listdir(dir_path)
+    dir_paths = list_directories(dir_path, recursive=False)
     if len(dir_paths) == 0:
         raise ValueError(f"There are not directories within {dir_path}")
 
@@ -368,7 +369,7 @@ def has_available_data(
         return False
 
     # If no files, return False
-    filepaths = list_files(data_dir, glob_pattern="*", recursive=True)
+    filepaths = list_files(data_dir, recursive=True)
     nfiles = len(filepaths)
     return nfiles >= 1
 

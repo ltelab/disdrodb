@@ -269,7 +269,7 @@ def create_product_logs(
             # Product options
             **product_kwargs,
         )
-        list_logs = list_files(logs_dir, glob_pattern="*", recursive=True)
+        list_logs = list_files(logs_dir, recursive=True)
 
     # --------------------------------------------------------.
     # LogCaptureHandler of pytest does not have baseFilename attribute, so it returns None
@@ -332,5 +332,5 @@ def create_product_logs(
 
     # --------------------------------------------------------.
     # Remove /problem directory if empty !
-    if len(os.listdir(logs_problem_dir)) == 0:
+    if len(list_files(logs_problem_dir, glob_pattern="*.log")) == 0:
         os.rmdir(logs_problem_dir)

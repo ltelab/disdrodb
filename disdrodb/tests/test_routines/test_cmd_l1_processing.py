@@ -47,7 +47,7 @@ PARALLEL = False
 # import pathlib
 # tmp_path = pathlib.Path("/tmp/10")
 # test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
-# dst_dir = os.path.join(test_data_archive_dir, VERSION)
+# dst_dir = os.path.join(test_data_archive_dir, "V0")
 # shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
 # test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
 

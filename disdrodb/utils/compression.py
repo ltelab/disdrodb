@@ -157,7 +157,7 @@ def compress_station_files(
         raise ValueError(f"Station data directory {station_dir} does not exist.")
 
     # Get list of files inside the station directory (in all nested directories)
-    filepaths = list_files(station_dir, glob_pattern="*", recursive=True)
+    filepaths = list_files(station_dir, recursive=True)
     for filepath in filepaths:
         _ = _compress_file(filepath, method, skip=skip)
 

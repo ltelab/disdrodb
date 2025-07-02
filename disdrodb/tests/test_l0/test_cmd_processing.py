@@ -52,7 +52,7 @@ FORCE = False
 # from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
 
-# tmp_path = pathlib.Path("/tmp/17/")
+# tmp_path = pathlib.Path("/tmp/19/")
 # tmp_path.mkdir(parents=True)
 # test_data_archive_dir = tmp_path / "data" / "DISDRODB"
 # shutil.copytree(BASE_DIR, test_data_archive_dir)

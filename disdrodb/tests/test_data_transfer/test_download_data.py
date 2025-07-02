@@ -88,7 +88,7 @@ class TestBuildWebserverWgetCommand:
         cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, force=True, verbose=True)
 
         assert cmd[0] == "wget"
-        assert "-q" in cmd
+        assert "-q" not in cmd
         assert "-r" in cmd
         assert "-np" in cmd
         assert "-nH" in cmd
@@ -106,7 +106,7 @@ class TestBuildWebserverWgetCommand:
         cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, force=False, verbose=False)
 
         assert cmd[0] == "wget"
-        assert "-q" not in cmd
+        assert "-q" in cmd
         assert "--timestamping" not in cmd
         assert "-r" in cmd
         assert "-np" in cmd

@@ -102,7 +102,7 @@ sensor_temperature:
   chunksizes: 5000
   _FillValue: 255
 sensor_serial_number:
-  dtype: object
+  dtype: str
   zlib: false
   complevel: 3
   shuffle: true
@@ -110,7 +110,7 @@ sensor_serial_number:
   contiguous: false
   chunksizes: 5000
 firmware_iop:
-  dtype: object
+  dtype: str
   zlib: false
   complevel: 3
   shuffle: true
@@ -118,7 +118,7 @@ firmware_iop:
   contiguous: false
   chunksizes: 5000
 firmware_dsp:
-  dtype: object
+  dtype: str
   zlib: false
   complevel: 3
   shuffle: true

@@ -16,7 +16,7 @@ from disdrodb.api.path import (
     define_station_dir,
 )
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
-from disdrodb.utils.directories import contains_files, contains_netcdf_or_parquet_files
+from disdrodb.utils.directories import contains_files, contains_netcdf_or_parquet_files, list_directories, list_files
 from disdrodb.utils.yaml import read_yaml
 
 
@@ -37,7 +37,8 @@ def get_required_product(product):
 
 def list_data_sources(metadata_archive_dir, data_sources=None, invalid_fields_policy="raise"):
     """List data sources names in the DISDRODB Metadata Archive."""
-    available_data_sources = os.listdir(os.path.join(metadata_archive_dir, "METADATA"))
+    path = os.path.join(metadata_archive_dir, "METADATA")
+    available_data_sources = sorted(list_directories(path, return_paths=False))
     # Filter by optionally specified data_sources
     if data_sources is not None:
         available_data_sources = check_valid_fields(
@@ -52,7 +53,7 @@ def list_data_sources(metadata_archive_dir, data_sources=None, invalid_fields_po
 
 def _list_campaign_names(metadata_archive_dir, data_source):
     data_source_dir = define_data_source_dir(metadata_archive_dir, product="METADATA", data_source=data_source)
-    campaign_names = os.listdir(data_source_dir)
+    campaign_names = sorted(list_directories(data_source_dir, return_paths=False))
     return campaign_names
 
 
@@ -109,7 +110,7 @@ def _list_station_names(metadata_archive_dir, data_source, campaign_name):
         data_source=data_source,
         campaign_name=campaign_name,
     )
-    metadata_filenames = os.listdir(metadata_dir)
+    metadata_filenames = sorted(list_files(metadata_dir, glob_pattern="*.yml", return_paths=False))
     station_names = [fname.replace(".yml", "").replace(".yaml", "") for fname in metadata_filenames]
     return station_names
 

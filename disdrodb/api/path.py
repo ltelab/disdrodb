@@ -349,6 +349,55 @@ def define_config_dir(product):
 #### Directory/Filepaths L0A and L0B products
 
 
+def define_partitioning_tree(time, folder_partitioning):
+    """Define the time directory tree given a timestep.
+
+    Parameters
+    ----------
+    time : datetime.datetime
+        Timestep.
+    folder_partitioning : str or None
+        Define the subdirectory structure where saving files.
+        Allowed values are:
+          - None: Files are saved directly in data_dir.
+          - "year": Files are saved under a subdirectory for the year.
+          - "year/month": Files are saved under subdirectories for year and month.
+          - "year/month/day": Files are saved under subdirectories for year, month and day
+          - "year/month_name": Files are stored under subdirectories by year and month name
+          - "year/quarter": Files are saved under subdirectories for year and quarter.
+
+    Returns
+    -------
+    str
+        A time partitioned directory tree.
+    """
+    if folder_partitioning == "":
+        return ""
+    if folder_partitioning == "year":
+        year = str(time.year)
+        return year
+    if folder_partitioning == "year/month":
+        year = str(time.year)
+        month = str(time.month).zfill(2)
+        return os.path.join(year, month)
+    if folder_partitioning == "year/month/day":
+        year = str(time.year)
+        month = str(time.month).zfill(2)
+        day = str(time.day).zfill(2)
+        return os.path.join(year, month, day)
+    if folder_partitioning == "year/month_name":
+        year = str(time.year)
+        month = str(time.month_name())
+        return os.path.join(year, month)
+    if folder_partitioning == "year/quarter":
+        year = str(time.year)
+        # Calculate quarter: months 1-3 => Q1, 4-6 => Q2, etc.
+        quarter = (time.month - 1) // 3 + 1
+        quarter_dir = f"Q{quarter}"
+        return os.path.join(year, quarter_dir)
+    raise NotImplementedError(f"Unrecognized '{folder_partitioning}' folder partitioning scheme.")
+
+
 def define_file_folder_path(obj, data_dir, folder_partitioning):
     """
     Define the folder path where saving a file based on the dataset's starting time.
@@ -382,32 +431,9 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
     # Retrieve the starting time from the dataset.
     starting_time, _ = get_file_start_end_time(obj)
 
-    # Build the folder path based on the chosen partition scheme.
-    if folder_partitioning == "":
-        return data_dir
-    if folder_partitioning == "year":
-        year = str(starting_time.year)
-        return os.path.join(data_dir, year)
-    if folder_partitioning == "year/month":
-        year = str(starting_time.year)
-        month = str(starting_time.month).zfill(2)
-        return os.path.join(data_dir, year, month)
-    if folder_partitioning == "year/month/day":
-        year = str(starting_time.year)
-        month = str(starting_time.month).zfill(2)
-        day = str(starting_time.day).zfill(2)
-        return os.path.join(data_dir, year, month, day)
-    if folder_partitioning == "year/month_name":
-        year = str(starting_time.year)
-        month = str(starting_time.month_name())
-        return os.path.join(data_dir, year, month)
-    if folder_partitioning == "year/quarter":
-        year = str(starting_time.year)
-        # Calculate quarter: months 1-3 => Q1, 4-6 => Q2, etc.
-        quarter = (starting_time.month - 1) // 3 + 1
-        quarter_dir = f"Q{quarter}"
-        return os.path.join(data_dir, year, quarter_dir)
-    raise NotImplementedError(f"Unrecognized '{folder_partitioning}' folder partitioning scheme.")
+    # Build the folder path based on the chosen partition scheme
+    partitioning_tree = define_partitioning_tree(time=starting_time, folder_partitioning=folder_partitioning)
+    return os.path.join(data_dir, partitioning_tree)
 
 
 def define_product_dir_tree(

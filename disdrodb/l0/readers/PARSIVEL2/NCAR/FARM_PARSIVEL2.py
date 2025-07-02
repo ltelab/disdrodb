@@ -128,6 +128,7 @@ def reader(
     columns_to_drop = [
         "station_name",
         "station_number",
+        "sensor_serial_number",
         "firmware_iop",
         "firmware_dsp",
         "TO_SPLIT",
