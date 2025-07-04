@@ -99,6 +99,9 @@ def generate_l1(
     # Initialize L2 dataset
     ds_l1 = xr.Dataset()
 
+    # Add raw_drop_number variable
+    ds_l1["raw_drop_number"] = ds["raw_drop_number"]
+
     # Retrieve sample interval
     # --> sample_interval is a coordinate of L0C products
     if "sample_interval" in ds:

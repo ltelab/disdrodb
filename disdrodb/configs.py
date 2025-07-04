@@ -35,6 +35,7 @@ def _define_config_filepath():
 def define_disdrodb_configs(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
+    configs_path: Optional[str] = None,
     folder_partitioning: Optional[str] = None,
     zenodo_token: Optional[str] = None,
     zenodo_sandbox_token: Optional[str] = None,
@@ -48,6 +49,8 @@ def define_disdrodb_configs(
         The directory path where the DISDRODB Data Archive is located.
     metadata_archive_dir : str
         The directory path where the DISDRODB Metadata Archive is located.
+    configs_path : str
+        The directory path where the custom DISDRODB products configurations files are defined.
     folder_partitioning : str
         The folder partitioning scheme used in the DISDRODB Data Archive.
         Allowed values are:
@@ -98,6 +101,9 @@ def define_disdrodb_configs(
         config_dict["zenodo_token"] = zenodo_token
     if zenodo_sandbox_token is not None:
         config_dict["zenodo_sandbox_token"] = zenodo_sandbox_token
+
+    if configs_path is not None:
+        config_dict["configs_path"] = configs_path
 
     # Write the DISDRODB config file
     write_yaml(config_dict, filepath, sort_keys=False)
@@ -201,3 +207,78 @@ def get_zenodo_token(sandbox: bool):
         raise ValueError(f"Missing {token_name} in the DISDRODB config file !")
 
     return token
+
+
+def get_product_default_configs_path():
+    """Return the paths where DISDRODB products configuration files are stored."""
+    import disdrodb
+
+    configs_path = os.path.join(disdrodb.__root_path__, "disdrodb", "etc", "products")
+    return configs_path
+
+
+def check_availability_radar_simulations(options):
+    """Check radar simulations are possible for L2E and L2M products."""
+    import disdrodb
+
+    if "radar_simulation_enabled" in options and not disdrodb.pytmatrix_available:
+        options["radar_simulation_enabled"] = False
+    return options
+
+
+def get_product_options(product, time_integration=None):
+    """Get options for DISDRODB products."""
+    import disdrodb
+
+    # TODO: adapt
+    # if os.environ.get("PYTEST_CURRENT_TEST"):
+    #     configs_path = TEST_PRODUCT_CONFIGS_PATH
+    # else
+
+    configs_path = disdrodb.config.get("configs_path", get_product_default_configs_path())
+
+    # Validate DISDRODB products configuration
+    validate_product_configuration(configs_path)
+
+    # Check product
+    # - TODO
+
+    # Retrieve global product options
+    global_options = read_yaml(os.path.join(configs_path, product, "global.yaml"))
+    if time_integration is None:
+        global_options = check_availability_radar_simulations(global_options)
+        return global_options
+
+    # If time integration is specified, drop 'time_integrations' key
+    global_options.pop("time_integrations", None)
+    custom_options_path = os.path.join(configs_path, product, f"{time_integration}.yaml")
+    if not os.path.exists(custom_options_path):
+        global_options.pop("time_integrations", None)
+        return global_options
+    custom_options = read_yaml(custom_options_path)
+    options = global_options.copy()
+    options.update(custom_options)
+    options = check_availability_radar_simulations(options)
+    return options
+
+
+def get_product_time_integrations(product):
+    """Get DISDRODB L2 product temporal aggregations."""
+    # Check only L2E and L2M
+    return get_product_options(product)["time_integrations"]
+
+
+def get_model_options(product, model_name):
+    """Get DISDRODB L2M model options."""
+    import disdrodb
+
+    configs_path = disdrodb.config.get("configs_path", get_product_default_configs_path())
+    model_options_path = os.path.join(configs_path, product, f"{model_name}.yaml")
+    model_options = read_yaml(model_options_path)
+    return model_options
+
+
+def validate_product_configuration(configs_path):
+    # Time intregations of L2M subset of L2E
+    # All YA
+    pass

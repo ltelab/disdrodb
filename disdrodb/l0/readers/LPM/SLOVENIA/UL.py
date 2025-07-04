@@ -61,6 +61,9 @@ def reader(
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
+    
+    # - Skip rows with badly encoded data
+    reader_kwargs["encoding_errors"] = "replace"
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',

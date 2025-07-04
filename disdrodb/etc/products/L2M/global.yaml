@@ -1,0 +1,17 @@
+time_integrations: ["1MIN", "5MIN", "10MIN", "ROLL1MIN"]
+models: ["GAMMA_ML", "NGAMMA_GS_LOG_ND_MAE"]
+fall_velocity_method: "Beard1976"
+diameter_min: 0
+diameter_max: 10
+diameter_spacing: 0.05
+gof_metrics: True
+min_nbins: 4
+remove_timesteps_with_few_bins: False
+mask_timesteps_with_few_bins: False
+radar_simulation_enabled: False
+radar_simulation_options: 
+  radar_band: ["S", "C", "X", "Ku", "Ka", "W"]
+  canting_angle_std: 7
+  diameter_max: 10
+  axis_ratio: Thurai2007
+

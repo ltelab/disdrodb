@@ -24,6 +24,10 @@ import os
 def initialize_dask_cluster():
     """Initialize Dask Cluster."""
     import dask
+
+    # Silence dask warnings
+    # dask.config.set({"logging.distributed": "error"})
+    # Import dask.distributed after setting the config
     from dask.distributed import Client, LocalCluster
 
     # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
@@ -31,16 +35,14 @@ def initialize_dask_cluster():
     # Retrieve the number of process to run
     available_workers = os.cpu_count() - 2  # if not set, all CPUs
     num_workers = dask.config.get("num_workers", available_workers)
-    # Silence dask warnings
-    dask.config.set({"logging.distributed": "error"})
-    # dask.config.set({"distributed.admin.system-monitor.gil.enabled": False})
+
     # Create dask.distributed local cluster
     cluster = LocalCluster(
         n_workers=num_workers,
         threads_per_worker=1,
         processes=True,
         # memory_limit='8GB',
-        # silence_logs=False,
+        silence_logs=logging.ERROR,
     )
     client = Client(cluster)
     return cluster, client

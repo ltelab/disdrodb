@@ -128,11 +128,21 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     - The function updates the dataset attributes and the sample_interval coordinate.
 
     """
+    # --------------------------------------------------------------------------.
+    # Raise error if the accumulation_interval is less than the sample interval
+    if accumulation_interval < sample_interval:
+        raise ValueError("Expecting an accumulation_interval > sample interval.")
+    # Raise error if accumulation_interval is not multiple of sample_interval
+    if not accumulation_interval % sample_interval == 0:
+        raise ValueError("The accumulation_interval is not a multiple of sample interval.")
+
+    # --------------------------------------------------------------------------.
     # TODO: here infill NaN with zero if necessary before regularizing !
 
     # Ensure regular dataset without missing timesteps
     ds = regularize_dataset(ds, freq=f"{sample_interval}s")
 
+    # --------------------------------------------------------------------------.
     # Define dataset attributes
     attrs = ds.attrs.copy()
     if rolling:
@@ -217,30 +227,3 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     # Add accumulation_interval as new sample_interval coordinate
     ds_resampled = add_sample_interval(ds_resampled, sample_interval=accumulation_interval)
     return ds_resampled
-
-
-def get_possible_accumulations(sample_interval, accumulations=None):
-    """
-    Get a list of valid accumulation intervals based on the sampling time.
-
-    Parameters
-    ----------
-    - sample_interval (int): The inferred sampling time in seconds.
-    - accumulations (list of int or string): List of desired accumulation intervals.
-    If provide integers, specify accumulation in seconds.
-
-    Returns
-    -------
-    - list of int: Valid accumulation intervals in seconds.
-    """
-    # Select default accumulations
-    if accumulations is None:
-        accumulations = DEFAULT_ACCUMULATIONS
-
-    # Get accumulations in seconds
-    accumulations = [int(pd.Timedelta(acc).total_seconds()) if isinstance(acc, str) else acc for acc in accumulations]
-
-    # Filter candidate accumulations to include only those that are multiples of the sampling time
-    possible_accumulations = [acc for acc in accumulations if acc % sample_interval == 0]
-
-    return possible_accumulations

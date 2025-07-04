@@ -297,7 +297,7 @@ def regularize_dataset(
 
 
 ####------------------------------------------
-#### Sampling interval utilities
+#### Interval utilities
 
 
 def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
@@ -380,7 +380,7 @@ def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
             raise TypeError("Float array sample_interval must contain only whole numbers.")
         return sample_interval.astype(int)
 
-    # Deal with xarray.DataArrayy of floats that are all integer-valued (with optionally some NaN)
+    # Deal with xarray.DataArray of floats that are all integer-valued (with optionally some NaN)
     if isinstance(sample_interval, xr.DataArray) and np.issubdtype(sample_interval.dtype, np.floating):
         arr = sample_interval.copy()
         data = arr.data
@@ -399,6 +399,17 @@ def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
     raise TypeError(
         "sample_interval must be an integer value or array, or numpy.ndarray / xarray.DataArray with type timedelta64.",
     )
+
+
+def ensure_timedelta_seconds_interval(interval):
+    """Return interval as numpy.timedelta64 in seconds."""
+    if isinstance(interval, (xr.DataArray, np.ndarray)):
+        return ensure_sample_interval_in_seconds(interval).astype("m8[s]")
+    return np.array(ensure_sample_interval_in_seconds(interval), dtype="m8[s]")
+
+
+####------------------------------------------
+#### Sample Interval Utilities
 
 
 def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
@@ -659,3 +670,134 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
         ds = ds.isel(time=idx_valid_timesteps)
     # Return dataset
     return ds
+
+
+####---------------------------------------------------------------------------------
+#### Time blocks
+
+
+def check_freq(freq: str) -> None:
+    """Check validity of freq argument."""
+    valid_freq = ["none", "year", "season", "quarter", "month", "day", "hour"]
+    if not isinstance(freq, str):
+        raise TypeError("'freq' must be a string.")
+    if freq not in valid_freq:
+        raise ValueError(
+            f"'freq' '{freq}' is not possible. Must be one of: {valid_freq}.",
+        )
+    return freq
+
+
+def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, freq: str) -> np.ndarray:  # noqa: PLR0911
+    """Generate time blocks between `start_time` and `end_time` for a given frequency.
+
+    Parameters
+    ----------
+    start_time : numpy.datetime64
+        Inclusive start of the overall time range.
+    end_time : numpy.datetime64
+        Inclusive end of the overall time range.
+    freq : str
+        Frequency specifier. Accepted values are:
+        - 'none'    : return a single block [start_time, end_time]
+        - 'day'     : split into daily blocks
+        - 'month'   : split into calendar months
+        - 'quarter' : split into calendar quarters
+        - 'year'    : split into calendar years
+        - 'season'  : split into meteorological seasons (MAM, JJA, SON, DJF)
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of shape (n, 2) with dtype datetime64[s], where each row is [block_start, block_end].
+
+    """
+    freq = check_freq(freq)
+    if freq == "none":
+        return np.array([[start_time, end_time]], dtype="datetime64[s]")
+
+    if freq == "hour":
+        periods = pd.period_range(start=start_time, end=end_time, freq="h")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "day":
+        periods = pd.period_range(start=start_time, end=end_time, freq="d")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "month":
+        periods = pd.period_range(start=start_time, end=end_time, freq="M")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "year":
+        periods = pd.period_range(start=start_time, end=end_time, freq="Y")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "quarter":
+        periods = pd.period_range(start=start_time, end=end_time, freq="Q")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.floor("s").to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "season":
+        # Fiscal quarter frequency ending in Feb → seasons DJF, MAM, JJA, SON
+        periods = pd.period_range(start=start_time, end=end_time, freq="Q-FEB")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+    raise NotImplementedError(f"Frequency '{freq}' is not implemented.")

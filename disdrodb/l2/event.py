@@ -15,105 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Functions for event definition."""
-import dask
+
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 from disdrodb.api.info import get_start_end_time_from_filepaths
-from disdrodb.utils.time import acronym_to_seconds, ensure_sorted_by_time
-
-
-@dask.delayed
-def _delayed_open_dataset(filepath):
-    with dask.config.set(scheduler="synchronous"):
-        ds = xr.open_dataset(filepath, chunks={}, autoclose=True, decode_timedelta=False, cache=False)
-    return ds
-
-
-def identify_events(
-    filepaths,
-    parallel=False,
-    min_n_drops=5,
-    neighbor_min_size=2,
-    neighbor_time_interval="5MIN",
-    intra_event_max_time_gap="6H",
-    event_min_duration="5MIN",
-    event_min_size=3,
-):
-    """Return a list of rainy events.
-
-    Rainy timesteps are defined when N > min_n_drops.
-    Any rainy isolated timesteps (based on neighborhood criteria) is removed.
-    Then, consecutive rainy timesteps are grouped into the same event if the time gap between them does not
-    exceed `intra_event_max_time_gap`. Finally, events that do not meet minimum size or duration
-    requirements are filtered out.
-
-    Parameters
-    ----------
-    filepaths: list
-        List of L1C file paths.
-    parallel: bool
-        Whether to load the files in parallel.
-        Set parallel=True only in a multiprocessing environment.
-        The default is False.
-    neighbor_time_interval : str
-        The time interval around a given a timestep defining the neighborhood.
-        Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
-    neighbor_min_size : int, optional
-        The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
-        timestep to be considered non-isolated.  Isolated timesteps are removed !
-        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
-        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
-        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
-        Defaults to 1.
-    intra_event_max_time_gap: str
-        The maximum time interval between two timesteps to be considered part of the same event.
-        This parameters is used to group timesteps into events !
-    event_min_duration : str
-        The minimum duration an event must span. Events shorter than this duration are discarded.
-    event_min_size : int, optional
-        The minimum number of valid timesteps required for an event. Defaults to 1.
-
-    Returns
-    -------
-    list of dict
-        A list of events, where each event is represented as a dictionary with keys:
-        - "start_time": np.datetime64, start time of the event
-        - "end_time": np.datetime64, end time of the event
-        - "duration": np.timedelta64, duration of the event
-        - "n_timesteps": int, number of valid timesteps in the event
-    """
-    # Open datasets in parallel
-    if parallel:
-        list_ds = dask.compute([_delayed_open_dataset(filepath) for filepath in filepaths])[0]
-    else:
-        list_ds = [xr.open_dataset(filepath, chunks={}, cache=False, decode_timedelta=False) for filepath in filepaths]
-    # Filter dataset for requested variables
-    variables = ["time", "N"]
-    list_ds = [ds[variables] for ds in list_ds]
-    # Concat datasets
-    ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
-    # Read in memory the variable needed
-    ds = ds.compute()
-    # Close file on disk
-    _ = [ds.close() for ds in list_ds]
-    del list_ds
-    # Sort dataset by time
-    ds = ensure_sorted_by_time(ds)
-    # Define candidate timesteps to group into events
-    idx_valid = ds["N"].data > min_n_drops
-    timesteps = ds["time"].data[idx_valid]
-    # Define event list
-    event_list = group_timesteps_into_event(
-        timesteps=timesteps,
-        neighbor_min_size=neighbor_min_size,
-        neighbor_time_interval=neighbor_time_interval,
-        intra_event_max_time_gap=intra_event_max_time_gap,
-        event_min_duration=event_min_duration,
-        event_min_size=event_min_size,
-    )
-    return event_list
+from disdrodb.utils.time import acronym_to_seconds, ensure_timedelta_seconds_interval
 
 
 def group_timesteps_into_event(
@@ -324,7 +231,7 @@ def group_timesteps_into_events(timesteps, intra_event_max_time_gap):
 ####-----------------------------------------------------------------------------------.
 
 
-def get_events_info(list_events, filepaths, accumulation_interval, rolling):
+def get_events_info(list_events, filepaths, sample_interval, accumulation_interval, rolling):  # noqa: ARG001
     """
     Provide information about the required files for each event.
 
@@ -339,6 +246,8 @@ def get_events_info(list_events, filepaths, accumulation_interval, rolling):
         keys with `numpy.datetime64` values.
     filepaths : list of str
         List of file paths corresponding to data files.
+    sample_interval : numpy.timedelta64 or int
+        The sample interval of the input dataset.
     accumulation_interval : numpy.timedelta64 or int
         Time interval to adjust the event period for accumulation. If an integer is provided, it is
         assumed to be in seconds.
@@ -355,9 +264,9 @@ def get_events_info(list_events, filepaths, accumulation_interval, rolling):
         - 'filepaths': List of file paths overlapping with the adjusted event period.
 
     """
-    # Ensure accumulation_interval is numpy.timedelta64
-    if not isinstance(accumulation_interval, np.timedelta64):
-        accumulation_interval = np.timedelta64(accumulation_interval, "s")
+    # Ensure sample_interval and accumulation_interval is numpy.timedelta64
+    accumulation_interval = ensure_timedelta_seconds_interval(accumulation_interval)
+    sample_interval = ensure_timedelta_seconds_interval(sample_interval)
 
     # Retrieve file start_time and end_time
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
@@ -369,11 +278,9 @@ def get_events_info(list_events, filepaths, accumulation_interval, rolling):
         event_start_time = event_dict["start_time"]
         event_end_time = event_dict["end_time"]
 
-        # Add buffer to account for accumulation interval
-        if rolling:  # backward
-            event_start_time = event_start_time - np.array(accumulation_interval, dtype="m8[s]")
-        else:  # aggregate forward
-            event_end_time = event_end_time + np.array(accumulation_interval, dtype="m8[s]")
+        # Adapt event_end_time if accumulation interval different from sample interval
+        if sample_interval != accumulation_interval:
+            event_end_time = event_end_time + accumulation_interval
 
         # Derive event filepaths
         overlaps = (files_start_time <= event_end_time) & (files_end_time >= event_start_time)

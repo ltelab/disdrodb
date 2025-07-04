@@ -1,0 +1,8 @@
+psd_model: "NormalizedGammaPSD"
+optimization: "GS"
+optimization_kwargs: 
+  target: "Z"
+  transformation: "identity"
+  error_order: 1 
+
+

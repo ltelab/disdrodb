@@ -26,6 +26,11 @@ def get_attrs_dict():
             "long_name": "Drop counts per diameter and velocity class",
             "units": "",
         },
+        "raw_drop_number": {
+            "description": "Counts of drops per diameter and velocity class",
+            "long_name": "Drop counts per diameter and velocity class",
+            "units": "",
+        },
         "drop_counts": {
             "description": "Counts of drops per diameter class",
             "long_name": "Drop counts per diameter class",
@@ -441,6 +446,15 @@ def get_encoding_dict():
             "contiguous": False,
         },
         "drop_number": {
+            "dtype": "uint32",
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
+            "_FillValue": 4294967295,
+        },
+        "raw_drop_number": {
             "dtype": "uint32",
             "zlib": True,
             "complevel": 3,

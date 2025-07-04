@@ -129,6 +129,7 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
     xarray.Dataset
         DISRODB L2E dataset.
     """
+    # TODO: compute_spectra, percentage_contribution options --> Add to YAML file
     # Initialize L2E dataset
     ds_l2 = xr.Dataset()
 
@@ -172,6 +173,7 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
 
     # Copy relevant L1 variables to L2 product
     variables = [
+        "raw_drop_number",  # 2D V x D
         "drop_number",  # 2D V x D
         "drop_counts",  # 1D D
         "sample_interval",
@@ -357,6 +359,8 @@ def generate_l2_model(
 
     ####------------------------------------------------------.
     #### Preprocessing
+    # TODO: Add filtering arguments to YAML files !
+
     # Count number of diameter bins with data
     if "Nbins" not in ds:
         # Add bins statistics

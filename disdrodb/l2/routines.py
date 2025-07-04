@@ -28,12 +28,11 @@ import pandas as pd
 import xarray as xr
 
 # Directory
-from disdrodb import is_pytmatrix_available
 from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
-from disdrodb.api.info import group_filepaths
+from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
 from disdrodb.api.io import find_files
 from disdrodb.api.path import (
     define_accumulation_acronym,
@@ -41,15 +40,20 @@ from disdrodb.api.path import (
     define_l2m_filename,
 )
 from disdrodb.api.search import get_required_product
-from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
+from disdrodb.configs import (
+    get_data_archive_dir,
+    get_metadata_archive_dir,
+    get_model_options,
+    get_product_options,
+    get_product_time_integrations,
+)
 from disdrodb.l1.resampling import resample_dataset
-from disdrodb.l2.event import get_events_info, identify_events
+from disdrodb.l2.event import get_events_info, group_timesteps_into_event
 from disdrodb.l2.processing import (
     generate_l2_empirical,
     generate_l2_model,
     generate_l2_radar,
 )
-from disdrodb.l2.processing_options import get_l2_processing_options
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 from disdrodb.utils.list import flatten_list
@@ -62,10 +66,203 @@ from disdrodb.utils.logger import (
     log_error,
     log_info,
 )
-from disdrodb.utils.time import ensure_sample_interval_in_seconds, get_resampling_information, regularize_dataset
+from disdrodb.utils.time import (
+    ensure_sample_interval_in_seconds,
+    ensure_sorted_by_time,
+    generate_time_blocks,
+    get_resampling_information,
+    regularize_dataset,
+)
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
+
+
+@dask.delayed
+def _delayed_open_dataset(filepath):
+    with dask.config.set(scheduler="synchronous"):
+        ds = xr.open_dataset(filepath, chunks={}, autoclose=True, decode_timedelta=False, cache=False)
+    return ds
+
+
+####----------------------------------------------------------------------------.
+def identify_events(
+    filepaths,
+    parallel=False,
+    min_n_drops=5,
+    neighbor_min_size=2,
+    neighbor_time_interval="5MIN",
+    intra_event_max_time_gap="6H",
+    event_min_duration="5MIN",
+    event_min_size=3,
+):
+    """Return a list of rainy events.
+
+    Rainy timesteps are defined when N > min_n_drops.
+    Any rainy isolated timesteps (based on neighborhood criteria) is removed.
+    Then, consecutive rainy timesteps are grouped into the same event if the time gap between them does not
+    exceed `intra_event_max_time_gap`. Finally, events that do not meet minimum size or duration
+    requirements are filtered out.
+
+    Parameters
+    ----------
+    filepaths: list
+        List of L1C file paths.
+    parallel: bool
+        Whether to load the files in parallel.
+        Set parallel=True only in a multiprocessing environment.
+        The default is False.
+    neighbor_time_interval : str
+        The time interval around a given a timestep defining the neighborhood.
+        Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
+    neighbor_min_size : int, optional
+        The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
+        timestep to be considered non-isolated.  Isolated timesteps are removed !
+        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
+        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
+        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
+        Defaults to 1.
+    intra_event_max_time_gap: str
+        The maximum time interval between two timesteps to be considered part of the same event.
+        This parameters is used to group timesteps into events !
+    event_min_duration : str
+        The minimum duration an event must span. Events shorter than this duration are discarded.
+    event_min_size : int, optional
+        The minimum number of valid timesteps required for an event. Defaults to 1.
+
+    Returns
+    -------
+    list of dict
+        A list of events, where each event is represented as a dictionary with keys:
+        - "start_time": np.datetime64, start time of the event
+        - "end_time": np.datetime64, end time of the event
+        - "duration": np.timedelta64, duration of the event
+        - "n_timesteps": int, number of valid timesteps in the event
+    """
+    # Open datasets in parallel
+    if parallel:
+        list_ds = dask.compute([_delayed_open_dataset(filepath) for filepath in filepaths])[0]
+    else:
+        list_ds = [xr.open_dataset(filepath, chunks={}, cache=False, decode_timedelta=False) for filepath in filepaths]
+    # Filter dataset for requested variables
+    variables = ["time", "N"]
+    list_ds = [ds[variables] for ds in list_ds]
+    # Concat datasets
+    ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
+    # Read in memory the variable needed
+    ds = ds.compute()
+    # Close file on disk
+    _ = [ds.close() for ds in list_ds]
+    del list_ds
+    # Sort dataset by time
+    ds = ensure_sorted_by_time(ds)
+    # Define candidate timesteps to group into events
+    idx_valid = ds["N"].data > min_n_drops
+    timesteps = ds["time"].data[idx_valid]
+    # Define event list
+    event_list = group_timesteps_into_event(
+        timesteps=timesteps,
+        neighbor_min_size=neighbor_min_size,
+        neighbor_time_interval=neighbor_time_interval,
+        intra_event_max_time_gap=intra_event_max_time_gap,
+        event_min_duration=event_min_duration,
+        event_min_size=event_min_size,
+    )
+    return event_list
+
+
+def identify_time_partitions(filepaths: list[str], freq: str) -> list[dict]:
+    """Identify the set of time blocks covered by files.
+
+    The result is a minimal, sorted, and unique set of time partitions.
+
+    Parameters
+    ----------
+    filepaths : list of str
+        Paths to input files from which start and end times will be extracted
+        via `get_start_end_time_from_filepaths`.
+    freq : {'none', 'hour', 'day', 'month', 'quarter', 'season', 'year'}
+        Frequency determining the granularity of candidate blocks.
+        See `generate_time_blocks` for more details.
+
+    Returns
+    -------
+    list of dict
+        A list of dictionaries, each containing:
+
+        - `start_time` (numpy.datetime64[s])
+            Inclusive start of a time block.
+        - `end_time` (numpy.datetime64[s])
+            Inclusive end of a time block.
+
+        Only those blocks that overlap at least one file's interval are returned.
+        The list is sorted by `start_time` and contains no duplicate blocks.
+    """
+    # Define file start time and end time
+    start_times, end_times = get_start_end_time_from_filepaths(filepaths)
+
+    # Define files time coverage
+    start_time, end_time = start_times.min(), end_times.max()
+
+    # Compute candidate time blocks
+    blocks = generate_time_blocks(start_time, end_time, freq=freq)  # end_time non inclusive is correct?
+
+    # Select time blocks with files
+    mask = (blocks[:, 0][:, None] <= end_times) & (blocks[:, 1][:, None] >= start_times)
+    blocks = blocks[mask.any(axis=1)]
+
+    # Ensure sorted unique time blocks
+    order = np.argsort(blocks[:, 0])
+    blocks = np.unique(blocks[order], axis=0)
+
+    # Convert to list of dicts
+    list_time_blocks = [{"start_time": start_time, "end_time": end_time} for start_time, end_time in blocks]
+    return list_time_blocks
+
+
+def is_possible_product(accumulation_interval, sample_interval, rolling):
+    """Assess if production is possible given the requested accumulation interval and source sample_interval."""
+    # Avoid rolling product generation at source sample interval
+    if rolling and accumulation_interval == sample_interval:
+        return False
+    # Avoid product generation if the accumulation_interval is less than the sample interval
+    if accumulation_interval < sample_interval:
+        return False
+    # Avoid producti generation if accumulation_interval is not multiple of sample_interval
+    return accumulation_interval % sample_interval == 0
+
+
+def get_list_events(filepaths, parallel, l2_processing_options):
+    # - [(start_time, end_time)]
+    # - Either save_by_event or save_by_time_block
+    # - save_by_event requires loading data into memory
+    #   --> Does some data selection on what to process !
+    # - save_by_time_block does not require loading data into memory
+    #   --> Does not do some data selection on what to process !
+
+    # save_by_event
+    # - event options
+
+    # save_by_time_block
+    # - year, season, month, day
+
+    # TODO: Here pass event option list !
+    #  - min_n_drops=5,
+    #  - neighbor_min_size=2,
+    #  - neighbor_time_interval="5MIN",
+    #  - intra_event_max_time_gap="6H",
+    #  - event_min_duration="5MIN",
+    #  - event_min_size=3,
+
+    freq = "month"
+
+    # l2_processing_options
+    save_by_event = False
+
+    if save_by_event:
+        return identify_events(filepaths, parallel=parallel)
+
+    return identify_time_partitions(filepaths, freq=freq)
 
 
 ####----------------------------------------------------------------------------.
@@ -85,10 +282,7 @@ def _generate_l2e(
     # L2E options
     accumulation_interval,
     rolling,
-    l2e_options,
-    # Radar options
-    radar_simulation_enabled,
-    radar_simulation_options,
+    product_options,
     # Processing options
     force,
     verbose,
@@ -139,6 +333,8 @@ def _generate_l2e(
         # --> Aggregation with original missing timesteps currently results in NaN !
         # TODO: Add tolerance on fraction of missing timesteps for large accumulation_intervals
         # TODO: NaN should not be set as 0 !
+
+        ds["raw_drop_number"] = xr.where(np.isnan(ds["raw_drop_number"]), 0, ds["raw_drop_number"])
         ds["drop_number"] = xr.where(np.isnan(ds["drop_number"]), 0, ds["drop_number"])
 
         # - Regularize dataset
@@ -154,49 +350,53 @@ def _generate_l2e(
             rolling=rolling,
         )
 
+        # Extract L2E processing options
+        drop_timesteps_without_drops = product_options.pop("drop_timesteps_without_drops")
+        radar_simulation_enabled = product_options.pop("radar_simulation_enabled")
+        radar_simulation_options = product_options.pop("radar_simulation_options")
+
         ##------------------------------------------------------------------------.
-        # Remove timesteps with no drops or NaN (from L2E computations)
-        # timestep_zero_drops = ds["time"].data[ds["N"].data == 0]
-        # timestep_nan = ds["time"].data[np.isnan(ds["N"].data)]
-        # TODO: Make it a choice !
-        indices_valid_timesteps = np.where(
-            ~np.logical_or(ds["N"].data == 0, np.isnan(ds["N"].data)),
-        )[0]
-        ds = ds.isel(time=indices_valid_timesteps)
+        #### Preprocessing
+        # Optionally remove timesteps with no drops or NaN
+        # --> More aggressive filtering can be done at the time of analysis
+        # --> To not discard data:
+        #     - drop_timesteps_without_drops=False
+        #     - Or a posteriori use regularize_dataset (but info missing timesteps lost)
+        if drop_timesteps_without_drops:
+            indices_valid_timesteps = np.where(
+                ~np.logical_or(ds["N"].data == 0, np.isnan(ds["N"].data)),
+            )[0]
+            ds = ds.isel(time=indices_valid_timesteps)
 
         ##------------------------------------------------------------------------.
         #### Generate L2E product
-        # TODO: Pass filtering criteria and actual L2E options !
-        ds = generate_l2_empirical(ds=ds, **l2e_options)
+        # - Only if at least 2 timesteps available
+        if len(ds["time"].size > 2):
 
-        # Simulate L2M-based radar variables if asked
-        if radar_simulation_enabled:
-            ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_simulation_options)
-            ds.update(ds_radar)
-            ds.attrs = ds_radar.attrs.copy()
+            # Compute L2E variables
+            ds = generate_l2_empirical(ds=ds, **product_options)
 
-        ##------------------------------------------------------------------------.
-        #### Regularize back dataset
-        # TODO: infill timestep_zero_drops and timestep_nan differently ?
-        # --> R, P, LWC = 0,
-        # --> Z, D, with np.nan?
+            # Simulate L2M-based radar variables if asked
+            if radar_simulation_enabled:
+                ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_simulation_options)
+                ds.update(ds_radar)
+                ds.attrs = ds_radar.attrs.copy()
 
-        ##------------------------------------------------------------------------.
-        # Write netCDF4 dataset
-        if ds["time"].size > 1:
-            filename = define_l2e_filename(
-                ds,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                sample_interval=accumulation_interval,
-                rolling=rolling,
-            )
-            filepath = os.path.join(data_dir, filename)
-            write_product(ds, product=product, filepath=filepath, force=force)
+            # Write netCDF4 dataset
+            if ds["time"].size > 1:
+                filename = define_l2e_filename(
+                    ds,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    sample_interval=accumulation_interval,
+                    rolling=rolling,
+                )
+                filepath = os.path.join(data_dir, filename)
+                write_product(ds, product=product, filepath=filepath, force=force)
 
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del ds
+            ##--------------------------------------------------------------------.
+            # Clean environment
+            del ds
 
         # Log end processing
         msg = f"{product} processing of {filename} has ended."
@@ -214,18 +414,6 @@ def _generate_l2e(
 
     # Return the logger file path
     return logger_filepath
-
-
-def is_possible_product(accumulation_interval, sample_interval, rolling):
-    """Assess if production is possible given the requested accumulation interval and source sample_interval."""
-    # Avoid rolling product generation at source sample interval
-    if rolling and accumulation_interval == sample_interval:
-        return False
-    # Avoid product generation if the accumulation_interval is less than the sample interval
-    if accumulation_interval < sample_interval:
-        return False
-    # Avoid producti generation if accumulation_interval is not multiple of sample_interval
-    return accumulation_interval % sample_interval == 0
 
 
 def run_l2e_station(
@@ -332,37 +520,31 @@ def run_l2e_station(
         print(msg)
         return
 
-    # -------------------------------------------------------------------------.
-    # Retrieve L2 processing options
-    # - Each dictionary item contains the processing options for a given rolling/accumulation_interval combo
-    l2_processing_options = get_l2_processing_options()
-
     # ---------------------------------------------------------------------.
-    # Group filepaths by sample intervals
-    # - Typically the sample interval is fixed
+    # Group filepaths by source sample intervals
+    # - Typically the sample interval is fixed and is just one
     # - Some stations might change the sample interval along the years
     # - For each sample interval, separated processing take place here after !
     dict_filepaths = group_filepaths(filepaths, groups="sample_interval")
 
     # -------------------------------------------------------------------------.
-    # Define list of event
-    # - [(start_time, end_time)]
-    # TODO: Here pass event option list !
-    # TODO: Implement more general define_events function
-    # - Either rainy events
-    # - Either time blocks (day/month/year)
-    # TODO: Define events identification settings based on accumulation
-    # - This is currently done at the source sample interval !
-    # - Should we allow event definition for each accumulation interval and
-    #   move this code inside the loop below
+    # Define list of "events"
+    # - [{start_time:xxx, end_time: xxx}, ....]
+    # - Either save_by_event or save_by_time_block
+    # - save_by_event requires loading data into memory
+    #   --> Does some data selection on what to process !
+    # - save_by_time_block does not require loading data into memory
+    #   --> Does not do some data selection on what to process !
+
+    # [IMPROVEMENT] allow custom event definition for each accumulation interval?
+    l2_processing_options = get_product_options("L2E")
+    dict_list_events = {
+        sample_interval: get_list_events(filepaths, parallel=parallel, l2_processing_options=l2_processing_options)
+        for sample_interval, filepaths in dict_filepaths.items()
+    }
 
     # sample_interval = list(dict_filepaths)[0]
     # filepaths = dict_filepaths[sample_interval]
-
-    dict_list_events = {
-        sample_interval: identify_events(filepaths, parallel=parallel)
-        for sample_interval, filepaths in dict_filepaths.items()
-    }
 
     # ---------------------------------------------------------------------.
     # Subset for debugging mode
@@ -377,19 +559,15 @@ def run_l2e_station(
     # rolling = False
     # accumulation_interval = 60
     # sample_interval_acronym = "1MIN"
-    # l2_options = l2_processing_options["1MIN"]
-    available_pytmatrix = is_pytmatrix_available()
+    # product_options = l2_processing_options["1MIN"]
+    time_integrations = get_product_time_integrations("L2E")
+    for sample_interval_acronym in time_integrations:
 
-    for sample_interval_acronym, l2_options in l2_processing_options.items():
+        # Retrieve product options
+        product_options = get_product_options("L2E", time_integration=sample_interval_acronym)
 
         # Retrieve accumulation_interval and rolling option
         accumulation_interval, rolling = get_resampling_information(sample_interval_acronym)
-
-        # Retrieve radar simulation options
-        radar_simulation_enabled = l2_options.get("radar_simulation_enabled", False)
-        radar_simulation_options = l2_options["radar_simulation_options"]
-        if not available_pytmatrix:
-            radar_simulation_enabled = False
 
         # ------------------------------------------------------------------.
         # Group filepaths by events
@@ -397,12 +575,14 @@ def run_l2e_station(
         # - It groups filepaths by start_time and end_time provided by list_events
         # - Here 'events' can also simply be period of times ('day', 'months', ...)
         # - When aggregating/resampling/accumulating data, we need to load also
-        #   some data before/after the actual event start_time/end_time
-        # - get_events_info adjust the event times to accounts for the required "border" data.
+        #   some data after the actual event end_time to ensure that the resampled dataset
+        #   contains the event_end_time
+        #   --> get_events_info adjust the event end_time to accounts for the required "border" data.
         events_info = [
             get_events_info(
                 list_events=list_events,
                 filepaths=dict_filepaths[sample_interval],
+                sample_interval=sample_interval,
                 accumulation_interval=accumulation_interval,
                 rolling=rolling,
             )
@@ -464,10 +644,7 @@ def run_l2e_station(
                 # L2E options
                 rolling=rolling,
                 accumulation_interval=accumulation_interval,
-                l2e_options={},  # TODO
-                # Radar options
-                radar_simulation_enabled=radar_simulation_enabled,
-                radar_simulation_options=radar_simulation_options,
+                product_options=product_options,
                 # Processing options
                 force=force,
                 verbose=verbose,
@@ -516,10 +693,7 @@ def _generate_l2m(
     sample_interval,
     rolling,
     model_name,
-    l2m_options,
-    # Radar options
-    radar_simulation_enabled,
-    radar_simulation_options,
+    product_options,
     # Processing options
     force,
     verbose,
@@ -528,13 +702,6 @@ def _generate_l2m(
     # -----------------------------------------------------------------.
     # Define product name
     product = "L2M"
-
-    # -----------------------------------------------------------------.
-    # Define model options
-    psd_model = l2m_options["models"][model_name]["psd_model"]
-    optimization = l2m_options["models"][model_name]["optimization"]
-    optimization_kwargs = l2m_options["models"][model_name]["optimization_kwargs"]
-    other_options = {k: v for k, v in l2m_options.items() if k != "models"}
 
     # -----------------------------------------------------------------.
     # Create file logger
@@ -550,7 +717,20 @@ def _generate_l2m(
     msg = f"{product} processing of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
 
+    # Define variables to load
+    optimization_kwargs = product_options["optimization_kwargs"]
+    if "init_method" in optimization_kwargs:
+        init_method = optimization_kwargs["init_method"]
+        moments = [f"M{order}" for order in init_method.replace("M", "")] + ["M1"]
+    else:
+        moments = ["M1"]
+
     ##------------------------------------------------------------------------.
+    # Extract L2M processing options
+    radar_simulation_enabled = product_options.pop("radar_simulation_enabled")
+    radar_simulation_options = product_options.pop("radar_simulation_options")
+
+    ##------------------------------------------------------------------------
     ### Core computation
     try:
         # Open the raw netCDF
@@ -561,22 +741,14 @@ def _generate_l2m(
                 "D50",
                 "Nw",
                 "Nt",
-                "M1",
-                "M2",
-                "M3",
-                "M4",
-                "M5",
-                "M6",
+                *moments,
             ]
             ds = ds[variables].load()
 
         # Produce L2M dataset
         ds = generate_l2_model(
             ds=ds,
-            psd_model=psd_model,
-            optimization=optimization,
-            optimization_kwargs=optimization_kwargs,
-            **other_options,
+            **product_options,
         )
 
         # Simulate L2M-based radar variables if asked
@@ -687,11 +859,6 @@ def run_l2m_station(
         msg = f"{product} processing of station {station_name} has started."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
-    # -------------------------------------------------------------------------.
-    # Retrieve L2 processing options
-    # - Each dictionary item contains the processing options for a given rolling/accumulation_interval combo
-    l2_processing_options = get_l2_processing_options()
-
     # ---------------------------------------------------------------------.
     # Retrieve source sampling interval
     # - If a station has varying measurement interval over time, choose the smallest one !
@@ -708,21 +875,14 @@ def run_l2m_station(
     # ---------------------------------------------------------------------.
     # Loop
     # sample_interval_acronym = "1MIN"
-    # l2_options = l2_processing_options["1MIN"]
-    available_pytmatrix = is_pytmatrix_available()
-    for sample_interval_acronym, l2_options in l2_processing_options.items():
+    time_integrations = get_product_time_integrations("L2M")
+    for sample_interval_acronym in time_integrations:
+
+        # Retrieve product options
+        product_options = get_product_options("L2M", time_integration=sample_interval_acronym)
 
         # Retrieve accumulation_interval and rolling option
         accumulation_interval, rolling = get_resampling_information(sample_interval_acronym)
-
-        # Retrieve L2M processing options
-        l2m_options = l2_options["l2m_options"]
-
-        # Retrieve radar simulation options
-        radar_simulation_enabled = l2_options.get("radar_simulation_enabled", False)
-        radar_simulation_options = l2_options["radar_simulation_options"]
-        if not available_pytmatrix:
-            radar_simulation_enabled = False
 
         # ------------------------------------------------------------------.
         # Avoid generation of rolling products for source sample interval !
@@ -768,11 +928,15 @@ def run_l2m_station(
         # Loop over distributions to fit
         # model_name = "GAMMA_ML"
         # model_options =  l2m_options["models"][model_name]
-        for model_name, model_options in l2m_options["models"].items():
+        # Retrieve list of models to fit
+        models = product_options.pop("models")
+        for model_name in models:
 
             # Retrieve model options
+            model_options = get_model_options(product="L2M", model_name=model_name)
             psd_model = model_options["psd_model"]
             optimization = model_options["optimization"]
+            product_options.update(model_options)
 
             # -----------------------------------------------------------------.
             msg = f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."
@@ -829,10 +993,7 @@ def run_l2m_station(
                     sample_interval=accumulation_interval,
                     rolling=rolling,
                     model_name=model_name,
-                    l2m_options=l2m_options,
-                    # Radar options
-                    radar_simulation_enabled=radar_simulation_enabled,
-                    radar_simulation_options=radar_simulation_options,
+                    product_options=product_options,
                     # Processing options
                     force=force,
                     verbose=verbose,
