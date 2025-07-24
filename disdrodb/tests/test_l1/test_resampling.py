@@ -15,59 +15,61 @@
 # along with this progra  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Testing resampling utilities."""
-import pytest
 import numpy as np
 import pandas as pd
+import pytest
 import xarray as xr
-from disdrodb.l1.resampling import ( 
+
+from disdrodb.l1.resampling import (
     add_sample_interval,
     define_window_size,
     resample_dataset,
 )
+
 
 class TestAddSampleInterval:
     def test_adds_sample_interval_coordinate(self):
         """Adds the sample_interval coordinate to the dataset."""
         ds = xr.Dataset()
         result = add_sample_interval(ds, 2)
-        assert 'sample_interval' in result.coords
+        assert "sample_interval" in result.coords
 
     def test_sets_coordinate_values(self):
         """Sets the correct value for the sample_interval coordinate."""
         ds = xr.Dataset()
         result = add_sample_interval(ds, 7)
-        assert result['sample_interval'].item() == 7
+        assert result["sample_interval"].item() == 7
 
     def test_sample_interval_attributes(self):
         """Sets description, long_name, and units on the coordinate."""
         ds = xr.Dataset()
         result = add_sample_interval(ds, 3)
-        var = result['sample_interval']
-        assert var.attrs['description'] == 'Sample interval'
-        assert var.attrs['long_name'] == 'Sample interval'
-        assert var.attrs['units'] == 'seconds'
+        var = result["sample_interval"]
+        assert var.attrs["description"] == "Sample interval"
+        assert var.attrs["long_name"] == "Sample interval"
+        assert var.attrs["units"] == "seconds"
 
     def test_sets_as_coordinate(self):
         """Marks sample_interval as a coordinate, not just a variable."""
         ds = xr.Dataset()
         result = add_sample_interval(ds, 1)
         # xarray caches coords in .coords
-        assert 'sample_interval' in result.coords
+        assert "sample_interval" in result.coords
         # and not in .data_vars
-        assert 'sample_interval' not in result.data_vars
+        assert "sample_interval" not in result.data_vars
 
     def test_updates_measurement_interval_attribute(self):
         """Updates the dataset's measurement_interval attribute."""
-        ds = xr.Dataset(attrs={'measurement_interval': 60})
+        ds = xr.Dataset(attrs={"measurement_interval": 60})
         result = add_sample_interval(ds, 120)
-        assert result.attrs['measurement_interval'] == 120
+        assert result.attrs["measurement_interval"] == 120
 
     def test_float_sample_interval_casts_to_int(self):
         """Casts a float sample_interval to int for measurement_interval."""
         ds = xr.Dataset()
         result = add_sample_interval(ds, 60.0)
-        assert isinstance(result.attrs['measurement_interval'], int)
-        assert result.attrs['measurement_interval'] == int(60.0)
+        assert isinstance(result.attrs["measurement_interval"], int)
+        assert result.attrs["measurement_interval"] == int(60.0)
 
     def test_original_dataset_unmodified(self):
         """Does not add sample_interval to the original dataset object."""
@@ -75,8 +77,8 @@ class TestAddSampleInterval:
         ds_copy = ds.copy()
         _ = add_sample_interval(ds, 4)
         # original ds_copy still has no sample_interval
-        assert 'sample_interval' not in ds_copy.coords
-        
+        assert "sample_interval" not in ds_copy.coords
+
 
 class TestDefineWindowSize:
     def test_exact_multiple_returns_correct_size(self):
@@ -113,7 +115,7 @@ class TestDefineWindowSize:
 
 
 class TestResampleDataset:
-    
+
     def test_case_sample_interval_equal_accumulation_interval(self):
         """Test it returns regularized input dataset with sample_interval coordinate and flags."""
         ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=5, freq="1min")})
@@ -124,18 +126,18 @@ class TestResampleDataset:
         # Test flags set correctly
         assert out.attrs["disdrodb_rolled_product"] == "True"
         assert out.attrs["disdrodb_aggregated_product"] == "False"
-    
+
     def test_case_when_accumulation_interval_not_multiple_sample_interval(self):
-       """Test raises ValueError if accumulation_interval is not a multiple of sample_interval."""
-       ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01", periods=3, freq="2min")})
-       with pytest.raises(ValueError):
-           resample_dataset(ds, sample_interval=120, accumulation_interval=200, rolling=True)
+        """Test raises ValueError if accumulation_interval is not a multiple of sample_interval."""
+        ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01", periods=3, freq="2min")})
+        with pytest.raises(ValueError):
+            resample_dataset(ds, sample_interval=120, accumulation_interval=200, rolling=True)
 
     def test_case_when_accumulation_interval_smaller_than_sample_interval(self):
-       """Test raises ValueError if accumulation_interval is less than sample_interval."""
-       ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01", periods=3, freq="1min")})
-       with pytest.raises(ValueError):
-           resample_dataset(ds, sample_interval=60, accumulation_interval=30, rolling=False)
+        """Test raises ValueError if accumulation_interval is less than sample_interval."""
+        ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01", periods=3, freq="1min")})
+        with pytest.raises(ValueError):
+            resample_dataset(ds, sample_interval=60, accumulation_interval=30, rolling=False)
 
     def test_non_rolling_resample_aggregates_correctly(self):
         """Test aggregates correctly when rolling=False."""
@@ -178,7 +180,7 @@ class TestResampleDataset:
             {
                 "fall_velocity": ("time", [10, 20, 30, 40]),
                 "drop_number": ("time", [1, 1, 1, 1]),
-                "raw_drop_number": ("time",  [2, 3, 4, 5]),
+                "raw_drop_number": ("time", [2, 3, 4, 5]),
             },
             coords={"time": times},
         )
@@ -187,7 +189,7 @@ class TestResampleDataset:
         # Window size of 2
         # Output time indicate start of the integration !
         expected_times = pd.to_datetime(
-            ["2000-01-01T00:00:00", "2000-01-01T00:01:00", "2000-01-01T00:02:00"]
+            ["2000-01-01T00:00:00", "2000-01-01T00:01:00", "2000-01-01T00:02:00"],
         )
         assert list(out["time"].data) == list(expected_times)
         np.testing.assert_allclose(out["fall_velocity"], [15, 25, 35])

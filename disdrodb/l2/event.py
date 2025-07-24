@@ -25,7 +25,7 @@ from disdrodb.utils.time import acronym_to_seconds, ensure_timedelta_seconds_int
 
 def group_timesteps_into_event(
     timesteps,
-    intra_event_max_time_gap,
+    event_max_time_gap,
     event_min_size=0,
     event_min_duration="0S",
     neighbor_min_size=0,
@@ -37,7 +37,7 @@ def group_timesteps_into_event(
     This function groups valid candidate timesteps into events by considering how they cluster
     in time. Any isolated timesteps (based on neighborhood criteria) are first removed. Then,
     consecutive timesteps are grouped into the same event if the time gap between them does not
-    exceed `intra_event_max_time_gap`. Finally, events that do not meet minimum size or duration
+    exceed `event_max_time_gap`. Finally, events that do not meet minimum size or duration
     requirements are filtered out.
 
     Please note that neighbor_min_size and neighbor_time_interval are very sensitive to the
@@ -57,7 +57,7 @@ def group_timesteps_into_event(
         - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
         - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
         Defaults to 1.
-    intra_event_max_time_gap: str
+    event_max_time_gap: str
         The maximum time interval between two timesteps to be considered part of the same event.
         This parameters is used to group timesteps into events !
     event_min_duration : str
@@ -76,7 +76,7 @@ def group_timesteps_into_event(
     """
     # Retrieve datetime arguments
     neighbor_time_interval = pd.Timedelta(acronym_to_seconds(neighbor_time_interval), unit="seconds")
-    intra_event_max_time_gap = pd.Timedelta(acronym_to_seconds(intra_event_max_time_gap), unit="seconds")
+    event_max_time_gap = pd.Timedelta(acronym_to_seconds(event_max_time_gap), unit="seconds")
     event_min_duration = pd.Timedelta(acronym_to_seconds(event_min_duration), unit="seconds")
 
     # Remove isolated timesteps
@@ -87,8 +87,8 @@ def group_timesteps_into_event(
     )
 
     # Group timesteps into events
-    # - If two timesteps are separated by less than intra_event_max_time_gap, are considered the same event
-    events = group_timesteps_into_events(timesteps, intra_event_max_time_gap)
+    # - If two timesteps are separated by less than event_max_time_gap, are considered the same event
+    events = group_timesteps_into_events(timesteps, event_max_time_gap)
 
     # Define list of event
     event_list = [
@@ -177,7 +177,7 @@ def remove_isolated_timesteps(timesteps, neighbor_min_size, neighbor_time_interv
     return non_isolated_timesteps
 
 
-def group_timesteps_into_events(timesteps, intra_event_max_time_gap):
+def group_timesteps_into_events(timesteps, event_max_time_gap):
     """
     Group valid timesteps into events based on a maximum allowed dry interval.
 
@@ -185,7 +185,7 @@ def group_timesteps_into_events(timesteps, intra_event_max_time_gap):
     ----------
     timesteps : array-like of np.datetime64
         Sorted array of valid timesteps.
-    intra_event_max_time_gap : np.timedelta64
+    event_max_time_gap : np.timedelta64
         Maximum time interval allowed between consecutive valid timesteps for them
         to be considered part of the same event.
 
@@ -204,9 +204,9 @@ def group_timesteps_into_events(timesteps, intra_event_max_time_gap):
     # Compute differences between consecutive timesteps
     diffs = np.diff(timesteps)
 
-    # Identify the indices where the gap is larger than intra_event_max_time_gap
+    # Identify the indices where the gap is larger than event_max_time_gap
     # These indices represent boundaries between events
-    break_indices = np.where(diffs > intra_event_max_time_gap)[0] + 1
+    break_indices = np.where(diffs > event_max_time_gap)[0] + 1
 
     # Split the timesteps at the identified break points
     events = np.split(timesteps, break_indices)
@@ -218,7 +218,7 @@ def group_timesteps_into_events(timesteps, intra_event_max_time_gap):
     #     current_t = timesteps[i]
     #     previous_t = timesteps[i - 1]
 
-    #     if current_t - previous_t <= intra_event_max_time_gap:
+    #     if current_t - previous_t <= event_max_time_gap:
     #         current_event.append(current_t)
     #     else:
     #         events.append(current_event)
@@ -231,17 +231,17 @@ def group_timesteps_into_events(timesteps, intra_event_max_time_gap):
 ####-----------------------------------------------------------------------------------.
 
 
-def get_events_info(list_events, filepaths, sample_interval, accumulation_interval, rolling):  # noqa: ARG001
+def get_files_partitions(list_partitions, filepaths, sample_interval, accumulation_interval, rolling):  # noqa: ARG001
     """
     Provide information about the required files for each event.
 
-    For each event in `list_events`, this function identifies the file paths from `filepaths` that
+    For each event in `list_partitions`, this function identifies the file paths from `filepaths` that
     overlap with the event period, adjusted by the `accumulation_interval`. The event period is
     extended backward or forward based on the `rolling` parameter.
 
     Parameters
     ----------
-    list_events : list of dict
+    list_partitions : list of dict
         List of events, where each event is a dictionary containing at least 'start_time' and 'end_time'
         keys with `numpy.datetime64` values.
     filepaths : list of str
@@ -273,7 +273,7 @@ def get_events_info(list_events, filepaths, sample_interval, accumulation_interv
 
     # Retrieve information for each event
     event_info = []
-    for event_dict in list_events:
+    for event_dict in list_partitions:
         # Retrieve event time period
         event_start_time = event_dict["start_time"]
         event_end_time = event_dict["end_time"]

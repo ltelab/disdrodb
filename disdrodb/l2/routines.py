@@ -17,8 +17,10 @@
 """Implements routines for DISDRODB L2 processing."""
 
 import datetime
+import json
 import logging
 import os
+import shutil
 import time
 from typing import Optional
 
@@ -36,6 +38,7 @@ from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
 from disdrodb.api.io import find_files
 from disdrodb.api.path import (
     define_accumulation_acronym,
+    define_file_folder_path,
     define_l2e_filename,
     define_l2m_filename,
 )
@@ -48,7 +51,7 @@ from disdrodb.configs import (
     get_product_time_integrations,
 )
 from disdrodb.l1.resampling import resample_dataset
-from disdrodb.l2.event import get_events_info, group_timesteps_into_event
+from disdrodb.l2.event import get_files_partitions, group_timesteps_into_event
 from disdrodb.l2.processing import (
     generate_l2_empirical,
     generate_l2_model,
@@ -85,23 +88,40 @@ def _delayed_open_dataset(filepath):
     return ds
 
 
+def _open_files(filepaths, start_time, end_time, variables=None):
+    list_ds = [
+        xr.open_dataset(filepath, chunks=-1, decode_timedelta=False, cache=False, autoclose=True)
+        for filepath in filepaths
+    ]
+    # - Concatenate datasets
+    ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
+    # - Subset variables
+    if variables is not None:
+        ds = ds[variables]
+    # - Subset time
+    ds = ds.sel(time=slice(start_time, end_time)).compute()
+    # - Close file on disk
+    _ = [ds.close() for ds in list_ds]
+    return ds
+
+
 ####----------------------------------------------------------------------------.
 def identify_events(
     filepaths,
     parallel=False,
-    min_n_drops=5,
+    min_drops=5,
     neighbor_min_size=2,
     neighbor_time_interval="5MIN",
-    intra_event_max_time_gap="6H",
+    event_max_time_gap="6H",
     event_min_duration="5MIN",
     event_min_size=3,
 ):
     """Return a list of rainy events.
 
-    Rainy timesteps are defined when N > min_n_drops.
+    Rainy timesteps are defined when N > min_drops.
     Any rainy isolated timesteps (based on neighborhood criteria) is removed.
     Then, consecutive rainy timesteps are grouped into the same event if the time gap between them does not
-    exceed `intra_event_max_time_gap`. Finally, events that do not meet minimum size or duration
+    exceed `event_max_time_gap`. Finally, events that do not meet minimum size or duration
     requirements are filtered out.
 
     Parameters
@@ -122,7 +142,7 @@ def identify_events(
         - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
         - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
         Defaults to 1.
-    intra_event_max_time_gap: str
+    event_max_time_gap: str
         The maximum time interval between two timesteps to be considered part of the same event.
         This parameters is used to group timesteps into events !
     event_min_duration : str
@@ -157,14 +177,14 @@ def identify_events(
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
     # Define candidate timesteps to group into events
-    idx_valid = ds["N"].data > min_n_drops
+    idx_valid = ds["N"].data > min_drops
     timesteps = ds["time"].data[idx_valid]
     # Define event list
     event_list = group_timesteps_into_event(
         timesteps=timesteps,
         neighbor_min_size=neighbor_min_size,
         neighbor_time_interval=neighbor_time_interval,
-        intra_event_max_time_gap=intra_event_max_time_gap,
+        event_max_time_gap=event_max_time_gap,
         event_min_duration=event_min_duration,
         event_min_size=event_min_size,
     )
@@ -232,37 +252,200 @@ def is_possible_product(accumulation_interval, sample_interval, rolling):
     return accumulation_interval % sample_interval == 0
 
 
-def get_list_events(filepaths, parallel, l2_processing_options):
-    # - [(start_time, end_time)]
-    # - Either save_by_event or save_by_time_block
-    # - save_by_event requires loading data into memory
-    #   --> Does some data selection on what to process !
-    # - save_by_time_block does not require loading data into memory
-    #   --> Does not do some data selection on what to process !
+def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
+    """Define temporal file processing partitions.
 
-    # save_by_event
-    # - event options
+    Parameters
+    ----------
+    filepaths : list
+        List of files paths to be processed
 
-    # save_by_time_block
-    # - year, season, month, day
+    strategy : str
+        Which partitioning strategy to apply:
 
-    # TODO: Here pass event option list !
-    #  - min_n_drops=5,
-    #  - neighbor_min_size=2,
-    #  - neighbor_time_interval="5MIN",
-    #  - intra_event_max_time_gap="6H",
-    #  - event_min_duration="5MIN",
-    #  - event_min_size=3,
+        - ``'time_block'`` defines fixed time intervals (e.g. monthly) covering input files.
+        - ``'event'`` detect clusters of precipitation ("events").
 
-    freq = "month"
+    parallel : bool
+         If True, parallel data loading is used to identify events.
 
-    # l2_processing_options
-    save_by_event = False
+    strategy_options : dict
+        Dictionary with strategy-specific parameters:
 
-    if save_by_event:
-        return identify_events(filepaths, parallel=parallel)
+        If ``strategy == 'time_block'``, supported options are:
 
-    return identify_time_partitions(filepaths, freq=freq)
+        - ``freq``: Time unit for blocks. One of {'year', 'season', 'month', 'day'}.
+
+        See identify_time_partitions for more information.
+
+        If ``strategy == 'event'``, supported options are:
+
+        - ``min_drops`` : int
+          Minimum number of drops to consider a timestep.
+        - ``neighbor_min_size`` : int
+          Minimum cluster size for merging neighboring events.
+        - ``neighbor_time_interval`` : str
+          Time window (e.g. "5MIN") to merge adjacent clusters.
+        - ``event_max_time_gap`` : str
+          Maximum allowed gap (e.g. "6H") within a single event.
+        - ``event_min_duration`` : str
+          Minimum total duration (e.g. "5MIN") of an event.
+        - ``event_min_size`` : int
+          Minimum number of records in an event.
+
+        See identify_events for more information.
+
+    Returns
+    -------
+    list
+        A list of dictionaries, each containing:
+
+        - ``start_time`` (numpy.datetime64[s])
+            Inclusive start of an event or time block.
+        - ``end_time`` (numpy.datetime64[s])
+            Inclusive end of an event or time block.
+
+    Notes
+    -----
+    - The ``'event'`` strategy requires loading data into memory to identify clusters.
+    - The ``'time_block'`` strategy can operate on metadata alone, without full data loading.
+    - The ``'event'`` strategy implicitly performs data selection on which files to process !
+    - The ``'time_block'`` strategy does not performs data selection on which files to process !
+    """
+    if strategy not in ["time_block", "event"]:
+        raise ValueError(f"Unknown strategy: {strategy!r}. Must be 'time_block' or 'event'.")
+    if strategy == "event":
+        return identify_events(filepaths, parallel=parallel, **strategy_options)
+
+    return identify_time_partitions(filepaths, **strategy_options)
+
+
+class ProcessingOptions:
+    """Define L2 products processing options."""
+
+    def __init__(self, product, filepaths, parallel, time_integrations=None):
+        """Define L2 products processing options."""
+        import disdrodb
+
+        # ---------------------------------------------------------------------.
+        # Define time integrations for which to retrieve processing options
+        if time_integrations is None:
+            time_integrations = get_product_time_integrations(product)
+        elif isinstance(time_integrations, str):
+            time_integrations = [time_integrations]
+
+        # ---------------------------------------------------------------------.
+        # Get product options at various time integrations
+        dict_product_options = {
+            time_integration: get_product_options(product, time_integration=time_integration)
+            for time_integration in time_integrations
+        }
+
+        # ---------------------------------------------------------------------.
+        # Group filepaths by source sample intervals
+        # - Typically the sample interval is fixed and is just one
+        # - Some stations might change the sample interval along the years
+        # - For each sample interval, separated processing take place here after !
+        dict_filepaths = group_filepaths(filepaths, groups="sample_interval")
+
+        # ---------------------------------------------------------------------.
+        # Retrieve processing information for each time integration
+        dict_folder_partitioning = {}
+        dict_files_partitions = {}
+        _cache_dict_list_partitions: dict[str, dict] = {}
+        for time_integration in time_integrations:
+
+            # -------------------------------------------------------------------------.
+            # Retrieve product options
+            product_options = dict_product_options[time_integration]
+
+            # Retrieve accumulation_interval and rolling option
+            accumulation_interval, rolling = get_resampling_information(time_integration)
+
+            # Extract processing options
+            archiving_options = product_options.pop("archiving_options")
+
+            dict_product_options[time_integration] = product_options
+            # -------------------------------------------------------------------------.
+            # Define folder partitioning
+            if "folder_partitioning" not in archiving_options:
+                dict_folder_partitioning[time_integration] = disdrodb.config.get("folder_partitioning")
+            else:
+                dict_folder_partitioning[time_integration] = archiving_options.pop("folder_partitioning")
+
+            # -------------------------------------------------------------------------.
+            # Define list of temporal partitions
+            # - [{start_time:xxx, end_time: xxx}, ....]
+            # - Either strategy: "event" or "time_block" or save_by_time_block"
+            # - "event" requires loading data into memory to identify events
+            #   --> Does some data filtering on what to process !
+            # - "time_block" does not require loading data into memory
+            #   --> Does not do data filtering on what to process !
+            # --> Here we cache dict_list_partitions so that we don't need to recompute
+            #     stuffs if processing options are the same
+            key = json.dumps(archiving_options, sort_keys=True)
+            if key not in _cache_dict_list_partitions:
+                _cache_dict_list_partitions[key] = {
+                    sample_interval: define_temporal_partitions(filepaths, parallel=parallel, **archiving_options)
+                    for sample_interval, filepaths in dict_filepaths.items()
+                }
+            dict_list_partitions = _cache_dict_list_partitions[key].copy()  # To avoid in-place replacement
+
+            # ------------------------------------------------------------------.
+            # Group filepaths by temporal partitions
+            # - This is done separately for each possible source sample interval
+            # - It groups filepaths by start_time and end_time provided by list_partitions
+            # - Here 'events' can also simply be period of times ('day', 'months', ...)
+            # - When aggregating/resampling/accumulating data, we need to load also
+            #   some data after the actual event end_time to ensure that the resampled dataset
+            #   contains the event_end_time
+            #   --> get_files_partitions adjust the event end_time to accounts for the required "border" data.
+            files_partitions = [
+                get_files_partitions(
+                    list_partitions=list_partitions,
+                    filepaths=dict_filepaths[sample_interval],
+                    sample_interval=sample_interval,
+                    accumulation_interval=accumulation_interval,
+                    rolling=rolling,
+                )
+                for sample_interval, list_partitions in dict_list_partitions.items()
+                if product != "L2E"
+                or is_possible_product(
+                    accumulation_interval=accumulation_interval,
+                    sample_interval=sample_interval,
+                    rolling=rolling,
+                )
+            ]
+            files_partitions = flatten_list(files_partitions)
+            dict_files_partitions[time_integration] = files_partitions
+
+        # ------------------------------------------------------------------.
+        # Keep only time_integrations for which events could be defined
+        # - Remove e.g when not compatible accumulation_interval with source sample_interval
+        time_integrations = [
+            time_integration
+            for time_integration in time_integrations
+            if len(dict_files_partitions[time_integration]) > 0
+        ]
+        # ------------------------------------------------------------------.
+        # Add attributes
+        self.time_integrations = time_integrations
+        self.dict_files_partitions = dict_files_partitions
+        self.dict_product_options = dict_product_options
+        self.dict_folder_partitioning = dict_folder_partitioning
+
+    def get_files_partitions(self, time_integration):
+        """Return files partitions dictionary for a specific L2E product."""
+        return self.dict_files_partitions[time_integration]
+
+    def get_product_options(self, time_integration):
+        """Return product options dictionary for a specific L2E product."""
+        return self.dict_product_options[time_integration]
+
+    def get_folder_partitioning(self, time_integration):
+        """Return the folder partitioning for a specific L2E product."""
+        # to be used for logs and files !
+        return self.dict_folder_partitioning[time_integration]
 
 
 ####----------------------------------------------------------------------------.
@@ -277,6 +460,7 @@ def _generate_l2e(
     filepaths,
     data_dir,
     logs_dir,
+    folder_partitioning,
     campaign_name,
     station_name,
     # L2E options
@@ -292,6 +476,9 @@ def _generate_l2e(
     # Define product name
     product = "L2E"
 
+    # Copy to avoid in-place replacement (outside this function)
+    product_options = product_options.copy()
+
     # -----------------------------------------------------------------.
     # Create file logger
     sample_interval_acronym = define_accumulation_acronym(seconds=accumulation_interval, rolling=rolling)
@@ -305,24 +492,16 @@ def _generate_l2e(
     )
     ##------------------------------------------------------------------------.
     # Log start processing
-    msg = f"{product} processing of {filename} has started."
+    msg = f"{product} creation of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
+    success_flag = False
 
     ##------------------------------------------------------------------------.
     ### Core computation
     try:
         # ------------------------------------------------------------------------.
         #### Open the dataset over the period of interest
-        # - Open the netCDFs
-        list_ds = [
-            xr.open_dataset(filepath, chunks={}, decode_timedelta=False, cache=False, autoclose=True)
-            for filepath in filepaths
-        ]
-        # - Concatenate datasets
-        ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
-        ds = ds.sel(time=slice(start_time, end_time)).compute()
-        # - Close file on disk
-        _ = [ds.close() for ds in list_ds]
+        ds = _open_files(filepaths, start_time=start_time, end_time=end_time)
 
         ##------------------------------------------------------------------------.
         #### Resample dataset
@@ -371,7 +550,7 @@ def _generate_l2e(
         ##------------------------------------------------------------------------.
         #### Generate L2E product
         # - Only if at least 2 timesteps available
-        if len(ds["time"].size > 2):
+        if ds["time"].size > 2:
 
             # Compute L2E variables
             ds = generate_l2_empirical(ds=ds, **product_options)
@@ -384,6 +563,7 @@ def _generate_l2e(
 
             # Write netCDF4 dataset
             if ds["time"].size > 1:
+                # Define filepath
                 filename = define_l2e_filename(
                     ds,
                     campaign_name=campaign_name,
@@ -391,16 +571,24 @@ def _generate_l2e(
                     sample_interval=accumulation_interval,
                     rolling=rolling,
                 )
-                filepath = os.path.join(data_dir, filename)
+                folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+                filepath = os.path.join(folder_path, filename)
                 write_product(ds, product=product, filepath=filepath, force=force)
+
+            ##--------------------------------------------------------------------.
+            #### - Define logger file final directory
+            if folder_partitioning != "":
+                log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
+                os.makedirs(log_dst_dir, exist_ok=True)
 
             ##--------------------------------------------------------------------.
             # Clean environment
             del ds
 
         # Log end processing
-        msg = f"{product} processing of {filename} has ended."
+        msg = f"{product} creation of {filename} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
+        success_flag = True
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -411,6 +599,13 @@ def _generate_l2e(
 
     # Close the file logger
     close_logger(logger)
+
+    # Move logger file to correct partitioning directory
+    if success_flag and folder_partitioning != "" and logger_filepath is not None:
+        # Move logger file to correct partitioning directory
+        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
+        shutil.move(logger_filepath, dst_filepath)
+        logger_filepath = dst_filepath
 
     # Return the logger file path
     return logger_filepath
@@ -436,12 +631,12 @@ def run_l2e_station(
     This function is intended to be called through the ``disdrodb_run_l2e_station``
     command-line interface.
 
-    The DISDRODB L2E routine generate a L2E file for each event.
-    Events are defined based on the DISDRODB event settings options.
-    The DISDRODB event settings allows to produce L2E files either
-    per custom block of time (i.e day/month/year) or for blocks of rainy events.
+    This routine generates L2E files.
+    Files are defined based on the DISDRODB archive settings options.
+    The DISDRODB archive settings allows to produce L2E files either
+    per custom block of time (i.e day/month/year) or per blocks of (rainy) events.
 
-    For stations with varying measurement intervals, DISDRODB defines a separate list of 'events'
+    For stations with varying measurement intervals, DISDRODB defines a separate list of partitions
     for each measurement interval option. In other words, DISDRODB does not
     mix files with data acquired at different sample intervals when resampling the data.
 
@@ -504,7 +699,7 @@ def run_l2e_station(
             station_name=station_name,
             product=required_product,
             # Processing options
-            debugging_mode=False,
+            debugging_mode=debugging_mode,
         )
     except Exception as e:
         print(str(e))  # Case where no file paths available
@@ -520,86 +715,30 @@ def run_l2e_station(
         print(msg)
         return
 
-    # ---------------------------------------------------------------------.
-    # Group filepaths by source sample intervals
-    # - Typically the sample interval is fixed and is just one
-    # - Some stations might change the sample interval along the years
-    # - For each sample interval, separated processing take place here after !
-    dict_filepaths = group_filepaths(filepaths, groups="sample_interval")
+    # Retrieve L2E processing options
+    l2e_processing_options = ProcessingOptions(product="L2E", filepaths=filepaths, parallel=parallel)
 
     # -------------------------------------------------------------------------.
-    # Define list of "events"
-    # - [{start_time:xxx, end_time: xxx}, ....]
-    # - Either save_by_event or save_by_time_block
-    # - save_by_event requires loading data into memory
-    #   --> Does some data selection on what to process !
-    # - save_by_time_block does not require loading data into memory
-    #   --> Does not do some data selection on what to process !
-
-    # [IMPROVEMENT] allow custom event definition for each accumulation interval?
-    l2_processing_options = get_product_options("L2E")
-    dict_list_events = {
-        sample_interval: get_list_events(filepaths, parallel=parallel, l2_processing_options=l2_processing_options)
-        for sample_interval, filepaths in dict_filepaths.items()
-    }
-
-    # sample_interval = list(dict_filepaths)[0]
-    # filepaths = dict_filepaths[sample_interval]
-
-    # ---------------------------------------------------------------------.
-    # Subset for debugging mode
-    if debugging_mode:
-        dict_list_events = {
-            sample_interval: list_events[0 : min(len(list_events), 3)]
-            for sample_interval, list_events in dict_list_events.items()
-        }
-
-    # ---------------------------------------------------------------------.
-    # Loop
+    # Generate products for each time integration
     # rolling = False
     # accumulation_interval = 60
-    # sample_interval_acronym = "1MIN"
-    # product_options = l2_processing_options["1MIN"]
-    time_integrations = get_product_time_integrations("L2E")
-    for sample_interval_acronym in time_integrations:
+    # time_integration = "10MIN"
+    # folder_partitioning = ""
+    # product_options = l2e_processing_options.get_product_options(time_integration)
+
+    for time_integration in l2e_processing_options.time_integrations:
+
+        # Retrieve event info
+        files_partitions = l2e_processing_options.get_files_partitions(time_integration)
+
+        # Retrieve folder partitioning (for files and logs)
+        folder_partitioning = l2e_processing_options.get_folder_partitioning(time_integration)
 
         # Retrieve product options
-        product_options = get_product_options("L2E", time_integration=sample_interval_acronym)
+        product_options = l2e_processing_options.get_product_options(time_integration)
 
         # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_resampling_information(sample_interval_acronym)
-
-        # ------------------------------------------------------------------.
-        # Group filepaths by events
-        # - This is done separately for each possible source sample interval
-        # - It groups filepaths by start_time and end_time provided by list_events
-        # - Here 'events' can also simply be period of times ('day', 'months', ...)
-        # - When aggregating/resampling/accumulating data, we need to load also
-        #   some data after the actual event end_time to ensure that the resampled dataset
-        #   contains the event_end_time
-        #   --> get_events_info adjust the event end_time to accounts for the required "border" data.
-        events_info = [
-            get_events_info(
-                list_events=list_events,
-                filepaths=dict_filepaths[sample_interval],
-                sample_interval=sample_interval,
-                accumulation_interval=accumulation_interval,
-                rolling=rolling,
-            )
-            for sample_interval, list_events in dict_list_events.items()
-            if is_possible_product(
-                accumulation_interval=accumulation_interval,
-                sample_interval=sample_interval,
-                rolling=rolling,
-            )
-        ]
-        events_info = flatten_list(events_info)
-
-        # ------------------------------------------------------------------.
-        # Skip processing if no files available
-        # - When not compatible accumulation_interval with source sample_interval
-        if len(events_info) == 0:
-            continue
+        accumulation_interval, rolling = get_resampling_information(time_integration)
 
         # ------------------------------------------------------------------.
         # Create product directory
@@ -639,6 +778,7 @@ def run_l2e_station(
                 filepaths=event_info["filepaths"],
                 data_dir=data_dir,
                 logs_dir=logs_dir,
+                folder_partitioning=folder_partitioning,
                 campaign_name=campaign_name,
                 station_name=station_name,
                 # L2E options
@@ -650,7 +790,7 @@ def run_l2e_station(
                 verbose=verbose,
                 parallel=parallel,
             )
-            for event_info in events_info
+            for event_info in files_partitions
         ]
         list_logs = dask.compute(*list_tasks) if parallel else list_tasks
 
@@ -684,9 +824,12 @@ def run_l2e_station(
 @delayed_if_parallel
 @single_threaded_if_parallel
 def _generate_l2m(
-    filepath,
+    start_time,
+    end_time,
+    filepaths,
     data_dir,
     logs_dir,
+    folder_partitioning,
     campaign_name,
     station_name,
     # L2M options
@@ -703,9 +846,17 @@ def _generate_l2m(
     # Define product name
     product = "L2M"
 
+    # Copy to avoid in-place replacement (outside this function)
+    product_options = product_options.copy()
+
     # -----------------------------------------------------------------.
     # Create file logger
-    filename = os.path.basename(filepath)
+    sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
+    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
+    filename = (
+        f"L2M_{model_name}.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    )
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
         filename=filename,
@@ -714,36 +865,38 @@ def _generate_l2m(
 
     ##------------------------------------------------------------------------.
     # Log start processing
-    msg = f"{product} processing of {filename} has started."
+    msg = f"{product} creation of {filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
-
-    # Define variables to load
-    optimization_kwargs = product_options["optimization_kwargs"]
-    if "init_method" in optimization_kwargs:
-        init_method = optimization_kwargs["init_method"]
-        moments = [f"M{order}" for order in init_method.replace("M", "")] + ["M1"]
-    else:
-        moments = ["M1"]
-
-    ##------------------------------------------------------------------------.
-    # Extract L2M processing options
-    radar_simulation_enabled = product_options.pop("radar_simulation_enabled")
-    radar_simulation_options = product_options.pop("radar_simulation_options")
+    success_flag = False
 
     ##------------------------------------------------------------------------
     ### Core computation
     try:
+        ##------------------------------------------------------------------------.
+        # Define variables to load
+        optimization_kwargs = product_options["optimization_kwargs"]
+        if "init_method" in optimization_kwargs:
+            init_method = optimization_kwargs["init_method"]
+            moments = [f"M{order}" for order in init_method.replace("M", "")] + ["M1"]
+        else:
+            moments = ["M1"]
+
+        variables = [
+            "drop_number_concentration",
+            "fall_velocity",
+            "D50",
+            "Nw",
+            "Nt",
+            *moments,
+        ]
+
+        # Extract L2M processing options
+        radar_simulation_enabled = product_options.pop("radar_simulation_enabled")
+        radar_simulation_options = product_options.pop("radar_simulation_options")
+
+        ##------------------------------------------------------------------------.
         # Open the raw netCDF
-        with xr.open_dataset(filepath, chunks={}, decode_timedelta=False, cache=False) as ds:
-            variables = [
-                "drop_number_concentration",
-                "fall_velocity",
-                "D50",
-                "Nw",
-                "Nt",
-                *moments,
-            ]
-            ds = ds[variables].load()
+        ds = _open_files(filepaths, start_time=start_time, end_time=end_time, variables=variables)
 
         # Produce L2M dataset
         ds = generate_l2_model(
@@ -768,17 +921,25 @@ def _generate_l2m(
                 rolling=rolling,
                 model_name=model_name,
             )
-            filepath = os.path.join(data_dir, filename)
+            folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+            filepath = os.path.join(folder_path, filename)
             # Write to disk
             write_product(ds, product=product, filepath=filepath, force=force)
+
+        ##--------------------------------------------------------------------.
+        #### - Define logger file final directory
+        if folder_partitioning != "":
+            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
+            os.makedirs(log_dst_dir, exist_ok=True)
 
         ##--------------------------------------------------------------------.
         # Clean environment
         del ds
 
         # Log end processing
-        msg = f"{product} processing of {filename} has ended."
+        msg = f"{product} creation of {filename} has ended."
         log_info(logger=logger, msg=msg, verbose=verbose)
+        success_flag = True
 
     ##--------------------------------------------------------------------.
     # Otherwise log the error
@@ -789,6 +950,13 @@ def _generate_l2m(
 
     # Close the file logger
     close_logger(logger)
+
+    # Move logger file to correct partitioning directory
+    if success_flag and folder_partitioning != "" and logger_filepath is not None:
+        # Move logger file to correct partitioning directory
+        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
+        shutil.move(logger_filepath, dst_filepath)
+        logger_filepath = dst_filepath
 
     # Return the logger file path
     return logger_filepath
@@ -878,9 +1046,6 @@ def run_l2m_station(
     time_integrations = get_product_time_integrations("L2M")
     for sample_interval_acronym in time_integrations:
 
-        # Retrieve product options
-        product_options = get_product_options("L2M", time_integration=sample_interval_acronym)
-
         # Retrieve accumulation_interval and rolling option
         accumulation_interval, rolling = get_resampling_information(sample_interval_acronym)
 
@@ -918,10 +1083,33 @@ def run_l2m_station(
         # If no data available, try with other L2E accumulation intervals
         if flag_not_available_data:
             msg = (
-                f"{product} processing of {data_source} {campaign_name} {station_name}"
-                + f"has not been launched because of missing {required_product} {sample_interval_acronym} data ."
+                f"{product} processing of {data_source} {campaign_name} {station_name} "
+                + f"has not been launched because of missing {required_product} {sample_interval_acronym} data."
             )
-            print(msg)
+            log_info(logger=logger, msg=msg, verbose=verbose)
+            continue
+
+        # -------------------------------------------------------------------------.
+        # Retrieve L2M processing options
+        l2m_processing_options = ProcessingOptions(
+            product="L2M", time_integrations=sample_interval_acronym, filepaths=filepaths, parallel=parallel
+        )
+
+        # Retrieve folder partitioning (for files and logs)
+        folder_partitioning = l2m_processing_options.get_folder_partitioning(sample_interval_acronym)
+
+        # Retrieve product options
+        product_options = l2m_processing_options.get_product_options(sample_interval_acronym)
+
+        # Retrieve files temporal partitions
+        files_partitions = l2m_processing_options.get_files_partitions(sample_interval_acronym)
+
+        if len(files_partitions) == 0:
+            msg = (
+                f"{product} processing of {data_source} {campaign_name} {station_name} "
+                + f"has not been launched because of missing {required_product} {sample_interval_acronym} data."
+            )
+            log_info(logger=logger, msg=msg, verbose=verbose)
             continue
 
         # -----------------------------------------------------------------.
@@ -984,9 +1172,12 @@ def run_l2m_station(
             # - If parallel=True, it does that in parallel using dask.delayed
             list_tasks = [
                 _generate_l2m(
-                    filepath=filepath,
+                    start_time=event_info["start_time"],
+                    end_time=event_info["end_time"],
+                    filepaths=event_info["filepaths"],
                     data_dir=data_dir,
                     logs_dir=logs_dir,
+                    folder_partitioning=folder_partitioning,
                     campaign_name=campaign_name,
                     station_name=station_name,
                     # L2M options
@@ -999,7 +1190,7 @@ def run_l2m_station(
                     verbose=verbose,
                     parallel=parallel,
                 )
-                for filepath in filepaths
+                for event_info in files_partitions
             ]
             list_logs = dask.compute(*list_tasks) if parallel else list_tasks
 

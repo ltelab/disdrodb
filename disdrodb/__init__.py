@@ -35,7 +35,7 @@ from disdrodb.api.search import (
     available_data_sources,
     available_stations,
 )
-from disdrodb.configs import define_disdrodb_configs as define_configs
+from disdrodb.configs import define_configs
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir, get_product_options
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation

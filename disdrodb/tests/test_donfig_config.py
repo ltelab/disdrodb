@@ -46,7 +46,7 @@ def test_disdrodb_config_takes_config_YAML(tmp_path, mocker):
 
     # Initialize config YAML
     data_archive_dir = os.path.join("my_path_to", "DISDRODB")
-    disdrodb.configs.define_disdrodb_configs(data_archive_dir=data_archive_dir, zenodo_token="test_token")
+    disdrodb.configs.define_configs(data_archive_dir=data_archive_dir, zenodo_token="test_token")
 
     reload(disdrodb._config)
     reload(disdrodb)

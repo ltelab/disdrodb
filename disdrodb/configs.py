@@ -19,6 +19,7 @@
 """DISDRODB Configuration File functions."""
 
 import os
+import shutil
 from typing import Optional
 
 from disdrodb.utils.yaml import read_yaml, write_yaml
@@ -32,7 +33,7 @@ def _define_config_filepath():
     return filepath
 
 
-def define_disdrodb_configs(
+def define_configs(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
     configs_path: Optional[str] = None,
@@ -112,11 +113,11 @@ def define_disdrodb_configs(
 
     # Now read the config file and set it as the active configuration
     # - This avoid the need to restart a python session to take effect !
-    config_dict = read_disdrodb_configs()
+    config_dict = read_configs()
     disdrodb.config.update(config_dict)
 
 
-def read_disdrodb_configs() -> dict[str, str]:
+def read_configs() -> dict[str, str]:
     """
     Reads the DISDRODB configuration file and returns a dictionary with the configuration settings.
 
@@ -194,7 +195,7 @@ def get_zenodo_token(sandbox: bool):
         host = "zenodo.org"
         token_name = "zenodo_token"
 
-    # token = read_disdrodb_configs().get(token_name, None)
+    # token = read_configs().get(token_name, None)
     token = disdrodb.config.get(token_name, None)
 
     if token is None:
@@ -226,6 +227,35 @@ def check_availability_radar_simulations(options):
     return options
 
 
+def copy_product_default_configs(configs_path): 
+    """Copy the default DISDRODB products configuration directory to a custom location.
+    
+    This function duplicates the entire directory of default product settings
+    (located at ``disdrodb/etc/products``) into the user-specified
+    ``configs_path``. Once copied, you can safely edit these files without
+    modifying the library's built-in defaults. To have DISDRODB use your
+    custom settings, point the global configuration at this new directory 
+    (e.g by specifying ``configs_path`` with the ``disdrodb.define_configs`` function).
+ 
+    Parameters
+    ----------
+    configs_path: 
+        Destination directory where the default product configuration files
+        will be copied. This directory must not already exist, and later
+        needs to be referenced in your DISDRODB global configuration.
+        
+    Returns
+    -------
+    configs_path
+        The path to the newly created custom product configuration directory. 
+
+    """
+    source_dir_path = get_product_default_configs_path()
+    if os.path.exists(configs_path): 
+        raise FileExistsError(f"The {configs_path} directory already exists!")
+    configs_path = shutil.copytree(source_dir_path, configs_path)
+    return configs_path
+    
 def get_product_options(product, time_integration=None):
     """Get options for DISDRODB products."""
     import disdrodb

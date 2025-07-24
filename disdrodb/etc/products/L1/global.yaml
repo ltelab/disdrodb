@@ -8,6 +8,5 @@ above_velocity_tolerance: null
 below_velocity_fraction: 0.5
 below_velocity_tolerance: null
 small_diameter_threshold: 1
-small_velocity_threshold: 2.5 
+small_velocity_threshold: 2.5
 maintain_smallest_drops: True
-

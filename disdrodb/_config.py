@@ -22,13 +22,13 @@ See https://donfig.readthedocs.io/en/latest/configuration.html for more info.
 """
 from donfig import Config
 
-from disdrodb.configs import read_disdrodb_configs
+from disdrodb.configs import read_configs
 
 
-def _get_disdrodb_default_configs():
+def _get_default_configs():
     """Retrieve the default DISDRODB settings from the ``.config_disdrodb.yml`` file."""
     try:
-        config_dict = read_disdrodb_configs()
+        config_dict = read_configs()
         config_dict = {key: value for key, value in config_dict.items() if value is not None}
     except Exception:
         config_dict = {}
@@ -42,7 +42,7 @@ _CONFIG_DEFAULTS = {
     "zenodo_token": None,
     "folder_partitioning": "year/month",
 }
-_CONFIG_DEFAULTS.update(_get_disdrodb_default_configs())
+_CONFIG_DEFAULTS.update(_get_default_configs())
 
 _CONFIG_PATHS = []
 

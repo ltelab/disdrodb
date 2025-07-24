@@ -62,9 +62,6 @@ def reader(
     #   - Available: gzip, bz2, zip
     reader_kwargs["compression"] = "infer"
 
-    # - Skip rows with badly encoded data
-    reader_kwargs["encoding_errors"] = "replace"
-
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
@@ -83,15 +80,13 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Count number of delimiters to identify valid rows
-    df = df[df["TO_BE_SPLITTED"].str.count(";") == 521]
+    df = df[df["TO_BE_SPLITTED"].str.count(";") == 520]
 
     # Split by ; delimiter (before raw drop number)
-    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=81)
+    df = df["TO_BE_SPLITTED"].str.split(";", expand=True, n=79)
 
     # Assign column names
     column_names = [
-        "id",
-        "time",
         "start_identifier",
         "device_address",
         "sensor_serial_number",
@@ -176,10 +171,11 @@ def reader(
     df.columns = column_names
 
     # Remove checksum from raw_drop_number
-    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=1, expand=True)[0]
+    df["raw_drop_number"] = df["raw_drop_number"].str.rsplit(";", n=2, expand=True)[0]
 
     # Define datetime "time" column
-    df["time"] = pd.to_datetime(df["time"], format="%d/%m/%Y %H.%M.%S", errors="coerce")
+    df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
+    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
 
     # Drop row if start_identifier different than 00
     df = df[df["start_identifier"].astype(str) == "00"]
@@ -189,7 +185,6 @@ def reader(
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "id",
         "start_identifier",
         "device_address",
         "sensor_serial_number",
