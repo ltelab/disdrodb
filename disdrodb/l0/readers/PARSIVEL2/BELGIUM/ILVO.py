@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for UGENT ILVO Parsivel2 raw text data."""
 import tarfile
+
 import numpy as np
 import pandas as pd
 
@@ -87,8 +88,8 @@ def reader(
         # Drop rows with invalid IDs
         valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
         df = df[df["ID"].astype(str).isin(valid_id_str)]
-        
-        # Reshape dataframe 
+
+        # Reshape dataframe
         df = df.set_index("ID").T
 
         # Assign column names

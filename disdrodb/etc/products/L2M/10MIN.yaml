@@ -3,10 +3,9 @@ archiving_options:
   strategy_options:
     min_drops: 5
     neighbor_min_size: 2
-    neighbor_time_interval: "5MIN" 
+    neighbor_time_interval: "5MIN"
     event_max_time_gap: "6H"
     event_min_duration: "5MIN"
     event_min_size: 3
   folder_partitioning: "year/month"
 drop_timesteps_without_drops: False
- 

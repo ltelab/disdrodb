@@ -1092,7 +1092,10 @@ def run_l2m_station(
         # -------------------------------------------------------------------------.
         # Retrieve L2M processing options
         l2m_processing_options = ProcessingOptions(
-            product="L2M", time_integrations=sample_interval_acronym, filepaths=filepaths, parallel=parallel
+            product="L2M",
+            time_integrations=sample_interval_acronym,
+            filepaths=filepaths,
+            parallel=parallel,
         )
 
         # Retrieve folder partitioning (for files and logs)

@@ -26,8 +26,8 @@ def reader_parsivel(filepath, logger):
     ##------------------------------------------------------------------------.
     #### Define column names
     column_names = [
-        "time", 
-        "RECORD", 
+        "time",
+        "RECORD",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
@@ -39,7 +39,7 @@ def reader_parsivel(filepath, logger):
         "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
-        "sensor_status", 
+        "sensor_status",
         "rain_kinetic_energy",
         "V_Batt_Min",
     ]
@@ -84,11 +84,12 @@ def reader_parsivel(filepath, logger):
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Define time
-    df["time"] = pd.to_datetime( df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
-    
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["RECORD", "V_Batt_Min"])
-    return df 
+    return df
+
 
 def reader_spectrum(filepath, logger):
     """Reader for Spectrum CR1000 Data Logger file."""
@@ -123,7 +124,7 @@ def reader_spectrum(filepath, logger):
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
     reader_kwargs["na_values"] = ["na", "", "error"]
- 
+
     ##------------------------------------------------------------------------.
     #### Read the data
     df = read_raw_text_file(
@@ -132,7 +133,7 @@ def reader_spectrum(filepath, logger):
         reader_kwargs=reader_kwargs,
         logger=logger,
     )
- 
+
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Define time
@@ -140,11 +141,11 @@ def reader_spectrum(filepath, logger):
     df.columns = ["time", "RECORD", "TO_PARSE"]
 
     df["time"] = pd.to_datetime(df["time"].str.strip('"'), format="%Y-%m-%d %H:%M:%S", errors="coerce")
- 
+
     # Derive raw drop arrays
     def split_string(s):
         vals = [v.strip() for v in s.split(",")]
-        c1 = ",".join(vals[:32])  # -10 
+        c1 = ",".join(vals[:32])  # -10
         c1 = c1.replace("-10", "0")
         c2 = "0,0," + ",".join(vals[32:62])
         c3 = ",".join(vals[62:])
@@ -161,10 +162,10 @@ def reader_spectrum(filepath, logger):
     df["raw_drop_concentration"] = splitted_string["raw_drop_concentration"]
     df["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
     df["raw_drop_number"] = splitted_string["raw_drop_number"]
-    
+
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["TO_PARSE", "RECORD"])
-    return df 
+    return df
 
 
 @is_documented_by(reader_generic_docstring)
@@ -173,29 +174,28 @@ def reader(
     logger=None,
 ):
     """Reader."""
-    # Retrieve Spectrum filepath 
+    # Retrieve Spectrum filepath
     spectrum_filepath = filepath.replace("parsivel", "spectre")
 
     # Read integral variables
     df = reader_parsivel(filepath, logger=logger)
-    
+
     # Initialize empty arrays
     # --> 0 values array produced in L0B
     df["raw_drop_concentration"] = ""
-    df["raw_drop_average_velocity"] = "" 
-    df["raw_drop_number"] = ""     
-    
+    df["raw_drop_average_velocity"] = ""
+    df["raw_drop_number"] = ""
+
     # Read raw spectrum for corresponding timesteps
     df_raw_spectrum = reader_spectrum(spectrum_filepath, logger=logger)
-         
+
     # Add raw array to df
-    df = df.set_index('time')
-    df_raw_spectrum = df_raw_spectrum.set_index('time')
+    df = df.set_index("time")
+    df_raw_spectrum = df_raw_spectrum.set_index("time")
     df.update(df_raw_spectrum)
-    
-    # Set back time as column 
+
+    # Set back time as column
     df = df.reset_index()
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
-   

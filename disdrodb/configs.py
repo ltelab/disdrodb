@@ -227,35 +227,36 @@ def check_availability_radar_simulations(options):
     return options
 
 
-def copy_product_default_configs(configs_path): 
+def copy_product_default_configs(configs_path):
     """Copy the default DISDRODB products configuration directory to a custom location.
-    
+
     This function duplicates the entire directory of default product settings
     (located at ``disdrodb/etc/products``) into the user-specified
     ``configs_path``. Once copied, you can safely edit these files without
     modifying the library's built-in defaults. To have DISDRODB use your
-    custom settings, point the global configuration at this new directory 
+    custom settings, point the global configuration at this new directory
     (e.g by specifying ``configs_path`` with the ``disdrodb.define_configs`` function).
- 
+
     Parameters
     ----------
-    configs_path: 
+    configs_path:
         Destination directory where the default product configuration files
         will be copied. This directory must not already exist, and later
         needs to be referenced in your DISDRODB global configuration.
-        
+
     Returns
     -------
     configs_path
-        The path to the newly created custom product configuration directory. 
+        The path to the newly created custom product configuration directory.
 
     """
     source_dir_path = get_product_default_configs_path()
-    if os.path.exists(configs_path): 
+    if os.path.exists(configs_path):
         raise FileExistsError(f"The {configs_path} directory already exists!")
     configs_path = shutil.copytree(source_dir_path, configs_path)
     return configs_path
-    
+
+
 def get_product_options(product, time_integration=None):
     """Get options for DISDRODB products."""
     import disdrodb

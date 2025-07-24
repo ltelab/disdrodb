@@ -65,7 +65,6 @@ def reader(
         logger=logger,
     )
 
-
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Define time
@@ -73,11 +72,11 @@ def reader(
     df.columns = ["date", "time", "TO_PARSE"]
     datetime_str = df["date"] + " " + df["time"]
     df["time"] = pd.to_datetime(datetime_str, format="%d.%m.%Y %H:%M:%S", errors="coerce")
-    
+
     # Identify rows with integral variables
     df_vars = df[df["TO_PARSE"].str.len() == 61]
-    
-    # Split and assign column names 
+
+    # Split and assign column names
     df_data = df_vars["TO_PARSE"].str.split(",", expand=True)
     var_names = [
         "rainfall_rate_32bit",
@@ -94,16 +93,16 @@ def reader(
     ]
     df_data.columns = var_names
     df_data["time"] = df_vars["time"]
-    
+
     # Initialize empty arrays
     # --> 0 values array produced in L0B
     df_data["raw_drop_concentration"] = ""
-    df_data["raw_drop_average_velocity"] = "" 
-    df_data["raw_drop_number"] = ""     
-    
-    # Identify raw spectrum 
+    df_data["raw_drop_average_velocity"] = ""
+    df_data["raw_drop_number"] = ""
+
+    # Identify raw spectrum
     df_raw_spectrum = df[df["TO_PARSE"].str.len() == 4545]
-        
+
     # Derive raw drop arrays
     def split_string(s):
         vals = [v.strip() for v in s.split(",")]
@@ -124,17 +123,15 @@ def reader(
     df_raw_spectrum["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
     df_raw_spectrum["raw_drop_number"] = splitted_string["raw_drop_number"]
     df_raw_spectrum = df_raw_spectrum.drop(columns=["date", "TO_PARSE"])
-     
-    # Add raw array 
-    df = df_data.set_index('time')
-    df_raw_spectrum = df_raw_spectrum.set_index('time')
-    
+
+    # Add raw array
+    df = df_data.set_index("time")
+    df_raw_spectrum = df_raw_spectrum.set_index("time")
+
     df.update(df_raw_spectrum)
-    
-    # Set back time as column 
+
+    # Set back time as column
     df = df.reset_index()
-  
+
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
- 
-   
