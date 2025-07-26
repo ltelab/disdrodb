@@ -81,28 +81,34 @@ from disdrodb.utils.writer import write_product
 logger = logging.getLogger(__name__)
 
 
-@dask.delayed
-def _delayed_open_dataset(filepath):
-    with dask.config.set(scheduler="synchronous"):
-        ds = xr.open_dataset(filepath, chunks={}, autoclose=True, decode_timedelta=False, cache=False)
-    return ds
+def _open_files(filepaths, start_time=None, end_time=None, variables=None, parallel=False):
+    # Define preprocessing function for parallel opening
+    preprocess = (lambda ds: ds[variables]) if parallel and variables is not None else None
 
-
-def _open_files(filepaths, start_time, end_time, variables=None):
-    list_ds = [
-        xr.open_dataset(filepath, chunks=-1, decode_timedelta=False, cache=False, autoclose=True)
-        for filepath in filepaths
-    ]
-    # - Concatenate datasets
-    ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
-    # - Subset variables
-    if variables is not None:
-        ds = ds[variables]
-    # - Subset time
-    ds = ds.sel(time=slice(start_time, end_time)).compute()
-    # - Close file on disk
-    _ = [ds.close() for ds in list_ds]
-    return ds
+    # Open netcdf
+    with xr.open_mfdataset(
+        filepaths,
+        chunks=-1,
+        combine="nested",
+        concat_dim="time",
+        engine="netcdf4",
+        parallel=parallel,
+        preprocess=preprocess,
+        compat="no_conflicts",
+        combine_attrs="override",
+        coords="different",  # maybe minimal?
+        decode_timedelta=False,
+        cache=False,
+        autoclose=True,
+    ) as ds:
+        # - Subset variables
+        if variables is not None and preprocess is None:
+            ds = ds[variables]
+        # - Subset time
+        ds = ds.sel(time=slice(start_time, end_time))
+        # - Put in memory
+        dataset = ds.compute()
+    return dataset
 
 
 ####----------------------------------------------------------------------------.
@@ -160,20 +166,7 @@ def identify_events(
         - "n_timesteps": int, number of valid timesteps in the event
     """
     # Open datasets in parallel
-    if parallel:
-        list_ds = dask.compute([_delayed_open_dataset(filepath) for filepath in filepaths])[0]
-    else:
-        list_ds = [xr.open_dataset(filepath, chunks={}, cache=False, decode_timedelta=False) for filepath in filepaths]
-    # Filter dataset for requested variables
-    variables = ["time", "N"]
-    list_ds = [ds[variables] for ds in list_ds]
-    # Concat datasets
-    ds = xr.concat(list_ds, dim="time", compat="no_conflicts", combine_attrs="override")
-    # Read in memory the variable needed
-    ds = ds.compute()
-    # Close file on disk
-    _ = [ds.close() for ds in list_ds]
-    del list_ds
+    ds = _open_files(filepaths, variables=["time", "N"], parallel=parallel)
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
     # Define candidate timesteps to group into events
@@ -448,6 +441,31 @@ class ProcessingOptions:
         return self.dict_folder_partitioning[time_integration]
 
 
+def precompute_scattering_tables(radar_band, num_points, diameter_max, canting_angle_std, axis_ratio, verbose=True):
+    """Precompute the pyTMatrix scattering tables required for radar variables simulations."""
+    from disdrodb.scattering.routines import get_list_simulations_params, get_radar_wavelength, load_scatterer
+
+    # Define parameters for all requested simulations
+    list_params = get_list_simulations_params(
+        radar_band=radar_band,
+        num_points=num_points,
+        diameter_max=diameter_max,
+        canting_angle_std=canting_angle_std,
+        axis_ratio=axis_ratio,
+    )
+
+    # Compute require scattering tables
+    for params in list_params:
+        # Retrieve wavelengths in mm
+        wavelength = get_radar_wavelength(params.pop("radar_band"))
+        # Initialize scattering table
+        _ = load_scatterer(
+            wavelength=wavelength,
+            verbose=verbose,
+            **params,
+        )
+
+
 ####----------------------------------------------------------------------------.
 #### L2E
 
@@ -484,15 +502,15 @@ def _generate_l2e(
     sample_interval_acronym = define_accumulation_acronym(seconds=accumulation_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
-    filename = f"L2E.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    expected_filename = f"L2E.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
-        filename=filename,
+        filename=expected_filename,
         parallel=parallel,
     )
     ##------------------------------------------------------------------------.
     # Log start processing
-    msg = f"{product} creation of {filename} has started."
+    msg = f"{product} creation of {expected_filename} has started."
     log_info(logger=logger, msg=msg, verbose=verbose)
     success_flag = False
 
@@ -501,7 +519,7 @@ def _generate_l2e(
     try:
         # ------------------------------------------------------------------------.
         #### Open the dataset over the period of interest
-        ds = _open_files(filepaths, start_time=start_time, end_time=end_time)
+        ds = _open_files(filepaths, start_time=start_time, end_time=end_time, parallel=False)
 
         ##------------------------------------------------------------------------.
         #### Resample dataset
@@ -573,21 +591,26 @@ def _generate_l2e(
                 )
                 folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
                 filepath = os.path.join(folder_path, filename)
+                # Write file
                 write_product(ds, product=product, filepath=filepath, force=force)
 
-            ##--------------------------------------------------------------------.
-            #### - Define logger file final directory
-            if folder_partitioning != "":
-                log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
-                os.makedirs(log_dst_dir, exist_ok=True)
+                # Update log
+                log_info(logger=logger, msg=f"{product} creation of {filename} has ended.", verbose=verbose)
+            else:
+                log_info(logger=logger, msg="File not created. Less than one timesteps available.", verbose=verbose)
+        else:
+            log_info(logger=logger, msg="File not created. Less than two timesteps available.", verbose=verbose)
 
-            ##--------------------------------------------------------------------.
-            # Clean environment
-            del ds
+        ##--------------------------------------------------------------------.
+        #### Define logger file final directory
+        if folder_partitioning != "":
+            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
+            os.makedirs(log_dst_dir, exist_ok=True)
 
-        # Log end processing
-        msg = f"{product} creation of {filename} has ended."
-        log_info(logger=logger, msg=msg, verbose=verbose)
+        ##--------------------------------------------------------------------.
+        # Clean environment
+        del ds
+
         success_flag = True
 
     ##--------------------------------------------------------------------.
@@ -739,6 +762,11 @@ def run_l2e_station(
 
         # Retrieve accumulation_interval and rolling option
         accumulation_interval, rolling = get_resampling_information(time_integration)
+
+        # Precompute required scattering tables
+        if product_options["radar_simulation_enabled"]:
+            radar_simulation_options = product_options["radar_simulation_options"]
+            precompute_scattering_tables(verbose=verbose, **radar_simulation_options)
 
         # ------------------------------------------------------------------.
         # Create product directory
@@ -1128,6 +1156,11 @@ def run_l2m_station(
             psd_model = model_options["psd_model"]
             optimization = model_options["optimization"]
             product_options.update(model_options)
+
+            # Precompute required scattering tables
+            if product_options["radar_simulation_enabled"]:
+                radar_simulation_options = product_options["radar_simulation_options"]
+                precompute_scattering_tables(verbose=verbose, **radar_simulation_options)
 
             # -----------------------------------------------------------------.
             msg = f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."

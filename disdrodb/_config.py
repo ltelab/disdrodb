@@ -38,6 +38,7 @@ def _get_default_configs():
 _CONFIG_DEFAULTS = {
     "data_archive_dir": None,
     "metadata_archive_dir": None,
+    "scattering_table_dir": None,
     "zenodo_sandbox_token": None,
     "zenodo_token": None,
     "folder_partitioning": "year/month",

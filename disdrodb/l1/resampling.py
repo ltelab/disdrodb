@@ -15,8 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities for temporal resampling."""
-
-
 import pandas as pd
 import xarray as xr
 

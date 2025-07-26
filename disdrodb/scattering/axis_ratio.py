@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Implement drop axis ratio theoretical models."""
+"""Implement drop (vertical-to-horizontal) axis ratio theoretical models."""
 
 import numpy as np
 import xarray as xr
@@ -26,7 +26,30 @@ def available_axis_ratio():
 
 
 def get_axis_ratio_method(method):
-    """Return the specified drop axis ratio method."""
+    """Return the specified drop axis ratio method.
+
+    Parameters
+    ----------
+    method : str
+        The method to use for calculating the axis ratio. Available methods are:
+        'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
+        'Pruppacher1970', 'Beard1987', 'Andsager1999'.
+
+    Returns
+    -------
+    callable
+        A function which compute the vertical-to-horizontal axis ratio given a
+        particle diameter in mm.
+
+    Notes
+    -----
+    This function serves as a wrapper to various axis ratio models for raindrops.
+    It returns the appropriate model based on the `method` parameter.
+
+    Please note that the axis ratio function to be provided to pyTmatrix expects to
+    return a horizontal-to-vertical axis ratio !
+
+    """
     method = check_axis_ratio(method)
     return AXIS_RATIO_METHODS[method]
 
@@ -55,12 +78,9 @@ def get_axis_ratio(diameter, method):
     Returns
     -------
     axis_ratio : array-like
-        Calculated axis ratios corresponding to the input diameters.
-
-    Raises
-    ------
-    ValueError
-        If the specified method is not one of the available methods.
+        The vertical-to-horizontal drop axis ratio corresponding to the input diameters.
+        Values of 1 indicate spherical particles, while values <1 indicate oblate particles.
+        Values >1 means prolate particles.
 
     Notes
     -----

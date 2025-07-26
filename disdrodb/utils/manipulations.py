@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -14,16 +16,13 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Implement PSD scattering routines."""
+"""Include functions helping for DISDRODB product manipulations."""
+
+import numpy as np 
+import xarray as xr
 
 
-from disdrodb.scattering.axis_ratio import available_axis_ratio, get_axis_ratio
-from disdrodb.scattering.routines import available_radar_bands, get_radar_parameters, load_scatterer
-
-__all__ = [
-    "available_axis_ratio",
-    "available_radar_bands",
-    "get_axis_ratio",
-    "get_radar_parameters",
-    "load_scatterer",
-]
+def get_diameter_bin_edges(ds):
+    """Retrieve diameter bin edges."""
+    bin_edges = np.append(ds["diameter_bin_lower"].compute().data, ds["diameter_bin_upper"].compute().data[-1])
+    return bin_edges

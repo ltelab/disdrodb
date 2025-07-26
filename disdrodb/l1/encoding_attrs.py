@@ -247,34 +247,55 @@ def get_attrs_dict():
             "long_name": "Slope Parameter of the Modeled Lognormal Distribution",
         },
         # Radar variables
-        "Zh": {
+        "DBZH": {
             "description": "Radar reflectivity factor at horizontal polarization",
             "long_name": "Horizontal Reflectivity",
             "units": "dBZ",
         },
-        "Zdr": {
+        "DBZV": {
+            "description": "Radar reflectivity factor at vertical polarization",
+            "long_name": "Vertical Reflectivity",
+            "units": "dBZ",
+        },
+        "ZDR": {
             "description": "Differential reflectivity",
             "long_name": "Differential Reflectivity",
             "units": "dB",
         },
-        "rho_hv": {
+        "RHOHV": {
             "description": "Correlation coefficient between horizontally and vertically polarized reflectivity",
             "long_name": "Copolarized Correlation Coefficient",
             "units": "",
         },
-        "ldr": {
+        "LDR": {
             "description": "Linear depolarization ratio",
             "long_name": "Linear Depolarization Ratio",
             "units": "dB",
         },
-        "Kdp": {
+        "KDP": {
             "description": "Specific differential phase",
             "long_name": "Specific Differential Phase",
             "units": "deg/km",
         },
-        "Ai": {
-            "description": "Specific attenuation",
-            "long_name": "Specific attenuation",
+        "DELTAHV": {
+            "description": "Backscatter differential phase shift",
+            "long_name": "Backscatter Differential Phase Shift",
+            "comment": "Also referred as co-polar phase shift difference",
+            "units": "deg",
+        },
+        "AH": {
+            "description": "Specific attenuation at horizontal polarization",
+            "long_name": "Specific Attenuation",
+            "units": "dB/km",
+        },
+        "AV": {
+            "description": "Specific attenuation at vertical polarization",
+            "long_name": "Specific Attenuation",
+            "units": "dB/km",
+        },
+        "ADR": {
+            "description": "Specific differential attenuation",
+            "long_name": "Specific Differential Attenuation",
             "units": "dB/km",
         },
     }
@@ -587,7 +608,23 @@ def get_encoding_dict():
             "fletcher32": False,
             "contiguous": False,
         },
-        "E": {
+        "TKE": {
+            "dtype": "float32",
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
+        },
+        "KED": {
+            "dtype": "float32",
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
+        },
+        "KEF": {
             "dtype": "float32",
             "zlib": True,
             "complevel": 3,
@@ -604,7 +641,7 @@ def get_encoding_dict():
             "contiguous": False,
         },
         # Radar variables
-        "Zh": {
+        "DBZH": {
             "dtype": "float32",
             "zlib": True,
             "complevel": 3,
@@ -612,7 +649,7 @@ def get_encoding_dict():
             "fletcher32": False,
             "contiguous": False,
         },
-        "Zdr": {
+        "DBZV": {
             "dtype": "float32",
             "zlib": True,
             "complevel": 3,
@@ -620,7 +657,7 @@ def get_encoding_dict():
             "fletcher32": False,
             "contiguous": False,
         },
-        "rho_hv": {
+        "ZDR": {
             "dtype": "float32",
             "zlib": True,
             "complevel": 3,
@@ -628,7 +665,7 @@ def get_encoding_dict():
             "fletcher32": False,
             "contiguous": False,
         },
-        "ldr": {
+        "RHOHV": {
             "dtype": "float32",
             "zlib": True,
             "complevel": 3,
@@ -636,7 +673,7 @@ def get_encoding_dict():
             "fletcher32": False,
             "contiguous": False,
         },
-        "Kdp": {
+        "DELTAHV": {
             "dtype": "float32",
             "zlib": True,
             "complevel": 3,
@@ -644,7 +681,39 @@ def get_encoding_dict():
             "fletcher32": False,
             "contiguous": False,
         },
-        "Ai": {
+        "LDR": {
+            "dtype": "float32",
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
+        },
+        "KDP": {
+            "dtype": "float32",
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
+        },
+        "AH": {
+            "dtype": "float32",
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
+        },
+        "AV": {
+            "dtype": "float32",
+            "zlib": True,
+            "complevel": 3,
+            "shuffle": True,
+            "fletcher32": False,
+            "contiguous": False,
+        },
+        "ADR": {
             "dtype": "float32",
             "zlib": True,
             "complevel": 3,

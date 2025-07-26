@@ -143,8 +143,9 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
     # - Regularization can be done at the end
     ds = ds.isel(time=ds["N"] > 0)
 
-    # Count number of diameter bins with data
-    if "Nbins" not in ds:
+    # Add bins metrics to resampled data if missing
+    bins_metrics = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
+    if not np.all(np.isin(bins_metrics, list(ds.data_vars))):
         # Add bins statistics
         ds.update(compute_qc_bins_metrics(ds))
 
@@ -186,6 +187,7 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
 
     variables = [var for var in variables if var in ds]
     ds_l2.update(ds[variables])
+    ds_l2.update(ds[bins_metrics])
 
     # -------------------------------------------------------------------------------------------
     # Compute and add drop average velocity if an optical disdrometer (i.e OTT Parsivel or ThiesLPM)
@@ -361,8 +363,9 @@ def generate_l2_model(
     #### Preprocessing
     # TODO: Add filtering arguments to YAML files !
 
-    # Count number of diameter bins with data
-    if "Nbins" not in ds:
+    # Add bins metrics if missing
+    bins_metrics = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
+    if not np.all(np.isin(bins_metrics, list(ds.data_vars))):
         # Add bins statistics
         ds.update(compute_qc_bins_metrics(ds))
 
@@ -475,8 +478,9 @@ def generate_l2_model(
 def generate_l2_radar(
     ds,
     radar_band=None,
-    canting_angle_std=7,
+    num_points=1024,
     diameter_max=10,
+    canting_angle_std=7,
     axis_ratio="Thurai2007",
     parallel=True,
 ):
@@ -489,10 +493,12 @@ def generate_l2_radar(
     radar_band : str or list of str, optional
         Radar band(s) to be used.
         If ``None`` (the default), all available radar bands are used.
+    num_points: int
+        Number of bins into which discretize the PSD.
+    diameter_max : float or list of float, optional
+        Maximum diameter. The default value is 10 mm.
     canting_angle_std : float or list of float, optional
         Standard deviation of the canting angle.  The default value is 7.
-    diameter_max : float or list of float, optional
-        Maximum diameter. The default value is 8 mm.
     axis_ratio : str or list of str, optional
         Method to compute the axis ratio. The default method is ``Thurai2007``.
     parallel : bool, optional
@@ -512,8 +518,9 @@ def generate_l2_radar(
     ds_radar = get_radar_parameters(
         ds=ds,
         radar_band=radar_band,
-        canting_angle_std=canting_angle_std,
+        num_points=num_points,
         diameter_max=diameter_max,
+        canting_angle_std=canting_angle_std,
         axis_ratio=axis_ratio,
         parallel=parallel,
     )

@@ -19,6 +19,8 @@
 import numpy as np
 import xarray as xr
 
+from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+
 
 def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):
     """
@@ -50,12 +52,7 @@ def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):
         ds["diameter_bin_lower"] >= minimum_diameter,
         ds["diameter_bin_upper"] <= maximum_diameter,
     )
-    ds = ds.isel({"diameter_bin_center": valid_indices})
-    # Update history
-    history = ds.attrs.get("history", "")
-    ds.attrs["history"] = (
-        history + f" Selected drops with diameters between {minimum_diameter} and {maximum_diameter} mm \n"
-    )
+    ds = ds.isel({DIAMETER_DIMENSION: valid_indices})
     return ds
 
 
@@ -89,12 +86,7 @@ def filter_velocity_bins(ds, minimum_velocity=0, maximum_velocity=12):
         ds["velocity_bin_lower"] >= minimum_velocity,
         ds["velocity_bin_upper"] <= maximum_velocity,
     )
-    ds = ds.isel({"velocity_bin_center": valid_indices})
-    # Update history
-    history = ds.attrs.get("history", "")
-    ds.attrs["history"] = (
-        history + f" Selected drops with fall velocity between {minimum_velocity} and {maximum_velocity} m/s \n"
-    )
+    ds = ds.isel({VELOCITY_DIMENSION: valid_indices})
     return ds
 
 

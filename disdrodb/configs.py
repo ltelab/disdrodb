@@ -36,6 +36,7 @@ def _define_config_filepath():
 def define_configs(
     data_archive_dir: Optional[str] = None,
     metadata_archive_dir: Optional[str] = None,
+    scattering_table_dir: Optional[str] = None,
     configs_path: Optional[str] = None,
     folder_partitioning: Optional[str] = None,
     zenodo_token: Optional[str] = None,
@@ -50,6 +51,8 @@ def define_configs(
         The directory path where the DISDRODB Data Archive is located.
     metadata_archive_dir : str
         The directory path where the DISDRODB Metadata Archive is located.
+    scattering_table_dir : str
+        The directory path where to store DISDRODB T-Matrix scattering tables.
     configs_path : str
         The directory path where the custom DISDRODB products configurations files are defined.
     folder_partitioning : str
@@ -74,7 +77,12 @@ def define_configs(
 
     """
     import disdrodb
-    from disdrodb.api.checks import check_data_archive_dir, check_folder_partitioning, check_metadata_archive_dir
+    from disdrodb.api.checks import (
+        check_data_archive_dir,
+        check_folder_partitioning,
+        check_metadata_archive_dir,
+        check_scattering_table_dir,
+    )
 
     # Define path to .config_disdrodb.yaml file
     filepath = _define_config_filepath()
@@ -90,9 +98,16 @@ def define_configs(
     # Add DISDRODB Data Archive Directory
     if data_archive_dir is not None:
         config_dict["data_archive_dir"] = check_data_archive_dir(data_archive_dir)
+
     # Add DISDRODB Metadata Archive Directory
     if metadata_archive_dir is not None:
         config_dict["metadata_archive_dir"] = check_metadata_archive_dir(metadata_archive_dir)
+
+    # Add DISDRODB Scattering Table Directory
+    if scattering_table_dir is not None:
+        os.makedirs(scattering_table_dir, exist_ok=True)
+        config_dict["scattering_table_dir"] = check_scattering_table_dir(scattering_table_dir)
+
     # Add DISDRODB Folder Partitioning
     if folder_partitioning is not None:
         config_dict["folder_partitioning"] = check_folder_partitioning(folder_partitioning)
@@ -171,6 +186,19 @@ def get_metadata_archive_dir(metadata_archive_dir=None):
     return metadata_archive_dir
 
 
+def get_scattering_table_dir(scattering_table_dir=None):
+    """Return the directory where DISDRODB save pyTMatrix scattering tables."""
+    import disdrodb
+    from disdrodb.api.checks import check_scattering_table_dir
+
+    if scattering_table_dir is None:
+        scattering_table_dir = disdrodb.config.get("scattering_table_dir", None)
+    if scattering_table_dir is None:
+        raise ValueError("The directory where to save DISDRODB T-Matrix scattering tables is not specified.")
+    scattering_table_dir = check_scattering_table_dir(scattering_table_dir)  # ensure Path converted to str
+    return scattering_table_dir
+
+
 def get_folder_partitioning():
     """Return the folder partitioning."""
     import disdrodb
@@ -222,7 +250,7 @@ def check_availability_radar_simulations(options):
     """Check radar simulations are possible for L2E and L2M products."""
     import disdrodb
 
-    if "radar_simulation_enabled" in options and not disdrodb.pytmatrix_available:
+    if "radar_simulation_enabled" in options and not disdrodb.is_pytmatrix_available():
         options["radar_simulation_enabled"] = False
     return options
 
@@ -284,7 +312,6 @@ def get_product_options(product, time_integration=None):
     global_options.pop("time_integrations", None)
     custom_options_path = os.path.join(configs_path, product, f"{time_integration}.yaml")
     if not os.path.exists(custom_options_path):
-        global_options.pop("time_integrations", None)
         return global_options
     custom_options = read_yaml(custom_options_path)
     options = global_options.copy()

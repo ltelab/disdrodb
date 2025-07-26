@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+import os
+
+import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -23,27 +26,6 @@ from disdrodb.l0.l0a_processing import read_raw_text_file
 
 def reader_parsivel(filepath, logger):
     """Reader for Parsivel CR1000 Data Logger file."""
-    ##------------------------------------------------------------------------.
-    #### Define column names
-    column_names = [
-        "time",
-        "RECORD",
-        "rainfall_rate_32bit",
-        "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "laser_amplitude",
-        "number_particles",
-        "sensor_temperature",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "sensor_status",
-        "rain_kinetic_energy",
-        "V_Batt_Min",
-    ]
-
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
@@ -76,18 +58,80 @@ def reader_parsivel(filepath, logger):
     #### Read the data
     df = read_raw_text_file(
         filepath=filepath,
-        column_names=column_names,
+        column_names=None,
         reader_kwargs=reader_kwargs,
         logger=logger,
     )
+
+    #### Define column names
+    n_columns = len(df.columns)
+    if n_columns == 16:
+        column_names = [
+            "time",
+            "RECORD",
+            "rainfall_rate_32bit",
+            "rainfall_accumulated_32bit",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "laser_amplitude",
+            "number_particles",
+            "sensor_temperature",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "sensor_status",
+            "rain_kinetic_energy",
+            "V_Batt_Min",
+        ]
+    elif n_columns == 20:
+        column_names = [
+            "time",
+            "RECORD",
+            "rainfall_rate_32bit",
+            "rainfall_accumulated_32bit",
+            "weather_code_synop_4680",
+            "weather_code_synop_4677",
+            "reflectivity_32bit",
+            "mor_visibility",
+            "laser_amplitude",
+            "number_particles",
+            "sensor_temperature",
+            "sensor_heating_current",
+            "sensor_battery_voltage",
+            "sensor_status",
+            "sensor_temperature_receiver",
+            "sensor_temperature_trasmitter",
+            "rain_kinetic_energy",
+            "V_Batt_Min",
+            "sample_interval",
+            "Temps_present",
+        ]
+    else:
+        raise ValueError(f"{filepath} has {n_columns} columns. Undefined reader.")
+
+    ##------------------------------------------------------------------------.
+    #### Assign column names
+    df.columns = column_names
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Define time
     df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
 
+    # Set missing columns as NaN
+    potential_missing_columns = [
+        "sensor_temperature_receiver",
+        "sensor_temperature_trasmitter",
+        "rain_kinetic_energy",
+    ]
+    for column in potential_missing_columns:
+        if column not in df.columns:
+            df[column] = np.nan
+
     # Drop columns not agreeing with DISDRODB L0 standards
-    df = df.drop(columns=["RECORD", "V_Batt_Min"])
+    columns_to_drop = ["RECORD", "V_Batt_Min", "Temps_present", "sample_interval"]
+    df = df.drop(columns=columns_to_drop, errors="ignore")
     return df
 
 
@@ -174,11 +218,14 @@ def reader(
     logger=None,
 ):
     """Reader."""
-    # Retrieve Spectrum filepath
+    # Retrieve spectrum filepath
     spectrum_filepath = filepath.replace("parsivel", "spectre")
 
     # Read integral variables
     df = reader_parsivel(filepath, logger=logger)
+
+    # Drop duplicates timesteps
+    df = df.drop_duplicates(subset="time", keep="first")
 
     # Initialize empty arrays
     # --> 0 values array produced in L0B
@@ -186,16 +233,17 @@ def reader(
     df["raw_drop_average_velocity"] = ""
     df["raw_drop_number"] = ""
 
-    # Read raw spectrum for corresponding timesteps
-    df_raw_spectrum = reader_spectrum(spectrum_filepath, logger=logger)
-
-    # Add raw array to df
-    df = df.set_index("time")
-    df_raw_spectrum = df_raw_spectrum.set_index("time")
-    df.update(df_raw_spectrum)
-
-    # Set back time as column
-    df = df.reset_index()
+    # Add raw spectrum if available
+    if os.path.exists(spectrum_filepath):
+        # Read raw spectrum for corresponding timesteps
+        df_raw_spectrum = reader_spectrum(spectrum_filepath, logger=logger)
+        df_raw_spectrum = df_raw_spectrum.drop_duplicates(subset="time", keep="first")
+        # Add raw array to df
+        df = df.set_index("time")
+        df_raw_spectrum = df_raw_spectrum.set_index("time")
+        df.update(df_raw_spectrum)
+        # Set back time as column
+        df = df.reset_index()
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

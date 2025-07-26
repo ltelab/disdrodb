@@ -107,6 +107,15 @@ def check_metadata_archive_dir(metadata_archive_dir: str):
     return metadata_archive_dir
 
 
+def check_scattering_table_dir(scattering_table_dir: str):
+    """Raise an error if the directory does not exist."""
+    scattering_table_dir = str(scattering_table_dir)  # convert Pathlib to string
+    scattering_table_dir = os.path.normpath(scattering_table_dir)
+    if not os.path.exists(scattering_table_dir):
+        raise ValueError(f"The DISDRODB T-Matrix scattering tables directory {scattering_table_dir} does not exists.")
+    return scattering_table_dir
+
+
 def check_measurement_interval(measurement_interval):
     """Check measurement interval validity."""
     if isinstance(measurement_interval, str) and measurement_interval == "":

@@ -132,7 +132,7 @@ def _generate_l1(
     ### Core computation
     try:
         # Open the raw netCDF
-        with xr.open_dataset(filepath, chunks={}, decode_timedelta=False, cache=False) as ds:
+        with xr.open_dataset(filepath, chunks=-1, decode_timedelta=False, cache=False) as ds:
             ds = ds[["raw_drop_number"]].load()
 
         # Produce L1 dataset

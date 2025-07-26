@@ -35,7 +35,13 @@ from disdrodb.api.search import (
     available_data_sources,
     available_stations,
 )
-from disdrodb.configs import define_configs, get_data_archive_dir, get_metadata_archive_dir, get_product_options
+from disdrodb.configs import (
+    define_configs,
+    get_data_archive_dir,
+    get_metadata_archive_dir,
+    get_product_options,
+    get_scattering_table_dir,
+)
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation
 from disdrodb.l0.l0_reader import available_readers, get_reader, get_station_reader
@@ -116,6 +122,7 @@ __all__ = [
     "get_metadata_archive_dir",
     "get_product_options",
     "get_reader",
+    "get_scattering_table_dir",
     "get_station_reader",
     "open_dataset",
     "open_documentation",
@@ -154,8 +161,6 @@ def is_pytmatrix_available():
         return False
     return hasattr(pytmatrix, "psd")
 
-
-pytmatrix_available = is_pytmatrix_available()
 
 # Get version
 with contextlib.suppress(PackageNotFoundError):
