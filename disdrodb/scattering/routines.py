@@ -23,10 +23,6 @@ import os
 import dask
 import numpy as np
 import xarray as xr
-from pytmatrix import orientation, radar, tmatrix_aux
-from pytmatrix.psd import PSDIntegrator
-from pytmatrix.tmatrix import Scatterer
-
 from disdrodb import DIAMETER_DIMENSION, get_scattering_table_dir
 from disdrodb.l1.filters import filter_diameter_bins
 from disdrodb.psd.models import BinnedPSD, create_psd, get_required_parameters
@@ -42,15 +38,6 @@ from disdrodb.utils.warnings import suppress_warnings
 
 logger = logging.getLogger(__name__)
 
-# Wavelengths for common radar frequencies defined in pytmatrix (in mm)
-wavelength_dict = {
-    "S": tmatrix_aux.wl_S,
-    "C": tmatrix_aux.wl_C,
-    "X": tmatrix_aux.wl_X,
-    "Ku": tmatrix_aux.wl_Ku,
-    "Ka": tmatrix_aux.wl_Ka,
-    "W": tmatrix_aux.wl_W,
-}
 
 # Common radar frequencies (in GHz)
 frequency_dict = {
@@ -155,6 +142,10 @@ def initialize_scatterer(
         A scatterer object with the PSD integrator configured and scattering
         table loaded or generated.
     """
+    from pytmatrix.psd import PSDIntegrator
+    from pytmatrix.tmatrix import Scatterer
+    from pytmatrix import orientation, tmatrix_aux
+    
     # Retrieve custom axis ratio function
     axis_ratio_func = get_axis_ratio_model(axis_ratio_model)
 
@@ -378,6 +369,8 @@ def compute_radar_variables(scatterer):
     To speed up computations, this function should input a scatterer object with
     a preinitialized scattering table.
     """
+    from pytmatrix import radar, tmatrix_aux
+    
     radar_vars = {}
 
     # Set backward scattering for reflectivity calculations
