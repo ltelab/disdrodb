@@ -18,12 +18,15 @@
 
 
 from disdrodb.scattering.axis_ratio import available_axis_ratio, get_axis_ratio
+from disdrodb.scattering.permittivity import available_refractive_index, get_refractive_index
 from disdrodb.scattering.routines import available_radar_bands, get_radar_parameters, load_scatterer
 
 __all__ = [
     "available_axis_ratio",
     "available_radar_bands",
+    "available_refractive_index",
     "get_axis_ratio",
     "get_radar_parameters",
+    "get_refractive_index",
     "load_scatterer",
 ]

@@ -68,51 +68,51 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Identify groups of lines corresponding to same measurement
-    is_start = df['TO_PARSE'].str.startswith('#0#,')
-    df['observation_id'] = is_start.cumsum()
+    is_start = df["TO_PARSE"].str.startswith("#0#,")
+    df["observation_id"] = is_start.cumsum()
 
     # Loop over groups and create a dataframe with a single row for each measurement
     list_obs = []
-    for _, df_obs in df.groupby('observation_id', sort=False):
-        if len(df_obs) not in [6, 7]: 
-            pass 
-        
+    for _, df_obs in df.groupby("observation_id", sort=False):
+        if len(df_obs) not in [6, 7]:
+            pass
+
         # Remove #<id># and last comma
-        series = df_obs["TO_PARSE"].str.split(",", n=1, expand=True)[1].str.rstrip(',')
+        series = df_obs["TO_PARSE"].str.split(",", n=1, expand=True)[1].str.rstrip(",")
         if len(df_obs) == 7:
             series = series.iloc[0:6]
-        
-        
+
         # Create dataframe and name columns
         df_obs = series.to_frame().T
-        df_obs.columns = ["time", 
-                          "TO_SPLIT1", 
-                          "TO_SPLIT2", 
-                          "raw_drop_concentration",
-                          "raw_drop_average_velocity", 
-                          "raw_drop_number"]
-        
-        # Append to the list 
-        list_obs.append(df_obs) 
-        
+        df_obs.columns = [
+            "time",
+            "TO_SPLIT1",
+            "TO_SPLIT2",
+            "raw_drop_concentration",
+            "raw_drop_average_velocity",
+            "raw_drop_number",
+        ]
+
+        # Append to the list
+        list_obs.append(df_obs)
+
     # Concat all timesteps into a single dataframe
     df = pd.concat(list_obs)
-    
-    # Split and rename remaining variables 
+
+    # Split and rename remaining variables
     df_split1 = df["TO_SPLIT1"].str.split(",", expand=True)
     df_split1.columns = ["weather_code_synop_4680", "unknown1", "unknown2", "reflectivity_32bit"]
     df_split2 = df["TO_SPLIT2"].str.split(",", expand=True)
     df_split2.columns = ["parsivel_id", "unknown3", "mor_visibility", "laser_amplitude", "sensor_status"]
-    
-    # Merge everything into a single dataframe 
+
+    # Merge everything into a single dataframe
     df = pd.concat([df, df_split1, df_split2], axis=1)
-    
+
     # Define time as datetime64
     df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
-    
-    # Remove unused variables 
-    df = df.drop(columns=["TO_SPLIT1", "TO_SPLIT2", "parsivel_id",
-                          "unknown1", "unknown2", "unknown3"])
-         
+
+    # Remove unused variables
+    df = df.drop(columns=["TO_SPLIT1", "TO_SPLIT2", "parsivel_id", "unknown1", "unknown2", "unknown3"])
+
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

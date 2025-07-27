@@ -67,6 +67,21 @@ def get_radar_wavelength(radar_band):
     return wavelength
 
 
+# Wavelength, Frequency Conversion
+def wavelength_to_frequency(wavelength):
+    """Convert wavelength in millimeters to frequency in GHz."""
+    c = 299_792_458  # speed of light in m/s
+    frequency = c / np.array(wavelength) / 1e6
+    return frequency
+
+
+def frequency_to_wavelength(frequency):
+    """Convert frequency in GHz to wavelength millimeters."""
+    c = 299_792_458  # speed of light in m/s
+    wavelength = c / np.array(frequency) / 1e6
+    return wavelength
+
+
 def initialize_scatterer(wavelength, num_points=1024, diameter_max=8, canting_angle_std=7, axis_ratio="Thurai2007"):
     """Initialize T-matrix scatterer object for a given wavelength."""
     # Retrieve custom axis ratio function

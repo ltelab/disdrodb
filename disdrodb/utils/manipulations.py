@@ -18,11 +18,20 @@
 # -----------------------------------------------------------------------------.
 """Include functions helping for DISDRODB product manipulations."""
 
-import numpy as np 
-import xarray as xr
+import numpy as np
 
 
 def get_diameter_bin_edges(ds):
     """Retrieve diameter bin edges."""
     bin_edges = np.append(ds["diameter_bin_lower"].compute().data, ds["diameter_bin_upper"].compute().data[-1])
     return bin_edges
+
+
+def convert_from_decibel(x):
+    """Convert dB to unit."""
+    return np.power(10.0, x / 10)
+
+
+def convert_to_decibel(x):
+    """Convert unit to dB."""
+    return 10 * np.log10(x)

@@ -67,6 +67,8 @@ from disdrodb.routines import (
     run_l2m,
     run_l2m_station,
 )
+from disdrodb.utils.manipulations import convert_from_decibel as idecibel
+from disdrodb.utils.manipulations import convert_to_decibel as decibel
 
 ARCHIVE_VERSION = "V0"
 SOFTWARE_VERSION = "V" + importlib.metadata.version("disdrodb")
@@ -113,6 +115,7 @@ __all__ = [
     "check_metadata_archive",
     "check_metadata_archive_geolocation",
     "check_station_metadata",
+    "decibel",
     "define_configs",
     "download_archive",
     "download_metadata_archive",
@@ -124,6 +127,7 @@ __all__ = [
     "get_reader",
     "get_scattering_table_dir",
     "get_station_reader",
+    "idecibel",
     "open_dataset",
     "open_documentation",
     "open_logs_directory",
