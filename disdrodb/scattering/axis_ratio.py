@@ -20,18 +20,18 @@ import numpy as np
 import xarray as xr
 
 
-def available_axis_ratio():
-    """Return a list of the available drop axis ratio methods."""
-    return list(AXIS_RATIO_METHODS)
+def available_axis_ratio_models():
+    """Return a list of the available drop axis ratio models."""
+    return list(AXIS_RATIO_MODELS)
 
 
-def get_axis_ratio_method(method):
-    """Return the specified drop axis ratio method.
+def get_axis_ratio_model(model):
+    """Return the specified drop axis ratio model.
 
     Parameters
     ----------
-    method : str
-        The method to use for calculating the axis ratio. Available methods are:
+    model : str
+        The model to use for calculating the axis ratio. Available models are:
         'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
         'Pruppacher1970', 'Beard1987', 'Andsager1999'.
 
@@ -44,34 +44,34 @@ def get_axis_ratio_method(method):
     Notes
     -----
     This function serves as a wrapper to various axis ratio models for raindrops.
-    It returns the appropriate model based on the `method` parameter.
+    It returns the appropriate model based on the `model` parameter.
 
     Please note that the axis ratio function to be provided to pyTmatrix expects to
     return a horizontal-to-vertical axis ratio !
 
     """
-    method = check_axis_ratio(method)
-    return AXIS_RATIO_METHODS[method]
+    model = check_axis_ratio_model(model)
+    return AXIS_RATIO_MODELS[model]
 
 
-def check_axis_ratio(method):
-    """Check validity of the specified drop axis ratio method."""
-    available_methods = available_axis_ratio()
-    if method not in available_methods:
-        raise ValueError(f"{method} is an invalid axis-ratio method. Valid methods: {available_methods}.")
-    return method
+def check_axis_ratio_model(model):
+    """Check validity of the specified drop axis ratio model."""
+    available_models = available_axis_ratio_models()
+    if model not in available_models:
+        raise ValueError(f"{model} is an invalid axis-ratio model. Valid models: {available_models}.")
+    return model
 
 
-def get_axis_ratio(diameter, method):
+def get_axis_ratio(diameter, model):
     """
-    Compute the axis ratio of raindrops using the specified method.
+    Compute the axis ratio of raindrops using the specified model.
 
     Parameters
     ----------
     diameter : array-like
         Raindrops diameter in mm.
-    method : str
-        The method to use for calculating the axis ratio. Available methods are:
+    model : str
+        The axis ratio model to use for calculating the axis ratio. Available models are:
         'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
         'Pruppacher1970', 'Beard1987', 'Andsager1999'.
 
@@ -85,19 +85,19 @@ def get_axis_ratio(diameter, method):
     Notes
     -----
     This function serves as a wrapper to various axis ratio models for raindrops.
-    It selects and applies the appropriate model based on the `method` parameter.
+    It selects and applies the appropriate model based on the `model` parameter.
 
     Examples
     --------
     >>> diameter = np.array([0.5, 1.0, 2.0, 3.0])
-    >>> axis_ratio = get_axis_ratio(diameter, method="Brandes2002")
+    >>> axis_ratio = get_axis_ratio(diameter, model="Brandes2002")
 
     """
     # Retrieve axis ratio function
-    func = get_axis_ratio_method(method)
+    axis_ratio_func = get_axis_ratio_model(model)
 
     # Retrieve axis ratio
-    axis_ratio = func(diameter)
+    axis_ratio = axis_ratio_func(diameter)
 
     # Clip values between 0 and 1
     axis_ratio = np.clip(axis_ratio, 0, 1)
@@ -106,7 +106,7 @@ def get_axis_ratio(diameter, method):
 
 def get_axis_ratio_andsager_1999(diameter):
     """
-    Compute the axis ratio of raindrops using the Andsager et al. (1999) method.
+    Compute the axis ratio of raindrops using the Andsager et al. (1999) model.
 
     Parameters
     ----------
@@ -165,7 +165,7 @@ def get_axis_ratio_andsager_1999(diameter):
 
 def get_axis_ratio_battaglia_2010(diameter):
     """
-    Compute the axis ratio of raindrops using the Battaglia et al. (2010) method.
+    Compute the axis ratio of raindrops using the Battaglia et al. (2010) model.
 
     Parameters
     ----------
@@ -205,7 +205,7 @@ def get_axis_ratio_battaglia_2010(diameter):
 
 def get_axis_ratio_beard_1987(diameter):
     """
-    Compute the axis ratio of raindrops using the Beard and Chuang (1987) method.
+    Compute the axis ratio of raindrops using the Beard and Chuang (1987) model.
 
     Parameters
     ----------
@@ -234,7 +234,7 @@ def get_axis_ratio_beard_1987(diameter):
 
 def get_axis_ratio_brandes_2002(diameter):
     """
-    Compute the axis ratio of raindrops using the Brandes et al. (2002) method.
+    Compute the axis ratio of raindrops using the Brandes et al. (2002) model.
 
     Parameters
     ----------
@@ -263,7 +263,7 @@ def get_axis_ratio_brandes_2002(diameter):
 
 def get_axis_ratio_pruppacher_1970(diameter):
     """
-    Compute the axis ratio of raindrops using the Pruppacher and Pitter (1971) method.
+    Compute the axis ratio of raindrops using the Pruppacher and Pitter (1971) model.
 
     Parameters
     ----------
@@ -293,7 +293,7 @@ def get_axis_ratio_pruppacher_1970(diameter):
 
 def get_axis_ratio_thurai_2005(diameter):
     """
-    Compute the axis ratio of raindrops using the Thurai et al. (2005) method.
+    Compute the axis ratio of raindrops using the Thurai et al. (2005) model.
 
     Parameters
     ----------
@@ -317,7 +317,7 @@ def get_axis_ratio_thurai_2005(diameter):
 
 
 def get_axis_ratio_thurai_2007(diameter):
-    """Compute the axis ratio of raindrops using the Thurai et al. (2007) method.
+    """Compute the axis ratio of raindrops using the Thurai et al. (2007) model.
 
     Parameters
     ----------
@@ -353,7 +353,7 @@ def get_axis_ratio_thurai_2007(diameter):
     return axis_ratio
 
 
-AXIS_RATIO_METHODS = {
+AXIS_RATIO_MODELS = {
     "Thurai2005": get_axis_ratio_thurai_2005,
     "Thurai2007": get_axis_ratio_thurai_2007,
     "Battaglia2010": get_axis_ratio_battaglia_2010,

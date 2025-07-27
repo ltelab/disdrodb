@@ -1,4 +1,4 @@
-time_integrations: ["1MIN"] # "5MIN", "10MIN", "ROLL1MIN"]
+time_integrations: ["1MIN", "5MIN", "10MIN", "ROLL1MIN"]
 archiving_options:
   strategy: time_block
   strategy_options:
@@ -7,8 +7,10 @@ archiving_options:
 drop_timesteps_without_drops: True
 radar_simulation_enabled: False
 radar_simulation_options:
-  radar_band: ["S", "C", "X", "Ku", "Ka", "W"]
+  frequency: ["S", "C", "X", "Ku", "K", "Ka", "W"]
   num_points: 1024
   diameter_max: 10
   canting_angle_std: 7
-  axis_ratio: Thurai2007
+  axis_ratio_model: Thurai2007
+  permittivity_model: Turner2016
+  water_temperature: 10

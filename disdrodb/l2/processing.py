@@ -477,11 +477,13 @@ def generate_l2_model(
 @check_pytmatrix_availability
 def generate_l2_radar(
     ds,
-    radar_band=None,
+    frequency=None,
     num_points=1024,
     diameter_max=10,
     canting_angle_std=7,
-    axis_ratio="Thurai2007",
+    axis_ratio_model="Thurai2007",
+    permittivity_model="Turner2016",
+    water_temperature=10,
     parallel=True,
 ):
     """Simulate polarimetric radar variables from empirical drop number concentration or the estimated PSD.
@@ -490,17 +492,27 @@ def generate_l2_radar(
     ----------
     ds : xarray.Dataset
         Dataset containing the drop number concentration variable or the PSD parameters.
-    radar_band : str or list of str, optional
-        Radar band(s) to be used.
-        If ``None`` (the default), all available radar bands are used.
-    num_points: int
+    frequency : str, float, or list of str and float, optional
+        Frequencies in GHz for which to compute the radar parameters.
+        Alternatively, also strings can be used to specify common radar frequencies.
+        If ``None``, the common radar frequencies will be used.
+        See ``disdrodb.scattering.available_radar_bands()``.
+    num_points: int or list of integer, optional
         Number of bins into which discretize the PSD.
     diameter_max : float or list of float, optional
         Maximum diameter. The default value is 10 mm.
     canting_angle_std : float or list of float, optional
         Standard deviation of the canting angle.  The default value is 7.
-    axis_ratio : str or list of str, optional
-        Method to compute the axis ratio. The default method is ``Thurai2007``.
+    axis_ratio_model : str or list of str, optional
+        Models to compute the axis ratio. The default model is ``Thurai2007``.
+        See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
+    permittivity_model : str str or list of str, optional
+        Permittivity model to use to compute the refractive index and the
+        rayleigh_dielectric_factor. The default is ``Turner2016``.
+        See available models with ``disdrodb.scattering.available_permittivity_models()``.
+    water_temperature : float or list of float, optional
+        Water temperature in degree Celsius to be used in the permittivity model.
+        The default is 10 degC.
     parallel : bool, optional
         Whether to compute radar variables in parallel.
         The default value is ``True``.
@@ -517,11 +529,13 @@ def generate_l2_radar(
     # Retrieve radar variables from L2E drop number concentration or from estimated L2M PSD model
     ds_radar = get_radar_parameters(
         ds=ds,
-        radar_band=radar_band,
+        frequency=frequency,
         num_points=num_points,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
-        axis_ratio=axis_ratio,
+        axis_ratio_model=axis_ratio_model,
+        permittivity_model=permittivity_model,
+        water_temperature=water_temperature,
         parallel=parallel,
     )
 

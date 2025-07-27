@@ -33,12 +33,12 @@ import xarray as xr
 #### Wrappers
 
 
-def available_refractive_index():
+def available_permittivity_models():
     """Return a list of the available raindrops complex refractive index models."""
-    return list(refractive_index_METHODS)
+    return list(REFRACTIVE_INDEX_MODELS)
 
 
-def get_refractive_index_method(method):
+def get_refractive_index_function(permittivity_model):
     """Return the specified model estimating the complex refractive index of rain drops.
 
     The complex refractive index of a hydrometeor (e.g., water droplet, ice particle, graupel)
@@ -54,8 +54,8 @@ def get_refractive_index_method(method):
 
     Parameters
     ----------
-    method : str
-        The method to use for calculating the complex refractive index. Available methods are:
+    model : str
+        The model to use for calculating the complex refractive index. Available models are:
         'Liebe1991', 'Liebe1991v2', 'Ellison2005', 'Turner2016', 'Turner2016SLC'.
 
     Returns
@@ -66,24 +66,24 @@ def get_refractive_index_method(method):
     Notes
     -----
     This function serves as a wrapper to various complex refractive index models for raindrops.
-    It returns the appropriate model based on the `method` parameter.
+    It returns the appropriate model based on the `model` parameter.
 
     """
-    method = check_refractive_index(method)
-    return refractive_index_METHODS[method]
+    permittivity_model = check_permittivity_model(permittivity_model)
+    return REFRACTIVE_INDEX_MODELS[permittivity_model]
 
 
-def check_refractive_index(method):
+def check_permittivity_model(permittivity_model):
     """Check validity of the specified complex refractive index model."""
-    available_methods = available_refractive_index()
-    if method not in available_methods:
-        raise ValueError(f"{method} is an invalid complex refractive index model. Valid methods: {available_methods}.")
-    return method
+    available_models = available_permittivity_models()
+    if permittivity_model not in available_models:
+        raise ValueError(f"{permittivity_model} is an invalid permittivity model. Valid models: {available_models}.")
+    return permittivity_model
 
 
-def get_refractive_index(temperature, frequency, method):
+def get_refractive_index(temperature, frequency, permittivity_model):
     """
-    Compute the complex refractive index of raindrops using the specified method.
+    Compute the complex refractive index of raindrops using the specified permittivity model.
 
     The complex refractive index of a hydrometeor (e.g., water droplet, ice particle, graupel)
     governs how radar waves interact with it.
@@ -102,9 +102,10 @@ def get_refractive_index(temperature, frequency, method):
         Temperature in degree Celsius.
     frequency: float
         Frequency in GHz.
-    method : str
-        The method to use for calculating the complex refractive index. Available methods are:
-        'Liebe1991', 'Liebe1991v2', 'Ellison2005', 'Turner2016', 'Turner2016SLC'.
+    permittivity_model : str
+        The permittivity model to use for calculating the complex refractive index.
+        Available models are: 'Liebe1991', 'Liebe1991v2', 'Ellison2005', 'Turner2016', 'Turner2016SLC'.
+        See available models with ``disdrodb.scattering.available_permittivity_models()``.
 
     Returns
     -------
@@ -114,17 +115,17 @@ def get_refractive_index(temperature, frequency, method):
     Notes
     -----
     This function serves as a wrapper to various permittivity models for raindrops.
-    It selects and applies the appropriate model based on the `method` parameter.
+    It selects and applies the appropriate model based on the `permittivity_model` parameter.
 
     Examples
     --------
     >>> temperature = np.array([0.5, 1.0, 2.0, 3.0])
     >>> frequency = 5.6  # GhZ  (C band)
-    >>> m = get_refractive_index(temperature=temperature, frequency=frequency, method="Liebe1991")
+    >>> m = get_refractive_index(temperature=temperature, frequency=frequency, permittivity_model="Liebe1991")
 
     """
     # Retrieve refractive_index function
-    func = get_refractive_index_method(method)
+    func = get_refractive_index_function(permittivity_model)
 
     # Retrieve refractive_index
     refractive_index = func(temperature=temperature, frequency=frequency)
@@ -142,17 +143,21 @@ def ensure_array(arr):
     return np.asanyarray(arr)
 
 
-def check_temperature_validity_range(temperature, vmin, vmax, method):
+def check_temperature_validity_range(temperature, vmin, vmax, permittivity_model):
     """Check temperature validity range."""
     if np.logical_or(temperature < vmin, temperature > vmax).any():
-        raise ValueError(f"The {method} refractive index model is only valid between {vmin} and {vmax} degree Celsius.")
+        raise ValueError(
+            f"The {permittivity_model} refractive index model is only valid between {vmin} and {vmax} degree Celsius.",
+        )
     return temperature
 
 
-def check_frequency_validity_range(frequency, vmin, vmax, method):
+def check_frequency_validity_range(frequency, vmin, vmax, permittivity_model):
     """Check frequency validity range."""
     if np.logical_or(frequency < vmin, frequency > vmax).any():
-        raise ValueError(f"The {method} refractive index model is only valid between {vmin} and {vmax} GHz.")
+        raise ValueError(
+            f"The {permittivity_model} refractive index model is only valid between {vmin} and {vmax} GHz.",
+        )
     return frequency
 
 
@@ -189,8 +194,8 @@ def get_rain_refractive_index_liebe1991_single(temperature, frequency):
     temperature = ensure_array(temperature)
 
     # Check frequency and temperature within validity range
-    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=100, method="Liebe1991single")
-    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=100, method="Liebe1991single")
+    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=100, permittivity_model="Liebe1991single")
+    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=100, permittivity_model="Liebe1991single")
 
     # Conversion of temperature to Kelvin
     temperature = temperature + 273.15
@@ -248,8 +253,8 @@ def get_rain_refractive_index_liebe1991(temperature, frequency):
     temperature = ensure_array(temperature)
 
     # Check frequency and temperature within validity range
-    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=40, method="Liebe1991")
-    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=1000, method="Liebe1991")
+    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=40, permittivity_model="Liebe1991")
+    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=1000, permittivity_model="Liebe1991")
 
     # Conversion of temperature to Kelvin
     temperature = temperature + 273.15
@@ -314,8 +319,8 @@ def get_rain_refractive_index_ellison2005(temperature, frequency):
     temperature = ensure_array(temperature)
 
     # Check frequency and temperature within validity range
-    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=100, method="Ellison2005")
-    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=1000, method="Ellison2005")
+    temperature = check_temperature_validity_range(temperature, vmin=0, vmax=100, permittivity_model="Ellison2005")
+    frequency = check_frequency_validity_range(frequency, vmin=0, vmax=1000, permittivity_model="Ellison2005")
 
     # Conversion of frequency to Hz
     frequency = frequency / 1e-9
@@ -402,8 +407,8 @@ def get_rain_refractive_index_turner2016(frequency, temperature):
     temperature = ensure_array(temperature)
 
     # Check frequency and temperature within validity range
-    temperature = check_temperature_validity_range(temperature, vmin=-40, vmax=50, method="Turner2016")
-    frequency = check_frequency_validity_range(frequency, vmin=0.5, vmax=500, method="Turner2016")
+    temperature = check_temperature_validity_range(temperature, vmin=-40, vmax=50, permittivity_model="Turner2016")
+    frequency = check_frequency_validity_range(frequency, vmin=0.5, vmax=500, permittivity_model="Turner2016")
 
     # Conversion of frequency to Hz
     frequency = frequency / 1e-9
@@ -473,7 +478,7 @@ def get_rayleigh_dielectric_factor(m):
 
 
 ####-------------------------------------------------------------------------------------.
-refractive_index_METHODS = {
+REFRACTIVE_INDEX_MODELS = {
     "Liebe1991": get_rain_refractive_index_liebe1991,
     "Liebe1991single": get_rain_refractive_index_liebe1991_single,
     "Ellison2005": get_rain_refractive_index_ellison2005,

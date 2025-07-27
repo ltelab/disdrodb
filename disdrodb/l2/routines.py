@@ -441,26 +441,34 @@ class ProcessingOptions:
         return self.dict_folder_partitioning[time_integration]
 
 
-def precompute_scattering_tables(radar_band, num_points, diameter_max, canting_angle_std, axis_ratio, verbose=True):
+def precompute_scattering_tables(
+    frequency,
+    num_points,
+    diameter_max,
+    canting_angle_std,
+    axis_ratio_model,
+    permittivity_model,
+    water_temperature,
+    verbose=True,
+):
     """Precompute the pyTMatrix scattering tables required for radar variables simulations."""
-    from disdrodb.scattering.routines import get_list_simulations_params, get_radar_wavelength, load_scatterer
+    from disdrodb.scattering.routines import get_list_simulations_params, load_scatterer
 
     # Define parameters for all requested simulations
     list_params = get_list_simulations_params(
-        radar_band=radar_band,
+        frequency=frequency,
         num_points=num_points,
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
-        axis_ratio=axis_ratio,
+        axis_ratio_model=axis_ratio_model,
+        permittivity_model=permittivity_model,
+        water_temperature=water_temperature,
     )
 
     # Compute require scattering tables
     for params in list_params:
-        # Retrieve wavelengths in mm
-        wavelength = get_radar_wavelength(params.pop("radar_band"))
         # Initialize scattering table
         _ = load_scatterer(
-            wavelength=wavelength,
             verbose=verbose,
             **params,
         )
