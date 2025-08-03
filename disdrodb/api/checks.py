@@ -17,9 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB Checks Functions."""
+import datetime
 import logging
 import os
 import re
+import sys
 import warnings
 
 import numpy as np
@@ -485,3 +487,87 @@ def check_issue_file(data_source, campaign_name, station_name, metadata_archive_
         station_name=station_name,
     )
     return issue_filepath
+
+
+def check_filepaths(filepaths):
+    """Ensure filepaths is a list of string."""
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+    if not isinstance(filepaths, list):
+        raise TypeError("Expecting a list of filepaths.")
+    return filepaths
+
+
+def get_current_utc_time():
+    """Get current UTC time."""
+    if sys.version_info >= (3, 11):
+        return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    return datetime.datetime.utcnow()
+
+
+def check_start_end_time(start_time, end_time):
+    """Check start_time and end_time value validity."""
+    start_time = check_time(start_time)
+    end_time = check_time(end_time)
+
+    # Check start_time and end_time are chronological
+    if start_time > end_time:
+        raise ValueError("Provide 'start_time' occurring before of 'end_time'.")
+    # Check start_time and end_time are in the past
+    if start_time > get_current_utc_time():
+        raise ValueError("Provide 'start_time' occurring in the past.")
+    if end_time > get_current_utc_time():
+        raise ValueError("Provide 'end_time' occurring in the past.")
+    return (start_time, end_time)
+
+
+def check_time(time):
+    """Check time validity.
+
+    It returns a :py:class:`datetime.datetime` object to seconds precision.
+
+    Parameters
+    ----------
+    time : datetime.datetime, datetime.date, numpy.datetime64 or str
+        Time object.
+        Accepted types: ``datetime.datetime``, ``datetime.date``, ``numpy.datetime64`` or ``str``.
+        If string type, it expects the isoformat ``YYYY-MM-DD hh:mm:ss``.
+
+    Returns
+    -------
+    time: datetime.datetime
+
+    """
+    if not isinstance(time, (datetime.datetime, datetime.date, np.datetime64, np.ndarray, str)):
+        raise TypeError(
+            "Specify time with datetime.datetime objects or a " "string of format 'YYYY-MM-DD hh:mm:ss'.",
+        )
+
+    # If numpy array with datetime64 (and size=1)
+    if isinstance(time, np.ndarray):
+        if np.issubdtype(time.dtype, np.datetime64):
+            if time.size == 1:
+                time = time[0].astype("datetime64[s]").tolist()
+            else:
+                raise ValueError("Expecting a single timestep!")
+        else:
+            raise ValueError("The numpy array does not have a numpy.datetime64 dtype!")
+
+    # If np.datetime64, convert to datetime.datetime
+    if isinstance(time, np.datetime64):
+        time = time.astype("datetime64[s]").tolist()
+    # If datetime.date, convert to datetime.datetime
+    if not isinstance(time, (datetime.datetime, str)):
+        time = datetime.datetime(time.year, time.month, time.day, 0, 0, 0)
+    if isinstance(time, str):
+        try:
+            time = datetime.datetime.fromisoformat(time)
+        except ValueError:
+            raise ValueError("The time string must have format 'YYYY-MM-DD hh:mm:ss'")
+    # If datetime object carries timezone that is not UTC, raise error
+    if time.tzinfo is not None:
+        if str(time.tzinfo) != "UTC":
+            raise ValueError("The datetime object must be in UTC timezone if timezone is given.")
+        # If UTC, strip timezone information
+        time = time.replace(tzinfo=None)
+    return time

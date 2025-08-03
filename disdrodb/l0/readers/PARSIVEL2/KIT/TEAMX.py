@@ -101,9 +101,14 @@ def reader(
 
     # Split and rename remaining variables
     df_split1 = df["TO_SPLIT1"].str.split(",", expand=True)
-    df_split1.columns = ["weather_code_synop_4680", "unknown1", "unknown2", "reflectivity_32bit"]
+    df_split1.columns = [
+        "weather_code_synop_4680",
+        "rainfall_accumulated_32bit",
+        "rainfall_rate32bit",
+        "reflectivity_32bit",
+    ]
     df_split2 = df["TO_SPLIT2"].str.split(",", expand=True)
-    df_split2.columns = ["parsivel_id", "unknown3", "mor_visibility", "laser_amplitude", "sensor_status"]
+    df_split2.columns = ["parsivel_id", "sensor_serial_number", "mor_visibility", "laser_amplitude", "sensor_status"]
 
     # Merge everything into a single dataframe
     df = pd.concat([df, df_split1, df_split2], axis=1)
@@ -112,7 +117,7 @@ def reader(
     df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y %H:%M:%S", errors="coerce")
 
     # Remove unused variables
-    df = df.drop(columns=["TO_SPLIT1", "TO_SPLIT2", "parsivel_id", "unknown1", "unknown2", "unknown3"])
+    df = df.drop(columns=["TO_SPLIT1", "TO_SPLIT2", "parsivel_id", "sensor_serial_number"])
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

@@ -35,7 +35,7 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
-from disdrodb.api.io import find_files
+from disdrodb.api.io import find_files, open_files
 from disdrodb.api.path import (
     define_accumulation_acronym,
     define_file_folder_path,
@@ -79,36 +79,6 @@ from disdrodb.utils.time import (
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
-
-
-def _open_files(filepaths, start_time=None, end_time=None, variables=None, parallel=False):
-    # Define preprocessing function for parallel opening
-    preprocess = (lambda ds: ds[variables]) if parallel and variables is not None else None
-
-    # Open netcdf
-    with xr.open_mfdataset(
-        filepaths,
-        chunks=-1,
-        combine="nested",
-        concat_dim="time",
-        engine="netcdf4",
-        parallel=parallel,
-        preprocess=preprocess,
-        compat="no_conflicts",
-        combine_attrs="override",
-        coords="different",  # maybe minimal?
-        decode_timedelta=False,
-        cache=False,
-        autoclose=True,
-    ) as ds:
-        # - Subset variables
-        if variables is not None and preprocess is None:
-            ds = ds[variables]
-        # - Subset time
-        ds = ds.sel(time=slice(start_time, end_time))
-        # - Put in memory
-        dataset = ds.compute()
-    return dataset
 
 
 ####----------------------------------------------------------------------------.
@@ -166,7 +136,7 @@ def identify_events(
         - "n_timesteps": int, number of valid timesteps in the event
     """
     # Open datasets in parallel
-    ds = _open_files(filepaths, variables=["time", "N"], parallel=parallel)
+    ds = open_files(filepaths, variables=["time", "N"], parallel=parallel)
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
     # Define candidate timesteps to group into events
@@ -527,7 +497,7 @@ def _generate_l2e(
     try:
         # ------------------------------------------------------------------------.
         #### Open the dataset over the period of interest
-        ds = _open_files(filepaths, start_time=start_time, end_time=end_time, parallel=False)
+        ds = open_files(filepaths, start_time=start_time, end_time=end_time, parallel=False)
 
         ##------------------------------------------------------------------------.
         #### Resample dataset
@@ -758,6 +728,9 @@ def run_l2e_station(
     # product_options = l2e_processing_options.get_product_options(time_integration)
 
     for time_integration in l2e_processing_options.time_integrations:
+        # Print progress message
+        msg = f"Production of {product} {time_integration} has started."
+        log_info(logger=logger, msg=msg, verbose=verbose)
 
         # Retrieve event info
         files_partitions = l2e_processing_options.get_files_partitions(time_integration)
@@ -932,7 +905,7 @@ def _generate_l2m(
 
         ##------------------------------------------------------------------------.
         # Open the raw netCDF
-        ds = _open_files(filepaths, start_time=start_time, end_time=end_time, variables=variables)
+        ds = open_files(filepaths, start_time=start_time, end_time=end_time, variables=variables)
 
         # Produce L2M dataset
         ds = generate_l2_model(
@@ -1158,7 +1131,6 @@ def run_l2m_station(
         # Retrieve list of models to fit
         models = product_options.pop("models")
         for model_name in models:
-
             # Retrieve model options
             model_options = get_model_options(product="L2M", model_name=model_name)
             psd_model = model_options["psd_model"]

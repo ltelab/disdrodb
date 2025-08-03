@@ -80,6 +80,7 @@ def get_drop_average_velocity(drop_number):
         dim=VELOCITY_DIMENSION,
         skipna=False,
     )
+    average_velocity.name = "average_velocity"
     return average_velocity
 
 

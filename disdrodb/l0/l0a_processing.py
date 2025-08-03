@@ -18,7 +18,6 @@
 # -----------------------------------------------------------------------------.
 """Functions to process raw text files into DISDRODB L0A Apache Parquet."""
 
-
 import logging
 import os
 from typing import Union
@@ -130,11 +129,15 @@ def read_raw_text_file(
     try:
         df = pd.read_csv(filepath, names=column_names, dtype=dtype, **reader_kwargs)
     except pd.errors.EmptyDataError:
+        # if isinstance(filepath, zipfile.ZipExtFile):
+        #     filepath = filepath.name
         msg = f"The following file is empty: {filepath}"
         raise ValueError(msg)
 
     # Check the dataframe is not empty
     if len(df.index) == 0:
+        # if isinstance(filepath, zipfile.ZipExtFile):
+        #     filepath = filepath.name
         msg = f"The following file is empty: {filepath}"
         raise ValueError(msg)
 
@@ -413,6 +416,8 @@ def is_raw_array_string_not_corrupted(string):
     """Check if the raw array is corrupted."""
     if not isinstance(string, str):
         return False
+    if string in ["", "NAN", "NaN"]:
+        return True
     split_str = infer_split_str(string=string)
     list_values = string.split(split_str)
     values = pd.to_numeric(list_values, errors="coerce")

@@ -5,7 +5,7 @@ mor_visibility:
   n_naturals: 4
   data_range:
     - 0
-    - 9999.9
+    - 20000
   nan_flags: null
   field_number: "20"
 weather_code_synop_4680:

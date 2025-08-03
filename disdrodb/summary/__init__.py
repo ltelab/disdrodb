@@ -14,27 +14,4 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Implement PSD scattering routines."""
-
-
-from disdrodb.scattering.axis_ratio import available_axis_ratio_models, get_axis_ratio_model
-from disdrodb.scattering.permittivity import available_permittivity_models, get_refractive_index
-from disdrodb.scattering.routines import (
-    RADAR_OPTIONS,
-    RADAR_VARIABLES,
-    available_radar_bands,
-    get_radar_parameters,
-    load_scatterer,
-)
-
-__all__ = [
-    "RADAR_OPTIONS",
-    "RADAR_VARIABLES",
-    "available_axis_ratio_models",
-    "available_permittivity_models",
-    "available_radar_bands",
-    "get_axis_ratio_model",
-    "get_radar_parameters",
-    "get_refractive_index",
-    "load_scatterer",
-]
+"""DISDRODB Summary Module."""

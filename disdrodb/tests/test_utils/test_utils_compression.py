@@ -17,15 +17,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB raw data compression."""
-
-
 import os
 import pathlib
 
 import pytest
 
 from disdrodb.tests.conftest import create_fake_data_dir, create_fake_raw_data_file
-from disdrodb.utils.compression import _zip_dir, compress_station_files, unzip_file
+from disdrodb.utils.compression import (
+    _zip_dir,
+    compress_station_files,
+    unzip_file,
+    unzip_file_on_terminal,
+)
 
 
 @pytest.mark.parametrize("method", ["zip", "gzip", "bzip2"])
@@ -125,6 +128,7 @@ def test_files_compression(tmp_path, method):
 
 
 def test_zip_unzip_directory(tmp_path):
+    """Test zip and unzip a directory."""
     dir_path = tmp_path / "test_dir"
     dir_path.mkdir()
     filepath = dir_path / "test_file.txt"
@@ -135,4 +139,19 @@ def test_zip_unzip_directory(tmp_path):
 
     unzip_path = tmp_path / "test_dir_unzipped"
     unzip_file(zip_path, unzip_path)
+    assert os.path.isdir(unzip_path)
+
+
+def test_zip_unzip_on_terminal_directory(tmp_path):
+    """Test zip and unzip a directory."""
+    dir_path = tmp_path / "test_dir"
+    dir_path.mkdir()
+    filepath = dir_path / "test_file.txt"
+    filepath.touch()
+
+    zip_path = _zip_dir(dir_path)
+    assert os.path.isfile(zip_path)
+
+    unzip_path = tmp_path / "test_dir_unzipped"
+    unzip_file_on_terminal(zip_path, unzip_path)
     assert os.path.isdir(unzip_path)

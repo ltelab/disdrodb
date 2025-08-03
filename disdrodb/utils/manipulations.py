@@ -20,6 +20,8 @@
 
 import numpy as np
 
+from disdrodb.utils.xarray import unstack_datarray_dimension
+
 
 def get_diameter_bin_edges(ds):
     """Retrieve diameter bin edges."""
@@ -35,3 +37,17 @@ def convert_from_decibel(x):
 def convert_to_decibel(x):
     """Convert unit to dB."""
     return 10 * np.log10(x)
+
+
+def unstack_radar_variables(ds):
+    """Unstack radar variables."""
+    from disdrodb.scattering import RADAR_VARIABLES
+
+    for var in RADAR_VARIABLES:
+        if var in ds:
+            ds_unstack = unstack_datarray_dimension(ds[var], dim="frequency", prefix="", suffix="_")
+            ds.update(ds_unstack)
+            ds = ds.drop_vars(var)
+    if "frequency" in ds.dims:
+        ds = ds.drop_dims("frequency")
+    return ds

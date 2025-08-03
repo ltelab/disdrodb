@@ -23,6 +23,7 @@ import os
 import dask
 import numpy as np
 import xarray as xr
+
 from disdrodb import DIAMETER_DIMENSION, get_scattering_table_dir
 from disdrodb.l1.filters import filter_diameter_bins
 from disdrodb.psd.models import BinnedPSD, create_psd, get_required_parameters
@@ -38,6 +39,15 @@ from disdrodb.utils.warnings import suppress_warnings
 
 logger = logging.getLogger(__name__)
 
+RADAR_OPTIONS = [
+    "frequency",
+    "diameter_max",
+    "num_points",
+    "canting_angle_std",
+    "axis_ratio_model",
+    "permittivity_model",
+    "water_temperature",
+]
 
 # Common radar frequencies (in GHz)
 frequency_dict = {
@@ -142,10 +152,10 @@ def initialize_scatterer(
         A scatterer object with the PSD integrator configured and scattering
         table loaded or generated.
     """
+    from pytmatrix import orientation, tmatrix_aux
     from pytmatrix.psd import PSDIntegrator
     from pytmatrix.tmatrix import Scatterer
-    from pytmatrix import orientation, tmatrix_aux
-    
+
     # Retrieve custom axis ratio function
     axis_ratio_func = get_axis_ratio_model(axis_ratio_model)
 
@@ -307,10 +317,6 @@ def load_scatterer(
         permittivity_model=permittivity_model,
     )
 
-    # For W band limits diameter_max up to 9.5, otherwise the kernel dies !
-    if wavelength < 3.5:
-        diameter_max = min(diameter_max, 9.5)
-
     # Retrieve scattering table directory
     scattering_table_dir = get_scattering_table_dir(scattering_table_dir)
 
@@ -370,7 +376,7 @@ def compute_radar_variables(scatterer):
     a preinitialized scattering table.
     """
     from pytmatrix import radar, tmatrix_aux
-    
+
     radar_vars = {}
 
     # Set backward scattering for reflectivity calculations
@@ -380,7 +386,13 @@ def compute_radar_variables(scatterer):
     radar_vars["DBZV"] = 10 * np.log10(radar.refl(scatterer, h_pol=False))  # dBZ
 
     radar_vars["ZDR"] = 10 * np.log10(radar.Zdr(scatterer))  # dB
+    if ~np.isfinite(radar_vars["ZDR"]):
+        radar_vars["ZDR"] = np.nan
+
     radar_vars["LDR"] = 10 * np.log10(radar.ldr(scatterer))  # dBZ
+    if ~np.isfinite(radar_vars["LDR"]):
+        radar_vars["LDR"] = np.nan
+
     radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # deg/km
     radar_vars["DELTAHV"] = radar.delta_hv(scatterer) * 180.0 / np.pi  # [deg]
 
@@ -395,7 +407,7 @@ def compute_radar_variables(scatterer):
 
 # Radar variables computed by DISDRODB
 # - Must reflect dictionary order output of compute_radar_variables
-RADAR_VARIABLES = ["DBZH", "DBZH", "ZDR", "LDR", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADR"]
+RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDR", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADR"]
 
 
 def _initialize_null_output(output_dictionary):

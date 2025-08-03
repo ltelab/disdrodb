@@ -22,6 +22,7 @@ import bz2
 import gzip
 import os
 import shutil
+import subprocess
 import tempfile
 import zipfile
 from typing import Optional
@@ -51,6 +52,34 @@ def unzip_file(filepath: str, dest_path: str) -> None:
     """
     with zipfile.ZipFile(filepath, "r") as zip_ref:
         zip_ref.extractall(dest_path)
+
+
+def unzip_file_on_terminal(filepath: str, dest_path: str) -> str:
+    """Unzip a file into a directory using the terminal command.
+
+    Parameters
+    ----------
+    filepath : str
+        Path of the file to unzip.
+    dest_path : str
+        Path of the destination directory.
+    """
+    os.makedirs(dest_path, exist_ok=True)
+
+    if os.name == "nt":
+        # Windows: use PowerShell Expand-Archive
+        cmd = [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-Command",
+            f"Expand-Archive -LiteralPath '{filepath}' -DestinationPath '{dest_path}' -Force",
+        ]
+    else:
+        # macOS/Linux: use unzip
+        cmd = ["unzip", "-q", filepath, "-d", dest_path]
+
+    subprocess.run(cmd, check=True)
 
 
 def _zip_dir(dir_path: str) -> str:

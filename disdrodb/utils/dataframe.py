@@ -253,8 +253,18 @@ def compute_2d_histogram(
         raise ValueError("No valid data points after removing NaN values")
 
     # Create binned columns with explicit handling of out-of-bounds values
-    df[f"{x}_binned"] = pd.cut(df[x], bins=x_bins, include_lowest=True)
-    df[f"{y}_binned"] = pd.cut(df[y], bins=y_bins, include_lowest=True)
+    df[f"{x}_binned"] = pd.cut(
+        df[x],
+        bins=pd.IntervalIndex.from_breaks(x_bins, closed="right"),
+        include_lowest=True,
+        ordered=True,
+    )
+    df[f"{y}_binned"] = pd.cut(
+        df[y],
+        bins=pd.IntervalIndex.from_breaks(y_bins, closed="right"),
+        include_lowest=True,
+        ordered=True,
+    )
 
     # Create complete IntervalIndex for both dimensions
     x_intervals = df[f"{x}_binned"].cat.categories
@@ -318,8 +328,8 @@ def compute_2d_histogram(
     df_stats = df_stats.reindex(full_index)
 
     # Determine coordinates
-    x_centers = x_intervals.mid
-    y_centers = y_intervals.mid
+    x_centers = np.array(x_intervals.mid)
+    y_centers = np.array(y_intervals.mid)
 
     # Use provided labels if available
     x_coords = x_labels if x_labels is not None else x_centers
@@ -336,6 +346,12 @@ def compute_2d_histogram(
 
     # Convert to dataset
     ds = df_stats.to_xarray()
+
+    # Convert Categorical coordinates to float if possible
+    if np.issubdtype(x_coords.dtype, np.number):
+        ds[f"{x}"] = ds[f"{x}"].astype(float)
+    if np.issubdtype(y_coords.dtype, np.number):
+        ds[f"{y}"] = ds[f"{y}"].astype(float)
 
     # Transpose arrays
     ds = ds.transpose(y, x)
