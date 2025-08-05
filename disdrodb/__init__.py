@@ -78,6 +78,7 @@ CONVENTIONS = "CF-1.10, ACDD-1.3"
 # TODO: make it configurable
 DIAMETER_COORDS = ["diameter_bin_center", "diameter_bin_width", "diameter_bin_lower", "diameter_bin_upper"]
 VELOCITY_COORDS = ["velocity_bin_center", "velocity_bin_width", "velocity_bin_lower", "velocity_bin_upper"]
+GEOLOCATION_COORDS = ["longitude", "latitude", "altitude"]
 VELOCITY_DIMENSION = "velocity_bin_center"
 DIAMETER_DIMENSION = "diameter_bin_center"
 OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "PWS100"]

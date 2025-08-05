@@ -920,8 +920,7 @@ def get_min_max_diameter(drop_counts):
     return min_drop_diameter, max_drop_diameter
 
 
-def get_mode_diameter(drop_number_concentration, diameter):
-    """Get raindrop diameter with highest occurrence."""
+def _get_mode_diameter(drop_number_concentration, diameter):
     # If all NaN, set to 0 otherwise argmax fail when all NaN data
     idx_all_nan_mask = np.isnan(drop_number_concentration).all(dim=DIAMETER_DIMENSION)
     drop_number_concentration = drop_number_concentration.where(~idx_all_nan_mask, 0)
@@ -937,6 +936,43 @@ def get_mode_diameter(drop_number_concentration, diameter):
     # Set to np.nan where data where all NaN or all 0
     idx_mask = np.logical_or(idx_all_nan_mask, idx_all_zero)
     diameter_mode = diameter_mode.where(~idx_mask)
+    return diameter_mode
+
+
+def get_mode_diameter(
+    drop_number_concentration,
+    diameter,
+):
+    """Get raindrop diameter with highest occurrence.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        The drop number concentration N(D) for each diameter bin, typically in units of
+        number per cubic meter per millimeter (m⁻³·mm⁻¹).
+    diameter : xarray.DataArray
+        The equivalent volume diameters D of the drops in each bin, in meters (m).
+
+    Returns
+    -------
+    xarray.DataArray
+        The diameter with the highest drop number concentration.
+    """
+    # Use map_blocks if working with Dask arrays
+    if hasattr(drop_number_concentration.data, "chunks"):
+        # Define the template for output
+        template = remove_diameter_coordinates(drop_number_concentration.isel({DIAMETER_DIMENSION: 0}))
+        diameter_mode = xr.map_blocks(
+            _get_mode_diameter,
+            drop_number_concentration,
+            kwargs={"diameter": diameter.compute()},
+            template=template,
+        )
+    else:
+        diameter_mode = _get_mode_diameter(
+            drop_number_concentration=drop_number_concentration,
+            diameter=diameter,
+        )
     return diameter_mode
 
 
@@ -1370,7 +1406,7 @@ def get_normalized_intercept_parameter_from_moments(moment_3, moment_4):
         [m⁻³·mm³] (number per cubic meter times diameter cubed).
 
     moment_4 : float or array-like
-        The foruth moment of the drop size distribution, \\( M_3 \\), in units of
+        The fourth moment of the drop size distribution, \\( M_3 \\), in units of
         [m⁻³·mm4].
 
     Returns

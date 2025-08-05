@@ -382,11 +382,22 @@ def save_table_to_pdf(
         os.replace(os.path.join(td, "table.pdf"), filepath)
 
 
-def plot_drop_spectrum(drop_number, title="Drop Spectrum"):
+def define_lognorm_max_value(value):
+    """Round up to next nice number: 90->100, 400->500, 1200->2000"""
+    if value <= 0:
+        return 1
+    magnitude = 10 ** np.floor(np.log10(value))
+    first_digit = value / magnitude
+    nice_value = 1 if first_digit <= 1 else 2 if first_digit <= 2 else 5 if first_digit <= 5 else 10
+    return nice_value * magnitude
+
+
+def plot_drop_spectrum(drop_number, norm=None, title="Drop Spectrum"):
     """Plot the drop spectrum."""
     cmap = plt.get_cmap("Spectral_r")
     cmap.set_under("none")
-    norm = LogNorm(vmin=1, vmax=None)
+    if norm is None:
+        norm = LogNorm(vmin=1, vmax=None)
 
     p = drop_number.plot.pcolormesh(
         x=DIAMETER_DIMENSION,
@@ -1289,7 +1300,7 @@ def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, fig
             axes[i, j].tick_params(axis="x", which="both", bottom=False)
 
     # Add subplot titles as text in top left corner of each plot
-    bbox_dict = {
+    title_bbox_dict = {
         "facecolor": "white",
         "alpha": 0.7,
         "edgecolor": "none",
@@ -1306,10 +1317,232 @@ def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, fig
             #  fontweight='bold',
             ha="left",
             va="top",
-            bbox=bbox_dict,
+            bbox=title_bbox_dict,
         )
         ax.set_title("")
 
+    return fig
+
+
+def plot_dmax_relationships(df, diameter_bin_edges, dmax="Dmax", diameter_max=10, norm_vmax=None, dpi=300):
+    """
+    Plot 2x2 subplots showing relationships between Dmax and precipitation parameters.
+
+    Parameters
+    ----------
+    df : DataFrame
+        Input dataframe containing the precipitation data
+    dmax : str, default "Dmax"
+        Column name for maximum diameter
+    vmax : float, default 10
+        Maximum value for Dmax axis limits
+    dpi : int, default 300
+        Resolution for the figure
+    """
+    # Compute 2D histograms
+    # - Dmax-R
+    ds_stats_dmax_r = compute_2d_histogram(
+        df,
+        x=dmax,
+        y="R",
+        x_bins=diameter_bin_edges,
+        y_bins=log_arange(0.1, 500, log_step=0.05, base=10),
+    )
+    # - Dmax-Nw
+    ds_stats_dmax_nw = compute_2d_histogram(
+        df,
+        x=dmax,
+        y="Nw",
+        x_bins=diameter_bin_edges,
+        y_bins=log_arange(10, 1_000_000, log_step=0.05, base=10),
+    )
+    # - Dmax-Nt
+    ds_stats_dmax_nt = compute_2d_histogram(
+        df,
+        x=dmax,
+        y="Nt",
+        x_bins=diameter_bin_edges,
+        y_bins=log_arange(1, 100_000, log_step=0.05, base=10),
+    )
+    # - Dmax-Dm
+    ds_stats_dmax_dm = compute_2d_histogram(
+        df,
+        x=dmax,
+        y="Dm",
+        variables=["R", "Nw", "sigma_m"],
+        x_bins=diameter_bin_edges,
+        y_bins=np.arange(0, 8, 0.05),
+    )
+
+    # Define vmax for counts
+    if norm_vmax:
+        norm_vmax = define_lognorm_max_value(ds_stats_dmax_r["count"].max().item())
+
+    # Define plotting parameters
+    cmap = plt.get_cmap("Spectral_r")
+    cmap.set_under(alpha=0)
+    norm = LogNorm(1, norm_vmax)
+
+    # Create figure with 2x2 subplots
+    figsize = (8, 6)
+    fig = plt.figure(figsize=figsize, dpi=dpi)
+
+    # Create main gridspec with larger space between plots and colorbar
+    # - Horizontal colorbar
+    main_gs = fig.add_gridspec(2, 1, height_ratios=[1, 0.20], hspace=0.15)
+
+    # - Vertical colorbar
+    # main_gs = fig.add_gridspec(1, 2, width_ratios=[1, 0.20], wspace=0.15)
+
+    # Create nested gridspec for the 2x2 subplots with smaller internal spacing
+    subplots_gs = main_gs[0].subgridspec(2, 2, hspace=0.05, wspace=0.05)
+
+    # Create the 2x2 subplot grid
+    axes = np.array(
+        [
+            [fig.add_subplot(subplots_gs[0, 0]), fig.add_subplot(subplots_gs[0, 1])],
+            [fig.add_subplot(subplots_gs[1, 0]), fig.add_subplot(subplots_gs[1, 1])],
+        ],
+    )
+
+    # - Dmax vs R (top-left)
+    ax1 = axes[0, 0]
+    p1 = ds_stats_dmax_r["count"].plot.pcolormesh(
+        x=dmax,
+        y="R",
+        cmap=cmap,
+        norm=norm,
+        extend="max",
+        yscale="log",
+        add_colorbar=False,
+        ax=ax1,
+    )
+    ax1.set_xlabel(r"$D_{max}$ [mm]")
+    ax1.set_ylabel(r"$R$ [mm h$^{-1}$]")
+    ax1.set_xlim(0.2, diameter_max)
+    ax1.set_ylim(0.1, 500)
+
+    # - Dmax vs Nw (top-right)
+    ax2 = axes[0, 1]
+    _ = ds_stats_dmax_nw["count"].plot.pcolormesh(
+        x=dmax,
+        y="Nw",
+        cmap=cmap,
+        norm=norm,
+        extend="max",
+        yscale="log",
+        add_colorbar=False,
+        ax=ax2,
+    )
+    ax2.set_xlabel(r"$D_{max}$ [mm]")
+    ax2.set_ylabel(r"$N_w$ [mm$^{-1}$ m$^{-3}$]")
+    ax2.set_xlim(0.2, diameter_max)
+    ax2.set_ylim(10, 1_000_000)
+
+    # - Dmax vs Nt (bottom-left)
+    ax3 = axes[1, 0]
+    _ = ds_stats_dmax_nt["count"].plot.pcolormesh(
+        x=dmax,
+        y="Nt",
+        cmap=cmap,
+        norm=norm,
+        extend="max",
+        yscale="log",
+        add_colorbar=False,
+        ax=ax3,
+    )
+    ax3.set_xlabel(r"$D_{max}$ [mm]")
+    ax3.set_ylabel(r"$N_t$ [m$^{-3}$]")
+    ax3.set_xlim(0.2, diameter_max)
+    ax3.set_ylim(1, 100_000)
+
+    # - Dmax vs Dm (bottom-right)
+    ax4 = axes[1, 1]
+    _ = ds_stats_dmax_dm["count"].plot.pcolormesh(
+        x=dmax,
+        y="Dm",
+        cmap=cmap,
+        norm=norm,
+        extend="max",
+        add_colorbar=False,
+        ax=ax4,
+    )
+    ax4.set_xlabel(r"$D_{max}$ [mm]")
+    ax4.set_ylabel(r"$D_m$ [mm]")
+    ax4.set_xlim(0.2, diameter_max)
+    ax4.set_ylim(0, 6)
+
+    # Remove xaxis labels and ticklables labels on first row
+    for ax in axes[0, :]:  # First row (both columns)
+        ax.set_xlabel("")
+        ax.set_xticks([])
+        ax.set_xticklabels([])
+        ax.tick_params(axis="x", which="both", bottom=True, top=False, labelbottom=False)
+
+    # Move y-axis of second column to the right
+    for ax in axes[:, 1]:  # Second column (both rows)
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+
+    # Add titles as legends in upper corners
+    title_bbox_dict = {
+        "facecolor": "white",
+        "alpha": 0.7,
+        "edgecolor": "none",
+        "pad": 1,
+    }
+    axes[0, 0].text(
+        0.05,
+        0.95,
+        r"$D_{max}$ vs $R$",
+        transform=axes[0, 0].transAxes,
+        fontsize=12,
+        verticalalignment="top",
+        bbox=title_bbox_dict,
+    )
+
+    axes[0, 1].text(
+        0.05,
+        0.95,
+        r"$D_{max}$ vs $N_w$",
+        transform=axes[0, 1].transAxes,
+        fontsize=12,
+        verticalalignment="top",
+        bbox=title_bbox_dict,
+    )
+
+    axes[1, 0].text(
+        0.05,
+        0.95,
+        r"$D_{max}$ vs $N_t$",
+        transform=axes[1, 0].transAxes,
+        fontsize=12,
+        verticalalignment="top",
+        bbox=title_bbox_dict,
+    )
+
+    axes[1, 1].text(
+        0.05,
+        0.95,
+        r"$D_{max}$ vs $D_m$",
+        transform=axes[1, 1].transAxes,
+        fontsize=12,
+        verticalalignment="top",
+        bbox=title_bbox_dict,
+    )
+
+    # Add colorbar
+    cax = fig.add_subplot(main_gs[1])
+    # - Horizontal colorbar
+    cbar = fig.colorbar(p1, cax=cax, extend="max", orientation="horizontal")
+    cbar.set_label("Counts", labelpad=10)
+    cbar.ax.set_aspect(0.1)
+    cbar.ax.xaxis.set_label_position("top")
+
+    # - Vertical colorbar
+    # cbar = fig.colorbar(p2, cax=cax, extend="max")
+    # cbar.set_label('Count', rotation=270, labelpad=10)
+    # cbar.ax.set_aspect(10)
     return fig
 
 
@@ -1630,6 +1863,25 @@ def create_nd_dataframe(ds):
     return df_nd
 
 
+def _prepare_summary_dataset(ds):
+    # Select fall velocity method
+    if "velocity_method" in ds.dims:
+        ds = ds.sel(velocity_method="fall_velocity")
+
+    # Select first occurrence of radars options (except frequency)
+    for dim in RADAR_OPTIONS:
+        if dim in ds.dims and dim != "frequency":
+            ds = ds.isel({dim: 0})
+
+    # Unstack frequency dimension
+    ds = unstack_radar_variables(ds)
+
+    # For kinetic energy variables, select source="drop_number"
+    if "source" in ds.dims:
+        ds = ds.sel(source="drop_number")
+    return ds
+
+
 def create_station_summary(data_source, campaign_name, station_name, data_archive_dir=None):
     """Create summary figures and tables for a disdrometer station."""
     # Define station summary directory
@@ -1647,21 +1899,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
         parallel=True,
         chunks=-1,
     )
-    # Select fall velocity method
-    if "velocity_method" in ds.dims:
-        ds = ds.sel(velocity_method="fall_velocity")
-
-    # Select first occurrence of radars options (except frequency)
-    for dim in RADAR_OPTIONS:
-        if dim in ds.dims and dim != "frequency":
-            ds = ds.isel({dim: 0})
-
-    # Unstack frequency dimension
-    ds = unstack_radar_variables(ds)
-
-    # For kinetic energy variables, select source="drop_number"
-    if "source" in ds.dims:
-        ds = ds.sel(source="drop_number")
+    ds = _prepare_summary_dataset(ds)
 
     # Put all data into memory
     ds = ds.compute()
@@ -1734,6 +1972,9 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     ####---------------------------------------------------------------------.
     #### Create L2E 1MIN dataframe
     df = create_l2e_dataframe(ds)
+
+    # Define diameter bin edges
+    diameter_bin_edges = get_diameter_bin_edges(ds)
 
     # ---------------------------------------------------------------------.
     #### Save L2E 1MIN Parquet
@@ -1946,6 +2187,18 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     fig = plot_dsd_params_relationships(df, add_nt=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
 
+    ###------------------------------------------------------------------------.
+    #### - Create Dmax relationship figures
+    filename = define_filename(
+        prefix="DSD_Dmax_Relations",
+        extension="png",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    fig = plot_dmax_relationships(df, diameter_bin_edges=diameter_bin_edges, dmax="Dmax", diameter_max=10)
+    fig.savefig(os.path.join(summary_dir_path, filename))
+
     # ---------------------------------------------------------------------.
     #### Create L2E QC summary plots
     # TODO:
@@ -1973,7 +2226,6 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    diameter_bin_edges = get_diameter_bin_edges(ds)
     plot_dsd_density(df_nd, diameter_bin_edges=diameter_bin_edges)
     fig.savefig(os.path.join(summary_dir_path, filename))
 

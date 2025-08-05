@@ -49,7 +49,8 @@ def set_encodings(ds: xr.Dataset, encoding_dict: dict) -> xr.Dataset:
     ds = rechunk_dataset(ds, encoding_dict)
 
     # Set time encoding
-    ds["time"].encoding.update(get_time_encoding())
+    if "time" in ds:
+        ds["time"].encoding.update(get_time_encoding())
 
     # Set the variable encodings
     for var, encoding in encoding_dict.items():

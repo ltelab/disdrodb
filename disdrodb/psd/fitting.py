@@ -22,10 +22,36 @@ from scipy.integrate import quad
 from scipy.optimize import minimize
 from scipy.special import gamma, gammainc, gammaln  # Regularized lower incomplete gamma function
 
+from disdrodb.l2.empirical_dsd import (
+    get_median_volume_drop_diameter,
+    get_moment,
+    get_normalized_intercept_parameter_from_moments,
+    get_total_number_concentration,
+)
 from disdrodb.psd.models import ExponentialPSD, GammaPSD, LognormalPSD, NormalizedGammaPSD
 from disdrodb.utils.warnings import suppress_warnings
 
 # gamma(>171) return inf !
+
+####--------------------------------------------------------------------------------------.
+#### Notes
+## Variable requirements for fitting PSD Models
+# - drop_number_concentration and diameter coordinates
+# - Always recompute other parameters to ensure not use model parameters of L2M
+
+# ML: None
+
+# MOM: moments
+# --> get_moment(drop_number_concentration, diameter, diameter_bin_width, moment)
+
+# GS: fall_velocity if target optimization is R (rain)
+# - NormalizedGamma: "Nw", "D50"
+# --> get_normalized_intercept_parameter_from_moments(moment_3, moment_4)
+# --> get_median_volume_drop_diameter(drop_number_concentration, diameter, diameter_bin_width):
+# --> get_mean_volume_drop_diameter(moment_3, moment_4)  (Dm)
+
+# - LogNormal,Exponential, Gamma: Nt
+# --> get_total_number_concentration(drop_number_concentration, diameter_bin_width)
 
 
 ####--------------------------------------------------------------------------------------.
@@ -621,8 +647,8 @@ def _get_initial_gamma_parameters(ds, mom_method=None):
     if mom_method is None:
         ds_init = xr.Dataset(
             {
-                "a": xr.ones_like(ds["M1"]),
-                "scale": xr.ones_like(ds["M1"]),
+                "a": 1,
+                "scale": 1,
             },
         )
     else:
@@ -1346,6 +1372,12 @@ def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_o
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
     # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
 
+    # Compute required variables
+    ds["Nt"] = get_total_number_concentration(
+        drop_number_concentration=ds["drop_number_concentration"],
+        diameter_bin_width=ds["diameter_bin_width"],
+    )
+
     # Define kwargs
     kwargs = {
         "D": ds["diameter_bin_center"].data,
@@ -1390,6 +1422,12 @@ def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
     # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
 
+    # Compute required variables
+    ds["Nt"] = get_total_number_concentration(
+        drop_number_concentration=ds["drop_number_concentration"],
+        diameter_bin_width=ds["diameter_bin_width"],
+    )
+
     # Define kwargs
     kwargs = {
         "D": ds["diameter_bin_center"].data,
@@ -1433,6 +1471,12 @@ def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_ord
     # "target": ["ND", "LWC", "Z", "R"]
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
     # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
+
+    # Compute required variables
+    ds["Nt"] = get_total_number_concentration(
+        drop_number_concentration=ds["drop_number_concentration"],
+        diameter_bin_width=ds["diameter_bin_width"],
+    )
 
     # Define kwargs
     kwargs = {
@@ -1500,6 +1544,29 @@ def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", er
     # "target": ["ND", "LWC", "Z", "R"]
     # "transformation": "log", "identity", "sqrt",  # only for drop_number_concentration
     # "error_order": 1,     # MAE/MSE ... only for drop_number_concentration
+
+    # Compute required variables
+    drop_number_concentration = ds["drop_number_concentration"]
+    diameter_bin_width = ds["diameter_bin_width"]
+    diameter = ds["diameter_bin_center"] / 1000  # conversion from mm to m
+    m3 = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=3,
+    )
+    m4 = get_moment(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+        moment=4,
+    )
+    ds["Nw"] = get_normalized_intercept_parameter_from_moments(moment_3=m3, moment_4=m4)
+    ds["D50"] = get_median_volume_drop_diameter(
+        drop_number_concentration=drop_number_concentration,
+        diameter=diameter,  # m
+        diameter_bin_width=diameter_bin_width,  # mm
+    )
 
     # Define kwargs
     kwargs = {
@@ -1735,12 +1802,25 @@ def get_lognormal_parameters_M346(M3, M4, M6):
     return Nt, mu, sigma
 
 
+def _compute_moments(ds, moments):
+    list_moments = [
+        get_moment(
+            drop_number_concentration=ds["drop_number_concentration"],
+            diameter=ds["diameter_bin_center"] / 1000,  # m
+            diameter_bin_width=ds["diameter_bin_width"],  # mm
+            moment=int(moment.replace("M", "")),
+        )
+        for moment in moments
+    ]
+    return list_moments
+
+
 def _get_gamma_parameters_mom(ds: xr.Dataset, mom_method: str) -> xr.Dataset:
     # Get the correct function and list of variables for the requested method
     func, needed_moments = MOM_METHODS_DICT["GammaPSD"][mom_method]
 
-    # Extract the required arrays from the dataset
-    arrs = [ds[var_name] for var_name in needed_moments]
+    # Compute required moments
+    arrs = _compute_moments(ds, moments=needed_moments)
 
     # Apply the function. This will produce (mu, Lambda, N0) with the same coords/shapes as input data
     N0, mu, Lambda = func(*arrs)
@@ -1761,8 +1841,8 @@ def _get_lognormal_parameters_mom(ds: xr.Dataset, mom_method: str) -> xr.Dataset
     # Get the correct function and list of variables for the requested method
     func, needed_moments = MOM_METHODS_DICT["LognormalPSD"][mom_method]
 
-    # Extract the required arrays from the dataset
-    arrs = [ds[var_name] for var_name in needed_moments]
+    # Compute required moments
+    arrs = _compute_moments(ds, moments=needed_moments)
 
     # Apply the function. This will produce (mu, Lambda, N0) with the same coords/shapes as input data
     Nt, mu, sigma = func(*arrs)
@@ -1783,8 +1863,8 @@ def _get_exponential_parameters_mom(ds: xr.Dataset, mom_method: str) -> xr.Datas
     # Get the correct function and list of variables for the requested method
     func, needed_moments = MOM_METHODS_DICT["ExponentialPSD"][mom_method]
 
-    # Extract the required arrays from the dataset
-    arrs = [ds[var_name] for var_name in needed_moments]
+    # Compute required moments
+    arrs = _compute_moments(ds, moments=needed_moments)
 
     # Apply the function. This will produce (mu, Lambda, N0) with the same coords/shapes as input data
     N0, Lambda = func(*arrs)

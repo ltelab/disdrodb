@@ -48,39 +48,17 @@ from disdrodb.l2.empirical_dsd import (
     get_std_volume_drop_diameter,
     get_total_number_concentration,
 )
+from disdrodb.tests.fake_datasets import create_template_dataset
 
 
 @pytest.fixture(scope="session")
 def template_dataset():
     """Read a template NetCDF file once for all tests."""
-    time = xr.DataArray(np.array([0, 1], dtype=float), dims="time")
-    diameter_bin_center = xr.DataArray(np.array([0.2, 0.4, 0.6, 0.8]), dims="diameter_bin_center")
-    diameter_bin_width = xr.DataArray(np.array([0.2, 0.2, 0.2, 0.2]), dims="diameter_bin_center")
-    velocity_bin_center = xr.DataArray(np.array([0.2, 0.5, 1]), dims="velocity_bin_center")
-    fall_velocity = xr.DataArray(np.array([[0.5, 1, 1.5, 2], [0.5, 1, 1.5, 2]]), dims=("time", "diameter_bin_center"))
-    drop_number_concentration = xr.DataArray(
-        np.array([[0, 10000, 5000, 500], [0, 10000, 5000, 500]]),
-        dims=("time", "diameter_bin_center"),
-    )
-    drop_number = xr.DataArray(np.ones((2, 3, 4)), dims=("time", "velocity_bin_center", "diameter_bin_center"))
-
-    ds = xr.Dataset(
-        data_vars={
-            "fall_velocity": fall_velocity,
-            "drop_number_concentration": drop_number_concentration,
-            "drop_number": drop_number,
-        },
-        coords={
-            "time": time,
-            "diameter_bin_center": diameter_bin_center,
-            "diameter_bin_width": diameter_bin_width,
-            "velocity_bin_center": velocity_bin_center,
-        },
-    )
+    ds = create_template_dataset(with_velocity=True)
     return ds
 
 
-# template_dataset = ds
+# template_dataset = create_template_dataset(with_velocity=True)
 
 
 def _prepare_test_dataset(
