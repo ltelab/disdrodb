@@ -336,42 +336,16 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
 #### L2 Model Parameters
 
 
-def get_default_optimization_options(psd_model):
+def _get_default_optimization(psd_model):
     """PSD model defaults."""
-    PSD_MODEL_OPT_DEFAULTS = {
-        "ExponentialPSD": {
-            "optimization": "ML",
-            "optimization_kwargs": {
-                "init_method": None,
-                "probability_method": "cdf",
-                "likelihood": "multinomial",
-                "truncated_likelihood": True,
-                "optimizer": "Nelder-Mead",
-            },
-        },
-        "GammaPSD": {
-            "optimization": "ML",
-            "optimization_kwargs": {
-                "init_method": "M346",
-                "probability_method": "cdf",
-                "likelihood": "multinomial",
-                "truncated_likelihood": True,
-                "optimizer": "Nelder-Mead",
-            },
-        },
-        "NormalizedGammaPSD": {
-            "optimization": "GS",
-            "optimization_kwargs": {
-                "target": "ND",
-                "transformation": "identity",
-                "error_order": 1,  # MAE
-            },
-        },
+    defaults = {
+        "ExponentialPSD": "ML",
+        "GammaPSD": "ML",
+        "LognormalPSD": "ML",
+        "NormalizedGammaPSD": "GS",
     }
-    options = PSD_MODEL_OPT_DEFAULTS[psd_model]
-    optimization = options["optimization"]
-    optimization_kwargs = options["optimization_kwargs"]
-    return optimization, optimization_kwargs
+    optimization = defaults[psd_model]
+    return optimization
 
 
 def check_l2m_input_dataset(ds):
@@ -475,11 +449,9 @@ def generate_l2_model(
     # --> but good to have everything to compare across models
 
     ####------------------------------------------------------.
-    #### Define default PSD optimization arguments
-    if psd_model is None:
-        psd_model = "NormalizedGammaPSD"
-    if optimization is None:
-        optimization, optimization_kwargs = get_default_optimization_options(psd_model)
+    #### Define default PSD model and optimization
+    psd_model = "NormalizedGammaPSD" if psd_model is None else psd_model
+    optimization = _get_default_optimization(psd_model) if optimization is None else optimization
 
     # ----------------------------------------------------------------------------.
     #### Preprocessing
@@ -528,7 +500,7 @@ def generate_l2_model(
         optimization=optimization,
         optimization_kwargs=optimization_kwargs,
     )
-
+    psd_fitting_attrs = ds_psd_params.attrs
     ####------------------------------------------------------.
     #### Mask timesteps with few bins if asked
     if mask_timesteps_with_few_bins:
@@ -593,7 +565,7 @@ def generate_l2_model(
 
     # Add global attributes
     ds_params.attrs = attrs
-    ds_params.attrs["disdrodb_psd_model"] = psd_name
+    ds_params.attrs.update(psd_fitting_attrs)
 
     # Return dataset
     return ds_params

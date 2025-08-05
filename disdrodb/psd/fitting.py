@@ -22,6 +22,7 @@ from scipy.integrate import quad
 from scipy.optimize import minimize
 from scipy.special import gamma, gammainc, gammaln  # Regularized lower incomplete gamma function
 
+from disdrodb import DIAMETER_DIMENSION
 from disdrodb.l2.empirical_dsd import (
     get_median_volume_drop_diameter,
     get_moment,
@@ -29,6 +30,7 @@ from disdrodb.l2.empirical_dsd import (
     get_total_number_concentration,
 )
 from disdrodb.psd.models import ExponentialPSD, GammaPSD, LognormalPSD, NormalizedGammaPSD
+from disdrodb.utils.manipulations import get_diameter_bin_edges
 from disdrodb.utils.warnings import suppress_warnings
 
 # gamma(>171) return inf !
@@ -83,18 +85,18 @@ def compute_gof_stats(drop_number_concentration, psd):
     # Compute GOF statistics
     with suppress_warnings():
         # Compute Pearson correlation
-        pearson_r = xr.corr(observed_values, fitted_values, dim="diameter_bin_center")
+        pearson_r = xr.corr(observed_values, fitted_values, dim=DIAMETER_DIMENSION)
 
         # Compute MSE
-        mse = (error**2).mean(dim="diameter_bin_center")
+        mse = (error**2).mean(dim=DIAMETER_DIMENSION)
 
         # Compute maximum error
-        max_error = error.max(dim="diameter_bin_center")
-        relative_max_error = error.max(dim="diameter_bin_center") / observed_values.max(dim="diameter_bin_center")
+        max_error = error.max(dim=DIAMETER_DIMENSION)
+        relative_max_error = error.max(dim=DIAMETER_DIMENSION) / observed_values.max(dim=DIAMETER_DIMENSION)
 
         # Compute difference in total number concentration
-        total_number_concentration_obs = (observed_values * diameter_bin_width).sum(dim="diameter_bin_center")
-        total_number_concentration_pred = (fitted_values * diameter_bin_width).sum(dim="diameter_bin_center")
+        total_number_concentration_obs = (observed_values * diameter_bin_width).sum(dim=DIAMETER_DIMENSION)
+        total_number_concentration_pred = (fitted_values * diameter_bin_width).sum(dim=DIAMETER_DIMENSION)
         total_number_concentration_difference = total_number_concentration_pred - total_number_concentration_obs
 
         # Compute Kullback-Leibler divergence
@@ -104,19 +106,19 @@ def compute_gof_stats(drop_number_concentration, psd):
 
         # - Compute probabilities per bin
         pk = pk_pdf * diameter_bin_width
-        pk = pk / pk.sum(dim="diameter_bin_center")  # this might not be necessary
+        pk = pk / pk.sum(dim=DIAMETER_DIMENSION)  # this might not be necessary
         qk = qk_pdf * diameter_bin_width
-        qk = qk / qk.sum(dim="diameter_bin_center")  # this might not be necessary
+        qk = qk / qk.sum(dim=DIAMETER_DIMENSION)  # this might not be necessary
 
         # - Compute divergence
         log_prob_ratio = np.log(pk / qk)
         log_prob_ratio = log_prob_ratio.where(np.isfinite(log_prob_ratio))
-        kl_divergence = (pk * log_prob_ratio).sum(dim="diameter_bin_center")
+        kl_divergence = (pk * log_prob_ratio).sum(dim=DIAMETER_DIMENSION)
 
         # Other statistics that can be computed also from different diameter discretization
         # - Compute max deviation at distribution mode
-        max_deviation = observed_values.max(dim="diameter_bin_center") - fitted_values.max(dim="diameter_bin_center")
-        max_relative_deviation = max_deviation / fitted_values.max(dim="diameter_bin_center")
+        max_deviation = observed_values.max(dim=DIAMETER_DIMENSION) - fitted_values.max(dim=DIAMETER_DIMENSION)
+        max_relative_deviation = max_deviation / fitted_values.max(dim=DIAMETER_DIMENSION)
 
         # - Compute diameter difference of the distribution mode
         diameter_mode_deviation = get_mode_diameter(observed_values, diameter) - get_mode_diameter(
@@ -285,6 +287,8 @@ def compute_negative_log_likelihood(
 
 def estimate_lognormal_parameters(
     counts,
+    mu,
+    sigma,
     bin_edges,
     probability_method="cdf",
     likelihood="multinomial",
@@ -299,6 +303,12 @@ def estimate_lognormal_parameters(
     ----------
     counts : array-like
         The counts for each bin in the histogram.
+    mu: float
+        The initial guess of the mean of the log of the distribution.
+        A good default value is 0.
+    sigma: float
+        The initial guess of the standard deviation of the log distribution.
+        A good default value is 1.
     bin_edges : array-like
         The edges of the bins.
     probability_method : str, optional
@@ -332,9 +342,9 @@ def estimate_lognormal_parameters(
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.lognorm.html#scipy.stats.lognorm
     """
-    # LogNormal
-    # - mu = log(scale)
-    # - loc = 0
+    # Definite initial guess for the parameters
+    scale = np.exp(mu)  # mu = np.log(scale)
+    initial_params = [sigma, scale]
 
     # Initialize bad results
     null_output = (
@@ -354,9 +364,6 @@ def estimate_lognormal_parameters(
     def param_constraints(params):
         sigma, scale = params
         return sigma > 0 and scale > 0
-
-    # Definite initial guess for the parameters
-    initial_params = [1.0, 1.0]  # sigma, scale
 
     # Define bounds for sigma and scale
     bounds = [(1e-6, None), (1e-6, None)]
@@ -401,6 +408,7 @@ def estimate_lognormal_parameters(
 
 def estimate_exponential_parameters(
     counts,
+    Lambda,
     bin_edges,
     probability_method="cdf",
     likelihood="multinomial",
@@ -415,6 +423,10 @@ def estimate_exponential_parameters(
     ----------
     counts : array-like
         The counts for each bin in the histogram.
+    Lambda : float
+        The initial guess of the scale parameter.
+        scale = 1 / lambda correspond to the scale parameter of the scipy.stats.expon distribution.
+        A good default value is 1.
     bin_edges : array-like
         The edges of the bins.
     probability_method : str, optional
@@ -447,6 +459,10 @@ def estimate_exponential_parameters(
     ----------
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.expon.html
     """
+    # Definite initial guess for parameters
+    scale = 1 / Lambda
+    initial_params = [scale]
+
     # Initialize bad results
     null_output = {"N0": np.nan, "Lambda": np.nan} if output_dictionary else np.array([np.nan, np.nan])
 
@@ -463,9 +479,6 @@ def estimate_exponential_parameters(
     def param_constraints(params):
         scale = params[0]
         return scale > 0
-
-    # Definite initial guess for the scale parameter
-    initial_params = [1.0]  # scale
 
     # Define bounds for scale
     bounds = [(1e-6, None)]
@@ -511,8 +524,8 @@ def estimate_exponential_parameters(
 
 def estimate_gamma_parameters(
     counts,
-    a,
-    scale,
+    mu,
+    Lambda,
     bin_edges,
     probability_method="cdf",
     likelihood="multinomial",
@@ -527,11 +540,13 @@ def estimate_gamma_parameters(
     ----------
     counts : array-like
         The counts for each bin in the histogram.
-    a: float
-        The shape parameter of the scipy.stats.gamma distribution.
-        A good default value is 1.
-    scale: float
-        The scale parameter of the scipy.stats.gamma distribution.
+    mu: float
+        The initial guess of the shape parameter.
+        a = mu + 1 correspond to the shape parameter of the scipy.stats.gamma distribution.
+        A good default value is 0.
+    lambda: float
+        The initial guess of the scale parameter.
+        scale = 1 / lambda correspond to the scale parameter of the scipy.stats.gamma distribution.
         A good default value is 1.
     bin_edges : array-like
         The edges of the bins.
@@ -567,6 +582,11 @@ def estimate_gamma_parameters(
     .. [1] https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gamma.html
 
     """
+    # Define initial guess for parameters
+    a = mu + 1  # (mu = a-1, a = mu+1)
+    scale = 1 / Lambda
+    initial_params = [a, scale]
+
     # Initialize bad results
     null_output = (
         {"N0": np.nan, "mu": np.nan, "lambda": np.nan} if output_dictionary else np.array([np.nan, np.nan, np.nan])
@@ -586,9 +606,6 @@ def estimate_gamma_parameters(
     def param_constraints(params):
         a, scale = params
         return a > 0.1 and scale > 0  # using a > 0 cause some troubles
-
-    # Definite initial guess for the parameters
-    initial_params = [a, scale]  # (mu=a-1, a=mu+1)
 
     # Define bounds for a and scale
     bounds = [(1e-6, None), (1e-6, None)]
@@ -643,12 +660,59 @@ def estimate_gamma_parameters(
     return output
 
 
-def _get_initial_gamma_parameters(ds, mom_method=None):
-    if mom_method is None:
+def _get_initial_lognormal_parameters(ds, mom_method=None):
+    default_mu = 0  # mu = np.log(scale)
+    default_sigma = 1
+    if mom_method is None or mom_method == "None":
         ds_init = xr.Dataset(
             {
-                "a": 1,
-                "scale": 1,
+                "mu": default_mu,
+                "sigma": default_sigma,
+            },
+        )
+    else:
+        ds_init = get_mom_parameters(
+            ds=ds,
+            psd_model="LognormalPSD",
+            mom_methods=mom_method,
+        )
+        # If initialization results in some not finite number, set default value
+        ds_init["mu"] = xr.where(
+            np.logical_and(np.isfinite(ds_init["mu"]), ds_init["mu"] > 0),
+            ds_init["mu"],
+            default_mu,
+        )
+        ds_init["sigma"] = xr.where(np.isfinite(ds_init["sigma"]), ds_init["sigma"], default_sigma)
+    return ds_init
+
+
+def _get_initial_exponential_parameters(ds, mom_method=None):
+    default_lambda = 1  # lambda = 1 /scale
+    if mom_method is None or mom_method == "None":
+        ds_init = xr.Dataset(
+            {
+                "Lambda": default_lambda,
+            },
+        )
+    else:
+        ds_init = get_mom_parameters(
+            ds=ds,
+            psd_model="ExponentialPSD",
+            mom_methods=mom_method,
+        )
+        # If initialization results in some not finite number, set default value
+        ds_init["Lambda"] = xr.where(np.isfinite(ds_init["Lambda"]), ds_init["Lambda"], default_lambda)
+    return ds_init
+
+
+def _get_initial_gamma_parameters(ds, mom_method=None):
+    default_mu = 0  #  a = mu + 1  |   mu = a - 1
+    default_lambda = 1  #  scale = 1 / Lambda
+    if mom_method is None or mom_method == "None":
+        ds_init = xr.Dataset(
+            {
+                "mu": default_mu,
+                "Lambda": default_lambda,
             },
         )
     else:
@@ -657,11 +721,13 @@ def _get_initial_gamma_parameters(ds, mom_method=None):
             psd_model="GammaPSD",
             mom_methods=mom_method,
         )
-        ds_init["a"] = ds_init["mu"] + 1
-        ds_init["scale"] = 1 / ds_init["Lambda"]
         # If initialization results in some not finite number, set default value
-        ds_init["a"] = xr.where(np.isfinite(ds_init["a"]), ds_init["a"], ds["M1"])
-        ds_init["scale"] = xr.where(np.isfinite(ds_init["scale"]), ds_init["scale"], ds["M1"])
+        ds_init["mu"] = xr.where(
+            np.logical_and(np.isfinite(ds_init["mu"]), ds_init["mu"] > -1),
+            ds_init["mu"],
+            default_mu,
+        )
+        ds_init["Lambda"] = xr.where(np.isfinite(ds_init["Lambda"]), ds_init["Lambda"], default_lambda)
     return ds_init
 
 
@@ -689,7 +755,7 @@ def get_gamma_parameters(
           with the specified mom_method.
     init_method: str or list
         The method(s) of moments used to initialize the gamma parameters.
-        If None, the scale parameter is set to 1 and mu to 0 (a=1).
+        If None (or 'None'), the scale parameter is set to 1 and mu to 0 (a=1).
     probability_method : str, optional
         Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
@@ -716,9 +782,9 @@ def get_gamma_parameters(
     """
     # Define inputs
     counts = ds["drop_number_concentration"] * ds["diameter_bin_width"]
-    diameter_breaks = np.append(ds["diameter_bin_lower"].data, ds["diameter_bin_upper"].data[-1])
+    diameter_breaks = get_diameter_bin_edges(ds)
 
-    # Define initial parameters (a, scale)
+    # Define initial parameters (mu, Lambda)
     ds_init = _get_initial_gamma_parameters(ds, mom_method=init_method)
 
     # Define kwargs
@@ -735,18 +801,16 @@ def get_gamma_parameters(
     da_params = xr.apply_ufunc(
         estimate_gamma_parameters,
         counts,
-        ds_init["a"],
-        ds_init["scale"],
+        ds_init["mu"],
+        ds_init["Lambda"],
         kwargs=kwargs,
-        input_core_dims=[["diameter_bin_center"], [], []],
+        input_core_dims=[[DIAMETER_DIMENSION], [], []],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
         dask_gufunc_kwargs={"output_sizes": {"parameters": 3}},  # lengths of the new output_core_dims dimensions.
         output_dtypes=["float64"],
     )
-
-    ds_init.isel(velocity_method=0, time=-3)
 
     # Add parameters coordinates
     da_params = da_params.assign_coords({"parameters": ["N0", "mu", "Lambda"]})
@@ -761,7 +825,7 @@ def get_gamma_parameters(
 
 def get_lognormal_parameters(
     ds,
-    init_method=None,  # noqa: ARG001
+    init_method=None,
     probability_method="cdf",
     likelihood="multinomial",
     truncated_likelihood=True,
@@ -805,7 +869,10 @@ def get_lognormal_parameters(
     """
     # Define inputs
     counts = ds["drop_number_concentration"] * ds["diameter_bin_width"]
-    diameter_breaks = np.append(ds["diameter_bin_lower"].data, ds["diameter_bin_upper"].data[-1])
+    diameter_breaks = get_diameter_bin_edges(ds)
+
+    # Define initial parameters (mu, sigma)
+    ds_init = _get_initial_lognormal_parameters(ds, mom_method=init_method)
 
     # Define kwargs
     kwargs = {
@@ -821,8 +888,10 @@ def get_lognormal_parameters(
     da_params = xr.apply_ufunc(
         estimate_lognormal_parameters,
         counts,
+        ds_init["mu"],
+        ds_init["sigma"],
         kwargs=kwargs,
-        input_core_dims=[["diameter_bin_center"]],
+        input_core_dims=[[DIAMETER_DIMENSION], [], []],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
@@ -844,7 +913,7 @@ def get_lognormal_parameters(
 
 def get_exponential_parameters(
     ds,
-    init_method=None,  # noqa: ARG001
+    init_method=None,
     probability_method="cdf",
     likelihood="multinomial",
     truncated_likelihood=True,
@@ -890,7 +959,10 @@ def get_exponential_parameters(
     """
     # Define inputs
     counts = ds["drop_number_concentration"] * ds["diameter_bin_width"]
-    diameter_breaks = np.append(ds["diameter_bin_lower"].data, ds["diameter_bin_upper"].data[-1])
+    diameter_breaks = get_diameter_bin_edges(ds)
+
+    # Define initial parameters (Lambda)
+    ds_init = _get_initial_exponential_parameters(ds, mom_method=init_method)
 
     # Define kwargs
     kwargs = {
@@ -906,8 +978,9 @@ def get_exponential_parameters(
     da_params = xr.apply_ufunc(
         estimate_exponential_parameters,
         counts,
+        ds_init["Lambda"],
         kwargs=kwargs,
-        input_core_dims=[["diameter_bin_center"]],
+        input_core_dims=[[DIAMETER_DIMENSION], []],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
@@ -1056,7 +1129,8 @@ def get_gamma_parameters_johnson2014(ds, method="Nelder-Mead"):
     """Deprecated model. See Gamma Model with truncated_likelihood and 'pdf'."""
     drop_number_concentration = ds["drop_number_concentration"]
     diameter = ds["diameter_bin_center"]
-    diameter_breaks = np.append(ds["diameter_bin_lower"].data, ds["diameter_bin_upper"].data[-1])
+    diameter_breaks = get_diameter_bin_edges(ds)
+
     # Define kwargs
     kwargs = {
         "output_dictionary": False,
@@ -1069,7 +1143,7 @@ def get_gamma_parameters_johnson2014(ds, method="Nelder-Mead"):
         diameter,
         # diameter_bin_width,
         kwargs=kwargs,
-        input_core_dims=[["diameter_bin_center"], ["diameter_bin_center"]],  # ["diameter_bin_center"],
+        input_core_dims=[[DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],  # [DIAMETER_DIMENSION],
         output_core_dims=[["parameters"]],
         vectorize=True,
     )
@@ -1397,7 +1471,7 @@ def get_exponential_parameters_gs(ds, target="ND", transformation="log", error_o
         # Other options
         kwargs=kwargs,
         # Settings
-        input_core_dims=[[], ["diameter_bin_center"], ["diameter_bin_center"]],
+        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
@@ -1447,7 +1521,7 @@ def get_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1
         # Other options
         kwargs=kwargs,
         # Settings
-        input_core_dims=[[], ["diameter_bin_center"], ["diameter_bin_center"]],
+        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
@@ -1497,7 +1571,7 @@ def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_ord
         # Other options
         kwargs=kwargs,
         # Settings
-        input_core_dims=[[], ["diameter_bin_center"], ["diameter_bin_center"]],
+        input_core_dims=[[], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
@@ -1588,7 +1662,7 @@ def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", er
         # Other options
         kwargs=kwargs,
         # Settings
-        input_core_dims=[[], [], ["diameter_bin_center"], ["diameter_bin_center"]],
+        input_core_dims=[[], [], [DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],
         output_core_dims=[["parameters"]],
         vectorize=True,
         dask="parallelized",
@@ -1923,6 +1997,8 @@ OPTIMIZATION_ROUTINES_DICT = {
 
 def available_mom_methods(psd_model):
     """Implemented MOM methods for a given PSD model."""
+    if psd_model not in MOM_METHODS_DICT:
+        raise NotImplementedError(f"No MOM methods available for {psd_model}")
     return list(MOM_METHODS_DICT[psd_model])
 
 
@@ -1943,7 +2019,7 @@ def check_psd_model(psd_model, optimization):
             f"{optimization} optimization is not available for 'psd_model' {psd_model}. "
             f"Accepted PSD models are {valid_psd_models}."
         )
-        raise ValueError(msg)
+        raise NotImplementedError(msg)
 
 
 def check_target(target):
@@ -2001,11 +2077,14 @@ def check_optimizer(optimizer):
     return optimizer
 
 
-def check_mom_methods(mom_methods, psd_model):
+def check_mom_methods(mom_methods, psd_model, allow_none=False):
     """Check valid mom_methods arguments."""
-    if isinstance(mom_methods, str):
+    if isinstance(mom_methods, (str, type(None))):
         mom_methods = [mom_methods]
+    mom_methods = [str(v) for v in mom_methods]  # None --> 'None'
     valid_mom_methods = available_mom_methods(psd_model)
+    if allow_none:
+        valid_mom_methods = [*valid_mom_methods, "None"]
     invalid_mom_methods = np.array(mom_methods)[np.isin(mom_methods, valid_mom_methods, invert=True)]
     if len(invalid_mom_methods) > 0:
         raise ValueError(
@@ -2050,25 +2129,38 @@ def check_optimization_kwargs(optimization_kwargs, optimization, psd_model):
     expected_arguments = dict_arguments.get(optimization, {})
 
     # Check for missing arguments in optimization_kwargs
-    missing_args = [arg for arg in expected_arguments if arg not in optimization_kwargs]
-    if missing_args:
-        raise ValueError(f"Missing required arguments for {optimization} optimization: {missing_args}")
+    # missing_args = [arg for arg in expected_arguments if arg not in optimization_kwargs]
+    # if missing_args:
+    #     raise ValueError(f"Missing required arguments for {optimization} optimization: {missing_args}")
 
-    # Validate argument values
-    _ = [check(optimization_kwargs[arg]) for arg, check in expected_arguments.items() if callable(check)]
+    # Validate arguments values
+    _ = [
+        check(optimization_kwargs[arg])
+        for arg, check in expected_arguments.items()
+        if callable(check) and arg in optimization_kwargs
+    ]
 
     # Further special checks
-    if optimization == "MOM":
+    if optimization == "MOM" and "mom_methods" in optimization_kwargs:
         _ = check_mom_methods(mom_methods=optimization_kwargs["mom_methods"], psd_model=psd_model)
-    if optimization == "ML" and optimization_kwargs["init_method"] is not None:
-        _ = check_mom_methods(mom_methods=optimization_kwargs["init_method"], psd_model=psd_model)
+    if optimization == "ML" and optimization_kwargs.get("init_method", None) is not None:
+        _ = check_mom_methods(mom_methods=optimization_kwargs["init_method"], psd_model=psd_model, allow_none=True)
 
 
 ####--------------------------------------------------------------------------------------.
 #### Wrappers for fitting
 
 
-def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods: str) -> xr.Dataset:
+def _finalize_attributes(ds_params, psd_model, optimization, optimization_kwargs):
+    ds_params.attrs["disdrodb_psd_model"] = psd_model
+    ds_params.attrs["disdrodb_psd_optimization"] = optimization
+    ds_params.attrs["disdrodb_psd_optimization_kwargs"] = ", ".join(
+        [f"{k}: {v}" for k, v in optimization_kwargs.items()],
+    )
+    return ds_params
+
+
+def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods=None) -> xr.Dataset:
     """
     Compute PSD model parameters using various method-of-moments (MOM) approaches.
 
@@ -2078,8 +2170,9 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods: str) -> xr.D
     ----------
     ds : xarray.Dataset
         An xarray Dataset with the required moments M0...M6 as data variables.
-    mom_methods: str or list
-        Valid MOM methods are {'M012', 'M234', 'M246', 'M456', 'M346'}.
+    mom_methods: str or list (optional)
+        See valid values with disdrodb.psd.available_mom_methods(psd_model)
+        If None (the default), compute model parameters with all available MOM methods.
 
     Returns
     -------
@@ -2090,6 +2183,8 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods: str) -> xr.D
     """
     # Check inputs
     check_psd_model(psd_model=psd_model, optimization="MOM")
+    if mom_methods is None:
+        mom_methods = available_mom_methods(psd_model)
     mom_methods = check_mom_methods(mom_methods, psd_model=psd_model)
 
     # Retrieve function
@@ -2097,13 +2192,21 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods: str) -> xr.D
 
     # Compute parameters
     if len(mom_methods) == 1:
-        ds = func(ds=ds, mom_method=mom_methods[0])
-        ds.attrs["mom_method"] = mom_methods[0]
-        return ds
-    list_ds = [func(ds=ds, mom_method=mom_method) for mom_method in mom_methods]
-    ds = xr.concat(list_ds, dim="mom_method")
-    ds = ds.assign_coords({"mom_method": mom_methods})
-    return ds
+        ds_params = func(ds=ds, mom_method=mom_methods[0])
+    else:
+        list_ds = [func(ds=ds, mom_method=mom_method) for mom_method in mom_methods]
+        ds_params = xr.concat(list_ds, dim="mom_method")
+        ds_params = ds_params.assign_coords({"mom_method": mom_methods})
+
+    # Add model attributes
+    optimization_kwargs = {"mom_methods": mom_methods}
+    ds_params = _finalize_attributes(
+        ds_params=ds_params,
+        psd_model=psd_model,
+        optimization="MOM",
+        optimization_kwargs=optimization_kwargs,
+    )
+    return ds_params
 
 
 def get_ml_parameters(
@@ -2132,7 +2235,7 @@ def get_ml_parameters(
         The PSD model to fit. See ``available_psd_models()``.
     init_method: str or list
         The method(s) of moments used to initialize the PSD model parameters.
-        See ``available_mom_methods(psd_model)``.
+        Multiple methods can be specified. See ``available_mom_methods(psd_model)``.
     probability_method : str, optional
         Method to compute probabilities. The default value is ``cdf``.
     likelihood : str, optional
@@ -2156,21 +2259,51 @@ def get_ml_parameters(
     optimizer = check_optimizer(optimizer)
 
     # Check valid init_method
-    if init_method is not None:
-        init_method = check_mom_methods(mom_methods=init_method, psd_model=psd_model)
+    init_method = check_mom_methods(mom_methods=init_method, psd_model=psd_model, allow_none=True)
 
     # Retrieve estimation function
     func = OPTIMIZATION_ROUTINES_DICT["ML"][psd_model]
 
-    # Retrieve parameters
-    ds_params = func(
-        ds=ds,
-        init_method=init_method,
-        probability_method=probability_method,
-        likelihood=likelihood,
-        truncated_likelihood=truncated_likelihood,
-        optimizer=optimizer,
+    # Compute parameters
+    if init_method is None or len(init_method) == 1:
+        ds_params = func(
+            ds=ds,
+            init_method=init_method[0],
+            probability_method=probability_method,
+            likelihood=likelihood,
+            truncated_likelihood=truncated_likelihood,
+            optimizer=optimizer,
+        )
+    else:
+        list_ds = [
+            func(
+                ds=ds,
+                init_method=method,
+                probability_method=probability_method,
+                likelihood=likelihood,
+                truncated_likelihood=truncated_likelihood,
+                optimizer=optimizer,
+            )
+            for method in init_method
+        ]
+        ds_params = xr.concat(list_ds, dim="init_method")
+        ds_params = ds_params.assign_coords({"init_method": init_method})
+
+    # Add model attributes
+    optimization_kwargs = {
+        "init_method": init_method,
+        "probability_method": "probability_method",
+        "likelihood": likelihood,
+        "truncated_likelihood": truncated_likelihood,
+        "optimizer": optimizer,
+    }
+    ds_params = _finalize_attributes(
+        ds_params=ds_params,
+        psd_model=psd_model,
+        optimization="ML",
+        optimization_kwargs=optimization_kwargs,
     )
+
     # Return dataset with parameters
     return ds_params
 
@@ -2192,6 +2325,18 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
     # Estimate parameters
     ds_params = func(ds, target=target, transformation=transformation, error_order=error_order)
 
+    # Add model attributes
+    optimization_kwargs = {
+        "target": target,
+        "transformation": transformation,
+        "error_order": error_order,
+    }
+    ds_params = _finalize_attributes(
+        ds_params=ds_params,
+        psd_model=psd_model,
+        optimization="GS",
+        optimization_kwargs=optimization_kwargs,
+    )
     # Return dataset with parameters
     return ds_params
 
@@ -2200,9 +2345,10 @@ def estimate_model_parameters(
     ds,
     psd_model,
     optimization,
-    optimization_kwargs,
+    optimization_kwargs=None,
 ):
     """Routine to estimate PSD model parameters."""
+    optimization_kwargs = {} if optimization_kwargs is None else optimization_kwargs
     optimization = check_optimization(optimization)
     check_optimization_kwargs(optimization_kwargs=optimization_kwargs, optimization=optimization, psd_model=psd_model)
 
@@ -2216,11 +2362,4 @@ def estimate_model_parameters(
 
     # Retrieve parameters
     ds_params = func(ds, psd_model=psd_model, **optimization_kwargs)
-
-    # Finalize attributes
-    ds_params.attrs["disdrodb_psd_model"] = psd_model
-    ds_params.attrs["disdrodb_psd_optimization"] = optimization
-    if optimization == "GS":
-        ds_params.attrs["disdrodb_psd_optimization_target"] = optimization_kwargs["target"]
-
     return ds_params

@@ -302,7 +302,7 @@ class ExponentialPSD(XarrayPSD):
         Lambda: the inverse scale parameter
 
     Args (call):
-        D: the particle diameter.
+        D: the particle diameter in millimeter.
 
     Returns (call):
         The PSD value for the given diameter.
@@ -377,7 +377,7 @@ class GammaPSD(ExponentialPSD):
         mu: the shape parameter [-]
 
     Args (call):
-        D: the particle diameter.
+        D: the particle diameter in millimeter.
 
     Returns (call):
         The PSD value for the given diameter.
@@ -478,7 +478,7 @@ class NormalizedGammaPSD(XarrayPSD):
         mu: the shape parameter.
 
     Args (call):
-        D: the particle diameter.
+        D: the particle diameter in millimeter.
 
     Returns (call):
         The PSD value for the given diameter.

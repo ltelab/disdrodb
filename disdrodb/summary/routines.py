@@ -383,7 +383,7 @@ def save_table_to_pdf(
 
 
 def define_lognorm_max_value(value):
-    """Round up to next nice number: 90->100, 400->500, 1200->2000"""
+    """Round up to next nice number: 90->100, 400->500, 1200->2000."""
     if value <= 0:
         return 1
     magnitude = 10 ** np.floor(np.log10(value))

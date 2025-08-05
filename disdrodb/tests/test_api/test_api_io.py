@@ -171,7 +171,11 @@ class TestFindFiles:
             )
 
         # Add fake data files
-        for filename in ["file1.parquet", "file2.parquet"]:
+        filenames = [
+            "L0A.1MIN.LOCARNO_2019.61.s20190713134200.e20190714111000.V0.parquet",
+            "L0A.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.parquet",
+        ]
+        for filename in filenames:
             _ = create_fake_raw_data_file(
                 data_archive_dir=data_archive_dir,
                 product=product,
@@ -222,7 +226,13 @@ class TestFindFiles:
             )
 
         # Add fake data files
-        for filename in ["file1.nc", "file2.nc", "file3.nc", "file4.nc"]:
+        filenames = [
+            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190714111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190715144200.e20190716111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
+        ]
+        for filename in filenames:
             _ = create_fake_raw_data_file(
                 data_archive_dir=data_archive_dir,
                 product=product,
@@ -254,7 +264,7 @@ class TestFindFiles:
         assert len(filepaths) == 4
 
         # Test it does not return other files except netCDFs
-        for filename in ["file1.dummy", "file2.log", "file3.parquet"]:
+        for filename in [".hidden_file", "dummy.log"]:
             _ = create_fake_raw_data_file(
                 data_archive_dir=data_archive_dir,
                 product=product,
@@ -271,6 +281,24 @@ class TestFindFiles:
             product=product,
         )
         assert len(filepaths) == 4
+
+        # Test raise error if there is a netCDF file with bad naming
+        _ = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            filename="dummy.nc",
+        )
+        with pytest.raises(ValueError, match="dummy.nc can not be parsed"):
+            find_files(
+                data_archive_dir=data_archive_dir,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                product=product,
+            )
 
 
 ####--------------------------------------------------------------------------.
