@@ -419,6 +419,7 @@ def precompute_scattering_tables(
     axis_ratio_model,
     permittivity_model,
     water_temperature,
+    elevation_angle,
     verbose=True,
 ):
     """Precompute the pyTMatrix scattering tables required for radar variables simulations."""
@@ -433,6 +434,7 @@ def precompute_scattering_tables(
         axis_ratio_model=axis_ratio_model,
         permittivity_model=permittivity_model,
         water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
     )
 
     # Compute require scattering tables

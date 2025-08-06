@@ -10,9 +10,7 @@ diameter_min: 0
 diameter_max: 10
 diameter_spacing: 0.05
 gof_metrics: True
-min_nbins: 4
-remove_timesteps_with_few_bins: False
-mask_timesteps_with_few_bins: False
+min_nbins: 5
 radar_simulation_enabled: False
 radar_simulation_options:
   frequency: ["S", "C", "X", "Ku", "K", "Ka", "W"]
@@ -22,3 +20,4 @@ radar_simulation_options:
   axis_ratio_model: Thurai2007
   permittivity_model: "Turner2016"
   water_temperature: 10
+  elevation_angle: 0

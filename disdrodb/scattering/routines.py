@@ -47,6 +47,7 @@ RADAR_OPTIONS = [
     "axis_ratio_model",
     "permittivity_model",
     "water_temperature",
+    "elevation_angle",
 ]
 
 # Common radar frequencies (in GHz)
@@ -108,6 +109,46 @@ def frequency_to_wavelength(frequency):
     return wavelength
 
 
+def get_backward_geometry(elevation_angle):
+    """Define backward geometry given a radar elevation angle."""
+    # - Format (thet0, thet0, phi0, phi0, alpha, beta
+    # - thet0, thet0, thet: The zenith angles of incident and scattered radiation (default to 90)
+    # - phi0, phi: The azimuth angles of incident and scattered radiation (default to 0 and 180)
+    # - alpha, beta: Defaults to 0.0, 0.0. Valid values: alpha = [0, 360] beta = [0, 180]
+
+    # Retrieve zenith angle of incident beam (from vertical)
+    theta = 90.0 - elevation_angle
+
+    # Return (thet0, thet0, phi0, phi0, alpha, beta) tuple
+    return (theta, 180 - theta, 0.0, 180, 0.0, 0.0)
+
+
+def get_forward_geometry(elevation_angle):
+    """Define forward geometry given a radar elevation angle."""
+    # - Format (thet0, thet0, phi0, phi0, alpha, beta
+    # - thet0, thet0, thet: The zenith angles of incident and scattered radiation (default to 90)
+    # - phi0, phi: The azimuth angles of incident and scattered radiation (default to 0 and 180)
+    # - alpha, beta: Defaults to 0.0, 0.0. Valid values: alpha = [0, 360] beta = [0, 180]
+
+    # Retrieve zenith angle of incident beam (from vertical)
+    theta = 90.0 - elevation_angle
+
+    # Return (thet0, thet0, phi0, phi0, alpha, beta) tuple
+    return (theta, theta, 0.0, 0.0, 0.0, 0.0)
+
+
+# from pytmatrix import tmatrix_aux
+# get_backward_geometry(0)
+# tmatrix_aux.geom_horiz_back
+# get_backward_geometry(90)
+# tmatrix_aux.geom_vert_back   # phi0 varies (180 instead of pytmatrix 0)
+
+# get_forward_geometry(0)
+# tmatrix_aux.geom_horiz_forw
+# get_forward_geometry(90)     # theta and thet0 are 0 instead of 180
+# tmatrix_aux.geom_vert_forw
+
+
 def initialize_scatterer(
     wavelength,
     refractive_index,
@@ -115,6 +156,7 @@ def initialize_scatterer(
     diameter_max=8,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
+    elevation_angle=0,
 ):
     """Initialize T-matrix scatterer object for a given frequency.
 
@@ -140,6 +182,10 @@ def initialize_scatterer(
     axis_ratio_model: str
         Axis ratio model used to shape hydrometeors. The default is ``"Thurai2007"``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
+    elevation_angle: str
+        Radar elevation angle in degrees.
+        Specify 90 degrees for vertically pointing radars.
+        The default is 0 degrees.
     scattering_table_dir : str or Path, optional
         Directory path where T-Matrix scattering tables are stored. If None, the default
         location will be used.
@@ -152,7 +198,7 @@ def initialize_scatterer(
         A scatterer object with the PSD integrator configured and scattering
         table loaded or generated.
     """
-    from pytmatrix import orientation, tmatrix_aux
+    from pytmatrix import orientation
     from pytmatrix.psd import PSDIntegrator
     from pytmatrix.tmatrix import Scatterer
 
@@ -162,6 +208,11 @@ def initialize_scatterer(
     # Define radar dielectric factor
     Kw_sqr = get_rayleigh_dielectric_factor(refractive_index)
 
+    # Define backward and forward geometries
+    # - Format (thet0, thet0, phi0, phi0, alpha, beta
+    backward_geom = get_backward_geometry(elevation_angle)
+    forward_geom = get_forward_geometry(elevation_angle)
+
     # ---------------------------------------------------------------.
     # For W band limits diameter_max up to 9.5, otherwise the kernel dies !
     if wavelength < 3.5:
@@ -170,19 +221,19 @@ def initialize_scatterer(
     # ---------------------------------------------------------------.
     # Initialize Scatterer class
     # - By specifying m, we assume same refractive index for all particles diameters
-    # - thet0, thet0, thet: The zenith angles of incident and scattered radiation (default to 90)
-    # - phi0, phi: The azimuth angles of incident and scattered radiation (default to 0 and 180)
-    # - alpha, beta: Defaults to 0.0, 0.0. Valid values: alpha = [0, 360] beta = [0, 180]
     scatterer = Scatterer(wavelength=wavelength, m=refractive_index, Kw_sqr=Kw_sqr)
 
-    # - Define particle orientation PDF for orientational averaging
-    # --> The standard deviation of the angle with respect to vertical orientation (the canting angle).
-    scatterer.or_pdf = orientation.gaussian_pdf(std=canting_angle_std)
+    # - Define geometry
+    scatterer.set_geometry(backward_geom)
 
     # - Define orientation methods
     # --> Alternatives: orient_averaged_adaptive, orient_single,
     # --> Speed: orient_single > orient_averaged_fixed > orient_averaged_adaptive
     scatterer.orient = orientation.orient_averaged_fixed
+
+    # - Define particle orientation PDF for orientational averaging
+    # --> The standard deviation of the angle with respect to vertical orientation (the canting angle).
+    scatterer.or_pdf = orientation.gaussian_pdf(std=canting_angle_std)
 
     # ---------------------------------------------------------------.
     # Initialize PSDIntegrator
@@ -198,7 +249,8 @@ def initialize_scatterer(
     # - Define maximum drop diameter
     scatterer.psd_integrator.D_max = diameter_max
     # - Define geometries
-    scatterer.psd_integrator.geometries = (tmatrix_aux.geom_horiz_back, tmatrix_aux.geom_horiz_forw)
+    # --> convention: first is backward, second is forward
+    scatterer.psd_integrator.geometries = (backward_geom, forward_geom)
     return scatterer
 
 
@@ -209,6 +261,7 @@ def calculate_scatterer(
     diameter_max=8,
     canting_angle_std=7,
     axis_ratio_model="Thurai2007",
+    elevation_angle=0,
 ):
     """Initialize T-matrix scatterer object for a given frequency.
 
@@ -232,6 +285,10 @@ def calculate_scatterer(
     axis_ratio_model : str, optional
         Axis ratio model used to shape hydrometeors. The default is ``"Thurai2007"``.
         See available models with ``disdrodb.scattering.available_axis_ratio_models()``.
+    elevation_angle: str
+        Radar elevation angle in degrees.
+        Specify 90 degrees for vertically pointing radars.
+        The default is 0 degrees.
 
     Returns
     -------
@@ -248,6 +305,7 @@ def calculate_scatterer(
         diameter_max=diameter_max,
         canting_angle_std=canting_angle_std,
         axis_ratio_model=axis_ratio_model,
+        elevation_angle=elevation_angle,
     )
 
     # ---------------------------------------------------------------.
@@ -264,6 +322,7 @@ def load_scatterer(
     axis_ratio_model="Thurai2007",
     permittivity_model="Turner2016",
     water_temperature=10,
+    elevation_angle=0,
     scattering_table_dir=None,
     verbose=False,
 ):
@@ -295,6 +354,10 @@ def load_scatterer(
     water_temperature : float
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
+    elevation_angle: str
+        Radar elevation angle in degrees.
+        Specify 90 degrees for vertically pointing radars.
+        The default is 0 degrees.
     scattering_table_dir : str or Path, optional
         Directory path where T-Matrix scattering tables are stored. If None, the default
         location will be used.
@@ -325,6 +388,7 @@ def load_scatterer(
         [
             "ScatteringTable",
             f"wl-{wavelength:.2f}",
+            f"el-{elevation_angle:.1f}",
             f"dmax-{diameter_max:.1f}",
             f"npts-{num_points}",
             f"m-{refractive_index:.3f}",
@@ -343,6 +407,7 @@ def load_scatterer(
             diameter_max=diameter_max,
             canting_angle_std=canting_angle_std,
             axis_ratio_model=axis_ratio_model,
+            elevation_angle=elevation_angle,
         )
         _ = scatterer.psd_integrator.load_scatter_table(scatter_table_filepath)
 
@@ -359,6 +424,7 @@ def load_scatterer(
             diameter_max=diameter_max,
             canting_angle_std=canting_angle_std,
             axis_ratio_model=axis_ratio_model,
+            elevation_angle=elevation_angle,
         )
 
         scatterer.psd_integrator.save_scatter_table(scatter_table_filepath)
@@ -375,12 +441,17 @@ def compute_radar_variables(scatterer):
     To speed up computations, this function should input a scatterer object with
     a preinitialized scattering table.
     """
-    from pytmatrix import radar, tmatrix_aux
+    from pytmatrix import radar
 
     radar_vars = {}
 
+    # Retrieve backward and forward_geometries
+    # - Convention (first is backward, second is forward)
+    backward_geom = scatterer.psd_integrator.geometries[0]
+    forward_geom = scatterer.psd_integrator.geometries[1]
+
     # Set backward scattering for reflectivity calculations
-    scatterer.set_geometry(tmatrix_aux.geom_horiz_back)
+    scatterer.set_geometry(backward_geom)
 
     radar_vars["DBZH"] = 10 * np.log10(radar.refl(scatterer, h_pol=True))  # dBZ
     radar_vars["DBZV"] = 10 * np.log10(radar.refl(scatterer, h_pol=False))  # dBZ
@@ -397,7 +468,7 @@ def compute_radar_variables(scatterer):
     radar_vars["DELTAHV"] = radar.delta_hv(scatterer) * 180.0 / np.pi  # [deg]
 
     # Set forward scattering for attenuation and phase calculations
-    scatterer.set_geometry(tmatrix_aux.geom_horiz_forw)
+    scatterer.set_geometry(forward_geom)
     radar_vars["KDP"] = radar.Kdp(scatterer)  # deg/km
     radar_vars["AH"] = radar.Ai(scatterer, h_pol=True)  # dB/km
     radar_vars["AV"] = radar.Ai(scatterer, h_pol=False)  # dB/km
@@ -448,7 +519,6 @@ def _estimate_model_radar_parameters(
 
     # Get radar variables
     with suppress_warnings():
-        radar_vars = compute_radar_variables(scatterer)
         try:
             radar_vars = compute_radar_variables(scatterer)
             output = radar_vars if output_dictionary else np.array(list(radar_vars.values()))
@@ -476,6 +546,7 @@ def get_model_radar_parameters(
     axis_ratio_model="Thurai2007",
     permittivity_model="Turner2016",
     water_temperature=10,
+    elevation_angle=0,
 ):
     """Compute radar parameters from a PSD model.
 
@@ -502,6 +573,10 @@ def get_model_radar_parameters(
     water_temperature : float
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
+    elevation_angle: str
+        Radar elevation angle in degrees.
+        Specify 90 degrees for vertically pointing radars.
+        The default is 0 degrees.
 
     Returns
     -------
@@ -529,6 +604,7 @@ def get_model_radar_parameters(
         axis_ratio_model=axis_ratio_model,
         permittivity_model=permittivity_model,
         water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
     )
 
     # Define kwargs
@@ -540,7 +616,6 @@ def get_model_radar_parameters(
     }
 
     # Loop over each PSD (not in parallel --> dask="forbidden")
-    # - It costs much more to initiate the scatterer rather than looping over timesteps !
     da_radar = xr.apply_ufunc(
         _estimate_model_radar_parameters,
         da_parameters,
@@ -565,6 +640,7 @@ def get_model_radar_parameters(
         axis_ratio_model=axis_ratio_model,
         permittivity_model=permittivity_model,
         water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
     )
     return ds_radar
 
@@ -578,6 +654,7 @@ def get_empirical_radar_parameters(
     axis_ratio_model="Thurai2007",
     permittivity_model="Turner2016",
     water_temperature=10,
+    elevation_angle=0,
 ):
     """Compute radar parameters from an empirical drop number concentration.
 
@@ -603,6 +680,10 @@ def get_empirical_radar_parameters(
     water_temperature : float
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
+    elevation_angle: str
+        Radar elevation angle in degrees.
+        Specify 90 degrees for vertically pointing radars.
+        The default is 0 degrees.
 
     Returns
     -------
@@ -637,6 +718,7 @@ def get_empirical_radar_parameters(
         axis_ratio_model=axis_ratio_model,
         permittivity_model=permittivity_model,
         water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
     )
 
     # Define kwargs
@@ -672,6 +754,7 @@ def get_empirical_radar_parameters(
         axis_ratio_model=axis_ratio_model,
         permittivity_model=permittivity_model,
         water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
     )
     return ds_radar
 
@@ -685,6 +768,7 @@ def _finalize_radar_dataset(
     axis_ratio_model,
     permittivity_model,
     water_temperature,
+    elevation_angle,
 ):
     # Add parameters coordinates
     da_radar = da_radar.assign_coords({"radar_variables": RADAR_VARIABLES})
@@ -701,6 +785,7 @@ def _finalize_radar_dataset(
         "canting_angle_std": [canting_angle_std],
         "permittivity_model": [permittivity_model],
         "water_temperature": [water_temperature],
+        "elevation_angle": [elevation_angle],
     }
     ds_radar = ds_radar.expand_dims(dim=dims_dict)
     return ds_radar
@@ -726,6 +811,7 @@ def get_list_simulations_params(
     axis_ratio_model,
     permittivity_model,
     water_temperature,
+    elevation_angle,
 ):
     """Return list with the set of parameters required for each simulation."""
     # Ensure numeric frequencies
@@ -740,6 +826,7 @@ def get_list_simulations_params(
     axis_ratio_model = ensure_rounded_unique_array(axis_ratio_model)
     permittivity_model = ensure_rounded_unique_array(permittivity_model)
     water_temperature = ensure_rounded_unique_array(water_temperature, decimals=1)
+    elevation_angle = ensure_rounded_unique_array(elevation_angle, decimals=1)
 
     # Check parameters validity
     axis_ratio_model = [check_axis_ratio_model(model) for model in axis_ratio_model]
@@ -759,8 +846,9 @@ def get_list_simulations_params(
             "axis_ratio_model": ar.item(),
             "permittivity_model": perm.item(),
             "water_temperature": t_w.item(),
+            "elevation_angle": el.item(),
         }
-        for freq, d_max, n_p, cas, ar, perm, t_w in itertools.product(
+        for freq, d_max, n_p, cas, ar, perm, t_w, el in itertools.product(
             frequency,
             diameter_max,
             num_points,
@@ -768,6 +856,7 @@ def get_list_simulations_params(
             axis_ratio_model,
             permittivity_model,
             water_temperature,
+            elevation_angle,
         )
     ]
     return list_params
@@ -782,6 +871,7 @@ def get_radar_parameters(
     axis_ratio_model="Thurai2007",
     permittivity_model="Turner2016",
     water_temperature=10,
+    elevation_angle=0,
     parallel=True,
 ):
     """Compute radar parameters from empirical drop number concentration or PSD model.
@@ -811,6 +901,10 @@ def get_radar_parameters(
     water_temperature : float or list of float, optional
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
+    elevation_angle: float or list of float, optional
+        Radar elevation angles in degrees.
+        Specify 90 degrees for vertically pointing radars.
+        The default is 0 degrees.
     parallel : bool, optional
         Whether to compute radar variables in parallel.
         The default value is ``True``.
@@ -846,6 +940,7 @@ def get_radar_parameters(
         axis_ratio_model=axis_ratio_model,
         permittivity_model=permittivity_model,
         water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
     )
 
     # Compute radar variables for each configuration in parallel
@@ -872,17 +967,8 @@ def get_radar_parameters(
     ds_radar.attrs = ds.attrs.copy()
 
     # Remove single dimensions and add scattering settings information for single dimensions
-    parameters = [
-        "frequency",
-        "num_points",
-        "diameter_max",
-        "canting_angle_std",
-        "axis_ratio_model",
-        "permittivity_model",
-        "water_temperature",
-    ]
     scattering_string = ""
-    for param in parameters:
+    for param in RADAR_OPTIONS:
         if ds_radar.sizes[param] == 1:
             value = ds_radar[param].item()
             scattering_string += f"param: {value}; "

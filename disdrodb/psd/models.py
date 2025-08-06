@@ -32,7 +32,6 @@ import xarray as xr
 from scipy.interpolate import PchipInterpolator, interp1d
 from scipy.special import gamma as gamma_f
 
-from disdrodb import DIAMETER_DIMENSION
 from disdrodb.utils.warnings import suppress_warnings
 
 # Check if pytmatrix is available
@@ -79,7 +78,7 @@ def check_diameter_inputs(D):
             raise ValueError("Expecting a 1-dimensional diameter array.")
         if D.size == 0:
             raise ValueError("Expecting a non-empty diameter array.")
-        return xr.DataArray(D, dims=DIAMETER_DIMENSION)
+        return D  # If xr.DataArray(D, dims=DIAMETER_DIMENSION) make pytmatrix failing !
     raise TypeError(f"Invalid diameter type: {type(D)}")
 
 

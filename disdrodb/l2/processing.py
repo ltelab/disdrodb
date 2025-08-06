@@ -148,7 +148,7 @@ def check_l2e_input_dataset(ds):
     return ds
 
 
-def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
+def generate_l2_empirical(ds, ds_env=None, compute_spectra=False, compute_percentage_contribution=False):
     """Generate the DISDRODB L2E dataset from the DISDRODB L1 dataset.
 
     Parameters
@@ -175,7 +175,6 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
     ds = check_l2e_input_dataset(ds)
 
     # -------------------------------------------------------
-    # TODO: compute_spectra, percentage_contribution options --> Add to YAML file
     # Initialize L2E dataset
     ds_l2 = xr.Dataset()
 
@@ -200,10 +199,7 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False):
     # --> Used for fall velocity and water density estimates
     if ds_env is None:
         ds_env = load_env_dataset(ds)
-
-    # TODO: Derive water density as function of ENV (temperature, ...)
-    # -->  (T == 10){density_water <- 999.7}else if(T == 20){density_water <- 998.2}else{density_water <- 995.7}
-    water_density = 1000  # kg / m3
+    water_density = ds_env.get("water_density", 1000)  # kg / m3
 
     # Determine if the velocity dimension is available
     has_velocity_dimension = "velocity_bin_center" in ds.dims
@@ -402,9 +398,7 @@ def generate_l2_model(
     optimization=None,
     optimization_kwargs=None,
     # Filtering options
-    min_nbins=4,
-    remove_timesteps_with_few_bins=False,
-    mask_timesteps_with_few_bins=False,
+    min_nbins=3,
     # GOF metrics options
     gof_metrics=True,
 ):
@@ -435,6 +429,9 @@ def generate_l2_model(
         or "MOM" (Method of Moments).
     optimization_kwargs : dict, optional
         Dictionary with arguments to customize the fitting procedure.
+    min_nbins: int
+        Minimum number of bins with drops required to fit the PSD model.
+        The default value is 5.
     gof_metrics : bool, optional
         Whether to add goodness-of-fit metrics to the output dataset. The default is True.
 
@@ -465,32 +462,23 @@ def generate_l2_model(
     # - If dataset is opened with decode_timedelta=False, sample_interval is already in seconds !
     sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])
 
-    # Derive water density as function of ENV (temperature, ...)
-    # TODO --> Add into ds_env !
-    # -->  (T == 10){density_water <- 999.7}else if(T == 20){density_water <- 998.2}else{density_water <- 995.7}
-    water_density = 1000  # kg / m3
-
     # ----------------------------------------------------------------------------.
-    # TODO: Add filtering arguments to YAML files !
-
     # Add bins metrics if missing
     bins_metrics = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
     if not np.all(np.isin(bins_metrics, list(ds.data_vars))):
         # Add bins statistics
         ds.update(compute_qc_bins_metrics(ds))
 
-    # Identify timesteps with enough diameter bins with counted trops
-    valid_timesteps = ds["Nbins"] >= min_nbins
-
-    # Drop such timesteps if asked
-    if remove_timesteps_with_few_bins:
-        mask_timesteps_with_few_bins = False
+    # Remove timesteps with not enough bins with drops
+    if min_nbins > 0 and "time" in ds.dims:
+        valid_timesteps = ds["Nbins"].compute() >= min_nbins
         ds = ds.isel(time=valid_timesteps, drop=False)
 
     # Retrieve ENV dataset or take defaults
     # --> Used for fall velocity and water density estimates
     if ds_env is None:
         ds_env = load_env_dataset(ds)
+    water_density = ds_env.get("water_density", 1000)  # kg / m3
 
     ####------------------------------------------------------.
     #### Retrieve PSD parameters
@@ -501,10 +489,6 @@ def generate_l2_model(
         optimization_kwargs=optimization_kwargs,
     )
     psd_fitting_attrs = ds_psd_params.attrs
-    ####------------------------------------------------------.
-    #### Mask timesteps with few bins if asked
-    if mask_timesteps_with_few_bins:
-        ds_psd_params = ds_psd_params.where(valid_timesteps)
 
     ####-------------------------------------------------------
     #### Create PSD
@@ -585,6 +569,7 @@ def generate_l2_radar(
     axis_ratio_model="Thurai2007",
     permittivity_model="Turner2016",
     water_temperature=10,
+    elevation_angle=0,
     parallel=True,
 ):
     """Simulate polarimetric radar variables from empirical drop number concentration or the estimated PSD.
@@ -614,6 +599,10 @@ def generate_l2_radar(
     water_temperature : float or list of float, optional
         Water temperature in degree Celsius to be used in the permittivity model.
         The default is 10 degC.
+    elevation_angle : float or list of float, optional
+        Radar elevation angles in degrees.
+        Specify 90 degrees for vertically pointing radars.
+        The default is 0 degrees.
     parallel : bool, optional
         Whether to compute radar variables in parallel.
         The default value is ``True``.
@@ -637,6 +626,7 @@ def generate_l2_radar(
         axis_ratio_model=axis_ratio_model,
         permittivity_model=permittivity_model,
         water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
         parallel=parallel,
     )
 

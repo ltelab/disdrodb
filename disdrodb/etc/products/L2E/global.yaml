@@ -14,3 +14,4 @@ radar_simulation_options:
   axis_ratio_model: Thurai2007
   permittivity_model: Turner2016
   water_temperature: 10
+  elevation_angle: 0
