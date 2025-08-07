@@ -94,6 +94,10 @@ def generate_l1(
     # Determine if the velocity dimension is available
     has_velocity_dimension = VELOCITY_DIMENSION in ds.dims
 
+    # Retrieve sensor_name
+    # - If not present, don't drop Parsivels first two bins
+    sensor_name = attrs.get("sensor_name", "")
+
     # ---------------------------------------------------------------------------
     # Retrieve sample interval
     # --> sample_interval is a coordinate of L0C products
@@ -124,6 +128,11 @@ def generate_l1(
 
     # -------------------------------------------------------------------------------------------
     # Filter dataset by diameter and velocity bins
+    if sensor_name in ["PARSIVEL", "PARSIVEL2"]:
+        # - Remove first two bins because never reports data !
+        # - If not removed, can alter e.g. L2M model fitting
+        ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=0.312)  # it includes the 0.2495-0.3745 bin
+
     # - Filter diameter bins
     ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=minimum_diameter, maximum_diameter=maximum_diameter)
     # - Filter velocity bins

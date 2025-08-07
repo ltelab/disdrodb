@@ -31,10 +31,10 @@ def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):
     ds : xarray.Dataset
         The dataset containing diameter bin data.
     minimum_diameter : float, optional
-        The minimum diameter to include in the filter, in millimeters.
+        The minimum diameter to be included, in millimeters.
         Defaults to the minimum value in `ds["diameter_bin_lower"]`.
     maximum_diameter : float, optional
-        The maximum diameter to include in the filter, in millimeters.
+        The maximum diameter to be included, in millimeters.
         Defaults to the maximum value in `ds["diameter_bin_upper"]`.
 
     Returns
@@ -42,16 +42,27 @@ def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):
     xarray.Dataset
         The filtered dataset containing only the specified diameter bins.
     """
+    # Put data into memory
+    ds["diameter_bin_lower"] = ds["diameter_bin_lower"].compute()
+    ds["diameter_bin_upper"] = ds["diameter_bin_upper"].compute()
+
     # Initialize default arguments
     if minimum_diameter is None:
         minimum_diameter = ds["diameter_bin_lower"].min().item()
     if maximum_diameter is None:
         maximum_diameter = ds["diameter_bin_upper"].max().item()
-    # Select valid bins
+
+    # Select bins which overlap the specified diameters
     valid_indices = np.logical_and(
-        ds["diameter_bin_lower"] >= minimum_diameter,
-        ds["diameter_bin_upper"] <= maximum_diameter,
+        ds["diameter_bin_upper"] > minimum_diameter,
+        ds["diameter_bin_lower"] < maximum_diameter,
     )
+
+    # Select bins with diameter values entirely inside the specified min/max values
+    # valid_indices = np.logical_and(
+    #     ds["diameter_bin_lower"] >= minimum_diameter,
+    #     ds["diameter_bin_upper"] <= maximum_diameter,
+    # )
     ds = ds.isel({DIAMETER_DIMENSION: valid_indices})
     return ds
 
@@ -76,16 +87,27 @@ def filter_velocity_bins(ds, minimum_velocity=0, maximum_velocity=12):
     xarray.Dataset
         The filtered dataset containing only the specified velocity bins.
     """
+    # Put data into memory
+    ds["velocity_bin_lower"] = ds["velocity_bin_lower"].compute()
+    ds["velocity_bin_upper"] = ds["velocity_bin_upper"].compute()
+
     # Initialize default arguments
     if minimum_velocity is None:
         minimum_velocity = ds["velocity_bin_lower"].min().item()
     if maximum_velocity is None:
         maximum_velocity = ds["velocity_bin_upper"].max().item()
-    # Select valid bins
+
+    # Select bins which overlap the specified velocities
     valid_indices = np.logical_and(
-        ds["velocity_bin_lower"] >= minimum_velocity,
-        ds["velocity_bin_upper"] <= maximum_velocity,
+        ds["velocity_bin_upper"] > minimum_velocity,
+        ds["velocity_bin_lower"] < maximum_velocity,
     )
+
+    # Select bins with velocity values entirely inside the specified min/max values
+    # valid_indices = np.logical_and(
+    #     ds["velocity_bin_lower"] >= minimum_velocity,
+    #     ds["velocity_bin_upper"] <= maximum_velocity,
+    # )
     ds = ds.isel({VELOCITY_DIMENSION: valid_indices})
     return ds
 
