@@ -3,8 +3,8 @@
 import numpy as np
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l2.processing import generate_l2_empirical
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.l2.processing import generate_l2e
 
 
 def create_template_dataset(with_velocity=True):
@@ -57,4 +57,4 @@ def create_template_dataset(with_velocity=True):
 def create_template_l2e_dataset(with_velocity=True):
     """Create DISDRODB L2E basic dataset."""
     ds = create_template_dataset(with_velocity=with_velocity)
-    return generate_l2_empirical(ds)
+    return generate_l2e(ds)

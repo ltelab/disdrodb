@@ -30,8 +30,8 @@ from matplotlib.colors import LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 
 import disdrodb
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.api.path import define_station_dir
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
 from disdrodb.l2.event import group_timesteps_into_event
 from disdrodb.scattering import RADAR_OPTIONS, available_radar_bands
@@ -1847,10 +1847,10 @@ def create_l2e_dataframe(ds):
 def create_nd_dataframe(ds):
     """Create pandas Dataframe with N(D) data."""
     # Retrieve stacked N(D) dataframe
-    ds_stack = ds[["drop_number_concentration", "Nw", "diameter_bin_center", "Dm", "R"]].stack(
+    ds_stack = ds[["drop_number_concentration", "Nw", "diameter_bin_center", "Dm", "R"]].stack(  # noqa: PD013
         dim={"obs": ["time", "diameter_bin_center"]},
     )
-    # - Drop coordinates
+    # Drop coordinates
     coords_to_drop = [
         "velocity_method",
         "sample_interval",

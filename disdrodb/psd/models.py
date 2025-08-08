@@ -32,6 +32,7 @@ import xarray as xr
 from scipy.interpolate import PchipInterpolator, interp1d
 from scipy.special import gamma as gamma_f
 
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.utils.warnings import suppress_warnings
 
 # Check if pytmatrix is available
@@ -120,6 +121,8 @@ class XarrayPSD(PSD):
     def __call__(self, D):
         """Compute the PSD."""
         D = check_diameter_inputs(D)
+        if self.has_xarray_parameters() and not np.isscalar(D):
+            D = xr.DataArray(D, dims=DIAMETER_DIMENSION)
         with suppress_warnings():
             return self.formula(D=D, **self.parameters)
 
@@ -694,6 +697,7 @@ class BinnedPSD(PSD):
         """
         # Ensure D is numpy array of correct dimension
         D = np.asanyarray(check_diameter_inputs(D))
+
         # Define interpolator
         interpolator = define_interpolator(
             bin_edges=self.bin_edges,

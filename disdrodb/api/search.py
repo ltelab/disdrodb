@@ -16,14 +16,13 @@ from disdrodb.api.path import (
     define_station_dir,
 )
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
+from disdrodb.constants import PRODUCTS_REQUIREMENTS
 from disdrodb.utils.directories import contains_files, contains_netcdf_or_parquet_files, list_directories, list_files
 from disdrodb.utils.yaml import read_yaml
 
 
 def get_required_product(product):
     """Determine the required product for input product processing."""
-    from disdrodb import PRODUCTS_REQUIREMENTS
-
     # Check input
     check_product(product)
     # Determine required product

@@ -24,7 +24,8 @@ import dask
 import numpy as np
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, get_scattering_table_dir
+from disdrodb.configs import get_scattering_table_dir
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.l1.filters import filter_diameter_bins
 from disdrodb.psd.models import BinnedPSD, create_psd, get_required_parameters
 from disdrodb.scattering.axis_ratio import check_axis_ratio_model, get_axis_ratio_model
@@ -443,36 +444,36 @@ def compute_radar_variables(scatterer):
     """
     from pytmatrix import radar
 
-    radar_vars = {}
+    with suppress_warnings():
+        radar_vars = {}
+        # Retrieve backward and forward_geometries
+        # - Convention (first is backward, second is forward)
+        backward_geom = scatterer.psd_integrator.geometries[0]
+        forward_geom = scatterer.psd_integrator.geometries[1]
 
-    # Retrieve backward and forward_geometries
-    # - Convention (first is backward, second is forward)
-    backward_geom = scatterer.psd_integrator.geometries[0]
-    forward_geom = scatterer.psd_integrator.geometries[1]
+        # Set backward scattering for reflectivity calculations
+        scatterer.set_geometry(backward_geom)
 
-    # Set backward scattering for reflectivity calculations
-    scatterer.set_geometry(backward_geom)
+        radar_vars["DBZH"] = 10 * np.log10(radar.refl(scatterer, h_pol=True))  # dBZ
+        radar_vars["DBZV"] = 10 * np.log10(radar.refl(scatterer, h_pol=False))  # dBZ
 
-    radar_vars["DBZH"] = 10 * np.log10(radar.refl(scatterer, h_pol=True))  # dBZ
-    radar_vars["DBZV"] = 10 * np.log10(radar.refl(scatterer, h_pol=False))  # dBZ
+        radar_vars["ZDR"] = 10 * np.log10(radar.Zdr(scatterer))  # dB
+        if ~np.isfinite(radar_vars["ZDR"]):
+            radar_vars["ZDR"] = np.nan
 
-    radar_vars["ZDR"] = 10 * np.log10(radar.Zdr(scatterer))  # dB
-    if ~np.isfinite(radar_vars["ZDR"]):
-        radar_vars["ZDR"] = np.nan
+        radar_vars["LDR"] = 10 * np.log10(radar.ldr(scatterer))  # dBZ
+        if ~np.isfinite(radar_vars["LDR"]):
+            radar_vars["LDR"] = np.nan
 
-    radar_vars["LDR"] = 10 * np.log10(radar.ldr(scatterer))  # dBZ
-    if ~np.isfinite(radar_vars["LDR"]):
-        radar_vars["LDR"] = np.nan
+        radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # deg/km
+        radar_vars["DELTAHV"] = radar.delta_hv(scatterer) * 180.0 / np.pi  # [deg]
 
-    radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # deg/km
-    radar_vars["DELTAHV"] = radar.delta_hv(scatterer) * 180.0 / np.pi  # [deg]
-
-    # Set forward scattering for attenuation and phase calculations
-    scatterer.set_geometry(forward_geom)
-    radar_vars["KDP"] = radar.Kdp(scatterer)  # deg/km
-    radar_vars["AH"] = radar.Ai(scatterer, h_pol=True)  # dB/km
-    radar_vars["AV"] = radar.Ai(scatterer, h_pol=False)  # dB/km
-    radar_vars["ADR"] = radar_vars["AH"] - radar_vars["AV"]  # dB/km
+        # Set forward scattering for attenuation and phase calculations
+        scatterer.set_geometry(forward_geom)
+        radar_vars["KDP"] = radar.Kdp(scatterer)  # deg/km
+        radar_vars["AH"] = radar.Ai(scatterer, h_pol=True)  # dB/km
+        radar_vars["AV"] = radar.Ai(scatterer, h_pol=False)  # dB/km
+        radar_vars["ADR"] = radar_vars["AH"] - radar_vars["AV"]  # dB/km
     return radar_vars
 
 

@@ -19,7 +19,7 @@
 import numpy as np
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 
 
 def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):

@@ -22,8 +22,8 @@ import os
 
 import pytest
 
-from disdrodb import ARCHIVE_VERSION
 from disdrodb.api.path import define_campaign_dir, define_logs_dir
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,

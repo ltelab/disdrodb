@@ -20,7 +20,7 @@
 import datetime
 import os
 
-from disdrodb import ARCHIVE_VERSION, CONVENTIONS, COORDINATES, SOFTWARE_VERSION
+from disdrodb.constants import ARCHIVE_VERSION, CONVENTIONS, COORDINATES, SOFTWARE_VERSION
 from disdrodb.utils.yaml import read_yaml
 
 ####---------------------------------------------------------------------.
@@ -94,8 +94,9 @@ def update_disdrodb_attrs(ds, product: str):
 
     # ----------------------------------------------
     # Add time_coverage_start and time_coverage_end
-    attrs["time_coverage_start"] = str(ds["time"].data[0])
-    attrs["time_coverage_end"] = str(ds["time"].data[-1])
+    if "time" in ds.dims:
+        attrs["time_coverage_start"] = str(ds["time"].data[0])
+        attrs["time_coverage_end"] = str(ds["time"].data[-1])
 
     # ----------------------------------------------
     # Set DISDRODDB attributes

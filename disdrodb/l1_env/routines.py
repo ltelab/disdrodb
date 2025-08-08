@@ -17,6 +17,8 @@
 """Core functions for DISDRODB ENV production."""
 import xarray as xr
 
+from disdrodb.constants import GEOLOCATION_COORDS
+
 
 def get_default_environment_dataset():
     """Define defaults values for the ENV dataset."""
@@ -30,7 +32,6 @@ def get_default_environment_dataset():
 
 
 def _assign_geolocation(ds_src, dst_dst):
-    from disdrodb import GEOLOCATION_COORDS
 
     dict_coords = {coord: ds_src[coord] for coord in GEOLOCATION_COORDS if coord in ds_src}
     dst_dst = dst_dst.assign_coords(dict_coords)

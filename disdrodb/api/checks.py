@@ -32,6 +32,7 @@ from disdrodb.api.path import (
     define_issue_filepath,
     define_metadata_filepath,
 )
+from disdrodb.constants import PRODUCTS, PRODUCTS_ARGUMENTS
 from disdrodb.utils.directories import (
     ensure_string_path,
     list_directories,
@@ -228,8 +229,6 @@ def check_data_source(data_source):
 
 def check_product(product):
     """Check DISDRODB product."""
-    from disdrodb import PRODUCTS
-
     if not isinstance(product, str):
         raise TypeError("`product` must be a string.")
     valid_products = PRODUCTS
@@ -260,8 +259,6 @@ def check_product_kwargs(product, product_kwargs):
     ValueError
         If required arguments are missing or if there are unexpected extra arguments.
     """
-    from disdrodb import PRODUCTS_ARGUMENTS
-
     required = set(PRODUCTS_ARGUMENTS.get(product, []))
     provided = set(product_kwargs.keys())
     missing = required - provided
@@ -279,8 +276,6 @@ def check_product_kwargs(product, product_kwargs):
 
 def select_required_product_kwargs(product, product_kwargs):
     """Select the required product arguments."""
-    from disdrodb import PRODUCTS_ARGUMENTS
-
     required = set(PRODUCTS_ARGUMENTS.get(product, []))
     provided = set(product_kwargs.keys())
     missing = required - provided

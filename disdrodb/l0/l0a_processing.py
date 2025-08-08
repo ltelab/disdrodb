@@ -838,14 +838,14 @@ def read_l0a_dataframe(
 #### L0A Utility
 
 
-def read_raw_text_files(
+def generate_l0a(
     filepaths: Union[list, str],
     reader,
     sensor_name,
     verbose=True,
     logger=None,
 ) -> pd.DataFrame:
-    """Read and parse a list for raw files into a dataframe.
+    """Read and parse a list of raw files and generate a DISDRODB L0A dataframe.
 
     Parameters
     ----------

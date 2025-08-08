@@ -20,8 +20,8 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.api.configs import available_sensor_names
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import (
     compute_integral_parameters,
     get_bin_dimensions,
@@ -1990,7 +1990,7 @@ class TestKineticEnergyVariables:
 
 class TestComputeIntegralParameters:
 
-    def test_with_numpy_arrays(self):
+    def test_with_numpy_arrays(self, template_dataset):
         """Test compute_integral_parameters runs with in-memory arrays."""
         ds = _prepare_test_dataset(
             template_dataset,
@@ -2012,7 +2012,7 @@ class TestComputeIntegralParameters:
         for var in ds.data_vars:
             assert not hasattr(ds[var].data, "chunks")
 
-    def test_with_dask_arrays(self):
+    def test_with_dask_arrays(self, template_dataset):
         """Test compute_integral_parameters runs with dask arrays."""
         ds = _prepare_test_dataset(
             template_dataset,
@@ -2037,7 +2037,7 @@ class TestComputeIntegralParameters:
         # Test it computes without errors
         ds = ds.compute()
 
-    def test_without_time_dimension(self):
+    def test_without_time_dimension(self, template_dataset):
         """Test compute_integral_parameters runs without time dimension."""
         ds = _prepare_test_dataset(
             template_dataset,

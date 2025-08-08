@@ -31,11 +31,11 @@ from disdrodb.l0.l0a_processing import (
     concatenate_dataframe,
     drop_time_periods,
     drop_timesteps,
+    generate_l0a,
     is_raw_array_string_not_corrupted,
     preprocess_reader_kwargs,
     read_l0a_dataframe,
     read_raw_text_file,
-    read_raw_text_files,
     remove_corrupted_rows,
     remove_duplicated_timesteps,
     remove_issue_timesteps,
@@ -603,7 +603,7 @@ class TestReadRawTextFiles:
 
         # Test raise value error if empty filepaths list is passed
         with pytest.raises(ValueError, match="'filepaths' must contains at least 1 filepath"):
-            read_raw_text_files(
+            generate_l0a(
                 filepaths=[],
                 reader=reader,
                 sensor_name=sensor_name,
@@ -646,7 +646,7 @@ class TestReadRawTextFiles:
             return pd.read_parquet(filepath)
 
         # Test the function returns the expected dataframe
-        df_output = read_raw_text_files(
+        df_output = generate_l0a(
             filepaths=[file1, file2],
             reader=reader,
             sensor_name=sensor_name,
@@ -684,7 +684,7 @@ class TestReadRawTextFiles:
             return pd.read_parquet(filepath)
 
         # Test the function accept a single filepath (as string)
-        df_output = read_raw_text_files(
+        df_output = generate_l0a(
             filepaths=str(file1),
             reader=reader,
             sensor_name=sensor_name,
@@ -729,7 +729,7 @@ class TestReadRawTextFiles:
             return pd.read_parquet(filepath)
 
         # Test bad filepath is skipped
-        df_output = read_raw_text_files(
+        df_output = generate_l0a(
             filepaths=[file1, file2, "dummy_path"],
             reader=reader,
             sensor_name=sensor_name,
@@ -753,7 +753,7 @@ class TestReadRawTextFiles:
 
         # Test bad filepath is skipped
         with pytest.raises(ValueError, match="Any raw file could be read"):
-            read_raw_text_files(
+            generate_l0a(
                 filepaths=["dummy1", "dummy2"],
                 reader=reader,
                 sensor_name=sensor_name,

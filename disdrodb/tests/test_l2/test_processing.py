@@ -19,8 +19,8 @@ import pytest
 import xarray as xr
 
 import disdrodb.psd
-from disdrodb import DIAMETER_DIMENSION
-from disdrodb.l2.processing import check_l2e_input_dataset, generate_l2_empirical, generate_l2_model
+from disdrodb.constants import DIAMETER_DIMENSION
+from disdrodb.l2.processing import check_l2e_input_dataset, generate_l2e, generate_l2m
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.tests.fake_datasets import create_template_dataset, create_template_l2e_dataset
 
@@ -79,12 +79,12 @@ class TestCheckL2eInputDataset:
 
 
 class TestGenerateL2Empirical:
-    """Test the generate_l2_empirical product function."""
+    """Test the generate_l2e product function."""
 
     def test_spectrum_with_velocity_dimension(self):
         """Spectrum dataset with velocity dimension should include new dims."""
         ds = create_template_dataset(with_velocity=True)
-        ds_out = generate_l2_empirical(ds)
+        ds_out = generate_l2e(ds)
         assert "velocity_method" in ds_out.dims
         assert "source" in ds_out.dims
         assert isinstance(ds_out, xr.Dataset)
@@ -92,7 +92,7 @@ class TestGenerateL2Empirical:
     def test_spectrum_without_velocity_dimension(self):
         """Spectrum dataset without velocity dim should not add velocity dims."""
         ds = create_template_dataset(with_velocity=False)
-        ds_out = generate_l2_empirical(ds)
+        ds_out = generate_l2e(ds)
         assert "velocity_method" not in ds_out.dims
         assert "source" not in ds_out.dims
         assert isinstance(ds_out, xr.Dataset)
@@ -101,21 +101,21 @@ class TestGenerateL2Empirical:
         """Dataset without time dimension should still process correctly."""
         ds = create_template_dataset(with_velocity=True)
         ds = ds.isel(time=0)
-        ds_out = generate_l2_empirical(ds)
+        ds_out = generate_l2e(ds)
         assert isinstance(ds_out, xr.Dataset)
 
     def test_additional_dimension_preserved(self):
         """Additional dimensions should be preserved in output dims."""
         ds = create_template_dataset(with_velocity=True)
         ds = ds.expand_dims({"year": [2012, 2013]})
-        ds_out = generate_l2_empirical(ds)
+        ds_out = generate_l2e(ds)
         assert "year" in ds_out.dims
 
     def test_with_lazy_dask_array(self):
         """Test it correctly deals with dask arrays."""
         ds = create_template_dataset(with_velocity=True)
         ds_lazy = ds.chunk({"time": 1})
-        ds_out = generate_l2_empirical(ds_lazy)
+        ds_out = generate_l2e(ds_lazy)
         # Check returns dask array
         assert isinstance(ds_out, xr.Dataset)
         assert hasattr(ds_out["Dmode"].data, "chunks")
@@ -124,19 +124,19 @@ class TestGenerateL2Empirical:
         ds_out = ds_out.compute()
         assert isinstance(ds_out, xr.Dataset)
         # Test equaliy with in-memory computing
-        ds_out1 = generate_l2_empirical(ds)
+        ds_out1 = generate_l2e(ds)
         xr.testing.assert_allclose(ds_out, ds_out1)
 
     def test_idempotent_l2e_generation(self):
         """Regenerating L2E with L2E dataset should produce identical results."""
         ds = create_template_dataset(with_velocity=True)
-        ds_out = generate_l2_empirical(ds)
-        ds_out2 = generate_l2_empirical(ds_out)
+        ds_out = generate_l2e(ds)
+        ds_out2 = generate_l2e(ds_out)
         xr.testing.assert_allclose(ds_out, ds_out2)
 
 
 class TestGenerateL2Model:
-    """Test the generate_l2_empirical product function."""
+    """Test the generate_l2e product function."""
 
     @pytest.mark.parametrize(
         "psd_model",
@@ -145,7 +145,7 @@ class TestGenerateL2Model:
     def test_with_in_memory_numpy_array(self, psd_model):
         """Test L2M product generation with in-memory numpy data."""
         ds = create_template_l2e_dataset()
-        ds_out = generate_l2_model(ds, psd_model=psd_model)
+        ds_out = generate_l2m(ds, psd_model=psd_model)
         assert isinstance(ds_out, xr.Dataset)
 
     @pytest.mark.parametrize(
@@ -156,7 +156,7 @@ class TestGenerateL2Model:
         """Test L2M product generation with lazy dask array data."""
         ds = create_template_l2e_dataset()
         ds_lazy = ds.chunk({"time": 1})
-        ds_out = generate_l2_model(ds_lazy, psd_model=psd_model)
+        ds_out = generate_l2m(ds_lazy, psd_model=psd_model)
         # Test it returns dask arrays
         assert isinstance(ds_out, xr.Dataset)
         assert hasattr(ds_out["R"].data, "chunks")
@@ -167,56 +167,56 @@ class TestGenerateL2Model:
         assert isinstance(ds_out, xr.Dataset)
 
         # Test equaliy with in-memory computing
-        ds_out1 = generate_l2_model(ds, psd_model=psd_model)
+        ds_out1 = generate_l2m(ds, psd_model=psd_model)
         xr.testing.assert_allclose(ds_out, ds_out1)
 
     def test_without_time_dimension(self):
         """Dataset without time dimension should still process correctly."""
         ds = create_template_l2e_dataset()
         ds = ds.isel(time=0)
-        ds_out = generate_l2_model(ds, psd_model="NormalizedGammaPSD")
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD")
         assert isinstance(ds_out, xr.Dataset)
 
     def test_additional_dimension_preserved(self):
         """Additional dimensions should be preserved in output dims."""
         ds = create_template_l2e_dataset()
         ds["drop_number_concentration"] = ds["drop_number_concentration"].expand_dims({"year": [2012, 2013]})
-        ds_out = generate_l2_model(ds, psd_model="NormalizedGammaPSD")
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD")
         assert "year" in ds_out.dims
         assert "year" in ds_out["mu"].dims
 
     def test_idempotent_generation(self):
         """Regenerating L2M with L2M dataset should produce identical results."""
         ds = create_template_l2e_dataset()
-        ds_out = generate_l2_model(ds, psd_model="NormalizedGammaPSD")
-        ds_out2 = generate_l2_model(ds_out, psd_model="NormalizedGammaPSD")
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD")
+        ds_out2 = generate_l2m(ds_out, psd_model="NormalizedGammaPSD")
         xr.testing.assert_allclose(ds_out, ds_out2)
 
     def test_NormalizedGammaPSD_fitting(self):
         """Test Normalized Gamma PSD fitting."""
         ds = create_template_l2e_dataset()
 
-        ds_out = generate_l2_model(ds, psd_model="NormalizedGammaPSD", optimization="GS")
+        ds_out = generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="GS")
         assert ds_out.attrs["disdrodb_psd_model"] == "NormalizedGammaPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
         assert "disdrodb_psd_optimization_kwargs" in ds_out.attrs
 
         # Test raise error
         with pytest.raises(NotImplementedError, match="ML optimization is not available"):
-            generate_l2_model(ds, psd_model="NormalizedGammaPSD", optimization="ML")
+            generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="ML")
 
         with pytest.raises(NotImplementedError, match="MOM optimization is not available"):
-            generate_l2_model(ds, psd_model="NormalizedGammaPSD", optimization="MOM")
+            generate_l2m(ds, psd_model="NormalizedGammaPSD", optimization="MOM")
 
     def test_GammaPSD_fitting(self):
         """Test Gamma PSD fitting."""
         ds = create_template_l2e_dataset()
 
-        ds_out = generate_l2_model(ds, psd_model="GammaPSD", optimization="GS")
+        ds_out = generate_l2m(ds, psd_model="GammaPSD", optimization="GS")
 
-        ds_out = generate_l2_model(ds, psd_model="GammaPSD", optimization="ML")
+        ds_out = generate_l2m(ds, psd_model="GammaPSD", optimization="ML")
 
-        ds_out = generate_l2_model(ds, psd_model="GammaPSD", optimization="MOM")
+        ds_out = generate_l2m(ds, psd_model="GammaPSD", optimization="MOM")
         assert "mom_method" in ds_out.dims
         assert ds_out.attrs["disdrodb_psd_model"] == "GammaPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
@@ -226,9 +226,9 @@ class TestGenerateL2Model:
         """Test LognormalPSD fitting."""
         ds = create_template_l2e_dataset()
 
-        ds_out = generate_l2_model(ds, psd_model="LognormalPSD", optimization="GS")
-        ds_out = generate_l2_model(ds, psd_model="LognormalPSD", optimization="ML")
-        ds_out = generate_l2_model(ds, psd_model="LognormalPSD", optimization="MOM")
+        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="GS")
+        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="ML")
+        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="MOM")
 
         assert ds_out.attrs["disdrodb_psd_model"] == "LognormalPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
@@ -238,9 +238,9 @@ class TestGenerateL2Model:
         """Test ExponentialPSD fitting."""
         ds = create_template_l2e_dataset()
 
-        ds_out = generate_l2_model(ds, psd_model="ExponentialPSD", optimization="GS")
-        ds_out = generate_l2_model(ds, psd_model="ExponentialPSD", optimization="ML")
-        ds_out = generate_l2_model(ds, psd_model="ExponentialPSD", optimization="MOM")
+        ds_out = generate_l2m(ds, psd_model="ExponentialPSD", optimization="GS")
+        ds_out = generate_l2m(ds, psd_model="ExponentialPSD", optimization="ML")
+        ds_out = generate_l2m(ds, psd_model="ExponentialPSD", optimization="MOM")
 
         assert ds_out.attrs["disdrodb_psd_model"] == "ExponentialPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs
@@ -249,19 +249,19 @@ class TestGenerateL2Model:
     def test_fitting_without_init_method(self):
         """Test fitting without moment initialization."""
         ds = create_template_l2e_dataset()
-        ds_out = generate_l2_model(
+        ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",
             optimization_kwargs={"init_method": None},
         )
-        ds_out = generate_l2_model(
+        ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",
             optimization_kwargs={"init_method": "None"},
         )
-        ds_out = generate_l2_model(
+        ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",
@@ -272,7 +272,7 @@ class TestGenerateL2Model:
     def test_fitting_with_multiple_init_method(self):
         """Test fitting with multiple initialization methods."""
         ds = create_template_l2e_dataset()
-        ds_out = generate_l2_model(
+        ds_out = generate_l2m(
             ds,
             psd_model="GammaPSD",
             optimization="ML",

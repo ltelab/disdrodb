@@ -22,7 +22,7 @@ from scipy.integrate import quad
 from scipy.optimize import minimize
 from scipy.special import gamma, gammainc, gammaln  # Regularized lower incomplete gamma function
 
-from disdrodb import DIAMETER_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.l2.empirical_dsd import (
     get_median_volume_drop_diameter,
     get_moment,

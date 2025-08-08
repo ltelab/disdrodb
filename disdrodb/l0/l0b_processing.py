@@ -386,13 +386,13 @@ def _define_dataset_variables(df, sensor_name, logger=None, verbose=False):
     return data_vars
 
 
-def create_l0b_from_l0a(
+def generate_l0b(
     df: pd.DataFrame,
     metadata: dict,
     logger=None,
     verbose: bool = False,
 ) -> xr.Dataset:
-    """Transform the L0A dataframe to the L0B xr.Dataset.
+    """Transform the DISDRODB L0A dataframe to the DISDRODB L0B xr.Dataset.
 
     Parameters
     ----------

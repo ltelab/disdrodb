@@ -388,11 +388,10 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
     return ds
 
 
-def finalize_l0c_dataset(ds, sample_interval, start_day, end_day, verbose=True, logger=None):
+def finalize_l0c_dataset(ds, sample_interval, verbose=True, logger=None):
     """Finalize a L0C dataset with unique sampling interval.
 
-    It adds the sampling_interval coordinate and it regularizes
-    the timesteps for trailing seconds.
+    It adds the sampling_interval coordinate and it regularizes the timesteps for trailing seconds.
     """
     # Add sample interval as coordinate
     ds = add_sample_interval(ds, sample_interval=sample_interval)
@@ -409,9 +408,6 @@ def finalize_l0c_dataset(ds, sample_interval, start_day, end_day, verbose=True, 
 
     # Performs checks about timesteps regularity
     ds = check_timesteps_regularity(ds=ds, sample_interval=sample_interval, verbose=verbose, logger=logger)
-
-    # Slice for requested day
-    ds = ds.sel({"time": slice(start_day, end_day)})
     return ds
 
 
@@ -533,11 +529,9 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
         sample_interval: finalize_l0c_dataset(
             ds=ds,
             sample_interval=sample_interval,
-            start_day=start_day,
-            end_day=end_day,
             verbose=verbose,
             logger=logger,
-        )
+        ).sel({"time": slice(start_day, end_day)})
         for sample_interval, ds in dict_ds.items()
     }
     return dict_ds

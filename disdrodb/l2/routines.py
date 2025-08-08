@@ -27,7 +27,6 @@ from typing import Optional
 import dask
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 # Directory
 from disdrodb.api.create_directories import (
@@ -53,9 +52,9 @@ from disdrodb.configs import (
 from disdrodb.l1.resampling import resample_dataset
 from disdrodb.l2.event import get_files_partitions, group_timesteps_into_event
 from disdrodb.l2.processing import (
-    generate_l2_empirical,
-    generate_l2_model,
     generate_l2_radar,
+    generate_l2e,
+    generate_l2m,
 )
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
@@ -74,7 +73,6 @@ from disdrodb.utils.time import (
     ensure_sorted_by_time,
     generate_time_blocks,
     get_resampling_information,
-    regularize_dataset,
 )
 from disdrodb.utils.writer import write_product
 
@@ -503,21 +501,8 @@ def _generate_l2e(
 
         ##------------------------------------------------------------------------.
         #### Resample dataset
-        # Here we set NaN in the raw_drop_number to 0
-        # - We assume that NaN corresponds to 0
-        # - When we regularize, we infill with NaN
-        # - When we aggregate with sum, we don't skip NaN
-        # --> Aggregation with original missing timesteps currently results in NaN !
-        # TODO: Add tolerance on fraction of missing timesteps for large accumulation_intervals
-        # TODO: NaN should not be set as 0 !
-
-        ds["raw_drop_number"] = xr.where(np.isnan(ds["raw_drop_number"]), 0, ds["raw_drop_number"])
-        ds["drop_number"] = xr.where(np.isnan(ds["drop_number"]), 0, ds["drop_number"])
-
-        # - Regularize dataset
-        # --> Infill missing timesteps with np.Nan
-        sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).item()
-        ds = regularize_dataset(ds, freq=f"{sample_interval}s")
+        # Define sample interval in seconds
+        sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).to_numpy().item()
 
         # - Resample dataset
         ds = resample_dataset(
@@ -551,7 +536,7 @@ def _generate_l2e(
         if ds["time"].size > 2:
 
             # Compute L2E variables
-            ds = generate_l2_empirical(ds=ds, **product_options)
+            ds = generate_l2e(ds=ds, **product_options)
 
             # Simulate L2M-based radar variables if asked
             if radar_simulation_enabled:
@@ -910,7 +895,7 @@ def _generate_l2m(
         ds = open_files(filepaths, start_time=start_time, end_time=end_time, variables=variables)
 
         # Produce L2M dataset
-        ds = generate_l2_model(
+        ds = generate_l2m(
             ds=ds,
             **product_options,
         )

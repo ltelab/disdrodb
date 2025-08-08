@@ -70,15 +70,15 @@ sample_interval:
 drop_number:
   description: Counts of drops per diameter and velocity class
   long_name: Drop counts per diameter and velocity class
-  units: ''
+  units: ""
 raw_drop_number:
   description: Counts of drops per diameter and velocity class
   long_name: Drop counts per diameter and velocity class
-  units: ''
+  units: ""
 drop_counts:
   description: Counts of drops per diameter class
   long_name: Drop counts per diameter class
-  units: ''
+  units: ""
 Dmin:
   description: Minimum drop diameter
   long_name: Minimum drop diameter
@@ -98,88 +98,88 @@ drop_average_velocity:
 N:
   description: Total number of selected drops
   long_name: Total number of selected drops
-  units: ''
+  units: ""
 Nremoved:
   description: Total number of discarded drops
   long_name: Total number of discarded drops
-  units: ''
+  units: ""
 Nbins:
   description: Number of diameter bins with drops
   long_name: Number of diameter bins with drops
-  units: ''
+  units: ""
 Nbins_missing:
   description: Number of diameter bins with no drops
   long_name: Number of diameter bins with no drops
-  units: ''
+  units: ""
 Nbins_missing_fraction:
   description: Fraction of diameter bins with no drops
   long_name: Fraction of diameter bins with no drops
-  units: ''
+  units: ""
 Nbins_missing_consecutive:
   description: Maximum number of consecutive diameter bins with no drops
   long_name: Maximum number of consecutive diameter bins with no drops
-  units: ''
+  units: ""
 drop_number_concentration:
   description: Number concentration of drops per diameter class per unit volume
   long_name: Drop number concentration per diameter class
   units: m-3 mm-1
 drop_volume:
-  standard_name: ''
+  standard_name: ""
   units: mm3
   long_name: Volume of Drops per Diameter Class
 drop_total_volume:
-  standard_name: ''
+  standard_name: ""
   units: mm3
   long_name: Total Volume of Drops
 drop_relative_volume_ratio:
-  standard_name: ''
-  units: ''
+  standard_name: ""
+  units: ""
   long_name: Relative Volume Ratio of Drops
 KEmin:
-  standard_name: ''
+  standard_name: ""
   units: J
   long_name: Minimum Drop Kinetic Energy
 KEmax:
-  standard_name: ''
+  standard_name: ""
   units: J
   long_name: Maximum Drop Kinetic Energy
 TKE:
   description: Total Kinetic Energy
-  standard_name: ''
+  standard_name: ""
   units: J m-2
   long_name: Total Kinetic Energy
 KED:
   description: Kinetic energy per unit rainfall depth
-  standard_name: ''
+  standard_name: ""
   units: J m-2 mm-1
   long_name: Rainfall Kinetic Energy
 KEF:
   description: Kinetic energy per unit time
-  standard_name: ''
+  standard_name: ""
   units: J m-2 h-1
   long_name: Kinetic Energy Density Flux
 M1:
-  standard_name: ''
+  standard_name: ""
   units: m-3 mm
   long_name: First Moment of the Drop Size Distribution
 M2:
-  standard_name: ''
+  standard_name: ""
   units: m-3 mm2
   long_name: Second Moment of the Drop Size Distribution
 M3:
-  standard_name: ''
+  standard_name: ""
   units: m-3 mm3
   long_name: Third Moment of the Drop Size Distribution
 M4:
-  standard_name: ''
+  standard_name: ""
   units: m-3 mm4
   long_name: Fourth Moment of the Drop Size Distribution
 M5:
-  standard_name: ''
+  standard_name: ""
   units: m-3 mm5
   long_name: Fifth Moment of the Drop Size Distribution
 M6:
-  standard_name: ''
+  standard_name: ""
   units: m-3 mm6
   long_name: Sixth Moment of the Drop Size Distribution
 Nt:
@@ -210,7 +210,7 @@ W:
   units: g m-3
   long_name: Liquid Water Content
 D10:
-  standard_name: ''
+  standard_name: ""
   units: mm
   long_name: 10th Percentile Drop Diameter
 D50:
@@ -218,11 +218,11 @@ D50:
   units: mm
   long_name: Median Volume Drop Diameter
 D90:
-  standard_name: ''
+  standard_name: ""
   units: mm
   long_name: 90th Percentile Drop Diameter
 Dmode:
-  standard_name: ''
+  standard_name: ""
   units: mm
   long_name: Mode Diameter of the Drop Size Distribution
 Dm:
@@ -230,7 +230,7 @@ Dm:
   units: mm
   long_name: Mean Volume Diameter
 sigma_m:
-  standard_name: ''
+  standard_name: ""
   units: mm
   long_name: Standard Deviation of Mass Spectrum
 Nw:
@@ -250,10 +250,11 @@ ZDR:
   long_name: Differential Reflectivity
   units: dB
 RHOHV:
-  description: Correlation coefficient between horizontally and vertically polarized
+  description:
+    Correlation coefficient between horizontally and vertically polarized
     reflectivity
   long_name: Copolarized Correlation Coefficient
-  units: ''
+  units: ""
 LDR:
   description: Linear depolarization ratio
   long_name: Linear Depolarization Ratio
@@ -282,10 +283,10 @@ ADR:
 R2:
   name: Squared Pearson correlation coefficient
   standard_name: correlation_coefficient_squared
-  long_name: Squared Pearson correlation coefficient 
+  long_name: Squared Pearson correlation coefficient
   description: Squared Pearson correlation coefficient squared between observed and modelled N(D) values.
   unit: ""
-  valid_range: [0, 1] 
+  valid_range: [0, 1]
 MAE:
   name: Mean Absolute Error
   standard_name: mean_absolute_error
@@ -331,4 +332,4 @@ KLDiv:
   standard_name: kullback_leibler_divergence
   description: A distance measure of how the modelled distribution diverges from the observed N(D) one.
   units: ""
-  valid_range: [0, inf] 
+  valid_range: [0, inf]

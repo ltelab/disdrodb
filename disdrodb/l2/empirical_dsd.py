@@ -23,8 +23,8 @@ Infinite values should be removed beforehand or otherwise are propagated through
 import numpy as np
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.api.checks import check_sensor_name
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.utils.xarray import (
     remove_diameter_coordinates,
     remove_velocity_coordinates,
@@ -199,7 +199,7 @@ def compute_qc_bins_metrics(ds):
     return ds_qc_bins
 
 
-def add_bin_metrics(ds):
+def add_bins_metrics(ds):
     """Add bin metrics if missing."""
     bins_metrics = BINS_METRICS
     if not np.all(np.isin(bins_metrics, list(ds.data_vars))):

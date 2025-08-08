@@ -55,7 +55,7 @@ from disdrodb.l0.l0a_processing import (
 )
 from disdrodb.l0.l0b_nc_processing import sanitize_ds
 from disdrodb.l0.l0b_processing import (
-    create_l0b_from_l0a,
+    generate_l0b,
     set_l0b_encodings,
     write_l0b,
 )
@@ -231,7 +231,7 @@ def _generate_l0b(
 
         # -----------------------------------------------------------------.
         # Create xarray Dataset
-        ds = create_l0b_from_l0a(df=df, metadata=metadata, logger=logger, verbose=verbose)
+        ds = generate_l0b(df=df, metadata=metadata, logger=logger, verbose=verbose)
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset

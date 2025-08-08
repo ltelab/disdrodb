@@ -10,6 +10,7 @@ import shutil
 import pytest
 
 from disdrodb import __root_path__
+from disdrodb.constants import PRODUCTS_ARGUMENTS
 from disdrodb.utils.yaml import write_yaml
 
 
@@ -122,8 +123,7 @@ def create_fake_issue_file(
 
 
 def get_default_product_kwargs(product, product_kwargs=None):
-    from disdrodb import PRODUCTS_ARGUMENTS
-
+    """Get default product kwargs."""
     product_kwargs = {} if product_kwargs is None else product_kwargs
     if product not in PRODUCTS_ARGUMENTS:
         return product_kwargs

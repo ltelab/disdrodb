@@ -20,6 +20,7 @@
 import os
 
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.utils.directories import check_directory_exists
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
@@ -68,8 +69,6 @@ def define_disdrodb_path(
     dir_path : str
         Directory path
     """
-    from disdrodb import ARCHIVE_VERSION
-
     if len(campaign_name) > 0 and len(data_source) == 0:
         raise ValueError("If campaign_name is specified, data_source must be specified.")
 
@@ -711,7 +710,6 @@ def define_filename(
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
     from disdrodb.api.checks import check_product, check_product_kwargs
 
     product = check_product(product)
@@ -785,8 +783,6 @@ def define_l0a_filename(df, campaign_name: str, station_name: str) -> str:
     str
         L0A file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     starting_time, ending_time = get_file_start_end_time(df)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
@@ -812,8 +808,6 @@ def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
@@ -839,8 +833,6 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
@@ -871,8 +863,6 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
     str
         L1 file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
@@ -903,8 +893,6 @@ def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interv
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
@@ -940,8 +928,6 @@ def define_l2m_filename(
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")

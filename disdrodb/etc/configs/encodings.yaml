@@ -400,13 +400,6 @@ ADR:
   shuffle: true
   fletcher32: false
   contiguous: false
-ADR:
-  dtype: float32
-  zlib: true
-  complevel: 3
-  shuffle: true
-  fletcher32: false
-  contiguous: false
 R2:
   dtype: float32
   zlib: true
@@ -470,4 +463,3 @@ KLDiv:
   shuffle: true
   fletcher32: false
   contiguous: false
-

@@ -24,12 +24,13 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import ARCHIVE_VERSION, __root_path__
+from disdrodb import __root_path__
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l2e import disdrodb_run_l2e
 from disdrodb.cli.disdrodb_run_l2e_station import disdrodb_run_l2e_station
 from disdrodb.cli.disdrodb_run_l2m import disdrodb_run_l2m
 from disdrodb.cli.disdrodb_run_l2m_station import disdrodb_run_l2m_station
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.routines import (
     run_l2e,
     run_l2e_station,

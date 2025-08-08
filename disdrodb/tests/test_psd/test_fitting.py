@@ -20,13 +20,13 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.psd.fitting import compute_gof_stats, estimate_model_parameters
 from disdrodb.tests.fake_datasets import create_template_l2e_dataset
 
 
 class TestEstimateModelParameters:
-    """Test the generate_l2_empirical product function."""
+    """Test the generate_l2e product function."""
 
     def test_NormalizedGammaPSD_fitting(self):
         """Test Normalized Gamma PSD fitting."""

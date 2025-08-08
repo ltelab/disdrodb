@@ -18,7 +18,7 @@
 
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
 from disdrodb.l1.filters import define_spectrum_mask, filter_diameter_bins, filter_velocity_bins
 from disdrodb.l1.resampling import add_sample_interval

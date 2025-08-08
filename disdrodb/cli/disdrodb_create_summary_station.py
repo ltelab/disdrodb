@@ -31,18 +31,18 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 # -------------------------------------------------------------------------.
 # Click Command Line Interface decorator
 
+
 @click.command()
 @click_station_arguments
 @click_data_archive_dir_option
 @click.option("-p", "--parallel", type=bool, show_default=True, default=False, help="Read files in parallel")
-
 def disdrodb_create_summary_station(
     # Station arguments
     data_source: str,
     campaign_name: str,
     station_name: str,
-    # Processing options: 
-    parallel = False,
+    # Processing options:
+    parallel=False,
     # DISDRODB root directories
     data_archive_dir: Optional[str] = None,
 ):
@@ -51,7 +51,7 @@ def disdrodb_create_summary_station(
     Parameters \n
     ---------- \n
     data_source : str \n
-        Institution name (when campaign data spans more than 1 country), 
+        Institution name (when campaign data spans more than 1 country),
         or country (when all campaigns (or sensor networks) are inside a given country).\n
         Must be UPPER CASE.\n
     campaign_name : str \n
@@ -67,23 +67,24 @@ def disdrodb_create_summary_station(
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 
     data_archive_dir = parse_archive_dir(data_archive_dir)
-    
+
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
     if parallel:
-       cluster, client = initialize_dask_cluster()
-    
-    #-------------------------------------------------------------------------.
+        cluster, client = initialize_dask_cluster()
+
+    # -------------------------------------------------------------------------.
     create_station_summary(
         # Station arguments
-        data_source=data_source, 
-        campaign_name=campaign_name, 
-        station_name=station_name, 
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
         # Options
-        parallel = parallel,
+        parallel=parallel,
         # DISDRODB root directory
-        data_archive_dir=data_archive_dir)
-    
+        data_archive_dir=data_archive_dir,
+    )
+
     # -------------------------------------------------------------------------.
     # Close the cluster
     if parallel:
