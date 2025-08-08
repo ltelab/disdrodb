@@ -572,7 +572,7 @@ def _generate_l2e(
                 folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
                 filepath = os.path.join(folder_path, filename)
                 # Write file
-                write_product(ds, product=product, filepath=filepath, force=force)
+                write_product(ds, filepath=filepath, force=force)
 
                 # Update log
                 log_info(logger=logger, msg=f"{product} creation of {filename} has ended.", verbose=verbose)
@@ -919,7 +919,7 @@ def _generate_l2m(
         if radar_simulation_enabled:
             ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_simulation_options)
             ds.update(ds_radar)
-            ds.attrs = ds_radar.attrs.copy()
+            ds.attrs = ds_radar.attrs.copy()  # ds_radar contains already all L2M attrs
 
         # Write L2M netCDF4 dataset
         if ds["time"].size > 1:
@@ -935,7 +935,7 @@ def _generate_l2m(
             folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
             filepath = os.path.join(folder_path, filename)
             # Write to disk
-            write_product(ds, product=product, filepath=filepath, force=force)
+            write_product(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
         #### - Define logger file final directory

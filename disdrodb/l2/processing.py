@@ -19,12 +19,12 @@
 import numpy as np
 import xarray as xr
 
-from disdrodb.l1.encoding_attrs import get_attrs_dict, get_encoding_dict
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (
+    BINS_METRICS,
+    add_bin_metrics,
     compute_integral_parameters,
-    compute_qc_bins_metrics,
     compute_spectrum_parameters,
     get_drop_average_velocity,
     get_drop_number_concentration,
@@ -35,10 +35,9 @@ from disdrodb.l2.empirical_dsd import (
 )
 from disdrodb.psd import create_psd, estimate_model_parameters
 from disdrodb.psd.fitting import compute_gof_stats
-from disdrodb.utils.attrs import set_attrs
 from disdrodb.utils.decorators import check_pytmatrix_availability
-from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.time import ensure_sample_interval_in_seconds
+from disdrodb.utils.writer import finalize_product
 
 
 def define_diameter_array(diameter_min=0, diameter_max=10, diameter_spacing=0.05):
@@ -190,10 +189,7 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False, compute_percen
         ds = ds.isel(time=ds["N"] > 0)
 
     # Add bins metrics to resampled data if missing
-    bins_metrics = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
-    if not np.all(np.isin(bins_metrics, list(ds.data_vars))):
-        # Add bins statistics
-        ds.update(compute_qc_bins_metrics(ds))
+    ds = add_bin_metrics(ds)
 
     # Retrieve ENV dataset or take defaults
     # --> Used for fall velocity and water density estimates
@@ -230,7 +226,7 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False, compute_percen
 
     variables = [var for var in variables if var in ds]
     ds_l2.update(ds[variables])
-    ds_l2.update(ds[bins_metrics])
+    ds_l2.update(ds[BINS_METRICS])
 
     # -------------------------------------------------------------------------------------------
     # Compute and add drop average velocity if an optical disdrometer (i.e OTT Parsivel or ThiesLPM)
@@ -314,17 +310,12 @@ def generate_l2_empirical(ds, ds_env=None, compute_spectra=False, compute_percen
     ds_l2.update(ds_parameters)
 
     # ----------------------------------------------------------------------------.
-    #### Add encodings and attributes
-    # Add variables attributes
-    attrs_dict = get_attrs_dict()
-    ds_l2 = set_attrs(ds_l2, attrs_dict=attrs_dict)
-
-    # Add variables encoding
-    encoding_dict = get_encoding_dict()
-    ds_l2 = set_encodings(ds_l2, encoding_dict=encoding_dict)
-
+    #### Finalize dataset
     # Add global attributes
     ds_l2.attrs = attrs
+
+    # Add variables attributes and encodings
+    ds_l2 = finalize_product(ds_l2, product="L2E")
     return ds_l2
 
 
@@ -464,13 +455,11 @@ def generate_l2_model(
 
     # ----------------------------------------------------------------------------.
     # Add bins metrics if missing
-    bins_metrics = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
-    if not np.all(np.isin(bins_metrics, list(ds.data_vars))):
-        # Add bins statistics
-        ds.update(compute_qc_bins_metrics(ds))
+    ds = add_bin_metrics(ds)
 
     # Remove timesteps with not enough bins with drops
-    if min_nbins > 0 and "time" in ds.dims:
+    # - Nbins must have only 'time' dimension to enable array subsetting !
+    if min_nbins > 0 and "time" in ds.dims and ds["Nbins"].dims == ("time",):
         valid_timesteps = ds["Nbins"].compute() >= min_nbins
         ds = ds.isel(time=valid_timesteps, drop=False)
 
@@ -528,28 +517,26 @@ def generate_l2_model(
 
     # Add GOF statistics if asked
     if gof_metrics:
-        ds_gof = compute_gof_stats(drop_number_concentration=ds["drop_number_concentration"], psd=psd)
+        ds_gof = compute_gof_stats(
+            observed_values=ds["drop_number_concentration"],  # empirical N(D)
+            fitted_values=psd(ds_params["diameter_bin_center"]),  # fitted N(D) on empirical diameter bins !
+        )
         ds_params.update(ds_gof)
 
     # Add empirical drop_number_concentration and fall velocity
     # - To reuse output dataset to create another L2M dataset or to compute other GOF metrics
     ds_params["drop_number_concentration"] = ds["drop_number_concentration"]
     ds_params["fall_velocity"] = ds["fall_velocity"]
-    ds_params.update(ds[bins_metrics])
+    ds_params.update(ds[BINS_METRICS])
 
     #### ----------------------------------------------------------------------------.
-    #### Add encodings and attributes
-    # Add variables attributes
-    attrs_dict = get_attrs_dict()
-    ds_params = set_attrs(ds_params, attrs_dict=attrs_dict)
-
-    # Add variables encoding
-    encoding_dict = get_encoding_dict()
-    ds_params = set_encodings(ds_params, encoding_dict=encoding_dict)
-
+    #### Finalize dataset
     # Add global attributes
     ds_params.attrs = attrs
     ds_params.attrs.update(psd_fitting_attrs)
+
+    # Add variables attributes and encodings
+    ds_params = finalize_product(ds_params, product="L2M")
 
     # Return dataset
     return ds_params
@@ -631,14 +618,9 @@ def generate_l2_radar(
     )
 
     #### ----------------------------------------------------------------------------.
-    #### Add encodings and attributes
-    # Add variables attributes
-    attrs_dict = get_attrs_dict()
-    ds_radar = set_attrs(ds_radar, attrs_dict=attrs_dict)
-
-    # Add variables encoding
-    encoding_dict = get_encoding_dict()
-    ds_radar = set_encodings(ds_radar, encoding_dict=encoding_dict)
+    #### Finalize dataset
+    # Add variables attributes and encodings
+    ds_radar = finalize_product(ds_radar)
 
     # Return dataset
     return ds_radar

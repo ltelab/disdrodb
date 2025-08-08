@@ -58,88 +58,111 @@ from disdrodb.utils.warnings import suppress_warnings
 
 ####--------------------------------------------------------------------------------------.
 #### Goodness of fit (GOF)
-def compute_gof_stats(drop_number_concentration, psd):
+def compute_gof_stats(obs, pred, dim=DIAMETER_DIMENSION):
     """
-    Compute various goodness-of-fit (GoF) statistics between observed and predicted values.
+    Compute various goodness-of-fit (GoF) statistics between obs and predicted values.
 
     Parameters
     ----------
-    - drop_number_concentration: xarray.DataArray with dimensions ('time', 'diameter_bin_center')
-    - psd: instance of PSD class
+    obs: xarray.DataArray
+        Observations DataArray with at least dimension ``dim``.
+    pred: xarray.DataArray
+        Predictions DataArray with at least dimension ``dim``.
+    dim: str
+        DataArray dimension over which to compute GOF statistics.
+        The default is DIAMETER_DIMENSION.
 
     Returns
     -------
-    - ds: xarray.Dataset containing the computed GoF statistics
+    ds: xarray.Dataset
+        Dataset containing the computed GoF statistics.
     """
     from disdrodb.l2.empirical_dsd import get_mode_diameter
 
-    # Retrieve diameter bin width
-    diameter = drop_number_concentration["diameter_bin_center"]
-    diameter_bin_width = drop_number_concentration["diameter_bin_width"]
+    # Retrieve diameter and diameter bin width
+    diameter = obs["diameter_bin_center"]
+    diameter_bin_width = obs["diameter_bin_width"]
 
-    # Define observed and predicted values and compute errors
-    observed_values = drop_number_concentration
-    fitted_values = psd(diameter)  # .transpose(*observed_values.dims)
-    error = observed_values - fitted_values
+    # Compute errors
+    error = obs - pred
+
+    # Compute max obs and pred
+    obs_max = obs.max(dim=dim, skipna=False)
+    pred_max = pred.max(dim=dim, skipna=False)
+
+    # Compute NaN mask
+    mask_nan = np.logical_or(np.isnan(obs_max), np.isnan(pred_max))
 
     # Compute GOF statistics
     with suppress_warnings():
-        # Compute Pearson correlation
-        pearson_r = xr.corr(observed_values, fitted_values, dim=DIAMETER_DIMENSION)
+        # Compute Pearson Correlation
+        pearson_r = xr.corr(obs, pred, dim=dim)
 
-        # Compute MSE
-        mse = (error**2).mean(dim=DIAMETER_DIMENSION)
+        # Compute Mean Absolute Error (MAE)
+        mae = np.abs(error).mean(dim=dim, skipna=False)
 
-        # Compute maximum error
-        max_error = error.max(dim=DIAMETER_DIMENSION)
-        relative_max_error = error.max(dim=DIAMETER_DIMENSION) / observed_values.max(dim=DIAMETER_DIMENSION)
+        # Compute maximum absolute error
+        max_error = np.abs(error).max(dim=dim, skipna=False)
+        relative_max_error = xr.where(max_error == 0, 0, xr.where(obs_max == 0, np.nan, max_error / obs_max))
+
+        # Compute deviation of N(D) at distribution mode
+        mode_deviation = obs_max - pred_max
+        mode_relative_deviation = xr.where(
+            mode_deviation == 0,
+            0,
+            xr.where(obs_max == 0, np.nan, mode_deviation / obs_max),
+        )
+
+        # Compute diameter difference of the distribution mode
+        diameter_mode_pred = get_mode_diameter(pred, diameter)
+        diameter_mode_obs = get_mode_diameter(obs, diameter)
+        diameter_mode_deviation = diameter_mode_obs - diameter_mode_pred
 
         # Compute difference in total number concentration
-        total_number_concentration_obs = (observed_values * diameter_bin_width).sum(dim=DIAMETER_DIMENSION)
-        total_number_concentration_pred = (fitted_values * diameter_bin_width).sum(dim=DIAMETER_DIMENSION)
+        total_number_concentration_obs = (obs * diameter_bin_width).sum(dim=dim, skipna=False)
+        total_number_concentration_pred = (pred * diameter_bin_width).sum(dim=dim, skipna=False)
         total_number_concentration_difference = total_number_concentration_pred - total_number_concentration_obs
 
         # Compute Kullback-Leibler divergence
         # - Compute pdf per bin
-        pk_pdf = observed_values / total_number_concentration_obs
-        qk_pdf = fitted_values / total_number_concentration_pred
+        pk_pdf = obs / total_number_concentration_obs
+        qk_pdf = pred / total_number_concentration_pred
 
         # - Compute probabilities per bin
         pk = pk_pdf * diameter_bin_width
-        pk = pk / pk.sum(dim=DIAMETER_DIMENSION)  # this might not be necessary
+        pk = pk / pk.sum(dim=dim, skipna=False)  # this might not be necessary
         qk = qk_pdf * diameter_bin_width
-        qk = qk / qk.sum(dim=DIAMETER_DIMENSION)  # this might not be necessary
+        qk = qk / qk.sum(dim=dim, skipna=False)  # this might not be necessary
 
-        # - Compute divergence
+        # - Compute log probability ratio
+        epsilon = 1e-10
+        pk = xr.where(pk == 0, epsilon, pk)
+        qk = xr.where(qk == 0, epsilon, qk)
         log_prob_ratio = np.log(pk / qk)
         log_prob_ratio = log_prob_ratio.where(np.isfinite(log_prob_ratio))
-        kl_divergence = (pk * log_prob_ratio).sum(dim=DIAMETER_DIMENSION)
 
-        # Other statistics that can be computed also from different diameter discretization
-        # - Compute max deviation at distribution mode
-        max_deviation = observed_values.max(dim=DIAMETER_DIMENSION) - fitted_values.max(dim=DIAMETER_DIMENSION)
-        max_relative_deviation = max_deviation / fitted_values.max(dim=DIAMETER_DIMENSION)
-
-        # - Compute diameter difference of the distribution mode
-        diameter_mode_deviation = get_mode_diameter(observed_values, diameter) - get_mode_diameter(
-            fitted_values,
-            diameter,
-        )
+        # - Compute divergence
+        kl_divergence = (pk * log_prob_ratio).sum(dim=dim, skipna=False)
+        kl_divergence = xr.where((error == 0).all(dim=dim), 0, kl_divergence)
 
     # Create an xarray.Dataset to hold the computed statistics
     ds = xr.Dataset(
         {
-            "r2": pearson_r**2,  # Squared Pearson correlation coefficient
-            "mse": mse,  # Mean Squared Error
-            "max_error": max_error,  # Maximum Absolute Error
-            "relative_max_error": relative_max_error,  # Relative Maximum Error
-            "total_number_concentration_difference": total_number_concentration_difference,
-            "kl_divergence": kl_divergence,  # Kullback-Leibler divergence
-            "max_deviation": max_deviation,  # Deviation at distribution mode
-            "max_relative_deviation": max_relative_deviation,  # Relative deviation at mode
-            "diameter_mode_deviation": diameter_mode_deviation,  # Difference in mode diameters
+            "R2": pearson_r**2,  # Squared Pearson correlation coefficient
+            "MAE": mae,  # Mean Absolute Error
+            "MaxAE": max_error,  # Maximum Absolute Error
+            "RelMaxAE": relative_max_error,  # Relative Maximum Absolute Error
+            "PeakDiff": mode_deviation,  # Difference at distribution peak
+            "RelPeakDiff": mode_relative_deviation,  # Relative difference at peak
+            "DmodeDiff": diameter_mode_deviation,  # Difference in mode diameters
+            "NtDiff": total_number_concentration_difference,
+            "KLDiv": kl_divergence,  # Kullback-Leibler divergence
         },
     )
+    # Round
+    ds = ds.round(2)
+    # Mask where input obs or pred is NaN
+    ds = ds.where(~mask_nan)
     return ds
 
 
@@ -206,7 +229,7 @@ def get_adjusted_nt(cdf, params, Nt, bin_edges):
     # Estimate proportion of missing drops (Johnson's 2011 Eqs. 3)
     # --> Alternative: p = 1 - np.sum(pdf(diameter, params)* diameter_bin_width)  # [-]
     p = 1 - np.diff(cdf([bin_edges[0], bin_edges[-1]], params)).item()  # [-]
-    # Adjusts Nt for the proportion of drops not observed
+    # Adjusts Nt for the proportion of drops not obs
     #   p = np.clip(p, 0, 1 - 1e-12)
     if np.isclose(p, 1, atol=1e-12):
         return np.nan
@@ -234,7 +257,7 @@ def compute_negative_log_likelihood(
     bin_edges : array-like
         Edges of the bins (length N+1).
     counts : array-like
-        Observed counts in each bin (length N).
+        obs counts in each bin (length N).
     cdf_func : callable
         Cumulative distribution function of the distribution.
     pdf_func : callable
@@ -1108,7 +1131,7 @@ def _estimate_gamma_parameters_johnson(
         p = 1 - np.sum((Lambda ** (mu + 1)) / gamma(mu + 1) * D**mu * np.exp(-Lambda * D) * diameter_bin_width)  # [-]
 
         # Convert tilde_N_T to N_T using Johnson's 2013 Eqs. 3 and 4.
-        # - Adjusts for the proportion of drops not observed
+        # - Adjusts for the proportion of drops not obs
         N_T = tilde_N_T / (1 - p)  # [m-3]
 
         # Compute N0
@@ -1593,8 +1616,8 @@ def get_lognormal_parameters_gs(ds, target="ND", transformation="log", error_ord
 def get_normalized_gamma_parameters_gs(ds, target="ND", transformation="log", error_order=1):
     r"""Estimate $\mu$ of a Normalized Gamma distribution using Grid Search.
 
-    The D50 and Nw parameters of the Normalized Gamma distribution are derived empirically from the observed DSD.
-    $\mu$ is derived by minimizing the errors between the observed DSD and modelled Normalized Gamma distribution.
+    The D50 and Nw parameters of the Normalized Gamma distribution are derived empirically from the obs DSD.
+    $\mu$ is derived by minimizing the errors between the obs DSD and modelled Normalized Gamma distribution.
 
     Parameters
     ----------
@@ -1956,6 +1979,79 @@ def _get_exponential_parameters_mom(ds: xr.Dataset, mom_method: str) -> xr.Datas
 
 ####--------------------------------------------------------------------------------------.
 #### Routines dictionary
+
+####--------------------------------------------------------------------------------------.
+ATTRS_PARAMS_DICT = {
+    "GammaPSD": {
+        "N0": {
+            "description": "Intercept parameter of the Gamma PSD",
+            "standard_name": "particle_size_distribution_intercept",
+            "units": "mm**(-1-mu) m-3",
+            "long_name": "GammaPSD intercept parameter",
+        },
+        "mu": {
+            "description": "Shape parameter of the Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "GammaPSD shape parameter",
+        },
+        "Lambda": {
+            "description": "Slope (rate) parameter of the Gamma PSD",
+            "standard_name": "particle_size_distribution_slope",
+            "units": "mm-1",
+            "long_name": "GammaPSD slope parameter",
+        },
+    },
+    "NormalizedGammaPSD": {
+        "Nw": {
+            "standard_name": "normalized_intercept_parameter",
+            "units": "mm-1 m-3",
+            "long_name": "NormalizedGammaPSD Normalized Intercept Parameter",
+        },
+        "mu": {
+            "description": "Dimensionless shape parameter controlling the curvature of the Normalized Gamma PSD",
+            "standard_name": "particle_size_distribution_shape",
+            "units": "",
+            "long_name": "NormalizedGammaPSD Shape Parameter ",
+        },
+        "D50": {
+            "standard_name": "median_volume_diameter",
+            "units": "mm",
+            "long_name": "NormalizedGammaPSD Median Volume Drop Diameter",
+        },
+    },
+    "LognormalPSD": {
+        "Nt": {
+            "standard_name": "number_concentration_of_rain_drops_in_air",
+            "units": "m-3",
+            "long_name": "Total Number Concentration",
+        },
+        "mu": {
+            "description": "Mean of the Lognormal PSD",
+            "units": "log(mm)",
+            "long_name": "Mean of the Lognormal PSD",
+        },
+        "sigma": {
+            "standard_name": "Standard Deviation of the Lognormal PSD",
+            "units": "",
+            "long_name": "Standard Deviation of the Lognormal PSD",
+        },
+    },
+    "ExponentialPSD": {
+        "N0": {
+            "description": "Intercept parameter of the Exponential PSD",
+            "standard_name": "particle_size_distribution_intercept",
+            "units": "mm-1 m-3",
+            "long_name": "ExponentialPSD intercept parameter",
+        },
+        "Lambda": {
+            "description": "Slope (rate) parameter of the Exponential PSD",
+            "standard_name": "particle_size_distribution_slope",
+            "units": "mm-1",
+            "long_name": "ExponentialPSD slope parameter",
+        },
+    },
+}
 
 
 MOM_METHODS_DICT = {
@@ -2362,4 +2458,8 @@ def estimate_model_parameters(
 
     # Retrieve parameters
     ds_params = func(ds, psd_model=psd_model, **optimization_kwargs)
+
+    # Add parameters attributes (and units)
+    for var, attrs in ATTRS_PARAMS_DICT[psd_model].items():
+        ds_params[var].attrs = attrs
     return ds_params

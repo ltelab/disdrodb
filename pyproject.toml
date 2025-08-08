@@ -79,6 +79,7 @@ disdrodb_metadata_archive_directory="disdrodb.cli.disdrodb_metadata_archive_dire
 # Metadata archive
 disdrodb_download_metadata_archive="disdrodb.cli.disdrodb_download_metadata_archive:disdrodb_download_metadata_archive"
 disdrodb_check_metadata_archive="disdrodb.cli.disdrodb_check_metadata_archive:disdrodb_check_metadata_archive"
+
 # Open directories
 disdrodb_open_metadata_archive="disdrodb.cli.disdrodb_open_metadata_archive:disdrodb_open_metadata_archive"
 disdrodb_open_data_archive="disdrodb.cli.disdrodb_open_data_archive:disdrodb_open_data_archive"
@@ -86,11 +87,16 @@ disdrodb_open_logs_directory="disdrodb.cli.disdrodb_open_logs_directory:disdrodb
 disdrodb_open_metadata_directory="disdrodb.cli.disdrodb_open_metadata_directory:disdrodb_open_metadata_directory"
 disdrodb_open_product_directory="disdrodb.cli.disdrodb_open_product_directory:disdrodb_open_product_directory"
 disdrodb_open_readers_directory="disdrodb.cli.disdrodb_open_readers_directory:disdrodb_open_readers_directory"
+
 # Data transfer
 disdrodb_download_archive="disdrodb.cli.disdrodb_download_archive:disdrodb_download_archive"
 disdrodb_download_station="disdrodb.cli.disdrodb_download_station:disdrodb_download_station"
 disdrodb_upload_archive="disdrodb.cli.disdrodb_upload_archive:disdrodb_upload_archive"
 disdrodb_upload_station="disdrodb.cli.disdrodb_upload_station:disdrodb_upload_station"
+
+# Summary
+disdrodb_create_summary_station="disdrodb.cli.disdrodb_create_summary_station:disdrodb_create_summary_station"
+
 # L0A
 disdrodb_run_l0a_station="disdrodb.cli.disdrodb_run_l0a_station:disdrodb_run_l0a_station"
 disdrodb_run_l0a="disdrodb.cli.disdrodb_run_l0a:disdrodb_run_l0a"

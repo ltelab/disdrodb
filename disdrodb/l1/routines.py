@@ -145,7 +145,7 @@ def _generate_l1(
             folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
             filepath = os.path.join(folder_path, filename)
             # Write to disk
-            write_product(ds, product=product, filepath=filepath, force=force)
+            write_product(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
         #### - Define logger file final directory

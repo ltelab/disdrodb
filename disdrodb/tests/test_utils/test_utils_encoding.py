@@ -34,10 +34,10 @@ def test_rechunk_dataset():
     ds = xr.Dataset(data, coords=coords)
 
     # Define the encoding dictionary
-    encoding_dict = {"a": {"chunksizes": (1, 2)}, "b": {"chunksizes": (2, 1)}}
+    encodings_dict = {"a": {"chunksizes": (1, 2)}, "b": {"chunksizes": (2, 1)}}
 
     # Test the rechunk_dataset function
-    ds_rechunked = rechunk_dataset(ds, encoding_dict)
+    ds_rechunked = rechunk_dataset(ds, encodings_dict)
     assert ds_rechunked["a"].chunks == ((1, 1), (2, 1))
     assert ds_rechunked["b"].chunks == ((2,), (1, 1, 1))
 

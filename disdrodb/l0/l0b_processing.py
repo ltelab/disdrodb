@@ -503,8 +503,8 @@ def set_l0b_encodings(ds: xr.Dataset, sensor_name: str):
     xarray.Dataset
         Output xarray dataset.
     """
-    encoding_dict = get_l0b_encodings_dict(sensor_name)
-    ds = set_encodings(ds=ds, encoding_dict=encoding_dict)
+    encodings_dict = get_l0b_encodings_dict(sensor_name)
+    ds = set_encodings(ds=ds, encodings_dict=encodings_dict)
     return ds
 
 

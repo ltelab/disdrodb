@@ -16,22 +16,19 @@
 # -----------------------------------------------------------------------------.
 """Core functions for DISDRODB L1 production."""
 
-
 import xarray as xr
 
 from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l1.encoding_attrs import get_attrs_dict, get_encoding_dict
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
 from disdrodb.l1.filters import define_spectrum_mask, filter_diameter_bins, filter_velocity_bins
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (  # TODO: maybe move out of L2
-    compute_qc_bins_metrics,
+    add_bins_metrics,
     get_min_max_diameter,
 )
-from disdrodb.utils.attrs import set_attrs
-from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.time import ensure_sample_interval_in_seconds, infer_sample_interval
+from disdrodb.utils.writer import finalize_product
 
 
 def generate_l1(
@@ -189,22 +186,17 @@ def generate_l1(
     ds_l1["Nremoved"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION) - ds_l1["N"]
 
     # Add bins statistics
-    ds_l1.update(compute_qc_bins_metrics(ds_l1))
+    ds_l1 = add_bins_metrics(ds_l1)
 
     # -------------------------------------------------------------------------------------------
     # Add quality flags
     # TODO: snow_flags, insects_flag, ...
 
     #### ----------------------------------------------------------------------------.
-    #### Add encodings and attributes
-    # Add variables attributes
-    attrs_dict = get_attrs_dict()
-    ds_l1 = set_attrs(ds_l1, attrs_dict=attrs_dict)
-
-    # Add variables encoding
-    encoding_dict = get_encoding_dict()
-    ds_l1 = set_encodings(ds_l1, encoding_dict=encoding_dict)
-
+    #### Finalize dataset
     # Add global attributes
     ds_l1.attrs = attrs
+
+    # Add variables attributes and encodings
+    ds_l1 = finalize_product(ds_l1, product="L1")
     return ds_l1

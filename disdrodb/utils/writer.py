@@ -22,11 +22,29 @@ import os
 
 import xarray as xr
 
-from disdrodb.utils.attrs import set_disdrodb_attrs
+from disdrodb.utils.attrs import get_attrs_dict, set_attrs, set_disdrodb_attrs
 from disdrodb.utils.directories import create_directory, remove_if_exists
+from disdrodb.utils.encoding import get_encodings_dict, set_encodings
 
 
-def write_product(ds: xr.Dataset, filepath: str, product: str, force: bool = False) -> None:
+def finalize_product(ds, product=None) -> xr.Dataset:
+    """Finalize DISDRODB product."""
+    # Add variables attributes
+    attrs_dict = get_attrs_dict()
+    ds = set_attrs(ds, attrs_dict=attrs_dict)
+
+    # Add variables encoding
+    encodings_dict = get_encodings_dict()
+    ds = set_encodings(ds, encodings_dict=encodings_dict)
+
+    # Add DISDRODB global attributes
+    # - e.g. in generate_l2_radar it inherit from input dataset !
+    if product is not None:
+        ds = set_disdrodb_attrs(ds, product=product)
+    return ds
+
+
+def write_product(ds: xr.Dataset, filepath: str, force: bool = False) -> None:
     """Save the xarray dataset into a NetCDF file.
 
     Parameters
@@ -35,8 +53,6 @@ def write_product(ds: xr.Dataset, filepath: str, product: str, force: bool = Fal
         Input xarray dataset.
     filepath : str
         Output file path.
-    product: str
-        DISDRODB product name.
     force : bool, optional
         Whether to overwrite existing data.
         If ``True``, overwrite existing data into destination directories.
@@ -49,9 +65,6 @@ def write_product(ds: xr.Dataset, filepath: str, product: str, force: bool = Fal
     # - If force=True --> Remove it
     # - If force=False --> Raise error
     remove_if_exists(filepath, force=force)
-
-    # Update attributes
-    ds = set_disdrodb_attrs(ds, product=product)
 
     # Write netcdf
     ds.to_netcdf(filepath, engine="netcdf4")

@@ -81,9 +81,22 @@ VELOCITY_COORDS = ["velocity_bin_center", "velocity_bin_width", "velocity_bin_lo
 GEOLOCATION_COORDS = ["longitude", "latitude", "altitude"]
 VELOCITY_DIMENSION = "velocity_bin_center"
 DIAMETER_DIMENSION = "diameter_bin_center"
+COORDINATES = [
+    "diameter_bin_center",
+    "diameter_bin_width",
+    "diameter_bin_upper",
+    "velocity_bin_lower",
+    "velocity_bin_center",
+    "velocity_bin_width",
+    "velocity_bin_upper",
+    "latitude",
+    "longitude",
+    "altitude",
+    "time",
+    "sample_interval",
+]
 OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "PWS100"]
 IMPACT_SENSORS = ["RD80"]
-
 
 PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]
 

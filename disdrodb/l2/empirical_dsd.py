@@ -139,6 +139,9 @@ def _compute_qc_bins_metrics(arr):
     return output
 
 
+BINS_METRICS = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
+
+
 def compute_qc_bins_metrics(ds):
     """
     Compute quality-control metrics for drop-count bins along the diameter dimension.
@@ -192,9 +195,17 @@ def compute_qc_bins_metrics(ds):
     )
 
     # Assign meaningful labels to the qc 'metric' dimension
-    variables = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
-    ds_qc_bins = da_qc_bins.assign_coords(metric=variables).to_dataset(dim="metric")
+    ds_qc_bins = da_qc_bins.assign_coords(metric=BINS_METRICS).to_dataset(dim="metric")
     return ds_qc_bins
+
+
+def add_bin_metrics(ds):
+    """Add bin metrics if missing."""
+    bins_metrics = BINS_METRICS
+    if not np.all(np.isin(bins_metrics, list(ds.data_vars))):
+        # Add bins statistics
+        ds.update(compute_qc_bins_metrics(ds))
+    return ds
 
 
 ####-------------------------------------------------------------------------------------------------------------------.

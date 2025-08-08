@@ -65,6 +65,7 @@ from disdrodb.l0.l0c_processing import (
     retrieve_possible_measurement_intervals,
 )
 from disdrodb.metadata import read_station_metadata
+from disdrodb.utils.attrs import set_disdrodb_attrs
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
@@ -437,6 +438,8 @@ def _generate_l0c(
 
                 # Set encodings
                 ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
+                # Update global attributes
+                ds = set_disdrodb_attrs(ds, product=product)
 
                 # Define product filepath
                 filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
@@ -444,7 +447,7 @@ def _generate_l0c(
                 filepath = os.path.join(folder_path, filename)
 
                 # Write to disk
-                write_product(ds, product=product, filepath=filepath, force=force)
+                write_product(ds, filepath=filepath, force=force)
 
         # Clean environment
         del ds

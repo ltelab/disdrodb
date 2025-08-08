@@ -160,7 +160,7 @@ class TestGenerateL2Model:
         # Test it returns dask arrays
         assert isinstance(ds_out, xr.Dataset)
         assert hasattr(ds_out["R"].data, "chunks")
-        assert hasattr(ds_out["kl_divergence"].data, "chunks")
+        assert hasattr(ds_out["KLDiv"].data, "chunks")
 
         # Test it can compute without error
         ds_out = ds_out.compute()
@@ -180,9 +180,10 @@ class TestGenerateL2Model:
     def test_additional_dimension_preserved(self):
         """Additional dimensions should be preserved in output dims."""
         ds = create_template_l2e_dataset()
-        ds = ds.expand_dims({"year": [2012, 2013]})
+        ds["drop_number_concentration"] = ds["drop_number_concentration"].expand_dims({"year": [2012, 2013]})
         ds_out = generate_l2_model(ds, psd_model="NormalizedGammaPSD")
         assert "year" in ds_out.dims
+        assert "year" in ds_out["mu"].dims
 
     def test_idempotent_generation(self):
         """Regenerating L2M with L2M dataset should produce identical results."""

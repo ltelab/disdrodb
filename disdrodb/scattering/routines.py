@@ -974,7 +974,7 @@ def get_radar_parameters(
             scattering_string += f"param: {value}; "
 
     if scattering_string != "":
-        ds_radar.attrs[f"disdrodb_scattering_{param}"] = scattering_string
+        ds_radar.attrs["disdrodb_scattering_options"] = scattering_string
     ds_radar = ds_radar.squeeze()
     return ds_radar
 

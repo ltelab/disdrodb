@@ -31,6 +31,7 @@ from matplotlib.gridspec import GridSpec
 
 import disdrodb
 from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
+from disdrodb.api.path import define_station_dir
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
 from disdrodb.l2.event import group_timesteps_into_event
 from disdrodb.scattering import RADAR_OPTIONS, available_radar_bands
@@ -420,7 +421,7 @@ def plot_raw_and_filtered_spectrums(
     drop_number,
     theoretical_average_velocity,
     measured_average_velocity=None,
-    norm=True,
+    norm=None,
     figsize=(8, 4),
     dpi=300,
 ):
@@ -1882,26 +1883,13 @@ def _prepare_summary_dataset(ds):
     return ds
 
 
-def create_station_summary(data_source, campaign_name, station_name, data_archive_dir=None):
-    """Create summary figures and tables for a disdrometer station."""
-    # Define station summary directory
-    summary_dir_path = "/tmp/"
-
-    # ---------------------------------------------------------------------.
-    #### Load L2E 1MIN dataset
-    ds = disdrodb.open_dataset(
-        data_archive_dir=data_archive_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        product="L2E",
-        product_kwargs={"rolling": False, "sample_interval": 60},
-        parallel=True,
-        chunks=-1,
-    )
+def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, station_name):
+    """Generate station summary using L2E dataset."""
+    ####---------------------------------------------------------------------.
+    #### Prepare dataset
     ds = _prepare_summary_dataset(ds)
 
-    # Put all data into memory
+    # Ensure all data are in memory
     ds = ds.compute()
 
     ####---------------------------------------------------------------------.
@@ -1932,7 +1920,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     # Create figures with raw and filtered spectrum
     # - Raw
     filename = define_filename(
-        prefix="RawSpectrum",
+        prefix="SpectrumRaw",
         extension="png",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -1940,10 +1928,11 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     p = plot_drop_spectrum(raw_drop_number, title="Raw Drop Spectrum")
     p.figure.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     # - Filtered
     filename = define_filename(
-        prefix="FilteredSpectrum",
+        prefix="SpectrumFiltered",
         extension="png",
         data_source=data_source,
         campaign_name=campaign_name,
@@ -1951,6 +1940,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     p = plot_drop_spectrum(drop_number, title="Filtered Drop Spectrum")
     p.figure.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     # Create figure comparing raw and filtered spectrum
     filename = define_filename(
@@ -1968,6 +1958,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
         measured_average_velocity=measured_average_velocity,
     )
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     ####---------------------------------------------------------------------.
     #### Create L2E 1MIN dataframe
@@ -1982,7 +1973,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     l2e_parquet_filepath = os.path.join(summary_dir_path, l2e_parquet_filename)
     df.to_parquet(l2e_parquet_filepath, engine="pyarrow", compression="snappy")
 
-    # ---------------------------------------------------------------------.
+    #### ---------------------------------------------------------------------.
     #### Create table with rain summary
     table_rain_summary = create_table_rain_summary(df)
     table_rain_summary_filename = f"Station_Summary.{data_source}.{campaign_name}.{station_name}.yaml"
@@ -2027,7 +2018,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
             orientation="portrait",  # "landscape",
         )
 
-    # ---------------------------------------------------------------------.
+    #### ---------------------------------------------------------------------.
     #### Create L2E DSD Parameters summary plots
     #### - Create Z-R figure
     filename = define_filename(
@@ -2040,6 +2031,8 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
 
     fig = plot_Z_R(df, z="Z", r="R", title=r"$Z$ vs $R$")
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
+
     ###------------------------------------------------------------------------.
     #### - Create R-KED figure
     filename = define_filename(
@@ -2051,6 +2044,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_KED_R(df, log_r=True, log_ked=False)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     ###------------------------------------------------------------------------.
     #### - Create R-KEF figure
@@ -2063,6 +2057,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_KEF_R(df, log_r=True, log_kef=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     ###------------------------------------------------------------------------.
     #### - Create Z-KEF figure
@@ -2075,6 +2070,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_KEF_Z(df, log_kef=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     ###------------------------------------------------------------------------.
     #### - Create R-AH figures
@@ -2091,6 +2087,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
             )
             fig = plot_k_R(df, var=var, title=f"R vs k (at {radar_band} band)", figsize=(8, 8), dpi=300)
             fig.savefig(os.path.join(summary_dir_path, filename))
+            plt.close()
 
     #### - Create DSD parameters density figures with LWC
     filename = define_filename(
@@ -2102,6 +2099,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     filename = define_filename(
         prefix="DSD_Params_Density_with_LWC_LogDm_MaxNormalized",
@@ -2112,6 +2110,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=False)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     filename = define_filename(
         prefix="DSD_Params_Density_with_LWC_LinearDm_LogNormalized",
@@ -2122,6 +2121,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     filename = define_filename(
         prefix="DSD_Params_Density_with_LWC_LogDm_LogNormalized",
@@ -2132,6 +2132,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=True, lwc=True, log_normalize=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     ###------------------------------------------------------------------------.
     #### - Create DSD parameters density figures with R
@@ -2144,6 +2145,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=False)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     filename = define_filename(
         prefix="DSD_Params_Density_with_R_LogDm_MaxNormalized",
@@ -2154,6 +2156,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=False)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     filename = define_filename(
         prefix="DSD_Params_Density_with_R_LinearDm_LogNormalized",
@@ -2164,6 +2167,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=False, lwc=False, log_normalize=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     filename = define_filename(
         prefix="DSD_Params_Density_with_R_LogDm_LogNormalized",
@@ -2174,6 +2178,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_density(df, log_dm=True, lwc=False, log_normalize=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     ###------------------------------------------------------------------------.
     #### - Create DSD parameters relationship figures
@@ -2186,6 +2191,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dsd_params_relationships(df, add_nt=True)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     ###------------------------------------------------------------------------.
     #### - Create Dmax relationship figures
@@ -2198,8 +2204,9 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_dmax_relationships(df, diameter_bin_edges=diameter_bin_edges, dmax="Dmax", diameter_max=10)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
-    # ---------------------------------------------------------------------.
+    #### ---------------------------------------------------------------------.
     #### Create L2E QC summary plots
     # TODO:
 
@@ -2217,6 +2224,7 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
     )
     fig = plot_normalized_dsd_density(df_nd)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
     #### - Plot N(D) vs D
     filename = define_filename(
@@ -2226,7 +2234,52 @@ def create_station_summary(data_source, campaign_name, station_name, data_archiv
         campaign_name=campaign_name,
         station_name=station_name,
     )
-    plot_dsd_density(df_nd, diameter_bin_edges=diameter_bin_edges)
+    fig = plot_dsd_density(df_nd, diameter_bin_edges=diameter_bin_edges)
     fig.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
 
-    # ---------------------------------------------------------------------.
+
+####------------------------------------------------------------------------.
+#### Wrappers
+
+
+def create_station_summary(data_source, campaign_name, station_name, parallel=False, data_archive_dir=None):
+    """Create summary figures and tables for a disdrometer station."""
+    # Print processing info
+    print(f"Creation of station summary for {data_source} {campaign_name} {station_name} has started.")
+
+    # Define station summary directory
+    summary_dir_path = define_station_dir(
+        product="SUMMARY",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        data_archive_dir=data_archive_dir,
+        check_exists=False,
+    )
+    os.makedirs(summary_dir_path, exist_ok=True)
+
+    # Load L2E 1MIN dataset
+    ds = disdrodb.open_dataset(
+        data_archive_dir=data_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product="L2E",
+        product_kwargs={"rolling": False, "sample_interval": 60},
+        parallel=parallel,
+        chunks=-1,
+    )
+
+    # Generate station summary figures and table
+    generate_station_summary(
+        ds=ds,
+        summary_dir_path=summary_dir_path,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    print(f"Creation of station summary for {data_source} {campaign_name} {station_name} has terminated.")
+
+    # -------------------------------------------------------------------------------------------------.
