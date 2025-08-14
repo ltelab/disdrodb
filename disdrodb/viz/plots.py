@@ -39,9 +39,12 @@ def plot_nd(ds, var="drop_number_concentration", cmap=None, norm=None):
     # Define cmap an norm
     if cmap is None:
         cmap = plt.get_cmap("Spectral_r").copy()
+
     vmin = ds_var[var].min().item()
     norm = LogNorm(vmin, None) if norm is None else norm
 
     # Plot N(D)
     p = ds_var[var].plot.pcolormesh(x="time", norm=norm, cmap=cmap)
+    p.axes.set_title("Drop number concentration (N(D))")
+    p.axes.set_ylabel("Drop diameter (mm)")
     return p
