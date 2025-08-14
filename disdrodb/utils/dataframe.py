@@ -47,7 +47,39 @@ def log_arange(start, stop, log_step=0.1, base=10):
     log_start = np.log(start) / np.log(base)
     log_stop = np.log(stop) / np.log(base)
 
-    log_values = np.arange(log_start, log_stop, log_step)
+    log_values = np.arange(log_start, log_stop + log_step / 2, log_step)
+    return base**log_values
+
+
+def log_linspace(start, stop, n_bins, base=10):
+    """
+    Return numbers spaced evenly on a log scale between start and stop.
+
+    Parameters
+    ----------
+    start : float
+        The starting value of the sequence (must be > 0).
+    stop : float
+        The end value of the sequence (must be > 0).
+    n_bins : int
+        The number of points to generate (including start and stop).
+    base : float
+        The logarithmic base (default is 10).
+
+    Returns
+    -------
+    np.ndarray
+        Array of values spaced evenly in log space.
+    """
+    if start <= 0 or stop <= 0:
+        raise ValueError("Both start and stop must be > 0 for log spacing.")
+    if n_bins < 2:
+        raise ValueError("n_bins must be >= 2 to include start and stop values.")
+
+    log_start = np.log(start) / np.log(base)
+    log_stop = np.log(stop) / np.log(base)
+
+    log_values = np.linspace(log_start, log_stop, n_bins)
     return base**log_values
 
 

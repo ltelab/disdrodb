@@ -15,3 +15,33 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB Plotting Tools."""
+import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+
+
+def plot_nd(ds, var="drop_number_concentration", cmap=None, norm=None):
+    """Plot drop number concentration N(D) timeseries."""
+    # Check inputs
+    if var not in ds:
+        raise ValueError(f"{var} is not a xarray Dataset variable!")
+    # Check only time and diameter dimensions are specified
+    # TODO: DIAMETER_DIMENSION, "time"
+
+    # Select N(D)
+    ds_var = ds[[var]].compute()
+
+    # Regularize input
+    ds_var = ds_var.disdrodb.regularize()
+
+    # Set 0 values to np.nan
+    ds_var = ds_var.where(ds_var[var] > 0)
+
+    # Define cmap an norm
+    if cmap is None:
+        cmap = plt.get_cmap("Spectral_r").copy()
+    vmin = ds_var[var].min().item()
+    norm = LogNorm(vmin, None) if norm is None else norm
+
+    # Plot N(D)
+    p = ds_var[var].plot.pcolormesh(x="time", norm=norm, cmap=cmap)
+    return p

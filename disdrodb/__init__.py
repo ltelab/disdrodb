@@ -20,6 +20,7 @@ import contextlib
 import os
 from importlib.metadata import PackageNotFoundError, version
 
+import disdrodb.accessor  # noqa
 from disdrodb._config import config  # noqa
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.api.io import (

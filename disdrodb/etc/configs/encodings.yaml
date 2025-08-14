@@ -182,6 +182,14 @@ drop_counts:
   fletcher32: false
   contiguous: false
   _FillValue: 4294967295
+Nraw:
+  dtype: uint32
+  zlib: true
+  complevel: 3
+  shuffle: true
+  fletcher32: false
+  contiguous: false
+  _FillValue: 4294967295
 N:
   dtype: uint32
   zlib: true

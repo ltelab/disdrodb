@@ -183,7 +183,8 @@ def generate_l1(
     ds_l1["Dmin"] = min_drop_diameter
     ds_l1["Dmax"] = max_drop_diameter
     ds_l1["N"] = drop_counts.sum(dim=DIAMETER_DIMENSION)
-    ds_l1["Nremoved"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION) - ds_l1["N"]
+    ds_l1["Nraw"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION)
+    ds_l1["Nremoved"] = ds_l1["Nraw"] - ds_l1["N"]
 
     # Add bins statistics
     ds_l1 = add_bins_metrics(ds_l1)

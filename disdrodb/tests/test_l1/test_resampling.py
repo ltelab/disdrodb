@@ -201,3 +201,15 @@ class TestResampleDataset:
         assert out.attrs["measurement_interval"] == 120
         assert "sample_interval" in out.coords
         assert out["sample_interval"].item() == 120
+
+    def test_accessor_method(self):
+        """Test disdrodb resample accessor method."""
+        ds = xr.Dataset(coords={"time": pd.date_range("2000-01-01 00:00:00", periods=5, freq="1min")})
+        ds = ds.assign_coords({"sample_interval": 60})
+        out = ds.disdrodb.resample(accumulation_interval=60, rolling=True)
+        # Test sample_interval coordinate is added
+        assert "sample_interval" in out.coords
+        assert out["sample_interval"].item() == 60
+        # Test flags set correctly
+        assert out.attrs["disdrodb_rolled_product"] == "True"
+        assert out.attrs["disdrodb_aggregated_product"] == "False"

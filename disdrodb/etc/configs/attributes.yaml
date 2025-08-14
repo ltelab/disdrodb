@@ -95,6 +95,10 @@ drop_average_velocity:
   description: Average measured drop fall velocity per diameter class
   long_name: Measured average drop fall velocity
   units: m s-1
+Nraw:
+  description: Total number of measured drops
+  long_name: Total number of measured drops
+  units: ""
 N:
   description: Total number of selected drops
   long_name: Total number of selected drops

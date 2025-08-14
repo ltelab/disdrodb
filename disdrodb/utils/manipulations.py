@@ -31,7 +31,7 @@ def get_diameter_bin_edges(ds):
 
 def convert_from_decibel(x):
     """Convert dB to unit."""
-    return np.power(10.0, x / 10)
+    return np.power(10.0, 0.1 * x)  # x/10
 
 
 def convert_to_decibel(x):
