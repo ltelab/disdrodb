@@ -232,7 +232,64 @@ def find_files(
 #### DISDRODB Open Product Files
 
 
-def open_files(
+def open_raw_files(filepaths, data_source, campaign_name, station_name):
+    """Open raw files to DISDRODB L0A or L0B format.
+
+    Raw text files are opened into a DISDRODB L0A pandas Dataframe.
+    Raw netCDF files are opened into a DISDRODB L0B xarray Dataset.
+    """
+    from disdrodb.issue import read_station_issue
+    from disdrodb.l0 import generate_l0a, generate_l0b_from_nc, get_station_reader
+    from disdrodb.metadata import read_station_metadata
+
+    # Read station metadata
+    metadata = read_station_metadata(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    sensor_name = metadata["sensor_name"]
+
+    # Read station issue YAML file
+    try:
+        issue_dict = read_station_issue(
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+    except Exception:
+        issue_dict = None
+
+    # Get reader
+    reader = get_station_reader(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    # Return DISDRODB L0A dataframe if raw text files
+    if metadata["raw_data_format"] == "txt":
+        df = generate_l0a(
+            filepaths=filepaths,
+            reader=reader,
+            sensor_name=sensor_name,
+            issue_dict=issue_dict,
+            verbose=False,
+        )
+        return df
+
+    # Return DISDRODB L0B dataframe if raw netCDF files
+    ds = generate_l0b_from_nc(
+        filepaths=filepaths,
+        reader=reader,
+        sensor_name=sensor_name,
+        metadata=metadata,
+        issue_dict=issue_dict,
+        verbose=False,
+    )
+    return ds
+
+
+def open_netcdf_files(
     filepaths,
     chunks=-1,
     start_time=None,
@@ -242,7 +299,7 @@ def open_files(
     compute=True,
     **open_kwargs,
 ):
-    """Open DISDRODB product files using xarray."""
+    """Open DISDRODB netCDF files using xarray."""
     import xarray as xr
 
     # Ensure variables is a list
@@ -337,9 +394,6 @@ def open_dataset(
     """
     from disdrodb.l0.l0a_processing import read_l0a_dataframe
 
-    # Check product validity
-    if product == "RAW":
-        raise ValueError("It's not possible to open the raw data with this function.")
     product_kwargs = product_kwargs if product_kwargs else {}
 
     # List product files
@@ -355,12 +409,24 @@ def open_dataset(
         **product_kwargs,
     )
 
+    # Open RAW files
+    # - For raw txt files return DISDRODB L0A dataframe
+    # - For raw netCDF files return DISDRODB L0B dataframe
+    if product == "RAW":
+        obj = open_raw_files(
+            filepaths=filepaths,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        return obj
+
     # Open L0A Parquet files
     if product == "L0A":
         return read_l0a_dataframe(filepaths)
 
     # Open DISDRODB netCDF files using xarray
-    ds = open_files(
+    ds = open_netcdf_files(
         filepaths=filepaths,
         chunks=chunks,
         start_time=start_time,

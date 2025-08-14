@@ -24,6 +24,7 @@ from typing import Union
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 from disdrodb.l0.check_standards import check_l0a_column_names, check_l0a_standards
 from disdrodb.l0.l0b_processing import infer_split_str
@@ -630,6 +631,9 @@ def sanitize_df(
     # - Sort by time
     df = df.sort_values("time")
 
+    # - Drop index
+    df = df.reset_index(drop=True)
+
     # ------------------------------------------------------.
     # - Check column names agrees to DISDRODB standards
     check_l0a_column_names(df, sensor_name=sensor_name)
@@ -760,24 +764,8 @@ def concatenate_dataframe(list_df: list, logger=None, verbose: bool = False) -> 
     return df
 
 
-def _read_l0a(filepath: str, verbose: bool = False, logger=None, debugging_mode: bool = False) -> pd.DataFrame:
-    # Log
-    msg = f"Reading L0 Apache Parquet file at {filepath} started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    # Open file
-    df = pd.read_parquet(filepath)
-    if debugging_mode:
-        df = df.iloc[0:100]
-    # Log
-    msg = f"Reading L0 Apache Parquet file at {filepath} ended."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    return df
-
-
 def read_l0a_dataframe(
     filepaths: Union[str, list],
-    verbose: bool = False,
-    logger=None,
     debugging_mode: bool = False,
 ) -> pd.DataFrame:
     """Read DISDRODB L0A Apache Parquet file(s).
@@ -786,13 +774,10 @@ def read_l0a_dataframe(
     ----------
     filepaths : str or list
         Either a list or a single filepath.
-    verbose : bool
-        Whether to print detailed processing information into terminal.
-        The default is ``False``.
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         If filepaths is a list, it reads only the first 3 files.
-        For each file it select only the first 100 rows.
+        It selects only 100 rows sampled from the first 3 files.
         The default is ``False``.
 
     Returns
@@ -801,8 +786,6 @@ def read_l0a_dataframe(
         L0A Dataframe.
 
     """
-    from disdrodb.l0.l0a_processing import concatenate_dataframe
-
     # ----------------------------------------
     # Check filepaths validity
     if not isinstance(filepaths, (list, str)):
@@ -819,12 +802,15 @@ def read_l0a_dataframe(
 
     # ---------------------------------------------------
     # Define the list of dataframe
-    list_df = [
-        _read_l0a(filepath, verbose=verbose, logger=logger, debugging_mode=debugging_mode) for filepath in filepaths
-    ]
+    df = pq.ParquetDataset(filepaths).read().to_pandas()
 
-    # Concatenate dataframe
-    df = concatenate_dataframe(list_df, logger=logger, verbose=verbose)
+    # Ensure no index
+    df = df.reset_index(drop=True)
+
+    # Reduce rows
+    if debugging_mode:
+        n_rows = min(100, len(df))
+        df = df.sample(n=n_rows)
 
     # Ensure time is in nanoseconds
     df["time"] = df["time"].astype("M8[ns]")
@@ -842,6 +828,7 @@ def generate_l0a(
     filepaths: Union[list, str],
     reader,
     sensor_name,
+    issue_dict=None,
     verbose=True,
     logger=None,
 ) -> pd.DataFrame:
@@ -856,6 +843,13 @@ def generate_l0a(
         Format: reader(filepath, logger=None)
     sensor_name : str
         Name of the sensor.
+    issue_dict : dict, optional
+        Issue dictionary providing information on timesteps to remove.
+        The default is an empty dictionary ``{}``.
+        Valid issue_dict key are ``'timesteps'`` and ``'time_periods'``.
+        Valid issue_dict values are list of datetime64 values (with second accuracy).
+        To correctly format and check the validity of the ``issue_dict``, use
+        the ``disdrodb.l0.issue.check_issue_dict`` function.
     verbose : bool
         Whether to verbose the processing. The default is ``True``.
 
@@ -891,6 +885,7 @@ def generate_l0a(
             df = sanitize_df(
                 df=df,
                 sensor_name=sensor_name,
+                issue_dict=issue_dict,
                 logger=logger,
                 verbose=verbose,
             )

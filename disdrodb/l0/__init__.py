@@ -17,12 +17,14 @@
 """DISDRODB L0 software."""
 from disdrodb.l0.l0_reader import available_readers, get_reader, get_station_reader
 from disdrodb.l0.l0a_processing import generate_l0a
+from disdrodb.l0.l0b_nc_processing import generate_l0b_from_nc
 from disdrodb.l0.l0b_processing import generate_l0b
 
 __all__ = [
     "available_readers",
     "generate_l0a",
     "generate_l0b",
+    "generate_l0b_from_nc",
     "get_reader",
     "get_station_reader",
 ]

@@ -34,7 +34,7 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
-from disdrodb.api.io import find_files, open_files
+from disdrodb.api.io import find_files, open_netcdf_files
 from disdrodb.api.path import (
     define_accumulation_acronym,
     define_file_folder_path,
@@ -134,7 +134,7 @@ def identify_events(
         - "n_timesteps": int, number of valid timesteps in the event
     """
     # Open datasets in parallel
-    ds = open_files(filepaths, variables=["time", "N"], parallel=parallel)
+    ds = open_netcdf_files(filepaths, variables=["time", "N"], parallel=parallel)
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
     # Define candidate timesteps to group into events
@@ -497,7 +497,7 @@ def _generate_l2e(
     try:
         # ------------------------------------------------------------------------.
         #### Open the dataset over the period of interest
-        ds = open_files(filepaths, start_time=start_time, end_time=end_time, parallel=False)
+        ds = open_netcdf_files(filepaths, start_time=start_time, end_time=end_time, parallel=False)
 
         ##------------------------------------------------------------------------.
         #### Resample dataset
@@ -892,7 +892,7 @@ def _generate_l2m(
 
         ##------------------------------------------------------------------------.
         # Open the raw netCDF
-        ds = open_files(filepaths, start_time=start_time, end_time=end_time, variables=variables)
+        ds = open_netcdf_files(filepaths, start_time=start_time, end_time=end_time, variables=variables)
 
         # Produce L2M dataset
         ds = generate_l2m(

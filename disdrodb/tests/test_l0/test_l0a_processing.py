@@ -567,21 +567,23 @@ def test_read_raw_text_file(tmp_path):
 
 def test_write_l0a(tmp_path):
     """Test writing and reading L0A parquet files and type validation."""
-    # create dummy dataframe
+    # Create dummy dataframe
     data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
     df = pd.DataFrame(data).set_index("a")
     df["time"] = pd.Timestamp.now().to_numpy().astype("M8[ns]")  # open by default as [ns]. Now() returns as [us]
-
     # Write parquet file
     filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
     write_l0a(df, filepath, force=True, verbose=False)
 
     # Read parquet file
-    df_written = read_l0a_dataframe([filepath], verbose=False)
+    df_written = read_l0a_dataframe([filepath])
+
+    # Drop index (must not be conserved by write_l0a)
+    df = df.reset_index(drop=True)
 
     # Check if parquet file are similar
-    is_equal = df.equals(df_written)
-    assert is_equal
+    # - Index must not be conserved !
+    assert df.equals(df_written)
 
     # Test error is raised when bad parquet file
     with pytest.raises(ValueError):
@@ -774,7 +776,7 @@ class TestReadL0ADataFrame:
         df.to_parquet(filepath, compression="gzip")
 
         # Read written parquet file
-        df_written = read_l0a_dataframe(filepath, False)
+        df_written = read_l0a_dataframe(filepath)
         df["time"] = df["time"].astype("M8[ns]")
         pd.testing.assert_frame_equal(df_written, df)
 
@@ -804,7 +806,7 @@ class TestReadL0ADataFrame:
         df_concatenated = df_concatenated.sort_values(by="time")
 
         # Read written parquet files
-        df_written = read_l0a_dataframe(filepaths, verbose=False)
+        df_written = read_l0a_dataframe(filepaths)
         df_concatenated["time"] = df_concatenated["time"].astype("M8[ns]")
         pd.testing.assert_frame_equal(df_written, df_concatenated)
 
@@ -812,4 +814,4 @@ class TestReadL0ADataFrame:
         """Test raise error with bad filepaths type."""
         # Assert raise error if filepaths is not a list or string
         with pytest.raises(TypeError, match="Expecting filepaths to be a string or a list of strings."):
-            read_l0a_dataframe(1, verbose=False)
+            read_l0a_dataframe(1)

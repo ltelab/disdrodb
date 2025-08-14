@@ -84,7 +84,7 @@ def disdrodb_run_l0b_station(
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        It processes just the first 100 rows of 3 L0A files.
+        It processes 100 rows sampled from 3 L0A files.
         The default is False.
     data_archive_dir : str
         DISDRODB Data Archive directory

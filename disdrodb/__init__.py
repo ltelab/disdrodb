@@ -45,7 +45,14 @@ from disdrodb.configs import (
 )
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation
-from disdrodb.l0 import available_readers, generate_l0a, generate_l0b, get_reader, get_station_reader
+from disdrodb.l0 import (
+    available_readers,
+    generate_l0a,
+    generate_l0b,
+    generate_l0b_from_nc,
+    get_reader,
+    get_station_reader,
+)
 from disdrodb.l1 import generate_l1
 from disdrodb.l2 import generate_l2_radar, generate_l2e, generate_l2m
 from disdrodb.metadata import download_metadata_archive, read_metadata_archive, read_station_metadata
@@ -127,6 +134,7 @@ __all__ = [
     "find_files",
     "generate_l0a",
     "generate_l0b",
+    "generate_l0b_from_nc",
     "generate_l1",
     "generate_l2_radar",
     "generate_l2e",

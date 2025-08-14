@@ -16,9 +16,10 @@
 
 # -----------------------------------------------------------------------------.
 """This module contains functions for subsetting and aligning DISDRODB products."""
+
 import numpy as np
 from xarray.core.utils import either_dict_or_kwargs
-from functools import reduce
+
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 
 
@@ -173,30 +174,27 @@ def sel(xr_obj, indexers=None, drop=False, method=None, **indexers_kwargs):
 def align(*args):
     """Align DISDRODB products over time, velocity and diameter dimensions."""
     list_xr_obj = args
-    
-    # Check input 
+
+    # Check input
     if len(list_xr_obj) <= 1:
         raise ValueError("At least two xarray object are required for alignment.")
-    
-    # Define dimensions used for aligment
+
+    # Define dimensions used for alignment
     dims_to_align = ["time", DIAMETER_DIMENSION, VELOCITY_DIMENSION]
-    
+
     # Check which dimensions and coordinates are available across all datasets
-    coords = []
-    for coord in dims_to_align:
-        if all(coord in xr_obj.coords for xr_obj in list_xr_obj):
-            coords.append(coord)
+    coords = [coord for coord in dims_to_align if all(coord in xr_obj.coords for xr_obj in list_xr_obj)]
     if not coords:
         raise ValueError("No common coordinates found among the input datasets for alignment.")
-    
+
     # Start with the input datasets
     list_aligned = list(list_xr_obj)
-    
+
     # Loop over the dimensions which are available
     for coord in coords:
         # Retrieve list of coordinate values
         list_coord_values = [xr_obj[coord].data for xr_obj in list_aligned]
-        
+
         # Retrieve intersection of coordinates values
         # - np.atleast_1d ensure that the dimension is not dropped if only 1 value
         # - np.intersect1d returns the sorted array of common unique elements
@@ -204,13 +202,13 @@ def align(*args):
         for coord_values in list_coord_values[1:]:
             common_values = np.intersect1d(common_values, coord_values)
         sel_indices = np.atleast_1d(common_values)
-        
+
         # Check there are common coordinate values
         if len(sel_indices) == 0:
             raise ValueError(f"No common {coord} values across input objects.")
-        
+
         # Subset dataset
         new_list_aligned = [sel(xr_obj, {coord: sel_indices}) for xr_obj in list_aligned]
         list_aligned = new_list_aligned
-    
+
     return list_aligned

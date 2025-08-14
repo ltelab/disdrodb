@@ -93,7 +93,7 @@ def disdrodb_run_l0c(
         If False, multi-threading is automatically exploited to speed up I/0 tasks.
     debugging_mode : bool
         If True, it reduces the amount of data to process.
-        It processes just the first 100 rows of 3 L0A files for each station.
+        It processes 100 rows sampled from 3 L0A files for each station.
         The default is False.
     remove_l0b: bool, optional
         Whether to remove the processed L0B files. The default value is ``False``.

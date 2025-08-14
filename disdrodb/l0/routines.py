@@ -227,7 +227,7 @@ def _generate_l0b(
     ##------------------------------------------------------------------------.
     try:
         # Read L0A Apache Parquet file
-        df = read_l0a_dataframe(filepath, logger=logger, verbose=verbose, debugging_mode=debugging_mode)
+        df = read_l0a_dataframe(filepath, debugging_mode=debugging_mode)
 
         # -----------------------------------------------------------------.
         # Create xarray Dataset
@@ -723,7 +723,7 @@ def run_l0b_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 100 rows of 3 L0A files will be processed. The default value is ``False``.
+        Only 100 rows sampled from 3 L0A files will be processed. The default value is ``False``.
     remove_l0a: bool, optional
         Whether to remove the processed L0A files. The default value is ``False``.
     data_archive_dir : str, optional
