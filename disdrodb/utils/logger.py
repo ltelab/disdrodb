@@ -164,9 +164,16 @@ def _define_station_summary_log_file(list_logs, summary_filepath):
 
 
 def _define_station_problem_log_file(list_logs, problem_filepath):
-    # - Copy the log of files with warnings and error
-    list_keywords = ["ERROR"]  # "WARNING"
-    list_patterns = ["ValueError: Less than 5 timesteps available for day"]
+    # Copy the log of files with errors
+    list_keywords = ["ERROR"]
+    # Exclude lines with the following patterns
+    list_patterns = [
+        # Caused by no data with L2E and L2M filtering
+        "No timesteps with rain rate",
+        "No timesteps with N",
+        "No timesteps with Nbins",
+    ]
+    # Compile patterns to search, escaping any special regex characters
     re_keyword = re.compile("|".join(list_keywords))
     # Compile patterns to ignore, escaping any special regex characters
     re_patterns = re.compile("|".join(map(re.escape, list_patterns))) if list_patterns else None

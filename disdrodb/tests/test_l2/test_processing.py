@@ -107,7 +107,7 @@ class TestGenerateL2Empirical:
     def test_additional_dimension_preserved(self):
         """Additional dimensions should be preserved in output dims."""
         ds = create_template_dataset(with_velocity=True)
-        ds = ds.expand_dims({"year": [2012, 2013]})
+        ds["drop_number"] = ds["drop_number"].expand_dims({"year": [2012, 2013]})
         ds_out = generate_l2e(ds)
         assert "year" in ds_out.dims
 
@@ -226,9 +226,9 @@ class TestGenerateL2Model:
         """Test LognormalPSD fitting."""
         ds = create_template_l2e_dataset()
 
-        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="GS")
-        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="ML")
-        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="MOM")
+        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="GS", minimum_rain_rate=0)
+        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="ML", minimum_rain_rate=0)
+        ds_out = generate_l2m(ds, psd_model="LognormalPSD", optimization="MOM", minimum_rain_rate=0)
 
         assert ds_out.attrs["disdrodb_psd_model"] == "LognormalPSD"
         assert "disdrodb_psd_optimization" in ds_out.attrs

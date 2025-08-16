@@ -51,3 +51,21 @@ def unstack_radar_variables(ds):
     if "frequency" in ds.dims:
         ds = ds.drop_dims("frequency")
     return ds
+
+
+def resample_drop_number_concentration(da, diameter_bin_edges, method="linear"):
+    """Resample drop number concentration N(D) DataArray to high resolution diameter bins."""
+    diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
+
+    da = da.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
+    diameter_bin_width = np.diff(diameter_bin_edges)
+    diameter_bin_lower = diameter_bin_edges[:-1]
+    diameter_bin_upper = diameter_bin_edges[1:]
+    da = da.assign_coords(
+        {
+            "diameter_bin_width": ("diameter_bin_center", diameter_bin_width),
+            "diameter_bin_lower": ("diameter_bin_center", diameter_bin_lower),
+            "diameter_bin_upper": ("diameter_bin_center", diameter_bin_upper),
+        },
+    )
+    return da

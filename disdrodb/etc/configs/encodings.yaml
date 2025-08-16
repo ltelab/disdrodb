@@ -401,7 +401,7 @@ AV:
   shuffle: true
   fletcher32: false
   contiguous: false
-ADR:
+ADP:
   dtype: float32
   zlib: true
   complevel: 3

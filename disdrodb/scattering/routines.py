@@ -473,13 +473,13 @@ def compute_radar_variables(scatterer):
         radar_vars["KDP"] = radar.Kdp(scatterer)  # deg/km
         radar_vars["AH"] = radar.Ai(scatterer, h_pol=True)  # dB/km
         radar_vars["AV"] = radar.Ai(scatterer, h_pol=False)  # dB/km
-        radar_vars["ADR"] = radar_vars["AH"] - radar_vars["AV"]  # dB/km
+        radar_vars["ADP"] = radar_vars["AH"] - radar_vars["AV"]  # dB/km
     return radar_vars
 
 
 # Radar variables computed by DISDRODB
 # - Must reflect dictionary order output of compute_radar_variables
-RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDR", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADR"]
+RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDR", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADP"]
 
 
 def _initialize_null_output(output_dictionary):

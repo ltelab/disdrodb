@@ -187,7 +187,7 @@ class TestResampleDataset:
         out = resample_dataset(ds, sample_interval=60, accumulation_interval=120, rolling=True)
 
         # Window size of 2
-        # Output time indicate start of the integration !
+        # Output time indicate start of the measurement interval !
         expected_times = pd.to_datetime(
             ["2000-01-01T00:00:00", "2000-01-01T00:01:00", "2000-01-01T00:02:00"],
         )

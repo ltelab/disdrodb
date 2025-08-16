@@ -20,11 +20,12 @@ import subprocess
 import tempfile
 from shutil import which
 
+import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import xarray as xr
-from matplotlib.colors import LogNorm, Normalize
+from matplotlib.colors import ListedColormap, LogNorm, Normalize
 from matplotlib.gridspec import GridSpec
 from scipy.optimize import curve_fit
 
@@ -35,8 +36,13 @@ from disdrodb.l2.empirical_dsd import get_drop_average_velocity
 from disdrodb.l2.event import group_timesteps_into_event
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.utils.dataframe import compute_2d_histogram, log_arange
-from disdrodb.utils.manipulations import get_diameter_bin_edges, unstack_radar_variables
+from disdrodb.utils.manipulations import (
+    get_diameter_bin_edges,
+    resample_drop_number_concentration,
+    unstack_radar_variables,
+)
 from disdrodb.utils.yaml import write_yaml
+from disdrodb.viz import compute_dense_lines, max_blend_images, to_rgba
 
 ####-----------------------------------------------------------------
 #### PDF Latex Utilities
@@ -458,6 +464,19 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
 
     # Define dataframe
     df_data = pd.DataFrame({"x": x, "y": y})
+
+    # TODO: replace code with compute_1d_histogram
+    # from disdrodb.utils.dataframe import compute_1d_histogram
+    # df_agg = compute_1d_histogram(
+    #     df=df_data,
+    #     column="x",
+    #     variables="y",
+    #     bins=xbins,
+    #     prefix_name=True,
+    #     include_quantiles=False
+    # )
+    # df_agg["count"] # instead of N
+
     # - Keep only data within bin range
     df_data = df_data[(df_data["x"] >= xbins[0]) & (df_data["x"] < xbins[-1])]
     # - Define bins
@@ -663,16 +682,47 @@ def plot_raw_and_filtered_spectrums(
 
 
 ####-------------------------------------------------------------------
-#### N(D) plots
+#### N(D) Climatological plots
 
 
-def plot_normalized_dsd_density(df_nd, figsize=(8, 8), dpi=300):
-    """Plot normalized DSD N(D)/Nw ~ D/Dm density."""
+def create_nd_dataframe(ds, variables=None):
+    """Create pandas Dataframe with N(D) data."""
+    # Define variables to select
+    if isinstance(variables, str):
+        variables = [variables]
+    variables = [] if variables is None else variables
+    variables = ["drop_number_concentration", "Nw", "diameter_bin_center", "Dm", "D50", "R", *variables]
+    variables = np.unique(variables).tolist()
+
+    # Retrieve stacked N(D) dataframe
+    ds_stack = ds[variables].stack(  # noqa: PD013
+        dim={"obs": ["time", "diameter_bin_center"]},
+    )
+    # Drop coordinates
+    coords_to_drop = [
+        "velocity_method",
+        "sample_interval",
+        *RADAR_OPTIONS,
+    ]
+    df_nd = ds_stack.to_dataframe().drop(columns=coords_to_drop, errors="ignore")
+    df_nd["D"] = df_nd["diameter_bin_center"]
+    df_nd["N(D)"] = df_nd["drop_number_concentration"]
+    df_nd = df_nd[df_nd["R"] != 0]
+    df_nd = df_nd[df_nd["N(D)"] != 0]
+
+    # Compute normalized density
+    df_nd["D/D50"] = df_nd["D"] / df_nd["D50"]
     df_nd["D/Dm"] = df_nd["D"] / df_nd["Dm"]
     df_nd["N(D)/Nw"] = df_nd["N(D)"] / df_nd["Nw"]
+    df_nd["log10[N(D)/Nw]"] = np.log10(df_nd["N(D)/Nw"])
+    return df_nd
+
+
+def plot_normalized_dsd_density(df_nd, x="D/D50", figsize=(8, 8), dpi=300):
+    """Plot normalized DSD N(D)/Nw ~ D/D50 (or D/Dm) density."""
     ds_stats = compute_2d_histogram(
         df_nd,
-        x="D/Dm",
+        x=x,
         y="N(D)/Nw",
         x_bins=np.arange(0, 4, 0.025),
         y_bins=log_arange(1e-5, 50, log_step=0.1, base=10),
@@ -685,7 +735,7 @@ def plot_normalized_dsd_density(df_nd, figsize=(8, 8), dpi=300):
 
     fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
     p = ds_stats["count"].plot.pcolormesh(
-        x="D/Dm",
+        x=x,
         y="N(D)/Nw",
         ax=ax,
         vmin=1,
@@ -696,7 +746,7 @@ def plot_normalized_dsd_density(df_nd, figsize=(8, 8), dpi=300):
     )
     ax.set_ylim(1e-5, 20)
     ax.set_xlim(0, 4)
-    ax.set_xlabel(r"$D/D_m$ [-]")
+    ax.set_xlabel(f"{x} [-]")
     ax.set_ylabel(r"$N(D)/N_w$ [-]")
     ax.set_title("Normalized DSD")
     return p
@@ -721,6 +771,108 @@ def plot_dsd_density(df_nd, diameter_bin_edges, figsize=(8, 8), dpi=300):
     ax.set_xlabel(r"$D$ [mm]")
     ax.set_ylabel(r"$N(D)$ [m$^{-3}$ mm$^{-1}$]")
     ax.set_title("DSD")
+    return p
+
+
+def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
+    """Plot N(D) ~ D using dense lines."""
+    # Define intervals for rain rates
+    r_bins = [0, 2, 5, 10, 50, 100, 500]
+
+    # Define N(D) bins and diameter bin edeges
+    y_bins = log_arange(1, 20_000, log_step=0.025, base=10)
+    diameter_bin_edges = np.arange(0, 8, 0.01)
+
+    # Resample N(D) to high resolution !
+    # - quadratic, pchip
+    da = resample_drop_number_concentration(
+        ds["drop_number_concentration"],
+        diameter_bin_edges=diameter_bin_edges,
+        method="linear",
+    )
+    ds_resampled = xr.Dataset(
+        {
+            "R": ds["R"],
+            "drop_number_concentration": da,
+        },
+    )
+
+    # Define diameter bin edges to compute dense lines
+    x_bins = da.disdrodb.diameter_bin_edges
+
+    # Define discrete colormap (one color per rain-interval):
+    cmap_list = [
+        plt.get_cmap("Reds"),
+        plt.get_cmap("Oranges"),
+        plt.get_cmap("Purples"),
+        plt.get_cmap("Greens"),
+        plt.get_cmap("Blues"),
+        plt.get_cmap("Grays"),
+    ]
+    cmap_list = [ListedColormap(cmap(np.arange(0, cmap.N))[-40:]) for cmap in cmap_list]
+
+    # Compute dense lines
+    dict_rgb = {}
+    for i in range(0, len(r_bins) - 1):
+        # Define dataset subset
+        idx_rain_interval = np.logical_and(ds_resampled["R"] >= r_bins[i], ds_resampled["R"] < r_bins[i + 1])
+        da = ds_resampled.isel(time=idx_rain_interval)["drop_number_concentration"]
+
+        # Retrieve dense lines
+        da_dense_lines = compute_dense_lines(
+            da=da,
+            coord="diameter_bin_center",
+            x_bins=x_bins,
+            y_bins=y_bins,
+            normalization="max",
+        )
+        # Define cmap
+        cmap = cmap_list[i]
+        # Map colors and transparency
+        # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="linear")
+        # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="exp")
+        # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="log")
+        da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="sqrt")
+
+        dict_rgb[i] = da_rgb
+
+    # Blend images with max-alpha
+    ds_rgb = xr.concat(dict_rgb.values(), dim="r_class")
+    da_blended = max_blend_images(ds_rgb, dim="r_class")
+
+    # Prepare legend handles
+    handles = []
+    labels = []
+    for i in range(len(r_bins) - 1):
+        color = cmap_list[i](0.8)  # pick a representative color from each cmap
+        handle = mlines.Line2D([], [], color=color, alpha=0.6, linewidth=2)
+        label = f"[{r_bins[i]} - {r_bins[i+1]}]"
+        handles.append(handle)
+        labels.append(label)
+
+    # Create figure
+    fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=dpi)
+
+    p = ax.pcolormesh(
+        da_blended["diameter_bin_center"],
+        da_blended["drop_number_concentration"],
+        da_blended.data,
+    )
+
+    # Set axis scale and limits
+    ax.set_yscale("log")
+    ax.set_xlim(0, 8)
+    ax.set_ylim(1, 20_000)
+
+    # Add axis labels and title
+    ax.set_xlabel(r"$D$ [mm]")
+    ax.set_ylabel(r"$N(D)$ [m$^{-3}$ mm$^{-1}$]")
+    ax.set_title("DSD")
+
+    # Add legend with title
+    ax.legend(handles, labels, title="Rain rate [mm/hr]", loc="upper right")
+
+    # Return figure
     return p
 
 
@@ -2596,7 +2748,7 @@ def plot_ADP_KDP_ZDR(
     figsize=(8, 8),
     dpi=300,
 ):
-    """Create a 2D histogram of ADR/KDP vs ZDR.
+    """Create a 2D histogram of ADP/KDP vs ZDR.
 
     References
     ----------
@@ -3292,7 +3444,7 @@ def plot_radar_relationships(df, band):
     zdr = f"ZDR_{band}"
     kdp = f"KDP_{band}"
     a = f"AH_{band}"
-    adp = f"ADR_{band}"
+    adp = f"ADP_{band}"
 
     # Define limits
     adp_kdp_ylim_dict = {
@@ -3518,8 +3670,8 @@ def define_filename(prefix, extension, data_source, campaign_name, station_name)
     return filename
 
 
-def create_l2e_dataframe(ds):
-    """Create pandas Dataframe for L2E analysis."""
+def create_l2_dataframe(ds):
+    """Create pandas Dataframe for L2 analysis."""
     # - Drop array variables and convert to pandas
     df = ds.drop_dims([DIAMETER_DIMENSION, VELOCITY_DIMENSION]).to_pandas()
     # - Drop coordinates
@@ -3528,26 +3680,6 @@ def create_l2e_dataframe(ds):
     # - Drop rows with missing rain
     df = df[df["R"] > 0]
     return df
-
-
-def create_nd_dataframe(ds):
-    """Create pandas Dataframe with N(D) data."""
-    # Retrieve stacked N(D) dataframe
-    ds_stack = ds[["drop_number_concentration", "Nw", "diameter_bin_center", "Dm", "R"]].stack(  # noqa: PD013
-        dim={"obs": ["time", "diameter_bin_center"]},
-    )
-    # Drop coordinates
-    coords_to_drop = [
-        "velocity_method",
-        "sample_interval",
-        *RADAR_OPTIONS,
-    ]
-    df_nd = ds_stack.to_dataframe().drop(columns=coords_to_drop, errors="ignore")
-    df_nd["D"] = df_nd["diameter_bin_center"]
-    df_nd["N(D)"] = df_nd["drop_number_concentration"]
-    df_nd = df_nd[df_nd["R"] != 0]
-    df_nd = df_nd[df_nd["N(D)"] != 0]
-    return df_nd
 
 
 def prepare_summary_dataset(ds, velocity_method="fall_velocity", source="drop_number"):
@@ -3654,7 +3786,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 
     ####---------------------------------------------------------------------.
     #### Create L2E 1MIN dataframe
-    df = create_l2e_dataframe(ds)
+    df = create_l2_dataframe(ds)
 
     # Define diameter bin edges
     diameter_bin_edges = get_diameter_bin_edges(ds)
@@ -3897,18 +4029,6 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     #### Create N(D) densities
     df_nd = create_nd_dataframe(ds)
 
-    #### - Plot N(D)/Nw vs D/Dm
-    filename = define_filename(
-        prefix="N(D)_Normalized",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    p = plot_normalized_dsd_density(df_nd)
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
     #### - Plot N(D) vs D
     filename = define_filename(
         prefix="N(D)",
@@ -3918,6 +4038,30 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         station_name=station_name,
     )
     p = plot_dsd_density(df_nd, diameter_bin_edges=diameter_bin_edges)
+    p.figure.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
+
+    #### - Plot N(D) vs D with dense lines
+    filename = define_filename(
+        prefix="N(D)_DenseLines",
+        extension="png",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    p = plot_dsd_with_dense_lines(ds)
+    p.figure.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
+
+    #### - Plot N(D)/Nw vs D/Dm
+    filename = define_filename(
+        prefix="N(D)_Normalized",
+        extension="png",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    p = plot_normalized_dsd_density(df_nd)
     p.figure.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 

@@ -1,12 +1,17 @@
-time_integrations: ["1MIN", "5MIN", "10MIN", "ROLL1MIN"]
-archiving_options:
+temporal_resolutions: ["1MIN", "5MIN", "10MIN", "ROLL1MIN"]
+archive_options:
   strategy: time_block
   strategy_options:
     freq: month
   folder_partitioning: ""
-drop_timesteps_without_drops: True
-radar_simulation_enabled: False
-radar_simulation_options:
+product_options:
+  minimum_ndrops: 1
+  minimum_nbins: 1
+  minimum_rain_rate: 0.01
+  compute_spectra: False
+  compute_percentage_contribution: False
+radar_enabled: False
+radar_options:
   frequency: ["S", "C", "X", "Ku", "K", "Ka", "W"]
   num_points: 1024
   diameter_max: 10

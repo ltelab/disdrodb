@@ -44,6 +44,8 @@ def create_template_dataset(with_velocity=True):
             "velocity_bin_center": velocity_bin_center,
         },
     )
+    # Compute N
+    ds["N"] = drop_number.sum(dim=(VELOCITY_DIMENSION, DIAMETER_DIMENSION))
 
     # Finalize attribute
     if not with_velocity:

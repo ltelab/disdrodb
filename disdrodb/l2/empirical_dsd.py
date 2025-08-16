@@ -66,7 +66,7 @@ def get_drop_average_velocity(drop_number):
     ----------
     drop_number : xarray.DataArray
         Array of drop counts \\( n(D,v) \\) per diameter (and velocity, if available) bins
-        over the time integration period.
+        over the measurement interval.
         The DataArray must have the ``velocity_bin_center`` coordinate.
 
     Returns
@@ -264,7 +264,7 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
         Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
     drop_number : xarray.DataArray
         Array of drop counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
-        bins over the time integration period.
+        bins over the measurement interval.
     sample_interval : float or xarray.DataArray
         Time over which the drops are counted \\( \\Delta t \\) in seconds (s).
     sampling_area : float or xarray.DataArray
@@ -289,7 +289,7 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     - \\( n(D,v) \\): Number of drops counted in diameter (and velocity) bins.
     - \\( A_{\text{eff}}(D) \\): Effective sampling area of the sensor for diameter \\( D \\) in square meters (m²).
     - \\( \\Delta D \\): Diameter bin width in millimeters (mm).
-    - \\( \\Delta t \\): Time integration period in seconds (s).
+    - \\( \\Delta t \\): Measurement interval in seconds (s).
     - \\( v(D) \\): Fall velocity of drops in diameter bin \\( D \\) in meters per second (m/s).
 
     The effective sampling area \\( A_{\text{eff}}(D) \\) depends on the sensor and may vary with drop diameter.
@@ -1629,7 +1629,7 @@ def get_kinetic_energy_variables_from_drop_number(
     - \\( D_i \\) is the diameter of bin \\( i \\).
     - \\( v_j \\) is the velocity of bin \\( j \\).
     - \\( A \\) is the sampling area.
-    - \\( \\Delta t \\) is the time integration period in seconds.
+    - \\( \\Delta t \\) is the measurement interval in seconds.
     - \\( R \\) is the rainfall rate in mm/hr.
 
     """

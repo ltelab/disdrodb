@@ -126,7 +126,7 @@ def _generate_l1(
     success_flag = False
     ##------------------------------------------------------------------------.
     # Retrieve L1 configurations
-    l1_options = get_product_options("L1")
+    l1_options = get_product_options("L1").get("product_options")
 
     ##------------------------------------------------------------------------.
     ### Core computation

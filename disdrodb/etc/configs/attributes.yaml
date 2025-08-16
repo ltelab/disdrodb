@@ -280,7 +280,7 @@ AV:
   description: Specific attenuation at vertical polarization
   long_name: Specific Attenuation
   units: dB/km
-ADR:
+ADP:
   description: Specific differential attenuation
   long_name: Specific Differential Attenuation
   units: dB/km

@@ -15,3 +15,16 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB Visualization Module."""
+from disdrodb.viz.plots import (
+    compute_dense_lines,
+    max_blend_images,
+    plot_nd,
+    to_rgba,
+)
+
+__all__ = [
+    "compute_dense_lines",
+    "max_blend_images",
+    "plot_nd",
+    "to_rgba",
+]

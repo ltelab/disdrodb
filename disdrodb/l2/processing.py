@@ -110,6 +110,49 @@ def define_velocity_array(ds):
 
 
 ####--------------------------------------------------------------------------
+#### Timesteps filtering functions
+
+
+def select_timesteps_with_drops(ds, minimum_ndrops=0):
+    """Select timesteps with at least the specified number of drops."""
+    valid_timesteps = ds["N"].to_numpy() >= minimum_ndrops
+    if not valid_timesteps.any().item():
+        raise ValueError(f"No timesteps with N >= {minimum_ndrops}.")
+    if "time" in ds.dims:
+        ds = ds.isel(time=valid_timesteps, drop=False)
+    return ds
+
+
+def select_timesteps_with_minimum_nbins(ds, minimum_nbins):
+    """Select timesteps with at least the specified number of diameter bins with drops."""
+    if minimum_nbins == 0:
+        return ds
+    valid_timesteps = ds["Nbins"].to_numpy() >= minimum_nbins
+    if not valid_timesteps.any().item():
+        raise ValueError(f"No timesteps with Nbins >= {minimum_nbins}.")
+    if "time" in ds.dims:
+        ds = ds.isel(time=valid_timesteps, drop=False)
+    return ds
+
+
+def select_timesteps_with_minimum_rain_rate(ds, minimum_rain_rate):
+    """Select timesteps with at least the specified rain rate."""
+    if minimum_rain_rate == 0:
+        return ds
+    # Ensure dimensionality of R is 1
+    # - Collapse velocity_method
+    dims_to_agg = set(ds["R"].dims) - {"time"}
+    da_r = ds["R"].max(dim=dims_to_agg)
+    # Determine valid timesteps
+    valid_timesteps = da_r.to_numpy() >= minimum_rain_rate
+    if not valid_timesteps.any().item():
+        raise ValueError(f"No timesteps with rain rate (R) >= {minimum_rain_rate} mm/hr.")
+    if "time" in ds.dims:
+        ds = ds.isel(time=valid_timesteps, drop=False)
+    return ds
+
+
+####--------------------------------------------------------------------------
 #### L2 Empirical Parameters
 
 
@@ -147,7 +190,15 @@ def check_l2e_input_dataset(ds):
     return ds
 
 
-def generate_l2e(ds, ds_env=None, compute_spectra=False, compute_percentage_contribution=False):
+def generate_l2e(
+    ds,
+    ds_env=None,
+    compute_spectra=False,
+    compute_percentage_contribution=False,
+    minimum_ndrops=1,
+    minimum_nbins=1,
+    minimum_rain_rate=0.01,
+):
     """Generate the DISDRODB L2E dataset from the DISDRODB L1 dataset.
 
     Parameters
@@ -182,14 +233,14 @@ def generate_l2e(ds, ds_env=None, compute_spectra=False, compute_percentage_cont
 
     # -------------------------------------------------------
     #### Preprocessing
-    # Discard all timesteps without measured drops
-    # - This allow to speed up processing
-    # - Regularization can be done at the end
-    if "time" in ds.dims and "N" in ds:
-        ds = ds.isel(time=ds["N"] > 0)
+    # Select timesteps with at least the specified number of drops
+    ds = select_timesteps_with_drops(ds, minimum_ndrops=minimum_ndrops)
 
     # Add bins metrics to resampled data if missing
     ds = add_bins_metrics(ds)
+
+    # Remove timesteps with not enough bins with drops
+    ds = select_timesteps_with_minimum_nbins(ds, minimum_nbins=minimum_nbins)
 
     # Retrieve ENV dataset or take defaults
     # --> Used for fall velocity and water density estimates
@@ -285,7 +336,7 @@ def generate_l2e(ds, ds_env=None, compute_spectra=False, compute_percentage_cont
 
     # -------------------------------------------------------
     #### Compute KE integral parameters directly from drop_number
-    # - The kinetic energy variables can be computed using the actual measured fall velocity by the sensor.
+    # The kinetic energy variables can be computed using the actual measured fall velocity by the sensor.
     if has_velocity_dimension:
         ds_ke = get_kinetic_energy_variables_from_drop_number(
             drop_number=drop_number,
@@ -304,13 +355,13 @@ def generate_l2e(ds, ds_env=None, compute_spectra=False, compute_percentage_cont
         for var in ke_vars:
             ds_parameters[var] = ds_ke[var]
 
-    # ----------------------------------------------------------------------------
-    #### Finalize L2 Dataset
     # Add DSD integral parameters
     ds_l2.update(ds_parameters)
 
-    # ----------------------------------------------------------------------------.
-    #### Finalize dataset
+    # ----------------------------------------------------------------------------
+    #### Finalize L2 Dataset
+    ds_l2 = select_timesteps_with_minimum_rain_rate(ds_l2, minimum_rain_rate=minimum_rain_rate)
+
     # Add global attributes
     ds_l2.attrs = attrs
 
@@ -388,7 +439,9 @@ def generate_l2m(
     ds_env=None,
     fall_velocity_method="Beard1976",
     # Filtering options
-    min_nbins=3,
+    minimum_ndrops=1,
+    minimum_nbins=3,
+    minimum_rain_rate=0.01,
     # GOF metrics options
     gof_metrics=True,
 ):
@@ -419,7 +472,7 @@ def generate_l2m(
         or "MOM" (Method of Moments).
     optimization_kwargs : dict, optional
         Dictionary with arguments to customize the fitting procedure.
-    min_nbins: int
+    minimum_nbins: int
         Minimum number of bins with drops required to fit the PSD model.
         The default value is 5.
     gof_metrics : bool, optional
@@ -443,21 +496,18 @@ def generate_l2m(
     # Check and prepare dataset
     ds = check_l2m_input_dataset(ds)
 
-    # Retrieve time of integration
+    # Retrieve measurement interval
     # - If dataset is opened with decode_timedelta=False, sample_interval is already in seconds !
     sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"])
 
-    # ----------------------------------------------------------------------------.
+    # Select timesteps with at least the specified number of drops
+    ds = select_timesteps_with_drops(ds, minimum_ndrops=minimum_ndrops)
+
     # Add bins metrics if missing
     ds = add_bins_metrics(ds)
 
     # Remove timesteps with not enough bins with drops
-    # - Nbins must have only 'time' dimension to enable array subsetting !
-    if min_nbins > 0 and "time" in ds.dims and ds["Nbins"].dims == ("time",):
-        valid_timesteps = ds["Nbins"].compute() >= min_nbins
-        if not valid_timesteps.any().item():
-            raise ValueError(f"No timesteps with Nbins > {min_nbins}.")
-        ds = ds.isel(time=valid_timesteps, drop=False)
+    ds = select_timesteps_with_minimum_nbins(ds, minimum_nbins=minimum_nbins)
 
     # Retrieve ENV dataset or take defaults
     # --> Used for fall velocity and water density estimates
@@ -523,10 +573,13 @@ def generate_l2m(
     # - To reuse output dataset to create another L2M dataset or to compute other GOF metrics
     ds_params["drop_number_concentration"] = ds["drop_number_concentration"]
     ds_params["fall_velocity"] = ds["fall_velocity"]
+    ds_params["N"] = ds["N"]
     ds_params.update(ds[BINS_METRICS])
 
     #### ----------------------------------------------------------------------------.
     #### Finalize dataset
+    ds_params = select_timesteps_with_minimum_rain_rate(ds_params, minimum_rain_rate=minimum_rain_rate)
+
     # Add global attributes
     ds_params.attrs = attrs
     ds_params.attrs.update(psd_fitting_attrs)

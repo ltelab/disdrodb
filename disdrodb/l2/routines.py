@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Implements routines for DISDRODB L2 processing."""
 
+import copy
 import datetime
 import json
 import logging
@@ -47,7 +48,7 @@ from disdrodb.configs import (
     get_metadata_archive_dir,
     get_model_options,
     get_product_options,
-    get_product_time_integrations,
+    get_product_temporal_resolutions,
 )
 from disdrodb.l1.resampling import resample_dataset
 from disdrodb.l2.event import get_files_partitions, group_timesteps_into_event
@@ -284,22 +285,22 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
 class ProcessingOptions:
     """Define L2 products processing options."""
 
-    def __init__(self, product, filepaths, parallel, time_integrations=None):
+    def __init__(self, product, filepaths, parallel, temporal_resolutions=None):
         """Define L2 products processing options."""
         import disdrodb
 
         # ---------------------------------------------------------------------.
-        # Define time integrations for which to retrieve processing options
-        if time_integrations is None:
-            time_integrations = get_product_time_integrations(product)
-        elif isinstance(time_integrations, str):
-            time_integrations = [time_integrations]
+        # Define temporal resolutions for which to retrieve processing options
+        if temporal_resolutions is None:
+            temporal_resolutions = get_product_temporal_resolutions(product)
+        elif isinstance(temporal_resolutions, str):
+            temporal_resolutions = [temporal_resolutions]
 
         # ---------------------------------------------------------------------.
-        # Get product options at various time integrations
+        # Get product options at various temporal resolutions
         dict_product_options = {
-            time_integration: get_product_options(product, time_integration=time_integration)
-            for time_integration in time_integrations
+            temporal_resolution: get_product_options(product, temporal_resolution=temporal_resolution)
+            for temporal_resolution in temporal_resolutions
         }
 
         # ---------------------------------------------------------------------.
@@ -310,29 +311,29 @@ class ProcessingOptions:
         dict_filepaths = group_filepaths(filepaths, groups="sample_interval")
 
         # ---------------------------------------------------------------------.
-        # Retrieve processing information for each time integration
+        # Retrieve processing information for each temporal resolution
         dict_folder_partitioning = {}
         dict_files_partitions = {}
         _cache_dict_list_partitions: dict[str, dict] = {}
-        for time_integration in time_integrations:
+        for temporal_resolution in temporal_resolutions:
 
             # -------------------------------------------------------------------------.
             # Retrieve product options
-            product_options = dict_product_options[time_integration]
+            product_options = dict_product_options[temporal_resolution]
 
             # Retrieve accumulation_interval and rolling option
-            accumulation_interval, rolling = get_resampling_information(time_integration)
+            accumulation_interval, rolling = get_resampling_information(temporal_resolution)
 
             # Extract processing options
-            archiving_options = product_options.pop("archiving_options")
+            archive_options = product_options.pop("archive_options")
 
-            dict_product_options[time_integration] = product_options
+            dict_product_options[temporal_resolution] = product_options
             # -------------------------------------------------------------------------.
             # Define folder partitioning
-            if "folder_partitioning" not in archiving_options:
-                dict_folder_partitioning[time_integration] = disdrodb.config.get("folder_partitioning")
+            if "folder_partitioning" not in archive_options:
+                dict_folder_partitioning[temporal_resolution] = disdrodb.config.get("folder_partitioning")
             else:
-                dict_folder_partitioning[time_integration] = archiving_options.pop("folder_partitioning")
+                dict_folder_partitioning[temporal_resolution] = archive_options.pop("folder_partitioning")
 
             # -------------------------------------------------------------------------.
             # Define list of temporal partitions
@@ -344,10 +345,10 @@ class ProcessingOptions:
             #   --> Does not do data filtering on what to process !
             # --> Here we cache dict_list_partitions so that we don't need to recompute
             #     stuffs if processing options are the same
-            key = json.dumps(archiving_options, sort_keys=True)
+            key = json.dumps(archive_options, sort_keys=True)
             if key not in _cache_dict_list_partitions:
                 _cache_dict_list_partitions[key] = {
-                    sample_interval: define_temporal_partitions(filepaths, parallel=parallel, **archiving_options)
+                    sample_interval: define_temporal_partitions(filepaths, parallel=parallel, **archive_options)
                     for sample_interval, filepaths in dict_filepaths.items()
                 }
             dict_list_partitions = _cache_dict_list_partitions[key].copy()  # To avoid in-place replacement
@@ -378,35 +379,35 @@ class ProcessingOptions:
                 )
             ]
             files_partitions = flatten_list(files_partitions)
-            dict_files_partitions[time_integration] = files_partitions
+            dict_files_partitions[temporal_resolution] = files_partitions
 
         # ------------------------------------------------------------------.
-        # Keep only time_integrations for which events could be defined
+        # Keep only temporal_resolutions for which events could be defined
         # - Remove e.g when not compatible accumulation_interval with source sample_interval
-        time_integrations = [
-            time_integration
-            for time_integration in time_integrations
-            if len(dict_files_partitions[time_integration]) > 0
+        temporal_resolutions = [
+            temporal_resolution
+            for temporal_resolution in temporal_resolutions
+            if len(dict_files_partitions[temporal_resolution]) > 0
         ]
         # ------------------------------------------------------------------.
         # Add attributes
-        self.time_integrations = time_integrations
+        self.temporal_resolutions = temporal_resolutions
         self.dict_files_partitions = dict_files_partitions
         self.dict_product_options = dict_product_options
         self.dict_folder_partitioning = dict_folder_partitioning
 
-    def get_files_partitions(self, time_integration):
+    def get_files_partitions(self, temporal_resolution):
         """Return files partitions dictionary for a specific L2E product."""
-        return self.dict_files_partitions[time_integration]
+        return self.dict_files_partitions[temporal_resolution]
 
-    def get_product_options(self, time_integration):
+    def get_product_options(self, temporal_resolution):
         """Return product options dictionary for a specific L2E product."""
-        return self.dict_product_options[time_integration]
+        return self.dict_product_options[temporal_resolution]
 
-    def get_folder_partitioning(self, time_integration):
+    def get_folder_partitioning(self, temporal_resolution):
         """Return the folder partitioning for a specific L2E product."""
         # to be used for logs and files !
-        return self.dict_folder_partitioning[time_integration]
+        return self.dict_folder_partitioning[temporal_resolution]
 
 
 def precompute_scattering_tables(
@@ -513,22 +514,9 @@ def _generate_l2e(
         )
 
         # Extract L2E processing options
-        drop_timesteps_without_drops = product_options.pop("drop_timesteps_without_drops")
-        radar_simulation_enabled = product_options.pop("radar_simulation_enabled")
-        radar_simulation_options = product_options.pop("radar_simulation_options")
-
-        ##------------------------------------------------------------------------.
-        #### Preprocessing
-        # Optionally remove timesteps with no drops or NaN
-        # --> More aggressive filtering can be done at the time of analysis
-        # --> To not discard data:
-        #     - drop_timesteps_without_drops=False
-        #     - Or a posteriori use regularize_dataset (but info missing timesteps lost)
-        if drop_timesteps_without_drops:
-            indices_valid_timesteps = np.where(
-                ~np.logical_or(ds["N"].data == 0, np.isnan(ds["N"].data)),
-            )[0]
-            ds = ds.isel(time=indices_valid_timesteps)
+        l2e_options = product_options.get("product_options")
+        radar_enabled = product_options.get("radar_enabled")
+        radar_options = product_options.get("radar_options")
 
         ##------------------------------------------------------------------------.
         #### Generate L2E product
@@ -536,11 +524,11 @@ def _generate_l2e(
         if ds["time"].size > 2:
 
             # Compute L2E variables
-            ds = generate_l2e(ds=ds, **product_options)
+            ds = generate_l2e(ds=ds, **l2e_options)
 
             # Simulate L2M-based radar variables if asked
-            if radar_simulation_enabled:
-                ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_simulation_options)
+            if radar_enabled:
+                ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_options)
                 ds.update(ds_radar)
                 ds.attrs = ds_radar.attrs.copy()
 
@@ -707,34 +695,34 @@ def run_l2e_station(
     l2e_processing_options = ProcessingOptions(product="L2E", filepaths=filepaths, parallel=parallel)
 
     # -------------------------------------------------------------------------.
-    # Generate products for each time integration
+    # Generate products for each temporal resolution
     # rolling = False
     # accumulation_interval = 60
-    # time_integration = "10MIN"
+    # temporal_resolution = "10MIN"
     # folder_partitioning = ""
-    # product_options = l2e_processing_options.get_product_options(time_integration)
+    # product_options = l2e_processing_options.get_product_options(temporal_resolution)
 
-    for time_integration in l2e_processing_options.time_integrations:
+    for temporal_resolution in l2e_processing_options.temporal_resolutions:
         # Print progress message
-        msg = f"Production of {product} {time_integration} has started."
+        msg = f"Production of {product} {temporal_resolution} has started."
         log_info(logger=logger, msg=msg, verbose=verbose)
 
         # Retrieve event info
-        files_partitions = l2e_processing_options.get_files_partitions(time_integration)
+        files_partitions = l2e_processing_options.get_files_partitions(temporal_resolution)
 
         # Retrieve folder partitioning (for files and logs)
-        folder_partitioning = l2e_processing_options.get_folder_partitioning(time_integration)
+        folder_partitioning = l2e_processing_options.get_folder_partitioning(temporal_resolution)
 
         # Retrieve product options
-        product_options = l2e_processing_options.get_product_options(time_integration)
+        product_options = l2e_processing_options.get_product_options(temporal_resolution)
 
         # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_resampling_information(time_integration)
+        accumulation_interval, rolling = get_resampling_information(temporal_resolution)
 
         # Precompute required scattering tables
-        if product_options["radar_simulation_enabled"]:
-            radar_simulation_options = product_options["radar_simulation_options"]
-            precompute_scattering_tables(verbose=verbose, **radar_simulation_options)
+        if product_options["radar_enabled"]:
+            radar_options = product_options["radar_options"]
+            precompute_scattering_tables(verbose=verbose, **radar_options)
 
         # ------------------------------------------------------------------.
         # Create product directory
@@ -869,8 +857,13 @@ def _generate_l2m(
     ### Core computation
     try:
         ##------------------------------------------------------------------------.
+        # Extract L2M processing options
+        l2m_options = product_options.get("product_options")
+        radar_enabled = product_options.get("radar_enabled")
+        radar_options = product_options.get("radar_options")
+
         # Define variables to load
-        optimization_kwargs = product_options["optimization_kwargs"]
+        optimization_kwargs = l2m_options["optimization_kwargs"]
         if "init_method" in optimization_kwargs:
             init_method = optimization_kwargs["init_method"]
             moments = [f"M{order}" for order in init_method.replace("M", "")] + ["M1"]
@@ -883,12 +876,9 @@ def _generate_l2m(
             "D50",
             "Nw",
             "Nt",
+            "N",
             *moments,
         ]
-
-        # Extract L2M processing options
-        radar_simulation_enabled = product_options.pop("radar_simulation_enabled")
-        radar_simulation_options = product_options.pop("radar_simulation_options")
 
         ##------------------------------------------------------------------------.
         # Open the raw netCDF
@@ -897,12 +887,12 @@ def _generate_l2m(
         # Produce L2M dataset
         ds = generate_l2m(
             ds=ds,
-            **product_options,
+            **l2m_options,
         )
 
         # Simulate L2M-based radar variables if asked
-        if radar_simulation_enabled:
-            ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_simulation_options)
+        if radar_enabled:
+            ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_options)
             ds.update(ds_radar)
             ds.attrs = ds_radar.attrs.copy()  # ds_radar contains already all L2M attrs
 
@@ -1039,8 +1029,8 @@ def run_l2m_station(
     # ---------------------------------------------------------------------.
     # Loop
     # sample_interval_acronym = "1MIN"
-    time_integrations = get_product_time_integrations("L2M")
-    for sample_interval_acronym in time_integrations:
+    temporal_resolutions = get_product_temporal_resolutions("L2M")
+    for sample_interval_acronym in temporal_resolutions:
 
         # Retrieve accumulation_interval and rolling option
         accumulation_interval, rolling = get_resampling_information(sample_interval_acronym)
@@ -1089,7 +1079,7 @@ def run_l2m_station(
         # Retrieve L2M processing options
         l2m_processing_options = ProcessingOptions(
             product="L2M",
-            time_integrations=sample_interval_acronym,
+            temporal_resolutions=sample_interval_acronym,
             filepaths=filepaths,
             parallel=parallel,
         )
@@ -1098,7 +1088,7 @@ def run_l2m_station(
         folder_partitioning = l2m_processing_options.get_folder_partitioning(sample_interval_acronym)
 
         # Retrieve product options
-        product_options = l2m_processing_options.get_product_options(sample_interval_acronym)
+        global_product_options = l2m_processing_options.get_product_options(sample_interval_acronym)
 
         # Retrieve files temporal partitions
         files_partitions = l2m_processing_options.get_files_partitions(sample_interval_acronym)
@@ -1116,18 +1106,21 @@ def run_l2m_station(
         # model_name = "GAMMA_ML"
         # model_options =  l2m_options["models"][model_name]
         # Retrieve list of models to fit
-        models = product_options.pop("models")
+        models = global_product_options.pop("models")
         for model_name in models:
-            # Retrieve model options
+            # -----------------------------------------------------------------.
+            # Retrieve product-model options
+            product_options = copy.deepcopy(global_product_options)
             model_options = get_model_options(product="L2M", model_name=model_name)
+            product_options["product_options"].update(model_options)
+
             psd_model = model_options["psd_model"]
             optimization = model_options["optimization"]
-            product_options.update(model_options)
 
             # Precompute required scattering tables
-            if product_options["radar_simulation_enabled"]:
-                radar_simulation_options = product_options["radar_simulation_options"]
-                precompute_scattering_tables(verbose=verbose, **radar_simulation_options)
+            if product_options["radar_enabled"]:
+                radar_options = product_options["radar_options"]
+                precompute_scattering_tables(verbose=verbose, **radar_options)
 
             # -----------------------------------------------------------------.
             msg = f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has started."

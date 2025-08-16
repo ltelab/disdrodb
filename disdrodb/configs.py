@@ -250,8 +250,8 @@ def check_availability_radar_simulations(options):
     """Check radar simulations are possible for L2E and L2M products."""
     import disdrodb
 
-    if "radar_simulation_enabled" in options and not disdrodb.is_pytmatrix_available():
-        options["radar_simulation_enabled"] = False
+    if "radar_enabled" in options and not disdrodb.is_pytmatrix_available():
+        options["radar_enabled"] = False
     return options
 
 
@@ -285,7 +285,7 @@ def copy_product_default_configs(configs_path):
     return configs_path
 
 
-def get_product_options(product, time_integration=None):
+def get_product_options(product, temporal_resolution=None):
     """Get options for DISDRODB products."""
     import disdrodb
 
@@ -304,13 +304,13 @@ def get_product_options(product, time_integration=None):
 
     # Retrieve global product options
     global_options = read_yaml(os.path.join(configs_path, product, "global.yaml"))
-    if time_integration is None:
+    if temporal_resolution is None:
         global_options = check_availability_radar_simulations(global_options)
         return global_options
 
-    # If time integration is specified, drop 'time_integrations' key
-    global_options.pop("time_integrations", None)
-    custom_options_path = os.path.join(configs_path, product, f"{time_integration}.yaml")
+    # If temporal resolutions are specified, drop 'temporal_resolutions' key
+    global_options.pop("temporal_resolutions", None)
+    custom_options_path = os.path.join(configs_path, product, f"{temporal_resolution}.yaml")
     if not os.path.exists(custom_options_path):
         return global_options
     custom_options = read_yaml(custom_options_path)
@@ -320,10 +320,10 @@ def get_product_options(product, time_integration=None):
     return options
 
 
-def get_product_time_integrations(product):
+def get_product_temporal_resolutions(product):
     """Get DISDRODB L2 product temporal aggregations."""
     # Check only L2E and L2M
-    return get_product_options(product)["time_integrations"]
+    return get_product_options(product)["temporal_resolutions"]
 
 
 def get_model_options(product, model_name):

@@ -1,4 +1,4 @@
-archiving_options:
+archive_options:
   strategy: event
   strategy_options:
     min_drops: 5
@@ -8,4 +8,5 @@ archiving_options:
     event_min_duration: "5MIN"
     event_min_size: 3
   folder_partitioning: "year/month"
-drop_timesteps_without_drops: False
+product_options:
+  minimum_ndrops: 0

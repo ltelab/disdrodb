@@ -20,6 +20,8 @@
 import numpy as np
 import pandas as pd
 
+from disdrodb.utils.warnings import suppress_warnings
+
 
 def log_arange(start, stop, log_step=0.1, base=10):
     """
@@ -132,6 +134,9 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
     if len(df) == 0:
         raise ValueError("No valid data points after removing NaN values")
 
+    # Keep only data within bin range
+    df = df[(df[column] >= bins[0]) & (df[column] < bins[-1])]
+
     # Create binned columns with explicit handling of out-of-bounds values
     df[f"{column}_binned"] = pd.cut(df[column], bins=bins, include_lowest=True)
 
@@ -166,7 +171,7 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
                 (f"{prefix}std", "std"),
                 (f"{prefix}min", "min"),
                 (f"{prefix}max", "max"),
-                (f"{prefix}mad", lambda s: np.median(np.abs(s - np.median(s)))),
+                (f"{prefix}mad", lambda s: (s - s.median()).abs().median()),
             ]
             if i == 0:
                 list_stats.append(("count", "count"))
@@ -174,7 +179,8 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
             list_stats = [("count", "count")]
 
         # Compute statistics
-        df_stats = df_grouped[var].agg(list_stats)
+        with suppress_warnings():
+            df_stats = df_grouped[var].agg(list_stats)
 
         # Compute other variable statistics
         if variables_specified:

@@ -438,7 +438,7 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
     - The function adds a tolerance for searching timesteps
     before and after 00:00 to account for imprecise logging times.
     - It checks that duplicated timesteps have the same raw drop number values.
-    - The function infers the time integration sample interval and
+    - The function infers the sample interval and
     regularizes timesteps to handle trailing seconds.
     - The data is loaded into memory and connections to source files
     are closed before returning the dataset.

@@ -234,7 +234,7 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
         ds_resampled.update(_rolling(ds=ds, variables=var_to_cumulate, window_size=window_size, op="sum"))
         ds_resampled.update(_rolling(ds=ds, variables=var_to_min, window_size=window_size, op="min"))
         ds_resampled.update(_rolling(ds=ds, variables=var_to_max, window_size=window_size, op="max"))
-        # Ensure time to correspond to the start time of the integration
+        # Ensure time to correspond to the start time of the measurement period
         ds_resampled = ds_resampled.isel(time=slice(window_size - 1, None)).assign_coords(
             {"time": ds_resampled["time"].data[: -window_size + 1]},
         )
