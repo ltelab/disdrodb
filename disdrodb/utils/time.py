@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 #### Sampling Interval Acronyms
 
 
-def seconds_to_acronym(seconds):
+def seconds_to_temporal_resolution(seconds):
     """
     Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
 
@@ -57,27 +57,27 @@ def seconds_to_acronym(seconds):
         parts.append(f"{components.minutes}MIN")
     if components.seconds > 0:
         parts.append(f"{components.seconds}S")
-    acronym = "".join(parts)
-    return acronym
+    temporal_resolution = "".join(parts)
+    return temporal_resolution
 
 
-def get_resampling_information(sample_interval_acronym):
+def get_resampling_information(temporal_resolution):
     """
-    Extract resampling information from the sample interval acronym.
+    Extract resampling information from the temporal_resolution string.
 
     Parameters
     ----------
-    sample_interval_acronym: str
-      A string representing the sample interval: e.g., "1H30MIN", "ROLL1H30MIN".
+    temporal_resolution: str
+      A string representing the product temporal resolution: e.g., "1H30MIN", "ROLL1H30MIN".
 
     Returns
     -------
     sample_interval_seconds, rolling: tuple
         Sample_interval in seconds and whether rolling is enabled.
     """
-    rolling = sample_interval_acronym.startswith("ROLL")
+    rolling = temporal_resolution.startswith("ROLL")
     if rolling:
-        sample_interval_acronym = sample_interval_acronym[4:]  # Remove "ROLL"
+        temporal_resolution = temporal_resolution[4:]  # Remove "ROLL"
 
     # Allowed pattern: one or more occurrences of "<number><unit>"
     # where unit is exactly one of D, H, MIN, or S.
@@ -85,15 +85,15 @@ def get_resampling_information(sample_interval_acronym):
     pattern = r"^(\d+(?:D|H|MIN|S))+$"
 
     # Check if the entire string matches the pattern
-    if not re.match(pattern, sample_interval_acronym):
+    if not re.match(pattern, temporal_resolution):
         raise ValueError(
-            f"Invalid sample interval acronym '{sample_interval_acronym}'. "
+            f"Invalid temporal resolution '{temporal_resolution}'. "
             "Must be composed of one or more <number><unit> groups, where unit is D, H, MIN, or S.",
         )
 
     # Regular expression to match duration components and extract all (value, unit) pairs
     pattern = r"(\d+)(D|H|MIN|S)"
-    matches = re.findall(pattern, sample_interval_acronym)
+    matches = re.findall(pattern, temporal_resolution)
 
     # Conversion factors for each unit
     unit_to_seconds = {
@@ -112,21 +112,21 @@ def get_resampling_information(sample_interval_acronym):
     return sample_interval, rolling
 
 
-def acronym_to_seconds(acronym):
+def temporal_resolution_to_seconds(temporal_resolution):
     """
-    Extract the interval in seconds from the duration acronym.
+    Extract the measurement interval in seconds from the temporal resolution string.
 
     Parameters
     ----------
-    acronym: str
-      A string representing a duration: e.g., "1H30MIN", "ROLL1H30MIN".
+    temporal_resolution: str
+      A string representing the product measurement interval: e.g., "1H30MIN", "ROLL1H30MIN".
 
     Returns
     -------
     seconds
         Duration in seconds.
     """
-    seconds, _ = get_resampling_information(acronym)
+    seconds, _ = get_resampling_information(temporal_resolution)
     return seconds
 
 

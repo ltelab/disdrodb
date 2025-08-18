@@ -247,7 +247,7 @@ def read_txt_file(file, filename, logger):
 
     # Deal with different data formats
     if len(df) == 1:
-        # If TYP acronym --> single-line new format
+        # If TYP in first row --> single-line new format
         if "TYP" in df["TO_PARSE"].iloc[0]:
             return parse_single_line_format(df, filename, logger=logger)
         # Otherwise old format

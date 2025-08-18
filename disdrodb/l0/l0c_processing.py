@@ -457,8 +457,6 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
 
     # ---------------------------------------------------------------------------------------.
     # Open files with data within the provided day and concatenate them
-    # list_ds = [xr.open_dataset(filepath, chunks={}).sel({"time": slice(start_day_tol, end_day_tol)})
-    # for filepath in filepaths]
     list_ds = [
         xr.open_dataset(filepath, decode_timedelta=False, chunks=-1, cache=False).sortby("time")
         for filepath in filepaths

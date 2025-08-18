@@ -23,7 +23,6 @@ import pytest
 import xarray as xr
 
 from disdrodb.utils.time import (
-    acronym_to_seconds,
     check_freq,
     ensure_sample_interval_in_seconds,
     ensure_sorted_by_time,
@@ -36,7 +35,8 @@ from disdrodb.utils.time import (
     infer_sample_interval,
     regularize_dataset,
     regularize_timesteps,
-    seconds_to_acronym,
+    seconds_to_temporal_resolution,
+    temporal_resolution_to_seconds,
 )
 
 
@@ -534,59 +534,59 @@ class TestGetProblematicTimestepIndices:
 class TestSecondsToAcronym:
     def test_zero_seconds(self):
         """Zero seconds returns empty string."""
-        assert seconds_to_acronym(0) == ""
+        assert seconds_to_temporal_resolution(0) == ""
 
     def test_seconds_only(self):
         """Only seconds less than a minute returns e.g. '45S'."""
-        assert seconds_to_acronym(45) == "45S"
+        assert seconds_to_temporal_resolution(45) == "45S"
 
     def test_minutes_and_seconds(self):
         """Minutes and seconds return e.g. '1MIN30S'."""
-        assert seconds_to_acronym(90) == "1MIN30S"
+        assert seconds_to_temporal_resolution(90) == "1MIN30S"
 
     def test_hours_and_minutes(self):
         """Hours and minutes return e.g. '1H15MIN'."""
-        assert seconds_to_acronym(3600 + 900) == "1H15MIN"
+        assert seconds_to_temporal_resolution(3600 + 900) == "1H15MIN"
 
     def test_hours_only(self):
-        """Exact hours return only hours acronym."""
-        assert seconds_to_acronym(7200) == "2H"
+        """Exact hours return only hours."""
+        assert seconds_to_temporal_resolution(7200) == "2H"
 
     def test_days_and_hours(self):
         """Days and hours return e.g. '1D2H'."""
-        assert seconds_to_acronym(86400 + 7200) == "1D2H"
+        assert seconds_to_temporal_resolution(86400 + 7200) == "1D2H"
 
     def test_full_components(self):
         """Days, hours, minutes, and seconds returns '1D1H1MIN1S'."""
         total = 86400 + 3600 + 60 + 1
-        assert seconds_to_acronym(total) == "1D1H1MIN1S"
+        assert seconds_to_temporal_resolution(total) == "1D1H1MIN1S"
 
     def test_invalid_type(self):
         """Non-integer input raises an error."""
         with pytest.raises((TypeError, ValueError)):
-            seconds_to_acronym("60")
+            seconds_to_temporal_resolution("60")
 
 
-def test_acronym_to_seconds():
-    """Test acronym_to_seconds."""
-    assert acronym_to_seconds("30S") == 30
+def test_temporal_resolution_to_seconds():
+    """Test temporal_resolution_to_seconds."""
+    assert temporal_resolution_to_seconds("30S") == 30
 
 
 class TestGetResamplingInformation:
     def test_single_seconds(self):
-        """Single seconds acronym returns correct seconds and non-rolling flag."""
+        """Single seconds temporal resolution string returns correct seconds and non-rolling flag."""
         seconds, rolling = get_resampling_information("30S")
         assert seconds == 30
         assert rolling is False
 
     def test_single_minutes(self):
-        """Single minutes acronym returns correct seconds and non-rolling flag."""
+        """Single minutes temporal resolution string returns correct seconds and non-rolling flag."""
         seconds, rolling = get_resampling_information("5MIN")
         assert seconds == 5 * 60
         assert rolling is False
 
     def test_hours_and_minutes(self):
-        """Composite hours and minutes acronym computes proper seconds and non-rolling flag."""
+        """Composite hours and minutes temporal resolution string computes proper seconds and non-rolling flag."""
         seconds, rolling = get_resampling_information("2H30MIN")
         assert seconds == 2 * 3600 + 30 * 60
         assert rolling is False
@@ -610,13 +610,13 @@ class TestGetResamplingInformation:
         assert rolling is True
 
     def test_zero_seconds(self):
-        """Zero seconds acronym returns zero and non-rolling flag."""
+        """Zero seconds temporal resolution string returns zero and non-rolling flag."""
         seconds, rolling = get_resampling_information("0S")
         assert seconds == 0
         assert rolling is False
 
     def test_order_independence(self):
-        """Unit order in acronym does not affect computed seconds."""
+        """Unit order in temporal resolution string does not affect computed seconds."""
         s1, _ = get_resampling_information("1H30MIN")
         s2, _ = get_resampling_information("30MIN1H")
         assert s1 == s2
@@ -637,7 +637,7 @@ class TestGetResamplingInformation:
             get_resampling_information("1H30")
 
     def test_empty_string(self):
-        """Empty acronym string raises ValueError."""
+        """Empty temporal resolution string raises ValueError."""
         with pytest.raises(ValueError):
             get_resampling_information("")
 

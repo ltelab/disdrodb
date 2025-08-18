@@ -27,9 +27,7 @@ from typing import Optional
 
 import dask
 
-from disdrodb.api.checks import check_sensor_name
-
-# Directory
+from disdrodb.api.checks import check_sensor_name, check_station_inputs
 from disdrodb.api.create_directories import (
     create_l0_directory_structure,
     create_logs_directory,
@@ -76,8 +74,6 @@ from disdrodb.utils.logger import (
     log_error,
     log_info,
 )
-
-# log_warning,
 from disdrodb.utils.writer import write_product
 from disdrodb.utils.yaml import read_yaml
 
@@ -545,6 +541,15 @@ def run_l0a_station(
     data_archive_dir = get_data_archive_dir(data_archive_dir)
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # ------------------------------------------------------------------------.
     # Read metadata
     metadata = read_station_metadata(
         metadata_archive_dir=metadata_archive_dir,
@@ -740,6 +745,13 @@ def run_l0b_station(
     # Retrieve DISDRODB Metadata Archive directory
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
     # -----------------------------------------------------------------.
     # Retrieve metadata
     metadata = read_station_metadata(
@@ -802,7 +814,7 @@ def run_l0b_station(
     # If no data available, print error message and return None
     if flag_not_available_data:
         msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            f"{product} processing of {data_source} {campaign_name} {station_name} "
             + f"has not been launched because of missing {required_product} data."
         )
         print(msg)
@@ -970,6 +982,14 @@ def run_l0c_station(
     # Retrieve DISDRODB Metadata Archive directory
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
     # ------------------------------------------------------------------------.
     # Start processing
     t_i = time.time()
@@ -1028,7 +1048,7 @@ def run_l0c_station(
     # If no data available, print error message and return None
     if flag_not_available_data:
         msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            f"{product} processing of {data_source} {campaign_name} {station_name} "
             + f"has not been launched because of missing {required_product} data."
         )
         print(msg)

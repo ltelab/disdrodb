@@ -2260,7 +2260,7 @@ def get_mom_parameters(ds: xr.Dataset, psd_model: str, mom_methods=None) -> xr.D
     """
     Compute PSD model parameters using various method-of-moments (MOM) approaches.
 
-    The method is specified by the `mom_methods` acronym, e.g. 'M012', 'M234', 'M246'.
+    The method is specified by the `mom_methods` abbreviations, e.g. 'M012', 'M234', 'M246'.
 
     Parameters
     ----------

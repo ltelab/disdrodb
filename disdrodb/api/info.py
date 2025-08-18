@@ -25,7 +25,7 @@ from pathlib import Path
 import numpy as np
 from trollsift import Parser
 
-from disdrodb.utils.time import acronym_to_seconds
+from disdrodb.utils.time import temporal_resolution_to_seconds
 
 ####---------------------------------------------------------------------------
 ########################
@@ -35,13 +35,13 @@ DISDRODB_FNAME_L0_PATTERN = (
     "{product:s}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
-DISDRODB_FNAME_L2E_PATTERN = (  # also L0C and L1 --> accumulation_acronym = sample_interval
-    "{product:s}.{accumulation_acronym}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+DISDRODB_FNAME_L2E_PATTERN = (  # also L0C and L1
+    "{product:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
 
 DISDRODB_FNAME_L2M_PATTERN = (
-    "{product:s}_{subproduct:s}.{accumulation_acronym}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
+    "{product:s}_{subproduct:s}.{temporal_resolution}.{campaign_name:s}.{station_name:s}.s{start_time:%Y%m%d%H%M%S}.e{end_time:%Y%m%d%H%M%S}"
     ".{version:s}.{data_format:s}"
 )
 
@@ -76,8 +76,8 @@ def _get_info_from_filename(filename):
         raise ValueError(f"{filename} can not be parsed. Report the issue.")
 
     # Add additional information to info dictionary
-    if "accumulation_acronym" in info_dict:
-        info_dict["sample_interval"] = acronym_to_seconds(info_dict["accumulation_acronym"])
+    if "temporal_resolution" in info_dict:
+        info_dict["sample_interval"] = temporal_resolution_to_seconds(info_dict["temporal_resolution"])
 
     # Return info dictionary
     return info_dict
@@ -162,8 +162,8 @@ def get_start_end_time_from_filepaths(filepaths):
 
 def get_sample_interval_from_filepaths(filepaths):
     """Return the sample interval of the specified files."""
-    list_accumulation_acronym = get_key_from_filepaths(filepaths, key="accumulation_acronym")
-    list_sample_interval = [acronym_to_seconds(s) for s in list_accumulation_acronym]
+    list_temporal_resolution = get_key_from_filepaths(filepaths, key="temporal_resolution")
+    list_sample_interval = [temporal_resolution_to_seconds(s) for s in list_temporal_resolution]
     return list_sample_interval
 
 
@@ -345,7 +345,7 @@ FILE_KEYS = [
     "start_time",
     "end_time",
     "data_format",
-    "accumulation_acronym",
+    "temporal_resolution",
     "sample_interval",
 ]
 
@@ -444,7 +444,7 @@ def group_filepaths(filepaths, groups=None):
     groups: list or str
         The group keys by which to group the filepaths.
         Valid group keys are ``product``, ``subproduct``, ``campaign_name``, ``station_name``,
-        ``start_time``, ``end_time``,``accumulation_acronym``,``sample_interval``,
+        ``start_time``, ``end_time``,``temporal_resolution``,``sample_interval``,
         ``data_format``,
         ``year``, ``month``, ``day``,  ``doy``, ``dow``, ``hour``, ``minute``, ``second``,
         ``month_name``, ``quarter``, ``season``.

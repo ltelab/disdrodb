@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from disdrodb.api.info import get_start_end_time_from_filepaths
-from disdrodb.utils.time import acronym_to_seconds, ensure_timedelta_seconds_interval
+from disdrodb.utils.time import ensure_timedelta_seconds_interval, temporal_resolution_to_seconds
 
 
 def group_timesteps_into_event(
@@ -75,9 +75,9 @@ def group_timesteps_into_event(
         - "n_timesteps": int, number of valid timesteps in the event
     """
     # Retrieve datetime arguments
-    neighbor_time_interval = pd.Timedelta(acronym_to_seconds(neighbor_time_interval), unit="seconds")
-    event_max_time_gap = pd.Timedelta(acronym_to_seconds(event_max_time_gap), unit="seconds")
-    event_min_duration = pd.Timedelta(acronym_to_seconds(event_min_duration), unit="seconds")
+    neighbor_time_interval = pd.Timedelta(temporal_resolution_to_seconds(neighbor_time_interval), unit="seconds")
+    event_max_time_gap = pd.Timedelta(temporal_resolution_to_seconds(event_max_time_gap), unit="seconds")
+    event_min_duration = pd.Timedelta(temporal_resolution_to_seconds(event_min_duration), unit="seconds")
 
     # Remove isolated timesteps
     timesteps = remove_isolated_timesteps(

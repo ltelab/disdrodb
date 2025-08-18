@@ -288,19 +288,19 @@ def copy_product_default_configs(configs_path):
 def get_product_options(product, temporal_resolution=None):
     """Get options for DISDRODB products."""
     import disdrodb
+    from disdrodb.api.checks import check_product
 
-    # TODO: adapt
-    # if os.environ.get("PYTEST_CURRENT_TEST"):
-    #     configs_path = TEST_PRODUCT_CONFIGS_PATH
-    # else
-
-    configs_path = disdrodb.config.get("configs_path", get_product_default_configs_path())
+    # Define configs path
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        configs_path = os.path.join(disdrodb.__root_path__, "disdrodb", "tests", "products")
+    else:
+        configs_path = disdrodb.config.get("configs_path", get_product_default_configs_path())
 
     # Validate DISDRODB products configuration
     validate_product_configuration(configs_path)
 
     # Check product
-    # - TODO
+    check_product(product)
 
     # Retrieve global product options
     global_options = read_yaml(os.path.join(configs_path, product, "global.yaml"))
@@ -337,6 +337,6 @@ def get_model_options(product, model_name):
 
 
 def validate_product_configuration(configs_path):
-    # Time intregations of L2M subset of L2E
-    # All YA
+    """Validate the DISDRODB products configuration files."""
+    # TODO: Implement validation of DISDRODB products configuration files with pydantic
     pass

@@ -113,7 +113,7 @@ def reader(
     # --> "" generates an array of zeros in L0B processing
     df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>ZERO</SPECTRUM>", "")
 
-    # Remove <SPECTRUM> and </SPECTRUM>" acronyms from the raw_drop_number field
+    # Remove <SPECTRUM> and </SPECTRUM> prefix and suffix from the raw_drop_number field
     df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
     df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
 

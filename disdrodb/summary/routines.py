@@ -41,6 +41,7 @@ from disdrodb.utils.manipulations import (
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
+from disdrodb.utils.warnings import suppress_warnings
 from disdrodb.utils.yaml import write_yaml
 from disdrodb.viz import compute_dense_lines, max_blend_images, to_rgba
 
@@ -453,6 +454,10 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     >>> xbins = np.arange(0, 60, 5)
     >>> (a, b), (a_std, b_std) = fit_powerlaw(x, y, xbins)
     """
+    # Set min_counts to 0 during pytest execution in order to test the summary routine
+    if os.environ.get("PYTEST_CURRENT_TEST"):
+        min_counts = 0
+
     # Ensure numpy array
     x = np.asanyarray(x)
     y = np.asanyarray(y)
@@ -465,7 +470,7 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     # Define dataframe
     df_data = pd.DataFrame({"x": x, "y": y})
 
-    # TODO: replace code with compute_1d_histogram
+    # Alternative code
     # from disdrodb.utils.dataframe import compute_1d_histogram
     # df_agg = compute_1d_histogram(
     #     df=df_data,
@@ -499,21 +504,24 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
 
     # Remove bins with less than n counts
     df_agg = df_agg[df_agg["n"] > min_counts]
+    if len(df_agg) < 5:
+        raise ValueError("Not enough data to fit a power law.")
 
     # Estimate sigma based on MAD
     sigma = df_agg["mad"]
 
     # Fit the data
-    (a, b), pcov = curve_fit(
-        lambda x, a, b: a * np.power(x, b),
-        df_agg["x"],
-        df_agg["y"],
-        method="lm",
-        sigma=sigma,
-        absolute_sigma=True,
-        maxfev=10_000,  # max n iterations
-    )
-    (a_std, b_std) = np.sqrt(np.diag(pcov))
+    with suppress_warnings():
+        (a, b), pcov = curve_fit(
+            lambda x, a, b: a * np.power(x, b),
+            df_agg["x"],
+            df_agg["y"],
+            method="lm",
+            sigma=sigma,
+            absolute_sigma=True,
+            maxfev=10_000,  # max n iterations
+        )
+        (a_std, b_std) = np.sqrt(np.diag(pcov))
 
     # Return the parameters and their standard deviation
     return (float(a), float(b)), (float(a_std), float(b_std))

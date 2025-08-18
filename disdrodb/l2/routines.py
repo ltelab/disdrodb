@@ -29,7 +29,7 @@ import dask
 import numpy as np
 import pandas as pd
 
-# Directory
+from disdrodb.api.checks import check_station_inputs
 from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
@@ -37,10 +37,10 @@ from disdrodb.api.create_directories import (
 from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
 from disdrodb.api.io import find_files, open_netcdf_files
 from disdrodb.api.path import (
-    define_accumulation_acronym,
     define_file_folder_path,
     define_l2e_filename,
     define_l2m_filename,
+    define_temporal_resolution,
 )
 from disdrodb.api.search import get_required_product
 from disdrodb.configs import (
@@ -478,10 +478,10 @@ def _generate_l2e(
 
     # -----------------------------------------------------------------.
     # Create file logger
-    sample_interval_acronym = define_accumulation_acronym(seconds=accumulation_interval, rolling=rolling)
+    temporal_resolution = define_temporal_resolution(seconds=accumulation_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
-    expected_filename = f"L2E.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    expected_filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
         filename=expected_filename,
@@ -656,6 +656,14 @@ def run_l2e_station(
     # Retrieve DISDRODB Metadata Archive directory
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir=metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
     # ------------------------------------------------------------------------.
     # Start processing
     if verbose:
@@ -685,7 +693,7 @@ def run_l2e_station(
     # If no data available, print error message and return None
     if flag_not_available_data:
         msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            f"{product} processing of {data_source} {campaign_name} {station_name} "
             + f"has not been launched because of missing {required_product} data."
         )
         print(msg)
@@ -835,12 +843,10 @@ def _generate_l2m(
 
     # -----------------------------------------------------------------.
     # Create file logger
-    sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
+    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
-    filename = (
-        f"L2M_{model_name}.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
-    )
+    filename = f"L2M_{model_name}.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
         filename=filename,
@@ -1006,6 +1012,14 @@ def run_l2m_station(
     # Retrieve DISDRODB Metadata Archive directory
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
     # ------------------------------------------------------------------------.
     # Start processing
     if verbose:
@@ -1028,12 +1042,14 @@ def run_l2m_station(
 
     # ---------------------------------------------------------------------.
     # Loop
-    # sample_interval_acronym = "1MIN"
+    # temporal_resolution = "1MIN"
+    # temporal_resolution = "10MIN"
     temporal_resolutions = get_product_temporal_resolutions("L2M")
-    for sample_interval_acronym in temporal_resolutions:
+    print(temporal_resolutions)
+    for temporal_resolution in temporal_resolutions:
 
         # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_resampling_information(sample_interval_acronym)
+        accumulation_interval, rolling = get_resampling_information(temporal_resolution)
 
         # ------------------------------------------------------------------.
         # Avoid generation of rolling products for source sample interval !
@@ -1070,7 +1086,7 @@ def run_l2m_station(
         if flag_not_available_data:
             msg = (
                 f"{product} processing of {data_source} {campaign_name} {station_name} "
-                + f"has not been launched because of missing {required_product} {sample_interval_acronym} data."
+                + f"has not been launched because of missing {required_product} {temporal_resolution} data."
             )
             log_info(logger=logger, msg=msg, verbose=verbose)
             continue
@@ -1079,24 +1095,24 @@ def run_l2m_station(
         # Retrieve L2M processing options
         l2m_processing_options = ProcessingOptions(
             product="L2M",
-            temporal_resolutions=sample_interval_acronym,
+            temporal_resolutions=temporal_resolution,
             filepaths=filepaths,
             parallel=parallel,
         )
 
         # Retrieve folder partitioning (for files and logs)
-        folder_partitioning = l2m_processing_options.get_folder_partitioning(sample_interval_acronym)
+        folder_partitioning = l2m_processing_options.get_folder_partitioning(temporal_resolution)
 
         # Retrieve product options
-        global_product_options = l2m_processing_options.get_product_options(sample_interval_acronym)
+        global_product_options = l2m_processing_options.get_product_options(temporal_resolution)
 
         # Retrieve files temporal partitions
-        files_partitions = l2m_processing_options.get_files_partitions(sample_interval_acronym)
+        files_partitions = l2m_processing_options.get_files_partitions(temporal_resolution)
 
         if len(files_partitions) == 0:
             msg = (
                 f"{product} processing of {data_source} {campaign_name} {station_name} "
-                + f"has not been launched because of missing {required_product} {sample_interval_acronym} data."
+                + f"has not been launched because of missing {required_product} {temporal_resolution} data."
             )
             log_info(logger=logger, msg=msg, verbose=verbose)
             continue

@@ -1,19 +1,15 @@
-temporal_resolutions: ["1MIN", "5MIN", "10MIN"]
-models: ["GAMMA_ML", "NGAMMA_GS_LOG_ND_MAE"]
+temporal_resolutions: ["1MIN", "10MIN", "ROLL1MIN"]
 archive_options:
   strategy: time_block
   strategy_options:
     freq: month
   folder_partitioning: ""
 product_options:
-  fall_velocity_method: "Beard1976"
-  diameter_min: 0
-  diameter_max: 10
-  diameter_spacing: 0.05
-  gof_metrics: True
   minimum_ndrops: 1
-  minimum_nbins: 5
+  minimum_nbins: 1
   minimum_rain_rate: 0.01
+  compute_spectra: False
+  compute_percentage_contribution: False
 radar_enabled: False
 radar_options:
   frequency: ["S", "C", "X", "Ku", "K", "Ka", "W"]
@@ -21,6 +17,6 @@ radar_options:
   diameter_max: 10
   canting_angle_std: 7
   axis_ratio_model: Thurai2007
-  permittivity_model: "Turner2016"
+  permittivity_model: Turner2016
   water_temperature: 10
   elevation_angle: 0

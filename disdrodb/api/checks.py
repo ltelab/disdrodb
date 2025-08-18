@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB Checks Functions."""
 import datetime
+import difflib
 import logging
 import os
 import re
@@ -380,6 +381,45 @@ def has_available_data(
     return nfiles >= 1
 
 
+def check_station_inputs(
+    data_source,
+    campaign_name,
+    station_name,
+    metadata_archive_dir=None,
+):
+    """Check validity of stations inputs."""
+    import disdrodb
+
+    # Check data source
+    valid_data_sources = disdrodb.available_data_sources(metadata_archive_dir=metadata_archive_dir)
+    if data_source not in valid_data_sources:
+        matches = difflib.get_close_matches(data_source, valid_data_sources, n=1, cutoff=0.4)
+        suggestion = f"Did you mean '{matches[0]}'?" if matches else ""
+        raise ValueError(f"DISDRODB does not include a data source named {data_source}. {suggestion}")
+    # Check campaign name
+    valid_campaigns = disdrodb.available_campaigns(data_sources=data_source, metadata_archive_dir=metadata_archive_dir)
+    if campaign_name not in valid_campaigns:
+        matches = difflib.get_close_matches(campaign_name, valid_campaigns, n=1, cutoff=0.4)
+        suggestion = f"Did you mean campaign '{matches[0]}' ?" if matches else ""
+        raise ValueError(
+            f"The {data_source} data source does not include a campaign named {campaign_name}. {suggestion}",
+        )
+
+    # Check station name
+    valid_stations = disdrodb.available_stations(
+        data_sources=data_source,
+        campaign_names=campaign_name,
+        metadata_archive_dir=metadata_archive_dir,
+        return_tuple=False,
+    )
+    if station_name not in valid_stations:
+        matches = difflib.get_close_matches(station_name, valid_stations, n=1, cutoff=0.4)
+        suggestion = f"Did you mean station '{matches[0]}'?" if matches else ""
+        raise ValueError(
+            f"The {data_source} {campaign_name} campaign does not have a station named {station_name}. {suggestion}",
+        )
+
+
 def check_data_availability(
     product,
     data_source,
@@ -419,7 +459,6 @@ def check_metadata_file(metadata_archive_dir, data_source, campaign_name, statio
             f"The metadata YAML file of {data_source} {campaign_name} {station_name} does not exist at"
             f" {metadata_filepath}."
         )
-        logger.error(msg)
         raise ValueError(msg)
 
     # Check validity

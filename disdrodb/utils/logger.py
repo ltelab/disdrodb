@@ -228,7 +228,7 @@ def create_product_logs(
 
     The logs directory structure is the follow:
     /logs
-    - /files/<product_acronym>/<station> (same structure as data ... a log for each processed file)
+    - /files/<product_name>/<station> (same structure as data ... a log for each processed file)
     - /summary
       -->  SUMMARY.<PRODUCT_ACRONYM>.<CAMPAIGN_NAME>.<STATION_NAME>.log
     - /problems

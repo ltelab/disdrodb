@@ -300,7 +300,7 @@ def generate_l2e(
     ds_l2["drop_number_concentration"] = drop_number_concentration
 
     # -------------------------------------------------------
-    #### Compute L2 spectra
+    #### Compute R, LWC, KE and Z spectra
     if compute_spectra:
         ds_spectrum = compute_spectrum_parameters(
             drop_number_concentration,
@@ -310,6 +310,10 @@ def generate_l2e(
             water_density=water_density,
         )
         ds_l2.update(ds_spectrum)
+
+    if compute_percentage_contribution:
+        # TODO: Implement percentage contribution computation
+        pass
 
     # ----------------------------------------------------------------------------
     #### Compute L2 integral parameters from drop_number_concentration

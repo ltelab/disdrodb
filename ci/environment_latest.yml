@@ -16,6 +16,7 @@ dependencies:
   - pandas
   - dask[distributed]
   - xarray
+  - tectonic
   # Docs
   - jupyter
   - sphinx

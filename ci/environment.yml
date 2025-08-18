@@ -16,6 +16,7 @@ dependencies:
   - scipy
   - dask[distributed]
   - xarray
+  - tectonic
   # Docs
   - jupyter
   - sphinx=5.1.1

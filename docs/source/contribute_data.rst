@@ -566,7 +566,7 @@ The DISDRODB L0 processing saves the DISDRODB product sin the directories tree i
 |                        ├── 📜 \L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc
 |              ├── 📁 L0C
 |                  ├── 📁 <STATION_NAME>
-|                       ├── 📜 \L0B.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc
+|                       ├── 📜 \L0B.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc
 |              ├── 📁 logs
 |                  ├── 📁 files
 |                       ├── 📁 <PRODUCT>
