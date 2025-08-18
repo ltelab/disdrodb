@@ -160,8 +160,53 @@ If a hook identifies an issue (signified by the pre-commit script exiting with a
 Further details about pre-commit hooks can be found in the Contributors Guidelines, specifically in the provided in the :ref:`Code quality control <code_quality_control>` section.
 
 
-Installation of pyTMatrix
-================================
+Optional dependencies
+=======================
+
+Specific functionality in disdrodb may require additional optional dependencies.
+To unlock the full functionalities offered by disdrodb, it is recommended to install also the packages detailed here below.
+
+IDEs
+..............
+
+For an improved development experience, consider installing the intuitive `Jupyter <https://jupyter.org/>`_ and
+`Spyder <https://www.spyder-ide.org/>`_ Python Integrated Development Environments (IDEs):
+
+.. code-block:: bash
+
+   conda install -c conda-forge jupyter spyder
+
+
+Speed Up Xarray Computations
+...............................
+
+To speed up arrays computations with xarray, install
+`flox <https://flox.readthedocs.io/en/latest/>`_,
+`numbagg <https://github.com/numbagg/numbagg>`_,
+`bottleneck <https://bottleneck.readthedocs.io/en/latest/intro.html>`_ and
+`opt-einsum <https://optimized-einsum.readthedocs.io/en/stable/>`_:
+
+.. code-block:: bash
+
+   conda install -c conda-forge flox numbagg bottleneck opt-einsum
+
+
+Summary Tables
+..............................
+
+If you want to generate automatic summary tables of rain events or DSD parameters within the disdrodb software,
+`Tectonic <https://tectonic-typesetting.github.io/en-US/>`__ must be installed.
+Tectonic is a modern typesetting system that can be used to compile LaTeX documents and create PDF files.
+
+You can install Tectonic using conda:
+
+.. code-block:: bash
+
+   conda install -c conda-forge tectonic
+
+
+T-Matrix Radar Simulations
+............................
 
 To simulate radar polarimetric variables in the DISDRODB L2E and L2M products, you must install the pyTMatrix package.
 The original pyTMatrix can be difficult to install on recent Python versions.
@@ -199,20 +244,6 @@ The instructions below describe how to install the LTE-maintained fork of pyTMat
 
    Installing pyTMatrix directly via ``pip install git+https://github.com/ltelab/pytmatrix-lte.git`` does *not* work at this time. We welcome contributions to enable this type of installation !
 
-
-Installation of Tectonic
-=============================
-
-`Tectonic <https://tectonic-typesetting.github.io/en-US/>`__ is a modern typesetting system
-that can be used to compile LaTeX documents and create PDF files.
-If you want to generate automatic summary tables of rain events or DSD parameters within the disdrodb software,
-Tectonic must be installed.
-
-You can install Tectonic using conda:
-
-.. code-block:: bash
-
-   conda install -c conda-forge tectonic
 
 
 Run DISDRODB on Jupyter Notebooks

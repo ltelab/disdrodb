@@ -17,9 +17,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB Checks Functions."""
+import datetime
+import difflib
 import logging
 import os
 import re
+import sys
 import warnings
 
 import numpy as np
@@ -30,6 +33,7 @@ from disdrodb.api.path import (
     define_issue_filepath,
     define_metadata_filepath,
 )
+from disdrodb.constants import PRODUCTS, PRODUCTS_ARGUMENTS
 from disdrodb.utils.directories import (
     ensure_string_path,
     list_directories,
@@ -105,6 +109,15 @@ def check_metadata_archive_dir(metadata_archive_dir: str):
     if not metadata_archive_dir.endswith("DISDRODB"):
         raise ValueError(f"The path {metadata_archive_dir} does not end with DISDRODB. Please check the path.")
     return metadata_archive_dir
+
+
+def check_scattering_table_dir(scattering_table_dir: str):
+    """Raise an error if the directory does not exist."""
+    scattering_table_dir = str(scattering_table_dir)  # convert Pathlib to string
+    scattering_table_dir = os.path.normpath(scattering_table_dir)
+    if not os.path.exists(scattering_table_dir):
+        raise ValueError(f"The DISDRODB T-Matrix scattering tables directory {scattering_table_dir} does not exists.")
+    return scattering_table_dir
 
 
 def check_measurement_interval(measurement_interval):
@@ -217,8 +230,6 @@ def check_data_source(data_source):
 
 def check_product(product):
     """Check DISDRODB product."""
-    from disdrodb import PRODUCTS
-
     if not isinstance(product, str):
         raise TypeError("`product` must be a string.")
     valid_products = PRODUCTS
@@ -249,8 +260,6 @@ def check_product_kwargs(product, product_kwargs):
     ValueError
         If required arguments are missing or if there are unexpected extra arguments.
     """
-    from disdrodb import PRODUCTS_ARGUMENTS
-
     required = set(PRODUCTS_ARGUMENTS.get(product, []))
     provided = set(product_kwargs.keys())
     missing = required - provided
@@ -268,8 +277,6 @@ def check_product_kwargs(product, product_kwargs):
 
 def select_required_product_kwargs(product, product_kwargs):
     """Select the required product arguments."""
-    from disdrodb import PRODUCTS_ARGUMENTS
-
     required = set(PRODUCTS_ARGUMENTS.get(product, []))
     provided = set(product_kwargs.keys())
     missing = required - provided
@@ -374,6 +381,45 @@ def has_available_data(
     return nfiles >= 1
 
 
+def check_station_inputs(
+    data_source,
+    campaign_name,
+    station_name,
+    metadata_archive_dir=None,
+):
+    """Check validity of stations inputs."""
+    import disdrodb
+
+    # Check data source
+    valid_data_sources = disdrodb.available_data_sources(metadata_archive_dir=metadata_archive_dir)
+    if data_source not in valid_data_sources:
+        matches = difflib.get_close_matches(data_source, valid_data_sources, n=1, cutoff=0.4)
+        suggestion = f"Did you mean '{matches[0]}'?" if matches else ""
+        raise ValueError(f"DISDRODB does not include a data source named {data_source}. {suggestion}")
+    # Check campaign name
+    valid_campaigns = disdrodb.available_campaigns(data_sources=data_source, metadata_archive_dir=metadata_archive_dir)
+    if campaign_name not in valid_campaigns:
+        matches = difflib.get_close_matches(campaign_name, valid_campaigns, n=1, cutoff=0.4)
+        suggestion = f"Did you mean campaign '{matches[0]}' ?" if matches else ""
+        raise ValueError(
+            f"The {data_source} data source does not include a campaign named {campaign_name}. {suggestion}",
+        )
+
+    # Check station name
+    valid_stations = disdrodb.available_stations(
+        data_sources=data_source,
+        campaign_names=campaign_name,
+        metadata_archive_dir=metadata_archive_dir,
+        return_tuple=False,
+    )
+    if station_name not in valid_stations:
+        matches = difflib.get_close_matches(station_name, valid_stations, n=1, cutoff=0.4)
+        suggestion = f"Did you mean station '{matches[0]}'?" if matches else ""
+        raise ValueError(
+            f"The {data_source} {campaign_name} campaign does not have a station named {station_name}. {suggestion}",
+        )
+
+
 def check_data_availability(
     product,
     data_source,
@@ -413,7 +459,6 @@ def check_metadata_file(metadata_archive_dir, data_source, campaign_name, statio
             f"The metadata YAML file of {data_source} {campaign_name} {station_name} does not exist at"
             f" {metadata_filepath}."
         )
-        logger.error(msg)
         raise ValueError(msg)
 
     # Check validity
@@ -476,3 +521,87 @@ def check_issue_file(data_source, campaign_name, station_name, metadata_archive_
         station_name=station_name,
     )
     return issue_filepath
+
+
+def check_filepaths(filepaths):
+    """Ensure filepaths is a list of string."""
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+    if not isinstance(filepaths, list):
+        raise TypeError("Expecting a list of filepaths.")
+    return filepaths
+
+
+def get_current_utc_time():
+    """Get current UTC time."""
+    if sys.version_info >= (3, 11):
+        return datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    return datetime.datetime.utcnow()
+
+
+def check_start_end_time(start_time, end_time):
+    """Check start_time and end_time value validity."""
+    start_time = check_time(start_time)
+    end_time = check_time(end_time)
+
+    # Check start_time and end_time are chronological
+    if start_time > end_time:
+        raise ValueError("Provide 'start_time' occurring before of 'end_time'.")
+    # Check start_time and end_time are in the past
+    if start_time > get_current_utc_time():
+        raise ValueError("Provide 'start_time' occurring in the past.")
+    if end_time > get_current_utc_time():
+        raise ValueError("Provide 'end_time' occurring in the past.")
+    return (start_time, end_time)
+
+
+def check_time(time):
+    """Check time validity.
+
+    It returns a :py:class:`datetime.datetime` object to seconds precision.
+
+    Parameters
+    ----------
+    time : datetime.datetime, datetime.date, numpy.datetime64 or str
+        Time object.
+        Accepted types: ``datetime.datetime``, ``datetime.date``, ``numpy.datetime64`` or ``str``.
+        If string type, it expects the isoformat ``YYYY-MM-DD hh:mm:ss``.
+
+    Returns
+    -------
+    time: datetime.datetime
+
+    """
+    if not isinstance(time, (datetime.datetime, datetime.date, np.datetime64, np.ndarray, str)):
+        raise TypeError(
+            "Specify time with datetime.datetime objects or a " "string of format 'YYYY-MM-DD hh:mm:ss'.",
+        )
+
+    # If numpy array with datetime64 (and size=1)
+    if isinstance(time, np.ndarray):
+        if np.issubdtype(time.dtype, np.datetime64):
+            if time.size == 1:
+                time = time[0].astype("datetime64[s]").tolist()
+            else:
+                raise ValueError("Expecting a single timestep!")
+        else:
+            raise ValueError("The numpy array does not have a numpy.datetime64 dtype!")
+
+    # If np.datetime64, convert to datetime.datetime
+    if isinstance(time, np.datetime64):
+        time = time.astype("datetime64[s]").tolist()
+    # If datetime.date, convert to datetime.datetime
+    if not isinstance(time, (datetime.datetime, str)):
+        time = datetime.datetime(time.year, time.month, time.day, 0, 0, 0)
+    if isinstance(time, str):
+        try:
+            time = datetime.datetime.fromisoformat(time)
+        except ValueError:
+            raise ValueError("The time string must have format 'YYYY-MM-DD hh:mm:ss'")
+    # If datetime object carries timezone that is not UTC, raise error
+    if time.tzinfo is not None:
+        if str(time.tzinfo) != "UTC":
+            raise ValueError("The datetime object must be in UTC timezone if timezone is given.")
+        # If UTC, strip timezone information
+        time = time.replace(tzinfo=None)
+    return time

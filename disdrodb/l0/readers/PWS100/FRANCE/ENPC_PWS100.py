@@ -17,12 +17,112 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for ENPC PWS100 raw text data."""
-import zipfile
-
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
-from disdrodb.utils.logger import log_error, log_warning
+from disdrodb.utils.logger import log_error  # , log_warning
+
+
+def read_txt_file(file, filename, logger):
+    r"""Parse a single txt file within the daily zip file.
+
+    The file starts with \\x020 and ends with \\x03\\r\\n.
+    """
+    # Read file
+    try:
+        txt = file.readline().decode("utf-8")
+    except Exception:
+        log_error(logger=logger, msg=f"{filename} is corrupted", verbose=False)
+        return None
+
+    # Check file is not empty
+    if txt == "":
+        log_error(logger=logger, msg=f"{filename} is empty", verbose=False)
+        return None
+
+    # Remove everything before \x020
+    # - At start it can appear: \x013 0 \x02PSU voltage too low 13.3\x03\r\n\
+    txt = txt.split("x020 ", 1)[-1]
+
+    # Remove everything after \\x03
+    txt = txt.split("x03", 1)[0]
+
+    # if "PSU voltage too low" in txt or "volt" in txt:
+    #     log_warning(logger=logger, msg=f"PSU voltage too low in {filename}", verbose=False)
+    #     return None
+
+    # if "Error - message" in txt:
+    #     log_warning(logger=logger, msg=f"Error message in {filename}", verbose=False)
+    #     return None
+
+    # Clean up the line
+    txt = txt.replace(" 00 ", " 0 0 ")
+    txt = txt.replace("  ", " 0 ")
+
+    # Split the cleaned line
+    buf = txt.split(" ")
+
+    # Helper to convert list of floats to comma-separated string
+    def int_list_to_str(lst):
+        return ",".join(f"{int(i)}" for i in lst)
+
+    # Try to get the drop_size distribution:
+    try:
+        drop_size_distribution = int_list_to_str(buf[29:329])  # Drop size distribution (message field 42)
+    except Exception:
+        log_error(logger, msg=f"Corrupted drop_size_distribution field in {filename}", verbose=False)
+        return None
+
+    # Try to get peak_to_pedestal_hist
+    try:
+        peak_to_pedestal_hist = int_list_to_str(buf[1498:1548])
+    except Exception:
+        log_error(
+            logger,
+            msg=f"Corrupted raw_drop_number or peak_to_pedestal_hist field in {filename}",
+            verbose=False,
+        )
+        return None
+
+    # Parse fields
+    data = {
+        "mor_visibility": float(buf[1]),  # Visibility Range (message field 20)
+        "weather_code_synop_4680": float(buf[2]),  # Present Weather Code (WMO)  (message field 21)
+        "weather_code_metar_4678": buf[3],  # Present Weather Code (METAR)  (message field 22)
+        "weather_code_nws": buf[4],  # Present Weather Code (NWS)  (message field 23)
+        "alarms": int_list_to_str(buf[5:21]),  # Alarms (message field (24))
+        "sensor_status": buf[21],  # Fault status of PWS100 (message field 25)
+        "air_temperature": float(buf[22]),  # Temperature (°C) (message field 30)
+        "relative_humidity": float(buf[23]),  # Sampled relative humidity (%) (message field 30)
+        "wetbulb_temperature": float(buf[24]),  # Average wetbulb temperature (°C)(message field 30)
+        "air_temperature_max": float(buf[25]),  # Maximum temperature (°C)(message field 31)
+        "air_temperature_min": float(buf[26]),  # Minimum temperature (°C)(message field 31)
+        "rainfall_rate": float(buf[27]),  # Precipitation rate (mm/h)(message field 40)
+        "rainfall_accumulated": float(buf[28]),  # Precipitation accumulation (mm/h)(message field 41)
+        "drop_size_distribution": drop_size_distribution,  # Drop size distribution (message field 42)
+        "average_drop_velocity": float(buf[329]),  # Average velocity (mm/s)(message field 43)
+        "average_drop_size": float(buf[330]),  # Average size (mm/h)(message field 43)
+        "type_distribution": int_list_to_str(buf[331:342]),  # Type distribution (message field 44)
+        "raw_drop_number": int_list_to_str(buf[342:1498]),  # Size/velocity spectrum (34*34) (message field 47)
+        "peak_to_pedestal_hist": (
+            peak_to_pedestal_hist  # Peak to pedestal ratio distribution histogram (message field 48)
+        ),
+    }
+
+    # Convert to single-row DataFrame
+    df = pd.DataFrame([data])
+
+    # Define datetime "time" column from filename
+    datetime_str = " ".join(filename.replace(".txt", "").split("_")[-6:])
+    df["time"] = pd.to_datetime(datetime_str, format="%Y %m %d %H %M %S")
+
+    # # Drop columns not agreeing with DISDRODB L0 standards
+    # columns_to_drop = [
+    #      "peak_to_pedestal_hist",
+    #      "type_distribution",
+    # ]
+    # df = df.drop(columns=columns_to_drop)
+    return df
 
 
 @is_documented_by(reader_generic_docstring)
@@ -31,102 +131,9 @@ def reader(
     logger=None,
 ):
     """Reader."""
+    import zipfile
 
-    ##------------------------------------------------------------------------.
-    #### Define function to read each txt file inside each daily zip file
-    def read_txt_file(file, filename, logger):  # noqa PLR0911
-        """Parse a single txt file within the daily zip file."""
-        # Read file
-        try:
-            txt = file.readline().decode("utf-8")
-        except Exception:
-            log_warning(logger=logger, msg=f"{filename} is corrupted", verbose=False)
-            return None
-
-        # Check file is not empty
-        if txt == "":
-            log_warning(logger=logger, msg=f"{filename} is empty", verbose=False)
-            return None
-
-        if "PSU voltage too low" in txt or "volt" in txt:
-            log_warning(logger=logger, msg=f"PSU voltage too low in {filename}", verbose=False)
-            return None
-
-        if "Error - message" in txt:
-            log_warning(logger=logger, msg=f"Error message in {filename}", verbose=False)
-            return None
-
-        # Clean up the line
-        txt = txt.replace(" 00 ", " 0 0 ")
-        txt = txt.replace("  ", " 0 ")
-        txt = txt[1:-8]
-
-        # Split the cleaned line
-        buf = txt.split(" ")
-
-        # Helper to convert list of floats to comma-separated string
-        def int_list_to_str(lst):
-            return ",".join(f"{int(i)}" for i in lst)
-
-        # Try to get the drop_size distribution:
-        try:
-            drop_size_distribution = int_list_to_str(buf[30:330])  # Drop size distribution (message field 42)
-        except Exception:
-            log_warning(logger, msg=f"Corrupted drop_size_distribution field in {filename}", verbose=False)
-            return None
-
-        # Try to get peak_to_pedestal_hist
-        try:
-            peak_to_pedestal_hist = int_list_to_str(buf[1499:1549])
-        except Exception:
-            log_warning(
-                logger,
-                msg=f"Corrupted raw_drop_number or peak_to_pedestal_hist field in {filename}",
-                verbose=False,
-            )
-            return None
-        # Parse fields
-        data = {
-            "mor_visibility": float(buf[2]),  # Visibility Range (message field 20)
-            "weather_code_synop_4680": float(buf[3]),  # Present Weather Code (WMO)  (message field 21)
-            "weather_code_metar_4678": buf[4],  # Present Weather Code (METAR)  (message field 22)
-            "weather_code_nws": buf[5],  # Present Weather Code (NWS)  (message field 23)
-            "alarms": int_list_to_str(buf[6:22]),  # Alarms (message field (24))
-            "sensor_status": buf[22],  # Fault status of PWS100 (message field 25)
-            "air_temperature": float(buf[23]),  # Temperature (°C) (message field 30)
-            "relative_humidity": float(buf[24]),  # Sampled relative humidity (%) (message field 30)
-            "wetbulb_temperature": float(buf[25]),  # Average wetbulb temperature (°C)(message field 30)
-            "air_temperature_max": float(buf[26]),  # Maximum temperature (°C)(message field 31)
-            "air_temperature_min": float(buf[27]),  # Minimum temperature (°C)(message field 31)
-            "rainfall_rate": float(buf[28]),  # Precipitation rate (mm/h)(message field 40)
-            "rainfall_accumulated": float(buf[29]),  # Precipitation accumulation (mm/h)(message field 41)
-            "drop_size_distribution": drop_size_distribution,  # Drop size distribution (message field 42)
-            "average_drop_velocity": float(buf[330]),  # Average velocity (mm/s)(message field 43)
-            "average_drop_size": float(buf[331]),  # Average size (mm/h)(message field 43)
-            "type_distribution": int_list_to_str(buf[332:343]),  # Type distribution (message field 44)
-            "raw_drop_number": int_list_to_str(buf[343:1499]),  # Size/velocity spectrum (34*34) (message field 47)
-            "peak_to_pedestal_hist": (
-                peak_to_pedestal_hist  # Peak to pedestal ratio distribution histogram (message field 48)
-            ),
-        }
-
-        # Convert to single-row DataFrame
-        df = pd.DataFrame([data])
-
-        # Define datetime "time" column from filename
-        datetime_str = " ".join(filename.replace(".txt", "").split("_")[-6:])
-        df["time"] = pd.to_datetime(datetime_str, format="%Y %m %d %H %M %S")
-
-        # # Drop columns not agreeing with DISDRODB L0 standards
-        # columns_to_drop = [
-        #      "peak_to_pedestal_hist",
-        #      "type_distribution",
-        # ]
-        # df = df.drop(columns=columns_to_drop)
-        return df
-
-    # ---------------------------------------------------------------------.
-    #### Iterate over all files (aka timesteps) in the daily zip archive
+    # Iterate over all files (aka timesteps) in the daily zip archive
     # - Each file contain a single timestep !
     list_df = []
     with zipfile.ZipFile(filepath, "r") as zip_ref:
@@ -146,5 +153,4 @@ def reader(
     # Concatenate all dataframes into a single one
     df = pd.concat(list_df)
 
-    # ---------------------------------------------------------------------.
     return df

@@ -27,9 +27,7 @@ from typing import Optional
 
 import dask
 
-from disdrodb.api.checks import check_sensor_name
-
-# Directory
+from disdrodb.api.checks import check_sensor_name, check_station_inputs
 from disdrodb.api.create_directories import (
     create_l0_directory_structure,
     create_logs_directory,
@@ -55,7 +53,7 @@ from disdrodb.l0.l0a_processing import (
 )
 from disdrodb.l0.l0b_nc_processing import sanitize_ds
 from disdrodb.l0.l0b_processing import (
-    create_l0b_from_l0a,
+    generate_l0b,
     set_l0b_encodings,
     write_l0b,
 )
@@ -65,6 +63,7 @@ from disdrodb.l0.l0c_processing import (
     retrieve_possible_measurement_intervals,
 )
 from disdrodb.metadata import read_station_metadata
+from disdrodb.utils.attrs import set_disdrodb_attrs
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
@@ -75,8 +74,6 @@ from disdrodb.utils.logger import (
     log_error,
     log_info,
 )
-
-# log_warning,
 from disdrodb.utils.writer import write_product
 from disdrodb.utils.yaml import read_yaml
 
@@ -226,11 +223,11 @@ def _generate_l0b(
     ##------------------------------------------------------------------------.
     try:
         # Read L0A Apache Parquet file
-        df = read_l0a_dataframe(filepath, logger=logger, verbose=verbose, debugging_mode=debugging_mode)
+        df = read_l0a_dataframe(filepath, debugging_mode=debugging_mode)
 
         # -----------------------------------------------------------------.
         # Create xarray Dataset
-        ds = create_l0b_from_l0a(df=df, metadata=metadata, logger=logger, verbose=verbose)
+        ds = generate_l0b(df=df, metadata=metadata, logger=logger, verbose=verbose)
 
         # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
@@ -437,6 +434,8 @@ def _generate_l0c(
 
                 # Set encodings
                 ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
+                # Update global attributes
+                ds = set_disdrodb_attrs(ds, product=product)
 
                 # Define product filepath
                 filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
@@ -444,7 +443,7 @@ def _generate_l0c(
                 filepath = os.path.join(folder_path, filename)
 
                 # Write to disk
-                write_product(ds, product=product, filepath=filepath, force=force)
+                write_product(ds, filepath=filepath, force=force)
 
         # Clean environment
         del ds
@@ -542,6 +541,15 @@ def run_l0a_station(
     data_archive_dir = get_data_archive_dir(data_archive_dir)
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
+    # ------------------------------------------------------------------------.
     # Read metadata
     metadata = read_station_metadata(
         metadata_archive_dir=metadata_archive_dir,
@@ -720,7 +728,7 @@ def run_l0b_station(
         and multi-threading will be automatically exploited to speed up I/O tasks.
     debugging_mode : bool, optional
         If ``True``, the amount of data processed will be reduced.
-        Only the first 100 rows of 3 L0A files will be processed. The default value is ``False``.
+        Only 100 rows sampled from 3 L0A files will be processed. The default value is ``False``.
     remove_l0a: bool, optional
         Whether to remove the processed L0A files. The default value is ``False``.
     data_archive_dir : str, optional
@@ -737,6 +745,13 @@ def run_l0b_station(
     # Retrieve DISDRODB Metadata Archive directory
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
     # -----------------------------------------------------------------.
     # Retrieve metadata
     metadata = read_station_metadata(
@@ -799,7 +814,7 @@ def run_l0b_station(
     # If no data available, print error message and return None
     if flag_not_available_data:
         msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            f"{product} processing of {data_source} {campaign_name} {station_name} "
             + f"has not been launched because of missing {required_product} data."
         )
         print(msg)
@@ -967,6 +982,14 @@ def run_l0c_station(
     # Retrieve DISDRODB Metadata Archive directory
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
     # ------------------------------------------------------------------------.
     # Start processing
     t_i = time.time()
@@ -1025,7 +1048,7 @@ def run_l0c_station(
     # If no data available, print error message and return None
     if flag_not_available_data:
         msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            f"{product} processing of {data_source} {campaign_name} {station_name} "
             + f"has not been launched because of missing {required_product} data."
         )
         print(msg)

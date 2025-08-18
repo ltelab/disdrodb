@@ -1,0 +1,8 @@
+psd_model: "GammaPSD"
+optimization: "ML"
+optimization_kwargs:
+  init_method: "M346"
+  probability_method: "cdf"
+  likelihood: "multinomial"
+  truncated_likelihood: True
+  optimizer: "Nelder-Mead"

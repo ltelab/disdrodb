@@ -23,9 +23,10 @@ import pytest
 import xarray as xr
 
 from disdrodb.utils.time import (
-    acronym_to_seconds,
+    check_freq,
     ensure_sample_interval_in_seconds,
     ensure_sorted_by_time,
+    generate_time_blocks,
     get_dataframe_start_end_time,
     get_dataset_start_end_time,
     get_file_start_end_time,
@@ -34,7 +35,8 @@ from disdrodb.utils.time import (
     infer_sample_interval,
     regularize_dataset,
     regularize_timesteps,
-    seconds_to_acronym,
+    seconds_to_temporal_resolution,
+    temporal_resolution_to_seconds,
 )
 
 
@@ -532,59 +534,59 @@ class TestGetProblematicTimestepIndices:
 class TestSecondsToAcronym:
     def test_zero_seconds(self):
         """Zero seconds returns empty string."""
-        assert seconds_to_acronym(0) == ""
+        assert seconds_to_temporal_resolution(0) == ""
 
     def test_seconds_only(self):
         """Only seconds less than a minute returns e.g. '45S'."""
-        assert seconds_to_acronym(45) == "45S"
+        assert seconds_to_temporal_resolution(45) == "45S"
 
     def test_minutes_and_seconds(self):
         """Minutes and seconds return e.g. '1MIN30S'."""
-        assert seconds_to_acronym(90) == "1MIN30S"
+        assert seconds_to_temporal_resolution(90) == "1MIN30S"
 
     def test_hours_and_minutes(self):
         """Hours and minutes return e.g. '1H15MIN'."""
-        assert seconds_to_acronym(3600 + 900) == "1H15MIN"
+        assert seconds_to_temporal_resolution(3600 + 900) == "1H15MIN"
 
     def test_hours_only(self):
-        """Exact hours return only hours acronym."""
-        assert seconds_to_acronym(7200) == "2H"
+        """Exact hours return only hours."""
+        assert seconds_to_temporal_resolution(7200) == "2H"
 
     def test_days_and_hours(self):
         """Days and hours return e.g. '1D2H'."""
-        assert seconds_to_acronym(86400 + 7200) == "1D2H"
+        assert seconds_to_temporal_resolution(86400 + 7200) == "1D2H"
 
     def test_full_components(self):
         """Days, hours, minutes, and seconds returns '1D1H1MIN1S'."""
         total = 86400 + 3600 + 60 + 1
-        assert seconds_to_acronym(total) == "1D1H1MIN1S"
+        assert seconds_to_temporal_resolution(total) == "1D1H1MIN1S"
 
     def test_invalid_type(self):
         """Non-integer input raises an error."""
         with pytest.raises((TypeError, ValueError)):
-            seconds_to_acronym("60")
+            seconds_to_temporal_resolution("60")
 
 
-def test_acronym_to_seconds():
-    """Test acronym_to_seconds."""
-    assert acronym_to_seconds("30S") == 30
+def test_temporal_resolution_to_seconds():
+    """Test temporal_resolution_to_seconds."""
+    assert temporal_resolution_to_seconds("30S") == 30
 
 
 class TestGetResamplingInformation:
     def test_single_seconds(self):
-        """Single seconds acronym returns correct seconds and non-rolling flag."""
+        """Single seconds temporal resolution string returns correct seconds and non-rolling flag."""
         seconds, rolling = get_resampling_information("30S")
         assert seconds == 30
         assert rolling is False
 
     def test_single_minutes(self):
-        """Single minutes acronym returns correct seconds and non-rolling flag."""
+        """Single minutes temporal resolution string returns correct seconds and non-rolling flag."""
         seconds, rolling = get_resampling_information("5MIN")
         assert seconds == 5 * 60
         assert rolling is False
 
     def test_hours_and_minutes(self):
-        """Composite hours and minutes acronym computes proper seconds and non-rolling flag."""
+        """Composite hours and minutes temporal resolution string computes proper seconds and non-rolling flag."""
         seconds, rolling = get_resampling_information("2H30MIN")
         assert seconds == 2 * 3600 + 30 * 60
         assert rolling is False
@@ -608,13 +610,13 @@ class TestGetResamplingInformation:
         assert rolling is True
 
     def test_zero_seconds(self):
-        """Zero seconds acronym returns zero and non-rolling flag."""
+        """Zero seconds temporal resolution string returns zero and non-rolling flag."""
         seconds, rolling = get_resampling_information("0S")
         assert seconds == 0
         assert rolling is False
 
     def test_order_independence(self):
-        """Unit order in acronym does not affect computed seconds."""
+        """Unit order in temporal resolution string does not affect computed seconds."""
         s1, _ = get_resampling_information("1H30MIN")
         s2, _ = get_resampling_information("30MIN1H")
         assert s1 == s2
@@ -635,7 +637,7 @@ class TestGetResamplingInformation:
             get_resampling_information("1H30")
 
     def test_empty_string(self):
-        """Empty acronym string raises ValueError."""
+        """Empty temporal resolution string raises ValueError."""
         with pytest.raises(ValueError):
             get_resampling_information("")
 
@@ -886,3 +888,115 @@ class TestInferSampleInterval:
         # robust=True should raise error
         with pytest.raises(ValueError, match="Not unique sampling interval"):
             infer_sample_interval(ds, robust=True)
+
+
+class TestGenerateTimeBlocks:
+    def test_none(self):
+        """Test 'none' returns the original interval as a single block."""
+        start_time = np.datetime64("2022-01-01T05:06:07")
+        end_time = np.datetime64("2022-01-02T08:09:10")
+        result = generate_time_blocks(start_time, end_time, freq="none")
+        expected = np.array([[start_time, end_time]], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result, expected)
+
+    def test_hour(self):
+        """Test 'hour' splits into full-hour blocks covering the range."""
+        start_time = np.datetime64("2022-01-01T10:15:00")
+        end_time = np.datetime64("2022-01-01T12:45:00")
+        result = generate_time_blocks(start_time, end_time, freq="hour")
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-01-01T10:00:00", "2022-01-01T10:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-01-01T12:00:00", "2022-01-01T12:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_day(self):
+        """Test 'day' splits into calendar-day blocks covering the range."""
+        start_time = np.datetime64("2022-03-10T05:00:00")
+        end_time = np.datetime64("2022-03-12T20:00:00")
+        result = generate_time_blocks(start_time, end_time, freq="day")
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-03-10T00:00:00", "2022-03-10T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-03-12T00:00:00", "2022-03-12T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_month(self):
+        """Test 'month' splits into month blocks covering the range."""
+        start_time = np.datetime64("2022-01-15")
+        end_time = np.datetime64("2022-04-10")
+        result = generate_time_blocks(start_time, end_time, freq="month")
+
+        assert result.shape == (4, 2)
+
+        expected_first = np.array(["2022-01-01T00:00:00", "2022-01-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-04-01T00:00:00", "2022-04-30T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_year(self):
+        """Test 'year' splits into year blocks covering the range."""
+        start_time = np.datetime64("2020-06-01")
+        end_time = np.datetime64("2023-02-01")
+        result = generate_time_blocks(start_time, end_time, freq="year")
+
+        assert result.shape == (4, 2)
+
+        expected_first = np.array(["2020-01-01T00:00:00", "2020-12-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2023-01-01T00:00:00", "2023-12-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_quarter(self):
+        """Test 'quarter' splits into quarter blocks covering the range."""
+        start_time = np.datetime64("2022-02-10")
+        end_time = np.datetime64("2022-08-20")
+        result = generate_time_blocks(start_time, end_time, freq="quarter")
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-01-01T00:00:00", "2022-03-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-07-01T00:00:00", "2022-09-30T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_season(self):
+        """Test 'season' splits into meteorological-season blocks covering the range."""
+        start_time = np.datetime64("2022-01-01")
+        end_time = np.datetime64("2022-12-31")
+        result = generate_time_blocks(start_time, end_time, freq="season")
+        assert result.shape == (5, 2)
+
+        expected_first = np.array(["2021-12-01T00:00:00", "2022-02-28T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-12-01T00:00:00", "2023-02-28T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+
+class TestCheckFreq:
+    def test_valid_freq_returns_value(self):
+        """Valid freq strings should be returned unchanged."""
+        for valid in ["none", "year", "season", "quarter", "month", "day", "hour"]:
+            assert check_freq(valid) == valid
+
+    def test_non_string_raises_type_error(self):
+        """Non-string freq inputs should raise a TypeError."""
+        with pytest.raises(TypeError) as excinfo:
+            check_freq(123)
+        assert "'freq' must be a string." in str(excinfo.value)
+
+    def test_invalid_string_raises_value_error(self):
+        """String not in allowed list should raise a ValueError."""
+        with pytest.raises(ValueError) as excinfo:
+            check_freq("minute")
+        assert "'freq' 'minute' is not possible. Must be one of:" in str(excinfo.value)

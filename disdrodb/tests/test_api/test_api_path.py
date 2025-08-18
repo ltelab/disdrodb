@@ -29,6 +29,7 @@ from disdrodb.api.path import (
     define_l0b_filename,
     define_l0c_filename,
 )
+from disdrodb.constants import ARCHIVE_VERSION
 
 # PROCESSED_FOLDER_WINDOWS = "\\DISDRODB\\RAW"
 # PROCESSED_FOLDER_LINUX = "/DISDRODB/RAW"
@@ -46,8 +47,6 @@ from disdrodb.api.path import (
 
 
 def test_define_l0a_filename():
-    from disdrodb import ARCHIVE_VERSION
-
     # Set variables
     product = "L0A"
     campaign_name = "CAMPAIGN_NAME"
@@ -68,8 +67,6 @@ def test_define_l0a_filename():
 
 @pytest.mark.parametrize("product", ["L0B", "L0C"])
 def test_define_l0b_filename(product):
-    from disdrodb import ARCHIVE_VERSION
-
     # Set variables
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"

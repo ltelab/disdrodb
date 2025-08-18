@@ -388,11 +388,10 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
     return ds
 
 
-def finalize_l0c_dataset(ds, sample_interval, start_day, end_day, verbose=True, logger=None):
+def finalize_l0c_dataset(ds, sample_interval, verbose=True, logger=None):
     """Finalize a L0C dataset with unique sampling interval.
 
-    It adds the sampling_interval coordinate and it regularizes
-    the timesteps for trailing seconds.
+    It adds the sampling_interval coordinate and it regularizes the timesteps for trailing seconds.
     """
     # Add sample interval as coordinate
     ds = add_sample_interval(ds, sample_interval=sample_interval)
@@ -409,9 +408,6 @@ def finalize_l0c_dataset(ds, sample_interval, start_day, end_day, verbose=True, 
 
     # Performs checks about timesteps regularity
     ds = check_timesteps_regularity(ds=ds, sample_interval=sample_interval, verbose=verbose, logger=logger)
-
-    # Slice for requested day
-    ds = ds.sel({"time": slice(start_day, end_day)})
     return ds
 
 
@@ -442,7 +438,7 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
     - The function adds a tolerance for searching timesteps
     before and after 00:00 to account for imprecise logging times.
     - It checks that duplicated timesteps have the same raw drop number values.
-    - The function infers the time integration sample interval and
+    - The function infers the sample interval and
     regularizes timesteps to handle trailing seconds.
     - The data is loaded into memory and connections to source files
     are closed before returning the dataset.
@@ -461,10 +457,8 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
 
     # ---------------------------------------------------------------------------------------.
     # Open files with data within the provided day and concatenate them
-    # list_ds = [xr.open_dataset(filepath, chunks={}).sel({"time": slice(start_day_tol, end_day_tol)})
-    # for filepath in filepaths]
     list_ds = [
-        xr.open_dataset(filepath, decode_timedelta=False, chunks={}, cache=False).sortby("time")
+        xr.open_dataset(filepath, decode_timedelta=False, chunks=-1, cache=False).sortby("time")
         for filepath in filepaths
     ]
     list_ds = [ds.sel({"time": slice(start_day_tol, end_day_tol)}) for ds in list_ds]
@@ -533,11 +527,9 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
         sample_interval: finalize_l0c_dataset(
             ds=ds,
             sample_interval=sample_interval,
-            start_day=start_day,
-            end_day=end_day,
             verbose=verbose,
             logger=logger,
-        )
+        ).sel({"time": slice(start_day, end_day)})
         for sample_interval, ds in dict_ds.items()
     }
     return dict_ds

@@ -15,7 +15,7 @@ rainfall_accumulated_32bit:
   n_naturals: 4
   data_range:
     - 0
-    - 300.0
+    - 9999.0
   nan_flags: null
   field_number: "02"
 weather_code_synop_4680:

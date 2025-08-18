@@ -16,6 +16,8 @@ dependencies:
   - pandas
   - dask[distributed]
   - xarray
+  - tectonic
+  - matplotlib-base
   # Docs
   - jupyter
   - sphinx

@@ -38,8 +38,6 @@ def reader(
     reader_kwargs["delimiter"] = ";"
     # - Skip first row as columns names
     reader_kwargs["header"] = None
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
     reader_kwargs["skiprows"] = 0
     # - Skip file with encoding errors
     reader_kwargs["encoding_errors"] = "ignore"

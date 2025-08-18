@@ -21,6 +21,8 @@ import numpy as np
 import xarray as xr
 from xarray.core import dtypes
 
+from disdrodb.constants import DIAMETER_COORDS, VELOCITY_COORDS
+
 
 def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
     """
@@ -246,13 +248,9 @@ def define_fill_value_dictionary(xr_obj):
 
 def remove_diameter_coordinates(xr_obj):
     """Drop diameter coordinates from xarray object."""
-    from disdrodb import DIAMETER_COORDS
-
     return xr_obj.drop_vars(DIAMETER_COORDS, errors="ignore")
 
 
 def remove_velocity_coordinates(xr_obj):
     """Drop velocity coordinates from xarray object."""
-    from disdrodb import VELOCITY_COORDS
-
     return xr_obj.drop_vars(VELOCITY_COORDS, errors="ignore")

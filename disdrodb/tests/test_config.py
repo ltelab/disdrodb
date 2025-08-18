@@ -22,32 +22,32 @@ import os
 import pytest
 
 
-def test_define_disdrodb_configs(tmp_path, mocker):
+def test_define_configs(tmp_path, mocker):
     import disdrodb
 
     # Mock to save config YAML at custom location
     mocker.patch("disdrodb.configs._define_config_filepath", return_value=str(tmp_path / ".config_disdrodb.yml"))
 
     # Define config YAML
-    disdrodb.configs.define_disdrodb_configs(
+    disdrodb.configs.define_configs(
         data_archive_dir=os.path.join("test_path_to", "DISDRODB"),
         zenodo_token="test_token",
     )
     assert os.path.exists(tmp_path / ".config_disdrodb.yml")
 
 
-def test_read_disdrodb_configs(tmp_path, mocker):
-    from disdrodb.configs import define_disdrodb_configs, read_disdrodb_configs
+def test_read_configs(tmp_path, mocker):
+    from disdrodb.configs import define_configs, read_configs
 
     # Mock to save config YAML at custom location
     mocker.patch("disdrodb.configs._define_config_filepath", return_value=str(tmp_path / ".config_disdrodb.yml"))
 
     # Define config YAML
-    define_disdrodb_configs(data_archive_dir=os.path.join("test_path_to", "DISDRODB"), zenodo_token="test_token")
+    define_configs(data_archive_dir=os.path.join("test_path_to", "DISDRODB"), zenodo_token="test_token")
     assert os.path.exists(tmp_path / ".config_disdrodb.yml")
 
     # Read config YAML
-    config_dict = read_disdrodb_configs()
+    config_dict = read_configs()
     assert isinstance(config_dict, dict)
 
 
@@ -61,7 +61,7 @@ def test_update_disdrodb_configs(tmp_path, mocker):
 
     # Initialize
     data_archive_dir = os.path.join("test_path_to", "DISDRODB")
-    disdrodb.configs.define_disdrodb_configs(data_archive_dir=data_archive_dir, zenodo_token="test_token")
+    disdrodb.configs.define_configs(data_archive_dir=data_archive_dir, zenodo_token="test_token")
     assert os.path.exists(config_fpath)
 
     config_dict = read_yaml(config_fpath)
@@ -69,7 +69,7 @@ def test_update_disdrodb_configs(tmp_path, mocker):
 
     # Update
     new_data_archive_dir = os.path.join("new_test_path_to", "DISDRODB")
-    disdrodb.configs.define_disdrodb_configs(
+    disdrodb.configs.define_configs(
         data_archive_dir=new_data_archive_dir,
         zenodo_sandbox_token="new_token",
     )

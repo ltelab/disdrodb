@@ -115,7 +115,7 @@ def disdrodb_run_l0(
     debugging_mode : bool
         If True, it reduces the amount of data to process.
         For L0A, it processes just the first 3 raw data files.
-        For L0B, it processes just the first 100 rows of 3 L0A files.
+        For L0B, it processes 100 rows sampled from 3 L0A files.
         The default is False.
     data_archive_dir : str
         DISDRODB Data Archive directory

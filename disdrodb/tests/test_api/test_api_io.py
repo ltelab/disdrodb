@@ -17,9 +17,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB Input/Output Function."""
+import datetime
+
 import pytest
 
-from disdrodb.api.io import find_files
+from disdrodb.api.io import filter_by_time, find_files
 from disdrodb.tests.conftest import create_fake_raw_data_file
 
 # import pathlib
@@ -169,7 +171,11 @@ class TestFindFiles:
             )
 
         # Add fake data files
-        for filename in ["file1.parquet", "file2.parquet"]:
+        filenames = [
+            "L0A.1MIN.LOCARNO_2019.61.s20190713134200.e20190714111000.V0.parquet",
+            "L0A.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.parquet",
+        ]
+        for filename in filenames:
             _ = create_fake_raw_data_file(
                 data_archive_dir=data_archive_dir,
                 product=product,
@@ -220,7 +226,13 @@ class TestFindFiles:
             )
 
         # Add fake data files
-        for filename in ["file1.nc", "file2.nc", "file3.nc", "file4.nc"]:
+        filenames = [
+            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190714111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190714144200.e20190715111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190715144200.e20190716111000.V0.nc",
+            "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
+        ]
+        for filename in filenames:
             _ = create_fake_raw_data_file(
                 data_archive_dir=data_archive_dir,
                 product=product,
@@ -252,7 +264,7 @@ class TestFindFiles:
         assert len(filepaths) == 4
 
         # Test it does not return other files except netCDFs
-        for filename in ["file1.dummy", "file2.log", "file3.parquet"]:
+        for filename in [".hidden_file", "dummy.log"]:
             _ = create_fake_raw_data_file(
                 data_archive_dir=data_archive_dir,
                 product=product,
@@ -270,5 +282,82 @@ class TestFindFiles:
         )
         assert len(filepaths) == 4
 
+        # Test raise error if there is a netCDF file with bad naming
+        _ = create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            filename="dummy.nc",
+        )
+        with pytest.raises(ValueError, match="dummy.nc can not be parsed"):
+            find_files(
+                data_archive_dir=data_archive_dir,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                product=product,
+            )
+
 
 ####--------------------------------------------------------------------------.
+def test_filter_by_time() -> None:
+    """Test filter filepaths."""
+    filepaths = [
+        "L2E.1MIN.LOCARNO_2019.61.s20190713134200.e20190731111000.V0.nc",
+        "L2E.1MIN.LOCARNO_2019.61.s20190801001100.e20190831231600.V0.nc",
+        "L2E.1MIN.LOCARNO_2019.61.s20200801001100.e20200831231600.V0.nc",
+    ]
+
+    out = filter_by_time(
+        filepaths=filepaths,
+        start_time=datetime.datetime(2019, 1, 1),
+        end_time=datetime.datetime(2019, 12, 31, 23, 59, 59),
+    )
+
+    assert len(out) == 2
+
+    # Test None filepaths
+    res = filter_by_time(
+        filepaths=None,
+        start_time=datetime.datetime(2019, 1, 1),
+        end_time=datetime.datetime(2019, 12, 31, 23, 59, 59),
+    )
+
+    assert res == []
+
+    # Test empty filepath list
+    res = filter_by_time(
+        filepaths=[],
+        start_time=datetime.datetime(2019, 1, 1),
+        end_time=datetime.datetime(2019, 12, 31, 23, 59, 59),
+    )
+
+    assert res == []
+
+    # Test empty start time
+    res = filter_by_time(
+        filepaths=filepaths,
+        start_time=None,
+        end_time=datetime.datetime(2019, 12, 31, 23, 59, 59),
+    )
+
+    assert len(res) == 2
+
+    # Test empty end time (should default to utcnow which will technically be
+    # in the past by the time it gets to the function)
+    res = filter_by_time(
+        filepaths=filepaths,
+        start_time=datetime.datetime(2019, 1, 1),
+        end_time=None,
+    )
+    assert len(res) == 3
+
+    # Test select when time period requested is within file
+    res = filter_by_time(
+        filepaths=filepaths,
+        start_time=datetime.datetime(2019, 7, 14, 0, 0, 20),
+        end_time=datetime.datetime(2019, 7, 15, 0, 0, 30),
+    )
+    assert len(res) == 1

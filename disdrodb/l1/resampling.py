@@ -15,12 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities for temporal resampling."""
-
-
+import numpy as np
 import pandas as pd
 import xarray as xr
 
-from disdrodb.utils.time import regularize_dataset
+from disdrodb.utils.time import ensure_sample_interval_in_seconds, regularize_dataset
 
 DEFAULT_ACCUMULATIONS = ["10s", "30s", "1min", "2min", "5min", "10min", "30min", "1hour"]
 
@@ -96,6 +95,24 @@ def define_window_size(sample_interval, accumulation_interval):
     return window_size
 
 
+def _resample(ds, variables, accumulation, op):
+    if not variables:
+        return {}
+    ds_subset = ds[variables]
+    if "time" in ds_subset.dims:
+        return getattr(ds_subset.resample({"time": accumulation}), op)(skipna=False)
+    return ds_subset
+
+
+def _rolling(ds, variables, window_size, op):
+    if not variables:
+        return {}
+    ds_subset = ds[variables]
+    if "time" in ds_subset.dims:
+        return getattr(ds_subset.rolling(time=window_size, center=False), op)(skipna=False)
+    return ds_subset
+
+
 def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     """
     Resample the dataset to a specified accumulation interval.
@@ -128,11 +145,38 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     - The function updates the dataset attributes and the sample_interval coordinate.
 
     """
-    # TODO: here infill NaN with zero if necessary before regularizing !
+    # --------------------------------------------------------------------------.
+    # Ensure sample interval in seconds
+    sample_interval = int(ensure_sample_interval_in_seconds(sample_interval))
+
+    # --------------------------------------------------------------------------.
+    # Raise error if the accumulation_interval is less than the sample interval
+    if accumulation_interval < sample_interval:
+        raise ValueError("Expecting an accumulation_interval > sample interval.")
+    # Raise error if accumulation_interval is not multiple of sample_interval
+    if not accumulation_interval % sample_interval == 0:
+        raise ValueError("The accumulation_interval is not a multiple of sample interval.")
+
+    # --------------------------------------------------------------------------.
+    #### Preprocess the dataset
+    # Here we set NaN in the raw_drop_number to 0
+    # - We assume that NaN corresponds to 0
+    # - When we regularize, we infill with NaN
+    # - When we aggregate with sum, we don't skip NaN
+    # --> Aggregation with original missing timesteps currently results in NaN !
+
+    # Infill NaN values with zeros for drop_number and raw_drop_number
+    # - This might alter integrated statistics if NaN in spectrum does not actually correspond to 0 !
+    # - TODO: NaN should not be set as 0 !
+    for var in ["drop_number", "raw_drop_number"]:
+        if var in ds:
+            ds[var] = xr.where(np.isnan(ds[var]), 0, ds[var])
 
     # Ensure regular dataset without missing timesteps
+    # --> This adds NaN values for missing timesteps
     ds = regularize_dataset(ds, freq=f"{sample_interval}s")
 
+    # --------------------------------------------------------------------------.
     # Define dataset attributes
     attrs = ds.attrs.copy()
     if rolling:
@@ -155,7 +199,7 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
 
     # Retrieve variables to average/sum
     var_to_average = ["fall_velocity"]
-    var_to_cumulate = ["raw_drop_number", "drop_number", "drop_counts", "N", "Nremoved"]
+    var_to_cumulate = ["raw_drop_number", "drop_number", "drop_counts", "N", "Nraw", "Nremoved"]
     var_to_min = ["Dmin"]
     var_to_max = ["Dmax"]
 
@@ -168,6 +212,7 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     # TODO Define custom processing
     # - quality_flag --> take worst
     # - skipna if less than fraction (to not waste lot of data when aggregating over i.e. hours)
+    # - Add tolerance on fraction of missing timesteps for large accumulation_intervals
 
     # Resample the dataset
     # - Rolling currently does not allow direct rolling forward.
@@ -177,36 +222,19 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     # - https://github.com/pydata/xarray/issues/8958
     if not rolling:
         # Resample
-        if len(var_to_average) > 0:
-            ds_resampled.update(
-                ds[var_to_average].resample({"time": pd.Timedelta(seconds=accumulation_interval)}).mean(skipna=False),
-            )
-        if len(var_to_cumulate) > 0:
-            ds_resampled.update(
-                ds[var_to_cumulate].resample({"time": pd.Timedelta(seconds=accumulation_interval)}).sum(skipna=False),
-            )
-        if len(var_to_min) > 0:
-            ds_resampled.update(
-                ds[var_to_min].resample({"time": pd.Timedelta(seconds=accumulation_interval)}).min(skipna=False),
-            )
-        if len(var_to_max) > 0:
-            ds_resampled.update(
-                ds[var_to_max].resample({"time": pd.Timedelta(seconds=accumulation_interval)}).max(skipna=False),
-            )
-
+        accumulation = pd.Timedelta(seconds=accumulation_interval)
+        ds_resampled.update(_resample(ds=ds, variables=var_to_average, accumulation=accumulation, op="mean"))
+        ds_resampled.update(_resample(ds=ds, variables=var_to_cumulate, accumulation=accumulation, op="sum"))
+        ds_resampled.update(_resample(ds=ds, variables=var_to_min, accumulation=accumulation, op="min"))
+        ds_resampled.update(_resample(ds=ds, variables=var_to_max, accumulation=accumulation, op="max"))
     else:
         # Roll and Resample
         window_size = define_window_size(sample_interval=sample_interval, accumulation_interval=accumulation_interval)
-        if len(var_to_average) > 0:
-            ds_resampled.update(ds[var_to_average].rolling({"time": window_size}, center=False).mean(skipna=False))
-        if len(var_to_cumulate) > 0:
-            ds_resampled.update(ds[var_to_cumulate].rolling({"time": window_size}, center=False).sum(skipna=False))
-
-        if len(var_to_min) > 0:
-            ds_resampled.update(ds[var_to_min].rolling({"time": window_size}, center=False).min(skipna=False))
-        if len(var_to_max) > 0:
-            ds_resampled.update(ds[var_to_max].rolling({"time": window_size}, center=False).max(skipna=False))
-        # Ensure time to correspond to the start time of the integration
+        ds_resampled.update(_rolling(ds=ds, variables=var_to_average, window_size=window_size, op="mean"))
+        ds_resampled.update(_rolling(ds=ds, variables=var_to_cumulate, window_size=window_size, op="sum"))
+        ds_resampled.update(_rolling(ds=ds, variables=var_to_min, window_size=window_size, op="min"))
+        ds_resampled.update(_rolling(ds=ds, variables=var_to_max, window_size=window_size, op="max"))
+        # Ensure time to correspond to the start time of the measurement period
         ds_resampled = ds_resampled.isel(time=slice(window_size - 1, None)).assign_coords(
             {"time": ds_resampled["time"].data[: -window_size + 1]},
         )
@@ -217,30 +245,3 @@ def resample_dataset(ds, sample_interval, accumulation_interval, rolling=True):
     # Add accumulation_interval as new sample_interval coordinate
     ds_resampled = add_sample_interval(ds_resampled, sample_interval=accumulation_interval)
     return ds_resampled
-
-
-def get_possible_accumulations(sample_interval, accumulations=None):
-    """
-    Get a list of valid accumulation intervals based on the sampling time.
-
-    Parameters
-    ----------
-    - sample_interval (int): The inferred sampling time in seconds.
-    - accumulations (list of int or string): List of desired accumulation intervals.
-    If provide integers, specify accumulation in seconds.
-
-    Returns
-    -------
-    - list of int: Valid accumulation intervals in seconds.
-    """
-    # Select default accumulations
-    if accumulations is None:
-        accumulations = DEFAULT_ACCUMULATIONS
-
-    # Get accumulations in seconds
-    accumulations = [int(pd.Timedelta(acc).total_seconds()) if isinstance(acc, str) else acc for acc in accumulations]
-
-    # Filter candidate accumulations to include only those that are multiples of the sampling time
-    possible_accumulations = [acc for acc in accumulations if acc % sample_interval == 0]
-
-    return possible_accumulations

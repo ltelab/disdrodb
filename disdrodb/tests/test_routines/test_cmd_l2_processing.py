@@ -24,12 +24,13 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import ARCHIVE_VERSION, __root_path__
+from disdrodb import __root_path__
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l2e import disdrodb_run_l2e
 from disdrodb.cli.disdrodb_run_l2e_station import disdrodb_run_l2e_station
 from disdrodb.cli.disdrodb_run_l2m import disdrodb_run_l2m
 from disdrodb.cli.disdrodb_run_l2m_station import disdrodb_run_l2m_station
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.routines import (
     run_l2e,
     run_l2e_station,
@@ -51,8 +52,8 @@ FORCE = False
 
 # from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
-# tmp_path = pathlib.Path("/tmp/12")
-# test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
+# tmp_path = pathlib.Path("/tmp/13")
+#  test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
 # dst_dir = os.path.join(test_data_archive_dir, ARCHIVE_VERSION)
 # shutil.copytree(TEST_DATA_L1_DIR, dst_dir, dirs_exist_ok=True)
 # # shutil.copytree(TEST_DATA_L2E_DIR, dst_dir, dirs_exist_ok=True)
@@ -202,31 +203,32 @@ def test_disdrodb_run_l2m_station(tmp_path, disdrodb_metadata_archive_dir, paral
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check products at different sampling intervals are produced
-    # - 1MIN
+    # Check products are produced
+    # - 10MIN GAMMA ML
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60,
+        sample_interval=600,
         rolling=False,
         model_name="GAMMA_ML",
     )
-    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.1MIN.*.nc", recursive=True) == 2
-    # - ROLL1MIN
+    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
+
+    # - 10MIN NGAMMA_GS_LOG_ND_MAE
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60,
-        rolling=True,
+        sample_interval=600,
+        rolling=False,
         model_name="GAMMA_ML",
     )
-    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.ROLL1MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -373,28 +375,29 @@ def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check products at different sampling intervals are produced
-    # - 1MIN
+    # Check products are produced
+    # - 10MIN GAMMA ML
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60,
+        sample_interval=600,
         rolling=False,
         model_name="GAMMA_ML",
     )
-    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.1MIN.*.nc", recursive=True) == 2
-    # - ROLL1MIN
+    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
+
+    # - 10MIN NGAMMA_GS_LOG_ND_MAE
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2M",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60,
-        rolling=True,
+        sample_interval=600,
+        rolling=False,
         model_name="GAMMA_ML",
     )
-    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.ROLL1MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2

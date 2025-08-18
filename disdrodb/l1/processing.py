@@ -16,22 +16,19 @@
 # -----------------------------------------------------------------------------.
 """Core functions for DISDRODB L1 production."""
 
-
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l1.encoding_attrs import get_attrs_dict, get_encoding_dict
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
 from disdrodb.l1.filters import define_spectrum_mask, filter_diameter_bins, filter_velocity_bins
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (  # TODO: maybe move out of L2
-    compute_qc_bins_metrics,
+    add_bins_metrics,
     get_min_max_diameter,
 )
-from disdrodb.utils.attrs import set_attrs
-from disdrodb.utils.encoding import set_encodings
 from disdrodb.utils.time import ensure_sample_interval_in_seconds, infer_sample_interval
+from disdrodb.utils.writer import finalize_product
 
 
 def generate_l1(
@@ -51,7 +48,7 @@ def generate_l1(
     small_velocity_threshold=2.5,  # 3
     maintain_smallest_drops=True,
 ):
-    """Generate the DISDRODB L1 dataset from the DISDRODB L0C dataset.
+    """Generate DISDRODB L1 Dataset from DISDRODB L0C Dataset.
 
     Parameters
     ----------
@@ -88,17 +85,17 @@ def generate_l1(
     xarray.Dataset
         DISRODB L1 dataset.
     """
-    # Take as input an L0 !
-
     # Retrieve source attributes
     attrs = ds.attrs.copy()
 
     # Determine if the velocity dimension is available
     has_velocity_dimension = VELOCITY_DIMENSION in ds.dims
 
-    # Initialize L2 dataset
-    ds_l1 = xr.Dataset()
+    # Retrieve sensor_name
+    # - If not present, don't drop Parsivels first two bins
+    sensor_name = attrs.get("sensor_name", "")
 
+    # ---------------------------------------------------------------------------
     # Retrieve sample interval
     # --> sample_interval is a coordinate of L0C products
     if "sample_interval" in ds:
@@ -107,39 +104,52 @@ def generate_l1(
         # This line is not called in the DISDRODB processing chain !
         sample_interval = infer_sample_interval(ds, verbose=False)
 
-    # Re-add sample interval as coordinate (in seconds)
-    ds = add_sample_interval(ds, sample_interval=sample_interval)
-
     # ---------------------------------------------------------------------------
     # Retrieve ENV dataset or take defaults
     # --> Used only for Beard fall velocity currently !
     ds_env = load_env_dataset(ds)
 
+    # ---------------------------------------------------------------------------
+    # Initialize L1 dataset
+    ds_l1 = xr.Dataset()
+
+    # Add raw_drop_number variable to L1 dataset
+    ds_l1["raw_drop_number"] = ds["raw_drop_number"]
+
+    # Add sample interval as coordinate (in seconds)
+    ds_l1 = add_sample_interval(ds_l1, sample_interval=sample_interval)
+
+    # Add L0C coordinates that might got lost
+    if "time_qc" in ds_l1:
+        ds_l1 = ds_l1.assign_coords({"time_qc": ds["time_qc"]})
+
     # -------------------------------------------------------------------------------------------
     # Filter dataset by diameter and velocity bins
+    if sensor_name in ["PARSIVEL", "PARSIVEL2"]:
+        # - Remove first two bins because never reports data !
+        # - If not removed, can alter e.g. L2M model fitting
+        ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=0.312)  # it includes the 0.2495-0.3745 bin
+
     # - Filter diameter bins
-    ds = filter_diameter_bins(ds=ds, minimum_diameter=minimum_diameter, maximum_diameter=maximum_diameter)
+    ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=minimum_diameter, maximum_diameter=maximum_diameter)
     # - Filter velocity bins
     if has_velocity_dimension:
-        ds = filter_velocity_bins(ds=ds, minimum_velocity=minimum_velocity, maximum_velocity=maximum_velocity)
+        ds_l1 = filter_velocity_bins(ds=ds_l1, minimum_velocity=minimum_velocity, maximum_velocity=maximum_velocity)
 
     # -------------------------------------------------------------------------------------------
     # Compute fall velocity
-    fall_velocity = get_raindrop_fall_velocity(
-        diameter=ds["diameter_bin_center"],
+    ds_l1["fall_velocity"] = get_raindrop_fall_velocity(
+        diameter=ds_l1["diameter_bin_center"],
         method=fall_velocity_method,
         ds_env=ds_env,  # mm
     )
-
-    # Add fall velocity
-    ds_l1["fall_velocity"] = fall_velocity
 
     # -------------------------------------------------------------------------------------------
     # Define filtering mask according to fall velocity
     if has_velocity_dimension:
         mask = define_spectrum_mask(
-            drop_number=ds["raw_drop_number"],
-            fall_velocity=fall_velocity,
+            drop_number=ds_l1["raw_drop_number"],
+            fall_velocity=ds_l1["fall_velocity"],
             above_velocity_fraction=above_velocity_fraction,
             above_velocity_tolerance=above_velocity_tolerance,
             below_velocity_fraction=below_velocity_fraction,
@@ -152,14 +162,14 @@ def generate_l1(
     # -------------------------------------------------------------------------------------------
     # Retrieve drop number and drop_counts arrays
     if has_velocity_dimension:
-        drop_number = ds["raw_drop_number"].where(mask)  # 2D (diameter, velocity)
+        drop_number = ds_l1["raw_drop_number"].where(mask)  # 2D (diameter, velocity)
         drop_counts = drop_number.sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
-        drop_counts_raw = ds["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
+        drop_counts_raw = ds_l1["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
 
     else:
-        drop_number = ds["raw_drop_number"]  # 1D (diameter)
-        drop_counts = ds["raw_drop_number"]  # 1D (diameter)
-        drop_counts_raw = ds["raw_drop_number"]
+        drop_number = ds_l1["raw_drop_number"]  # 1D (diameter)
+        drop_counts = ds_l1["raw_drop_number"]  # 1D (diameter)
+        drop_counts_raw = ds_l1["raw_drop_number"]
 
     # Add drop number and drop_counts
     ds_l1["drop_number"] = drop_number
@@ -173,30 +183,21 @@ def generate_l1(
     ds_l1["Dmin"] = min_drop_diameter
     ds_l1["Dmax"] = max_drop_diameter
     ds_l1["N"] = drop_counts.sum(dim=DIAMETER_DIMENSION)
-    ds_l1["Nremoved"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION) - ds_l1["N"]
+    ds_l1["Nraw"] = drop_counts_raw.sum(dim=DIAMETER_DIMENSION)
+    ds_l1["Nremoved"] = ds_l1["Nraw"] - ds_l1["N"]
 
     # Add bins statistics
-    ds_l1.update(compute_qc_bins_metrics(ds_l1))
+    ds_l1 = add_bins_metrics(ds_l1)
 
     # -------------------------------------------------------------------------------------------
     # Add quality flags
     # TODO: snow_flags, insects_flag, ...
 
-    # -------------------------------------------------------------------------------------------
-    #### Add L0C coordinates that might got lost
-    if "time_qc" in ds:
-        ds_l1 = ds_l1.assign_coords({"time_qc": ds["time_qc"]})
-
     #### ----------------------------------------------------------------------------.
-    #### Add encodings and attributes
-    # Add variables attributes
-    attrs_dict = get_attrs_dict()
-    ds_l1 = set_attrs(ds_l1, attrs_dict=attrs_dict)
-
-    # Add variables encoding
-    encoding_dict = get_encoding_dict()
-    ds_l1 = set_encodings(ds_l1, encoding_dict=encoding_dict)
-
+    #### Finalize dataset
     # Add global attributes
     ds_l1.attrs = attrs
+
+    # Add variables attributes and encodings
+    ds_l1 = finalize_product(ds_l1, product="L1")
     return ds_l1

@@ -17,6 +17,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Routines to list and open DISDRODB products."""
+import datetime
 import os
 import shutil
 import subprocess
@@ -24,6 +25,14 @@ import sys
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
+
+from disdrodb.api.checks import (
+    check_filepaths,
+    check_start_end_time,
+    get_current_utc_time,
+)
+from disdrodb.api.info import get_start_end_time_from_filepaths
 from disdrodb.api.path import (
     define_campaign_dir,
     define_data_dir,
@@ -48,6 +57,75 @@ def filter_filepaths(filepaths, debugging_mode):
     return filepaths
 
 
+def is_within_time_period(l_start_time, l_end_time, start_time, end_time):
+    """Assess which files are within the start and end time."""
+    # - Case 1
+    #     s               e
+    #     |               |
+    #   ---------> (-------->)
+    idx_select1 = np.logical_and(l_start_time <= start_time, l_end_time > start_time)
+    # - Case 2
+    #     s               e
+    #     |               |
+    #          ---------(-.)
+    idx_select2 = np.logical_and(l_start_time >= start_time, l_end_time <= end_time)
+    # - Case 3
+    #     s               e
+    #     |               |
+    #                -------------
+    idx_select3 = np.logical_and(l_start_time < end_time, l_end_time > end_time)
+    # - Get idx where one of the cases occur
+    idx_select = np.logical_or.reduce([idx_select1, idx_select2, idx_select3])
+    return idx_select
+
+
+def filter_by_time(filepaths, start_time=None, end_time=None):
+    """Filter filepaths by start_time and end_time.
+
+    Parameters
+    ----------
+    filepaths : list
+        List of filepaths.
+    start_time : datetime.datetime
+        Start time.
+        If ``None``, will be set to 1997-01-01.
+    end_time : datetime.datetime
+        End time.
+        If ``None`` will be set to current UTC time.
+
+    Returns
+    -------
+    filepaths : list
+        List of valid filepaths.
+        If no valid filepaths, returns an empty list !
+
+    """
+    # -------------------------------------------------------------------------.
+    # Check filepaths
+    if isinstance(filepaths, type(None)):
+        return []
+    filepaths = check_filepaths(filepaths)
+    if len(filepaths) == 0:
+        return []
+
+    # -------------------------------------------------------------------------.
+    # Check start_time and end_time
+    if start_time is None:
+        start_time = datetime.datetime(1978, 1, 1, 0, 0, 0)  # Dummy start
+    if end_time is None:
+        end_time = get_current_utc_time()  # Current time
+    start_time, end_time = check_start_end_time(start_time, end_time)
+
+    # -------------------------------------------------------------------------.
+    # - Retrieve start_time and end_time of GPM granules
+    l_start_time, l_end_time = get_start_end_time_from_filepaths(filepaths)
+
+    # -------------------------------------------------------------------------.
+    # Select granules with data within the start and end time
+    idx_select = is_within_time_period(l_start_time, l_end_time, start_time=start_time, end_time=end_time)
+    return np.array(filepaths)[idx_select].tolist()
+
+
 def find_files(
     data_source,
     campaign_name,
@@ -56,6 +134,8 @@ def find_files(
     debugging_mode: bool = False,
     data_archive_dir: Optional[str] = None,
     glob_pattern=None,
+    start_time=None,
+    end_time=None,
     **product_kwargs,
 ):
     """Retrieve DISDRODB product files for a give station.
@@ -136,6 +216,13 @@ def find_files(
         msg = f"No {product} files are available in {data_dir}. Run {product} processing first."
         raise ValueError(msg)
 
+    # Filter files by start_time and end_time
+    if product != "RAW":
+        filepaths = filter_by_time(filepaths=filepaths, start_time=start_time, end_time=end_time)
+        if len(filepaths) == 0:
+            msg = f"No {product} files are available between {start_time} and {end_time}."
+            raise ValueError(msg)
+
     # Sort filepaths
     filepaths = sorted(filepaths)
     return filepaths
@@ -143,6 +230,117 @@ def find_files(
 
 ####----------------------------------------------------------------------------------
 #### DISDRODB Open Product Files
+
+
+def open_raw_files(filepaths, data_source, campaign_name, station_name):
+    """Open raw files to DISDRODB L0A or L0B format.
+
+    Raw text files are opened into a DISDRODB L0A pandas Dataframe.
+    Raw netCDF files are opened into a DISDRODB L0B xarray Dataset.
+    """
+    from disdrodb.issue import read_station_issue
+    from disdrodb.l0 import generate_l0a, generate_l0b_from_nc, get_station_reader
+    from disdrodb.metadata import read_station_metadata
+
+    # Read station metadata
+    metadata = read_station_metadata(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    sensor_name = metadata["sensor_name"]
+
+    # Read station issue YAML file
+    try:
+        issue_dict = read_station_issue(
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+    except Exception:
+        issue_dict = None
+
+    # Get reader
+    reader = get_station_reader(
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    # Return DISDRODB L0A dataframe if raw text files
+    if metadata["raw_data_format"] == "txt":
+        df = generate_l0a(
+            filepaths=filepaths,
+            reader=reader,
+            sensor_name=sensor_name,
+            issue_dict=issue_dict,
+            verbose=False,
+        )
+        return df
+
+    # Return DISDRODB L0B dataframe if raw netCDF files
+    ds = generate_l0b_from_nc(
+        filepaths=filepaths,
+        reader=reader,
+        sensor_name=sensor_name,
+        metadata=metadata,
+        issue_dict=issue_dict,
+        verbose=False,
+    )
+    return ds
+
+
+def open_netcdf_files(
+    filepaths,
+    chunks=-1,
+    start_time=None,
+    end_time=None,
+    variables=None,
+    parallel=False,
+    compute=True,
+    **open_kwargs,
+):
+    """Open DISDRODB netCDF files using xarray."""
+    import xarray as xr
+
+    # Ensure variables is a list
+    if variables is not None and isinstance(variables, str):
+        variables = [variables]
+    # Define preprocessing function for parallel opening
+    preprocess = (lambda ds: ds[variables]) if parallel and variables is not None else None
+
+    # Open netcdf
+    ds = xr.open_mfdataset(
+        filepaths,
+        chunks=chunks,
+        combine="nested",
+        concat_dim="time",
+        engine="netcdf4",
+        parallel=parallel,
+        preprocess=preprocess,
+        compat="no_conflicts",
+        combine_attrs="override",
+        coords="different",  # maybe minimal?
+        decode_timedelta=False,
+        cache=False,
+        autoclose=True,
+        **open_kwargs,
+    )
+    # - Subset variables
+    if variables is not None and preprocess is None:
+        ds = ds[variables]
+    # - Subset time
+    ds = ds.sel(time=slice(start_time, end_time))
+    # - If compute=True, load in memory and close connections to files
+    if compute:
+        dataset = ds.compute()
+        ds.close()
+        dataset.close()
+        del ds
+    else:
+        dataset = ds
+    return dataset
+
+
 def open_dataset(
     data_source,
     campaign_name,
@@ -151,7 +349,12 @@ def open_dataset(
     product_kwargs=None,
     debugging_mode: bool = False,
     data_archive_dir: Optional[str] = None,
+    chunks=-1,
     parallel=False,
+    compute=False,
+    start_time=None,
+    end_time=None,
+    variables=None,
     **open_kwargs,
 ):
     """Retrieve DISDRODB product files for a give station.
@@ -189,13 +392,8 @@ def open_dataset(
     xarray.Dataset
 
     """
-    import xarray as xr
-
     from disdrodb.l0.l0a_processing import read_l0a_dataframe
 
-    # Check product validity
-    if product == "RAW":
-        raise ValueError("It's not possible to open the raw data with this function.")
     product_kwargs = product_kwargs if product_kwargs else {}
 
     # List product files
@@ -206,25 +404,36 @@ def open_dataset(
         station_name=station_name,
         product=product,
         debugging_mode=debugging_mode,
+        start_time=start_time,
+        end_time=end_time,
         **product_kwargs,
     )
+
+    # Open RAW files
+    # - For raw txt files return DISDRODB L0A dataframe
+    # - For raw netCDF files return DISDRODB L0B dataframe
+    if product == "RAW":
+        obj = open_raw_files(
+            filepaths=filepaths,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        return obj
 
     # Open L0A Parquet files
     if product == "L0A":
         return read_l0a_dataframe(filepaths)
 
     # Open DISDRODB netCDF files using xarray
-    # - TODO: parallel option and add closers !
-    # - decode_timedelta -- > sample_interval not decoded to timedelta !
-    # list_ds = [xr.open_dataset(fpath, decode_timedelta=False, **open_kwargs) for fpath in filepaths]
-    # ds = xr.concat(list_ds, dim="time")
-    ds = xr.open_mfdataset(
-        filepaths,
-        engine="netcdf4",
-        combine="nested",  # 'by_coords',
-        concat_dim="time",
-        decode_timedelta=False,
+    ds = open_netcdf_files(
+        filepaths=filepaths,
+        chunks=chunks,
+        start_time=start_time,
+        end_time=end_time,
+        variables=variables,
         parallel=parallel,
+        compute=compute,
         **open_kwargs,
     )
     return ds

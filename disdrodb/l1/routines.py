@@ -28,7 +28,7 @@ from typing import Optional
 import dask
 import xarray as xr
 
-# Directory
+from disdrodb.api.checks import check_station_inputs
 from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
@@ -39,7 +39,12 @@ from disdrodb.api.path import (
     define_l1_filename,
 )
 from disdrodb.api.search import get_required_product
-from disdrodb.configs import get_data_archive_dir, get_folder_partitioning, get_metadata_archive_dir
+from disdrodb.configs import (
+    get_data_archive_dir,
+    get_folder_partitioning,
+    get_metadata_archive_dir,
+    get_product_options,
+)
 from disdrodb.l1.processing import generate_l1
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
@@ -54,42 +59,6 @@ from disdrodb.utils.logger import (
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
-
-
-def get_l1_options():
-    """Get L1 options."""
-    # - TODO: from YAML
-    # - TODO: as function of sensor name
-
-    # minimum_diameter
-    # --> PWS100: 0 (0.05)
-    # --> PARSIVEL: 0.2495 (0.312)
-    # --> RD80: 0.313 (0.359)
-    # --> LPM: 0.125 (0.1875) (we currently discard first bin with default settings !)
-
-    # maximum_diameter
-    # LPM: 9 (10) mm
-    # RD80: 5.373 (5.6) mm
-    # OTT: 24.5 (26) mm
-    # PWS100: 27.2 (28.8) mm
-
-    l1_options = {
-        # Fall velocity option
-        "fall_velocity_method": "Beard1976",
-        # Diameter-Velocity Filtering Options
-        "minimum_diameter": 0.2495,  # OTT PARSIVEL first two bin no data !
-        "maximum_diameter": 10,
-        "minimum_velocity": 0,
-        "maximum_velocity": 12,
-        "above_velocity_fraction": 0.5,
-        "above_velocity_tolerance": None,
-        "below_velocity_fraction": 0.5,
-        "below_velocity_tolerance": None,
-        "small_diameter_threshold": 1,  # 2
-        "small_velocity_threshold": 2.5,  # 3
-        "maintain_smallest_drops": True,
-    }
-    return l1_options
 
 
 @delayed_if_parallel
@@ -157,13 +126,13 @@ def _generate_l1(
     success_flag = False
     ##------------------------------------------------------------------------.
     # Retrieve L1 configurations
-    l1_options = get_l1_options()
+    l1_options = get_product_options("L1").get("product_options")
 
     ##------------------------------------------------------------------------.
     ### Core computation
     try:
         # Open the raw netCDF
-        with xr.open_dataset(filepath, chunks={}, decode_timedelta=False, cache=False) as ds:
+        with xr.open_dataset(filepath, chunks=-1, decode_timedelta=False, cache=False) as ds:
             ds = ds[["raw_drop_number"]].load()
 
         # Produce L1 dataset
@@ -176,7 +145,7 @@ def _generate_l1(
             folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
             filepath = os.path.join(folder_path, filename)
             # Write to disk
-            write_product(ds, product=product, filepath=filepath, force=force)
+            write_product(ds, filepath=filepath, force=force)
 
         ##--------------------------------------------------------------------.
         #### - Define logger file final directory
@@ -275,6 +244,14 @@ def run_l1_station(
     # Retrieve DISDRODB Metadata Archive directory
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
 
+    # Check valid data_source, campaign_name, and station_name
+    check_station_inputs(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+
     # Define logs directory
     logs_dir = create_logs_directory(
         product=product,
@@ -325,7 +302,7 @@ def run_l1_station(
     # If no data available, print error message and return None
     if flag_not_available_data:
         msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name}"
+            f"{product} processing of {data_source} {campaign_name} {station_name} "
             + f"has not been launched because of missing {required_product} data."
         )
         print(msg)

@@ -237,7 +237,7 @@ The DISDRODB Metadata Data Archive has the following structure:
 Now you can start filling the metadata YAML files.
 
 The metadata YAML file contains information of the station (e.g. type of raw data, type of device, geolocation, ...) which is
-required for the correct processing and integration of the station into the DISDRODB archive.
+required for the correct processing and ingestion of the station into the DISDRODB archive.
 
 The list and description of the metadata keys is available in the :ref:`Metadata <metadata>` section.
 
@@ -566,7 +566,7 @@ The DISDRODB L0 processing saves the DISDRODB product sin the directories tree i
 |                        ├── 📜 \L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc
 |              ├── 📁 L0C
 |                  ├── 📁 <STATION_NAME>
-|                       ├── 📜 \L0B.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc
+|                       ├── 📜 \L0B.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc
 |              ├── 📁 logs
 |                  ├── 📁 files
 |                       ├── 📁 <PRODUCT>

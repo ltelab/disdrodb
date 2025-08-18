@@ -15,8 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Core functions for DISDRODB ENV production."""
-
 import xarray as xr
+
+from disdrodb.constants import GEOLOCATION_COORDS
 
 
 def get_default_environment_dataset():
@@ -30,9 +31,23 @@ def get_default_environment_dataset():
     return ds_env
 
 
+def _assign_geolocation(ds_src, dst_dst):
+
+    dict_coords = {coord: ds_src[coord] for coord in GEOLOCATION_COORDS if coord in ds_src}
+    dst_dst = dst_dst.assign_coords(dict_coords)
+    return dst_dst
+
+
 def load_env_dataset(ds):
     """Load the ENV dataset."""
-    # TODO - Retrieve relative_humidity and temperature from L1-ENV
+    # TODO: Retrieve relative_humidity and temperature from L1-ENV
     ds_env = get_default_environment_dataset()
-    ds_env = ds_env.assign_coords({"altitude": ds["altitude"], "latitude": ds["latitude"]})
+    # Compute water density
+    # get_water_density(
+    # temperature=temperature,
+    # air_pressure=air_pressure,
+    # )
+    # -->  (T == 10 --> 999.7, T == 20 --> 998.2
+    ds_env["water_density"] = 1000  # kg / m3 # TODO as function of ENV (temperature, ...) ?
+    ds_env = _assign_geolocation(ds_src=ds, dst_dst=ds_env)
     return ds_env

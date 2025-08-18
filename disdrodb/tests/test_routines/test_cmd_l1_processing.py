@@ -24,10 +24,11 @@ import shutil
 import pytest
 from click.testing import CliRunner
 
-from disdrodb import ARCHIVE_VERSION, __root_path__
+from disdrodb import __root_path__
 from disdrodb.api.path import define_data_dir
 from disdrodb.cli.disdrodb_run_l1 import disdrodb_run_l1
 from disdrodb.cli.disdrodb_run_l1_station import disdrodb_run_l1_station
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.routines import (
     run_l1,
     run_l1_station,

@@ -15,3 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """DISDRODB L1 module."""
+from disdrodb.l1.processing import generate_l1
+
+__all__ = [
+    "generate_l1",
+]

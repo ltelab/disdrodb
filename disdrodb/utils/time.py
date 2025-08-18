@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 #### Sampling Interval Acronyms
 
 
-def seconds_to_acronym(seconds):
+def seconds_to_temporal_resolution(seconds):
     """
     Convert a duration in seconds to a readable string format (e.g., "1H30", "1D2H").
 
@@ -57,27 +57,27 @@ def seconds_to_acronym(seconds):
         parts.append(f"{components.minutes}MIN")
     if components.seconds > 0:
         parts.append(f"{components.seconds}S")
-    acronym = "".join(parts)
-    return acronym
+    temporal_resolution = "".join(parts)
+    return temporal_resolution
 
 
-def get_resampling_information(sample_interval_acronym):
+def get_resampling_information(temporal_resolution):
     """
-    Extract resampling information from the sample interval acronym.
+    Extract resampling information from the temporal_resolution string.
 
     Parameters
     ----------
-    sample_interval_acronym: str
-      A string representing the sample interval: e.g., "1H30MIN", "ROLL1H30MIN".
+    temporal_resolution: str
+      A string representing the product temporal resolution: e.g., "1H30MIN", "ROLL1H30MIN".
 
     Returns
     -------
     sample_interval_seconds, rolling: tuple
         Sample_interval in seconds and whether rolling is enabled.
     """
-    rolling = sample_interval_acronym.startswith("ROLL")
+    rolling = temporal_resolution.startswith("ROLL")
     if rolling:
-        sample_interval_acronym = sample_interval_acronym[4:]  # Remove "ROLL"
+        temporal_resolution = temporal_resolution[4:]  # Remove "ROLL"
 
     # Allowed pattern: one or more occurrences of "<number><unit>"
     # where unit is exactly one of D, H, MIN, or S.
@@ -85,15 +85,15 @@ def get_resampling_information(sample_interval_acronym):
     pattern = r"^(\d+(?:D|H|MIN|S))+$"
 
     # Check if the entire string matches the pattern
-    if not re.match(pattern, sample_interval_acronym):
+    if not re.match(pattern, temporal_resolution):
         raise ValueError(
-            f"Invalid sample interval acronym '{sample_interval_acronym}'. "
+            f"Invalid temporal resolution '{temporal_resolution}'. "
             "Must be composed of one or more <number><unit> groups, where unit is D, H, MIN, or S.",
         )
 
     # Regular expression to match duration components and extract all (value, unit) pairs
     pattern = r"(\d+)(D|H|MIN|S)"
-    matches = re.findall(pattern, sample_interval_acronym)
+    matches = re.findall(pattern, temporal_resolution)
 
     # Conversion factors for each unit
     unit_to_seconds = {
@@ -112,21 +112,21 @@ def get_resampling_information(sample_interval_acronym):
     return sample_interval, rolling
 
 
-def acronym_to_seconds(acronym):
+def temporal_resolution_to_seconds(temporal_resolution):
     """
-    Extract the interval in seconds from the duration acronym.
+    Extract the measurement interval in seconds from the temporal resolution string.
 
     Parameters
     ----------
-    acronym: str
-      A string representing a duration: e.g., "1H30MIN", "ROLL1H30MIN".
+    temporal_resolution: str
+      A string representing the product measurement interval: e.g., "1H30MIN", "ROLL1H30MIN".
 
     Returns
     -------
     seconds
         Duration in seconds.
     """
-    seconds, _ = get_resampling_information(acronym)
+    seconds, _ = get_resampling_information(temporal_resolution)
     return seconds
 
 
@@ -297,7 +297,7 @@ def regularize_dataset(
 
 
 ####------------------------------------------
-#### Sampling interval utilities
+#### Interval utilities
 
 
 def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
@@ -380,7 +380,7 @@ def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
             raise TypeError("Float array sample_interval must contain only whole numbers.")
         return sample_interval.astype(int)
 
-    # Deal with xarray.DataArrayy of floats that are all integer-valued (with optionally some NaN)
+    # Deal with xarray.DataArray of floats that are all integer-valued (with optionally some NaN)
     if isinstance(sample_interval, xr.DataArray) and np.issubdtype(sample_interval.dtype, np.floating):
         arr = sample_interval.copy()
         data = arr.data
@@ -399,6 +399,17 @@ def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
     raise TypeError(
         "sample_interval must be an integer value or array, or numpy.ndarray / xarray.DataArray with type timedelta64.",
     )
+
+
+def ensure_timedelta_seconds_interval(interval):
+    """Return interval as numpy.timedelta64 in seconds."""
+    if isinstance(interval, (xr.DataArray, np.ndarray)):
+        return ensure_sample_interval_in_seconds(interval).astype("m8[s]")
+    return np.array(ensure_sample_interval_in_seconds(interval), dtype="m8[s]")
+
+
+####------------------------------------------
+#### Sample Interval Utilities
 
 
 def infer_sample_interval(ds, robust=False, verbose=False, logger=None):
@@ -659,3 +670,134 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
         ds = ds.isel(time=idx_valid_timesteps)
     # Return dataset
     return ds
+
+
+####---------------------------------------------------------------------------------
+#### Time blocks
+
+
+def check_freq(freq: str) -> None:
+    """Check validity of freq argument."""
+    valid_freq = ["none", "year", "season", "quarter", "month", "day", "hour"]
+    if not isinstance(freq, str):
+        raise TypeError("'freq' must be a string.")
+    if freq not in valid_freq:
+        raise ValueError(
+            f"'freq' '{freq}' is not possible. Must be one of: {valid_freq}.",
+        )
+    return freq
+
+
+def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, freq: str) -> np.ndarray:  # noqa: PLR0911
+    """Generate time blocks between `start_time` and `end_time` for a given frequency.
+
+    Parameters
+    ----------
+    start_time : numpy.datetime64
+        Inclusive start of the overall time range.
+    end_time : numpy.datetime64
+        Inclusive end of the overall time range.
+    freq : str
+        Frequency specifier. Accepted values are:
+        - 'none'    : return a single block [start_time, end_time]
+        - 'day'     : split into daily blocks
+        - 'month'   : split into calendar months
+        - 'quarter' : split into calendar quarters
+        - 'year'    : split into calendar years
+        - 'season'  : split into meteorological seasons (MAM, JJA, SON, DJF)
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of shape (n, 2) with dtype datetime64[s], where each row is [block_start, block_end].
+
+    """
+    freq = check_freq(freq)
+    if freq == "none":
+        return np.array([[start_time, end_time]], dtype="datetime64[s]")
+
+    if freq == "hour":
+        periods = pd.period_range(start=start_time, end=end_time, freq="h")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "day":
+        periods = pd.period_range(start=start_time, end=end_time, freq="d")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "month":
+        periods = pd.period_range(start=start_time, end=end_time, freq="M")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "year":
+        periods = pd.period_range(start=start_time, end=end_time, freq="Y")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "quarter":
+        periods = pd.period_range(start=start_time, end=end_time, freq="Q")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.floor("s").to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "season":
+        # Fiscal quarter frequency ending in Feb → seasons DJF, MAM, JJA, SON
+        periods = pd.period_range(start=start_time, end=end_time, freq="Q-FEB")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+    raise NotImplementedError(f"Frequency '{freq}' is not implemented.")

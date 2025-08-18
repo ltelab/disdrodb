@@ -23,8 +23,8 @@ Infinite values should be removed beforehand or otherwise are propagated through
 import numpy as np
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.api.checks import check_sensor_name
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.utils.xarray import (
     remove_diameter_coordinates,
     remove_velocity_coordinates,
@@ -66,7 +66,7 @@ def get_drop_average_velocity(drop_number):
     ----------
     drop_number : xarray.DataArray
         Array of drop counts \\( n(D,v) \\) per diameter (and velocity, if available) bins
-        over the time integration period.
+        over the measurement interval.
         The DataArray must have the ``velocity_bin_center`` coordinate.
 
     Returns
@@ -80,6 +80,7 @@ def get_drop_average_velocity(drop_number):
         dim=VELOCITY_DIMENSION,
         skipna=False,
     )
+    average_velocity.name = "average_velocity"
     return average_velocity
 
 
@@ -138,6 +139,9 @@ def _compute_qc_bins_metrics(arr):
     return output
 
 
+BINS_METRICS = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
+
+
 def compute_qc_bins_metrics(ds):
     """
     Compute quality-control metrics for drop-count bins along the diameter dimension.
@@ -191,9 +195,17 @@ def compute_qc_bins_metrics(ds):
     )
 
     # Assign meaningful labels to the qc 'metric' dimension
-    variables = ["Nbins", "Nbins_missing", "Nbins_missing_fraction", "Nbins_missing_consecutive"]
-    ds_qc_bins = da_qc_bins.assign_coords(metric=variables).to_dataset(dim="metric")
+    ds_qc_bins = da_qc_bins.assign_coords(metric=BINS_METRICS).to_dataset(dim="metric")
     return ds_qc_bins
+
+
+def add_bins_metrics(ds):
+    """Add bin metrics if missing."""
+    bins_metrics = BINS_METRICS
+    if not np.all(np.isin(bins_metrics, list(ds.data_vars))):
+        # Add bins statistics
+        ds.update(compute_qc_bins_metrics(ds))
+    return ds
 
 
 ####-------------------------------------------------------------------------------------------------------------------.
@@ -252,7 +264,7 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
         Width of each diameter bin \\( \\Delta D \\) in millimeters (mm).
     drop_number : xarray.DataArray
         Array of drop counts \\(  n(D) or n(D,v) \\) per diameter (and velocity if available)
-        bins over the time integration period.
+        bins over the measurement interval.
     sample_interval : float or xarray.DataArray
         Time over which the drops are counted \\( \\Delta t \\) in seconds (s).
     sampling_area : float or xarray.DataArray
@@ -277,7 +289,7 @@ def get_drop_number_concentration(drop_number, velocity, diameter_bin_width, sam
     - \\( n(D,v) \\): Number of drops counted in diameter (and velocity) bins.
     - \\( A_{\text{eff}}(D) \\): Effective sampling area of the sensor for diameter \\( D \\) in square meters (m²).
     - \\( \\Delta D \\): Diameter bin width in millimeters (mm).
-    - \\( \\Delta t \\): Time integration period in seconds (s).
+    - \\( \\Delta t \\): Measurement interval in seconds (s).
     - \\( v(D) \\): Fall velocity of drops in diameter bin \\( D \\) in meters per second (m/s).
 
     The effective sampling area \\( A_{\text{eff}}(D) \\) depends on the sensor and may vary with drop diameter.
@@ -919,8 +931,7 @@ def get_min_max_diameter(drop_counts):
     return min_drop_diameter, max_drop_diameter
 
 
-def get_mode_diameter(drop_number_concentration, diameter):
-    """Get raindrop diameter with highest occurrence."""
+def _get_mode_diameter(drop_number_concentration, diameter):
     # If all NaN, set to 0 otherwise argmax fail when all NaN data
     idx_all_nan_mask = np.isnan(drop_number_concentration).all(dim=DIAMETER_DIMENSION)
     drop_number_concentration = drop_number_concentration.where(~idx_all_nan_mask, 0)
@@ -936,6 +947,43 @@ def get_mode_diameter(drop_number_concentration, diameter):
     # Set to np.nan where data where all NaN or all 0
     idx_mask = np.logical_or(idx_all_nan_mask, idx_all_zero)
     diameter_mode = diameter_mode.where(~idx_mask)
+    return diameter_mode
+
+
+def get_mode_diameter(
+    drop_number_concentration,
+    diameter,
+):
+    """Get raindrop diameter with highest occurrence.
+
+    Parameters
+    ----------
+    drop_number_concentration : xarray.DataArray
+        The drop number concentration N(D) for each diameter bin, typically in units of
+        number per cubic meter per millimeter (m⁻³·mm⁻¹).
+    diameter : xarray.DataArray
+        The equivalent volume diameters D of the drops in each bin, in meters (m).
+
+    Returns
+    -------
+    xarray.DataArray
+        The diameter with the highest drop number concentration.
+    """
+    # Use map_blocks if working with Dask arrays
+    if hasattr(drop_number_concentration.data, "chunks"):
+        # Define the template for output
+        template = remove_diameter_coordinates(drop_number_concentration.isel({DIAMETER_DIMENSION: 0}))
+        diameter_mode = xr.map_blocks(
+            _get_mode_diameter,
+            drop_number_concentration,
+            kwargs={"diameter": diameter.compute()},
+            template=template,
+        )
+    else:
+        diameter_mode = _get_mode_diameter(
+            drop_number_concentration=drop_number_concentration,
+            diameter=diameter,
+        )
     return diameter_mode
 
 
@@ -1369,7 +1417,7 @@ def get_normalized_intercept_parameter_from_moments(moment_3, moment_4):
         [m⁻³·mm³] (number per cubic meter times diameter cubed).
 
     moment_4 : float or array-like
-        The foruth moment of the drop size distribution, \\( M_3 \\), in units of
+        The fourth moment of the drop size distribution, \\( M_3 \\), in units of
         [m⁻³·mm4].
 
     Returns
@@ -1581,7 +1629,7 @@ def get_kinetic_energy_variables_from_drop_number(
     - \\( D_i \\) is the diameter of bin \\( i \\).
     - \\( v_j \\) is the velocity of bin \\( j \\).
     - \\( A \\) is the sampling area.
-    - \\( \\Delta t \\) is the time integration period in seconds.
+    - \\( \\Delta t \\) is the measurement interval in seconds.
     - \\( R \\) is the rainfall rate in mm/hr.
 
     """

@@ -15,6 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
+"""This reader allows to read raw data from NASA GCPEX, OLYMPEX and IPHEX campaigns."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -34,12 +35,13 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    # Skip file with encoding errors
-    reader_kwargs["encoding_errors"] = "ignore"
     # - Define delimiter
     reader_kwargs["delimiter"] = ";"
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+    reader_kwargs["skiprows"] = 0
+    # - Skip file with encoding errors
+    reader_kwargs["encoding_errors"] = "ignore"
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
     # - Define behaviour when encountering bad lines
@@ -68,14 +70,14 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Define 'time' datetime
+    # Convert time column to datetime
     df_time = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
     # Split the 'TO_BE_SPLITTED' column
     df = df["TO_BE_SPLITTED"].str.split(",", n=9, expand=True)
 
     # Assign column names
-    column_names = [
+    names = [
         "station_name",
         "sensor_status",
         "sensor_temperature",
@@ -87,7 +89,7 @@ def reader(
         "weather_code_synop_4677",
         "raw_drop_number",
     ]
-    df.columns = column_names
+    df.columns = names
 
     # Add the time column
     df["time"] = df_time

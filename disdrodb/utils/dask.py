@@ -16,31 +16,82 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Utilities for Dask Distributed computations."""
+"""Utilities for Dask Distributed Computations."""
 import logging
 import os
 
+import numpy as np
 
-def initialize_dask_cluster():
+
+def check_parallel_validity(parallel):
+    """Check validity of parallel option given Dask settings."""
+    import dask
+
+    scheduler = dask.config.get("scheduler", None)
+    if scheduler is None:
+        return parallel
+    if scheduler in ["synchronous", "threads"]:
+        return False
+    if scheduler == "distributed":
+        from dask.distributed import default_client
+
+        client = default_client()
+        info = client.scheduler_info()
+
+        # If ThreadWorker, only 1 pid
+        pids = list(client.run(os.getpid).values())
+        if len(np.unique(pids)) == 1:
+            return False
+
+        # If ProcessWorker
+        # - Check single thread per worker to avoid locks
+        nthreads_per_process = np.array([v["nthreads"] for v in info["workers"].values()])
+        if not np.all(nthreads_per_process == 1):
+            print(
+                "To open netCDFs in parallel with dask distributed (processes=True), please set threads_per_worker=1 !",
+            )
+            return False
+
+    # Otherwise let the user choose
+    return parallel
+
+
+def initialize_dask_cluster(minimum_memory=None):
     """Initialize Dask Cluster."""
     import dask
+    import psutil
+
+    # Silence dask warnings
+    # dask.config.set({"logging.distributed": "error"})
+    # Import dask.distributed after setting the config
     from dask.distributed import Client, LocalCluster
+    from dask.utils import parse_bytes
 
     # Set HDF5_USE_FILE_LOCKING to avoid going stuck with HDF
     os.environ["HDF5_USE_FILE_LOCKING"] = "FALSE"
-    # Retrieve the number of process to run
-    available_workers = os.cpu_count() - 2  # if not set, all CPUs
+
+    # Retrieve the number of processes to run
+    available_workers = os.cpu_count() - 2  # if not set, all CPUs minus 2
     num_workers = dask.config.get("num_workers", available_workers)
-    # Silence dask warnings
-    dask.config.set({"logging.distributed": "error"})
-    # dask.config.set({"distributed.admin.system-monitor.gil.enabled": False})
+
+    # If memory limit specified, ensure correct amount of workers
+    if minimum_memory is not None:
+        # Compute available memory (in bytes)
+        total_memory = psutil.virtual_memory().total
+        # Get minimum memory per worker (in bytes)
+        minimum_memory = parse_bytes(minimum_memory)
+        # Determine number of workers constrained by memory
+        maximum_workers_allowed = max(1, total_memory // minimum_memory)
+        # Respect both CPU and memory requirements
+        num_workers = min(maximum_workers_allowed, num_workers)
+
     # Create dask.distributed local cluster
     cluster = LocalCluster(
         n_workers=num_workers,
         threads_per_worker=1,
         processes=True,
         # memory_limit='8GB',
-        # silence_logs=False,
+        silence_logs=logging.ERROR,
     )
     client = Client(cluster)
     return cluster, client

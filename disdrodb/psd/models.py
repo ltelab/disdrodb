@@ -32,7 +32,7 @@ import xarray as xr
 from scipy.interpolate import PchipInterpolator, interp1d
 from scipy.special import gamma as gamma_f
 
-from disdrodb import DIAMETER_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.utils.warnings import suppress_warnings
 
 # Check if pytmatrix is available
@@ -79,7 +79,7 @@ def check_diameter_inputs(D):
             raise ValueError("Expecting a 1-dimensional diameter array.")
         if D.size == 0:
             raise ValueError("Expecting a non-empty diameter array.")
-        return xr.DataArray(D, dims=DIAMETER_DIMENSION)
+        return D  # If xr.DataArray(D, dims=DIAMETER_DIMENSION) make pytmatrix failing !
     raise TypeError(f"Invalid diameter type: {type(D)}")
 
 
@@ -121,6 +121,8 @@ class XarrayPSD(PSD):
     def __call__(self, D):
         """Compute the PSD."""
         D = check_diameter_inputs(D)
+        if self.has_xarray_parameters() and not np.isscalar(D):
+            D = xr.DataArray(D, dims=DIAMETER_DIMENSION)
         with suppress_warnings():
             return self.formula(D=D, **self.parameters)
 
@@ -302,7 +304,7 @@ class ExponentialPSD(XarrayPSD):
         Lambda: the inverse scale parameter
 
     Args (call):
-        D: the particle diameter.
+        D: the particle diameter in millimeter.
 
     Returns (call):
         The PSD value for the given diameter.
@@ -377,7 +379,7 @@ class GammaPSD(ExponentialPSD):
         mu: the shape parameter [-]
 
     Args (call):
-        D: the particle diameter.
+        D: the particle diameter in millimeter.
 
     Returns (call):
         The PSD value for the given diameter.
@@ -478,7 +480,7 @@ class NormalizedGammaPSD(XarrayPSD):
         mu: the shape parameter.
 
     Args (call):
-        D: the particle diameter.
+        D: the particle diameter in millimeter.
 
     Returns (call):
         The PSD value for the given diameter.
@@ -695,6 +697,7 @@ class BinnedPSD(PSD):
         """
         # Ensure D is numpy array of correct dimension
         D = np.asanyarray(check_diameter_inputs(D))
+
         # Define interpolator
         interpolator = define_interpolator(
             bin_edges=self.bin_edges,

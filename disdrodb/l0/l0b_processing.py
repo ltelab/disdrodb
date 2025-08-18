@@ -386,13 +386,13 @@ def _define_dataset_variables(df, sensor_name, logger=None, verbose=False):
     return data_vars
 
 
-def create_l0b_from_l0a(
+def generate_l0b(
     df: pd.DataFrame,
     metadata: dict,
     logger=None,
     verbose: bool = False,
 ) -> xr.Dataset:
-    """Transform the L0A dataframe to the L0B xr.Dataset.
+    """Transform the DISDRODB L0A dataframe to the DISDRODB L0B xr.Dataset.
 
     Parameters
     ----------
@@ -503,8 +503,8 @@ def set_l0b_encodings(ds: xr.Dataset, sensor_name: str):
     xarray.Dataset
         Output xarray dataset.
     """
-    encoding_dict = get_l0b_encodings_dict(sensor_name)
-    ds = set_encodings(ds=ds, encoding_dict=encoding_dict)
+    encodings_dict = get_l0b_encodings_dict(sensor_name)
+    ds = set_encodings(ds=ds, encodings_dict=encodings_dict)
     return ds
 
 

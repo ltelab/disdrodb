@@ -28,7 +28,7 @@ from disdrodb.l0 import l0b_processing
 from disdrodb.l0.l0b_processing import (
     _set_variable_attributes,
     add_dataset_crs_coords,
-    create_l0b_from_l0a,
+    generate_l0b,
 )
 from disdrodb.l0.standards import get_bin_coords_dict
 
@@ -92,7 +92,7 @@ def define_test_dummy_configs():
 
 
 @pytest.mark.parametrize("create_test_config_files", [define_test_dummy_configs()], indirect=True)
-def test_create_l0b_from_l0a(create_test_config_files):
+def test_generate_l0b(create_test_config_files):
     # Create a sample DataFrame
     df = pd.DataFrame(
         {
@@ -115,7 +115,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
     }
 
     # Call the function
-    ds = create_l0b_from_l0a(df, metadata=metadata)
+    ds = generate_l0b(df, metadata=metadata)
 
     # Check the output dataset has the correct variables and dimensions
     expected_variables = [
@@ -147,7 +147,7 @@ def test_create_l0b_from_l0a(create_test_config_files):
     # Assert that raise error if any raw_* columns present
     df_bad = df.drop(columns=["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"])
     with pytest.raises(ValueError):
-        create_l0b_from_l0a(df_bad, metadata=metadata)
+        generate_l0b(df_bad, metadata=metadata)
 
 
 def test_add_dataset_crs_coords():

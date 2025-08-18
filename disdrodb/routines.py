@@ -91,7 +91,7 @@ def run_l0_station(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L0A, it processes just the first 3 raw data files for each station.
-        For L0B, it processes just the first 100 rows of 3 L0A files for each station.
+        For L0B, it processes 100 rows sampled from 3 L0A files for each station.
         The default value is ``False``.
     data_archive_dir : str (optional)
         The directory path where the DISDRODB Data Archive is located.
@@ -794,7 +794,7 @@ def run_l0b(
         If ``False``, the files are processed sequentially in a single process.
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
-        For L0B, it processes just the first 100 rows of 3 L0A files.
+        For L0B, it processes 100 rows sampled from 3 L0A files.
         The default value is ``False``.
     data_archive_dir : str (optional)
         The directory path where the DISDRODB Data Archive is located.
@@ -1033,7 +1033,7 @@ def run_l0(
     debugging_mode : bool
         If ``True``, it reduces the amount of data to process.
         For L0A, it processes just the first 3 raw data files.
-        For L0B, it processes just the first 100 rows of 3 L0A files.
+        For L0B, it processes 100 rows sampled from 3 L0A files.
         The default value is ``False``.
     data_archive_dir : str (optional)
         The directory path where the DISDRODB Data Archive is located.

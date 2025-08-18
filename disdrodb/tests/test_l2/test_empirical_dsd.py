@@ -20,9 +20,10 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.api.configs import available_sensor_names
+from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import (
+    compute_integral_parameters,
     get_bin_dimensions,
     get_drop_average_velocity,
     get_drop_number_concentration,
@@ -48,39 +49,17 @@ from disdrodb.l2.empirical_dsd import (
     get_std_volume_drop_diameter,
     get_total_number_concentration,
 )
+from disdrodb.tests.fake_datasets import create_template_dataset
 
 
 @pytest.fixture(scope="session")
 def template_dataset():
     """Read a template NetCDF file once for all tests."""
-    time = xr.DataArray(np.array([0, 1], dtype=float), dims="time")
-    diameter_bin_center = xr.DataArray(np.array([0.2, 0.4, 0.6, 0.8]), dims="diameter_bin_center")
-    diameter_bin_width = xr.DataArray(np.array([0.2, 0.2, 0.2, 0.2]), dims="diameter_bin_center")
-    velocity_bin_center = xr.DataArray(np.array([0.2, 0.5, 1]), dims="velocity_bin_center")
-    fall_velocity = xr.DataArray(np.array([[0.5, 1, 1.5, 2], [0.5, 1, 1.5, 2]]), dims=("time", "diameter_bin_center"))
-    drop_number_concentration = xr.DataArray(
-        np.array([[0, 10000, 5000, 500], [0, 10000, 5000, 500]]),
-        dims=("time", "diameter_bin_center"),
-    )
-    drop_number = xr.DataArray(np.ones((2, 3, 4)), dims=("time", "velocity_bin_center", "diameter_bin_center"))
-
-    ds = xr.Dataset(
-        data_vars={
-            "fall_velocity": fall_velocity,
-            "drop_number_concentration": drop_number_concentration,
-            "drop_number": drop_number,
-        },
-        coords={
-            "time": time,
-            "diameter_bin_center": diameter_bin_center,
-            "diameter_bin_width": diameter_bin_width,
-            "velocity_bin_center": velocity_bin_center,
-        },
-    )
+    ds = create_template_dataset(with_velocity=True)
     return ds
 
 
-# template_dataset = ds
+# template_dataset = create_template_dataset(with_velocity=True)
 
 
 def _prepare_test_dataset(
@@ -2007,3 +1986,74 @@ class TestKineticEnergyVariables:
                 diameter_bin_width=ds["diameter_bin_width"],
                 sample_interval=60,
             )
+
+
+class TestComputeIntegralParameters:
+
+    def test_with_numpy_arrays(self, template_dataset):
+        """Test compute_integral_parameters runs with in-memory arrays."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number_concentration",
+            scenario="realistic",
+            array_type="numpy",
+        )
+
+        ds = compute_integral_parameters(
+            drop_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter=ds["diameter_bin_center"] / 1000,
+            diameter_bin_width=ds["diameter_bin_width"],
+            sample_interval=60,
+            water_density=1000,
+        )
+        # Test it returns numpy arrays
+        assert isinstance(ds, xr.Dataset)
+        for var in ds.data_vars:
+            assert not hasattr(ds[var].data, "chunks")
+
+    def test_with_dask_arrays(self, template_dataset):
+        """Test compute_integral_parameters runs with dask arrays."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number_concentration",
+            scenario="realistic",
+            array_type="dask",
+        )
+
+        ds = compute_integral_parameters(
+            drop_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter=ds["diameter_bin_center"] / 1000,
+            diameter_bin_width=ds["diameter_bin_width"],
+            sample_interval=60,
+            water_density=1000,
+        )
+        # Test it returns dask arrays
+        assert isinstance(ds, xr.Dataset)
+        for var in ds.data_vars:
+            assert hasattr(ds[var].data, "chunks")
+
+        # Test it computes without errors
+        ds = ds.compute()
+
+    def test_without_time_dimension(self, template_dataset):
+        """Test compute_integral_parameters runs without time dimension."""
+        ds = _prepare_test_dataset(
+            template_dataset,
+            variables="drop_number_concentration",
+            scenario="realistic",
+            array_type="numpy",
+        ).isel(time=0)
+
+        ds = compute_integral_parameters(
+            drop_number_concentration=ds["drop_number_concentration"],
+            velocity=ds["fall_velocity"],
+            diameter=ds["diameter_bin_center"] / 1000,
+            diameter_bin_width=ds["diameter_bin_width"],
+            sample_interval=60,
+            water_density=1000,
+        )
+        # Test it returns numpy arrays
+        assert isinstance(ds, xr.Dataset)
+        assert "time" not in ds.dims

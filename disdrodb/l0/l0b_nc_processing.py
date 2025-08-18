@@ -19,6 +19,7 @@
 """Functions to process DISDRODB raw netCDF files into DISDRODB L0B netCDF files."""
 
 import logging
+from typing import Union
 
 import numpy as np
 
@@ -33,6 +34,7 @@ from disdrodb.l0.standards import (
     get_valid_variable_names,
 )
 from disdrodb.utils.logger import (
+    log_error,
     # log_warning,
     # log_debug,
     log_info,
@@ -456,8 +458,8 @@ def sanitize_ds(
     ----------
     ds : xarray.Dataset
         Raw xarray dataset
-    attrs: dict
-        Global metadata to attach as global attributes to the xr.Dataset.
+    metadata: dict
+        Station metadata to attach as global attributes to the xr.Dataset.
     sensor_name : str
         Name of the sensor.
     verbose : bool
@@ -526,4 +528,106 @@ def open_raw_netcdf_file(
 
     # Log information
     log_info(logger=logger, msg=f"netCDF file {filepath} has been loaded successively into xarray.", verbose=False)
+    return ds
+
+
+def generate_l0b_from_nc(
+    filepaths: Union[list, str],
+    reader,
+    sensor_name,
+    metadata,
+    issue_dict=None,
+    verbose=True,
+    logger=None,
+):
+    """Read and parse a list of raw netCDF files and generate a DISDRODB L0B dataset.
+
+    Parameters
+    ----------
+    filepaths : Union[list,str]
+        File(s) path(s)
+    reader:
+        DISDRODB reader function.
+        Format: reader(filepath, logger=None)
+    sensor_name : str
+        Name of the sensor.
+    metadata: dict
+        Station metadata to attach as global attributes to the xr.Dataset.
+    issue_dict : dict, optional
+        Issue dictionary providing information on timesteps to remove.
+        The default is an empty dictionary ``{}``.
+        Valid issue_dict key are ``'timesteps'`` and ``'time_periods'``.
+        Valid issue_dict values are list of datetime64 values (with second accuracy).
+        To correctly format and check the validity of the ``issue_dict``, use
+        the ``disdrodb.l0.issue.check_issue_dict`` function.
+    verbose : bool
+        Whether to verbose the processing. The default is ``True``.
+
+    Returns
+    -------
+    xarray.Dataset
+        DISDRODB L0B Dataset.
+
+    Raises
+    ------
+    ValueError
+        Input parameters can not be used or the raw file can not be processed.
+
+    """
+    import xarray as xr
+
+    # Check input list
+    if isinstance(filepaths, str):
+        filepaths = [filepaths]
+    if len(filepaths) == 0:
+        raise ValueError("'filepaths' must contains at least 1 filepath.")
+
+    # ------------------------------------------------------.
+    # Loop over all raw files
+    n_files = len(filepaths)
+    processed_file_counter = 0
+    list_skipped_files_msg = []
+    list_ds = []
+    for filepath in filepaths:
+        # Try read the raw netCDF file
+        try:
+            ds = reader(filepath, logger=logger)
+            # Sanitize the dataframe
+            ds = sanitize_ds(
+                ds=ds,
+                sensor_name=sensor_name,
+                metadata=metadata,
+                issue_dict=issue_dict,
+                verbose=verbose,
+                logger=logger,
+            )
+            # Append dataframe to the list
+            list_ds.append(ds)
+            # Update the logger
+            processed_file_counter += 1
+            msg = f"Raw file '{filepath}' processed successfully ({processed_file_counter}/{n_files})."
+            log_info(logger=logger, msg=msg, verbose=verbose)
+
+        # Skip the file if the processing fails
+        except Exception as e:
+            # Update the logger
+            msg = f"{filepath} has been skipped. The error is: {e}."
+            log_error(logger=logger, msg=msg, verbose=verbose)
+            list_skipped_files_msg.append(msg)
+
+    # Update logger
+    msg = f"{len(list_skipped_files_msg)} of {n_files} have been skipped."
+    log_info(logger=logger, msg=msg, verbose=verbose)
+
+    # Check if there are files to concatenate
+    if len(list_ds) == 0:
+        raise ValueError("Any raw file could be read!")
+
+    ##----------------------------------------------------------------.
+    # Concatenate the datasets
+    list_ds = [ds.chunk({"time": -1}) for ds in list_ds]
+    ds = xr.concat(list_ds, dim="time", join="outer", compat="no_conflicts", combine_attrs="override").sortby("time")
+    ds = ds.compute()
+
+    # Return the dataframe
     return ds

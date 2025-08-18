@@ -17,10 +17,10 @@
 """DISDRODB software."""
 
 import contextlib
-import importlib
 import os
 from importlib.metadata import PackageNotFoundError, version
 
+import disdrodb.accessor  # noqa
 from disdrodb._config import config  # noqa
 from disdrodb.api.configs import available_sensor_names
 from disdrodb.api.io import (
@@ -35,11 +35,26 @@ from disdrodb.api.search import (
     available_data_sources,
     available_stations,
 )
-from disdrodb.configs import define_disdrodb_configs as define_configs
-from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
+from disdrodb.configs import (
+    define_configs,
+    get_data_archive_dir,
+    get_metadata_archive_dir,
+    get_model_options,
+    get_product_options,
+    get_scattering_table_dir,
+)
 from disdrodb.data_transfer.download_data import download_archive, download_station
 from disdrodb.docs import open_documentation, open_sensor_documentation
-from disdrodb.l0.l0_reader import available_readers, get_reader, get_station_reader
+from disdrodb.l0 import (
+    available_readers,
+    generate_l0a,
+    generate_l0b,
+    generate_l0b_from_nc,
+    get_reader,
+    get_station_reader,
+)
+from disdrodb.l1 import generate_l1
+from disdrodb.l2 import generate_l2_radar, generate_l2e, generate_l2m
 from disdrodb.metadata import download_metadata_archive, read_metadata_archive, read_station_metadata
 from disdrodb.metadata.checks import (
     check_metadata_archive,
@@ -62,22 +77,25 @@ from disdrodb.routines import (
     run_l2m,
     run_l2m_station,
 )
+from disdrodb.utils.manipulations import convert_from_decibel as idecibel
+from disdrodb.utils.manipulations import convert_to_decibel as decibel
 
-ARCHIVE_VERSION = "V0"
-SOFTWARE_VERSION = "V" + importlib.metadata.version("disdrodb")
-CONVENTIONS = "CF-1.10, ACDD-1.3"
-
-# Define coordinates names
-# TODO: make it configurable
-DIAMETER_COORDS = ["diameter_bin_center", "diameter_bin_width", "diameter_bin_lower", "diameter_bin_upper"]
-VELOCITY_COORDS = ["velocity_bin_center", "velocity_bin_width", "velocity_bin_lower", "velocity_bin_upper"]
-VELOCITY_DIMENSION = "velocity_bin_center"
-DIAMETER_DIMENSION = "diameter_bin_center"
-OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "PWS100"]
-IMPACT_SENSORS = ["RD80"]
-
-
-PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]
+from .constants import (
+    ARCHIVE_VERSION,
+    CONVENTIONS,
+    COORDINATES,
+    DIAMETER_COORDS,
+    DIAMETER_DIMENSION,
+    GEOLOCATION_COORDS,
+    IMPACT_SENSORS,
+    OPTICAL_SENSORS,
+    PRODUCTS,
+    PRODUCTS_ARGUMENTS,
+    PRODUCTS_REQUIREMENTS,
+    SOFTWARE_VERSION,
+    VELOCITY_COORDS,
+    VELOCITY_DIMENSION,
+)
 
 
 def available_products():
@@ -85,21 +103,21 @@ def available_products():
     return PRODUCTS
 
 
-PRODUCTS_ARGUMENTS = {
-    "L2E": ["rolling", "sample_interval"],
-    "L2M": ["rolling", "sample_interval", "model_name"],
-}
-
-PRODUCTS_REQUIREMENTS = {
-    "L0A": "RAW",
-    "L0B": "L0A",
-    "L0C": "L0B",
-    "L1": "L0C",
-    "L2E": "L1",
-    "L2M": "L2E",
-}
-
 __all__ = [
+    "ARCHIVE_VERSION",
+    "CONVENTIONS",
+    "COORDINATES",
+    "DIAMETER_COORDS",
+    "DIAMETER_DIMENSION",
+    "GEOLOCATION_COORDS",
+    "IMPACT_SENSORS",
+    "OPTICAL_SENSORS",
+    "PRODUCTS",
+    "PRODUCTS_ARGUMENTS",
+    "PRODUCTS_REQUIREMENTS",
+    "SOFTWARE_VERSION",
+    "VELOCITY_COORDS",
+    "VELOCITY_DIMENSION",
     "available_campaigns",
     "available_data_sources",
     "available_readers",
@@ -108,15 +126,27 @@ __all__ = [
     "check_metadata_archive",
     "check_metadata_archive_geolocation",
     "check_station_metadata",
+    "decibel",
     "define_configs",
     "download_archive",
     "download_metadata_archive",
     "download_station",
     "find_files",
+    "generate_l0a",
+    "generate_l0b",
+    "generate_l0b_from_nc",
+    "generate_l1",
+    "generate_l2_radar",
+    "generate_l2e",
+    "generate_l2m",
     "get_data_archive_dir",
     "get_metadata_archive_dir",
+    "get_model_options",
+    "get_product_options",
     "get_reader",
+    "get_scattering_table_dir",
     "get_station_reader",
+    "idecibel",
     "open_dataset",
     "open_documentation",
     "open_logs_directory",

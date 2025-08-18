@@ -17,12 +17,24 @@
 """Implement PSD scattering routines."""
 
 
-from disdrodb.scattering.axis_ratio import available_axis_ratio, get_axis_ratio
-from disdrodb.scattering.routines import available_radar_bands, get_radar_parameters
+from disdrodb.scattering.axis_ratio import available_axis_ratio_models, get_axis_ratio_model
+from disdrodb.scattering.permittivity import available_permittivity_models, get_refractive_index
+from disdrodb.scattering.routines import (
+    RADAR_OPTIONS,
+    RADAR_VARIABLES,
+    available_radar_bands,
+    get_radar_parameters,
+    load_scatterer,
+)
 
 __all__ = [
-    "available_axis_ratio",
+    "RADAR_OPTIONS",
+    "RADAR_VARIABLES",
+    "available_axis_ratio_models",
+    "available_permittivity_models",
     "available_radar_bands",
-    "get_axis_ratio",
+    "get_axis_ratio_model",
     "get_radar_parameters",
+    "get_refractive_index",
+    "load_scatterer",
 ]

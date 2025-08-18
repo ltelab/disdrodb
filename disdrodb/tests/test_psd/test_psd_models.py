@@ -21,7 +21,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from disdrodb import DIAMETER_DIMENSION
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.psd.models import (
     BinnedPSD,
     ExponentialPSD,
@@ -126,12 +126,16 @@ class TestLognormalPSD:
     def test_lognormal_scalar_parameters(self):
         """Check PSD with scalar parameters inputs produce valid PSD values."""
         psd = LognormalPSD(Nt=1.0, mu=0.0, sigma=1.0)
+
         # Check input scalar
         np.testing.assert_allclose(psd(1.0), 0.398942, atol=1e-5)
+
         # Check input numpy array
         np.testing.assert_allclose(psd(np.array([1.0, 2.0])), [0.39894228, 0.15687402], atol=1e-5)
+
         # Check input dask array
         np.testing.assert_allclose(psd(dask.array.from_array([1.0, 2.0])), [0.39894228, 0.15687402], atol=1e-5)
+
         # Check input xarray
         D = xr.DataArray([1.0, 2.0], dims=[DIAMETER_DIMENSION])
         output = psd(D)
@@ -144,23 +148,27 @@ class TestLognormalPSD:
         mu = xr.DataArray([1.0, 2.0], dims="time")
         sigma = xr.DataArray([1.0, 1.0], dims="time")
         psd = LognormalPSD(Nt=Nt, mu=mu, sigma=sigma)
+
         # Check input scalar
         output = psd(1.0)
         assert isinstance(output, xr.DataArray)
         assert output.sizes == {"time": 2}
         np.testing.assert_allclose(output.to_numpy(), np.array([0.24197072, 0.10798193]), atol=1e-5)
+
         # Check input numpy array diameters
         D = [1.0, 2.0, 3.0]
         output = psd(D)
         assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
         expected_array = np.array([[0.24197072, 0.1902978, 0.13233575], [0.10798193, 0.16984472, 0.17716858]])
         np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
+
         # Check input dask array diameters
         D = dask.array.from_array([1.0, 2.0, 3.0])
         output = psd(D)
         assert output.sizes == {"time": 2, DIAMETER_DIMENSION: 3}
         expected_array = np.array([[0.24197072, 0.1902978, 0.13233575], [0.10798193, 0.16984472, 0.17716858]])
         np.testing.assert_allclose(output.to_numpy(), expected_array, atol=1e-5)
+
         # Check input xarray
         D = xr.DataArray([1.0, 2.0, 3.0], dims=[DIAMETER_DIMENSION])
         output = psd(D)

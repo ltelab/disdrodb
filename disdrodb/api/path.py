@@ -20,11 +20,12 @@
 import os
 
 from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.utils.directories import check_directory_exists
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
     get_file_start_end_time,
-    seconds_to_acronym,
+    seconds_to_temporal_resolution,
 )
 
 ####--------------------------------------------------------------------------.
@@ -68,8 +69,6 @@ def define_disdrodb_path(
     dir_path : str
         Directory path
     """
-    from disdrodb import ARCHIVE_VERSION
-
     if len(campaign_name) > 0 and len(data_source) == 0:
         raise ValueError("If campaign_name is specified, data_source must be specified.")
 
@@ -474,16 +473,16 @@ def define_product_dir_tree(
         sample_interval = product_kwargs.get("sample_interval")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
-        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        return os.path.join(sample_interval_acronym)
+        temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+        return os.path.join(temporal_resolution)
     if product == "L2M":
         rolling = product_kwargs.get("rolling")
         sample_interval = product_kwargs.get("sample_interval")
         model_name = product_kwargs.get("model_name")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
-        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        return os.path.join(model_name, sample_interval_acronym)
+        temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+        return os.path.join(model_name, temporal_resolution)
     raise ValueError(f"The product {product} is not defined.")
 
 
@@ -655,15 +654,15 @@ def define_data_dir(
 #### Filenames for DISDRODB products
 
 
-def define_accumulation_acronym(seconds, rolling):
-    """Define the accumulation acronnym.
+def define_temporal_resolution(seconds, rolling):
+    """Define the DISDRODB product temporal resolution.
 
-    Prefix the accumulation interval acronym with ROLL if rolling=True.
+    Prefix the measurement interval with ROLL if rolling=True.
     """
-    accumulation_acronym = seconds_to_acronym(seconds)
+    temporal_resolution = seconds_to_temporal_resolution(seconds)
     if rolling:
-        accumulation_acronym = f"ROLL{accumulation_acronym}"
-    return accumulation_acronym
+        temporal_resolution = f"ROLL{temporal_resolution}"
+    return temporal_resolution
 
 
 ####--------------------------------------------------------------------------.
@@ -711,32 +710,31 @@ def define_filename(
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
     from disdrodb.api.checks import check_product, check_product_kwargs
 
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
 
     # -----------------------------------------.
-    # TODO: Define sample_interval_acronym
-    # - ADD sample_interval_acronym also to L0A and L0B
-    # - Add sample_interval_acronym also to L0C and L1
+    # TODO: Define temporal_resolution
+    # - ADD temporal_resolution also to L0A and L0B
+    # - Add temporal_resolution also to L0C and L1
 
     # -----------------------------------------.
-    # Define product acronym
-    product_acronym = f"{product}"
+    # Define product name
+    product_name = f"{product}"
     if product in ["L2E", "L2M"]:
         rolling = product_kwargs.get("rolling")
         sample_interval = product_kwargs.get("sample_interval")
-        sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
-        product_acronym = f"L2E.{sample_interval_acronym}"
+        temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+        product_name = f"L2E.{temporal_resolution}"
     if product in ["L2M"]:
         model_name = product_kwargs.get("model_name")
-        product_acronym = f"L2M_{model_name}.{sample_interval_acronym}"
+        product_name = f"L2M_{model_name}.{temporal_resolution}"
 
     # -----------------------------------------.
     # Define base filename
-    filename = f"{product_acronym}.{campaign_name}.{station_name}"
+    filename = f"{product_name}.{campaign_name}.{station_name}"
 
     # -----------------------------------------.
     # Add prefix
@@ -785,8 +783,6 @@ def define_l0a_filename(df, campaign_name: str, station_name: str) -> str:
     str
         L0A file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     starting_time, ending_time = get_file_start_end_time(df)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
@@ -812,8 +808,6 @@ def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
@@ -839,18 +833,14 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
-    sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
+    temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = ARCHIVE_VERSION
-    filename = (
-        f"L0C.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
-    )
+    filename = f"L0C.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return filename
 
 
@@ -871,18 +861,14 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
     str
         L1 file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
     # TODO: add sample_interval as argument
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
-    sample_interval_acronym = define_accumulation_acronym(sample_interval, rolling=False)
+    temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = ARCHIVE_VERSION
-    filename = (
-        f"L1.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
-    )
+    filename = f"L1.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return filename
 
 
@@ -903,16 +889,12 @@ def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interv
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
-    sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
+    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = ARCHIVE_VERSION
-    filename = (
-        f"L2E.{sample_interval_acronym}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
-    )
+    filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     return filename
 
 
@@ -940,15 +922,13 @@ def define_l2m_filename(
     str
         L0B file name.
     """
-    from disdrodb import ARCHIVE_VERSION
-
-    sample_interval_acronym = define_accumulation_acronym(seconds=sample_interval, rolling=rolling)
+    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
     starting_time, ending_time = get_file_start_end_time(ds)
     starting_time = starting_time.strftime("%Y%m%d%H%M%S")
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = ARCHIVE_VERSION
     filename = (
-        f"L2M_{model_name}.{sample_interval_acronym}.{campaign_name}."
+        f"L2M_{model_name}.{temporal_resolution}.{campaign_name}."
         + f"{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
     )
     return filename

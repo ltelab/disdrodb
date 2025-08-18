@@ -20,6 +20,8 @@
 import numpy as np
 import pandas as pd
 
+from disdrodb.utils.warnings import suppress_warnings
+
 
 def log_arange(start, stop, log_step=0.1, base=10):
     """
@@ -47,7 +49,39 @@ def log_arange(start, stop, log_step=0.1, base=10):
     log_start = np.log(start) / np.log(base)
     log_stop = np.log(stop) / np.log(base)
 
-    log_values = np.arange(log_start, log_stop, log_step)
+    log_values = np.arange(log_start, log_stop + log_step / 2, log_step)
+    return base**log_values
+
+
+def log_linspace(start, stop, n_bins, base=10):
+    """
+    Return numbers spaced evenly on a log scale between start and stop.
+
+    Parameters
+    ----------
+    start : float
+        The starting value of the sequence (must be > 0).
+    stop : float
+        The end value of the sequence (must be > 0).
+    n_bins : int
+        The number of points to generate (including start and stop).
+    base : float
+        The logarithmic base (default is 10).
+
+    Returns
+    -------
+    np.ndarray
+        Array of values spaced evenly in log space.
+    """
+    if start <= 0 or stop <= 0:
+        raise ValueError("Both start and stop must be > 0 for log spacing.")
+    if n_bins < 2:
+        raise ValueError("n_bins must be >= 2 to include start and stop values.")
+
+    log_start = np.log(start) / np.log(base)
+    log_stop = np.log(stop) / np.log(base)
+
+    log_values = np.linspace(log_start, log_stop, n_bins)
     return base**log_values
 
 
@@ -100,6 +134,9 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
     if len(df) == 0:
         raise ValueError("No valid data points after removing NaN values")
 
+    # Keep only data within bin range
+    df = df[(df[column] >= bins[0]) & (df[column] < bins[-1])]
+
     # Create binned columns with explicit handling of out-of-bounds values
     df[f"{column}_binned"] = pd.cut(df[column], bins=bins, include_lowest=True)
 
@@ -134,7 +171,7 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
                 (f"{prefix}std", "std"),
                 (f"{prefix}min", "min"),
                 (f"{prefix}max", "max"),
-                (f"{prefix}mad", lambda s: np.median(np.abs(s - np.median(s)))),
+                (f"{prefix}mad", lambda s: (s - s.median()).abs().median()),
             ]
             if i == 0:
                 list_stats.append(("count", "count"))
@@ -142,7 +179,8 @@ def compute_1d_histogram(df, column, variables=None, bins=10, labels=None, prefi
             list_stats = [("count", "count")]
 
         # Compute statistics
-        df_stats = df_grouped[var].agg(list_stats)
+        with suppress_warnings():
+            df_stats = df_grouped[var].agg(list_stats)
 
         # Compute other variable statistics
         if variables_specified:
@@ -253,8 +291,18 @@ def compute_2d_histogram(
         raise ValueError("No valid data points after removing NaN values")
 
     # Create binned columns with explicit handling of out-of-bounds values
-    df[f"{x}_binned"] = pd.cut(df[x], bins=x_bins, include_lowest=True)
-    df[f"{y}_binned"] = pd.cut(df[y], bins=y_bins, include_lowest=True)
+    df[f"{x}_binned"] = pd.cut(
+        df[x],
+        bins=pd.IntervalIndex.from_breaks(x_bins, closed="right"),
+        include_lowest=True,
+        ordered=True,
+    )
+    df[f"{y}_binned"] = pd.cut(
+        df[y],
+        bins=pd.IntervalIndex.from_breaks(y_bins, closed="right"),
+        include_lowest=True,
+        ordered=True,
+    )
 
     # Create complete IntervalIndex for both dimensions
     x_intervals = df[f"{x}_binned"].cat.categories
@@ -318,8 +366,8 @@ def compute_2d_histogram(
     df_stats = df_stats.reindex(full_index)
 
     # Determine coordinates
-    x_centers = x_intervals.mid
-    y_centers = y_intervals.mid
+    x_centers = np.array(x_intervals.mid)
+    y_centers = np.array(y_intervals.mid)
 
     # Use provided labels if available
     x_coords = x_labels if x_labels is not None else x_centers
@@ -336,6 +384,12 @@ def compute_2d_histogram(
 
     # Convert to dataset
     ds = df_stats.to_xarray()
+
+    # Convert Categorical coordinates to float if possible
+    if np.issubdtype(x_coords.dtype, np.number):
+        ds[f"{x}"] = ds[f"{x}"].astype(float)
+    if np.issubdtype(y_coords.dtype, np.number):
+        ds[f"{y}"] = ds[f"{y}"].astype(float)
 
     # Transpose arrays
     ds = ds.transpose(y, x)
