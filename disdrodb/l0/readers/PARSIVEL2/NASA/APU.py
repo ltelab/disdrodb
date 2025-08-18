@@ -17,7 +17,7 @@
 # -----------------------------------------------------------------------------.
 """This reader allows to read raw data from NASA APU stations.
 
-The reader allows to read raw  APU data from the following NASA campaigns: 
+The reader allows to read raw  APU data from the following NASA campaigns:
 
     - HYMEX
     - IFLOODS
