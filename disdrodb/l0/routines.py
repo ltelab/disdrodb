@@ -451,7 +451,6 @@ def _generate_l0c(
         ##--------------------------------------------------------------------.
         #### - Define logger file final directory
         if folder_partitioning != "":
-            print(day)
             dirtree = define_partitioning_tree(
                 time=datetime.datetime.strptime("2022-03-22", "%Y-%m-%d"),
                 folder_partitioning=folder_partitioning,
