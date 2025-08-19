@@ -17,6 +17,7 @@
 """DISDRODB Plotting Tools."""
 import matplotlib.pyplot as plt
 import numpy as np
+import psutil
 import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
 
@@ -211,6 +212,66 @@ def max_blend_images(ds_rgb, dim):
     return da
 
 
+def _create_denseline_grid(indices, ny, nx, nsamples):
+    # Assign 1 when line pass in a bin
+    valid = (indices >= 0) & (indices < ny)
+    s_idx, x_idx = np.nonzero(valid)
+    y_idx = indices[valid]
+
+    # ----------------------------------------------
+    ### Vectorized code with high memory footprint because of 3D array
+
+    # # Create 3D array with hits
+    # grid_3d = np.zeros((nsamples, ny, nx), dtype=np.int64)
+    # grid_3d[s_idx, y_idx, x_idx] = 1
+
+    # # Normalize by columns
+    # col_sums = grid_3d.sum(axis=1, keepdims=True)
+    # col_sums[col_sums == 0] = 1  # Avoid division by zero
+    # grid_3d = grid_3d / col_sums
+
+    # # Sum over samples
+    # grid = grid_3d.sum(axis=0)
+
+    # # Free memory
+    # del grid_3d
+
+    # ----------------------------------------------
+    ## Vectorized alternative with much lower memory footprint
+
+    # Count hits per (sample, y, x)
+    grid = np.zeros((ny, nx), dtype=np.float64)
+
+    # Compute per-sample-per-column counts
+    col_counts = np.zeros((nsamples, nx), dtype=np.int64)
+    np.add.at(col_counts, (s_idx, x_idx), 1)
+
+    # Define weights to normalize contributions, avoiding division by zero
+    # - Weight = 1 / (# hits per column, per sample)
+    col_counts[col_counts == 0] = 1
+    weights = 1.0 / col_counts[s_idx, x_idx]
+
+    # Accumulate weighted contributions
+    np.add.at(grid, (y_idx, x_idx), weights)
+
+    # Return 2D grid
+    return grid
+
+
+def _compute_block_size(ny, nx, dtype=np.float64, safety_margin=2e9):
+    """Compute maximum block size given available memory."""
+    avail_mem = psutil.virtual_memory().available - safety_margin
+
+    # Constant cost for final grid
+    base = ny * nx * np.dtype(dtype).itemsize
+
+    # Per-sample cost (worst case, includes col_counts + indices + weights)
+    per_sample = nx * 40
+
+    max_block = (avail_mem - base) // per_sample
+    return max(1, int(max_block))
+
+
 def compute_dense_lines(
     da: xr.DataArray,
     coord: str,
@@ -307,27 +368,37 @@ def compute_dense_lines(
     nx = len(x_bins) - 1
     ny = len(y_bins) - 1
     nsamples = arr.shape[0]
-    grid = np.zeros((ny, nx), dtype=float)
 
     # For each (series, x-index), find which y-bin it falls into:
     # - np.searchsorted(y_bins, value) gives the insertion index in y_bins;
     #   --> subtracting 1 yields the bin index.
     # If a value is not in y_bins, searchsorted returns 0, so idx = -1
+    # If a valueis NaN, the indices value will be ny
     indices = np.searchsorted(y_bins, arr) - 1  # (samples, nx)
 
-    # Assign 1 when line pass in a bin
-    valid = (indices >= 0) & (indices < ny)
-    s_idx, x_idx = np.nonzero(valid)
-    y_idx = indices[valid]
-    grid_3d = np.zeros((nsamples, ny, nx), dtype=int)
-    grid_3d[s_idx, y_idx, x_idx] = 1
+    # Compute unormalized DenseLines grid
+    # grid = _create_denseline_grid(
+    #     indices=indices,
+    #     ny=ny,
+    #     nx=nx,
+    #     nsamples=nsamples
+    # )
 
-    # Normalize by columns
-    col_sums = grid_3d.sum(axis=1, keepdims=True)
-    col_sums[col_sums == 0] = 1  # Avoid division by zero
-    grid_3d = grid_3d / col_sums
+    # Compute unormalized DenseLines grid by blocks to avoid running out of memory
+    # - Define block size based on available RAM memory
+    block = _compute_block_size(ny=ny, nx=nx, dtype=np.float64, safety_margin=4e9)
+    list_grid = []
+    for i in range(0, nsamples, block):
+        block_start_idx = i
+        block_end_idx = min(i + block, nsamples)
+        block_indices = indices[block_start_idx:block_end_idx, :]
+        block_nsamples = block_end_idx - block_start_idx
+        block_grid = _create_denseline_grid(indices=block_indices, ny=ny, nx=nx, nsamples=block_nsamples)
+        list_grid.append(block_grid)
 
-    # Normalize over samples
+    grid_3d = np.stack(list_grid, axis=0)
+
+    # Finalize sum over samples
     grid = grid_3d.sum(axis=0)
 
     # Normalize grid

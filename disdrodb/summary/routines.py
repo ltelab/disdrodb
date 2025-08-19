@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities to create summary statistics."""
+import gc
 import os
 import subprocess
 import tempfile
@@ -623,8 +624,6 @@ def plot_drop_spectrum(drop_number, norm=None, add_colorbar=True, title="Drop Sp
         add_colorbar=add_colorbar,
         cbar_kwargs={"label": "Number of particles"},
     )
-    p.axes.set_yticks([])
-    p.axes.set_yticklabels([])
     p.axes.set_xlabel("Diamenter [mm]")
     p.axes.set_ylabel("Fall velocity [m/s]")
     p.axes.set_title(title)
@@ -782,7 +781,7 @@ def plot_dsd_density(df_nd, diameter_bin_edges, figsize=(8, 8), dpi=300):
     return p
 
 
-def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
+def plot_dsd_with_dense_lines(drop_number_concentration, r, figsize=(8, 8), dpi=300):
     """Plot N(D) ~ D using dense lines."""
     # Define intervals for rain rates
     r_bins = [0, 2, 5, 10, 50, 100, 500]
@@ -794,13 +793,13 @@ def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
     # Resample N(D) to high resolution !
     # - quadratic, pchip
     da = resample_drop_number_concentration(
-        ds["drop_number_concentration"],
+        drop_number_concentration.compute(),
         diameter_bin_edges=diameter_bin_edges,
         method="linear",
     )
     ds_resampled = xr.Dataset(
         {
-            "R": ds["R"],
+            "R": r.compute(),
             "drop_number_concentration": da,
         },
     )
@@ -834,14 +833,17 @@ def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
             y_bins=y_bins,
             normalization="max",
         )
+
         # Define cmap
         cmap = cmap_list[i]
+
         # Map colors and transparency
         # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="linear")
         # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="exp")
         # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="log")
         da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="sqrt")
 
+        # Add to dictionary
         dict_rgb[i] = da_rgb
 
     # Blend images with max-alpha
@@ -1347,7 +1349,7 @@ def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, fig
 
     # Nt and Nw range
     nt_bins = log_arange(1, 100_000, log_step=log_step, base=10)
-    nw_bins = log_arange(1, 100_000, log_step=log_step, base=10)
+    nw_bins = log_arange(1, 1_000_000, log_step=log_step, base=10)
     nw_lim = (10, 1_000_000)
     nt_lim = (1, 100_000)
 
@@ -3711,12 +3713,15 @@ def prepare_summary_dataset(ds, velocity_method="fall_velocity", source="drop_nu
     # Select only timesteps with R > 0
     # - We save R with 2 decimals accuracy ... so 0.01 is the smallest value
     rainy_timesteps = np.logical_and(ds["Rm"].compute() >= 0.01, ds["R"].compute() >= 0.01)
-    ds = ds.isel(time=ds["Rm"].compute() >= rainy_timesteps)
+    ds = ds.isel(time=rainy_timesteps)
     return ds
 
 
 def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, station_name):
     """Generate station summary using L2E dataset."""
+    # Create summary directory if does not exist
+    os.makedirs(summary_dir_path, exist_ok=True)
+
     ####---------------------------------------------------------------------.
     #### Prepare dataset
     ds = prepare_summary_dataset(ds)
@@ -4034,6 +4039,11 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     # TODO:
 
     ####------------------------------------------------------------------------.
+    #### Free space - Remove df from memory
+    del df
+    gc.collect()
+
+    ####------------------------------------------------------------------------.
     #### Create N(D) densities
     df_nd = create_nd_dataframe(ds)
 
@@ -4049,18 +4059,6 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     p.figure.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 
-    #### - Plot N(D) vs D with dense lines
-    filename = define_filename(
-        prefix="N(D)_DenseLines",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    p = plot_dsd_with_dense_lines(ds)
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
     #### - Plot N(D)/Nw vs D/Dm
     filename = define_filename(
         prefix="N(D)_Normalized",
@@ -4070,6 +4068,29 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
         station_name=station_name,
     )
     p = plot_normalized_dsd_density(df_nd)
+    p.figure.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
+
+    #### Free space - Remove df_nd from memory
+    del df_nd
+    gc.collect()
+
+    #### - Plot N(D) vs D with DenseLines
+    # Extract required variables and free memory
+    drop_number_concentration = ds["drop_number_concentration"].compute().copy()
+    r = ds["R"].compute().copy()
+    del ds
+    gc.collect()
+
+    # Create figure
+    filename = define_filename(
+        prefix="N(D)_DenseLines",
+        extension="png",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    p = plot_dsd_with_dense_lines(drop_number_concentration=drop_number_concentration, r=r)
     p.figure.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 
