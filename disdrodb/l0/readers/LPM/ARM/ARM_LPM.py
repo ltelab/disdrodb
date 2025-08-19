@@ -31,6 +31,13 @@ def reader(
     ds = open_raw_netcdf_file(filepath=filepath, logger=logger)
 
     ##------------------------------------------------------------------------.
+    # Check correct dimensions
+    if ds.sizes["particle_diameter"] != 22 or ds.sizes["particle_fall_velocity"] != 20:
+        raise ValueError(
+            f"Dimensions of {filepath} {ds.sizes} do not match the expected dimensions for LPM sensor.",
+        )
+
+    ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Define dictionary mapping dataset variables to select and rename
     dict_names = {
