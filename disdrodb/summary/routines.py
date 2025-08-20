@@ -612,8 +612,13 @@ def plot_drop_spectrum(drop_number, norm=None, add_colorbar=True, title="Drop Sp
     """Plot the drop spectrum."""
     cmap = plt.get_cmap("Spectral_r").copy()
     cmap.set_under("none")
+    if "time" in drop_number.dims: 
+        drop_number = drop_number.sum(dim="time")
     if norm is None:
-        norm = LogNorm(vmin=1, vmax=None)
+        if drop_number.sum() > 0:
+            norm = LogNorm(vmin=1, vmax=None)
+        else: 
+            norm = None
 
     p = drop_number.plot.pcolormesh(
         x=DIAMETER_DIMENSION,
@@ -3732,6 +3737,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     ####---------------------------------------------------------------------.
     #### Create drop spectrum figures and statistics
     # Compute sum of raw and filtered spectrum over time
+
     raw_drop_number = ds["raw_drop_number"].sum(dim="time")
     drop_number = ds["drop_number"].sum(dim="time")
 
