@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -79,17 +78,16 @@ def reader(
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove rows with invalid length
     # df = df[df["TO_BE_PARSED"].str.len().isin([4664])]
-    
+
     # Count number of delimiters to select valid rows
     df = df[df["TO_BE_PARSED"].str.count(";") == 1107]
-   
 
     # Split by ; delimiter
     df = df["TO_BE_PARSED"].str.split(";", expand=True, n=19)
 
     # Assign column names
     names = [
-        "date", 
+        "date",
         "time",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
@@ -98,13 +96,13 @@ def reader(
         # "weather_code_metar_4678",
         "reflectivity_32bit",
         "mor_visibility",
-        "sampling_interval",
+        "sample_interval",
         "laser_amplitude",
         "number_particles",
         "sensor_temperature",
         "sensor_serial_number",
         "firmware_iop",
-        "sensor_heating_current"
+        "sensor_heating_current",
         "sensor_battery_voltage",
         "sensor_status",
         "station_name",
@@ -114,20 +112,25 @@ def reader(
     ]
 
     df.columns = names
-    # Add valid timestep
-    # Create dataframe
-    df_data["time"] = df_time.to_numpy()
 
-    df["time"] = pd.to_datetime(df_data["time"], format="%Y-%m-%d %H:%M:%S")
+    # Define time in datetime format
+    time_str = df["date"] + " " + df["time"]
+    df["time"] = pd.to_datetime(time_str, format="%d.%m.%Y %H:%M:%S", errors="coerce")
 
- Field N VED (log10(1/m3mm)); Field v (m/s); Raw data (1-32 number particles 1.class, 33-64 number particles 2.class, ...)
- 
     # Add raw array
-    df["raw_drop_concentration"] = df["RAW_TO_PARSE"].str[:224]
-    df["raw_drop_average_velocity"] = df["RAW_TO_PARSE"].str[224:448]
-    df["raw_drop_number"] = df["RAW_TO_PARSE"].str[448:]
+    df["raw_drop_concentration"] = df["ARRAY_TO_SPLIT"].str[:224]
+    df["raw_drop_average_velocity"] = df["ARRAY_TO_SPLIT"].str[224:448]
+    df["raw_drop_number"] = df["ARRAY_TO_SPLIT"].str[448:]
 
     # Drop columns not agreeing with DISDRODB L0 standards
-    df = df.drop(columns=["station_name", "RAW_TO_PARSE", "unknown1"])
+    columns_to_drop = [
+        "date",
+        "station_name",
+        "firmware_iop",
+        "ARRAY_TO_SPLIT",
+        "sensor_serial_number",
+        "sample_interval",
+    ]
+    df = df.drop(columns=columns_to_drop)
 
     return df

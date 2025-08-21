@@ -638,6 +638,32 @@ def run_l2m_station(
     _execute_cmd(cmd)
 
 
+def create_summary_station(
+    data_source,
+    campaign_name,
+    station_name,
+    parallel=False,
+    data_archive_dir=None,
+):
+    """Create summary figures and tables for a DISDRODB station."""
+    # Define command
+    cmd = " ".join(
+        [
+            "disdrodb_create_summary_station",
+            # Station arguments
+            data_source,
+            campaign_name,
+            station_name,
+            "--data_archive_dir",
+            str(data_archive_dir),
+            "--parallel",
+            str(parallel),
+        ],
+    )
+    # Execute command
+    _execute_cmd(cmd)
+
+
 ####--------------------------------------------------------------------------.
 #### Run DISDRODB Archive Processing
 
@@ -1407,6 +1433,66 @@ def run_l2m(
             parallel=parallel,
         )
         print(f"{product} processing of {data_source} {campaign_name} {station_name} station ended.")
+
+
+def create_summary(
+    data_sources=None,
+    campaign_names=None,
+    station_names=None,
+    parallel=False,
+    data_archive_dir=None,
+):
+    """Create summary figures and tables for a set of DISDRODB station.
+
+    Parameters
+    ----------
+    data_sources : list
+        Name of data source(s) to process.
+        The name(s) must be UPPER CASE.
+        If campaign_names and station are not specified, process all stations.
+        The default value is ``None``.
+    campaign_names : list
+        Name of the campaign(s) to process.
+        The name(s) must be UPPER CASE.
+        The default value is ``None``.
+    station_names : list
+        Station names to process.
+        The default value is ``None``.
+    data_archive_dir : str (optional)
+        The directory path where the DISDRODB Data Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``data_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    """
+    # Get list of available stations
+    list_info = available_stations(
+        # DISDRODB root directories
+        data_archive_dir=data_archive_dir,
+        # Stations arguments
+        data_sources=data_sources,
+        campaign_names=campaign_names,
+        station_names=station_names,
+        # Search options
+        product="L2E",
+        product_kwargs={"rolling": False, "sample_interval": 60},
+        raise_error_if_empty=True,
+    )
+
+    # Loop over stations
+    print(f"Creation of summaries for {len(list_info)} stations has started.")
+    for data_source, campaign_name, station_name in list_info:
+        # Run processing
+        create_summary_station(
+            # DISDRODB root directories
+            data_archive_dir=data_archive_dir,
+            # Station arguments
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Processing option
+            parallel=parallel,
+        )
+    print("Creation of station summaries has terminated.")
 
 
 ####--------------------------------------------------------------------------.

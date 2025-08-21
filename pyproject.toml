@@ -119,6 +119,7 @@ disdrodb_run_l2m="disdrodb.cli.disdrodb_run_l2m:disdrodb_run_l2m"
 
 # Summary
 disdrodb_create_summary_station="disdrodb.cli.disdrodb_create_summary_station:disdrodb_create_summary_station"
+disdrodb_create_summary="disdrodb.cli.disdrodb_create_summary:disdrodb_create_summary"
 
 
 [tool.pytest.ini_options]

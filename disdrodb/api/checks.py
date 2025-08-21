@@ -331,54 +331,43 @@ def check_valid_fields(fields, available_fields, field_name, invalid_fields_poli
         fields = [fields]
     fields = np.unique(np.array(fields))
     invalid_fields_policy = check_invalid_fields_policy(invalid_fields_policy)
+
     # Check for invalid fields
     fields = np.array(fields)
     is_valid = np.isin(fields, available_fields)
     invalid_fields_values = fields[~is_valid].tolist()
     fields = fields[is_valid].tolist()
+
+    # If invalid fields, suggest corrections using difflib
+    if invalid_fields_values:
+
+        # Format invalid fields nicely (avoid single-element lists)
+        if len(invalid_fields_values) == 1:
+            invalid_fields_str = f"'{invalid_fields_values[0]}'"
+        else:
+            invalid_fields_str = f"{invalid_fields_values}"
+
+        # Prepare suggestion string
+        suggestions = []
+        for invalid in invalid_fields_values:
+            matches = difflib.get_close_matches(invalid, available_fields, n=1, cutoff=0.4)
+            if matches:
+                suggestions.append(f"Did you mean '{matches[0]}' instead of '{invalid}'?")
+        suggestion_msg = " " + " ".join(suggestions) if suggestions else ""
+
     # Error handling for invalid fields were found
     if invalid_fields_policy == "warn" and invalid_fields_values:
-        warnings.warn(f"Ignoring invalid {field_name}: {invalid_fields_values}", UserWarning, stacklevel=2)
+        msg = f"Ignoring invalid {field_name}: {invalid_fields_str}.{suggestion_msg}"
+        warnings.warn(msg, UserWarning, stacklevel=2)
     elif invalid_fields_policy == "raise" and invalid_fields_values:
-        raise ValueError(f"These {field_name} does not exist: {invalid_fields_values}.")
+        msg = f"These {field_name} do not exist: {invalid_fields_str}.{suggestion_msg}"
+        raise ValueError(msg)
     else:  # "ignore" silently drop invalid entries
         pass
     # If no valid fields left, raise error
     if len(fields) == 0:
         raise ValueError(f"All specified {field_name} do not exist !.")
     return fields
-
-
-def has_available_data(
-    data_source,
-    campaign_name,
-    station_name,
-    product,
-    data_archive_dir=None,
-    # Product Options
-    **product_kwargs,
-):
-    """Return ``True`` if data are available for the given product and station."""
-    # Define product directory
-    data_dir = define_data_dir(
-        product=product,
-        data_archive_dir=data_archive_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        # Directory options
-        check_exists=False,
-        # Product Options
-        **product_kwargs,
-    )
-    # If the product directory does not exists, return False
-    if not os.path.isdir(data_dir):
-        return False
-
-    # If no files, return False
-    filepaths = list_files(data_dir, recursive=True)
-    nfiles = len(filepaths)
-    return nfiles >= 1
 
 
 def check_station_inputs(
@@ -418,6 +407,38 @@ def check_station_inputs(
         raise ValueError(
             f"The {data_source} {campaign_name} campaign does not have a station named {station_name}. {suggestion}",
         )
+
+
+def has_available_data(
+    data_source,
+    campaign_name,
+    station_name,
+    product,
+    data_archive_dir=None,
+    # Product Options
+    **product_kwargs,
+):
+    """Return ``True`` if data are available for the given product and station."""
+    # Define product directory
+    data_dir = define_data_dir(
+        product=product,
+        data_archive_dir=data_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Directory options
+        check_exists=False,
+        # Product Options
+        **product_kwargs,
+    )
+    # If the product directory does not exists, return False
+    if not os.path.isdir(data_dir):
+        return False
+
+    # If no files, return False
+    filepaths = list_files(data_dir, recursive=True)
+    nfiles = len(filepaths)
+    return nfiles >= 1
 
 
 def check_data_availability(

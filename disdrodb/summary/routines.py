@@ -612,13 +612,10 @@ def plot_drop_spectrum(drop_number, norm=None, add_colorbar=True, title="Drop Sp
     """Plot the drop spectrum."""
     cmap = plt.get_cmap("Spectral_r").copy()
     cmap.set_under("none")
-    if "time" in drop_number.dims: 
+    if "time" in drop_number.dims:
         drop_number = drop_number.sum(dim="time")
     if norm is None:
-        if drop_number.sum() > 0:
-            norm = LogNorm(vmin=1, vmax=None)
-        else: 
-            norm = None
+        norm = LogNorm(vmin=1, vmax=None) if drop_number.sum() > 0 else None
 
     p = drop_number.plot.pcolormesh(
         x=DIAMETER_DIMENSION,
@@ -4105,8 +4102,14 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
 #### Wrappers
 
 
-def create_station_summary(data_source, campaign_name, station_name, parallel=False, data_archive_dir=None):
-    """Create summary figures and tables for a disdrometer station."""
+def create_station_summary(
+    data_source,
+    campaign_name,
+    station_name,
+    parallel=False,
+    data_archive_dir=None,
+):
+    """Create summary figures and tables for a DISDRODB station."""
     # Print processing info
     print(f"Creation of station summary for {data_source} {campaign_name} {station_name} has started.")
 
