@@ -295,6 +295,8 @@ def get_axis_ratio_thurai_2005(diameter):
     """
     Compute the axis ratio of raindrops using the Thurai et al. (2005) model.
 
+    This model is assumed to be valid only for particles up to 5 mm.
+
     Parameters
     ----------
     diameter : array-like
@@ -311,7 +313,6 @@ def get_axis_ratio_thurai_2005(diameter):
     J. Atmos. Oceanic Technol., 22, 966-978, https://doi.org/10.1175/JTECH1767.1
 
     """
-    # Valid between 1 and 5 mm
     axis_ratio = 0.9707 + 4.26e-2 * diameter - 4.29e-2 * diameter**2 + 6.5e-3 * diameter**3 - 3e-4 * diameter**4
     return axis_ratio
 
@@ -350,6 +351,9 @@ def get_axis_ratio_thurai_2007(diameter):
     # Combine axis ratio
     axis_ratio_below_1_5 = xr.where(diameter > 0.7, axis_ratio_below_1_5, axis_ratio_below_0_7)
     axis_ratio = xr.where(diameter > 1.5, axis_ratio_above_1_5, axis_ratio_below_1_5)
+
+    # Ensure np.nan is preserved in arrays
+    axis_ratio = xr.where(np.isnan(diameter), np.nan, axis_ratio)
     return axis_ratio
 
 
