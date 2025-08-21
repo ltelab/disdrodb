@@ -17,17 +17,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test permittivity models."""
-import pytest
-import numpy as np
 import dask.array as da
+import numpy as np
+import pytest
 import xarray as xr
-from disdrodb.scattering.permittivity import ( 
-    available_permittivity_models, 
-    get_refractive_index,
+
+from disdrodb.scattering.permittivity import (
+    available_permittivity_models,
     check_permittivity_model,
-    get_refractive_index_function,
-    get_rayleigh_dielectric_factor,
     get_rain_refractive_index_liebe1991,
+    get_rayleigh_dielectric_factor,
+    get_refractive_index,
+    get_refractive_index_function,
 )
 
 
@@ -67,50 +68,49 @@ class TestGetRefractiveIndex:
         frequency = 5.6
         result = get_refractive_index(np.nan, frequency=frequency, permittivity_model=model)
         assert np.isnan(result), f"Expected NaN for model {model}, got {result}"
-    
+
     def test_xarray_broadcasting_temperature_frequency(self, model):
         """Test get_refractive_index broadcasts temperature and frequency DataArrays to combined dims."""
         # Temperature along "temperature" dim
         temperature = np.arange(5, 10)
         temperature = xr.DataArray(temperature, dims="temperature", coords={"temperature": temperature})
-    
+
         # Frequency along "frequency" dim
         frequency = np.arange(10, 12)
         frequency = xr.DataArray(frequency, dims="frequency", coords={"frequency": frequency})
-    
+
         # Call function
         m = get_refractive_index(temperature=temperature, frequency=frequency, permittivity_model=model)
-    
+
         # Check dimensions
         assert m.dims == ("temperature", "frequency")
         assert m.shape == (temperature.size, frequency.size)
-        
+
     def test_numpy_both_inputs_size_gt1_raises(self, model):
         """Test get_refractive_index raises when both temperature and frequency are >1 with numpy arrays."""
         temp = np.array([0, 10, 20])
         freq = np.array([1, 2, 3])
-    
+
         with pytest.raises(ValueError, match="xarray.DataArray"):
             get_refractive_index(temp, frequency=freq, permittivity_model=model)
 
 
 @pytest.mark.parametrize(
-"model,temperature,frequency,expected",
-[
-    # Reference outputs (computed once from current implementation at T=20°C, f=5.6 GHz)
-    ("Liebe1991", 20.0, 5.6, 8.624863+1.29096j),
-    ("Liebe1991single", 20.0, 5.6, 8.626885+1.28699831j),
-    ("Ellison2005", 20.0, 5.6, 8.627059+1.298061j),
-    ("Turner2016", 20.0, 5.6, 8.6217850+1.303982j),
-]
+    ("model", "temperature", "frequency", "expected"),
+    [
+        # Reference outputs (computed once from current implementation at T=20°C, f=5.6 GHz)
+        ("Liebe1991", 20.0, 5.6, 8.624863 + 1.29096j),
+        ("Liebe1991single", 20.0, 5.6, 8.626885 + 1.28699831j),
+        ("Ellison2005", 20.0, 5.6, 8.627059 + 1.298061j),
+        ("Turner2016", 20.0, 5.6, 8.6217850 + 1.303982j),
+    ],
 )
 def test_get_refractive_index_expected_values(model, temperature, frequency, expected):
     """Test each permittivity model via get_refractive_index returns expected reference values."""
     result = get_refractive_index(temperature=temperature, frequency=frequency, permittivity_model=model)
-    assert np.isclose(result, expected, rtol=1e-6, atol=1e-8), (
-        f"Model {model} gave {result}, expected {expected}"
-    )
-    
+    assert np.isclose(result, expected, rtol=1e-6, atol=1e-8), f"Model {model} gave {result}, expected {expected}"
+
+
 class TestModelValidityRange:
     """Test validity range enforcement for Liebe1991 refractive index model."""
 
@@ -133,7 +133,7 @@ class TestModelValidityRange:
         """Test frequency above 1000 GHz raises ValueError."""
         with pytest.raises(ValueError):
             get_rain_refractive_index_liebe1991(temperature=20, frequency=2000)
-            
+
 
 class TestCheckPermittivityModel:
     """Test suite for check_permittivity_model."""
@@ -170,8 +170,8 @@ class TestGetRefractiveIndexFunction:
         """Test invalid model name raises ValueError."""
         with pytest.raises(ValueError):
             get_refractive_index_function("NotAModel")
-            
-            
+
+
 class TestRayleighDielectricFactor:
     """Test get_rayleigh_dielectric_factor function."""
 

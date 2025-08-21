@@ -17,29 +17,30 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test axis ratio models."""
-import pytest
-import numpy as np
 import dask.array as da
+import numpy as np
+import pytest
 import xarray as xr
-from disdrodb.scattering.axis_ratio import ( 
-    available_axis_ratio_models, 
-    get_axis_ratio,
+
+from disdrodb.scattering.axis_ratio import (
+    available_axis_ratio_models,
     check_axis_ratio_model,
-    get_axis_ratio_model, 
+    get_axis_ratio,
+    get_axis_ratio_model,
 )
 
 
 @pytest.mark.parametrize("model", available_axis_ratio_models())
 class TestGetAxisRatio:
     """Test suite for get_axis_ratio function across all models."""
-    
+
     @pytest.mark.parametrize("scalar", [0.5, 1, 3.2])
     def test_scalar_inputs(self, model, scalar):
-      """Test get_axis_ratio accepts float and int scalar inputs."""
-      result = get_axis_ratio(scalar, model=model)
-      expected = get_axis_ratio(np.array([scalar]), model=model)[0]
-      assert np.isclose(result, expected, rtol=1e-6, atol=1e-6)
-      
+        """Test get_axis_ratio accepts float and int scalar inputs."""
+        result = get_axis_ratio(scalar, model=model)
+        expected = get_axis_ratio(np.array([scalar]), model=model)[0]
+        assert np.isclose(result, expected, rtol=1e-6, atol=1e-6)
+
     @pytest.mark.parametrize("backend", ["numpy", "dask", "xarray"])
     def test_arrays_consistent_across_backends(self, model, backend):
         """Test get_axis_ratio returns identical values across numpy, dask, and xarray inputs."""
@@ -52,7 +53,11 @@ class TestGetAxisRatio:
         elif backend == "xarray":
             input_data = xr.DataArray(values, dims="diameter")
 
-        result = get_axis_ratio(input_data, model=model).compute() if hasattr(input_data, "compute") else get_axis_ratio(input_data, model=model)
+        result = (
+            get_axis_ratio(input_data, model=model).compute()
+            if hasattr(input_data, "compute")
+            else get_axis_ratio(input_data, model=model)
+        )
         np.testing.assert_allclose(result, get_axis_ratio(values, model=model), rtol=1e-6, atol=1e-6)
 
     def test_nan_propagation(self, model):
@@ -63,7 +68,7 @@ class TestGetAxisRatio:
 
 
 @pytest.mark.parametrize(
-    "model,diameter,expected",
+    ("model", "diameter", "expected"),
     [
         # Reference outputs precomputed at diameter=2.0 mm
         ("Thurai2005", 2.0, 0.93150),
@@ -73,14 +78,12 @@ class TestGetAxisRatio:
         ("Pruppacher1970", 2.0, 0.906),
         ("Beard1987", 2.0, 0.92759279),
         ("Andsager1999", 2.0, 0.92759),
-    ]
+    ],
 )
 def test_get_axis_ratio_expected_values(model, diameter, expected):
     """Test each axis ratio model via get_axis_ratio returns expected reference values."""
     result = get_axis_ratio(diameter, model=model)
-    assert np.isclose(result, expected, rtol=1e-6, atol=1e-5), (
-        f"Model {model} gave {result}, expected {expected}"
-    )
+    assert np.isclose(result, expected, rtol=1e-6, atol=1e-5), f"Model {model} gave {result}, expected {expected}"
 
 
 @pytest.mark.parametrize("model", ["InvalidModel", "", None, 123])
@@ -89,7 +92,7 @@ def test_invalid_axis_ratio_models_raise(model):
     with pytest.raises(ValueError):
         check_axis_ratio_model(model)
 
-    
+
 @pytest.mark.parametrize("model", available_axis_ratio_models())
 def test_get_axis_ratio_model(model):
     """Test get_axis_ratio_model return a callable function."""

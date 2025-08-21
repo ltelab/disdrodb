@@ -528,7 +528,7 @@ def _estimate_model_radar_parameters(
     return output
 
 
-def get_psd_parameters(ds):
+def select_psd_parameters(ds):
     """Return a xr.Dataset with only the PSD parameters as variable."""
     psd_model = ds.attrs["disdrodb_psd_model"]
     required_parameters = get_required_parameters(psd_model)
@@ -587,14 +587,14 @@ def get_model_radar_parameters(
     # Retrieve psd model and parameters.
     psd_model = ds.attrs["disdrodb_psd_model"]
     required_parameters = get_required_parameters(psd_model)
-    ds_parameters = get_psd_parameters(ds)
+    ds_parameters = select_psd_parameters(ds)
 
     # Check argument validity
     axis_ratio_model = check_axis_ratio_model(axis_ratio_model)
     permittivity_model = check_permittivity_model(permittivity_model)
 
     # Create DataArray with PSD parameters
-    da_parameters = ds_parameters.to_array(dim="psd_parameters").compute()
+    da_parameters = ds_parameters.to_array(dim="psd_parameters")
 
     # Initialize scattering table
     scatterer = load_scatterer(
@@ -624,9 +624,10 @@ def get_model_radar_parameters(
         input_core_dims=[["psd_parameters"]],
         output_core_dims=[["radar_variables"]],
         vectorize=True,
-        dask="forbidden",
+        dask="parallelized",
         dask_gufunc_kwargs={
             "output_sizes": {"radar_variables": len(RADAR_VARIABLES)},
+            "allow_rechunk": True,
         },  # lengths of the new output_core_dims dimensions.
         output_dtypes=["float64"],
     )
@@ -695,7 +696,7 @@ def get_empirical_radar_parameters(
     ds = filter_diameter_bins(ds=ds, maximum_diameter=diameter_max)
 
     # Define inputs
-    da_drop_number_concentration = ds["drop_number_concentration"].compute()
+    da_drop_number_concentration = ds["drop_number_concentration"]  # .compute()
 
     # Set all zeros drop number concentration to np.nan
     # --> Otherwise inf can appear in the output
@@ -728,7 +729,6 @@ def get_empirical_radar_parameters(
         "bin_edges": bin_edges,
         "scatterer": scatterer,
     }
-
     # Loop over each PSD (not in parallel --> dask="forbidden")
     # - It costs much more to initiate the scatterer rather than looping over timesteps !
     da_radar = xr.apply_ufunc(
@@ -738,13 +738,12 @@ def get_empirical_radar_parameters(
         input_core_dims=[["diameter_bin_center"]],
         output_core_dims=[["radar_variables"]],
         vectorize=True,
-        dask="forbidden",
+        dask="parallelized",
         dask_gufunc_kwargs={
             "output_sizes": {"radar_variables": len(RADAR_VARIABLES)},
         },  # lengths of the new output_core_dims dimensions.
         output_dtypes=["float64"],
     )
-
     # Finalize radar dataset (add name, coordinates)
     ds_radar = _finalize_radar_dataset(
         da_radar=da_radar,
@@ -922,11 +921,11 @@ def get_radar_parameters(
     # Model-based simulation
     if "disdrodb_psd_model" in ds.attrs:
         func = get_model_radar_parameters
-        ds_subset = get_psd_parameters(ds).compute()
+        ds_subset = select_psd_parameters(ds)
     # Empirical PSD simulation
     else:
         func = get_empirical_radar_parameters
-        ds_subset = ds[["drop_number_concentration"]].compute()
+        ds_subset = ds[["drop_number_concentration"]]
 
     # Define default frequencies if not specified
     if frequency is None:
