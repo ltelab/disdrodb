@@ -22,6 +22,7 @@ import click
 
 from disdrodb.utils.cli import (
     click_data_archive_dir_option,
+    click_metadata_archive_dir_option,
     click_stations_options,
     parse_archive_dir,
     parse_arg_to_list,
@@ -36,6 +37,7 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click.command()
 @click_stations_options
 @click_data_archive_dir_option
+@click_metadata_archive_dir_option
 @click.option("-p", "--parallel", type=bool, show_default=True, default=False, help="Read files in parallel")
 def disdrodb_create_summary(
     # Stations options
@@ -46,6 +48,7 @@ def disdrodb_create_summary(
     parallel=False,
     # DISDRODB root directories
     data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
 ):
     r"""Create summary figures and tables for a specific set of DISDRODB stations.
 
@@ -91,6 +94,7 @@ def disdrodb_create_summary(
         parallel=parallel,
         # DISDRODB root directory
         data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
     )
 
     # -------------------------------------------------------------------------.
