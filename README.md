@@ -143,7 +143,7 @@ disdrodb_run_l2m
 
 ### 💫 Analyze Analysis-Ready Products
 
-The software’s `open_dataset` function **lazily** opens all station files of a given product:
+The software's `open_dataset` function **lazily** opens all station files of a given product:
 
 ```python
 import disdrodb

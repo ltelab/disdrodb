@@ -18,23 +18,25 @@
 # -----------------------------------------------------------------------------.
 """Test scattering routines."""
 import re
-import pytest
+
 import numpy as np
+import pytest
 import xarray as xr
-from disdrodb.scattering.routines import ( 
+
+from disdrodb import is_pytmatrix_available
+from disdrodb.scattering import RADAR_VARIABLES, get_radar_parameters
+from disdrodb.scattering.routines import (
+    _check_frequency,
     available_radar_bands,
     check_radar_band,
-    _check_frequency,
     ensure_numerical_frequency,
-    wavelength_to_frequency,
+    frequency_dict,
     frequency_to_wavelength,
     get_backward_geometry,
     get_forward_geometry,
-    frequency_dict,
     get_list_simulations_params,
+    wavelength_to_frequency,
 )
-from disdrodb.scattering import get_radar_parameters, RADAR_VARIABLES
-from disdrodb import is_pytmatrix_available
 from disdrodb.tests.fake_datasets import create_template_dataset
 
 
@@ -116,7 +118,7 @@ class TestGeometry:
         expected = (theta, theta, 0.0, 0.0, 0.0, 0.0)
         result = get_forward_geometry(angle)
         assert result == expected
-        
+
 
 class TestListSimulationParams:
     """Test suite for get_list_simulations_params."""
@@ -137,8 +139,14 @@ class TestListSimulationParams:
         assert len(params) == 1
         d = params[0]
         expected_keys = {
-            "frequency", "num_points", "diameter_max", "canting_angle_std",
-            "axis_ratio_model", "permittivity_model", "water_temperature", "elevation_angle"
+            "frequency",
+            "num_points",
+            "diameter_max",
+            "canting_angle_std",
+            "axis_ratio_model",
+            "permittivity_model",
+            "water_temperature",
+            "elevation_angle",
         }
         assert set(d.keys()) == expected_keys
         assert d["frequency"] == 5.6
@@ -224,13 +232,14 @@ class TestListSimulationParams:
         )
         freqs = [p["frequency"] for p in params]
         assert freqs == sorted(freqs)
-        
-        
+
+
 # TODO: in future place test units pytmatrix LUTs in disdrodb software to speed up testing
+
 
 @pytest.mark.skipif(not is_pytmatrix_available(), reason="pytmatrix not available")
 class TestGetRadarParameters:
-    
+
     def test_empirical_psd_dataset(self):
         """Test get_radar_parameters with an empirical PSD dataset."""
         ds = create_template_dataset(with_velocity=True)
@@ -249,10 +258,10 @@ class TestGetRadarParameters:
         assert isinstance(ds_radar, xr.Dataset)
         for var in RADAR_VARIABLES:
             assert var in ds_radar
-            
+
     def test_empirical_psd_dataset_dask_support(self):
         """Test that a Dataset with dask arrays returns lazy output and compute works."""
-        ds = create_template_dataset(with_velocity=True).chunk()  
+        ds = create_template_dataset(with_velocity=True).chunk()
         ds_radar = get_radar_parameters(
             ds=ds,
             frequency="C",
@@ -270,27 +279,27 @@ class TestGetRadarParameters:
         # Should be lazy: data backed by dask array
         for var in RADAR_VARIABLES:
             assert hasattr(ds_radar[var].data, "chunks")
-            
+
         # Compute should run without error
         ds_radar = ds_radar.compute()
-    
+
     @pytest.mark.parametrize(
-            "param_name, values",
-            [
-                ("frequency", [4.8, 5.3]),
-                ("num_points", [256, 1024]),
-                ("diameter_max", [6.0, 8.0]),
-                ("canting_angle_std", [5.0, 7.0]),
-                ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
-                ("permittivity_model", ["Turner2016", "Liebe1991"]),
-                ("water_temperature", [5.0, 10.0]),
-                ("elevation_angle", [0.0, 45.0]),
-            ],
-        )
+        ("param_name", "values"),
+        [
+            ("frequency", [4.8, 5.3]),
+            ("num_points", [256, 1024]),
+            ("diameter_max", [6.0, 8.0]),
+            ("canting_angle_std", [5.0, 7.0]),
+            ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
+            ("permittivity_model", ["Turner2016", "Liebe1991"]),
+            ("water_temperature", [5.0, 10.0]),
+            ("elevation_angle", [0.0, 45.0]),
+        ],
+    )
     def test_empirical_psd_list_input_creates_dimension(self, param_name, values):
         """Check that list arguments add new dimensions in the output dataset."""
         ds = create_template_dataset(with_velocity=True)
-        
+
         # Define defaults
         radar_kwargs = {
             "frequency": "C",
@@ -304,12 +313,12 @@ class TestGetRadarParameters:
         }
         # Overwrite the one parameter being tested with a list
         radar_kwargs[param_name] = values
-        
+
         # Simulate radar variables
         ds_radar = get_radar_parameters(
-             ds=ds,
-             parallel=False,
-             **radar_kwargs,
+            ds=ds,
+            parallel=False,
+            **radar_kwargs,
         )
 
         # Check parameter dimension is present
@@ -318,7 +327,7 @@ class TestGetRadarParameters:
         # Check parameter coordinate values matches input argument
         coordinate_values = ds_radar[param_name].to_numpy().tolist()
         assert set(coordinate_values) == set(values)
-        
+
     def test_model_psd_dataset(self):
         """Test get_radar_parameters with a model PSD dataset."""
         # Define L2M dataset
@@ -331,7 +340,7 @@ class TestGetRadarParameters:
         ds["Nw"] = Nw.expand_dims({"D50_c": D50})
         ds["mu"] = 1
         ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
-        
+
         # Create radar dataset
         ds_radar = get_radar_parameters(
             ds=ds,
@@ -347,7 +356,7 @@ class TestGetRadarParameters:
         assert isinstance(ds_radar, xr.Dataset)
         for var in RADAR_VARIABLES:
             assert var in ds_radar
-            
+
     def test_model_psd_dataset_dask_support(self):
         """Test that a PSD Model Dataset with dask arrays returns lazy output and compute works."""
         # Define L2M dataset
@@ -358,10 +367,10 @@ class TestGetRadarParameters:
         ds = xr.Dataset({"D50": D50, "Nw": Nw})
         ds["mu"] = 1
         ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
-        
+
         # Creaze lazy dataset
-        ds = ds.chunk({"time": 2}) 
-        
+        ds = ds.chunk({"time": 2})
+
         # Create radar dataset
         ds_radar = get_radar_parameters(
             ds=ds,
@@ -380,24 +389,23 @@ class TestGetRadarParameters:
         # Should be lazy: data backed by dask array
         for var in RADAR_VARIABLES:
             assert hasattr(ds_radar[var].data, "chunks")
-            
+
         # Compute should run without error
         ds_radar = ds_radar.compute()
 
-
     @pytest.mark.parametrize(
-            "param_name, values",
-            [
-                ("frequency", ["C", "X"]),
-                ("num_points", [256, 1024]),
-                ("diameter_max", [6.0, 8.0]),
-                ("canting_angle_std", [5.0, 7.0]),
-                ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
-                ("permittivity_model", ["Turner2016", "Liebe1991"]),
-                ("water_temperature", [5.0, 10.0]),
-                ("elevation_angle", [0.0, 45.0]),
-            ],
-        )
+        ("param_name", "values"),
+        [
+            ("frequency", ["C", "X"]),
+            ("num_points", [256, 1024]),
+            ("diameter_max", [6.0, 8.0]),
+            ("canting_angle_std", [5.0, 7.0]),
+            ("axis_ratio_model", ["Thurai2007", "Andsager1999"]),
+            ("permittivity_model", ["Turner2016", "Liebe1991"]),
+            ("water_temperature", [5.0, 10.0]),
+            ("elevation_angle", [0.0, 45.0]),
+        ],
+    )
     def test_model_psd_list_input_creates_dimension(self, param_name, values):
         """Check that list arguments add new dimensions in the output dataset."""
         # Define L2M dataset
@@ -422,21 +430,21 @@ class TestGetRadarParameters:
         }
         # Overwrite the one parameter being tested with a list
         radar_kwargs[param_name] = values
-        
+
         # Simulate radar variables
         ds_radar = get_radar_parameters(
-             ds=ds,
-             parallel=False,
-             **radar_kwargs,
+            ds=ds,
+            parallel=False,
+            **radar_kwargs,
         )
-    
+
         # Check parameter dimension is present
         assert param_name in ds_radar.dims
-    
+
         # Check parameter coordinate values matches input argument
         coordinate_values = ds_radar[param_name].to_numpy().tolist()
         assert set(coordinate_values) == set(values)
-        
+
     def test_get_radar_parameters_invalid_dataset_raises(self):
         """Check that get_radar_parameters raises ValueError if dataset is not L2E or L2M."""
         # Create a dummy dataset with irrelevant variable
@@ -444,14 +452,14 @@ class TestGetRadarParameters:
             {"foo": (("time",), np.arange(5))},
             coords={"time": np.arange(5)},
         )
-    
+
         with pytest.raises(ValueError, match="not a DISDRODB L2E or L2M product"):
             get_radar_parameters(
                 ds=ds,
                 frequency=5.0,  # numeric frequency in GHz
                 parallel=True,
             )
-            
+
     def test_missing_psd_parameters_raise_error(self):
         """Test that missing PSD model parameters in xarray Dataset raise error."""
         # Define L2M dataset
@@ -460,9 +468,8 @@ class TestGetRadarParameters:
         Nw = xr.DataArray(np.linspace(5e2, 2e4, n_timesteps), dims="time", name="Nw")
         ds = xr.Dataset({"D50": D50, "Nw": Nw})
         ds.attrs["disdrodb_psd_model"] = "NormalizedGammaPSD"
-        
-        with pytest.raises(ValueError, 
-                           match=re.escape("The NormalizedGammaPSD parameters ['mu'] are not present")):
+
+        with pytest.raises(ValueError, match=re.escape("The NormalizedGammaPSD parameters ['mu'] are not present")):
             get_radar_parameters(
                 ds=ds,
                 frequency=5.0,  # numeric frequency in GHz
