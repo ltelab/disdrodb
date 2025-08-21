@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Utilities to create summary statistics."""
 import gc
+import importlib
 import os
 import subprocess
 import tempfile
@@ -401,14 +402,35 @@ def prepare_latex_table_events_summary(df):
 #### Powerlaw routines
 
 
-def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
+def fit_powerlaw_with_ransac(x, y):
+    """Fit powerlaw relationship with RANSAC algorithm."""
+    from sklearn.linear_model import LinearRegression, RANSACRegressor
+
+    x = np.asanyarray(x)
+    y = np.asanyarray(y)
+    X = np.log10(x).reshape(-1, 1)
+    Y = np.log10(y)
+    ransac = RANSACRegressor(
+        estimator=LinearRegression(),
+        min_samples=0.5,
+        residual_threshold=0.3,
+        random_state=42,
+    )
+    ransac.fit(X, Y)
+    b = ransac.estimator_.coef_[0]  # slope
+    loga = ransac.estimator_.intercept_  # intercept
+    a = 10**loga
+    return a, b
+
+
+def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ransac=True):
     """
     Fit a power-law relationship ``y = a * x**b`` to binned median values.
 
     This function bins ``x`` into intervals defined by ``xbins``, computes the
     median of ``y`` in each bin (robust to outliers), and fits a power-law model
-    using the Levenberg-Marquardt algorithm. Optionally, ``x`` can be converted
-    from decibel units to linear scale automatically before fitting.
+    using the RANSAC or Levenberg-Marquardt algorithm.
+    Optionally, ``x`` can be converted from decibel units to linear scale automatically before fitting.
 
     Parameters
     ----------
@@ -425,6 +447,11 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     x_in_db : bool, optional
         If True, converts ``x`` values from decibels (dB) to linear scale using
         :func:`disdrodb.idecibel`. Default is False.
+    use_ransac: bool, optional
+        Whether to fit the powerlaw using the Random Sample Consensus (RANSAC)
+        algorithm or using the Levenberg-Marquardt algorithm.
+        The default is True.
+        To fit with RANSAC, scikit-learn must be installed.
 
     Returns
     -------
@@ -433,6 +460,8 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     params_std : tuple of float
         One standard deviation uncertainties ``(a_std, b_std)`` estimated from
         the covariance matrix of the fit.
+        Parameters standard deviation is currently
+        not available if fitting with the RANSAC algorithm.
 
     Notes
     -----
@@ -458,6 +487,11 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     # Set min_counts to 0 during pytest execution in order to test the summary routine
     if os.environ.get("PYTEST_CURRENT_TEST"):
         min_counts = 0
+
+    # Check if RANSAC algorithm is available
+    sklearn_available = importlib.util.find_spec("sklearn") is not None
+    if use_ransac and not sklearn_available:
+        use_ransac = False
 
     # Ensure numpy array
     x = np.asanyarray(x)
@@ -513,19 +547,27 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
 
     # Fit the data
     with suppress_warnings():
-        (a, b), pcov = curve_fit(
-            lambda x, a, b: a * np.power(x, b),
-            df_agg["x"],
-            df_agg["y"],
-            method="lm",
-            sigma=sigma,
-            absolute_sigma=True,
-            maxfev=10_000,  # max n iterations
-        )
-        (a_std, b_std) = np.sqrt(np.diag(pcov))
+        if use_ransac:
+            a, b = fit_powerlaw_with_ransac(x=df_agg["x"], y=df_agg["y"])
+            a_std = None
+            b_std = None
+        else:
+
+            (a, b), pcov = curve_fit(
+                lambda x, a, b: a * np.power(x, b),
+                df_agg["x"],
+                df_agg["y"],
+                method="lm",
+                sigma=sigma,
+                absolute_sigma=True,
+                maxfev=10_000,  # max n iterations
+            )
+            (a_std, b_std) = np.sqrt(np.diag(pcov))
+            a_std = float(a_std)
+            b_std = float(b_std)
 
     # Return the parameters and their standard deviation
-    return (float(a), float(b)), (float(a_std), float(b_std))
+    return (float(a), float(b)), (a_std, b_std)
 
 
 def predict_from_powerlaw(x, a, b):
@@ -823,9 +865,12 @@ def plot_dsd_with_dense_lines(drop_number_concentration, r, figsize=(8, 8), dpi=
     # Compute dense lines
     dict_rgb = {}
     for i in range(0, len(r_bins) - 1):
+
         # Define dataset subset
         idx_rain_interval = np.logical_and(ds_resampled["R"] >= r_bins[i], ds_resampled["R"] < r_bins[i + 1])
         da = ds_resampled.isel(time=idx_rain_interval)["drop_number_concentration"]
+        if da.sizes["time"] == 0:
+            continue
 
         # Retrieve dense lines
         da_dense_lines = compute_dense_lines(

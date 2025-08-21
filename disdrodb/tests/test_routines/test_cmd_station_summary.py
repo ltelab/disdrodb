@@ -109,11 +109,11 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
 
 
 @pytest.mark.parametrize("cli", [True, False])
-def test_disdrodb_create_summary(tmp_path, cli):
+def test_disdrodb_create_summary(tmp_path, disdrodb_metadata_archive_dir, cli):
     """Test the disdrodb_run_l2e command."""
     test_data_archive_dir = tmp_path / "data" / "DISDRODB"
-    # test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
-  
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+
     dst_dir = test_data_archive_dir / ARCHIVE_VERSION
     shutil.copytree(TEST_DATA_L2E_DIR, dst_dir)
 
@@ -136,6 +136,8 @@ def test_disdrodb_create_summary(tmp_path, cli):
                 # DISDRODB root directories
                 "--data_archive_dir",
                 test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
             ],
         )
     else:
@@ -148,6 +150,7 @@ def test_disdrodb_create_summary(tmp_path, cli):
             parallel=False,
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
         )
 
     # Check summary files are produced

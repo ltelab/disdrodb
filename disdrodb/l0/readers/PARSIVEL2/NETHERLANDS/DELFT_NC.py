@@ -66,7 +66,7 @@ def reader(
     ds = standardize_raw_dataset(ds=ds, dict_names=dict_names, sensor_name="PARSIVEL2")
 
     # Replace NaN flags
-    ds["raw_drop_number"] = ds["raw_drop_number"].where(ds["raw_drop_number"] != 65437.0)
+    ds["raw_drop_number"] = ds["raw_drop_number"].where(ds["raw_drop_number"] < 65437)  # dummy flag 65437.0
 
     # Return the dataset adhering to DISDRODB L0B standards
     return ds

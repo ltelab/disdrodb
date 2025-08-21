@@ -1441,6 +1441,7 @@ def create_summary(
     station_names=None,
     parallel=False,
     data_archive_dir=None,
+    metadata_archive_dir=None,
 ):
     """Create summary figures and tables for a set of DISDRODB station.
 
@@ -1468,6 +1469,7 @@ def create_summary(
     list_info = available_stations(
         # DISDRODB root directories
         data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         # Stations arguments
         data_sources=data_sources,
         campaign_names=campaign_names,

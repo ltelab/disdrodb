@@ -365,7 +365,7 @@ def available_stations(
     # Retrieve available stations from the Metadata Archive
     # - Raise error if no stations availables !
     list_info = list_station_names(
-        metadata_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
