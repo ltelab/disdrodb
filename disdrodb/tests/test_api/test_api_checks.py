@@ -641,12 +641,15 @@ class TestHasAvailableData:
 
     def test_directory_does_not_exist(self, tmp_path):
         """Test returns False if product directory does not exist."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         data_archive_dir = os.path.join(tmp_path, "DISDRODB")
 
         res = has_available_data(
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product="L0A",
             data_archive_dir=data_archive_dir,
         )
@@ -654,20 +657,23 @@ class TestHasAvailableData:
 
     def test_directory_exists_but_empty(self, tmp_path):
         """Test returns False if directory exists but has no files."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         data_archive_dir = os.path.join(tmp_path, "DISDRODB")
         data_dir = define_data_dir(
             product="L0A",
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             data_archive_dir=data_archive_dir,
             check_exists=False,
         )
         os.makedirs(data_dir, exist_ok=True)
         res = has_available_data(
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product="L0A",
             data_archive_dir=data_archive_dir,
         )
@@ -675,13 +681,16 @@ class TestHasAvailableData:
 
     def test_directory_with_files(self, tmp_path):
         """Test returns True if directory contains files."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         data_archive_dir = os.path.join(tmp_path, "DISDRODB")
         data_dir = define_data_dir(
             product="L0A",
             data_archive_dir=data_archive_dir,
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             check_exists=False,
         )
         os.makedirs(data_dir, exist_ok=True)
@@ -690,9 +699,9 @@ class TestHasAvailableData:
             f.write("test")
 
         res = has_available_data(
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product="L0A",
             data_archive_dir=data_archive_dir,
         )
@@ -704,47 +713,56 @@ class TestCheckDataAvailability:
 
     def test_raise_error_if_directory_does_not_exist(self, tmp_path):
         """Test raise error if product directory does not exist."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         data_archive_dir = os.path.join(tmp_path, "DISDRODB")
 
         with pytest.raises(ValueError):
             check_data_availability(
-                data_source="SRC",
-                campaign_name="CAMP",
-                station_name="ST01",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
                 product="L0A",
                 data_archive_dir=data_archive_dir,
             )
 
     def test_raise_error_if_directory_exists_but_empty(self, tmp_path):
         """Test raise error if product directory exists but has no files."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         data_archive_dir = os.path.join(tmp_path, "DISDRODB")
         data_dir = define_data_dir(
             product="L0A",
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             data_archive_dir=data_archive_dir,
             check_exists=False,
         )
         os.makedirs(data_dir, exist_ok=True)
         with pytest.raises(ValueError):
             check_data_availability(
-                data_source="SRC",
-                campaign_name="CAMP",
-                station_name="ST01",
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
                 product="L0A",
                 data_archive_dir=data_archive_dir,
             )
 
     def test_valid_directory_with_files(self, tmp_path):
         """Test do not raise error if directory contains files."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         data_archive_dir = os.path.join(tmp_path, "DISDRODB")
         data_dir = define_data_dir(
             product="L0A",
             data_archive_dir=data_archive_dir,
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             check_exists=False,
         )
         os.makedirs(data_dir, exist_ok=True)
@@ -753,9 +771,9 @@ class TestCheckDataAvailability:
             f.write("test")
 
         check_data_availability(
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             product="L0A",
             data_archive_dir=data_archive_dir,
         )
@@ -795,32 +813,44 @@ class TestCheckIssueDir:
 
     def test_issue_dir_exists(self, tmp_path):
         """Test check_issue_dir returns existing issue directory."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
         metadata_archive_dir = os.path.join(tmp_path, "DISDRODB")
 
         # Create expected directory structure
         issue_dir = define_issue_dir(
-            data_source="SRC",
-            campaign_name="CAMP",
+            data_source=data_source,
+            campaign_name=campaign_name,
             metadata_archive_dir=metadata_archive_dir,
             check_exists=False,
         )
         os.makedirs(issue_dir, exist_ok=True)
 
-        result = check_issue_dir(data_source="SRC", campaign_name="CAMP", metadata_archive_dir=metadata_archive_dir)
+        result = check_issue_dir(
+            data_source=data_source,
+            campaign_name=campaign_name,
+            metadata_archive_dir=metadata_archive_dir,
+        )
         assert os.path.exists(result)
         assert result == issue_dir
 
     def test_raise_no_error_if_issue_dir_not_exists(self, tmp_path):
         """Test check_issue_dir still returns path if directory missing (no error)."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
         metadata_archive_dir = os.path.join(tmp_path, "DISDRODB")
         issue_dir = define_issue_dir(
-            data_source="SRC",
-            campaign_name="CAMP",
+            data_source=data_source,
+            campaign_name=campaign_name,
             metadata_archive_dir=metadata_archive_dir,
             check_exists=False,
         )
         # Do not create the directory
-        result = check_issue_dir(data_source="SRC", campaign_name="CAMP", metadata_archive_dir=metadata_archive_dir)
+        result = check_issue_dir(
+            data_source=data_source,
+            campaign_name=campaign_name,
+            metadata_archive_dir=metadata_archive_dir,
+        )
         assert not os.path.exists(result)
         assert result == issue_dir
 
@@ -830,12 +860,15 @@ class TestCheckIssueFile:
 
     def test_issue_file_created_and_valid(self, tmp_path):
         """Test check_issue_file creates missing file and validates it."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         metadata_archive_dir = os.path.join(tmp_path, "DISDRODB")
 
         # Create parent issue dir
         issue_dir = define_issue_dir(
-            data_source="SRC",
-            campaign_name="CAMP",
+            data_source=data_source,
+            campaign_name=campaign_name,
             metadata_archive_dir=metadata_archive_dir,
             check_exists=False,
         )
@@ -843,9 +876,9 @@ class TestCheckIssueFile:
 
         # File path expected
         issue_filepath = define_issue_filepath(
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             metadata_archive_dir=metadata_archive_dir,
             check_exists=False,
         )
@@ -854,26 +887,34 @@ class TestCheckIssueFile:
         assert not os.path.exists(issue_filepath)
 
         # Function should create and validate it
-        result = check_issue_file("SRC", "CAMP", "ST01", metadata_archive_dir=metadata_archive_dir)
+        result = check_issue_file(
+            data_source,
+            campaign_name,
+            station_name,
+            metadata_archive_dir=metadata_archive_dir,
+        )
         assert os.path.exists(result)
         assert result == issue_filepath
 
     def test_issue_file_already_exists(self, tmp_path):
         """Test check_issue_file returns existing issue file."""
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
         metadata_archive_dir = os.path.join(tmp_path, "DISDRODB")
 
         issue_dir = define_issue_dir(
-            data_source="SRC",
-            campaign_name="CAMP",
+            data_source=data_source,
+            campaign_name=campaign_name,
             metadata_archive_dir=metadata_archive_dir,
             check_exists=False,
         )
         os.makedirs(issue_dir, exist_ok=True)
 
         issue_filepath = define_issue_filepath(
-            data_source="SRC",
-            campaign_name="CAMP",
-            station_name="ST01",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
             metadata_archive_dir=metadata_archive_dir,
             check_exists=False,
         )
@@ -881,5 +922,10 @@ class TestCheckIssueFile:
         with open(issue_filepath, "w") as f:
             f.write("")
 
-        result = check_issue_file("SRC", "CAMP", "ST01", metadata_archive_dir=metadata_archive_dir)
+        result = check_issue_file(
+            data_source,
+            campaign_name,
+            station_name,
+            metadata_archive_dir=metadata_archive_dir,
+        )
         assert result == issue_filepath
