@@ -674,7 +674,8 @@ def define_filename(
     campaign_name: str,
     station_name: str,
     # Filename options
-    obj=None,
+    start_time=None,
+    end_time=None,
     add_version=True,
     add_time_period=True,
     add_extension=True,
@@ -688,13 +689,16 @@ def define_filename(
 
     Parameters
     ----------
-    obj  : xarray.Dataset or pandas.DataFrame
-        xarray Dataset or pandas DataFrame.
-        Required if add_time_period = True.
     campaign_name : str
        Name of the campaign.
     station_name : str
        Name of the station.
+    start_time : datetime.datatime, optional
+        Start time.
+        Required if add_time_period = True.
+    end_time : datetime.datatime, optional
+        End time.
+        Required if add_time_period = True.
     sample_interval : int, optional
         The sampling interval in seconds of the product.
         It must be specified only for product L2E and L2M !
@@ -714,6 +718,9 @@ def define_filename(
 
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
+
+    if (add_time_period and start_time is None) or end_time is None:
+        raise ValueError("If add_time_period=True, specify start_time and end_time.")
 
     # -----------------------------------------.
     # TODO: Define temporal_resolution
@@ -744,10 +751,9 @@ def define_filename(
     # -----------------------------------------.
     # Add time period information
     if add_time_period:
-        starting_time, ending_time = get_file_start_end_time(obj)
-        starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-        ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-        filename = f"{filename}.s{starting_time}.e{ending_time}"
+        start_time = start_time.strftime("%Y%m%d%H%M%S")
+        end_time = end_time.strftime("%Y%m%d%H%M%S")
+        filename = f"{filename}.s{start_time}.e{end_time}"
 
     # -----------------------------------------.
     # Add product version

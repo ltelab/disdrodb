@@ -410,8 +410,8 @@ def get_time_component(time, component):
     return str(func_dict[component](time))
 
 
-def _get_groups_value(groups, filepath):
-    """Return the value associated to the groups keys.
+def get_groups_value(groups, filepath):
+    """Return a string associated to the groups keys.
 
     If multiple keys are specified, the value returned is a string of format: ``<group_value_1>/<group_value_2>/...``
 
@@ -463,5 +463,5 @@ def group_filepaths(filepaths, groups=None):
         return filepaths
     groups = check_groups(groups)
     filepaths_dict = defaultdict(list)
-    _ = [filepaths_dict[_get_groups_value(groups, filepath)].append(filepath) for filepath in filepaths]
+    _ = [filepaths_dict[get_groups_value(groups, filepath)].append(filepath) for filepath in filepaths]
     return dict(filepaths_dict)
