@@ -63,6 +63,7 @@ def define_disdrodb_path(
         The campaign name.
     check_exists : bool, optional
         Whether to check if the directory exists. The default value is ``True``.
+        Raise error if the directory does not exist.
 
     Returns
     -------
@@ -81,7 +82,7 @@ def define_disdrodb_path(
         dir_path = os.path.join(archive_dir, ARCHIVE_VERSION, data_source, campaign_name)
     if check_exists:
         check_directory_exists(dir_path)
-    return dir_path
+    return os.path.normpath(dir_path)
 
 
 def define_data_source_dir(
@@ -107,6 +108,7 @@ def define_data_source_dir(
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
         Whether to check if the directory exists. The default value is ``False``.
+        Raise error if the directory does not exist.
 
     Returns
     -------
@@ -386,7 +388,7 @@ def define_partitioning_tree(time, folder_partitioning):
         return os.path.join(year, month, day)
     if folder_partitioning == "year/month_name":
         year = str(time.year)
-        month = str(time.month_name())
+        month = time.strftime("%B")
         return os.path.join(year, month)
     if folder_partitioning == "year/quarter":
         year = str(time.year)
@@ -529,7 +531,7 @@ def define_logs_dir(
         product=product,
         **product_kwargs,
     )
-    logs_dir = os.path.join(campaign_dir, "logs", "files", product, product_dir_tree, station_name)
+    logs_dir = os.path.normpath(os.path.join(campaign_dir, "logs", "files", product, product_dir_tree, station_name))
     if check_exists:
         check_directory_exists(logs_dir)
     return str(logs_dir)
@@ -643,7 +645,7 @@ def define_data_dir(
         **product_kwargs,
     )
     # Define data directory
-    data_dir = os.path.join(station_dir, product_dir_tree)
+    data_dir = os.path.normpath(os.path.join(station_dir, product_dir_tree))
     # Check if directory exists
     if check_exists:
         check_directory_exists(data_dir)
@@ -701,10 +703,10 @@ def define_filename(
         Required if add_time_period = True.
     sample_interval : int, optional
         The sampling interval in seconds of the product.
-        It must be specified only for product L2E and L2M !
+        It must be specified only for product L0C, L1, L2E and L2M !
     rolling : bool, optional
         Whether the dataset has been resampled by aggregating or rolling.
-        It must be specified only for product L2E and L2M !
+        It must be specified only for product L1, L2E and L2M !
     model_name : str
         The model name of the fitted statistical distribution for the DSD.
         It must be specified only for product L2M !

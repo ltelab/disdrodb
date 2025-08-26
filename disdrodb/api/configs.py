@@ -54,8 +54,6 @@ def get_sensor_configs_dir(sensor_name: str, product: str) -> str:
     config_dir = define_config_dir(product=product)
     config_sensor_dir = os.path.join(config_dir, sensor_name)
     if not os.path.exists(config_sensor_dir):
-        list_sensors = sorted(list_directories(config_dir, recursive=False, return_paths=False))
-        print(f"Available sensor_name are {list_sensors}")
         raise ValueError(f"The config directory {config_sensor_dir} does not exist.")
     return config_sensor_dir
 

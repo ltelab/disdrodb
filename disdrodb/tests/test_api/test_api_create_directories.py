@@ -26,6 +26,7 @@ from disdrodb.api.create_directories import (
     create_initial_station_structure,
     create_issue_directory,
     create_l0_directory_structure,
+    create_logs_directory,
     create_product_directory,
     create_test_archive,
 )
@@ -37,6 +38,7 @@ from disdrodb.api.path import (
     define_station_dir,
 )
 from disdrodb.cli.disdrodb_initialize_station import disdrodb_initialize_station
+from disdrodb.constants import ARCHIVE_VERSION
 from disdrodb.tests.conftest import (
     create_fake_issue_file,
     create_fake_metadata_file,
@@ -438,3 +440,78 @@ def test_create_issue_directory(tmp_path):
 
     issue_dir = create_issue_directory(metadata_archive_dir, data_source=data_source, campaign_name=campaign_name)
     assert os.path.isdir(issue_dir)
+
+
+# import pathlib
+# tmp_path = pathlib.Path("/tmp/13")
+
+
+class TestCreateLogsDirectory:
+    """Tests for create_logs_directory."""
+
+    def test_creates_logs_dir(self, tmp_path):
+        """Test creates a new logs directory when it does not exist."""
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
+        product = "L0A"
+
+        logs_dir = create_logs_directory(
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            data_archive_dir=data_archive_dir,
+        )
+
+        # Path must exist and match expected structure
+        expected = os.path.join(
+            data_archive_dir,
+            ARCHIVE_VERSION,
+            data_source,
+            campaign_name,
+            "logs",
+            "files",
+            product,
+            station_name,
+        )
+        assert logs_dir == str(expected)
+        assert os.path.exists(expected)
+        assert os.path.isdir(expected)
+
+    def test_recreates_if_exists(self, tmp_path):
+        """Test removes and recreates logs directory if it already exists."""
+        data_archive_dir = tmp_path / "data" / "DISDRODB"
+        data_source = "DATA_SOURCE"
+        campaign_name = "CAMPAIGN_NAME"
+        station_name = "STATION_NAME"
+        product = "L0A"
+
+        # First create logs dir
+        logs_dir = create_logs_directory(
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            data_archive_dir=data_archive_dir,
+        )
+
+        # Put a file inside logs dir
+        dummy_file = os.path.join(logs_dir, "old.log")
+        with open(dummy_file, "w") as f:
+            f.write("old content")
+        assert os.path.exists(dummy_file)
+
+        # Call again → should clear and recreate directory
+        logs_dir2 = create_logs_directory(
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            data_archive_dir=data_archive_dir,
+        )
+        assert logs_dir == logs_dir2
+        assert os.path.exists(logs_dir)
+        # Old file must be gone
+        assert not os.path.exists(dummy_file)
