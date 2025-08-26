@@ -144,14 +144,14 @@ def check_measurement_intervals(measurement_intervals):
 
 def check_sample_interval(sample_interval):
     """Check sample_interval argument validity."""
-    if not isinstance(sample_interval, int):
-        raise ValueError("'sample_interval' must be an integer.")
+    if not isinstance(sample_interval, int) or isinstance(sample_interval, bool):
+        raise TypeError("'sample_interval' must be an integer.")
 
 
 def check_rolling(rolling):
     """Check rolling argument validity."""
     if not isinstance(rolling, bool):
-        raise ValueError("'rolling' must be a boolean.")
+        raise TypeError("'rolling' must be a boolean.")
 
 
 def check_folder_partitioning(folder_partitioning):
@@ -385,6 +385,7 @@ def check_station_inputs(
         matches = difflib.get_close_matches(data_source, valid_data_sources, n=1, cutoff=0.4)
         suggestion = f"Did you mean '{matches[0]}'?" if matches else ""
         raise ValueError(f"DISDRODB does not include a data source named {data_source}. {suggestion}")
+
     # Check campaign name
     valid_campaigns = disdrodb.available_campaigns(data_sources=data_source, metadata_archive_dir=metadata_archive_dir)
     if campaign_name not in valid_campaigns:
@@ -501,10 +502,9 @@ def check_issue_dir(data_source, campaign_name, metadata_archive_dir=None):
         campaign_name=campaign_name,
         check_exists=False,
     )
-    if not os.path.exists(issue_dir) and os.path.isdir(issue_dir):
-        msg = "The issue directory does not exist at {issue_dir}."
+    if not os.path.exists(issue_dir) or not os.path.isdir(issue_dir):
+        msg = f"The issue directory does not exist at {issue_dir}."
         logger.error(msg)
-        raise ValueError(msg)
     return issue_dir
 
 
@@ -525,7 +525,7 @@ def check_issue_file(data_source, campaign_name, station_name, metadata_archive_
         station_name=station_name,
         check_exists=False,
     )
-    # Check existence
+    # Check existence. If not, create one !
     if not os.path.exists(issue_filepath):
         create_station_issue(
             metadata_archive_dir=metadata_archive_dir,

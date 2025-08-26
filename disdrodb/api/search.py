@@ -362,6 +362,7 @@ def available_stations(
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
     product = check_product(product) if product is not None else None
     invalid_fields_policy = check_invalid_fields_policy(invalid_fields_policy)
+
     # Retrieve available stations from the Metadata Archive
     # - Raise error if no stations availables !
     list_info = list_station_names(

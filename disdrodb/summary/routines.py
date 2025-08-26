@@ -18,9 +18,9 @@
 import gc
 import importlib
 import os
+import shutil
 import subprocess
 import tempfile
-from shutil import which
 
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
@@ -60,7 +60,7 @@ def is_latex_engine_available() -> bool:
     bool
         True if tectonic is found, False otherwise.
     """
-    return which("tectonic") is not None
+    return shutil.which("tectonic") is not None
 
 
 def save_table_to_pdf(
@@ -144,7 +144,7 @@ def save_table_to_pdf(
                 check=True,
             )
         # Move result
-        os.replace(os.path.join(td, "table.pdf"), filepath)
+        shutil.move(os.path.join(td, "table.pdf"), filepath)
 
 
 ####-----------------------------------------------------------------
