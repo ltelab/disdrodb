@@ -17,9 +17,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB metadata reader."""
+import pandas as pd
 
 import disdrodb
-from disdrodb.metadata.reader import read_station_metadata
+from disdrodb.metadata.reader import read_metadata_archive, read_station_metadata
 from disdrodb.tests.conftest import create_fake_metadata_file
 
 
@@ -66,3 +67,12 @@ def test_read_station_metadata_with_default_config(tmp_path):
         )
 
     assert isinstance(metadata_dict, dict)
+
+
+def test_read_metadata_archive(disdrodb_metadata_archive_dir):
+    """Test reading the DISDRODB metadata archive into a dataframe."""
+    df = read_metadata_archive(
+        metadata_archive_dir=disdrodb_metadata_archive_dir,
+        data_sources="EPFL",
+    )  # filtering to speed up
+    assert isinstance(df, pd.DataFrame)

@@ -269,6 +269,7 @@ def _open_raw_files(filepaths, data_source, campaign_name, station_name, metadat
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        metadata_archive_dir=metadata_archive_dir,
     )
     # Return DISDRODB L0A dataframe if raw text files
     if metadata["raw_data_format"] == "txt":

@@ -31,6 +31,7 @@ from disdrodb.metadata.checks import (
     check_metadata_archive_reader,
     check_metadata_archive_sensor_name,
     check_metadata_archive_station_name,
+    check_station_metadata,
     check_station_metadata_geolocation,
     identify_empty_metadata_keys,
     identify_missing_metadata_coords,
@@ -84,6 +85,15 @@ def test_check_station_metadata_geolocation():
     # Test valid metadata
     metadata = {"longitude": 10, "latitude": 20, "platform_type": "fixed"}
     assert check_station_metadata_geolocation(metadata) is None
+
+    # Test geolocation set to be None
+    metadata = {"longitude": None, "latitude": 20, "platform_type": "fixed"}
+    with pytest.raises(ValueError):
+        check_station_metadata_geolocation(metadata)
+
+    metadata = {"longitude": 20, "latitude": None, "platform_type": "fixed"}
+    with pytest.raises(ValueError):
+        check_station_metadata_geolocation(metadata)
 
 
 def test_identify_empty_metadata_keys(tmp_path, capsys):
@@ -254,6 +264,115 @@ def test_check_metadata_archive_sensor_name(tmp_path, sensor_name):
     assert not is_valid
 
 
+def test_check_metadata_archive_measurement_interval(tmp_path):
+    """Check metadata archive has correct measurement interval specifications."""
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+    # Test 1 : measurement_interval list is allowed
+    metadata_dict = {"measurement_interval": [10, 30]}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert is_valid
+
+    # Test 2 : measurement_interval value is allowed
+    metadata_dict = {"measurement_interval": 30}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert is_valid
+
+    # Test 3 : measurement_interval value as string digit is allowed
+    metadata_dict = {"measurement_interval": "30"}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert is_valid
+
+    # Test 4 : measurement_interval value with bad value or empty string not valid
+    metadata_dict = {"measurement_interval": "BAD"}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+    metadata_dict = {"measurement_interval": ""}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+    # Test 5 : null measurement_interval is not valid
+    metadata_dict = {"measurement_interval": None}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+
+def test_check_metadata_archive_key_values(tmp_path):
+    """Check raise error field value not within expected set."""
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+    # Test "raw_data_format": ["txt", "netcdf"]
+    metadata_dict = {"raw_data_format": "bad"}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+    # Test  "deployment_status": ["ongoing", "terminated"]
+    metadata_dict = {"deployment_status": "bad"}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+    # Test "deployment_mode": ["land", "ship", "truck", "cable"]
+    metadata_dict = {"deployment_mode": "bad"}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+    # Test "platform_type": ["fixed", "mobile"],
+    metadata_dict = {"platform_type": "bad"}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+    # Test "platform_protection": ["shielded", "unshielded", ""]
+    metadata_dict = {"platform_protection": "bad"}
+    _ = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        metadata_dict=metadata_dict,
+    )
+    is_valid = check_metadata_archive(metadata_archive_dir)
+    assert not is_valid
+
+
 def test_check_metadata_archive_station_name(tmp_path):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
@@ -389,3 +508,16 @@ def test_identify_missing_metadata_coords(tmp_path):
     )
     with pytest.raises(TypeError):
         identify_missing_metadata_coords([metadata_filepath])
+
+
+def test_check_station_metadata(disdrodb_metadata_archive_dir):
+    """Test check_station_metadata do not raise error for valid metadata."""
+    data_source = "EPFL"
+    campaign_name = "PARADISO_2014"
+    station_name = "10"
+    check_station_metadata(
+        metadata_archive_dir=disdrodb_metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
