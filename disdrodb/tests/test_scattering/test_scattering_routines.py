@@ -240,7 +240,7 @@ class TestListSimulationParams:
 @pytest.mark.skipif(not is_pytmatrix_available(), reason="pytmatrix not available")
 class TestGetRadarParameters:
 
-    def test_empirical_psd_dataset(self):
+    def test_empirical_psd_dataset(self, set_scattering_table_dir):
         """Test get_radar_parameters with an empirical PSD dataset."""
         ds = create_template_dataset(with_velocity=True)
         ds_radar = get_radar_parameters(
@@ -259,7 +259,7 @@ class TestGetRadarParameters:
         for var in RADAR_VARIABLES:
             assert var in ds_radar
 
-    def test_empirical_psd_dataset_dask_support(self):
+    def test_empirical_psd_dataset_dask_support(self, set_scattering_table_dir):
         """Test that a Dataset with dask arrays returns lazy output and compute works."""
         ds = create_template_dataset(with_velocity=True).chunk()
         ds_radar = get_radar_parameters(
@@ -296,7 +296,7 @@ class TestGetRadarParameters:
             ("elevation_angle", [0.0, 45.0]),
         ],
     )
-    def test_empirical_psd_list_input_creates_dimension(self, param_name, values):
+    def test_empirical_psd_list_input_creates_dimension(self, param_name, values, set_scattering_table_dir):
         """Check that list arguments add new dimensions in the output dataset."""
         ds = create_template_dataset(with_velocity=True)
 
@@ -328,7 +328,7 @@ class TestGetRadarParameters:
         coordinate_values = ds_radar[param_name].to_numpy().tolist()
         assert set(coordinate_values) == set(values)
 
-    def test_model_psd_dataset(self):
+    def test_model_psd_dataset(self, set_scattering_table_dir):
         """Test get_radar_parameters with a model PSD dataset."""
         # Define L2M dataset
         n_D50 = 5
@@ -357,7 +357,7 @@ class TestGetRadarParameters:
         for var in RADAR_VARIABLES:
             assert var in ds_radar
 
-    def test_model_psd_dataset_dask_support(self):
+    def test_model_psd_dataset_dask_support(self, set_scattering_table_dir):
         """Test that a PSD Model Dataset with dask arrays returns lazy output and compute works."""
         # Define L2M dataset
         n_timesteps = 6
@@ -406,7 +406,7 @@ class TestGetRadarParameters:
             ("elevation_angle", [0.0, 45.0]),
         ],
     )
-    def test_model_psd_list_input_creates_dimension(self, param_name, values):
+    def test_model_psd_list_input_creates_dimension(self, param_name, values, set_scattering_table_dir):
         """Check that list arguments add new dimensions in the output dataset."""
         # Define L2M dataset
         n_timesteps = 6
@@ -445,7 +445,7 @@ class TestGetRadarParameters:
         coordinate_values = ds_radar[param_name].to_numpy().tolist()
         assert set(coordinate_values) == set(values)
 
-    def test_get_radar_parameters_invalid_dataset_raises(self):
+    def test_get_radar_parameters_invalid_dataset_raises(self, set_scattering_table_dir):
         """Check that get_radar_parameters raises ValueError if dataset is not L2E or L2M."""
         # Create a dummy dataset with irrelevant variable
         ds = xr.Dataset(
@@ -460,7 +460,7 @@ class TestGetRadarParameters:
                 parallel=True,
             )
 
-    def test_missing_psd_parameters_raise_error(self):
+    def test_missing_psd_parameters_raise_error(self, set_scattering_table_dir):
         """Test that missing PSD model parameters in xarray Dataset raise error."""
         # Define L2M dataset
         n_timesteps = 6
