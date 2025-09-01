@@ -401,8 +401,8 @@ def ensure_sample_interval_in_seconds(sample_interval):  # noqa: PLR0911
     )
 
 
-def ensure_timedelta_seconds_interval(interval):
-    """Return interval as numpy.timedelta64 in seconds."""
+def ensure_timedelta_seconds(interval):
+    """Return an a scalar value/array in seconds or timedelta object as numpy.timedelta64 in seconds."""
     if isinstance(interval, (xr.DataArray, np.ndarray)):
         return ensure_sample_interval_in_seconds(interval).astype("m8[s]")
     return np.array(ensure_sample_interval_in_seconds(interval), dtype="m8[s]")
@@ -786,18 +786,17 @@ def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, fre
         )
         return blocks
 
-    if freq == "season":
-        # Fiscal quarter frequency ending in Feb → seasons DJF, MAM, JJA, SON
-        periods = pd.period_range(start=start_time, end=end_time, freq="Q-FEB")
-        blocks = np.array(
+    # if freq == "season":
+    # Fiscal quarter frequency ending in Feb → seasons DJF, MAM, JJA, SON
+    periods = pd.period_range(start=start_time, end=end_time, freq="Q-FEB")
+    blocks = np.array(
+        [
             [
-                [
-                    period.start_time.to_datetime64().astype("datetime64[s]"),
-                    period.end_time.to_datetime64().astype("datetime64[s]"),
-                ]
-                for period in periods
-            ],
-            dtype="datetime64[s]",
-        )
-        return blocks
-    raise NotImplementedError(f"Frequency '{freq}' is not implemented.")
+                period.start_time.to_datetime64().astype("datetime64[s]"),
+                period.end_time.to_datetime64().astype("datetime64[s]"),
+            ]
+            for period in periods
+        ],
+        dtype="datetime64[s]",
+    )
+    return blocks

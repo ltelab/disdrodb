@@ -21,9 +21,10 @@
 import os
 
 import pytest
+import yaml
 
 from disdrodb import __root_path__
-from disdrodb.utils.yaml import read_yaml
+from disdrodb.utils.yaml import read_yaml, write_yaml
 
 TEST_DATA_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data")
 
@@ -47,3 +48,36 @@ def test_read_yaml():
     non_existent_filepath = os.path.join(TEST_DATA_DIR, "non_existent.yaml")
     with pytest.raises(FileNotFoundError):
         read_yaml(non_existent_filepath)
+
+
+class TestWriteYAML:
+    def test_write_yaml_creates_file_and_roundtrips(self, tmp_path):
+        """It writes a dict to YAML and loads back correctly."""
+        data = {"b": 2, "a": 1}
+        filepath = tmp_path / "test.yaml"
+
+        write_yaml(data, filepath)
+
+        assert filepath.exists()
+        with open(filepath) as f:
+            loaded = yaml.safe_load(f)
+        assert loaded == data
+
+    def test_write_yaml_respects_sort_keys(self, tmp_path):
+        """It respects sort_keys when writing YAML."""
+        data = {"b": 2, "a": 1}
+        filepath_unsorted = tmp_path / "unsorted.yaml"
+        filepath_sorted = tmp_path / "sorted.yaml"
+
+        write_yaml(data, filepath_unsorted, sort_keys=False)
+        unsorted_text = filepath_unsorted.read_text()
+
+        write_yaml(data, filepath_sorted, sort_keys=True)
+        sorted_text = filepath_sorted.read_text()
+
+        # Roundtrip correctness
+        assert yaml.safe_load(unsorted_text) == data
+        assert yaml.safe_load(sorted_text) == data
+
+        # Check ordering in YAML string
+        assert sorted_text.find("a:") < sorted_text.find("b:")

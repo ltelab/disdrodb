@@ -26,6 +26,7 @@ from disdrodb.utils.time import (
     check_freq,
     ensure_sample_interval_in_seconds,
     ensure_sorted_by_time,
+    ensure_timedelta_seconds,
     generate_time_blocks,
     get_dataframe_start_end_time,
     get_dataset_start_end_time,
@@ -479,6 +480,44 @@ class TestEnsureSampleIntervalInSeconds:
             ensure_sample_interval_in_seconds(np.nan)
         with pytest.raises(TypeError):
             ensure_sample_interval_in_seconds(np.datetime64("2021-01-01"))
+
+
+class TestEnsureTimedeltaSeconds:
+    """Test ensure_timedelta_seconds."""
+
+    def test_with_numpy_array(self):
+        """It converts a numpy array of seconds to timedelta64[s]."""
+        result = ensure_timedelta_seconds(np.array([1, 2, 3]))
+        assert np.issubdtype(result.dtype, np.timedelta64)
+        assert (result == np.array([1, 2, 3], dtype="m8[s]")).all()
+
+    def test_with_timedelta_array(self):
+        """It converts a numpy array of seconds to timedelta64[s]."""
+        arr = np.array([1, 2, 3]).astype("m8[m]")
+        result = ensure_timedelta_seconds(arr)
+        assert np.issubdtype(result.dtype, np.timedelta64)
+        assert (result == np.array([60, 120, 180], dtype="m8[s]")).all()
+
+    def test_with_xarray_dataarray(self):
+        """It converts an xarray DataArray of intervals to timedelta64[s]."""
+        result = ensure_timedelta_seconds(xr.DataArray([5, 10]))
+        assert isinstance(result, xr.DataArray)
+        assert np.issubdtype(result.dtype, np.timedelta64)
+        np.testing.assert_array_equal(result.values, np.array([5, 10], dtype="m8[s]"))
+
+    def test_with_scalar_seconds_integer_value(self):
+        """It converts a scalar interval (in seconds) to timedelta64[s]."""
+        result = ensure_timedelta_seconds(42)
+        assert isinstance(result, np.ndarray)
+        assert result.dtype == "m8[s]"
+        assert result == np.array(42, dtype="m8[s]")
+
+    def test_with_scalar_timedelta(self):
+        """It converts a scalar timedelta64 to timedelta64[s]."""
+        result = ensure_timedelta_seconds(np.array(1, dtype="m8[m]"))
+        assert isinstance(result, np.ndarray)
+        assert result.dtype == "m8[s]"
+        assert result == np.array(60, dtype="m8[s]")
 
 
 class TestGetProblematicTimestepIndices:

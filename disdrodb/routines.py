@@ -20,7 +20,7 @@ import time
 from typing import Optional
 
 from disdrodb.api.search import available_stations, get_required_product
-from disdrodb.utils.cli import _execute_cmd
+from disdrodb.utils.cli import execute_cmd
 
 ####--------------------------------------------------------------------------.
 #### Run DISDRODB Station Processing
@@ -239,7 +239,7 @@ def run_l0a_station(
         ],
     )
     # Execute command
-    _execute_cmd(cmd)
+    execute_cmd(cmd)
 
 
 def run_l0b_station(
@@ -323,7 +323,7 @@ def run_l0b_station(
         ],
     )
     # Execute command
-    _execute_cmd(cmd)
+    execute_cmd(cmd)
 
 
 def run_l0c_station(
@@ -407,7 +407,7 @@ def run_l0c_station(
         ],
     )
     # Execute command
-    _execute_cmd(cmd)
+    execute_cmd(cmd)
 
 
 def run_l1_station(
@@ -483,7 +483,7 @@ def run_l1_station(
         ],
     )
     # Execute command
-    _execute_cmd(cmd)
+    execute_cmd(cmd)
 
 
 def run_l2e_station(
@@ -559,7 +559,7 @@ def run_l2e_station(
         ],
     )
     # Execute command
-    _execute_cmd(cmd)
+    execute_cmd(cmd)
 
 
 def run_l2m_station(
@@ -635,7 +635,7 @@ def run_l2m_station(
         ],
     )
     # Execute command
-    _execute_cmd(cmd)
+    execute_cmd(cmd)
 
 
 def create_summary_station(
@@ -661,7 +661,7 @@ def create_summary_station(
         ],
     )
     # Execute command
-    _execute_cmd(cmd)
+    execute_cmd(cmd)
 
 
 ####--------------------------------------------------------------------------.

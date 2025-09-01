@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 
 from disdrodb.api.info import get_start_end_time_from_filepaths
-from disdrodb.utils.time import ensure_timedelta_seconds_interval, temporal_resolution_to_seconds
+from disdrodb.utils.time import ensure_timedelta_seconds, temporal_resolution_to_seconds
 
 
 def group_timesteps_into_event(
@@ -265,8 +265,8 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
 
     """
     # Ensure sample_interval and accumulation_interval is numpy.timedelta64
-    accumulation_interval = ensure_timedelta_seconds_interval(accumulation_interval)
-    sample_interval = ensure_timedelta_seconds_interval(sample_interval)
+    accumulation_interval = ensure_timedelta_seconds(accumulation_interval)
+    sample_interval = ensure_timedelta_seconds(sample_interval)
 
     # Retrieve file start_time and end_time
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)

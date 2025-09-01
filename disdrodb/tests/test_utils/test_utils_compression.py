@@ -19,12 +19,18 @@
 """Test DISDRODB raw data compression."""
 import os
 import pathlib
+import zipfile
 
 import pytest
 
-from disdrodb.tests.conftest import create_fake_data_dir, create_fake_raw_data_file
+from disdrodb.tests.conftest import (
+    create_fake_data_dir,
+    create_fake_metadata_file,
+    create_fake_raw_data_file,
+)
 from disdrodb.utils.compression import (
     _zip_dir,
+    archive_station_data,
     compress_station_files,
     unzip_file,
     unzip_file_on_terminal,
@@ -32,7 +38,7 @@ from disdrodb.utils.compression import (
 
 
 @pytest.mark.parametrize("method", ["zip", "gzip", "bzip2"])
-def test_files_compression(tmp_path, method):
+def test_compress_station_files(tmp_path, method):
     """Test compression of files in a directory."""
     data_archive_dir = tmp_path / "data" / "DISDRODB"
     data_source = "DATA_SOURCE"
@@ -155,3 +161,64 @@ def test_zip_unzip_on_terminal_directory(tmp_path):
     unzip_path = tmp_path / "test_dir_unzipped"
     unzip_file_on_terminal(zip_path, unzip_path)
     assert os.path.isdir(unzip_path)
+
+
+def test_archive_station_data(tmp_path):
+    """Test archive station data into a ZIP file."""
+    data_archive_dir = tmp_path / "data" / "DISDRODB"
+    metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
+
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
+
+    # Define wrong metadata file
+    metadata_dict = {}
+    metadata_dict["raw_data_glob_pattern"] = "*.txt"
+    metadata_dict["station_name"] = "INCONSISTENT_STATION_NAME"
+    metadata_filepath = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        metadata_dict=metadata_dict,
+    )
+
+    # Create fake files
+    filenames = ["test1.txt", "test2.txt"]
+    for filename in filenames:
+        create_fake_raw_data_file(
+            data_archive_dir=data_archive_dir,
+            product="RAW",
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            filename=filename,
+        )
+
+    # Archive station data into a zip file
+    with pytest.raises(ValueError):
+        archive_station_data(metadata_filepath=metadata_filepath, data_archive_dir=data_archive_dir)
+
+    # Define correct metadata file
+    metadata_dict = {}
+    metadata_dict["raw_data_glob_pattern"] = "*.txt"
+    metadata_dict["station_name"] = station_name
+    metadata_filepath = create_fake_metadata_file(
+        metadata_archive_dir=metadata_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        metadata_dict=metadata_dict,
+    )
+
+    # Archive station data into a zip file
+    station_zip_filepath = archive_station_data(
+        metadata_filepath=metadata_filepath,
+        data_archive_dir=data_archive_dir,
+    )
+
+    with zipfile.ZipFile(station_zip_filepath, "r") as zf:
+        zip_filenames = zf.namelist()
+
+    assert set(filenames) == set(zip_filenames)

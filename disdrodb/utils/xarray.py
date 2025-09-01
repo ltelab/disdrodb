@@ -106,6 +106,7 @@ def xr_get_last_valid_idx(da_condition, dim, fill_value=None):
 def _check_coord_handling(coord_handling):
     if coord_handling not in {"keep", "drop", "unstack"}:
         raise ValueError("coord_handling must be one of 'keep', 'drop', or 'unstack'.")
+    return coord_handling
 
 
 def _unstack_coordinates(xr_obj, dim, prefix, suffix):
@@ -163,6 +164,8 @@ def unstack_datarray_dimension(da, dim, coord_handling="keep", prefix="", suffix
     """
     # Retrieve DataArray name
     name = da.name
+    coord_handling = _check_coord_handling(coord_handling)
+
     # Unstack variables
     ds = da.to_dataset(dim=dim)
     rename_dict = {dim_value: f"{prefix}{name}{suffix}{dim_value}" for dim_value in list(ds.data_vars)}
