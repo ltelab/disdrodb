@@ -227,6 +227,7 @@ ignore = [
     "B904",
 	"RET504",
     "PD901",
+
     # Docstyle Rules
     "D100", # Missing docstring in public module
     "D404", # Docstring can't start with "This"

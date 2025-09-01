@@ -32,11 +32,15 @@ from disdrodb.api.path import (
     define_data_source_dir,
     define_disdrodb_path,
     define_file_folder_path,
+    define_filename,
     define_issue_dir,
     define_issue_filepath,
     define_l0a_filename,
     define_l0b_filename,
     define_l0c_filename,
+    define_l1_filename,
+    define_l2e_filename,
+    define_l2m_filename,
     define_logs_dir,
     define_metadata_dir,
     define_metadata_filepath,
@@ -369,6 +373,23 @@ def test_define_partitioning_tree_year():
 class TestProductDirTree:
     """Tests for product_dir_tree."""
 
+    def test_define_product_dir_tree_l0(self):
+        """Test RAW and L0 product dir tree."""
+        res = define_product_dir_tree("RAW")
+        assert res == ""
+
+        res = define_product_dir_tree("L0A")
+        assert res == ""
+
+        res = define_product_dir_tree("L0B")
+        assert res == ""
+
+        res = define_product_dir_tree("L0C")
+        assert res == ""
+
+        res = define_product_dir_tree("L1")
+        assert res == ""  # TODO: TO UPDATE IN FUTURE
+
     def test_define_product_dir_tree_l2e(self):
         """Test L2E product dir tree."""
         res = define_product_dir_tree("L2E", sample_interval=60, rolling=False)
@@ -501,6 +522,7 @@ class TestDefineStationDir:
 
         data_archive_dir = os.path.join(tmp_path, "DISDRODB")
 
+        # Check for DISDRODB product
         station_dir = define_station_dir(
             "L0A",
             data_source,
@@ -509,6 +531,17 @@ class TestDefineStationDir:
             data_archive_dir=data_archive_dir,
         )
         assert station_dir.endswith(os.path.join("L0A", station_name))
+
+        # Check for raw data
+        station_dir = define_station_dir(
+            "RAW",
+            data_source,
+            campaign_name,
+            station_name,
+            data_archive_dir=data_archive_dir,
+        )
+        assert station_dir.endswith(os.path.join("data", station_name))
+        assert "RAW" in station_dir
 
     def test_raise_error_if_station_dir_not_exists(self, tmp_path):
         """Test station dir check_exists functionality."""
@@ -720,6 +753,117 @@ class TestDefineIssueFilepath:
         assert res == issue_filepath
 
 
+class TestDefineFilename:
+    """Unit tests for the define_filename function."""
+
+    def test_l0b_with_time_period(self):
+        """Test filename generation for L0B with time period and default options."""
+        start = datetime.datetime(2020, 1, 1, 0, 0, 0)
+        end = datetime.datetime(2020, 1, 1, 1, 0, 0)
+        fn = define_filename(
+            product="L0B",
+            campaign_name="CAMPAIGN_NAME",
+            station_name="STATION_NAME",
+            start_time=start,
+            end_time=end,
+        )
+        assert fn == f"L0B.CAMPAIGN_NAME.STATION_NAME.s20200101000000.e20200101010000.{ARCHIVE_VERSION}.nc"
+
+    def test_l0a_extension_parquet(self):
+        """Test L0A product uses parquet extension instead of nc."""
+        start = datetime.datetime(2021, 5, 1, 12, 0, 0)
+        end = datetime.datetime(2021, 5, 1, 13, 0, 0)
+        fn = define_filename(
+            product="L0A",
+            campaign_name="CAMPAIGN_NAME",
+            station_name="STATION_NAME",
+            start_time=start,
+            end_time=end,
+        )
+        assert fn == f"L0A.CAMPAIGN_NAME.STATION_NAME.s20210501120000.e20210501130000.{ARCHIVE_VERSION}.parquet"
+
+    def test_l0c_with_sample_interval(self):
+        """Test L0C filename does not include temporal resolution."""
+        start = datetime.datetime(2022, 6, 1, 0, 0, 0)
+        end = datetime.datetime(2022, 6, 1, 0, 10, 0)
+        fn = define_filename(
+            product="L0C",
+            campaign_name="CAMPAIGN_NAME",
+            station_name="STATION_NAME",
+            start_time=start,
+            end_time=end,
+        )
+        assert fn == f"L0C.CAMPAIGN_NAME.STATION_NAME.s20220601000000.e20220601001000.{ARCHIVE_VERSION}.nc"
+
+    def test_l2e_with_rolling(self):
+        """Test L2E filename includes rolling temporal resolution."""
+        start = datetime.datetime(2022, 7, 1, 0, 0, 0)
+        end = datetime.datetime(2022, 7, 1, 0, 30, 0)
+        fn = define_filename(
+            product="L2E",
+            campaign_name="CAMPAIGN_NAME",
+            station_name="STATION_NAME",
+            start_time=start,
+            end_time=end,
+            sample_interval=300,
+            rolling=True,
+        )
+        assert fn == f"L2E.ROLL5MIN.CAMPAIGN_NAME.STATION_NAME.s20220701000000.e20220701003000.{ARCHIVE_VERSION}.nc"
+
+    def test_l2m_with_model_name(self):
+        """Test L2M filename includes model name and temporal resolution."""
+        start = datetime.datetime(2022, 8, 1, 0, 0, 0)
+        end = datetime.datetime(2022, 8, 1, 1, 0, 0)
+        fn = define_filename(
+            product="L2M",
+            campaign_name="CAMPAIGN_NAME",
+            station_name="STATION_NAME",
+            start_time=start,
+            end_time=end,
+            sample_interval=600,
+            rolling=False,
+            model_name="GAMMA_ML",
+        )
+        assert (
+            fn == f"L2M_GAMMA_ML.10MIN.CAMPAIGN_NAME.STATION_NAME.s20220801000000.e20220801010000.{ARCHIVE_VERSION}.nc"
+        )
+
+    def test_prefix_and_suffix(self):
+        """Test prefix and suffix are added correctly."""
+        start = datetime.datetime(2020, 9, 1, 0, 0, 0)
+        end = datetime.datetime(2020, 9, 1, 1, 0, 0)
+        fn = define_filename(
+            product="L0B",
+            campaign_name="CAMPAIGN_NAME",
+            station_name="STATION_NAME",
+            start_time=start,
+            end_time=end,
+            prefix="PRE",
+            suffix="SUF",
+        )
+        assert fn == f"PRE.L0B.CAMPAIGN_NAME.STATION_NAME.s20200901000000.e20200901010000.{ARCHIVE_VERSION}.nc.SUF"
+
+    def test_without_version_and_extension(self):
+        """Test filename without version and extension."""
+        start = datetime.datetime(2021, 1, 1, 0, 0, 0)
+        end = datetime.datetime(2021, 1, 1, 0, 30, 0)
+        fn = define_filename(
+            product="L0B",
+            campaign_name="CAMPAIGN_NAME",
+            station_name="STATION_NAME",
+            start_time=start,
+            end_time=end,
+            add_version=False,
+            add_extension=False,
+        )
+        assert fn == "L0B.CAMPAIGN_NAME.STATION_NAME.s20210101000000.e20210101003000"
+
+    def test_missing_time_raises(self):
+        """Test ValueError is raised if add_time_period=True but times are missing."""
+        with pytest.raises(ValueError):
+            define_filename("L0B", "CAMPAIGN_NAME", "STATION_NAME")
+
+
 def test_define_l0a_filename():
     """Test L0A filename generation."""
     campaign_name = "CAMPAIGN_NAME"
@@ -743,15 +887,37 @@ def test_define_l0a_filename():
     assert res == expected_name
 
 
-@pytest.mark.parametrize("product", ["L0B", "L0C"])
-def test_define_l0b_filename(product):
-    """Test L0B/L0C filename generation."""
+def test_define_l0b_filename():
+    """Test L0B filename generation."""
     campaign_name = "CAMPAIGN_NAME"
     station_name = "STATION_NAME"
 
     # Set variables
-    sample_interval = 10
-    sample_interval_str = "10S"
+    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
+    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
+
+    # Create xarray dataset
+    timesteps = pd.date_range(start=start_date, end=end_date)
+    data = np.zeros(timesteps.shape)
+    ds = xr.DataArray(
+        data=data,
+        dims=["time"],
+        coords={"time": pd.date_range(start=start_date, end=end_date)},
+    ).to_dataset(name="dummy")
+
+    # Test the function
+    fn = define_l0b_filename(ds, campaign_name, station_name)
+    assert fn == f"L0B.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+
+
+def test_define_l0c_filename():
+    """Test L0C filename generation."""
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
+
+    # Set variables
+    sample_interval = 60
+    # rolling=True
     start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
     end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
 
@@ -764,14 +930,109 @@ def test_define_l0b_filename(product):
         coords={"time": pd.date_range(start=start_date, end=end_date), "sample_interval": sample_interval},
     ).to_dataset(name="dummy")
 
-    # Define expected results
-    # TODO: MODIFY !
-    if product == "L0B":
-        expected_name = f"{product}.{campaign_name}.{station_name}.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
-    else:
-        expected_name = f"{product}.{sample_interval_str}.{campaign_name}.{station_name}.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"  # noqa: E501
+    # Test the function
+    fn = define_l0c_filename(
+        ds=ds,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # sample_interval=sample_interval, # TODO
+    )
+    assert fn == f"L0C.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+
+
+def test_define_l1_filename():
+    """Test L1 filename generation."""
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
+
+    # Set variables
+    sample_interval = 60
+    # rolling=True
+
+    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
+    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
+
+    # Create xarray dataset
+    timesteps = pd.date_range(start=start_date, end=end_date)
+    data = np.zeros(timesteps.shape)
+    ds = xr.DataArray(
+        data=data,
+        dims=["time"],
+        coords={"time": pd.date_range(start=start_date, end=end_date), "sample_interval": sample_interval},
+    ).to_dataset(name="dummy")
 
     # Test the function
-    define_filename_func = define_l0b_filename if product == "L0B" else define_l0c_filename
-    res = define_filename_func(ds, campaign_name, station_name)
-    assert res == expected_name
+    fn = define_l1_filename(
+        ds=ds,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # sample_interval=sample_interval,  # TODO
+        # rolling=rolling
+    )
+    assert fn == f"L1.1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+
+
+def test_define_l2e_filename():
+    """Test L2E filename generation."""
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
+
+    # Set variables
+    sample_interval = 60
+    rolling = True
+    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
+    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
+
+    # Create xarray dataset
+    timesteps = pd.date_range(start=start_date, end=end_date)
+    data = np.zeros(timesteps.shape)
+    ds = xr.DataArray(
+        data=data,
+        dims=["time"],
+        coords={"time": pd.date_range(start=start_date, end=end_date), "sample_interval": sample_interval},
+    ).to_dataset(name="dummy")
+
+    # Test the function
+    fn = define_l2e_filename(
+        ds=ds,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        sample_interval=sample_interval,
+        rolling=rolling,
+    )
+    assert fn == f"L2E.ROLL1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+
+
+def test_define_l2m_filename():
+    """Test L2M filename generation."""
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
+
+    # Set variables
+    sample_interval = 60
+    rolling = True
+    model_name = "GAMMA_ML"
+    start_date = datetime.datetime(2019, 3, 26, 0, 0, 0)
+    end_date = datetime.datetime(2021, 2, 8, 0, 0, 0)
+
+    # Create xarray dataset
+    timesteps = pd.date_range(start=start_date, end=end_date)
+    data = np.zeros(timesteps.shape)
+    ds = xr.DataArray(
+        data=data,
+        dims=["time"],
+        coords={"time": pd.date_range(start=start_date, end=end_date), "sample_interval": sample_interval},
+    ).to_dataset(name="dummy")
+
+    # Test the function
+    fn = define_l2m_filename(
+        ds=ds,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        sample_interval=sample_interval,
+        rolling=rolling,
+        model_name=model_name,
+    )
+    assert (
+        fn == f"L2M_GAMMA_ML.ROLL1MIN.CAMPAIGN_NAME.STATION_NAME.s20190326000000.e20210208000000.{ARCHIVE_VERSION}.nc"
+    )

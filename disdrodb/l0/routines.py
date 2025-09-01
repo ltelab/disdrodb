@@ -578,11 +578,11 @@ def run_l0a_station(
     # Create directory structure
     data_dir = create_l0_directory_structure(
         data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
-        metadata_archive_dir=metadata_archive_dir,
-        product=product,  # L0A or L0B
         station_name=station_name,
+        product=product,  # L0A or L0B
         force=force,
     )
 

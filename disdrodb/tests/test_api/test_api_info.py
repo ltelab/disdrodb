@@ -217,7 +217,7 @@ class TestInferPathInfoTuple:
     def test_with_campaign_directory(self):
         """Test infer_path_info_tuple extracts archive, source and campaign correctly."""
         # Build realistic DISDRODB path
-        data_archive_dir = os.path.join("/dummy", "DISDRODB")
+        data_archive_dir = os.path.join(os.sep, "dummy", "DISDRODB")
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
         campaign_dir = os.path.join(data_archive_dir, "V0", data_source, campaign_name)
@@ -233,7 +233,7 @@ class TestInferPathInfoTuple:
     def test_with_filepath(self, tmp_path):
         """Test infer_path_info_tuple works when passing a file path inside archive."""
         # Build realistic DISDRODB filepath
-        data_archive_dir = os.path.join("/dummy", "DISDRODB")
+        data_archive_dir = os.path.join(os.sep, "dummy", "DISDRODB")
         data_source = "DATA_SOURCE"
         campaign_name = "CAMPAIGN_NAME"
         file_path = os.path.join(
