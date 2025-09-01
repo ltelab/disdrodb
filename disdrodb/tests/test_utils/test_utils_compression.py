@@ -35,9 +35,9 @@ from disdrodb.utils.compression import (
 def test_files_compression(tmp_path, method):
     """Test compression of files in a directory."""
     data_archive_dir = tmp_path / "data" / "DISDRODB"
-    data_source = "test_data_source"
-    campaign_name = "test_campaign_name"
-    station_name = "station_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
 
     # Check raise an error if the directory does not yet exist
     with pytest.raises(ValueError):
