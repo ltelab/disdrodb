@@ -23,7 +23,7 @@ from disdrodb.l2.event import (
     group_timesteps_into_events,
     remove_isolated_timesteps,
 )
-from disdrodb.l2.routines import identify_time_partitions
+from disdrodb.routines.l2 import identify_time_partitions
 
 
 def generate_product_filename(start_time, end_time):

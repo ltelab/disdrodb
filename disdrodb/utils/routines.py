@@ -21,13 +21,64 @@ import os
 import shutil
 import tempfile
 
-from disdrodb.api.path import define_file_folder_path
+from disdrodb.api.io import find_files
+from disdrodb.api.path import define_file_folder_path, define_temporal_resolution
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
     log_error,
     log_info,
 )
+
+
+def is_possible_product(accumulation_interval, sample_interval, rolling):
+    """Assess if production is possible given the requested accumulation interval and source sample_interval."""
+    # Avoid rolling product generation at source sample interval
+    if rolling and accumulation_interval == sample_interval:
+        return False
+    # Avoid product generation if the accumulation_interval is less than the sample interval
+    if accumulation_interval < sample_interval:
+        return False
+    # Avoid producti generation if accumulation_interval is not multiple of sample_interval
+    return accumulation_interval % sample_interval == 0
+
+
+def try_get_required_filepaths(
+    product,
+    data_archive_dir,
+    data_source,
+    campaign_name,
+    station_name,
+    debugging_mode,
+    **product_kwargs,
+):
+    """Try to retrieve required filepaths for a product, or return None if unavailable."""
+    try:
+        filepaths = find_files(
+            data_archive_dir=data_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product=product,
+            debugging_mode=debugging_mode,
+            **product_kwargs,
+        )
+        return filepaths
+    # If no files available, print informative message
+    except Exception as e:
+        temporal_resolution = ""
+        if "sample_interval" in product_kwargs and "rolling" in product_kwargs:
+            temporal_resolution = define_temporal_resolution(
+                seconds=product_kwargs["sample_interval"],
+                rolling=product_kwargs["rolling"],
+            )
+        print(str(e))
+        msg = (
+            f"{product} processing of {data_source} {campaign_name} {station_name} "
+            f"has not been launched because of missing {product} {temporal_resolution} data."
+        )
+        print(msg)
+        return None
 
 
 def run_product_generation(

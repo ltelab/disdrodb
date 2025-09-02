@@ -34,7 +34,7 @@ from disdrodb.api.create_directories import (
     create_product_directory,
 )
 from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
-from disdrodb.api.io import find_files, open_netcdf_files
+from disdrodb.api.io import open_netcdf_files
 from disdrodb.api.path import (
     define_file_folder_path,
     define_l2e_filename,
@@ -57,6 +57,7 @@ from disdrodb.l2.processing import (
     generate_l2m,
 )
 from disdrodb.metadata import read_station_metadata
+from disdrodb.scattering.routines import precompute_scattering_tables
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 from disdrodb.utils.list import flatten_list
 
@@ -66,7 +67,11 @@ from disdrodb.utils.logger import (
     create_product_logs,
     log_info,
 )
-from disdrodb.utils.routines import run_product_generation
+from disdrodb.utils.routines import (
+    is_possible_product,
+    run_product_generation,
+    try_get_required_filepaths,
+)
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
     ensure_sorted_by_time,
@@ -199,18 +204,6 @@ def identify_time_partitions(filepaths: list[str], freq: str) -> list[dict]:
     # Convert to list of dicts
     list_time_blocks = [{"start_time": start_time, "end_time": end_time} for start_time, end_time in blocks]
     return list_time_blocks
-
-
-def is_possible_product(accumulation_interval, sample_interval, rolling):
-    """Assess if production is possible given the requested accumulation interval and source sample_interval."""
-    # Avoid rolling product generation at source sample interval
-    if rolling and accumulation_interval == sample_interval:
-        return False
-    # Avoid product generation if the accumulation_interval is less than the sample interval
-    if accumulation_interval < sample_interval:
-        return False
-    # Avoid producti generation if accumulation_interval is not multiple of sample_interval
-    return accumulation_interval % sample_interval == 0
 
 
 def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
@@ -409,41 +402,6 @@ class ProcessingOptions:
         return self.dict_folder_partitioning[temporal_resolution]
 
 
-def precompute_scattering_tables(
-    frequency,
-    num_points,
-    diameter_max,
-    canting_angle_std,
-    axis_ratio_model,
-    permittivity_model,
-    water_temperature,
-    elevation_angle,
-    verbose=True,
-):
-    """Precompute the pyTMatrix scattering tables required for radar variables simulations."""
-    from disdrodb.scattering.routines import get_list_simulations_params, load_scatterer
-
-    # Define parameters for all requested simulations
-    list_params = get_list_simulations_params(
-        frequency=frequency,
-        num_points=num_points,
-        diameter_max=diameter_max,
-        canting_angle_std=canting_angle_std,
-        axis_ratio_model=axis_ratio_model,
-        permittivity_model=permittivity_model,
-        water_temperature=water_temperature,
-        elevation_angle=elevation_angle,
-    )
-
-    # Compute require scattering tables
-    for params in list_params:
-        # Initialize scattering table
-        _ = load_scatterer(
-            verbose=verbose,
-            **params,
-        )
-
-
 ####----------------------------------------------------------------------------.
 #### L2E
 
@@ -534,6 +492,7 @@ def _generate_l2e(
         # Ensure at least 2 timestep available
         if ds["time"].size < 2:
             log_info(logger=logger, msg="File not created. Less than two timesteps available.", verbose=verbose)
+            return None
 
         # Simulate L2M-based radar variables if asked
         if radar_enabled:
@@ -672,33 +631,22 @@ def run_l2e_station(
         log_info(logger=logger, msg=msg, verbose=verbose)
 
     # -------------------------------------------------------------------------.
-    # List L1 files to process
+    # List files to process
+    # - If no data available, print error message and return None
     required_product = get_required_product(product)
-    flag_not_available_data = False
-    try:
-        filepaths = find_files(
-            data_archive_dir=data_archive_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            product=required_product,
-            # Processing options
-            debugging_mode=debugging_mode,
-        )
-    except Exception as e:
-        print(str(e))  # Case where no file paths available
-        flag_not_available_data = True
-
-    # -------------------------------------------------------------------------.
-    # If no data available, print error message and return None
-    if flag_not_available_data:
-        msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name} "
-            + f"has not been launched because of missing {required_product} data."
-        )
-        print(msg)
+    filepaths = try_get_required_filepaths(
+        data_archive_dir=data_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=required_product,
+        # Processing options
+        debugging_mode=debugging_mode,
+    )
+    if filepaths is None:
         return
 
+    # -------------------------------------------------------------------------.
     # Retrieve L2E processing options
     l2e_processing_options = ProcessingOptions(product="L2E", filepaths=filepaths, parallel=parallel)
 
@@ -1073,33 +1021,21 @@ def run_l2m_station(
 
         # -----------------------------------------------------------------.
         # List files to process
+        # - If no data available, print error message and try with other L2E accumulation intervals
         required_product = get_required_product(product)
-        flag_not_available_data = False
-        try:
-            filepaths = find_files(
-                data_archive_dir=data_archive_dir,
-                # Station arguments
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                # Product options
-                product=required_product,
-                sample_interval=accumulation_interval,
-                rolling=rolling,
-                # Processing options
-                debugging_mode=debugging_mode,
-            )
-        except Exception as e:
-            print(str(e))  # Case where no file paths available
-            flag_not_available_data = True
-
-        # If no data available, try with other L2E accumulation intervals
-        if flag_not_available_data:
-            msg = (
-                f"{product} processing of {data_source} {campaign_name} {station_name} "
-                + f"has not been launched because of missing {required_product} {temporal_resolution} data."
-            )
-            log_info(logger=logger, msg=msg, verbose=verbose)
+        filepaths = try_get_required_filepaths(
+            data_archive_dir=data_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product=required_product,
+            # Processing options
+            debugging_mode=debugging_mode,
+            # Product options
+            sample_interval=accumulation_interval,
+            rolling=rolling,
+        )
+        if filepaths is None:
             continue
 
         # -------------------------------------------------------------------------.

@@ -89,7 +89,7 @@ def disdrodb_run_l1_station(
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l1.routines import run_l1_station
+    from disdrodb.routines.l1 import run_l1_station
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 
     data_archive_dir = parse_archive_dir(data_archive_dir)

@@ -35,6 +35,7 @@ from disdrodb.scattering.routines import (
     get_backward_geometry,
     get_forward_geometry,
     get_list_simulations_params,
+    precompute_scattering_tables,
     wavelength_to_frequency,
 )
 from disdrodb.tests.fake_datasets import create_template_dataset
@@ -120,6 +121,22 @@ class TestGeometry:
         assert result == expected
 
 
+def test_precompute_scattering_tables():
+    """Test precompute_scattering_tables do not raise errors."""
+    out = precompute_scattering_tables(
+        frequency=[2.7, 5.6],
+        num_points=[100, 200],
+        diameter_max=[2.0],
+        canting_angle_std=[10.0],
+        axis_ratio_model=["Brandes2002"],
+        permittivity_model=["Liebe1991"],
+        water_temperature=[20.0],
+        elevation_angle=[90.0, 80.0],
+        verbose=True,
+    )
+    assert out is None
+
+
 class TestListSimulationParams:
     """Test suite for get_list_simulations_params."""
 
@@ -129,7 +146,7 @@ class TestListSimulationParams:
             frequency=5.6,
             num_points=100,
             diameter_max=5.0,
-            canting_angle_std=0.0,
+            canting_angle_std=10.0,
             axis_ratio_model="Brandes2002",
             permittivity_model="Liebe1991",
             water_temperature=20.0,
@@ -159,7 +176,7 @@ class TestListSimulationParams:
             frequency=[2.7, 5.6],
             num_points=[100, 200],
             diameter_max=[2.0],
-            canting_angle_std=[0.0],
+            canting_angle_std=[10.0],
             axis_ratio_model=["Brandes2002"],
             permittivity_model=["Liebe1991"],
             water_temperature=[20.0],
@@ -176,7 +193,7 @@ class TestListSimulationParams:
             frequency=[5.6001, 5.5999, 5.6],
             num_points=[100, 100, 100.0],
             diameter_max=[2.0, 2.0001],
-            canting_angle_std=[0.0],
+            canting_angle_std=[10.0],
             axis_ratio_model=["Brandes2002"],
             permittivity_model=["Liebe1991"],
             water_temperature=[20.0, 20.0001],
@@ -197,7 +214,7 @@ class TestListSimulationParams:
                 frequency=5.6,
                 num_points=100,
                 diameter_max=2.0,
-                canting_angle_std=0.0,
+                canting_angle_std=10.0,
                 axis_ratio_model="NotAModel",
                 permittivity_model="Liebe1991",
                 water_temperature=20.0,
@@ -211,7 +228,7 @@ class TestListSimulationParams:
                 frequency=5.6,
                 num_points=100,
                 diameter_max=2.0,
-                canting_angle_std=0.0,
+                canting_angle_std=10.0,
                 axis_ratio_model="Brandes2002",
                 permittivity_model="NotAModel",
                 water_temperature=20.0,
@@ -224,7 +241,7 @@ class TestListSimulationParams:
             frequency=[35.5, 2.7, 94.05],
             num_points=100,
             diameter_max=2.0,
-            canting_angle_std=0.0,
+            canting_angle_std=10.0,
             axis_ratio_model="Brandes2002",
             permittivity_model="Liebe1991",
             water_temperature=20.0,
@@ -260,6 +277,56 @@ def set_scattering_table_dir(tmp_path_factory):
 @pytest.mark.skipif(not is_pytmatrix_available(), reason="pytmatrix not available")
 class TestGetRadarParameters:
 
+    def test_empirical_nan_psd(self):
+        """Test get_radar_parameters with an empirical PSD which is all NaN."""
+        ds = create_template_dataset(with_velocity=True)
+        ds["drop_number_concentration"].data = np.ones(ds["drop_number_concentration"].data.shape) * np.nan
+        ds_radar = get_radar_parameters(
+            ds=ds,
+            frequency=None,
+            num_points=1024,
+            diameter_max=8,
+            canting_angle_std=7,
+            axis_ratio_model="Thurai2007",
+            permittivity_model="Turner2016",
+            water_temperature=10,
+            elevation_angle=0,
+            parallel=False,
+        )
+        # Assert all radar variables are present
+        assert isinstance(ds_radar, xr.Dataset)
+        for var in RADAR_VARIABLES:
+            assert var in ds_radar
+
+        # Assert all radar variables are NaN
+        for var in RADAR_VARIABLES:
+            assert np.all(np.isnan(ds_radar[var]))
+
+    def test_empirical_zeros_psd(self):
+        """Test get_radar_parameters with an empirical PSD which is all zeros."""
+        ds = create_template_dataset(with_velocity=True)
+        ds["drop_number_concentration"].data = np.zeros(ds["drop_number_concentration"].data.shape)
+        ds_radar = get_radar_parameters(
+            ds=ds,
+            frequency=None,
+            num_points=1024,
+            diameter_max=8,
+            canting_angle_std=7,
+            axis_ratio_model="Thurai2007",
+            permittivity_model="Turner2016",
+            water_temperature=10,
+            elevation_angle=0,
+            parallel=False,
+        )
+        # Assert all radar variables are present
+        assert isinstance(ds_radar, xr.Dataset)
+        for var in RADAR_VARIABLES:
+            assert var in ds_radar
+
+        # Assert all radar variables are NaN
+        for var in RADAR_VARIABLES:
+            assert np.all(np.isnan(ds_radar[var]))
+
     def test_empirical_psd_dataset(self):
         """Test get_radar_parameters with an empirical PSD dataset."""
         ds = create_template_dataset(with_velocity=True)
@@ -273,7 +340,7 @@ class TestGetRadarParameters:
             permittivity_model="Turner2016",
             water_temperature=10,
             elevation_angle=0,
-            parallel=False,
+            parallel=True,
         )
         assert isinstance(ds_radar, xr.Dataset)
         for var in RADAR_VARIABLES:

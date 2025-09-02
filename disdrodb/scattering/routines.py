@@ -432,6 +432,41 @@ def load_scatterer(
     return scatterer
 
 
+def precompute_scattering_tables(
+    frequency,
+    num_points,
+    diameter_max,
+    canting_angle_std,
+    axis_ratio_model,
+    permittivity_model,
+    water_temperature,
+    elevation_angle,
+    verbose=True,
+):
+    """Precompute the pyTMatrix scattering tables required for radar variables simulations."""
+    from disdrodb.scattering.routines import get_list_simulations_params, load_scatterer
+
+    # Define parameters for all requested simulations
+    list_params = get_list_simulations_params(
+        frequency=frequency,
+        num_points=num_points,
+        diameter_max=diameter_max,
+        canting_angle_std=canting_angle_std,
+        axis_ratio_model=axis_ratio_model,
+        permittivity_model=permittivity_model,
+        water_temperature=water_temperature,
+        elevation_angle=elevation_angle,
+    )
+
+    # Compute require scattering tables
+    for params in list_params:
+        # Initialize scattering table
+        _ = load_scatterer(
+            verbose=verbose,
+            **params,
+        )
+
+
 ####----------------------------------------------------------------------
 #### Scattering functions
 
@@ -458,12 +493,10 @@ def compute_radar_variables(scatterer):
         radar_vars["DBZV"] = 10 * np.log10(radar.refl(scatterer, h_pol=False))  # dBZ
 
         radar_vars["ZDR"] = 10 * np.log10(radar.Zdr(scatterer))  # dB
-        if ~np.isfinite(radar_vars["ZDR"]):
-            radar_vars["ZDR"] = np.nan
+        radar_vars["ZDR"] = np.where(np.isfinite(radar_vars["ZDR"]), radar_vars["ZDR"], np.nan)
 
         radar_vars["LDR"] = 10 * np.log10(radar.ldr(scatterer))  # dBZ
-        if ~np.isfinite(radar_vars["LDR"]):
-            radar_vars["LDR"] = np.nan
+        radar_vars["LDR"] = np.where(np.isfinite(radar_vars["LDR"]), radar_vars["LDR"], np.nan)
 
         radar_vars["RHOHV"] = radar.rho_hv(scatterer)  # deg/km
         radar_vars["DELTAHV"] = radar.delta_hv(scatterer) * 180.0 / np.pi  # [deg]
@@ -482,29 +515,26 @@ def compute_radar_variables(scatterer):
 RADAR_VARIABLES = ["DBZH", "DBZV", "ZDR", "LDR", "RHOHV", "DELTAHV", "KDP", "AH", "AV", "ADP"]
 
 
-def _initialize_null_output(output_dictionary):
-    if output_dictionary:
-        return dict.fromkeys(RADAR_VARIABLES, np.nan)
-    return np.zeros(len(RADAR_VARIABLES)) * np.nan
+def _try_compute_radar_variables(scatterer):
+    with suppress_warnings():
+        try:
+            radar_vars = compute_radar_variables(scatterer)
+            output = np.array(list(radar_vars.values()))
+        except Exception:
+            output = np.zeros(len(RADAR_VARIABLES)) * np.nan
+    return output
 
 
 def _estimate_empirical_radar_parameters(
     drop_number_concentration,
     bin_edges,
     scatterer,
-    output_dictionary,
 ):
     # Assign PSD model to the scatterer object
     scatterer.psd = BinnedPSD(bin_edges, drop_number_concentration)
 
     # Get radar variables
-    with suppress_warnings():
-        try:
-            radar_vars = compute_radar_variables(scatterer)
-            output = radar_vars if output_dictionary else np.array(list(radar_vars.values()))
-        except Exception:
-            output = _initialize_null_output(output_dictionary)
-    return output
+    return _try_compute_radar_variables(scatterer)
 
 
 def _estimate_model_radar_parameters(
@@ -512,20 +542,13 @@ def _estimate_model_radar_parameters(
     psd_model,
     psd_parameters_names,
     scatterer,
-    output_dictionary,
 ):
     # Assign PSD model to the scatterer object
     parameters = dict(zip(psd_parameters_names, parameters))
     scatterer.psd = create_psd(psd_model, parameters)
 
     # Get radar variables
-    with suppress_warnings():
-        try:
-            radar_vars = compute_radar_variables(scatterer)
-            output = radar_vars if output_dictionary else np.array(list(radar_vars.values()))
-        except Exception:
-            output = _initialize_null_output(output_dictionary)
-    return output
+    return _try_compute_radar_variables(scatterer)
 
 
 def select_psd_parameters(ds):
@@ -610,7 +633,6 @@ def get_model_radar_parameters(
 
     # Define kwargs
     kwargs = {
-        "output_dictionary": False,
         "psd_model": psd_model,
         "psd_parameters_names": required_parameters,
         "scatterer": scatterer,
@@ -725,7 +747,6 @@ def get_empirical_radar_parameters(
 
     # Define kwargs
     kwargs = {
-        "output_dictionary": False,
         "bin_edges": bin_edges,
         "scatterer": scatterer,
     }

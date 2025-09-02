@@ -69,7 +69,7 @@ from disdrodb.utils.logger import (
     create_product_logs,
     log_info,
 )
-from disdrodb.utils.routines import run_product_generation
+from disdrodb.utils.routines import run_product_generation, try_get_required_filepaths
 from disdrodb.utils.writer import write_product
 from disdrodb.utils.yaml import read_yaml
 
@@ -730,30 +730,19 @@ def run_l0b_station(
     )
 
     ##----------------------------------------------------------------.
-    # Get L0A files for the station
+    # List files to process
+    # - If no data available, print error message and return None
     required_product = get_required_product(product)
-    flag_not_available_data = False
-    try:
-        filepaths = find_files(
-            data_archive_dir=data_archive_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            product=required_product,
-            debugging_mode=debugging_mode,
-        )
-    except Exception as e:
-        print(str(e))  # Case where no file paths available
-        flag_not_available_data = True
-
-    # -------------------------------------------------------------------------.
-    # If no data available, print error message and return None
-    if flag_not_available_data:
-        msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name} "
-            + f"has not been launched because of missing {required_product} data."
-        )
-        print(msg)
+    filepaths = try_get_required_filepaths(
+        data_archive_dir=data_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=required_product,
+        # Processing options
+        debugging_mode=debugging_mode,
+    )
+    if filepaths is None:
         return
 
     ##----------------------------------------------------------------.
@@ -964,30 +953,18 @@ def run_l0c_station(
 
     # -------------------------------------------------------------------------.
     # List files to process
+    # - If no data available, print error message and return None
     required_product = get_required_product(product)
-    flag_not_available_data = False
-    try:
-        filepaths = find_files(
-            data_archive_dir=data_archive_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            product=required_product,
-            # Processing options
-            debugging_mode=debugging_mode,
-        )
-    except Exception as e:
-        print(str(e))  # Case where no file paths available
-        flag_not_available_data = True
-
-    # -------------------------------------------------------------------------.
-    # If no data available, print error message and return None
-    if flag_not_available_data:
-        msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name} "
-            + f"has not been launched because of missing {required_product} data."
-        )
-        print(msg)
+    filepaths = try_get_required_filepaths(
+        data_archive_dir=data_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=required_product,
+        # Processing options
+        debugging_mode=debugging_mode,
+    )
+    if filepaths is None:
         return
 
     # -------------------------------------------------------------------------.
