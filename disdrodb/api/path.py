@@ -399,7 +399,7 @@ def define_partitioning_tree(time, folder_partitioning):
     raise NotImplementedError(f"Unrecognized '{folder_partitioning}' folder partitioning scheme.")
 
 
-def define_file_folder_path(obj, data_dir, folder_partitioning):
+def define_file_folder_path(obj, dir_path, folder_partitioning):
     """
     Define the folder path where saving a file based on the dataset's starting time.
 
@@ -407,12 +407,13 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
     ----------
     ds : xarray.Dataset or pandas.DataFrame
         The object containing time information.
-    data_dir : str
+    dir : str
         Directory within the DISDRODB Data Archive where DISDRODB product files are to be saved.
+        It can be a product directory or a logs directory.
     folder_partitioning : str or None
         Define the subdirectory structure where saving files.
         Allowed values are:
-          - None: Files are saved directly in data_dir.
+          - None or "": Files are saved directly in data_dir.
           - "year": Files are saved under a subdirectory for the year.
           - "year/month": Files are saved under subdirectories for year and month.
           - "year/month/day": Files are saved under subdirectories for year, month and day
@@ -434,7 +435,7 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
 
     # Build the folder path based on the chosen partition scheme
     partitioning_tree = define_partitioning_tree(time=starting_time, folder_partitioning=folder_partitioning)
-    return os.path.join(data_dir, partitioning_tree)
+    return os.path.normpath(os.path.join(dir_path, partitioning_tree))
 
 
 def define_product_dir_tree(

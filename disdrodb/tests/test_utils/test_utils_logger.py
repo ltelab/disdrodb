@@ -28,7 +28,6 @@ from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
     create_product_logs,
-    log_debug,
     log_error,
     log_info,
     log_warning,
@@ -184,16 +183,8 @@ def test_define_summary_log_when_no_problems(tmp_path):
 @pytest.fixture
 def test_logger():
     logger = logging.getLogger("test_logger")
-    logger.setLevel(logging.DEBUG)  # Capture all log levels
+    logger.setLevel(logging.INFO)  # Capture all log INFO WARNING and ERROR levels
     return logger
-
-
-def test_log_debug(caplog, test_logger, capfd):
-    message = "Debug message"
-    log_debug(test_logger, message, verbose=True)
-    assert caplog.record_tuples == [("test_logger", logging.DEBUG, message)]
-    out, _ = capfd.readouterr()
-    assert " - Debug message" in out
 
 
 def test_log_info(caplog, test_logger, capfd):

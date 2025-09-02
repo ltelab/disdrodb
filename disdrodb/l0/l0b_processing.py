@@ -45,11 +45,7 @@ from disdrodb.utils.attrs import (
 )
 from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.utils.encoding import set_encodings
-from disdrodb.utils.logger import (
-    # log_warning,
-    # log_debug,
-    log_info,
-)
+from disdrodb.utils.logger import log_info
 from disdrodb.utils.time import ensure_sorted_by_time
 
 logger = logging.getLogger(__name__)

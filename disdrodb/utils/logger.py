@@ -42,7 +42,7 @@ def create_logger_file(logs_dir, filename, parallel):
     format_type = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     handler.setFormatter(logging.Formatter(format_type))
     logger.addHandler(handler)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # Define logger filepath
     # - LogCaptureHandler of pytest does not have baseFilename attribute --> So set None

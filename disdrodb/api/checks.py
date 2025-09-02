@@ -163,12 +163,12 @@ def check_folder_partitioning(folder_partitioning):
     folder_partitioning : str or None
         Defines the subdirectory structure based on the dataset's start time.
         Allowed values are:
-          - "": No additional subdirectories, files are saved directly in data_dir.
-          - "year": Files are stored under a subdirectory for the year (<data_dir>/2025).
-          - "year/month": Files are stored under subdirectories by year and month (<data_dir>/2025/04).
-          - "year/month/day": Files are stored under subdirectories by year, month and day (<data_dir>/2025/04/01).
-          - "year/month_name": Files are stored under subdirectories by year and month name (<data_dir>/2025/April).
-          - "year/quarter": Files are stored under subdirectories by year and quarter (<data_dir>/2025/Q2).
+          - "" or None: No additional subdirectories, files are saved directly in dir.
+          - "year": Files are stored under a subdirectory for the year (<dir>/2025).
+          - "year/month": Files are stored under subdirectories by year and month (<dir>/2025/04).
+          - "year/month/day": Files are stored under subdirectories by year, month and day (<dir>/2025/04/01).
+          - "year/month_name": Files are stored under subdirectories by year and month name (<dir>/2025/April).
+          - "year/quarter": Files are stored under subdirectories by year and quarter (<dir>/2025/Q2).
 
     Returns
     -------
@@ -176,6 +176,8 @@ def check_folder_partitioning(folder_partitioning):
         The verified folder partitioning scheme.
     """
     valid_options = ["", "year", "year/month", "year/month/day", "year/month_name", "year/quarter"]
+    if folder_partitioning is None:
+        folder_partitioning = ""
     if folder_partitioning not in valid_options:
         raise ValueError(
             f"Invalid folder_partitioning scheme '{folder_partitioning}'. Valid options are: {valid_options}.",

@@ -36,7 +36,6 @@ from disdrodb.l0.standards import (
 from disdrodb.utils.logger import (
     log_error,
     # log_warning,
-    # log_debug,
     log_info,
 )
 

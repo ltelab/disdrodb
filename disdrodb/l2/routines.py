@@ -21,7 +21,6 @@ import datetime
 import json
 import logging
 import os
-import shutil
 import time
 from typing import Optional
 
@@ -63,12 +62,11 @@ from disdrodb.utils.list import flatten_list
 
 # Logger
 from disdrodb.utils.logger import (
-    close_logger,
     create_logger_file,
     create_product_logs,
-    log_error,
     log_info,
 )
+from disdrodb.utils.routines import run_product_generation
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
     ensure_sorted_by_time,
@@ -135,12 +133,12 @@ def identify_events(
         - "n_timesteps": int, number of valid timesteps in the event
     """
     # Open datasets in parallel
-    ds = open_netcdf_files(filepaths, variables=["time", "N"], parallel=parallel)
+    ds = open_netcdf_files(filepaths, variables=["time", "N"], parallel=parallel, compute=True)
     # Sort dataset by time
     ds = ensure_sorted_by_time(ds)
     # Define candidate timesteps to group into events
-    idx_valid = ds["N"].data > min_drops
-    timesteps = ds["time"].data[idx_valid]
+    idx_valid = ds["N"].to_numpy() > min_drops
+    timesteps = ds["time"].to_numpy()[idx_valid]
     # Define event list
     event_list = group_timesteps_into_event(
         timesteps=timesteps,
@@ -150,6 +148,7 @@ def identify_events(
         event_min_duration=event_min_duration,
         event_min_size=event_min_size,
     )
+    del ds
     return event_list
 
 
@@ -469,42 +468,48 @@ def _generate_l2e(
     verbose,
     parallel,  # this is used by the decorator and to initialize correctly the logger !
 ):
-    # -----------------------------------------------------------------.
-    # Define product name
+    """Generate the L2E product from the DISDRODB L1 netCDF file."""
+    # Define product
     product = "L2E"
-
-    # Copy to avoid in-place replacement (outside this function)
-    product_options = product_options.copy()
-
-    # -----------------------------------------------------------------.
-    # Create file logger
+    # Define logger filename
     temporal_resolution = define_temporal_resolution(seconds=accumulation_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
-    expected_filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    logs_filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
-        filename=expected_filename,
+        filename=logs_filename,
         parallel=parallel,
     )
-    ##------------------------------------------------------------------------.
-    # Log start processing
-    msg = f"{product} creation of {expected_filename} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    success_flag = False
 
-    ##------------------------------------------------------------------------.
-    ### Core computation
-    try:
-        # ------------------------------------------------------------------------.
-        #### Open the dataset over the period of interest
+    # Define product processing function
+    def core(
+        filepaths,
+        campaign_name,
+        station_name,
+        product_options,
+        logger,
+        # Resampling arguments
+        start_time,
+        end_time,
+        accumulation_interval,
+        rolling,
+        # Archiving arguments
+        data_dir,
+        folder_partitioning,
+    ):
+        """Define L1 product processing."""
+        # Copy to avoid in-place replacement (outside this function)
+        product_options = product_options.copy()
+
+        # Open the dataset over the period of interest
         ds = open_netcdf_files(filepaths, start_time=start_time, end_time=end_time, parallel=False)
+        ds = ds.load()
+        ds.close()
 
-        ##------------------------------------------------------------------------.
-        #### Resample dataset
-        # Define sample interval in seconds
+        # Resample dataset # TODO: in future to perform in L1
+        # - Define sample interval in seconds
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).to_numpy().item()
-
         # - Resample dataset
         ds = resample_dataset(
             ds=ds,
@@ -518,71 +523,66 @@ def _generate_l2e(
         radar_enabled = product_options.get("radar_enabled")
         radar_options = product_options.get("radar_options")
 
-        ##------------------------------------------------------------------------.
-        #### Generate L2E product
-        # - Only if at least 2 timesteps available
-        if ds["time"].size > 2:
+        # Ensure at least 2 timestep available
+        if ds["time"].size < 2:
+            log_info(logger=logger, msg="File not created. Less than two timesteps available.", verbose=verbose)
+            return None
 
-            # Compute L2E variables
-            ds = generate_l2e(ds=ds, **l2e_options)
+        # Compute L2E variables
+        ds = generate_l2e(ds=ds, **l2e_options)
 
-            # Simulate L2M-based radar variables if asked
-            if radar_enabled:
-                ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_options)
-                ds.update(ds_radar)
-                ds.attrs = ds_radar.attrs.copy()
-
-            # Write netCDF4 dataset
-            if ds["time"].size > 1:
-                # Define filepath
-                filename = define_l2e_filename(
-                    ds,
-                    campaign_name=campaign_name,
-                    station_name=station_name,
-                    sample_interval=accumulation_interval,
-                    rolling=rolling,
-                )
-                folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
-                filepath = os.path.join(folder_path, filename)
-                # Write file
-                write_product(ds, filepath=filepath, force=force)
-
-                # Update log
-                log_info(logger=logger, msg=f"{product} creation of {filename} has ended.", verbose=verbose)
-            else:
-                log_info(logger=logger, msg="File not created. Less than one timesteps available.", verbose=verbose)
-        else:
+        # Ensure at least 2 timestep available
+        if ds["time"].size < 2:
             log_info(logger=logger, msg="File not created. Less than two timesteps available.", verbose=verbose)
 
-        ##--------------------------------------------------------------------.
-        #### Define logger file final directory
-        if folder_partitioning != "":
-            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
-            os.makedirs(log_dst_dir, exist_ok=True)
+        # Simulate L2M-based radar variables if asked
+        if radar_enabled:
+            ds_radar = generate_l2_radar(ds, parallel=not parallel, **radar_options)
+            ds.update(ds_radar)
+            ds.attrs = ds_radar.attrs.copy()
 
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del ds
+        # Write L2E netCDF4 dataset
+        filename = define_l2e_filename(
+            ds,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            sample_interval=accumulation_interval,
+            rolling=rolling,
+        )
+        folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
+        filepath = os.path.join(folder_path, filename)
+        write_product(ds, filepath=filepath, force=force)
 
-        success_flag = True
+        # Return L2E dataset
+        return ds
 
-    ##--------------------------------------------------------------------.
-    # Otherwise log the error
-    except Exception as e:
-        error_type = str(type(e).__name__)
-        msg = f"{error_type}: {e}"
-        log_error(logger, msg, verbose=verbose)
-
-    # Close the file logger
-    close_logger(logger)
-
-    # Move logger file to correct partitioning directory
-    if success_flag and folder_partitioning != "" and logger_filepath is not None:
-        # Move logger file to correct partitioning directory
-        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
-        shutil.move(logger_filepath, dst_filepath)
-        logger_filepath = dst_filepath
-
+    # Define product processing function kwargs
+    core_func_kwargs = dict(  # noqa: C408
+        filepaths=filepaths,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product_options=product_options,
+        # Resampling arguments
+        start_time=start_time,
+        end_time=end_time,
+        accumulation_interval=accumulation_interval,
+        rolling=rolling,
+        # Archiving arguments
+        data_dir=data_dir,
+        folder_partitioning=folder_partitioning,
+    )
+    # Run product generation
+    logger_filepath = run_product_generation(
+        product=product,
+        logs_dir=logs_dir,
+        logs_filename=logs_filename,
+        parallel=parallel,
+        verbose=verbose,
+        folder_partitioning=folder_partitioning,
+        core_func=core,
+        core_func_kwargs=core_func_kwargs,
+        pass_logger=True,
+    )
     # Return the logger file path
     return logger_filepath
 
@@ -834,34 +834,43 @@ def _generate_l2m(
     verbose,
     parallel,  # this is used only to initialize the correct logger !
 ):
-    # -----------------------------------------------------------------.
-    # Define product name
-    product = "L2M"
-
-    # Copy to avoid in-place replacement (outside this function)
-    product_options = product_options.copy()
-
-    # -----------------------------------------------------------------.
-    # Create file logger
+    """Generate the L2M product from a DISDRODB L2E netCDF file."""
+    # Define product
+    product = "L2E"
+    # Define logger filename
     temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
-    filename = f"L2M_{model_name}.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    logs_filename = (
+        f"L2M_{model_name}.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    )
     logger, logger_filepath = create_logger_file(
         logs_dir=logs_dir,
-        filename=filename,
+        filename=logs_filename,
         parallel=parallel,
     )
 
-    ##------------------------------------------------------------------------.
-    # Log start processing
-    msg = f"{product} creation of {filename} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    success_flag = False
+    # Define product processing function
+    def core(
+        start_time,
+        end_time,
+        filepaths,
+        campaign_name,
+        station_name,
+        logger,
+        # Product options
+        product_options,
+        sample_interval,
+        rolling,
+        model_name,
+        # Archiving arguments
+        data_dir,
+        folder_partitioning,
+    ):
+        """Define L1 product processing."""
+        # Copy to avoid in-place replacement (outside this function)
+        product_options = product_options.copy()
 
-    ##------------------------------------------------------------------------
-    ### Core computation
-    try:
         ##------------------------------------------------------------------------.
         # Extract L2M processing options
         l2m_options = product_options.get("product_options")
@@ -887,8 +896,10 @@ def _generate_l2m(
         ]
 
         ##------------------------------------------------------------------------.
-        # Open the raw netCDF
+        # Open the netCDF files
         ds = open_netcdf_files(filepaths, start_time=start_time, end_time=end_time, variables=variables)
+        ds = ds.load()
+        ds.close()
 
         # Produce L2M dataset
         ds = generate_l2m(
@@ -902,54 +913,55 @@ def _generate_l2m(
             ds.update(ds_radar)
             ds.attrs = ds_radar.attrs.copy()  # ds_radar contains already all L2M attrs
 
+        # Ensure at least 2 timestep available
+        if ds["time"].size < 2:
+            log_info(logger=logger, msg="File not created. Less than two timesteps available.", verbose=verbose)
+            return None
+
         # Write L2M netCDF4 dataset
-        if ds["time"].size > 1:
-            # Define filepath
-            filename = define_l2m_filename(
-                ds,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                sample_interval=sample_interval,
-                rolling=rolling,
-                model_name=model_name,
-            )
-            folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
-            filepath = os.path.join(folder_path, filename)
-            # Write to disk
-            write_product(ds, filepath=filepath, force=force)
+        filename = define_l2m_filename(
+            ds,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            sample_interval=sample_interval,
+            rolling=rolling,
+            model_name=model_name,
+        )
+        folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
+        filepath = os.path.join(folder_path, filename)
+        write_product(ds, filepath=filepath, force=force)
 
-        ##--------------------------------------------------------------------.
-        #### - Define logger file final directory
-        if folder_partitioning != "":
-            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
-            os.makedirs(log_dst_dir, exist_ok=True)
+        # Return L2M dataset
+        return ds
 
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del ds
-
-        # Log end processing
-        msg = f"{product} creation of {filename} has ended."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-        success_flag = True
-
-    ##--------------------------------------------------------------------.
-    # Otherwise log the error
-    except Exception as e:
-        error_type = str(type(e).__name__)
-        msg = f"{error_type}: {e}"
-        log_error(logger, msg, verbose=verbose)
-
-    # Close the file logger
-    close_logger(logger)
-
-    # Move logger file to correct partitioning directory
-    if success_flag and folder_partitioning != "" and logger_filepath is not None:
-        # Move logger file to correct partitioning directory
-        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
-        shutil.move(logger_filepath, dst_filepath)
-        logger_filepath = dst_filepath
-
+    # Define product processing function kwargs
+    core_func_kwargs = dict(  # noqa: C408
+        filepaths=filepaths,
+        start_time=start_time,
+        end_time=end_time,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Product options
+        product_options=product_options,
+        sample_interval=sample_interval,
+        rolling=rolling,
+        model_name=model_name,
+        # Archiving arguments
+        data_dir=data_dir,
+        folder_partitioning=folder_partitioning,
+    )
+    # Run product generation
+    logger_filepath = run_product_generation(
+        product=product,
+        logs_dir=logs_dir,
+        logs_filename=logs_filename,
+        parallel=parallel,
+        verbose=verbose,
+        folder_partitioning=folder_partitioning,
+        core_func=core,
+        core_func_kwargs=core_func_kwargs,
+        pass_logger=True,
+    )
     # Return the logger file path
     return logger_filepath
 
@@ -1045,7 +1057,6 @@ def run_l2m_station(
     # temporal_resolution = "1MIN"
     # temporal_resolution = "10MIN"
     temporal_resolutions = get_product_temporal_resolutions("L2M")
-    print(temporal_resolutions)
     for temporal_resolution in temporal_resolutions:
 
         # Retrieve accumulation_interval and rolling option

@@ -231,16 +231,3 @@ def disdrodb_metadata_archive_dir(tmp_path_factory):
 
     # Define directory where to download repository
     return download_metadata_archive(tmp_path_factory.mktemp("original_metadata_archive_repo"))
-
-
-@pytest.fixture(autouse=True, scope="session")
-def set_scattering_table_dir(tmp_path_factory):
-    """Set a single scattering_table_dir for the entire test session."""
-    import disdrodb
-
-    scattering_dir = tmp_path_factory.mktemp("scattering_table")
-    disdrodb.config.set({"scattering_table_dir": str(scattering_dir)})
-    yield
-
-    # reset after all tests finish
-    disdrodb.config.set({"scattering_table_dir": None})

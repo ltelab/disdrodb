@@ -600,7 +600,7 @@ class TestDefineFileFolderPath:
         start_time = datetime.datetime(2020, 1, 1, 12, 0, 0)
         df = pd.DataFrame({"time": [start_time], "value": [1]})
 
-        res = define_file_folder_path(df, str(tmp_path), "year/month/day")
+        res = define_file_folder_path(df, dir_path=str(tmp_path), folder_partitioning="year/month/day")
         expected_suffix = os.path.join("2020", "01", "01")
         assert res.endswith(expected_suffix)
 
@@ -612,7 +612,7 @@ class TestDefineFileFolderPath:
             coords={"time": [start_time, start_time + datetime.timedelta(minutes=5)]},
         )
 
-        res = define_file_folder_path(ds, str(tmp_path), "year/month")
+        res = define_file_folder_path(ds, dir_path=str(tmp_path), folder_partitioning="year/month")
         expected_suffix = os.path.join("2021", "06")
         assert res.endswith(expected_suffix)
 
@@ -622,7 +622,7 @@ class TestDefineFileFolderPath:
         df = pd.DataFrame({"time": [start_time]})
 
         with pytest.raises(ValueError):
-            define_file_folder_path(df, str(tmp_path), "bad_partitioning")
+            define_file_folder_path(df, dir_path=str(tmp_path), folder_partitioning="bad_partitioning")
 
 
 class TestDefineMetadataFilepath:

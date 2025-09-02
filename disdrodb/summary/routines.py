@@ -4179,6 +4179,7 @@ def create_station_summary(
         product_kwargs={"rolling": False, "sample_interval": 60},
         parallel=parallel,
         chunks=-1,
+        compute=True,
     )
 
     # Generate station summary figures and table

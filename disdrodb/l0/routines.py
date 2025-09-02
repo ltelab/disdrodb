@@ -21,7 +21,6 @@
 import datetime
 import logging
 import os
-import shutil
 import time
 from typing import Optional
 
@@ -40,7 +39,6 @@ from disdrodb.api.path import (
     define_l0b_filename,
     define_l0c_filename,
     define_metadata_filepath,
-    define_partitioning_tree,
 )
 from disdrodb.api.search import get_required_product
 from disdrodb.configs import get_data_archive_dir, get_folder_partitioning, get_metadata_archive_dir
@@ -68,12 +66,10 @@ from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_pa
 
 # Logger
 from disdrodb.utils.logger import (
-    close_logger,
-    create_logger_file,
     create_product_logs,
-    log_error,
     log_info,
 )
+from disdrodb.utils.routines import run_product_generation
 from disdrodb.utils.writer import write_product
 from disdrodb.utils.yaml import read_yaml
 
@@ -100,81 +96,150 @@ def _generate_l0a(
     verbose,
     parallel,
 ):
-    """Generate L0A file from raw file."""
+    """Generate L0A file from raw txt file."""
     # Define product
     product = "L0A"
-
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
-
     # Retrieve sensor name
     sensor_name = metadata["sensor_name"]
+    # Define logger filename
+    logs_filename = os.path.basename(filepath)
 
-    ##------------------------------------------------------------------------.
-    # Create file logger
-    filename = os.path.basename(filepath)
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=filename,
-        parallel=parallel,
-    )
-
-    ##------------------------------------------------------------------------.
-    # Log start processing
-    msg = f"{product} processing of {filename} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    success_flag = False
-    ##------------------------------------------------------------------------.
-    ### - Read raw file into a dataframe and sanitize for L0A format
-    try:
+    # Define product processing function
+    def core(
+        filepath,
+        campaign_name,
+        station_name,
+        sensor_name,
+        verbose,
+        issue_dict,
+        logger,
+        data_dir,
+        folder_partitioning,
+    ):
+        """Define L0A product processing."""
+        # Read raw data into L0A format
         df = reader(filepath, logger=logger)
-        df = sanitize_df(
-            df=df,
+        df = sanitize_df(df, sensor_name=sensor_name, verbose=verbose, issue_dict=issue_dict, logger=logger)
+
+        # Write L0A dataframe
+        filename = define_l0a_filename(df, campaign_name=campaign_name, station_name=station_name)
+        folder_path = define_file_folder_path(df, dir_path=data_dir, folder_partitioning=folder_partitioning)
+        out_path = os.path.join(folder_path, filename)
+        write_l0a(df, filepath=out_path, force=force, logger=logger, verbose=verbose)
+        # Return L0A dataframe
+        return df
+
+    # Define product processing function kwargs
+    core_func_kwargs = dict(  # noqa: C408
+        filepath=filepath,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        data_dir=data_dir,
+        folder_partitioning=folder_partitioning,
+        sensor_name=sensor_name,
+        verbose=verbose,
+        issue_dict=issue_dict,
+    )
+    # Run product generation
+    logger_filepath = run_product_generation(
+        product=product,
+        logs_dir=logs_dir,
+        logs_filename=logs_filename,
+        parallel=parallel,
+        verbose=verbose,
+        folder_partitioning=folder_partitioning,
+        core_func=core,
+        core_func_kwargs=core_func_kwargs,
+        pass_logger=True,
+    )
+    return logger_filepath
+
+
+@delayed_if_parallel
+@single_threaded_if_parallel
+def _generate_l0b_from_nc(
+    filepath,
+    data_dir,
+    logs_dir,
+    campaign_name,
+    station_name,
+    # Processing info
+    reader,
+    metadata,
+    issue_dict,
+    # Processing options
+    force,
+    verbose,
+    parallel,
+):
+    """Generate L0B file from raw netCDF file."""
+    # Define product
+    product = "L0B"
+    # Define folder partitioning
+    folder_partitioning = get_folder_partitioning()
+    # Define logger filename
+    logs_filename = os.path.basename(filepath)
+
+    # Define product processing function
+    def core(
+        filepath,
+        campaign_name,
+        station_name,
+        metadata,
+        issue_dict,
+        logger,
+        verbose,
+        data_dir,
+        folder_partitioning,
+    ):
+        """Define L0B product processing."""
+        # Retrieve sensor name
+        sensor_name = metadata["sensor_name"]
+        # Read raw netCDF and sanitize to L0B format
+        ds = reader(filepath, logger=logger)
+        ds = sanitize_ds(
+            ds=ds,
             sensor_name=sensor_name,
-            verbose=verbose,
+            metadata=metadata,
             issue_dict=issue_dict,
+            verbose=verbose,
             logger=logger,
         )
 
-        ##--------------------------------------------------------------------.
-        #### - Write to Parquet
-        filename = define_l0a_filename(df=df, campaign_name=campaign_name, station_name=station_name)
-        folder_path = define_file_folder_path(df, data_dir=data_dir, folder_partitioning=folder_partitioning)
+        # Write L0B netCDF4 dataset
+        filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
+        folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
         filepath = os.path.join(folder_path, filename)
-        write_l0a(df=df, filepath=filepath, force=force, logger=logger, verbose=verbose)
+        write_l0b(ds, filepath=filepath, force=force)
 
-        ##--------------------------------------------------------------------.
-        #### - Define logger file final directory
-        if folder_partitioning != "":
-            log_dst_dir = define_file_folder_path(df, data_dir=logs_dir, folder_partitioning=folder_partitioning)
-            os.makedirs(log_dst_dir, exist_ok=True)
+        # Return L0B dataset
+        return ds
 
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del df
-
-        # Log end processing
-        msg = f"{product} processing of {filename} has ended."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-        success_flag = True
-
-    # Otherwise log the error
-    except Exception as e:
-        error_type = str(type(e).__name__)
-        msg = f"{error_type}: {e}"
-        log_error(logger=logger, msg=msg, verbose=verbose)
-
-    # Close the file logger
-    close_logger(logger)
-
-    # Move logger file to correct partitioning directory
-    if success_flag and folder_partitioning != "" and logger_filepath is not None:
-        # Move logger file to correct partitioning directory
-        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
-        shutil.move(logger_filepath, dst_filepath)
-        logger_filepath = dst_filepath
-
-    # Return the logger file path
+    # Define product processing function kwargs
+    core_func_kwargs = dict(  # noqa: C408
+        filepath=filepath,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        metadata=metadata,
+        issue_dict=issue_dict,
+        verbose=verbose,
+        data_dir=data_dir,
+        folder_partitioning=folder_partitioning,
+    )
+    # Run product generation
+    logger_filepath = run_product_generation(
+        product=product,
+        logs_dir=logs_dir,
+        logs_filename=logs_filename,
+        parallel=parallel,
+        verbose=verbose,
+        folder_partitioning=folder_partitioning,
+        core_func=core,
+        core_func_kwargs=core_func_kwargs,
+        pass_logger=True,
+    )
     return logger_filepath
 
 
@@ -196,175 +261,60 @@ def _generate_l0b(
 ):
     # Define product
     product = "L0B"
-
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
+    # Define logger filename
+    logs_filename = os.path.basename(filepath)
 
-    # -----------------------------------------------------------------.
-    # Create file logger
-    filename = os.path.basename(filepath)
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=filename,
-        parallel=parallel,
-    )
-
-    ##------------------------------------------------------------------------.
-    # Log start processing
-    msg = f"{product} processing of {filename} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    success_flag = False
-
-    ##------------------------------------------------------------------------.
-    # Retrieve sensor name
-    sensor_name = metadata["sensor_name"]
-    check_sensor_name(sensor_name)
-
-    ##------------------------------------------------------------------------.
-    try:
+    # Define product processing function
+    def core(
+        filepath,
+        campaign_name,
+        station_name,
+        metadata,
+        logger,
+        debugging_mode,
+        verbose,
+        data_dir,
+        folder_partitioning,
+    ):
+        """Define L0B product processing."""
         # Read L0A Apache Parquet file
         df = read_l0a_dataframe(filepath, debugging_mode=debugging_mode)
-
-        # -----------------------------------------------------------------.
-        # Create xarray Dataset
+        # Create L0B xarray Dataset
         ds = generate_l0b(df=df, metadata=metadata, logger=logger, verbose=verbose)
 
-        # -----------------------------------------------------------------.
         # Write L0B netCDF4 dataset
         filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
-        folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+        folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
         filepath = os.path.join(folder_path, filename)
         write_l0b(ds, filepath=filepath, force=force)
+        # Return L0B dataset
+        return ds
 
-        ##--------------------------------------------------------------------.
-        #### - Define logger file final directory
-        if folder_partitioning != "":
-            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
-            os.makedirs(log_dst_dir, exist_ok=True)
-
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del ds, df
-
-        # Log end processing
-        msg = f"{product} processing of {filename} has ended."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-        success_flag = True
-
-    # Otherwise log the error
-    except Exception as e:
-        error_type = str(type(e).__name__)
-        msg = f"{error_type}: {e}"
-        log_error(logger, msg, verbose=verbose)
-
-    # Close the file logger
-    close_logger(logger)
-
-    # Move logger file to correct partitioning directory
-    if success_flag and folder_partitioning != "" and logger_filepath is not None:
-        # Move logger file to correct partitioning directory
-        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
-        shutil.move(logger_filepath, dst_filepath)
-        logger_filepath = dst_filepath
-
-    # Return the logger file path
-    return logger_filepath
-
-
-@delayed_if_parallel
-@single_threaded_if_parallel
-def _generate_l0b_from_nc(
-    filepath,
-    data_dir,
-    logs_dir,
-    campaign_name,
-    station_name,
-    # Processing info
-    reader,
-    metadata,
-    issue_dict,
-    # Processing options
-    force,
-    verbose,
-    parallel,
-):
-
-    # -----------------------------------------------------------------.
-    # Define product name
-    product = "L0B"
-
-    # Define folder partitioning
-    folder_partitioning = get_folder_partitioning()
-
-    # Retrieve sensor name
-    sensor_name = metadata["sensor_name"]
-
-    # -----------------------------------------------------------------.
-    # Create file logger
-    filename = os.path.basename(filepath)
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=filename,
-        parallel=parallel,
+    # Define product processing function kwargs
+    core_func_kwargs = dict(  # noqa: C408
+        filepath=filepath,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        metadata=metadata,
+        debugging_mode=debugging_mode,
+        verbose=verbose,
+        data_dir=data_dir,
+        folder_partitioning=folder_partitioning,
     )
-
-    ##------------------------------------------------------------------------.
-    # Log start processing
-    msg = f"{product} processing of {filename} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    success_flag = False
-
-    ##------------------------------------------------------------------------.
-    ### - Read raw netCDF and sanitize for L0B format
-    try:
-        ds = reader(filepath, logger=logger)
-        ds = sanitize_ds(
-            ds=ds,
-            sensor_name=sensor_name,
-            metadata=metadata,
-            issue_dict=issue_dict,
-            verbose=verbose,
-            logger=logger,
-        )
-
-        # -----------------------------------------------------------------.
-        # Write L0B netCDF4 dataset
-        filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
-        folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
-        filepath = os.path.join(folder_path, filename)
-        write_l0b(ds, filepath=filepath, force=force)
-
-        ##--------------------------------------------------------------------.
-        #### - Define logger file final directory
-        if folder_partitioning != "":
-            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
-            os.makedirs(log_dst_dir, exist_ok=True)
-
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del ds
-
-        # Log end processing
-        msg = f"L0B processing of {filename} has ended."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-        success_flag = True
-
-    # Otherwise log the error
-    except Exception as e:
-        error_type = str(type(e).__name__)
-        msg = f"{error_type}: {e}"
-        log_error(logger, msg, verbose=verbose)
-
-    # Close the file logger
-    close_logger(logger)
-
-    # Move logger file to correct partitioning directory
-    if success_flag and folder_partitioning != "" and logger_filepath is not None:
-        # Move logger file to correct partitioning directory
-        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
-        shutil.move(logger_filepath, dst_filepath)
-        logger_filepath = dst_filepath
-
+    # Run product generation
+    logger_filepath = run_product_generation(
+        product=product,
+        logs_dir=logs_dir,
+        logs_filename=logs_filename,
+        parallel=parallel,
+        verbose=verbose,
+        folder_partitioning=folder_partitioning,
+        core_func=core,
+        core_func_kwargs=core_func_kwargs,
+        pass_logger=True,
+    )
     # Return the logger file path
     return logger_filepath
 
@@ -384,32 +334,29 @@ def _generate_l0c(
     verbose,
     parallel,  # this is used only to initialize the correct logger !
 ):
-    # -----------------------------------------------------------------.
-    # Define product name
+    """Define L0C product processing."""
+    # Define product
     product = "L0C"
-
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
+    # Define logger filename
+    logs_filename = day
 
-    # -----------------------------------------------------------------.
-    # Create file logger
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=day,
-        parallel=parallel,
-    )
-
-    ##------------------------------------------------------------------------.
-    # Log start processing
-    msg = f"{product} processing for {day} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    success_flag = False
-
-    ##------------------------------------------------------------------------.
-    ### Core computation
-    try:
+    # Define product processing function
+    def core(
+        day,
+        filepaths,
+        metadata_filepath,
+        campaign_name,
+        station_name,
+        logger,
+        data_dir,
+        folder_partitioning,
+        verbose,
+    ):
+        """Define L0C product processing."""
         # Retrieve measurement_intervals
-        # - TODO: in future available from dataset
+        # TODO: in future available from dataset (in attributes removed from L0C !)
         metadata = read_yaml(metadata_filepath)
         measurement_intervals = retrieve_possible_measurement_intervals(metadata)
 
@@ -437,49 +384,39 @@ def _generate_l0c(
                 # Update global attributes
                 ds = set_disdrodb_attrs(ds, product=product)
 
-                # Define product filepath
+                # Write L0C netCDF4 dataset
                 filename = define_l0c_filename(ds, campaign_name=campaign_name, station_name=station_name)
-                folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
+                folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
                 filepath = os.path.join(folder_path, filename)
-
-                # Write to disk
                 write_product(ds, filepath=filepath, force=force)
 
-        # Clean environment
-        del ds
+        # Return L0C dataset
+        return ds
 
-        ##--------------------------------------------------------------------.
-        #### - Define logger file final directory
-        if folder_partitioning != "":
-            dirtree = define_partitioning_tree(
-                time=datetime.datetime.strptime("2022-03-22", "%Y-%m-%d"),
-                folder_partitioning=folder_partitioning,
-            )
-            log_dst_dir = os.path.join(logs_dir, dirtree)
-            os.makedirs(log_dst_dir, exist_ok=True)
+    # Define product processing function kwargs
+    core_func_kwargs = dict(  # noqa: C408
+        filepaths=filepaths,
+        day=day,
+        metadata_filepath=metadata_filepath,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        data_dir=data_dir,
+        folder_partitioning=folder_partitioning,
+        verbose=verbose,
+    )
 
-        # Log end processing
-        msg = f"{product} processing for {day} has ended."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-        success_flag = True
-
-    ##--------------------------------------------------------------------.
-    # Otherwise log the error
-    except Exception as e:
-        error_type = str(type(e).__name__)
-        msg = f"{error_type}: {e}"
-        log_error(logger, msg, verbose=verbose)
-
-    # Close the file logger
-    close_logger(logger)
-
-    # Move logger file to correct partitioning directory
-    if success_flag and folder_partitioning != "" and logger_filepath is not None:
-        # Move logger file to correct partitioning directory
-        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
-        shutil.move(logger_filepath, dst_filepath)
-        logger_filepath = dst_filepath
-
+    # Run product generation
+    logger_filepath = run_product_generation(
+        product=product,
+        logs_dir=logs_dir,
+        logs_filename=logs_filename,
+        parallel=parallel,
+        verbose=verbose,
+        folder_partitioning=folder_partitioning,
+        core_func=core,
+        core_func_kwargs=core_func_kwargs,
+        pass_logger=True,
+    )
     # Return the logger file path
     return logger_filepath
 

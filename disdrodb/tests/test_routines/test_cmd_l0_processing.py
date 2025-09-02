@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -335,7 +333,7 @@ def test_disdrodb_run_l0_station(tmp_path, disdrodb_metadata_archive_dir, verbos
     # Check files are produced
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
-        product="L0B",
+        product="L0C",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
