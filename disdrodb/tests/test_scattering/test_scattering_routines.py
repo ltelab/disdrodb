@@ -121,6 +121,7 @@ class TestGeometry:
         assert result == expected
 
 
+@pytest.mark.skipif(not is_pytmatrix_available(), reason="pytmatrix not available")
 def test_precompute_scattering_tables():
     """Test precompute_scattering_tables do not raise errors."""
     out = precompute_scattering_tables(
