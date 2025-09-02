@@ -15,15 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test manipulation utilities."""
+import pytest
 import numpy as np
 import xarray as xr
 
 import disdrodb
+from disdrodb.constants import DIAMETER_DIMENSION
 from disdrodb.tests.fake_datasets import create_template_l2e_dataset
 from disdrodb.utils.manipulations import (
     convert_from_decibel,
     convert_to_decibel,
     get_diameter_bin_edges,
+    get_diameter_coords_dict_from_bin_edges,
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
@@ -65,6 +68,68 @@ def test_unstack_radar_variables():
     assert "frequency" not in ds_unstacked.dims
 
     assert any(var.startswith("DBZH") for var in ds_unstacked.data_vars), "Expect new variables named DBZH_<freq>"
+
+
+class TestGetDiameterCoordsDictFromBinEdges:
+    """Test suite for get_diameter_coords_dict_from_bin_edges."""
+
+    def test_simple_bin_edges(self):
+        """Check correctness for a small set of bin edges."""
+        edges = np.array([0.0, 1.0, 2.0])
+        coords = get_diameter_coords_dict_from_bin_edges(edges)
+
+        # Expected values
+        expected_center = np.array([0.5, 1.5])
+        expected_width = np.array([1.0, 1.0])
+        expected_lower = np.array([0.0, 1.0])
+        expected_upper = np.array([1.0, 2.0])
+
+        np.testing.assert_array_equal(coords["diameter_bin_center"][1], expected_center)
+        np.testing.assert_array_equal(coords["diameter_bin_width"][1], expected_width)
+        np.testing.assert_array_equal(coords["diameter_bin_lower"][1], expected_lower)
+        np.testing.assert_array_equal(coords["diameter_bin_upper"][1], expected_upper)
+
+    def test_increasing_bin_edges_with_variable_widths(self):
+        """Check correctness when bin widths are not uniform."""
+        edges = np.array([0.0, 0.5, 2.0, 3.5])
+        coords = get_diameter_coords_dict_from_bin_edges(edges)
+
+        expected_center = np.array([0.25, 1.25, 2.75])
+        expected_width = np.array([0.5, 1.5, 1.5])
+        expected_lower = np.array([0.0, 0.5, 2.0])
+        expected_upper = np.array([0.5, 2.0, 3.5])
+
+        np.testing.assert_array_equal(coords["diameter_bin_center"][1], expected_center)
+        np.testing.assert_array_equal(coords["diameter_bin_width"][1], expected_width)
+        np.testing.assert_array_equal(coords["diameter_bin_lower"][1], expected_lower)
+        np.testing.assert_array_equal(coords["diameter_bin_upper"][1], expected_upper)
+
+    def test_minimum_two_edges(self):
+        """Check that two edges produce a single bin."""
+        edges = np.array([1.0, 2.0])
+        coords = get_diameter_coords_dict_from_bin_edges(edges)
+
+        np.testing.assert_array_equal(coords["diameter_bin_center"][1], [1.5])
+        np.testing.assert_array_equal(coords["diameter_bin_width"][1], [1.0])
+        np.testing.assert_array_equal(coords["diameter_bin_lower"][1], [1.0])
+        np.testing.assert_array_equal(coords["diameter_bin_upper"][1], [2.0])
+
+    def test_invalid_bin_edges_raises(self):
+        """Check that fewer than two edges raises an error."""
+        edges = np.array([1.0])  # not enough to form a bin
+        with pytest.raises(ValueError):
+            get_diameter_coords_dict_from_bin_edges(edges)
+
+    def test_usable_as_xarray_coords(self):
+        """Check that the dictionary can be passed directly to xarray.Dataset."""
+        edges = np.array([0.0, 1.0, 2.0])
+        coords = get_diameter_coords_dict_from_bin_edges(edges)
+
+        ds = xr.Dataset(coords=coords)
+        assert "diameter_bin_center" in ds.coords
+        assert "diameter_bin_lower" in ds.coords
+        assert DIAMETER_DIMENSION in ds.dims
+        assert ds.sizes[DIAMETER_DIMENSION] == 2
 
 
 def test_resample_drop_number_concentration_linear():

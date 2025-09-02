@@ -21,6 +21,7 @@
 import numpy as np
 
 from disdrodb.utils.xarray import unstack_datarray_dimension
+from disdrodb.constants import DIAMETER_DIMENSION
 
 
 def get_diameter_bin_edges(ds):
@@ -53,19 +54,28 @@ def unstack_radar_variables(ds):
     return ds
 
 
+def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
+    """Get dictionary with all relevant diameter coordinates."""
+    if np.size(diameter_bin_edges) < 2: 
+        raise ValueError("Expecting at least 2 values defining bin edges.")
+    diameter_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
+    diameter_bin_width = np.diff(diameter_bin_edges)
+    diameter_bin_lower = diameter_bin_edges[:-1]
+    diameter_bin_upper = diameter_bin_edges[1:]
+    coords_dict = {
+        "diameter_bin_center": (DIAMETER_DIMENSION, diameter_bin_center),
+        "diameter_bin_width": (DIAMETER_DIMENSION, diameter_bin_width),
+        "diameter_bin_lower": (DIAMETER_DIMENSION, diameter_bin_lower),
+        "diameter_bin_upper": (DIAMETER_DIMENSION, diameter_bin_upper),
+    }
+    return coords_dict
+
+
 def resample_drop_number_concentration(drop_number_concentration, diameter_bin_edges, method="linear"):
     """Resample drop number concentration N(D) DataArray to high resolution diameter bins."""
     diameters_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
 
     da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
-    diameter_bin_width = np.diff(diameter_bin_edges)
-    diameter_bin_lower = diameter_bin_edges[:-1]
-    diameter_bin_upper = diameter_bin_edges[1:]
-    da = da.assign_coords(
-        {
-            "diameter_bin_width": ("diameter_bin_center", diameter_bin_width),
-            "diameter_bin_lower": ("diameter_bin_center", diameter_bin_lower),
-            "diameter_bin_upper": ("diameter_bin_center", diameter_bin_upper),
-        },
-    )
+    coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
+    da = da.assign_coords(coords_dict) 
     return da

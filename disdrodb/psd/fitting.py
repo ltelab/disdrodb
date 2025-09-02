@@ -1222,6 +1222,36 @@ def _compute_cost_function(ND_obs, ND_preds, D, dD, V, target, transformation, e
     return errors
 
 
+def define_param_range(center, step, bounds, factor=2, refinement=20):
+    """
+    Create a refined parameter search range around a center value, constrained to bounds.
+
+    Parameters
+    ----------
+    center : float
+        Center of the range (e.g., current best estimate).
+    step : float
+        Coarse step size used in the first search.
+    bounds : tuple of (float, float)
+        Lower and upper bounds (can include -np.inf, np.inf).
+    factor : float, optional
+        How wide the refined range extends from the center (in multiples of step).
+        Default = 2.
+    refinement : int, optional
+        Factor to refine the step size (smaller step = finer grid).
+        Default = 20.
+
+    Returns
+    -------
+    np.ndarray
+        Array of values constrained to bounds.
+    """
+    lower = max(center - factor * step, bounds[0])
+    upper = min(center + factor * step, bounds[1])
+    new_step = step / refinement
+    return np.arange(lower, upper, new_step)
+        
+
 def apply_exponential_gs(
     Nt,
     ND_obs,
@@ -1257,7 +1287,7 @@ def apply_exponential_gs(
         )
 
     # Identify best parameter set
-    best_index = np.argmin(errors)
+    best_index = np.nanargmin(errors)
     return np.array([N0_arr[best_index].item(), lambda_arr[best_index].item()])
 
 
@@ -1287,7 +1317,7 @@ def _apply_gamma_gs(mu_values, lambda_values, Nt, ND_obs, D, dD, V, target, tran
         )
 
     # Best parameter
-    best_index = np.argmin(errors)
+    best_index = np.nanargmin(errors)
     return N0[best_index].item(), mu_arr[best_index].item(), lambda_arr[best_index].item()
 
 
@@ -1304,6 +1334,10 @@ def apply_gamma_gs(
     error_order,
 ):
     """Estimate GammaPSD model parameters using Grid Search."""
+    # Define parameters bounds 
+    mu_bounds = (0.01, 20)
+    lambda_bounds = (0.01, 60)
+
     # Define initial set of parameters
     mu_step = 0.5
     lambda_step = 0.5
@@ -1325,8 +1359,9 @@ def apply_gamma_gs(
     )
 
     # Second round of GS
-    mu_values = np.arange(mu - mu_step * 2, mu + mu_step * 2, step=mu_step / 20)
-    lambda_values = np.arange(Lambda - lambda_step * 2, Lambda + lambda_step * 2, step=lambda_step / 20)
+    mu_values = define_param_range(mu, mu_step, bounds=mu_bounds)
+    lambda_values = define_param_range(Lambda, lambda_step, bounds=lambda_bounds)
+
     N0, mu, Lambda = _apply_gamma_gs(
         mu_values=mu_values,
         lambda_values=lambda_values,
@@ -1368,7 +1403,7 @@ def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, t
         )
 
     # Best parameter
-    best_index = np.argmin(errors)
+    best_index = np.nanargmin(errors)
     return Nt, mu_arr[best_index].item(), sigma_arr[best_index].item()
 
 
@@ -1385,10 +1420,16 @@ def apply_lognormal_gs(
     error_order,
 ):
     """Estimate LognormalPSD model parameters using Grid Search."""
+    # Define parameters bounds 
+    sigma_bounds = (0, np.inf) # > 0 
+    scale_bounds = (0.1, np.inf) # > 0
+    # mu_bounds = (- np.inf, np.inf) # mu = np.log(scale) 
+    
     # Define initial set of parameters
-    mu_step = 0.5
-    sigma_step = 0.5
-    mu_values = np.arange(0.01, 20, step=mu_step)  # TODO: define realistic values
+    scale_step = 0.2
+    sigma_step = 0.2
+    scale_values = np.arange(0.1, 20, step=scale_step)
+    mu_values = np.log(scale_values) # TODO: define realistic values
     sigma_values = np.arange(0, 20, step=sigma_step)  # TODO: define realistic values
 
     # First round of GS
@@ -1406,8 +1447,9 @@ def apply_lognormal_gs(
     )
 
     # Second round of GS
-    mu_values = np.arange(mu - mu_step * 2, mu + mu_step * 2, step=mu_step / 20)
-    sigma_values = np.arange(sigma - sigma_step * 2, sigma + sigma_step * 2, step=sigma_step / 20)
+    sigma_values = define_param_range(sigma, sigma_step, bounds=sigma_bounds)
+    scale_values = define_param_range(np.exp(mu), scale_step, bounds=scale_bounds)
+    mu_values = np.log(scale_values)
     Nt, mu, sigma = _apply_lognormal_gs(
         mu_values=mu_values,
         sigma_values=sigma_values,
@@ -1459,7 +1501,7 @@ def apply_normalized_gamma_gs(
         )
 
     # Identify best parameter set
-    mu = mu_arr[np.argmin(errors)]
+    mu = mu_arr[np.nanargmin(errors)]
     return np.array([Nw, mu, D50])
 
 
@@ -2414,6 +2456,14 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
 
     # Check valid transformation
     transformation = check_transformation(transformation)
+
+    # Check fall velocity is available if target R
+    if "fall_velocity" not in ds:
+        if target == "R":
+            raise ValueError("'fall_velocity' variable is required if GS target is 'R'.")
+        ds["fall_velocity"] = (
+            xr.ones_like(ds["drop_number_concentration"].isel(time=0, missing_dims="ignore")) * np.nan
+        )  # dummy
 
     # Retrieve estimation function
     func = OPTIMIZATION_ROUTINES_DICT["GS"][psd_model]
