@@ -20,8 +20,8 @@
 
 import numpy as np
 
-from disdrodb.utils.xarray import unstack_datarray_dimension
 from disdrodb.constants import DIAMETER_DIMENSION
+from disdrodb.utils.xarray import unstack_datarray_dimension
 
 
 def get_diameter_bin_edges(ds):
@@ -56,7 +56,7 @@ def unstack_radar_variables(ds):
 
 def get_diameter_coords_dict_from_bin_edges(diameter_bin_edges):
     """Get dictionary with all relevant diameter coordinates."""
-    if np.size(diameter_bin_edges) < 2: 
+    if np.size(diameter_bin_edges) < 2:
         raise ValueError("Expecting at least 2 values defining bin edges.")
     diameter_bin_center = diameter_bin_edges[:-1] + np.diff(diameter_bin_edges) / 2
     diameter_bin_width = np.diff(diameter_bin_edges)
@@ -77,5 +77,5 @@ def resample_drop_number_concentration(drop_number_concentration, diameter_bin_e
 
     da = drop_number_concentration.interp(coords={"diameter_bin_center": diameters_bin_center}, method=method)
     coords_dict = get_diameter_coords_dict_from_bin_edges(diameter_bin_edges)
-    da = da.assign_coords(coords_dict) 
+    da = da.assign_coords(coords_dict)
     return da

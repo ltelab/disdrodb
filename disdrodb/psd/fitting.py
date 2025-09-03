@@ -20,9 +20,10 @@ import scipy.stats as ss
 import xarray as xr
 from scipy.integrate import quad
 from scipy.optimize import minimize
-from scipy.special import gamma, gammainc, gammaln  # Regularized lower incomplete gamma function
+from scipy.special import gamma, gammaln  # Regularized lower incomplete gamma function
 
 from disdrodb.constants import DIAMETER_DIMENSION
+from disdrodb.l1.fall_velocity import get_dataset_fall_velocity
 from disdrodb.l2.empirical_dsd import (
     get_median_volume_drop_diameter,
     get_moment,
@@ -227,13 +228,13 @@ def get_expected_probabilities(params, cdf_func, pdf_func, bin_edges, probabilit
 def get_adjusted_nt(cdf, params, Nt, bin_edges):
     """Adjust Nt for the proportion of missing drops. See Johnson's et al., 2013 Eqs. 3 and 4."""
     # Estimate proportion of missing drops (Johnson's 2011 Eqs. 3)
-    # --> Alternative: p = 1 - np.sum(pdf(diameter, params)* diameter_bin_width)  # [-]
+    # --> Alternative:
+    # - p = 1 - np.sum(pdf(diameter, params)* diameter_bin_width)  # [-]
+    # - p = 1 - np.sum((Lambda ** (mu + 1)) / gamma(mu + 1) * D**mu * np.exp(-Lambda * D) * diameter_bin_width)  # [-]
     p = 1 - np.diff(cdf([bin_edges[0], bin_edges[-1]], params)).item()  # [-]
-    # Adjusts Nt for the proportion of drops not obs
-    #   p = np.clip(p, 0, 1 - 1e-12)
-    if np.isclose(p, 1, atol=1e-12):
-        return np.nan
-    return Nt / (1 - p)  # [m-3]
+    # Adjusts Nt for the proportion of missing drops
+    nt_adj = np.nan if np.isclose(p, 1, atol=1e-12) else Nt / (1 - p)  # [m-3]
+    return nt_adj
 
 
 def compute_negative_log_likelihood(
@@ -669,7 +670,7 @@ def estimate_gamma_parameters(
 
     # Compute N0
     # - Use logarithmic computations to prevent overflow
-    # - N0 = Nt * Lambda ** (mu + 1) / gamma(mu + 1)
+    # - N0 = Nt * Lambda ** (mu + 1) / gamma(mu + 1)  # [m-3 * mm^(-mu-1)]
     with suppress_warnings():
         log_N0 = np.log(Nt) + (mu + 1) * np.log(Lambda) - gammaln(mu + 1)
         N0 = np.exp(log_N0)
@@ -785,6 +786,7 @@ def get_gamma_parameters(
         Likelihood function to use for fitting. The default value is ``multinomial``.
     truncated_likelihood : bool, optional
         Whether to use truncated likelihood. The default value is ``True``.
+        See Johnson et al., 2011 and 2011 for more information.
     optimizer : str, optional
         Optimization method to use. The default value is ``Nelder-Mead``.
 
@@ -801,6 +803,15 @@ def get_gamma_parameters(
     -----
     The function uses `xr.apply_ufunc` to fit the lognormal distribution parameters
     in parallel, leveraging Dask for parallel computation.
+
+    References
+    ----------
+    Johnson, R. W., D. V. Kliche, and P. L. Smith, 2011: Comparison of Estimators for Parameters of Gamma Distributions
+    with Left-Truncated Samples. J. Appl. Meteor. Climatol., 50, 296-310, https://doi.org/10.1175/2010JAMC2478.1
+
+    Johnson, R.W., Kliche, D., & Smith, P.L. (2010).
+    Maximum likelihood estimation of gamma parameters for coarsely binned and truncated raindrop size data.
+    Quarterly Journal of the Royal Meteorological Society, 140. DOI:10.1002/qj.2209
 
     """
     # Define inputs
@@ -981,7 +992,7 @@ def get_exponential_parameters(
 
     """
     # Define inputs
-    counts = ds["drop_number_concentration"] * ds["diameter_bin_width"]
+    counts = ds["drop_number_concentration"] * ds["diameter_bin_width"]  # mm-1 m-3 --> m-3
     diameter_breaks = get_diameter_bin_edges(ds)
 
     # Define initial parameters (Lambda)
@@ -1022,163 +1033,6 @@ def get_exponential_parameters(
     return ds_params
 
 
-####-------------------------------------------------------------------------------------------------------------------.
-
-
-def _estimate_gamma_parameters_johnson(
-    drop_number_concentration,
-    diameter,
-    diameter_breaks,
-    output_dictionary=True,
-    method="Nelder-Mead",
-    mu=0.5,
-    Lambda=3,
-    **kwargs,
-):
-    """Deprecated Maximum likelihood estimation of Gamma model.
-
-    N(D) = N_t * lambda**(mu+1) / gamma(mu+1) D**mu exp(-lambda*D)
-
-    Args:
-        spectra: The DSD for which to find parameters [mm-1 m-3].
-        widths: Class widths for each DSD bin [mm].
-        diams: Class-centre diameters for each DSD bin [mm].
-        mu: Initial value for shape parameter mu [-].
-        lambda_param: Initial value for slope parameter lambda [mm^-1].
-        kwargs: Extra arguments for the optimization process.
-
-    Returns
-    -------
-        Dictionary with estimated mu, lambda, and N0.
-        mu (shape) N0 (scale) lambda(slope)
-
-    Notes
-    -----
-    The last bin counts are not accounted in the fitting procedure !
-
-    References
-    ----------
-    Johnson, R. W., D. V. Kliche, and P. L. Smith, 2011: Comparison of Estimators for Parameters of Gamma Distributions
-    with Left-Truncated Samples. J. Appl. Meteor. Climatol., 50, 296-310, https://doi.org/10.1175/2010JAMC2478.1
-
-    Johnson, R.W., Kliche, D., & Smith, P.L. (2010).
-    Maximum likelihood estimation of gamma parameters for coarsely binned and truncated raindrop size data.
-    Quarterly Journal of the Royal Meteorological Society, 140. DOI:10.1002/qj.2209
-
-    """
-    # Initialize bad results
-    if output_dictionary:
-        null_output = {"mu": np.nan, "lambda": np.nan, "N0": np.nan}
-    else:
-        null_output = np.array([np.nan, np.nan, np.nan])
-
-    # Initialize parameters
-    # --> Ideally with method of moments estimate
-    # --> See equation 8 of Johnson's 2013
-    x0 = [mu, Lambda]
-
-    # Compute diameter_bin_width
-    diameter_bin_width = np.diff(diameter_breaks)
-
-    # Convert drop_number_concentration from mm-1 m-3 to m-3.
-    spectra = np.asarray(drop_number_concentration) * diameter_bin_width
-
-    # Define cost function
-    # - Parameter to be optimized on first positions
-    def _cost_function(parameters, spectra, diameter_breaks):
-        # Assume spectra to be in unit [m-3] (drop_number_concentration*diameter_bin_width) !
-        mu, Lambda = parameters
-        # Precompute gamma integrals between various diameter bins
-        # - gamminc(mu+1) already divides the integral by gamma(mu+1) !
-        pgamma_d = gammainc(mu + 1, Lambda * diameter_breaks)
-        # Compute probability with interval
-        delta_pgamma_bins = pgamma_d[1:] - pgamma_d[:-1]
-        # Compute normalization over interval
-        denominator = pgamma_d[-1] - pgamma_d[0]
-        # Compute cost function
-        # a = mu - 1, x = lambda
-        if mu > -1 and Lambda > 0:
-            cost = np.sum(-spectra * np.log(delta_pgamma_bins / denominator))
-            return cost
-        return np.inf
-
-    # Minimize the cost function
-    with suppress_warnings():
-        bounds = [(0, None), (0, None)]  # Force mu and lambda to be non-negative
-        res = minimize(
-            _cost_function,
-            x0=x0,
-            args=(spectra, diameter_breaks),
-            method=method,
-            bounds=bounds,
-            **kwargs,
-        )
-
-    # Check if the fit had success
-    if not res.success:
-        return null_output
-
-    # Extract parameters
-    mu = res.x[0]  # [-]
-    Lambda = res.x[1]  # [mm-1]
-
-    # Estimate tilde_N_T using the total drop concentration
-    tilde_N_T = np.sum(drop_number_concentration * diameter_bin_width)  # [m-3]
-
-    # Estimate proportion of missing drops (Johnson's 2011 Eqs. 3)
-    with suppress_warnings():
-        D = diameter
-        p = 1 - np.sum((Lambda ** (mu + 1)) / gamma(mu + 1) * D**mu * np.exp(-Lambda * D) * diameter_bin_width)  # [-]
-
-        # Convert tilde_N_T to N_T using Johnson's 2013 Eqs. 3 and 4.
-        # - Adjusts for the proportion of drops not obs
-        N_T = tilde_N_T / (1 - p)  # [m-3]
-
-        # Compute N0
-        N0 = N_T * (Lambda ** (mu + 1)) / gamma(mu + 1)  # [m-3 * mm^(-mu-1)]
-
-    # Compute Dm
-    # Dm = (mu + 4)/ Lambda
-
-    # Compute Nw
-    # Nw = N0* D^mu / f(mu) , with f(mu of the Normalized PSD)
-
-    # Define output
-    output = {"mu": mu, "Lambda": Lambda, "N0": N0} if output_dictionary else np.array([mu, Lambda, N0])
-    return output
-
-
-def get_gamma_parameters_johnson2014(ds, method="Nelder-Mead"):
-    """Deprecated model. See Gamma Model with truncated_likelihood and 'pdf'."""
-    drop_number_concentration = ds["drop_number_concentration"]
-    diameter = ds["diameter_bin_center"]
-    diameter_breaks = get_diameter_bin_edges(ds)
-
-    # Define kwargs
-    kwargs = {
-        "output_dictionary": False,
-        "diameter_breaks": diameter_breaks,
-        "method": method,
-    }
-    da_params = xr.apply_ufunc(
-        _estimate_gamma_parameters_johnson,
-        drop_number_concentration,
-        diameter,
-        # diameter_bin_width,
-        kwargs=kwargs,
-        input_core_dims=[[DIAMETER_DIMENSION], [DIAMETER_DIMENSION]],  # [DIAMETER_DIMENSION],
-        output_core_dims=[["parameters"]],
-        vectorize=True,
-    )
-
-    # Add parameters coordinates
-    da_params = da_params.assign_coords({"parameters": ["mu", "Lambda", "N0"]})
-
-    # Convert to skill Dataset
-    ds_params = da_params.to_dataset(dim="parameters")
-    return ds_params
-
-
 ####-----------------------------------------------------------------------------------------.
 #### Grid Search (GS)
 
@@ -1202,24 +1056,30 @@ def _compute_z(ND, D, dD):
     return Z
 
 
+def _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V):
+    if target == "Z":
+        errors = np.abs(_compute_z(ND_obs, D, dD) - _compute_z(ND_preds, D, dD))
+    elif target == "R":
+        errors = np.abs(_compute_rain_rate(ND_obs, D, dD, V) - _compute_rain_rate(ND_preds, D, dD, V))
+    else:  # if target == "LWC":
+        errors = np.abs(_compute_lwc(ND_obs, D, dD) - _compute_lwc(ND_preds, D, dD))
+    return errors
+
+
 def _compute_cost_function(ND_obs, ND_preds, D, dD, V, target, transformation, error_order):
     # Assume ND_obs of shape (D bins) and ND_preds of shape (# params, D bins)
     if target == "ND":
         if transformation == "identity":
             errors = np.mean(np.abs(ND_obs[None, :] - ND_preds) ** error_order, axis=1)
+            return errors
         if transformation == "log":
             errors = np.mean(np.abs(np.log(ND_obs[None, :] + 1) - np.log(ND_preds + 1)) ** error_order, axis=1)
-        if transformation == "np.sqrt":
+            return errors
+        if transformation == "sqrt":
             errors = np.mean(np.abs(np.sqrt(ND_obs[None, :]) - np.sqrt(ND_preds)) ** error_order, axis=1)
-    elif target == "Z":
-        errors = np.abs(_compute_z(ND_obs, D, dD) - _compute_z(ND_preds, D, dD))
-    elif target == "R":
-        errors = np.abs(_compute_rain_rate(ND_obs, D, dD, V) - _compute_rain_rate(ND_preds, D, dD, V))
-    elif target == "LWC":
-        errors = np.abs(_compute_lwc(ND_obs, D, dD) - _compute_lwc(ND_preds, D, dD))
-    else:
-        raise ValueError("Invalid target")
-    return errors
+            return errors
+    # if target in ["Z", "R", "LWC"]:
+    return _compute_target_variable_error(target, ND_obs, ND_preds, D, dD, V)
 
 
 def define_param_range(center, step, bounds, factor=2, refinement=20):
@@ -1250,7 +1110,7 @@ def define_param_range(center, step, bounds, factor=2, refinement=20):
     upper = min(center + factor * step, bounds[1])
     new_step = step / refinement
     return np.arange(lower, upper, new_step)
-        
+
 
 def apply_exponential_gs(
     Nt,
@@ -1285,8 +1145,14 @@ def apply_exponential_gs(
             transformation=transformation,
             error_order=error_order,
         )
+    # Replace inf with NaN
+    errors[~np.isfinite(errors)] = np.nan
 
-    # Identify best parameter set
+    # If all invalid, return NaN parameters
+    if np.all(np.isnan(errors)):
+        return np.array([np.nan, np.nan])
+
+    # Otherwise, choose the best index
     best_index = np.nanargmin(errors)
     return np.array([N0_arr[best_index].item(), lambda_arr[best_index].item()])
 
@@ -1316,7 +1182,14 @@ def _apply_gamma_gs(mu_values, lambda_values, Nt, ND_obs, D, dD, V, target, tran
             error_order=error_order,
         )
 
-    # Best parameter
+    # Replace inf with NaN
+    errors[~np.isfinite(errors)] = np.nan
+
+    # If all invalid, return NaN parameters
+    if np.all(np.isnan(errors)):
+        return np.array([np.nan, np.nan, np.nan])
+
+    # Otherwise, choose the best index
     best_index = np.nanargmin(errors)
     return N0[best_index].item(), mu_arr[best_index].item(), lambda_arr[best_index].item()
 
@@ -1334,7 +1207,7 @@ def apply_gamma_gs(
     error_order,
 ):
     """Estimate GammaPSD model parameters using Grid Search."""
-    # Define parameters bounds 
+    # Define parameters bounds
     mu_bounds = (0.01, 20)
     lambda_bounds = (0.01, 60)
 
@@ -1357,6 +1230,8 @@ def apply_gamma_gs(
         transformation=transformation,
         error_order=error_order,
     )
+    if np.isnan(N0):  # if np.nan, return immediately
+        return np.array([N0, mu, Lambda])
 
     # Second round of GS
     mu_values = define_param_range(mu, mu_step, bounds=mu_bounds)
@@ -1402,7 +1277,14 @@ def _apply_lognormal_gs(mu_values, sigma_values, Nt, ND_obs, D, dD, V, target, t
             error_order=error_order,
         )
 
-    # Best parameter
+    # Replace inf with NaN
+    errors[~np.isfinite(errors)] = np.nan
+
+    # If all invalid, return NaN parameters
+    if np.all(np.isnan(errors)):
+        return np.array([np.nan, np.nan, np.nan])
+
+    # Otherwise, choose the best index
     best_index = np.nanargmin(errors)
     return Nt, mu_arr[best_index].item(), sigma_arr[best_index].item()
 
@@ -1420,16 +1302,16 @@ def apply_lognormal_gs(
     error_order,
 ):
     """Estimate LognormalPSD model parameters using Grid Search."""
-    # Define parameters bounds 
-    sigma_bounds = (0, np.inf) # > 0 
-    scale_bounds = (0.1, np.inf) # > 0
-    # mu_bounds = (- np.inf, np.inf) # mu = np.log(scale) 
-    
+    # Define parameters bounds
+    sigma_bounds = (0, np.inf)  # > 0
+    scale_bounds = (0.1, np.inf)  # > 0
+    # mu_bounds = (- np.inf, np.inf) # mu = np.log(scale)
+
     # Define initial set of parameters
     scale_step = 0.2
     sigma_step = 0.2
     scale_values = np.arange(0.1, 20, step=scale_step)
-    mu_values = np.log(scale_values) # TODO: define realistic values
+    mu_values = np.log(scale_values)  # TODO: define realistic values
     sigma_values = np.arange(0, 20, step=sigma_step)  # TODO: define realistic values
 
     # First round of GS
@@ -1445,6 +1327,8 @@ def apply_lognormal_gs(
         transformation=transformation,
         error_order=error_order,
     )
+    if np.isnan(mu):  # if np.nan, return immediately
+        return np.array([Nt, mu, sigma])
 
     # Second round of GS
     sigma_values = define_param_range(sigma, sigma_step, bounds=sigma_bounds)
@@ -1500,8 +1384,16 @@ def apply_normalized_gamma_gs(
             error_order=error_order,
         )
 
-    # Identify best parameter set
-    mu = mu_arr[np.nanargmin(errors)]
+    # Replace inf with NaN
+    errors[~np.isfinite(errors)] = np.nan
+
+    # If all invalid, return NaN parameters
+    if np.all(np.isnan(errors)):
+        return np.array([np.nan, np.nan, np.nan])
+
+    # Otherwise, choose the best index
+    best_index = np.nanargmin(errors)
+    mu = mu_arr[best_index]
     return np.array([Nw, mu, D50])
 
 
@@ -1775,6 +1667,8 @@ def get_exponential_parameters_Zhang2008(moment_l, moment_m, l, m):  # noqa: E74
         Meteor. Climatol.,
         https://doi.org/10.1175/2008JAMC1876.1
     """
+    if l == m:
+        raise ValueError("Equal l and m moment orders are not allowed.")
     num = moment_l * gamma(m + 1)
     den = moment_m * gamma(l + 1)
     Lambda = np.power(num / den, (1 / (m - l)))
@@ -1799,21 +1693,21 @@ def get_exponential_parameters_M34(moment_3, moment_4):
     return N0, Lambda
 
 
-def get_gamma_parameters_M012(M0, M1, M2):
-    """Compute gamma distribution parameters following Cao et al., 2009.
+# def get_gamma_parameters_M012(M0, M1, M2):
+#     """Compute gamma distribution parameters following Cao et al., 2009.
 
-    References
-    ----------
-    Cao, Q., and G. Zhang, 2009:
-    Errors in Estimating Raindrop Size Distribution Parameters Employing Disdrometer  and Simulated Raindrop Spectra.
-    J. Appl. Meteor. Climatol., 48, 406-425, https://doi.org/10.1175/2008JAMC2026.1.
-    """
-    # TODO: really bad results. check formula !
-    G = M1**3 / M0 / M2
-    mu = 1 / (1 - G) - 2
-    Lambda = M0 / M1 * (mu + 1)
-    N0 = Lambda ** (mu + 1) * M0 / gamma(mu + 1)
-    return N0, mu, Lambda
+#     References
+#     ----------
+#     Cao, Q., and G. Zhang, 2009:
+#     Errors in Estimating Raindrop Size Distribution Parameters Employing Disdrometer  and Simulated Raindrop Spectra.
+#     J. Appl. Meteor. Climatol., 48, 406-425, https://doi.org/10.1175/2008JAMC2026.1.
+#     """
+#     # TODO: really bad results. check formula !
+#     G = M1**3 / M0 / M2
+#     mu = 1 / (1 - G) - 2
+#     Lambda = M0 / M1 * (mu + 1)
+#     N0 = Lambda ** (mu + 1) * M0 / gamma(mu + 1)
+#     return N0, mu, Lambda
 
 
 def get_gamma_parameters_M234(M2, M3, M4):
@@ -2459,11 +2353,7 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
 
     # Check fall velocity is available if target R
     if "fall_velocity" not in ds:
-        if target == "R":
-            raise ValueError("'fall_velocity' variable is required if GS target is 'R'.")
-        ds["fall_velocity"] = (
-            xr.ones_like(ds["drop_number_concentration"].isel(time=0, missing_dims="ignore")) * np.nan
-        )  # dummy
+        ds["fall_velocity"] = get_dataset_fall_velocity(ds)
 
     # Retrieve estimation function
     func = OPTIMIZATION_ROUTINES_DICT["GS"][psd_model]
@@ -2487,6 +2377,25 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
     return ds_params
 
 
+def sanitize_drop_number_concentration(drop_number_concentration):
+    """Sanitize drop number concentration array.
+
+    If N(D) is all zero or contain not finite values, set everything to np.nan
+    """
+    # Condition 1: all zeros along diameter_bin_center
+    all_zero = (drop_number_concentration == 0).all(dim="diameter_bin_center")
+
+    # Condition 2: any non-finite along diameter_bin_center
+    any_nonfinite = (~np.isfinite(drop_number_concentration)).any(dim="diameter_bin_center")
+
+    # Combine conditions
+    invalid = all_zero | any_nonfinite
+
+    # Replace entire profile with NaN where invalid
+    drop_number_concentration = drop_number_concentration.where(~invalid, np.nan)
+    return drop_number_concentration
+
+
 def estimate_model_parameters(
     ds,
     psd_model,
@@ -2494,9 +2403,17 @@ def estimate_model_parameters(
     optimization_kwargs=None,
 ):
     """Routine to estimate PSD model parameters."""
+    # Check inputs arguments
     optimization_kwargs = {} if optimization_kwargs is None else optimization_kwargs
     optimization = check_optimization(optimization)
     check_optimization_kwargs(optimization_kwargs=optimization_kwargs, optimization=optimization, psd_model=psd_model)
+
+    # Check N(D)
+    # --> If all 0, set to np.nan
+    # --> If any is not finite --> set to np.nan
+    if "drop_number_concentration" not in ds:
+        raise ValueError("'drop_number_concentration' variable not present in input xarray.Dataset.")
+    ds["drop_number_concentration"] = sanitize_drop_number_concentration(ds["drop_number_concentration"])
 
     # Define function
     dict_func = {

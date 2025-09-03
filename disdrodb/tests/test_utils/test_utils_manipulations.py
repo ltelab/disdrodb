@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test manipulation utilities."""
-import pytest
 import numpy as np
+import pytest
 import xarray as xr
 
 import disdrodb
