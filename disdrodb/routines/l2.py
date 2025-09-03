@@ -25,7 +25,6 @@ import time
 from typing import Optional
 
 import dask
-import numpy as np
 import pandas as pd
 
 from disdrodb.api.checks import check_station_inputs
@@ -33,7 +32,7 @@ from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
-from disdrodb.api.info import get_start_end_time_from_filepaths, group_filepaths
+from disdrodb.api.info import group_filepaths
 from disdrodb.api.io import open_netcdf_files
 from disdrodb.api.path import (
     define_file_folder_path,
@@ -50,7 +49,6 @@ from disdrodb.configs import (
     get_product_temporal_resolutions,
 )
 from disdrodb.l1.resampling import resample_dataset
-from disdrodb.l2.event import get_files_partitions, group_timesteps_into_event
 from disdrodb.l2.processing import (
     generate_l2_radar,
     generate_l2e,
@@ -58,6 +56,7 @@ from disdrodb.l2.processing import (
 )
 from disdrodb.metadata import read_station_metadata
 from disdrodb.scattering.routines import precompute_scattering_tables
+from disdrodb.utils.archiving import define_temporal_partitions, get_files_partitions
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 from disdrodb.utils.list import flatten_list
 
@@ -74,8 +73,6 @@ from disdrodb.utils.routines import (
 )
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
-    ensure_sorted_by_time,
-    generate_time_blocks,
     get_resampling_information,
 )
 from disdrodb.utils.writer import write_product
@@ -84,198 +81,12 @@ logger = logging.getLogger(__name__)
 
 
 ####----------------------------------------------------------------------------.
-def identify_events(
-    filepaths,
-    parallel=False,
-    min_drops=5,
-    neighbor_min_size=2,
-    neighbor_time_interval="5MIN",
-    event_max_time_gap="6H",
-    event_min_duration="5MIN",
-    event_min_size=3,
-):
-    """Return a list of rainy events.
-
-    Rainy timesteps are defined when N > min_drops.
-    Any rainy isolated timesteps (based on neighborhood criteria) is removed.
-    Then, consecutive rainy timesteps are grouped into the same event if the time gap between them does not
-    exceed `event_max_time_gap`. Finally, events that do not meet minimum size or duration
-    requirements are filtered out.
-
-    Parameters
-    ----------
-    filepaths: list
-        List of L1C file paths.
-    parallel: bool
-        Whether to load the files in parallel.
-        Set parallel=True only in a multiprocessing environment.
-        The default is False.
-    neighbor_time_interval : str
-        The time interval around a given a timestep defining the neighborhood.
-        Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
-    neighbor_min_size : int, optional
-        The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
-        timestep to be considered non-isolated.  Isolated timesteps are removed !
-        - If `neighbor_min_size=0,  then no timestep is considered isolated and no filtering occurs.
-        - If `neighbor_min_size=1`, the timestep must have at least one neighbor within `neighbor_time_interval`.
-        - If `neighbor_min_size=2`, the timestep must have at least two timesteps within `neighbor_time_interval`.
-        Defaults to 1.
-    event_max_time_gap: str
-        The maximum time interval between two timesteps to be considered part of the same event.
-        This parameters is used to group timesteps into events !
-    event_min_duration : str
-        The minimum duration an event must span. Events shorter than this duration are discarded.
-    event_min_size : int, optional
-        The minimum number of valid timesteps required for an event. Defaults to 1.
-
-    Returns
-    -------
-    list of dict
-        A list of events, where each event is represented as a dictionary with keys:
-        - "start_time": np.datetime64, start time of the event
-        - "end_time": np.datetime64, end time of the event
-        - "duration": np.timedelta64, duration of the event
-        - "n_timesteps": int, number of valid timesteps in the event
-    """
-    # Open datasets in parallel
-    ds = open_netcdf_files(filepaths, variables=["time", "N"], parallel=parallel, compute=True)
-    # Sort dataset by time
-    ds = ensure_sorted_by_time(ds)
-    # Define candidate timesteps to group into events
-    idx_valid = ds["N"].to_numpy() > min_drops
-    timesteps = ds["time"].to_numpy()[idx_valid]
-    # Define event list
-    event_list = group_timesteps_into_event(
-        timesteps=timesteps,
-        neighbor_min_size=neighbor_min_size,
-        neighbor_time_interval=neighbor_time_interval,
-        event_max_time_gap=event_max_time_gap,
-        event_min_duration=event_min_duration,
-        event_min_size=event_min_size,
-    )
-    del ds
-    return event_list
-
-
-def identify_time_partitions(filepaths: list[str], freq: str) -> list[dict]:
-    """Identify the set of time blocks covered by files.
-
-    The result is a minimal, sorted, and unique set of time partitions.
-
-    Parameters
-    ----------
-    filepaths : list of str
-        Paths to input files from which start and end times will be extracted
-        via `get_start_end_time_from_filepaths`.
-    freq : {'none', 'hour', 'day', 'month', 'quarter', 'season', 'year'}
-        Frequency determining the granularity of candidate blocks.
-        See `generate_time_blocks` for more details.
-
-    Returns
-    -------
-    list of dict
-        A list of dictionaries, each containing:
-
-        - `start_time` (numpy.datetime64[s])
-            Inclusive start of a time block.
-        - `end_time` (numpy.datetime64[s])
-            Inclusive end of a time block.
-
-        Only those blocks that overlap at least one file's interval are returned.
-        The list is sorted by `start_time` and contains no duplicate blocks.
-    """
-    # Define file start time and end time
-    start_times, end_times = get_start_end_time_from_filepaths(filepaths)
-
-    # Define files time coverage
-    start_time, end_time = start_times.min(), end_times.max()
-
-    # Compute candidate time blocks
-    blocks = generate_time_blocks(start_time, end_time, freq=freq)  # end_time non inclusive is correct?
-
-    # Select time blocks with files
-    mask = (blocks[:, 0][:, None] <= end_times) & (blocks[:, 1][:, None] >= start_times)
-    blocks = blocks[mask.any(axis=1)]
-
-    # Ensure sorted unique time blocks
-    order = np.argsort(blocks[:, 0])
-    blocks = np.unique(blocks[order], axis=0)
-
-    # Convert to list of dicts
-    list_time_blocks = [{"start_time": start_time, "end_time": end_time} for start_time, end_time in blocks]
-    return list_time_blocks
-
-
-def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
-    """Define temporal file processing partitions.
-
-    Parameters
-    ----------
-    filepaths : list
-        List of files paths to be processed
-
-    strategy : str
-        Which partitioning strategy to apply:
-
-        - ``'time_block'`` defines fixed time intervals (e.g. monthly) covering input files.
-        - ``'event'`` detect clusters of precipitation ("events").
-
-    parallel : bool
-         If True, parallel data loading is used to identify events.
-
-    strategy_options : dict
-        Dictionary with strategy-specific parameters:
-
-        If ``strategy == 'time_block'``, supported options are:
-
-        - ``freq``: Time unit for blocks. One of {'year', 'season', 'month', 'day'}.
-
-        See identify_time_partitions for more information.
-
-        If ``strategy == 'event'``, supported options are:
-
-        - ``min_drops`` : int
-          Minimum number of drops to consider a timestep.
-        - ``neighbor_min_size`` : int
-          Minimum cluster size for merging neighboring events.
-        - ``neighbor_time_interval`` : str
-          Time window (e.g. "5MIN") to merge adjacent clusters.
-        - ``event_max_time_gap`` : str
-          Maximum allowed gap (e.g. "6H") within a single event.
-        - ``event_min_duration`` : str
-          Minimum total duration (e.g. "5MIN") of an event.
-        - ``event_min_size`` : int
-          Minimum number of records in an event.
-
-        See identify_events for more information.
-
-    Returns
-    -------
-    list
-        A list of dictionaries, each containing:
-
-        - ``start_time`` (numpy.datetime64[s])
-            Inclusive start of an event or time block.
-        - ``end_time`` (numpy.datetime64[s])
-            Inclusive end of an event or time block.
-
-    Notes
-    -----
-    - The ``'event'`` strategy requires loading data into memory to identify clusters.
-    - The ``'time_block'`` strategy can operate on metadata alone, without full data loading.
-    - The ``'event'`` strategy implicitly performs data selection on which files to process !
-    - The ``'time_block'`` strategy does not performs data selection on which files to process !
-    """
-    if strategy not in ["time_block", "event"]:
-        raise ValueError(f"Unknown strategy: {strategy!r}. Must be 'time_block' or 'event'.")
-    if strategy == "event":
-        return identify_events(filepaths, parallel=parallel, **strategy_options)
-
-    return identify_time_partitions(filepaths, **strategy_options)
 
 
 class ProcessingOptions:
     """Define L2 products processing options."""
+
+    # TODO: TO MOVE ELSEWHERE (AFTER L1 REFACTORING !)
 
     def __init__(self, product, filepaths, parallel, temporal_resolutions=None):
         """Define L2 products processing options."""

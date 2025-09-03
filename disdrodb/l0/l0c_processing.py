@@ -25,7 +25,7 @@ import pandas as pd
 from disdrodb.api.checks import check_measurement_intervals
 from disdrodb.api.info import get_start_end_time_from_filepaths
 from disdrodb.l1.resampling import add_sample_interval
-from disdrodb.utils.logger import log_warning  # , log_info
+from disdrodb.utils.logger import log_warning
 from disdrodb.utils.time import (
     ensure_sorted_by_time,
     regularize_timesteps,
@@ -56,6 +56,10 @@ def get_files_per_days(filepaths):
     -----
     This function adds a tolerance of 60 seconds to account for imprecise time logging by the sensors.
     """
+    # Empty filepaths list return a dictionary
+    if len(filepaths) == 0:
+        return {}
+
     # Retrieve file start_time and end_time
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
 
@@ -533,87 +537,3 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
         for sample_interval, ds in dict_ds.items()
     }
     return dict_ds
-
-
-# ---------------------------------------------------------------------------------------.
-#### DEPRECATED CODE
-
-
-# def copy_l0b_to_l0c_directory(filepath):
-#     """Copy L0B file to L0C directory."""
-#     import netCDF4
-
-#     # Copy file
-#     l0c_filepath = filepath.replace("L0B", "L0C")
-#     _ = shutil.copy(filepath, l0c_filepath)
-
-#     # Edit DISDRODB product attribute
-#     with netCDF4.Dataset(l0c_filepath, mode="a") as nc_file:
-#         # Modify the global attribute
-#         nc_file.setncattr("disdrodb_product", "L0C")
-
-# def find_isel_common_time(da1, da2):
-#     """
-#     Find the indices of common time steps between two data arrays.
-
-#     Parameters
-#     ----------
-#     da1 : xarray.DataArray
-#         The first data array with a time coordinate.
-#     da2 : xarray.DataArray
-#         The second data array with a time coordinate.
-
-#     Returns
-#     -------
-#     da1_isel : numpy.ndarray
-#         Indices of the common time steps in the first data array.
-#     da2_isel : numpy.ndarray
-#         Indices of the common time steps in the second data array.
-
-#     Notes
-#     -----
-#     This function assumes that both input data arrays have a "time" coordinate.
-#     The function finds the intersection of the time steps in both data arrays
-#     and returns the indices of these common time steps for each data array.
-#     """
-#     intersecting_timesteps = np.intersect1d(da1["time"], da2["time"])
-#     da1_isel = np.where(np.isin(da1["time"], intersecting_timesteps))[0]
-#     da2_isel = np.where(np.isin(da2["time"], intersecting_timesteps))[0]
-#     return da1_isel, da2_isel
-
-
-# def check_same_raw_drop_number_values(list_ds, filepaths):
-#     """
-#     Check if the 'raw_drop_number' values are the same across multiple datasets.
-
-#     This function compares the 'raw_drop_number' values of multiple datasets to ensure they are identical
-#     at common timesteps.
-
-#     If any discrepancies are found, a ValueError is raised indicating which files
-#     have differing values.
-
-#     Parameters
-#     ----------
-#     list_ds : list of xarray.Dataset
-#         A list of xarray Datasets to be compared.
-#     filepaths : list of str
-#         A list of file paths corresponding to the datasets in `list_ds`.
-
-#     Raises
-#     ------
-#     ValueError
-#         If 'raw_drop_number' values differ at any common timestep between any two datasets.
-#     """
-#     # Retrieve variable to compare
-#     list_drop_number = [ds["raw_drop_number"].compute() for ds in list_ds]
-#     # Compare values
-#     combos = list(itertools.combinations(range(len(list_drop_number)), 2))
-#     for i, j in combos:
-#         da1 = list_drop_number[i]
-#         da2 = list_drop_number[j]
-#         da1_isel, da2_isel = find_isel_common_time(da1=da1, da2=da2)
-#         if not np.all(da1.isel(time=da1_isel).data == da2.isel(time=da2_isel).data):
-#             file1 = filepaths[i]
-#             file2 = filepaths[i]
-#             msg = f"Duplicated timesteps have different values between file {file1} and {file2}"
-#             raise ValueError(msg)

@@ -35,9 +35,9 @@ import disdrodb
 from disdrodb.api.path import define_station_dir
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
-from disdrodb.l2.event import group_timesteps_into_event
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.utils.dataframe import compute_2d_histogram, log_arange
+from disdrodb.utils.event import group_timesteps_into_event
 from disdrodb.utils.manipulations import (
     get_diameter_bin_edges,
     resample_drop_number_concentration,
