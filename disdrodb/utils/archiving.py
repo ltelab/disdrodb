@@ -16,6 +16,7 @@
 # -----------------------------------------------------------------------------.
 """Utility function for DISDRODB product archiving."""
 import numpy as np
+import pandas as pd
 
 from disdrodb.api.info import get_start_end_time_from_filepaths
 from disdrodb.api.io import open_netcdf_files
@@ -23,10 +24,140 @@ from disdrodb.utils.event import group_timesteps_into_event
 from disdrodb.utils.time import (
     ensure_sorted_by_time,
     ensure_timedelta_seconds,
-    generate_time_blocks,
 )
 
+####---------------------------------------------------------------------------------
+#### Time blocks
 
+
+def check_freq(freq: str) -> None:
+    """Check validity of freq argument."""
+    valid_freq = ["none", "year", "season", "quarter", "month", "day", "hour"]
+    if not isinstance(freq, str):
+        raise TypeError("'freq' must be a string.")
+    if freq not in valid_freq:
+        raise ValueError(
+            f"'freq' '{freq}' is not possible. Must be one of: {valid_freq}.",
+        )
+    return freq
+
+
+def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, freq: str) -> np.ndarray:  # noqa: PLR0911
+    """Generate time blocks between `start_time` and `end_time` for a given frequency.
+
+    Parameters
+    ----------
+    start_time : numpy.datetime64
+        Inclusive start of the overall time range.
+    end_time : numpy.datetime64
+        Inclusive end of the overall time range.
+    freq : str
+        Frequency specifier. Accepted values are:
+        - 'none'    : return a single block [start_time, end_time]
+        - 'day'     : split into daily blocks
+        - 'month'   : split into calendar months
+        - 'quarter' : split into calendar quarters
+        - 'year'    : split into calendar years
+        - 'season'  : split into meteorological seasons (MAM, JJA, SON, DJF)
+
+    Returns
+    -------
+    numpy.ndarray
+        Array of shape (n, 2) with dtype datetime64[s], where each row is [block_start, block_end].
+
+    """
+    freq = check_freq(freq)
+    if freq == "none":
+        return np.array([[start_time, end_time]], dtype="datetime64[s]")
+
+    if freq == "hour":
+        periods = pd.period_range(start=start_time, end=end_time, freq="h")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "day":
+        periods = pd.period_range(start=start_time, end=end_time, freq="d")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "month":
+        periods = pd.period_range(start=start_time, end=end_time, freq="M")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "year":
+        periods = pd.period_range(start=start_time, end=end_time, freq="Y")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    if freq == "quarter":
+        periods = pd.period_range(start=start_time, end=end_time, freq="Q")
+        blocks = np.array(
+            [
+                [
+                    period.start_time.to_datetime64().astype("datetime64[s]"),
+                    period.end_time.floor("s").to_datetime64().astype("datetime64[s]"),
+                ]
+                for period in periods
+            ],
+            dtype="datetime64[s]",
+        )
+        return blocks
+
+    # if freq == "season":
+    # Fiscal quarter frequency ending in Feb → seasons DJF, MAM, JJA, SON
+    periods = pd.period_range(start=start_time, end=end_time, freq="Q-FEB")
+    blocks = np.array(
+        [
+            [
+                period.start_time.to_datetime64().astype("datetime64[s]"),
+                period.end_time.to_datetime64().astype("datetime64[s]"),
+            ]
+            for period in periods
+        ],
+        dtype="datetime64[s]",
+    )
+    return blocks
+
+
+####----------------------------------------------------------------------------
+#### Event/Time partitioning
 def identify_events(
     filepaths,
     parallel=False,
@@ -134,7 +265,7 @@ def identify_time_partitions(filepaths: list[str], freq: str) -> list[dict]:
     start_time, end_time = start_times.min(), end_times.max()
 
     # Compute candidate time blocks
-    blocks = generate_time_blocks(start_time, end_time, freq=freq)  # end_time non inclusive is correct?
+    blocks = generate_time_blocks(start_time, end_time, freq=freq)  # TODO end_time non inclusive is correct?
 
     # Select time blocks with files
     mask = (blocks[:, 0][:, None] <= end_times) & (blocks[:, 1][:, None] >= start_times)
@@ -215,6 +346,10 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
         return identify_events(filepaths, parallel=parallel, **strategy_options)
 
     return identify_time_partitions(filepaths, **strategy_options)
+
+
+####----------------------------------------------------------------------------
+#### Filepaths partitioning
 
 
 def get_files_partitions(list_partitions, filepaths, sample_interval, accumulation_interval, rolling):  # noqa: ARG001
@@ -332,3 +467,64 @@ def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=0):
             dict_blocks[block_key] = filepaths[file_indices].tolist()
 
     return dict_blocks
+
+
+def get_files_per_days(filepaths):
+    """
+    Organize files by the days they cover based on their start and end times.
+
+    Parameters
+    ----------
+    filepaths : list of str
+        List of file paths to be processed.
+
+    Returns
+    -------
+    dict
+        Dictionary where keys are days (as strings) and values are lists of file paths
+        that cover those days.
+
+    Notes
+    -----
+    This function adds a tolerance of 60 seconds to account for imprecise time logging by the sensors.
+    """
+    # Empty filepaths list return a dictionary
+    if len(filepaths) == 0:
+        return {}
+
+    # Retrieve file start_time and end_time
+    files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
+
+    # Add tolerance to account for imprecise time logging by the sensors
+    # - Example: timestep 23:59:30 might be 00.00 and goes into the next day file ...
+    files_start_time = files_start_time - np.array(TOLERANCE_SECONDS, dtype="m8[s]")
+    files_end_time = files_end_time + np.array(TOLERANCE_SECONDS, dtype="m8[s]")
+
+    # Retrieve file start day and end day
+    start_day = files_start_time.min().astype("M8[D]")
+    end_day = files_end_time.max().astype("M8[D]") + np.array(1, dtype="m8[D]")
+
+    # Create an array with all days in time period covered by the files
+    list_days = np.asanyarray(pd.date_range(start=start_day, end=end_day, freq="D")).astype("M8[D]")
+
+    # Expand dimension to match each day using broadcasting
+    files_start_time = files_start_time.astype("M8[D]")[:, np.newaxis]  # shape (n_files, 1)
+    files_end_time = files_end_time.astype("M8[D]")[:, np.newaxis]  # shape (n_files, 1)
+
+    # Create an array of all days
+    # - Expand dimension to match each day using broadcasting
+    days = list_days[np.newaxis, :]  # shape (1, n_days)
+
+    # Use broadcasting to create a boolean matrix indicating which files cover which days
+    mask = (files_start_time <= days) & (files_end_time >= days)  # shape (n_files, n_days)
+
+    # Build a mapping from days to file indices
+    # For each day (column), find the indices of files (rows) that cover that day
+    dict_days = {}
+    filepaths = np.array(filepaths)
+    for i, day in enumerate(list_days):
+        file_indices = np.where(mask[:, i])[0]
+        if file_indices.size > 0:
+            dict_days[str(day)] = filepaths[file_indices].tolist()
+
+    return dict_days

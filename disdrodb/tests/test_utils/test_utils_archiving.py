@@ -16,11 +16,126 @@
 # -----------------------------------------------------------------------------.
 """Test DISDRODB archiving utilities."""
 import numpy as np
+import pytest
 
 from disdrodb.utils.archiving import (
+    check_freq,
+    generate_time_blocks,
     get_files_partitions,
     identify_time_partitions,
 )
+
+
+class TestGenerateTimeBlocks:
+    def test_none(self):
+        """Test 'none' returns the original interval as a single block."""
+        start_time = np.datetime64("2022-01-01T05:06:07")
+        end_time = np.datetime64("2022-01-02T08:09:10")
+        result = generate_time_blocks(start_time, end_time, freq="none")
+        expected = np.array([[start_time, end_time]], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result, expected)
+
+    def test_hour(self):
+        """Test 'hour' splits into full-hour blocks covering the range."""
+        start_time = np.datetime64("2022-01-01T10:15:00")
+        end_time = np.datetime64("2022-01-01T12:45:00")
+        result = generate_time_blocks(start_time, end_time, freq="hour")
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-01-01T10:00:00", "2022-01-01T10:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-01-01T12:00:00", "2022-01-01T12:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_day(self):
+        """Test 'day' splits into calendar-day blocks covering the range."""
+        start_time = np.datetime64("2022-03-10T05:00:00")
+        end_time = np.datetime64("2022-03-12T20:00:00")
+        result = generate_time_blocks(start_time, end_time, freq="day")
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-03-10T00:00:00", "2022-03-10T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-03-12T00:00:00", "2022-03-12T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_month(self):
+        """Test 'month' splits into month blocks covering the range."""
+        start_time = np.datetime64("2022-01-15")
+        end_time = np.datetime64("2022-04-10")
+        result = generate_time_blocks(start_time, end_time, freq="month")
+
+        assert result.shape == (4, 2)
+
+        expected_first = np.array(["2022-01-01T00:00:00", "2022-01-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-04-01T00:00:00", "2022-04-30T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_year(self):
+        """Test 'year' splits into year blocks covering the range."""
+        start_time = np.datetime64("2020-06-01")
+        end_time = np.datetime64("2023-02-01")
+        result = generate_time_blocks(start_time, end_time, freq="year")
+
+        assert result.shape == (4, 2)
+
+        expected_first = np.array(["2020-01-01T00:00:00", "2020-12-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2023-01-01T00:00:00", "2023-12-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_quarter(self):
+        """Test 'quarter' splits into quarter blocks covering the range."""
+        start_time = np.datetime64("2022-02-10")
+        end_time = np.datetime64("2022-08-20")
+        result = generate_time_blocks(start_time, end_time, freq="quarter")
+
+        assert result.shape == (3, 2)
+
+        expected_first = np.array(["2022-01-01T00:00:00", "2022-03-31T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-07-01T00:00:00", "2022-09-30T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+    def test_season(self):
+        """Test 'season' splits into meteorological-season blocks covering the range."""
+        start_time = np.datetime64("2022-01-01")
+        end_time = np.datetime64("2022-12-31")
+        result = generate_time_blocks(start_time, end_time, freq="season")
+        assert result.shape == (5, 2)
+
+        expected_first = np.array(["2021-12-01T00:00:00", "2022-02-28T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[0], expected_first)
+
+        expected_last = np.array(["2022-12-01T00:00:00", "2023-02-28T23:59:59"], dtype="datetime64[s]")
+        np.testing.assert_array_equal(result[-1], expected_last)
+
+
+class TestCheckFreq:
+    def test_valid_freq_returns_value(self):
+        """Valid freq strings should be returned unchanged."""
+        for valid in ["none", "year", "season", "quarter", "month", "day", "hour"]:
+            assert check_freq(valid) == valid
+
+    def test_non_string_raises_type_error(self):
+        """Non-string freq inputs should raise a TypeError."""
+        with pytest.raises(TypeError) as excinfo:
+            check_freq(123)
+        assert "'freq' must be a string." in str(excinfo.value)
+
+    def test_invalid_string_raises_value_error(self):
+        """String not in allowed list should raise a ValueError."""
+        with pytest.raises(ValueError) as excinfo:
+            check_freq("minute")
+        assert "'freq' 'minute' is not possible. Must be one of:" in str(excinfo.value)
 
 
 def generate_product_filename(start_time, end_time, product="L1", temporal_resolution="1MIN"):
