@@ -23,7 +23,6 @@ import numpy as np
 import pandas as pd
 
 from disdrodb.api.checks import check_measurement_intervals
-from disdrodb.api.info import get_start_end_time_from_filepaths
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.utils.logger import log_warning
 from disdrodb.utils.time import (
@@ -35,67 +34,6 @@ logger = logging.getLogger(__name__)
 
 
 TOLERANCE_SECONDS = 120
-
-
-def get_files_per_days(filepaths):
-    """
-    Organize files by the days they cover based on their start and end times.
-
-    Parameters
-    ----------
-    filepaths : list of str
-        List of file paths to be processed.
-
-    Returns
-    -------
-    dict
-        Dictionary where keys are days (as strings) and values are lists of file paths
-        that cover those days.
-
-    Notes
-    -----
-    This function adds a tolerance of 60 seconds to account for imprecise time logging by the sensors.
-    """
-    # Empty filepaths list return a dictionary
-    if len(filepaths) == 0:
-        return {}
-
-    # Retrieve file start_time and end_time
-    files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
-
-    # Add tolerance to account for imprecise time logging by the sensors
-    # - Example: timestep 23:59:30 might be 00.00 and goes into the next day file ...
-    files_start_time = files_start_time - np.array(TOLERANCE_SECONDS, dtype="m8[s]")
-    files_end_time = files_end_time + np.array(TOLERANCE_SECONDS, dtype="m8[s]")
-
-    # Retrieve file start day and end day
-    start_day = files_start_time.min().astype("M8[D]")
-    end_day = files_end_time.max().astype("M8[D]") + np.array(1, dtype="m8[D]")
-
-    # Create an array with all days in time period covered by the files
-    list_days = np.asanyarray(pd.date_range(start=start_day, end=end_day, freq="D")).astype("M8[D]")
-
-    # Expand dimension to match each day using broadcasting
-    files_start_time = files_start_time.astype("M8[D]")[:, np.newaxis]  # shape (n_files, 1)
-    files_end_time = files_end_time.astype("M8[D]")[:, np.newaxis]  # shape (n_files, 1)
-
-    # Create an array of all days
-    # - Expand dimension to match each day using broadcasting
-    days = list_days[np.newaxis, :]  # shape (1, n_days)
-
-    # Use broadcasting to create a boolean matrix indicating which files cover which days
-    mask = (files_start_time <= days) & (files_end_time >= days)  # shape (n_files, n_days)
-
-    # Build a mapping from days to file indices
-    # For each day (column), find the indices of files (rows) that cover that day
-    dict_days = {}
-    filepaths = np.array(filepaths)
-    for i, day in enumerate(list_days):
-        file_indices = np.where(mask[:, i])[0]
-        if file_indices.size > 0:
-            dict_days[str(day)] = filepaths[file_indices].tolist()
-
-    return dict_days
 
 
 def retrieve_possible_measurement_intervals(metadata):

@@ -42,7 +42,12 @@ def check_freq(freq: str) -> None:
     return freq
 
 
-def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, freq: str) -> np.ndarray:  # noqa: PLR0911
+def generate_time_blocks(
+    start_time: np.datetime64,
+    end_time: np.datetime64,
+    freq: str,
+    inclusive_end_time: bool = True,
+) -> np.ndarray:
     """Generate time blocks between `start_time` and `end_time` for a given frequency.
 
     Parameters
@@ -50,7 +55,7 @@ def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, fre
     start_time : numpy.datetime64
         Inclusive start of the overall time range.
     end_time : numpy.datetime64
-        Inclusive end of the overall time range.
+        End of the overall time range. Inclusive by default (see inclusive_end_time argument).
     freq : str
         Frequency specifier. Accepted values are:
         - 'none'    : return a single block [start_time, end_time]
@@ -59,6 +64,9 @@ def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, fre
         - 'quarter' : split into calendar quarters
         - 'year'    : split into calendar years
         - 'season'  : split into meteorological seasons (MAM, JJA, SON, DJF)
+    inclusive_end_time: bool
+        The default is True.
+        If False, if the last block end_time is equal to input end_time, such block is removed.
 
     Returns
     -------
@@ -70,89 +78,32 @@ def generate_time_blocks(start_time: np.datetime64, end_time: np.datetime64, fre
     if freq == "none":
         return np.array([[start_time, end_time]], dtype="datetime64[s]")
 
-    if freq == "hour":
-        periods = pd.period_range(start=start_time, end=end_time, freq="h")
-        blocks = np.array(
-            [
-                [
-                    period.start_time.to_datetime64().astype("datetime64[s]"),
-                    period.end_time.to_datetime64().astype("datetime64[s]"),
-                ]
-                for period in periods
-            ],
-            dtype="datetime64[s]",
-        )
-        return blocks
+    # Mapping from our custom freq to pandas frequency codes
+    freq_map = {
+        "hour": "h",
+        "day": "d",
+        "month": "M",
+        "quarter": "Q",
+        "year": "Y",
+        "season": "Q-FEB",  # seasons DJF, MAM, JJA, SON
+    }
 
-    if freq == "day":
-        periods = pd.period_range(start=start_time, end=end_time, freq="d")
-        blocks = np.array(
-            [
-                [
-                    period.start_time.to_datetime64().astype("datetime64[s]"),
-                    period.end_time.to_datetime64().astype("datetime64[s]"),
-                ]
-                for period in periods
-            ],
-            dtype="datetime64[s]",
-        )
-        return blocks
+    # Define periods
+    periods = pd.period_range(start=start_time, end=end_time, freq=freq_map[freq])
 
-    if freq == "month":
-        periods = pd.period_range(start=start_time, end=end_time, freq="M")
-        blocks = np.array(
-            [
-                [
-                    period.start_time.to_datetime64().astype("datetime64[s]"),
-                    period.end_time.to_datetime64().astype("datetime64[s]"),
-                ]
-                for period in periods
-            ],
-            dtype="datetime64[s]",
-        )
-        return blocks
+    # Create time blocks
+    blocks = []
+    for period in periods:
+        start = period.start_time.to_datetime64().astype("datetime64[s]")
+        if freq == "quarter":
+            end = period.end_time.floor("s").to_datetime64().astype("datetime64[s]")
+        else:
+            end = period.end_time.to_datetime64().astype("datetime64[s]")
+        blocks.append([start, end])
+    blocks = np.array(blocks, dtype="datetime64[s]")
 
-    if freq == "year":
-        periods = pd.period_range(start=start_time, end=end_time, freq="Y")
-        blocks = np.array(
-            [
-                [
-                    period.start_time.to_datetime64().astype("datetime64[s]"),
-                    period.end_time.to_datetime64().astype("datetime64[s]"),
-                ]
-                for period in periods
-            ],
-            dtype="datetime64[s]",
-        )
-        return blocks
-
-    if freq == "quarter":
-        periods = pd.period_range(start=start_time, end=end_time, freq="Q")
-        blocks = np.array(
-            [
-                [
-                    period.start_time.to_datetime64().astype("datetime64[s]"),
-                    period.end_time.floor("s").to_datetime64().astype("datetime64[s]"),
-                ]
-                for period in periods
-            ],
-            dtype="datetime64[s]",
-        )
-        return blocks
-
-    # if freq == "season":
-    # Fiscal quarter frequency ending in Feb → seasons DJF, MAM, JJA, SON
-    periods = pd.period_range(start=start_time, end=end_time, freq="Q-FEB")
-    blocks = np.array(
-        [
-            [
-                period.start_time.to_datetime64().astype("datetime64[s]"),
-                period.end_time.to_datetime64().astype("datetime64[s]"),
-            ]
-            for period in periods
-        ],
-        dtype="datetime64[s]",
-    )
+    if not inclusive_end_time and len(blocks) > 0 and blocks[-1, 0] == end_time:
+        blocks = blocks[:-1]
     return blocks
 
 
@@ -231,16 +182,18 @@ def identify_events(
     return event_list
 
 
-def identify_time_partitions(filepaths: list[str], freq: str) -> list[dict]:
+def identify_time_partitions(start_times, end_times, freq: str) -> list[dict]:
     """Identify the set of time blocks covered by files.
 
     The result is a minimal, sorted, and unique set of time partitions.
+    'start_times' and end_times can be derived using get_start_end_time_from_filepaths.
 
     Parameters
     ----------
-    filepaths : list of str
-        Paths to input files from which start and end times will be extracted
-        via `get_start_end_time_from_filepaths`.
+    start_times : numpy.ndarray of datetime64[s]
+        Array of inclusive start times for each file.
+    end_times : numpy.ndarray of datetime64[s]
+        Array of inclusive end times for each file.
     freq : {'none', 'hour', 'day', 'month', 'quarter', 'season', 'year'}
         Frequency determining the granularity of candidate blocks.
         See `generate_time_blocks` for more details.
@@ -258,14 +211,11 @@ def identify_time_partitions(filepaths: list[str], freq: str) -> list[dict]:
         Only those blocks that overlap at least one file's interval are returned.
         The list is sorted by `start_time` and contains no duplicate blocks.
     """
-    # Define file start time and end time
-    start_times, end_times = get_start_end_time_from_filepaths(filepaths)
-
     # Define files time coverage
     start_time, end_time = start_times.min(), end_times.max()
 
     # Compute candidate time blocks
-    blocks = generate_time_blocks(start_time, end_time, freq=freq)  # TODO end_time non inclusive is correct?
+    blocks = generate_time_blocks(start_time, end_time, freq=freq)
 
     # Select time blocks with files
     mask = (blocks[:, 0][:, None] <= end_times) & (blocks[:, 1][:, None] >= start_times)
@@ -345,7 +295,8 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
     if strategy == "event":
         return identify_events(filepaths, parallel=parallel, **strategy_options)
 
-    return identify_time_partitions(filepaths, **strategy_options)
+    start_times, end_times = get_start_end_time_from_filepaths(filepaths)
+    return identify_time_partitions(start_times=start_times, end_times=end_times, **strategy_options)
 
 
 ####----------------------------------------------------------------------------
@@ -385,9 +336,14 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
         - 'filepaths': List of file paths overlapping with the adjusted event period.
 
     """
+    # TODO:  expanding partition time will be done only at L1 stage when resampling
+
     # Ensure sample_interval and accumulation_interval is numpy.timedelta64
     accumulation_interval = ensure_timedelta_seconds(accumulation_interval)
     sample_interval = ensure_timedelta_seconds(sample_interval)
+
+    # Define offset on event_end_time
+    offset = accumulation_interval if sample_interval != accumulation_interval else ensure_timedelta_seconds(0)
 
     # Retrieve file start_time and end_time
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
@@ -398,10 +354,7 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
         # Retrieve event time period
         event_start_time = event_dict["start_time"]
         event_end_time = event_dict["end_time"]
-
-        # Adapt event_end_time if accumulation interval different from sample interval
-        if sample_interval != accumulation_interval:
-            event_end_time = event_end_time + accumulation_interval
+        event_end_time = event_end_time + offset  # for resampling
 
         # Derive event filepaths
         overlaps = (files_start_time <= event_end_time) & (files_end_time >= event_start_time)
@@ -416,60 +369,7 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
     return event_info
 
 
-def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=0):
-    """
-    Organize files by the time blocks they cover (day, month, etc.).
-
-    Parameters
-    ----------
-    filepaths : list of str
-        List of file paths to be processed.
-    freq : {'none', 'hour', 'day', 'month', 'quarter', 'season', 'year'}
-        Frequency used to define the time blocks.
-
-    Returns
-    -------
-    dict
-        Dictionary where keys are the time block identifiers (as strings)
-        and values are lists of file paths that overlap with that block.
-    """
-    if not filepaths:
-        return {}
-
-    # Identify candidate blocks
-    list_partitions = identify_time_partitions(filepaths, freq=freq)
-
-    # Retrieve file start_time and end_time
-    files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
-
-    # Add tolerance for sensor imprecision
-    files_start_time = files_start_time - np.array(tolerance_seconds, dtype="m8[s]")
-    files_end_time = files_end_time + np.array(tolerance_seconds, dtype="m8[s]")
-
-    # Retrieve time blocks start & end
-    block_starts = np.array([b["start_time"] for b in list_partitions])
-    block_ends = np.array([b["end_time"] for b in list_partitions])
-
-    # Broadcast to (n_files, n_blocks)
-    mask = (files_start_time[:, None] <= block_ends[None, :]) & (files_end_time[:, None] >= block_starts[None, :])
-
-    # Build dictionary
-    dict_blocks = {}
-    filepaths = np.array(filepaths)
-    for j, (start, end) in enumerate(zip(block_starts, block_ends)):
-        file_indices = np.where(mask[:, j])[0]
-        if file_indices.size > 0:
-            if freq == "none":
-                block_key = str(start)
-            else:
-                # Pick a stable representation (use block start as key)
-                block_key = str(start)
-            dict_blocks[block_key] = filepaths[file_indices].tolist()
-
-    return dict_blocks
-
-
-def get_files_per_days(filepaths):
+def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=120):
     """
     Organize files by the days they cover based on their start and end times.
 
@@ -497,34 +397,29 @@ def get_files_per_days(filepaths):
 
     # Add tolerance to account for imprecise time logging by the sensors
     # - Example: timestep 23:59:30 might be 00.00 and goes into the next day file ...
-    files_start_time = files_start_time - np.array(TOLERANCE_SECONDS, dtype="m8[s]")
-    files_end_time = files_end_time + np.array(TOLERANCE_SECONDS, dtype="m8[s]")
+    files_start_time = files_start_time - np.array(tolerance_seconds, dtype="m8[s]")
+    files_end_time = files_end_time + np.array(tolerance_seconds, dtype="m8[s]")
 
-    # Retrieve file start day and end day
-    start_day = files_start_time.min().astype("M8[D]")
-    end_day = files_end_time.max().astype("M8[D]") + np.array(1, dtype="m8[D]")
+    # Identify candidate blocks
+    list_partitions = identify_time_partitions(
+        start_times=files_start_time,
+        end_times=files_end_time,
+        freq=freq,
+    )
+    block_starts = np.array([b["start_time"] for b in list_partitions])
+    block_ends = np.array([b["end_time"] for b in list_partitions])
 
-    # Create an array with all days in time period covered by the files
-    list_days = np.asanyarray(pd.date_range(start=start_day, end=end_day, freq="D")).astype("M8[D]")
+    # Use broadcasting to create a boolean matrix indicating which files cover which time block
+    mask = (files_start_time[:, None] <= block_ends[None, :]) & (
+        files_end_time[:, None] >= block_starts[None, :]
+    )  #  (n_files, n_blocks)
 
-    # Expand dimension to match each day using broadcasting
-    files_start_time = files_start_time.astype("M8[D]")[:, np.newaxis]  # shape (n_files, 1)
-    files_end_time = files_end_time.astype("M8[D]")[:, np.newaxis]  # shape (n_files, 1)
-
-    # Create an array of all days
-    # - Expand dimension to match each day using broadcasting
-    days = list_days[np.newaxis, :]  # shape (1, n_days)
-
-    # Use broadcasting to create a boolean matrix indicating which files cover which days
-    mask = (files_start_time <= days) & (files_end_time >= days)  # shape (n_files, n_days)
-
-    # Build a mapping from days to file indices
-    # For each day (column), find the indices of files (rows) that cover that day
-    dict_days = {}
+    # Build a mapping from time block to file indices
+    # - For each time block (column), find the indices of files (rows) that cover that time block
+    dict_blocks = {}
     filepaths = np.array(filepaths)
-    for i, day in enumerate(list_days):
+    for i, (start, _) in enumerate(zip(block_starts, block_ends)):
         file_indices = np.where(mask[:, i])[0]
         if file_indices.size > 0:
-            dict_days[str(day)] = filepaths[file_indices].tolist()
-
-    return dict_days
+            dict_blocks[str(start)] = filepaths[file_indices].tolist()
+    return dict_blocks

@@ -55,12 +55,9 @@ from disdrodb.l0.l0b_processing import (
     set_l0b_encodings,
     write_l0b,
 )
-from disdrodb.l0.l0c_processing import (
-    create_daily_file,
-    get_files_per_days,
-    retrieve_possible_measurement_intervals,
-)
+from disdrodb.l0.l0c_processing import TOLERANCE_SECONDS, create_daily_file, retrieve_possible_measurement_intervals
 from disdrodb.metadata import read_station_metadata
+from disdrodb.utils.archiving import get_files_per_time_block
 from disdrodb.utils.attrs import set_disdrodb_attrs
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
@@ -969,7 +966,7 @@ def run_l0c_station(
 
     # -------------------------------------------------------------------------.
     # Retrieve dictionary with the required files for each day.
-    dict_days_files = get_files_per_days(filepaths)
+    dict_days_files = get_files_per_time_block(filepaths, freq="day", tolerance_seconds=TOLERANCE_SECONDS)
 
     # -----------------------------------------------------------------.
     # Generate L0C files
