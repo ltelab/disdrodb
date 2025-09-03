@@ -303,6 +303,23 @@ def define_temporal_partitions(filepaths, strategy, parallel, strategy_options):
 #### Filepaths partitioning
 
 
+def _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends):
+    """Map each block start_time to list of overlapping filepaths."""
+    # Use broadcasting to create a boolean matrix indicating which files cover which time block
+    # Broadcasting: (n_files, n_blocks)
+    mask = (files_start_time[:, None] <= block_ends[None, :]) & (files_end_time[:, None] >= block_starts[None, :])
+    # Create a list with the a dictionary for each block
+    filepaths = np.array(filepaths)
+    results = []
+    for i, (start, end) in enumerate(zip(block_starts, block_ends)):
+        indices = np.where(mask[:, i])[0]
+        if indices.size > 0:
+            results.append(
+                {"start_time": start, "end_time": end, "filepaths": filepaths[indices].tolist()},
+            )
+    return results
+
+
 def get_files_partitions(list_partitions, filepaths, sample_interval, accumulation_interval, rolling):  # noqa: ARG001
     """
     Provide information about the required files for each event.
@@ -336,7 +353,8 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
         - 'filepaths': List of file paths overlapping with the adjusted event period.
 
     """
-    # TODO:  expanding partition time will be done only at L1 stage when resampling
+    if len(filepaths) == 0 or len(list_partitions) == 0:
+        return []
 
     # Ensure sample_interval and accumulation_interval is numpy.timedelta64
     accumulation_interval = ensure_timedelta_seconds(accumulation_interval)
@@ -348,24 +366,20 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
     # Retrieve file start_time and end_time
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
 
-    # Retrieve information for each event
-    event_info = []
-    for event_dict in list_partitions:
-        # Retrieve event time period
-        event_start_time = event_dict["start_time"]
-        event_end_time = event_dict["end_time"]
-        event_end_time = event_end_time + offset  # for resampling
+    # Retrieve partitions blocks start and end time arrays
+    block_starts = np.array([p["start_time"] for p in list_partitions])
+    block_ends = np.array([p["end_time"] for p in list_partitions])
 
-        # Derive event filepaths
-        overlaps = (files_start_time <= event_end_time) & (files_end_time >= event_start_time)
-        event_filepaths = np.array(filepaths)[overlaps].tolist()
+    # Add optional offset for resampling
+    # TODO: expanding partition time should be done only at L1 stage when resampling
+    # In disdrodb, the time reported is time at the start of the accumulation period !
+    # If sensors report time at the end of measurement interval, we might being reporting time
+    #  with an inaccuracy equals to the sensor measurement interval.
+    # We could correct for that at L0C stage already !
+    block_ends = block_ends + offset
 
-        # Create dictionary
-        if len(event_filepaths) > 0:
-            event_info.append(
-                {"start_time": event_start_time, "end_time": event_end_time, "filepaths": event_filepaths},
-            )
-
+    # Retrieve partitioning info dictionaries
+    event_info = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)
     return event_info
 
 
@@ -409,17 +423,9 @@ def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=120):
     block_starts = np.array([b["start_time"] for b in list_partitions])
     block_ends = np.array([b["end_time"] for b in list_partitions])
 
-    # Use broadcasting to create a boolean matrix indicating which files cover which time block
-    mask = (files_start_time[:, None] <= block_ends[None, :]) & (
-        files_end_time[:, None] >= block_starts[None, :]
-    )  #  (n_files, n_blocks)
+    # Map filepaths to corresponding time blocks
+    list_dicts = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)
 
-    # Build a mapping from time block to file indices
-    # - For each time block (column), find the indices of files (rows) that cover that time block
-    dict_blocks = {}
-    filepaths = np.array(filepaths)
-    for i, (start, _) in enumerate(zip(block_starts, block_ends)):
-        file_indices = np.where(mask[:, i])[0]
-        if file_indices.size > 0:
-            dict_blocks[str(start)] = filepaths[file_indices].tolist()
+    # Create a dictionary of format {block_start_time: filepaths}
+    dict_blocks = {str(d["start_time"]): d["filepaths"] for d in list_dicts}
     return dict_blocks

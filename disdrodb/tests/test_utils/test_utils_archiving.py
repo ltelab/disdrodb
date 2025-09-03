@@ -307,24 +307,36 @@ class TestGetFilesPartitions:
 
     def test_no_overlap(self):
         """Events outside the files range should yield no results."""
-        events = [
+        list_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T17:30:00"),
                 "end_time": np.datetime64("2017-05-22T18:00:00"),
             },
         ]
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=60, rolling=False)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=60,
+            rolling=False,
+        )
         assert out == []
 
     def test_no_aggregation_case(self):
         """Test case when sample_interval== accumulation_interval."""
-        events = [
+        list_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T00:00:00"),
                 "end_time": np.datetime64("2017-05-22T00:02:00"),
             },
         ]
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=60, rolling=False)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=60,
+            rolling=False,
+        )
         assert len(out) == 1
         info = out[0]
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
@@ -333,7 +345,13 @@ class TestGetFilesPartitions:
 
         # Extend end_time by 180 seconds
         # --> Include last file based on its end time
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=180, rolling=False)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=180,
+            rolling=False,
+        )
         assert len(out) == 1
         info = out[0]
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
@@ -343,7 +361,7 @@ class TestGetFilesPartitions:
 
     def test_single_event_not_rolling_case(self):
         """Test case for rolling=False."""
-        events = [
+        list_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T00:00:00"),
                 "end_time": np.datetime64("2017-05-22T00:02:00"),
@@ -351,7 +369,13 @@ class TestGetFilesPartitions:
         ]
         # Extend end_time by 120 seconds
         # --> Include last file based on its start time
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=120, rolling=False)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=120,
+            rolling=False,
+        )
         assert len(out) == 1
         info = out[0]
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
@@ -361,7 +385,13 @@ class TestGetFilesPartitions:
 
         # Extend end_time by 180 seconds
         # --> Include last file based on its end time
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=180, rolling=False)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=180,
+            rolling=False,
+        )
         assert len(out) == 1
         info = out[0]
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
@@ -371,7 +401,7 @@ class TestGetFilesPartitions:
 
     def test_single_event_rolling_case(self):
         """Test case for rolling=True."""
-        events = [
+        list_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T00:00:00"),
                 "end_time": np.datetime64("2017-05-22T00:02:00"),
@@ -379,7 +409,13 @@ class TestGetFilesPartitions:
         ]
         # Extend end_time by 120 seconds
         # --> Include last file based on its start time
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=120, rolling=True)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=120,
+            rolling=True,
+        )
         assert len(out) == 1
         info = out[0]
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
@@ -389,7 +425,13 @@ class TestGetFilesPartitions:
 
         # Extend end_time by 180 seconds
         # --> Include last file based on its end time
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=180, rolling=True)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=180,
+            rolling=True,
+        )
         assert len(out) == 1
         info = out[0]
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
@@ -399,7 +441,7 @@ class TestGetFilesPartitions:
 
     def test_multiple_event(self):
         """Multiple events with forward 1-min extend map to correct file sets."""
-        events = [
+        list_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T00:00:00"),
                 "end_time": np.datetime64("2017-05-22T00:02:00"),
@@ -414,7 +456,13 @@ class TestGetFilesPartitions:
             },
         ]
 
-        out = get_files_partitions(events, filepaths, sample_interval=60, accumulation_interval=120, rolling=False)
+        out = get_files_partitions(
+            list_partitions,
+            filepaths,
+            sample_interval=60,
+            accumulation_interval=120,
+            rolling=False,
+        )
         assert len(out) == 2
         assert out[0]["start_time"] == np.datetime64("2017-05-22T00:00:00")
         assert out[0]["end_time"] == np.datetime64("2017-05-22T00:04:00")
@@ -429,13 +477,13 @@ class TestGetFilesPartitions:
 
     def test_empty_filepaths_list(self):
         """Providing no files always yields no overlaps."""
-        events = [
+        list_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T00:01:00"),
                 "end_time": np.datetime64("2017-05-22T00:01:00"),
             },
         ]
-        out = get_files_partitions(events, [], sample_interval=60, accumulation_interval=60, rolling=False)
+        out = get_files_partitions(list_partitions, [], sample_interval=60, accumulation_interval=60, rolling=False)
         assert out == []
 
 
