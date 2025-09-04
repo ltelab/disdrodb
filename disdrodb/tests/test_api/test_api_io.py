@@ -22,6 +22,7 @@ import os
 import shutil
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
@@ -37,6 +38,7 @@ from disdrodb.api.io import (
     open_logs_directory,
     open_metadata_archive,
     open_metadata_directory,
+    open_netcdf_files,
     open_product_directory,
     open_readers_directory,
     remove_product,
@@ -566,6 +568,25 @@ class TestOpenDataset:
 
         # Test is a xarray dataset
         assert isinstance(ds, xr.Dataset)
+
+
+def test_open_netcdf_files_with_duplicate_timesteps(tmp_path):
+    """Test open_netcdf_files deals correctly with duplicated timesteps."""
+    # Create dataset with duplicated timesteps
+    times = np.array(["2000-01-01 00:00:00", "2000-01-01 01:00:00", "2000-01-01 02:00:00"], dtype="M8[ns]")
+    ds = xr.Dataset({"var": ("time", np.arange(len(times)))}, coords={"time": times})
+    filepaths = [os.path.join(tmp_path, "dummy1.nc"), os.path.join(tmp_path, "dummy2.nc")]
+    # Write two netcdf which are equal
+    for filepath in filepaths:
+        ds.to_netcdf(filepath)
+
+    # Read with open_netcdf_files
+    ds = open_netcdf_files(filepaths)
+    # Test that duplicated timesteps are not dropped
+    assert ds.sizes["time"] == 6, "open_netcdf_files drop duplicated timesteps!"
+    # Test that filtering by times is allowed also in presence of duplicated timesteps
+    ds = open_netcdf_files(filepaths, start_time="2000-01-01 00:00:00", end_time="2000-01-01 01:00:00")
+    assert ds.sizes["time"] == 4
 
 
 class TestRemoveProduct:

@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Test DISDRODB archiving utilities."""
+import datetime
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -262,6 +264,8 @@ class TestIdentifyTimePartitions:
         result = identify_time_partitions(start_times, end_times, freq="none")
         assert len(result) == 1
         block = result[0]
+        assert isinstance(block["start_time"], np.datetime64)
+        assert isinstance(block["end_time"], np.datetime64)
         assert block["start_time"] == np.datetime64("2017-05-22T15:45:58")
         assert block["end_time"] == np.datetime64("2018-07-01T12:00:00")
 
@@ -323,7 +327,7 @@ class TestGetFilesPartitions:
         assert out == []
 
     def test_no_aggregation_case(self):
-        """Test case when sample_interval== accumulation_interval."""
+        """Test case when sample_interval==accumulation_interval."""
         list_partitions = [
             {
                 "start_time": np.datetime64("2017-05-22T00:00:00"),
@@ -338,7 +342,10 @@ class TestGetFilesPartitions:
             rolling=False,
         )
         assert len(out) == 1
+
         info = out[0]
+        assert isinstance(info["start_time"], datetime.datetime)
+        assert isinstance(info["end_time"], datetime.datetime)
         assert info["start_time"] == np.datetime64("2017-05-22T00:00:00")
         assert info["end_time"] == np.datetime64("2017-05-22T00:02:00")
         assert len(info["filepaths"]) == 2
@@ -487,8 +494,22 @@ class TestGetFilesPartitions:
         assert out == []
 
 
-class TestGetFilesPerDays:
+class TestGetFilesPerTimeBlock:
     """Test suite for get_files_per_time_block."""
+
+    def test_get_files_per_time_block_structure(self):
+        """Test list structure returned by get_files_per_time_block."""
+        filepaths = [
+            "L0B.1MIN.LOCARNO_2019.61.s20190713134200.e20190713161000.V0.nc",
+        ]
+        list_event_info = get_files_per_time_block(filepaths, freq="day")
+        assert isinstance(list_event_info, list)
+        assert "start_time" in list_event_info[0]
+        assert "end_time" in list_event_info[0]
+        assert "filepaths" in list_event_info[0]
+        assert isinstance(list_event_info[0]["start_time"], datetime.datetime)
+        assert isinstance(list_event_info[0]["end_time"], datetime.datetime)
+        assert isinstance(list_event_info[0]["filepaths"], list)
 
     def test_files_grouped_per_day(self):
         """Files spanning multiple days should be grouped correctly by day."""
@@ -499,41 +520,59 @@ class TestGetFilesPerDays:
             "L0B.1MIN.LOCARNO_2019.61.s20190716144200.e20190717111000.V0.nc",
         ]
 
-        dict_days = get_files_per_time_block(filepaths)
+        list_event_info = get_files_per_time_block(filepaths, freq="day")
 
         # Days covered span from 2019-07-13 to 2019-07-17
-        expected_days = [
-            "2019-07-13T00:00:00",
-            "2019-07-14T00:00:00",
-            "2019-07-15T00:00:00",
-            "2019-07-16T00:00:00",
-            "2019-07-17T00:00:00",
+        dict_days = {str(info["start_time"]): info["filepaths"] for info in list_event_info}
+        expected_days_start_time = [
+            "2019-07-13 00:00:00",
+            "2019-07-14 00:00:00",
+            "2019-07-15 00:00:00",
+            "2019-07-16 00:00:00",
+            "2019-07-17 00:00:00",
         ]
-        assert set(dict_days.keys()) == set(expected_days)
+        assert set(dict_days.keys()) == set(expected_days_start_time)
 
         # Check that each day has the correct file(s)
-        assert filepaths[0] in dict_days["2019-07-13T00:00:00"]
-        assert len(dict_days["2019-07-13T00:00:00"]) == 1
-        assert filepaths[1] in dict_days["2019-07-14T00:00:00"]
-        assert filepaths[1] in dict_days["2019-07-15T00:00:00"]
-        assert filepaths[2] in dict_days["2019-07-15T00:00:00"]
-        assert filepaths[2] in dict_days["2019-07-16T00:00:00"]
-        assert filepaths[3] in dict_days["2019-07-16T00:00:00"]
-        assert filepaths[3] in dict_days["2019-07-17T00:00:00"]
+        assert filepaths[0] in dict_days["2019-07-13 00:00:00"]
+        assert len(dict_days["2019-07-13 00:00:00"]) == 1
+        assert filepaths[1] in dict_days["2019-07-14 00:00:00"]
+        assert filepaths[1] in dict_days["2019-07-15 00:00:00"]
+        assert filepaths[2] in dict_days["2019-07-15 00:00:00"]
+        assert filepaths[2] in dict_days["2019-07-16 00:00:00"]
+        assert filepaths[3] in dict_days["2019-07-16 00:00:00"]
+        assert filepaths[3] in dict_days["2019-07-17 00:00:00"]
+
+        # Check end time
+        dict_days = {str(info["end_time"]): info["filepaths"] for info in list_event_info}
+        expected_days_end_time = [
+            "2019-07-13 23:59:59",
+            "2019-07-14 23:59:59",
+            "2019-07-15 23:59:59",
+            "2019-07-16 23:59:59",
+            "2019-07-17 23:59:59",
+        ]
+        assert set(dict_days.keys()) == set(expected_days_end_time)
 
     def test_empty_list_returns_empty_dict(self):
-        """An empty list of filepaths should return an empty dict."""
-        assert get_files_per_time_block([]) == {}
+        """An empty list of filepaths should return an empty list."""
+        assert get_files_per_time_block([]) == []
 
     def test_single_file_spanning_multiple_days(self):
         """A single file spanning multiple days should appear in all those days."""
         filepaths = [
             "L0B.1MIN.LOCARNO_2019.61.s20190701000000.e20190702235900.V0.nc",
         ]
-        dict_days = get_files_per_time_block(filepaths)
+        list_event_info = get_files_per_time_block(filepaths)
 
         # Expect to cover July 1, 2, and 3 + previous and next day around midnight
-        expected_days = ["2019-06-30T00:00:00", "2019-07-01T00:00:00", "2019-07-02T00:00:00", "2019-07-03T00:00:00"]
-        assert set(dict_days.keys()) == set(expected_days)
-        for day in expected_days:
-            assert filepaths[0] in dict_days[day]
+        expected_start_times = [
+            "2019-06-30 00:00:00",
+            "2019-07-01 00:00:00",
+            "2019-07-02 00:00:00",
+            "2019-07-03 00:00:00",
+        ]
+        start_times = [str(info["start_time"]) for info in list_event_info]
+        assert set(start_times) == set(expected_start_times)
+        for info in list_event_info:
+            assert filepaths[0] in info["filepaths"]

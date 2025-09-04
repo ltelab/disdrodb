@@ -15,6 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utility function for DISDRODB product archiving."""
+import datetime
+
 import numpy as np
 import pandas as pd
 
@@ -315,7 +317,11 @@ def _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_star
         indices = np.where(mask[:, i])[0]
         if indices.size > 0:
             results.append(
-                {"start_time": start, "end_time": end, "filepaths": filepaths[indices].tolist()},
+                {
+                    "start_time": start.astype(datetime.datetime),
+                    "end_time": end.astype(datetime.datetime),
+                    "filepaths": filepaths[indices].tolist(),
+                },
             )
     return results
 
@@ -348,8 +354,8 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
     -------
     list of dict
         A list where each element is a dictionary containing:
-        - 'start_time': Adjusted start time of the event (`numpy.datetime64`).
-        - 'end_time': Adjusted end time of the event (`numpy.datetime64`).
+        - 'start_time': Adjusted start time of the event (`datetime.datetime64`).
+        - 'end_time': Adjusted end time of the event (`datetime.datetime64`).
         - 'filepaths': List of file paths overlapping with the adjusted event period.
 
     """
@@ -367,8 +373,8 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
 
     # Retrieve partitions blocks start and end time arrays
-    block_starts = np.array([p["start_time"] for p in list_partitions])
-    block_ends = np.array([p["end_time"] for p in list_partitions])
+    block_starts = np.array([p["start_time"] for p in list_partitions]).astype("M8[s]")
+    block_ends = np.array([p["end_time"] for p in list_partitions]).astype("M8[s]")
 
     # Add optional offset for resampling
     # TODO: expanding partition time should be done only at L1 stage when resampling
@@ -378,9 +384,9 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
     # We could correct for that at L0C stage already !
     block_ends = block_ends + offset
 
-    # Retrieve partitioning info dictionaries
-    event_info = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)
-    return event_info
+    # Map filepaths to corresponding time blocks
+    list_event_info = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)
+    return list_event_info
 
 
 def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=120):
@@ -404,7 +410,7 @@ def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=120):
     """
     # Empty filepaths list return a dictionary
     if len(filepaths) == 0:
-        return {}
+        return []
 
     # Retrieve file start_time and end_time
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
@@ -420,12 +426,9 @@ def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=120):
         end_times=files_end_time,
         freq=freq,
     )
-    block_starts = np.array([b["start_time"] for b in list_partitions])
-    block_ends = np.array([b["end_time"] for b in list_partitions])
+    block_starts = np.array([b["start_time"] for b in list_partitions]).astype("M8[s]")
+    block_ends = np.array([b["end_time"] for b in list_partitions]).astype("M8[s]")
 
     # Map filepaths to corresponding time blocks
-    list_dicts = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)
-
-    # Create a dictionary of format {block_start_time: filepaths}
-    dict_blocks = {str(d["start_time"]): d["filepaths"] for d in list_dicts}
-    return dict_blocks
+    list_event_info = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)
+    return list_event_info

@@ -21,19 +21,26 @@ import logging
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from disdrodb.api.checks import check_measurement_intervals
+from disdrodb.api.io import open_netcdf_files
+from disdrodb.l0.l0b_processing import set_l0b_encodings
 from disdrodb.l1.resampling import add_sample_interval
+from disdrodb.utils.attrs import set_disdrodb_attrs
 from disdrodb.utils.logger import log_warning
-from disdrodb.utils.time import (
-    ensure_sorted_by_time,
-    regularize_timesteps,
-)
+from disdrodb.utils.time import ensure_sorted_by_time
 
 logger = logging.getLogger(__name__)
 
+# L0C processing requires searching for data (per time blocks) into neighbouring files:
+# - to account for possible trailing seconds in previous/next files
+# - to get information if at the edges of the time blocks previous/next timesteps are available
+# - to shift the time to ensure reported L0C time is the start of the measurement interval
+TOLERANCE_SECONDS = 60 * 3
 
-TOLERANCE_SECONDS = 120
+####---------------------------------------------------------------------------------
+#### Measurement intervals
 
 
 def retrieve_possible_measurement_intervals(metadata):
@@ -45,8 +52,8 @@ def retrieve_possible_measurement_intervals(metadata):
 def drop_timesteps_with_invalid_sample_interval(ds, measurement_intervals, verbose=True, logger=None):
     """Drop timesteps with unexpected sample intervals."""
     # TODO
-    # - correct logged sample_interval for trailing seconds. Example (58,59,61,62) converted to 60 s ?
-    # - Need to know more how Parsivel software computes sample_interval variable ...
+    # - sample_interval logged by sensor corrected for trailing seconds? Example (58,59,61,62) --> 60?
+    # - Need to know more how Parsivel software computes sample_interval variable internally ...
 
     # Retrieve logged sample_interval
     sample_interval = ds["sample_interval"].compute().data
@@ -70,6 +77,8 @@ def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_in
     """
     Split a dataset into subsets where each subset has a consistent sampling interval.
 
+    This function do not modify the actual timesteps !
+
     Parameters
     ----------
     ds : xarray.Dataset
@@ -92,13 +101,13 @@ def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_in
     # Define array of possible measurement intervals
     measurement_intervals = np.array(measurement_intervals)
 
+    # Check sorted by time and sort if necessary
+    ds = ensure_sorted_by_time(ds)
+
     # If a single measurement interval expected, return dictionary with input dataset
     if len(measurement_intervals) == 1:
         dict_ds = {measurement_intervals[0]: ds}
         return dict_ds
-
-    # Check sorted by time and sort if necessary
-    ds = ensure_sorted_by_time(ds)
 
     # Calculate time differences in seconds
     deltadt = np.diff(ds["time"].data).astype("timedelta64[s]").astype(int)
@@ -159,6 +168,10 @@ def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_in
     # Define dictionary of datasets
     dict_ds = {k: ds.isel(time=indices) for k, indices in dict_sampling_interval_indices.items()}
     return dict_ds
+
+
+####---------------------------------------------------------------------------------
+#### Timesteps duplicates
 
 
 def has_same_value_over_time(da):
@@ -259,6 +272,164 @@ def remove_duplicated_timesteps(ds, ensure_variables_equality=True, logger=None,
     return ds
 
 
+####---------------------------------------------------------------------------------
+#### Timesteps regularization
+
+
+def get_problematic_timestep_indices(timesteps, sample_interval):
+    """Identify timesteps with missing previous or following timesteps."""
+    previous_time = timesteps - pd.Timedelta(seconds=sample_interval)
+    next_time = timesteps + pd.Timedelta(seconds=sample_interval)
+    idx_previous_missing = np.where(~np.isin(previous_time, timesteps))[0][1:]
+    idx_next_missing = np.where(~np.isin(next_time, timesteps))[0][:-1]
+    idx_isolated_missing = np.intersect1d(idx_previous_missing, idx_next_missing)
+    idx_previous_missing = idx_previous_missing[np.isin(idx_previous_missing, idx_isolated_missing, invert=True)]
+    idx_next_missing = idx_next_missing[np.isin(idx_next_missing, idx_isolated_missing, invert=True)]
+    return idx_previous_missing, idx_next_missing, idx_isolated_missing
+
+
+def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=True, logger=None, verbose=True):
+    """Ensure timesteps match with the sample_interval.
+
+    This function:
+    - drop dataset indices with duplicated timesteps,
+    - but does not add missing timesteps to the dataset.
+    """
+    # Check sorted by time and sort if necessary
+    ds = ensure_sorted_by_time(ds)
+
+    # Convert time to pandas.DatetimeIndex for easier manipulation
+    times = pd.to_datetime(ds["time"].to_numpy())
+
+    # Determine the start and end times
+    start_time = times[0].floor(f"{sample_interval}s")
+    end_time = times[-1].ceil(f"{sample_interval}s")
+
+    # Create the expected time grid
+    expected_times = pd.date_range(start=start_time, end=end_time, freq=f"{sample_interval}s")
+
+    # Convert to numpy arrays
+    times = times.to_numpy(dtype="M8[s]")
+    expected_times = expected_times.to_numpy(dtype="M8[s]")
+
+    # Map original times to the nearest expected times
+    # Calculate the difference between original times and expected times
+    time_deltas = np.abs(times - expected_times[:, None]).astype(int)
+
+    # Find the index of the closest expected time for each original time
+    nearest_indices = np.argmin(time_deltas, axis=0)
+    adjusted_times = expected_times[nearest_indices]
+
+    # Check for duplicates in adjusted times
+    unique_times, counts = np.unique(adjusted_times, return_counts=True)
+    duplicates = unique_times[counts > 1]
+
+    # Initialize time quality flag
+    # - 0 when ok or just rounded to closest 00
+    # - 1 if previous timestep is missing
+    # - 2 if next timestep is missing
+    # - 3 if previous and next timestep is missing
+    # - 4 if solved duplicated timesteps
+    # - 5 if needed to drop duplicated timesteps and select the last
+    flag_previous_missing = 1
+    flag_next_missing = 2
+    flag_isolated_timestep = 3
+    flag_solved_duplicated_timestep = 4
+    flag_dropped_duplicated_timestep = 5
+    qc_flag = np.zeros(adjusted_times.shape)
+
+    # Initialize list with the duplicated timesteps index to drop
+    # - We drop the first occurrence because is likely the shortest interval
+    idx_to_drop = []
+
+    # Attempt to resolve for duplicates
+    if duplicates.size > 0:
+        # Handle duplicates
+        for dup_time in duplicates:
+            # Indices of duplicates
+            dup_indices = np.where(adjusted_times == dup_time)[0]
+            n_duplicates = len(dup_indices)
+            # Define previous and following timestep
+            prev_time = dup_time - pd.Timedelta(seconds=sample_interval)
+            next_time = dup_time + pd.Timedelta(seconds=sample_interval)
+            # Try to find missing slots before and after
+            # - If more than 3 duplicates, impossible to solve !
+            count_solved = 0
+            # If the previous timestep is available, set that one
+            if n_duplicates == 2:
+                if prev_time not in adjusted_times:
+                    adjusted_times[dup_indices[0]] = prev_time
+                    qc_flag[dup_indices[0]] = flag_solved_duplicated_timestep
+                    count_solved += 1
+                elif next_time not in adjusted_times:
+                    adjusted_times[dup_indices[-1]] = next_time
+                    qc_flag[dup_indices[-1]] = flag_solved_duplicated_timestep
+                    count_solved += 1
+                else:
+                    pass
+            elif n_duplicates == 3:
+                if prev_time not in adjusted_times:
+                    adjusted_times[dup_indices[0]] = prev_time
+                    qc_flag[dup_indices[0]] = flag_solved_duplicated_timestep
+                    count_solved += 1
+                if next_time not in adjusted_times:
+                    adjusted_times[dup_indices[-1]] = next_time
+                    qc_flag[dup_indices[-1]] = flag_solved_duplicated_timestep
+                    count_solved += 1
+            if count_solved != n_duplicates - 1:
+                idx_to_drop = np.append(idx_to_drop, dup_indices[0:-1])
+                qc_flag[dup_indices[-1]] = flag_dropped_duplicated_timestep
+                msg = (
+                    f"Cannot resolve {n_duplicates} duplicated timesteps "
+                    f"(after trailing seconds correction) around {dup_time}."
+                )
+                log_warning(logger=logger, msg=msg, verbose=verbose)
+                if robust:
+                    raise ValueError(msg)
+
+    # Update the time coordinate (Convert to ns for xarray compatibility)
+    ds = ds.assign_coords({"time": adjusted_times.astype("datetime64[ns]")})
+
+    # Update quality flag values for next and previous timestep is missing
+    if add_quality_flag:
+        idx_previous_missing, idx_next_missing, idx_isolated_missing = get_problematic_timestep_indices(
+            adjusted_times,
+            sample_interval,
+        )
+        qc_flag[idx_previous_missing] = np.maximum(qc_flag[idx_previous_missing], flag_previous_missing)
+        qc_flag[idx_next_missing] = np.maximum(qc_flag[idx_next_missing], flag_next_missing)
+        qc_flag[idx_isolated_missing] = np.maximum(qc_flag[idx_isolated_missing], flag_isolated_timestep)
+
+        # If the first timestep is at 00:00 and currently flagged as previous missing (1), reset to 0
+        # first_time = pd.to_datetime(adjusted_times[0]).time()
+        # first_expected_time = pd.Timestamp("00:00:00").time()
+        # if first_time == first_expected_time and qc_flag[0] == flag_previous_missing:
+        #     qc_flag[0] = 0
+
+        # # If the last timestep is flagged and currently flagged as next missing (2), reset it to 0
+        # last_time = pd.to_datetime(adjusted_times[-1]).time()
+        # last_time_expected = (pd.Timestamp("00:00:00") - pd.Timedelta(30, unit="seconds")).time()
+        # # Check if adding one interval would go beyond the end_time
+        # if last_time == last_time_expected and qc_flag[-1] == flag_next_missing:
+        #     qc_flag[-1] = 0
+
+        # Assign time quality flag coordinate
+        ds["time_qc"] = xr.DataArray(qc_flag, dims="time")
+        ds = ds.set_coords("time_qc")
+
+    # Drop duplicated timesteps
+    # - Using ds =  ds.drop_isel({"time": idx_to_drop.astype(int)}) raise:
+    #   --> pandas.errors.InvalidIndexError: Reindexing only valid with uniquely valued Index objects
+    #   --> https://github.com/pydata/xarray/issues/6605
+    if len(idx_to_drop) > 0:
+        idx_to_drop = idx_to_drop.astype(int)
+        idx_valid_timesteps = np.arange(0, ds["time"].size)
+        idx_valid_timesteps = np.delete(idx_valid_timesteps, idx_to_drop)
+        ds = ds.isel(time=idx_valid_timesteps)
+    # Return dataset
+    return ds
+
+
 def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
     """Check for the regularity of timesteps."""
     # Check sorted by time and sort if necessary
@@ -330,7 +501,11 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
     return ds
 
 
-def finalize_l0c_dataset(ds, sample_interval, verbose=True, logger=None):
+####----------------------------------------------------------------------------------------------.
+#### Wrapper
+
+
+def _finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger=None):
     """Finalize a L0C dataset with unique sampling interval.
 
     It adds the sampling_interval coordinate and it regularizes the timesteps for trailing seconds.
@@ -350,25 +525,38 @@ def finalize_l0c_dataset(ds, sample_interval, verbose=True, logger=None):
 
     # Performs checks about timesteps regularity
     ds = check_timesteps_regularity(ds=ds, sample_interval=sample_interval, verbose=verbose, logger=logger)
+
+    # Shift timesteps to ensure time correspond to start of measurement interval
+    # TODO as function of sensor name
+
+    # Set encodings
+    ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
+
+    # Update global attributes
+    ds = set_disdrodb_attrs(ds, product="L0C")
     return ds
 
 
-def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_equality=True, logger=None, verbose=True):
+def create_l0c_datasets(
+    event_info,
+    measurement_intervals,
+    sensor_name,
+    ensure_variables_equality=True,
+    logger=None,
+    verbose=True,
+):
     """
-    Create a daily file by merging and processing data from multiple filepaths.
+    Create a single dataset by merging and processing data from multiple filepaths.
 
     Parameters
     ----------
-    day : str or numpy.datetime64
-        The day for which the daily file is to be created.
-        Should be in a format that can be converted to numpy.datetime64.
-    filepaths : list of str
-        List of filepaths to the data files to be processed.
+    event_info : dict
+        Dictionary with start_time, end_time and filepaths keys.
 
     Returns
     -------
-    xarray.Dataset
-        The processed dataset containing data for the specified day.
+    dict
+        A dictionary with an xarray.Dataset for each measurement interval.
 
     Raises
     ------
@@ -377,50 +565,33 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
 
     Notes
     -----
-    - The function adds a tolerance for searching timesteps
-    before and after 00:00 to account for imprecise logging times.
-    - It checks that duplicated timesteps have the same raw drop number values.
-    - The function infers the sample interval and
-    regularizes timesteps to handle trailing seconds.
-    - The data is loaded into memory and connections to source files
-    are closed before returning the dataset.
+    - Data is loaded into memory and connections to source files are closed before returning the dataset.
+    - Tolerance in input files is used around expected dataset start_time and end_time to account for
+      imprecise logging times and ensuring correct definition of qc_time at files boundaries (e.g. 00:00).
+    - Duplicated timesteps with different raw drop number values are dropped
+    - First occurrence of duplicated timesteps with equal raw drop number values is kept.
+    - Regularizes timesteps to handle trailing seconds.
     """
-    import xarray as xr  # Load in each process when function is called !
-
     # ---------------------------------------------------------------------------------------.
-    # Define start day and end of day
-    start_day = np.array(day).astype("M8[D]")
-    end_day = start_day + np.array(1, dtype="m8[D]") - np.array(1, dtype="m8[s]")  # avoid 00:00 of next day !
+    # Retrieve information
+    start_time = np.array(event_info["start_time"], dtype="M8[s]")
+    end_time = np.array(event_info["end_time"], dtype="M8[s]")
+    filepaths = event_info["filepaths"]
 
-    # Add tolerance for searching timesteps before and after 00:00 to account for imprecise logging time
-    # - Example: timestep 23:59:30 that should be 00.00 goes into the next day ...
-    start_day_tol = start_day - np.array(TOLERANCE_SECONDS, dtype="m8[s]")
-    end_day_tol = end_day + np.array(TOLERANCE_SECONDS, dtype="m8[s]")
+    # Define expected dataset time coverage
+    start_time_tol = start_time - np.array(TOLERANCE_SECONDS, dtype="m8[s]")
+    end_time_tol = end_time + np.array(TOLERANCE_SECONDS, dtype="m8[s]")
 
     # ---------------------------------------------------------------------------------------.
     # Open files with data within the provided day and concatenate them
-    list_ds = [
-        xr.open_dataset(filepath, decode_timedelta=False, chunks=-1, cache=False).sortby("time")
-        for filepath in filepaths
-    ]
-    list_ds = [ds.sel({"time": slice(start_day_tol, end_day_tol)}) for ds in list_ds]
-    if len(list_ds) > 1:
-        # Concatenate dataset
-        # - If some variable are missing in one file, it is filled with NaN. This should not occur anyway.
-        # - The resulting dataset can have duplicated timesteps !
-        ds = xr.concat(list_ds, dim="time", join="outer", compat="no_conflicts", combine_attrs="override").sortby(
-            "time",
-        )
-    else:
-        ds = list_ds[0]
-
-    # Compute data
-    ds = ds.compute()
-
-    # Close connection to source files
-    _ = [ds.close() for ds in list_ds]
-    ds.close()
-    del list_ds
+    ds = open_netcdf_files(
+        filepaths,
+        start_time=start_time_tol,
+        end_time=end_time_tol,
+        chunks=-1,
+        parallel=False,
+        compute=True,
+    )
 
     # ---------------------------------------------------------------------------------------.
     # If sample interval is a dataset variable, drop timesteps with unexpected measurement intervals !
@@ -431,9 +602,16 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
             verbose=verbose,
             logger=logger,
         )
+        n_timesteps = len(ds["time"])
+        if n_timesteps < 3:
+            raise ValueError(f"Only {n_timesteps} timesteps left after removing those with unexpected sample interval.")
 
     # ---------------------------------------------------------------------------------------.
-    # Remove duplicated timesteps
+    # Remove duplicated timesteps (before correcting for trailing seconds)
+    # - It checks that duplicated timesteps have the same raw_drop_number values
+    # - If duplicated timesteps have different raw_drop_number values:
+    #   --> warning is raised
+    #   --> timesteps are dropped
     ds = remove_duplicated_timesteps(
         ds,
         ensure_variables_equality=ensure_variables_equality,
@@ -455,23 +633,24 @@ def create_daily_file(day, filepaths, measurement_intervals, ensure_variables_eq
         min_block_size=5,
     )
 
-    # Log a warning if two sampling intervals are present within a given day
+    # Log a warning if two sampling intervals are present within a given time block
     if len(dict_ds) > 1:
         occuring_sampling_intervals = list(dict_ds)
-        msg = f"The dataset contains both sampling intervals {occuring_sampling_intervals}."
+        msg = f"The input dataset contains these sampling intervals: {occuring_sampling_intervals}."
         log_warning(logger=logger, msg=msg, verbose=verbose)
 
     # ---------------------------------------------------------------------------------------.
     # Finalize L0C datasets
-    # - Add sample_interval coordinate
+    # - Add and ensure sample_interval coordinate has just 1 value (not varying with time)
     # - Regularize timesteps for trailing seconds
     dict_ds = {
-        sample_interval: finalize_l0c_dataset(
+        sample_interval: _finalize_l0c_dataset(
             ds=ds,
             sample_interval=sample_interval,
+            sensor_name=sensor_name,
             verbose=verbose,
             logger=logger,
-        ).sel({"time": slice(start_day, end_day)})
+        ).sel({"time": slice(start_time, end_time)})
         for sample_interval, ds in dict_ds.items()
     }
     return dict_ds

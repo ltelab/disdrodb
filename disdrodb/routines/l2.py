@@ -122,7 +122,7 @@ class ProcessingOptions:
 
             # -------------------------------------------------------------------------.
             # Retrieve product options
-            product_options = dict_product_options[temporal_resolution]
+            product_options = dict_product_options[temporal_resolution].copy()
 
             # Retrieve accumulation_interval and rolling option
             accumulation_interval, rolling = get_resampling_information(temporal_resolution)
@@ -140,7 +140,7 @@ class ProcessingOptions:
 
             # -------------------------------------------------------------------------.
             # Define list of temporal partitions
-            # - [{start_time:xxx, end_time: xxx}, ....]
+            # - [{start_time: np.datetime64, end_time: np.datetime64}, ....]
             # - Either strategy: "event" or "time_block" or save_by_time_block"
             # - "event" requires loading data into memory to identify events
             #   --> Does some data filtering on what to process !
@@ -165,6 +165,7 @@ class ProcessingOptions:
             #   some data after the actual event end_time to ensure that the resampled dataset
             #   contains the event_end_time
             #   --> get_files_partitions adjust the event end_time to accounts for the required "border" data.
+            # - ATTENTION: get_files_partitions returns start_time and end_time as datetime objects !
             files_partitions = [
                 get_files_partitions(
                     list_partitions=list_partitions,

@@ -150,7 +150,7 @@ def run_product_generation(
 
             # Move log file to final logs directory
             success_flag = obj is not None
-            if success_flag:
+            if success_flag:  # and "time" in obj and len(obj["time"]) > 0:
                 logs_dir = define_file_folder_path(obj, dir_path=logs_dir, folder_partitioning=folder_partitioning)
             os.makedirs(logs_dir, exist_ok=True)
             if tmp_logger_filepath is not None:  # (when running pytest, tmp_logger_filepath is None)

@@ -329,18 +329,6 @@ def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     return ds
 
 
-def _set_dataset_attrs(ds, sensor_name):
-    """Set variable and coordinates attributes."""
-    # - Add netCDF variable attributes
-    # --> Attributes: long_name, units, descriptions, valid_min, valid_max
-    ds = _set_variable_attributes(ds=ds, sensor_name=sensor_name)
-    # - Add netCDF coordinate attributes
-    ds = set_coordinate_attributes(ds=ds)
-    #  - Set DISDRODB global attributes
-    ds = set_disdrodb_attrs(ds=ds, product="L0B")
-    return ds
-
-
 def add_dataset_crs_coords(ds):
     """Add the CRS coordinate to the xr.Dataset."""
     # TODO: define CF-compliant CRS !
@@ -474,7 +462,12 @@ def finalize_dataset(ds, sensor_name, metadata):
     ds = ds.transpose("time", "diameter_bin_center", ...)
 
     # Add netCDF variable and coordinate attributes
-    ds = _set_dataset_attrs(ds, sensor_name)
+    # - Add variable attributes: long_name, units, descriptions, valid_min, valid_max
+    ds = _set_variable_attributes(ds=ds, sensor_name=sensor_name)
+    # - Add netCDF coordinate attributes
+    ds = set_coordinate_attributes(ds=ds)
+    #  - Set DISDRODB global attributes
+    ds = set_disdrodb_attrs(ds=ds, product="L0B")
 
     # Ensure variables with dtype object are converted to string
     ds = _convert_object_variables_to_string(ds)
