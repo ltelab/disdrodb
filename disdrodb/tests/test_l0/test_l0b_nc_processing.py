@@ -33,6 +33,7 @@ from disdrodb.l0.l0b_nc_processing import (
     replace_nan_flags,
     set_nan_invalid_values,
     set_nan_outside_data_range,
+    standardize_raw_dataset,
     subset_dataset,
 )
 
@@ -197,7 +198,7 @@ class TestRemoveIssueTimesteps:
         # expected size = original 10 - 2 timesteps - 2 period entries = 6
         assert ds_filtered.sizes["time"] == 6
 
-    def test_error_if_all_removed(self):
+    def test_raises_error_if_all_timesteps_are_removed(self):
         """Should raise ValueError when all timesteps are removed."""
         timesteps = pd.date_range("2025-01-01T00:00", periods=10, freq="1min")
         ds = xr.Dataset({"value": ("time", range(10))}, coords={"time": timesteps})
@@ -207,6 +208,12 @@ class TestRemoveIssueTimesteps:
         end = ds["time"].to_numpy()[-1]
         issue_dict = {"time_periods": [(start, end)]}
 
+        # Test raise error
+        with pytest.raises(ValueError, match="No timesteps left after removing problematic"):
+            remove_issue_timesteps(ds, issue_dict=issue_dict)
+
+        # Define issue dict with timesteps matching all dataset timesteps
+        issue_dict = {"timesteps": ds["time"].to_numpy()}
         # Test raise error
         with pytest.raises(ValueError, match="No timesteps left after removing problematic"):
             remove_issue_timesteps(ds, issue_dict=issue_dict)
@@ -384,3 +391,212 @@ def test_get_missing_variables(create_test_config_files):
 
     # Assertions
     assert missing_vars == {"var3", "var_not_in_ds"}, "Missing variables should be identified correctly"
+
+
+class TestStandardizeRawDataset:
+    def create_test_dataset(self, include_raw_data=True, include_optional_vars=True):
+        """Create a test dataset based on DELFT_NC dict_names structure."""
+        # Create time coordinate
+        times = pd.date_range("2023-01-01", periods=5, freq="60s")
+
+        # Create diameter and velocity classes (32 bins each for PARSIVEL2)
+        diameter_classes = np.arange(32)
+        velocity_classes = np.arange(32)
+
+        # Create the base dataset structure
+        data_vars = {}
+        coords = {
+            "time": times,
+            "diameter_classes": diameter_classes,
+            "velocity_classes": velocity_classes,
+        }
+
+        # Add required variables
+        if include_raw_data:
+            data_vars["raw_data"] = (
+                ("time", "diameter_classes", "velocity_classes"),
+                np.random.randint(0, 100, size=(5, 32, 32)),
+            )
+
+        if include_optional_vars:
+            data_vars.update(
+                {
+                    "rainfall_rate_32bit": (("time",), np.random.rand(5) * 10),
+                    "fieldV": (("time", "velocity_classes"), np.random.rand(5, 32) * 20),
+                    "fieldN": (("time", "diameter_classes"), np.random.rand(5, 32) * 1000),
+                },
+            )
+
+        return xr.Dataset(data_vars, coords=coords)
+
+    def get_dict_names(self):
+        """Get the dict_names mapping for testing."""
+        return {
+            ### Dimensions
+            "diameter_classes": "diameter_bin_center",
+            "velocity_classes": "velocity_bin_center",
+            ### Variables
+            "rainfall_rate_32bit": "rainfall_rate_32bit",
+            "fieldV": "raw_drop_average_velocity",
+            "fieldN": "raw_drop_concentration",
+            "raw_data": "raw_drop_number",
+        }
+
+    def test_missing_raw_drop_number_raises_error(self):
+        """Test that missing raw_drop_number raises ValueError."""
+        # Create dataset without raw_data
+        ds = self.create_test_dataset(include_raw_data=False, include_optional_vars=True)
+        dict_names = self.get_dict_names()
+
+        with pytest.raises(ValueError, match="The raw drop spectrum is not present in the netCDF file!"):
+            standardize_raw_dataset(ds, dict_names, "PARSIVEL2")
+
+    def test_successful_processing_all_variables_present(self):
+        """Test successful processing when all variables are present."""
+        ds = self.create_test_dataset(include_raw_data=True, include_optional_vars=True)
+        dict_names = self.get_dict_names()
+
+        result = standardize_raw_dataset(ds, dict_names, "PARSIVEL2")
+
+        # Check that all variables were renamed correctly
+        assert "raw_drop_number" in result.data_vars
+        assert "raw_drop_average_velocity" in result.data_vars
+        assert "raw_drop_concentration" in result.data_vars
+        assert "rainfall_rate_32bit" in result.data_vars
+
+        # Check that old names are gone
+        assert "raw_data" not in result.data_vars
+        assert "fieldV" not in result.data_vars
+        assert "fieldN" not in result.data_vars
+
+        # Check dimensions were renamed
+        assert "diameter_bin_center" in result.dims
+        assert "velocity_bin_center" in result.dims
+        assert "diameter_classes" not in result.dims
+        assert "velocity_classes" not in result.dims
+
+        # Check coordinates were added
+        assert "diameter_bin_width" in result.coords
+        assert "diameter_bin_lower" in result.coords
+        assert "diameter_bin_upper" in result.coords
+        assert "velocity_bin_width" in result.coords
+        assert "velocity_bin_lower" in result.coords
+        assert "velocity_bin_upper" in result.coords
+
+        # Check data shapes are preserved
+        assert result["raw_drop_number"].shape == (5, 32, 32)
+        assert result["raw_drop_average_velocity"].shape == (5, 32)
+        assert result["raw_drop_concentration"].shape == (5, 32)
+        assert result["rainfall_rate_32bit"].shape == (5,)
+
+        # Check dimensions are correct
+        assert result["raw_drop_number"].dims == ("time", "diameter_bin_center", "velocity_bin_center")
+        assert result["raw_drop_average_velocity"].dims == ("time", "velocity_bin_center")
+        assert result["raw_drop_concentration"].dims == ("time", "diameter_bin_center")
+        assert result["rainfall_rate_32bit"].dims == ("time",)
+
+    def test_missing_optional_variables_infilled_with_nan(self):
+        """Test that missing optional variables are infilled with NaN."""
+        # Create dataset with only raw_data
+        ds = self.create_test_dataset(include_raw_data=True, include_optional_vars=False)
+        dict_names = self.get_dict_names()
+
+        result = standardize_raw_dataset(ds, dict_names, "PARSIVEL2")
+
+        # Check that raw_drop_number is present and not NaN
+        assert "raw_drop_number" in result.data_vars
+        assert not np.all(np.isnan(result["raw_drop_number"].values))
+
+        # Check that missing variables were added as NaN
+        expected_missing = ["raw_drop_average_velocity", "raw_drop_concentration", "rainfall_rate_32bit"]
+        for var in expected_missing:
+            assert var in result.data_vars
+            assert np.all(np.isnan(result[var].values))
+
+        # Check shapes of infilled variables
+        assert result["raw_drop_average_velocity"].sizes == {"diameter_bin_center": 32, "time": 5}
+        assert result["raw_drop_concentration"].sizes == {"diameter_bin_center": 32, "time": 5}
+        assert result["rainfall_rate_32bit"].shape == (5,)
+
+    def test_partial_missing_variables(self):
+        """Test with some variables missing."""
+        # Create dataset with raw_data and only fieldV
+        ds = self.create_test_dataset(include_raw_data=True, include_optional_vars=False)
+        ds["fieldV"] = (("time", "velocity_classes"), np.random.rand(5, 32) * 20)
+
+        dict_names = self.get_dict_names()
+
+        result = standardize_raw_dataset(ds, dict_names, "PARSIVEL2")
+
+        # Check that present variables have real data
+        assert "raw_drop_number" in result.data_vars
+        assert "raw_drop_average_velocity" in result.data_vars
+        assert not np.all(np.isnan(result["raw_drop_number"].values))
+        assert not np.all(np.isnan(result["raw_drop_average_velocity"].values))
+
+        # Check that missing variables were infilled
+        missing_vars = ["raw_drop_concentration", "rainfall_rate_32bit"]
+        for var in missing_vars:
+            assert var in result.data_vars
+            assert np.all(np.isnan(result[var].values))
+
+    def test_coordinates_updated_with_bin_coords(self):
+        """Test that bin coordinates are properly updated."""
+        ds = self.create_test_dataset(include_raw_data=True, include_optional_vars=True)
+        dict_names = self.get_dict_names()
+
+        result = standardize_raw_dataset(ds, dict_names, "PARSIVEL2")
+
+        # Check that coordinate values were updated (should be different from simple arange)
+        # The actual bin coordinates should come from get_bin_coords_dict("PARSIVEL2")
+        assert "diameter_bin_center" in result.coords
+        assert "velocity_bin_center" in result.coords
+
+        # Check that coordinates have the right length
+        assert len(result.coords["diameter_bin_center"]) == 32
+        assert len(result.coords["velocity_bin_center"]) == 32
+
+    def test_data_integrity_preserved(self):
+        """Test that data values are preserved during the transformation."""
+        ds = self.create_test_dataset(include_raw_data=True, include_optional_vars=True)
+        dict_names = self.get_dict_names()
+
+        # Store original values
+        original_raw_data = ds["raw_data"].to_numpy()
+        original_fieldV = ds["fieldV"].to_numpy()
+        original_fieldN = ds["fieldN"].to_numpy()
+        original_rainfall = ds["rainfall_rate_32bit"].to_numpy()
+
+        result = standardize_raw_dataset(ds, dict_names, "PARSIVEL2")
+
+        # Check that data values are preserved
+        np.testing.assert_array_equal(result["raw_drop_number"].values, original_raw_data)
+        np.testing.assert_array_equal(result["raw_drop_average_velocity"].values, original_fieldV)
+        np.testing.assert_array_equal(result["raw_drop_concentration"].values, original_fieldN)
+        np.testing.assert_array_equal(result["rainfall_rate_32bit"].values, original_rainfall)
+
+    def test_invalid_sensor_name(self):
+        """Test that invalid sensor name raises appropriate error."""
+        ds = self.create_test_dataset(include_raw_data=True, include_optional_vars=True)
+        dict_names = self.get_dict_names()
+
+        with pytest.raises(ValueError):
+            standardize_raw_dataset(ds, dict_names, "INVALID_SENSOR")
+
+    def test_subset_behavior_with_extra_variables(self):
+        """Test that extra variables not in dict_names are properly handled."""
+        ds = self.create_test_dataset(include_raw_data=True, include_optional_vars=True)
+
+        # Add an extra variable that's not in dict_names
+        ds["extra_variable"] = (("time",), np.random.rand(5))
+
+        dict_names = self.get_dict_names()
+
+        result = standardize_raw_dataset(ds, dict_names, "PARSIVEL2")
+
+        # Extra variable should not be in the result (assuming it's not a valid DISDRODB variable)
+        assert "extra_variable" not in result.data_vars
+
+        # But expected variables should still be there
+        assert "raw_drop_number" in result.data_vars
+        assert "raw_drop_average_velocity" in result.data_vars

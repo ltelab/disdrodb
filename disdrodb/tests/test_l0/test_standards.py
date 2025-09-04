@@ -32,6 +32,7 @@ from disdrodb.l0.standards import (
     get_l0a_encodings_dict,
     get_n_velocity_bins,
     get_nan_flags_dict,
+    get_sensor_logged_variables,
     get_valid_coordinates_names,
     get_valid_dimension_names,
     get_valid_names,
@@ -40,6 +41,12 @@ from disdrodb.l0.standards import (
 )
 
 SENSOR_NAMES = disdrodb.available_sensor_names()
+
+
+@pytest.mark.parametrize("sensor_name", SENSOR_NAMES)
+def test_get_sensor_logged_variables(sensor_name):
+    function_return = get_sensor_logged_variables(sensor_name)
+    assert isinstance(function_return, list)
 
 
 @pytest.mark.parametrize("sensor_name", SENSOR_NAMES)

@@ -269,13 +269,15 @@ def remove_issue_timesteps(df, issue_dict, logger=None, verbose=False):
     # Retrieve timesteps and time_periods
     timesteps = issue_dict.get("timesteps", None)
     time_periods = issue_dict.get("time_periods", None)
+    timesteps = [] if timesteps is None else timesteps
+    time_periods = [] if time_periods is None else time_periods
 
     # Drop rows of specified timesteps
-    if timesteps:
+    if len(timesteps) > 0:
         df = drop_timesteps(df=df, timesteps=timesteps)
 
     # Drop rows within specified time_period
-    if time_periods:
+    if len(time_periods) > 0:
         df = drop_time_periods(df, time_periods=time_periods)
 
     # Report number of dropped rows
@@ -804,13 +806,13 @@ def read_l0a_dataframe(
     # Define the list of dataframe
     df = pq.ParquetDataset(filepaths).read().to_pandas()
 
-    # Ensure no index
-    df = df.reset_index(drop=True)
-
     # Reduce rows
     if debugging_mode:
         n_rows = min(100, len(df))
         df = df.sample(n=n_rows)
+
+    # Ensure no index
+    df = df.reset_index(drop=True)
 
     # Ensure time is in nanoseconds
     df["time"] = df["time"].astype("M8[ns]")

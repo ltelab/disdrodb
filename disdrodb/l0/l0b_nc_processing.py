@@ -346,7 +346,7 @@ def drop_timesteps(ds, timesteps: list):
     # Ensure there's at least one timestep left
     if ds_filtered.sizes.get("time", 0) == 0:
         raise ValueError(
-            "No timesteps left after removing problematic timesteps. " "Maybe you need to adjust the issue YAML file.",
+            "No timesteps left after removing problematic timesteps. Maybe you need to adjust the issue YAML file.",
         )
     return ds_filtered
 
@@ -422,16 +422,21 @@ def remove_issue_timesteps(
     ValueError
         If after removing specified timesteps/periods no data remains.
     """
+    # Retrieve number of initial rows
     n_initial = ds.sizes.get("time", 0)
-    timesteps = issue_dict.get("timesteps", []) or []
-    time_periods = issue_dict.get("time_periods", []) or []
+
+    # Retrieve timesteps and time_periods
+    timesteps = issue_dict.get("timesteps")
+    time_periods = issue_dict.get("time_periods")
+    timesteps = [] if timesteps is None else timesteps
+    time_periods = [] if time_periods is None else time_periods
 
     # Drop individual timesteps
-    if timesteps:
+    if len(timesteps) > 0:
         ds = drop_timesteps(ds, timesteps)
 
     # Drop intervals of time
-    if time_periods:
+    if len(time_periods) > 0:
         ds = drop_time_periods(ds, time_periods)
 
     # Report number dropped
