@@ -23,7 +23,6 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from disdrodb.api.checks import check_measurement_intervals
 from disdrodb.api.io import open_netcdf_files
 from disdrodb.l0.l0b_processing import set_l0b_encodings
 from disdrodb.l1.resampling import add_sample_interval
@@ -43,21 +42,10 @@ TOLERANCE_SECONDS = 60 * 3
 #### Measurement intervals
 
 
-def retrieve_possible_measurement_intervals(metadata):
-    """Retrieve list of possible measurements intervals."""
-    measurement_intervals = metadata.get("measurement_interval", [])
-    return check_measurement_intervals(measurement_intervals)
-
-
 def drop_timesteps_with_invalid_sample_interval(ds, measurement_intervals, verbose=True, logger=None):
     """Drop timesteps with unexpected sample intervals."""
-    # TODO
-    # - sample_interval logged by sensor corrected for trailing seconds? Example (58,59,61,62) --> 60?
-    # - Need to know more how Parsivel software computes sample_interval variable internally ...
-
-    # Retrieve logged sample_interval
-    sample_interval = ds["sample_interval"].compute().data
-    timesteps = ds["time"].compute().data
+    sample_interval = ds["sample_interval"].to_numpy()
+    timesteps = ds["time"].to_numpy()
     is_valid_sample_interval = np.isin(sample_interval.data, measurement_intervals)
     indices_invalid_sample_interval = np.where(~is_valid_sample_interval)[0]
     if len(indices_invalid_sample_interval) > 0:
@@ -73,11 +61,25 @@ def drop_timesteps_with_invalid_sample_interval(ds, measurement_intervals, verbo
     return ds
 
 
-def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_interval=10, min_block_size=5):
+def split_dataset_by_sampling_intervals(
+    ds,
+    measurement_intervals,
+    min_sample_interval=10,
+    min_block_size=5,
+    time_is_end_interval=True,
+):
     """
     Split a dataset into subsets where each subset has a consistent sampling interval.
 
-    This function do not modify the actual timesteps !
+    Notes
+    -----
+    - Does not modify timesteps (regularization is left to `regularize_timesteps`).
+    - Assumes no duplicated timesteps in the dataset.
+    - If only one measurement interval is specified, no timestep-diff checks are performed.
+    - If multiple measurement intervals are specified:
+        * Raises an error if *none* of the expected intervals appear.
+        * Splits where interval changes.
+    - Segments shorter than `min_block_size` are discarded.
 
     Parameters
     ----------
@@ -87,16 +89,20 @@ def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_in
         A list of possible primary sampling intervals (in seconds) that the dataset might have.
     min_sample_interval : int, optional
         The minimum expected sampling interval in seconds. Defaults to 10s.
+        This is used to deal with possible trailing seconds errors.
     min_block_size : float, optional
         The minimum number of timesteps with a given sampling interval to be considered.
         Otherwise such portion of data is discarded !
         Defaults to 5 timesteps.
+    time_is_end_interval: bool
+        Whether time refers to the end of the measurement interval.
+        The default is True.
 
     Returns
     -------
-    dict
+    dict[int, xr.Dataset]
         A dictionary where keys are the identified sampling intervals (in seconds),
-        and values are xarray.Datasets containing only data from those intervals.
+        and values are xarray.Datasets containing only data from those sampling intervals.
     """
     # Define array of possible measurement intervals
     measurement_intervals = np.array(measurement_intervals)
@@ -106,11 +112,18 @@ def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_in
 
     # If a single measurement interval expected, return dictionary with input dataset
     if len(measurement_intervals) == 1:
-        dict_ds = {measurement_intervals[0]: ds}
+        dict_ds = {int(measurement_intervals[0]): ds}
         return dict_ds
 
+    # If sample_interval is a dataset variable, use it to define dictionary of datasets
+    if "sample_interval" in ds:
+        return {int(interval): ds.isel(time=ds["sample_interval"] == interval) for interval in measurement_intervals}
+
+    # ---------------------------------------------------------------------------------------.
+    # Otherwise exploit difference between timesteps to identify change point
+
     # Calculate time differences in seconds
-    deltadt = np.diff(ds["time"].data).astype("timedelta64[s]").astype(int)
+    deltadt = np.abs(np.diff(ds["time"].data)).astype("timedelta64[s]").astype(int)
 
     # Round each delta to the nearest multiple of 5 (because the smallest possible sample interval is 10 s)
     # - This account for possible trailing seconds of the logger
@@ -126,25 +139,46 @@ def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_in
     if np.all(np.isnan(mapped_intervals)):
         raise ValueError("Impossible to identify timesteps with expected sampling intervals.")
 
+    # Check which measurements intervals are occurring in the dataset
+    uniques = np.unique(mapped_intervals)
+    uniques_intervals = uniques[~np.isnan(uniques)]
+    n_different_intervals_occurring = len(uniques_intervals)
+    if n_different_intervals_occurring == 1:
+        dict_ds = {int(k): ds for k in uniques_intervals}
+        return dict_ds
+
+    # Fill NaNs: decide whether to attach to previous or next interval
+    for i in range(len(mapped_intervals)):
+        if np.isnan(mapped_intervals[i]):
+            # If next exists and is NaN → forward fill
+            if i + 1 < len(mapped_intervals) and np.isnan(mapped_intervals[i + 1]):
+                mapped_intervals[i] = mapped_intervals[i - 1] if i > 0 else mapped_intervals[i + 1]
+            # Otherwise → backward fill (attach to next valid)
+            else:
+                mapped_intervals[i] = (
+                    mapped_intervals[i + 1] if i + 1 < len(mapped_intervals) else mapped_intervals[i - 1]
+                )
+
     # Infill np.nan values by using neighbor intervals
     # Forward fill
-    for i in range(1, len(mapped_intervals)):
-        if np.isnan(mapped_intervals[i]):
-            mapped_intervals[i] = mapped_intervals[i - 1]
+    # for i in range(1, len(mapped_intervals)):
+    #     if np.isnan(mapped_intervals[i]):
+    #         mapped_intervals[i] = mapped_intervals[i - 1]
 
-    # Backward fill (in case the first entries were np.nan)
-    for i in range(len(mapped_intervals) - 2, -1, -1):
-        if np.isnan(mapped_intervals[i]):
-            mapped_intervals[i] = mapped_intervals[i + 1]
+    # # Backward fill (in case the first entries were np.nan)
+    # for i in range(len(mapped_intervals) - 2, -1, -1):
+    #     if np.isnan(mapped_intervals[i]):
+    #         mapped_intervals[i] = mapped_intervals[i + 1]
 
     # Now all intervals are assigned to one of the possible measurement_intervals.
     # Identify boundaries where interval changes
     change_points = np.where(mapped_intervals[:-1] != mapped_intervals[1:])[0] + 1
 
     # Split ds into segments according to change_points
-    segments = np.split(np.arange(ds.sizes["time"]), change_points)
+    offset = 1 if time_is_end_interval else 0
+    segments = np.split(np.arange(ds.sizes["time"]), change_points + offset)
 
-    # Remove segments with less than 10 points
+    # Remove segments with less than min_block_size elements
     segments = [seg for seg in segments if len(seg) >= min_block_size]
     if len(segments) == 0:
         raise ValueError(
@@ -153,20 +187,33 @@ def split_dataset_by_sampling_intervals(ds, measurement_intervals, min_sample_in
 
     # Define dataset indices for each sampling interva
     dict_sampling_interval_indices = {}
+    used_indices = set()
     for seg in segments:
         # Define the assumed sampling interval of such segment
         start_idx = seg[0]
         segment_sampling_interval = int(mapped_intervals[start_idx])
-        if segment_sampling_interval not in dict_sampling_interval_indices:
-            dict_sampling_interval_indices[segment_sampling_interval] = [seg]
-        else:
-            dict_sampling_interval_indices[segment_sampling_interval].append(seg)
+        # Remove any indices that have already been assigned to another interval
+        seg_filtered = seg[~np.isin(seg, list(used_indices))]
+
+        # Only keep segment if it still meets minimum size after filtering
+        if len(seg_filtered) >= min_block_size:
+            if segment_sampling_interval not in dict_sampling_interval_indices:
+                dict_sampling_interval_indices[segment_sampling_interval] = [seg_filtered]
+            else:
+                dict_sampling_interval_indices[segment_sampling_interval].append(seg_filtered)
+
+            # Mark these indices as used
+            used_indices.update(seg_filtered)
+
+    # Concatenate indices for each sampling interval
     dict_sampling_interval_indices = {
-        k: np.concatenate(list_indices) for k, list_indices in dict_sampling_interval_indices.items()
+        k: np.concatenate(list_indices)
+        for k, list_indices in dict_sampling_interval_indices.items()
+        if list_indices  # Only include if there are valid segments
     }
 
     # Define dictionary of datasets
-    dict_ds = {k: ds.isel(time=indices) for k, indices in dict_sampling_interval_indices.items()}
+    dict_ds = {int(k): ds.isel(time=indices) for k, indices in dict_sampling_interval_indices.items()}
     return dict_ds
 
 
@@ -417,6 +464,32 @@ def regularize_timesteps(ds, sample_interval, robust=False, add_quality_flag=Tru
         ds["time_qc"] = xr.DataArray(qc_flag, dims="time")
         ds = ds.set_coords("time_qc")
 
+        # Add CF attributes for time_qc
+        ds["time_qc"].attrs = {
+            "long_name": "time quality flag",
+            "standard_name": "status_flag",
+            "units": "1",
+            "valid_range": [0, 5],
+            "flag_values": [0, 1, 2, 3, 4, 5],
+            "flag_meanings": (
+                "good_data "
+                "previous_timestep_missing "
+                "next_timestep_missing "
+                "isolated_timestep "
+                "solved_duplicated_timestep "
+                "dropped_duplicated_timestep"
+            ),
+            "comment": (
+                "Quality flag for time coordinate. "
+                "Flag 0: data is good or just rounded to nearest sampling interval. "
+                "Flag 1: previous timestep is missing in the time series. "
+                "Flag 2: next timestep is missing in the time series. "
+                "Flag 3: both previous and next timesteps are missing (isolated timestep). "
+                "Flag 4: timestep was moved from duplicate to fill missing timestep. "
+                "Flag 5: duplicate timestep was dropped, keeping the last occurrence."
+            ),
+        }
+
     # Drop duplicated timesteps
     # - Using ds =  ds.drop_isel({"time": idx_to_drop.astype(int)}) raise:
     #   --> pandas.errors.InvalidIndexError: Reindexing only valid with uniquely valued Index objects
@@ -452,12 +525,14 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
     fractions = np.round(counts / len(deltadt) * 100, 2)
 
     # Compute stats about expected deltadt
-    sample_interval_counts = counts[unique_deltadt == sample_interval].item()
-    sample_interval_fraction = fractions[unique_deltadt == sample_interval].item()
+    mask = unique_deltadt == sample_interval
+    sample_interval_counts = counts[mask].item() if mask.any() else 0
+    sample_interval_fraction = fractions[mask].item() if mask.any() else 0.0
 
     # Compute stats about most frequent deltadt
-    most_frequent_deltadt_counts = counts[unique_deltadt == most_frequent_deltadt].item()
-    most_frequent_deltadt_fraction = fractions[unique_deltadt == most_frequent_deltadt].item()
+    mask = unique_deltadt == most_frequent_deltadt
+    most_frequent_deltadt_counts = counts[mask].item() if mask.any() else 0
+    most_frequent_deltadt_fraction = fractions[mask].item() if mask.any() else 0.0
 
     # Compute stats about unexpected deltadt
     unexpected_intervals = unique_deltadt[unique_deltadt != sample_interval]
@@ -465,13 +540,14 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
     unexpected_intervals_fractions = fractions[unique_deltadt != sample_interval]
     frequent_unexpected_intervals = unexpected_intervals[unexpected_intervals_fractions > 5]
 
-    # Report warning if the samplin_interval deltadt occurs less often than 60 % of times
+    # Report warning if the sampling_interval deltadt occurs less often than 60 % of times
     # -> TODO: maybe only report in stations where the disdro does not log only data when rainy
     if sample_interval_fraction < 60:
         msg = (
             f"The expected (sampling) interval between observations occurs only "
             f"{sample_interval_counts}/{n} times ({sample_interval_fraction} %)."
         )
+        log_warning(logger=logger, msg=msg, verbose=verbose)
 
     # Report warning if a deltadt occurs more often then the sampling interval
     if most_frequent_deltadt != sample_interval:
@@ -485,14 +561,7 @@ def check_timesteps_regularity(ds, sample_interval, verbose=False, logger=None):
 
     # Report with a warning all unexpected deltadt with frequency larger than 5 %
     if len(frequent_unexpected_intervals) > 0:
-        msg_parts = ["The following unexpected intervals occur frequently:"]
-        for interval in frequent_unexpected_intervals:
-            c = unexpected_intervals_counts[unexpected_intervals == interval].item()
-            f = unexpected_intervals_fractions[unexpected_intervals == interval].item()
-            msg_parts.append(f" {interval} ({f}%) ({c}/{n}) | ")
-        msg = " ".join(msg_parts)
-
-        msg = "The following time intervals between observations occurs often: "
+        msg = "The following time intervals between observations occur frequently: "
         for interval in frequent_unexpected_intervals:
             c = unexpected_intervals_counts[unexpected_intervals == interval].item()
             f = unexpected_intervals_fractions[unexpected_intervals == interval].item()
@@ -524,6 +593,8 @@ def _finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger
     )
 
     # Performs checks about timesteps regularity
+    # - Do not discard anything
+    # - Just log warnings in the log file
     ds = check_timesteps_regularity(ds=ds, sample_interval=sample_interval, verbose=verbose, logger=logger)
 
     # Shift timesteps to ensure time correspond to start of measurement interval
@@ -622,7 +693,7 @@ def create_l0c_datasets(
     # Raise error if less than 3 timesteps left
     n_timesteps = len(ds["time"])
     if n_timesteps < 3:
-        raise ValueError(f"{n_timesteps} timesteps left after removing duplicated timesteps.")
+        raise ValueError(f"{n_timesteps} timesteps left after removing duplicated.")
 
     # ---------------------------------------------------------------------------------------.
     # Split dataset by sampling intervals
@@ -636,7 +707,7 @@ def create_l0c_datasets(
     # Log a warning if two sampling intervals are present within a given time block
     if len(dict_ds) > 1:
         occuring_sampling_intervals = list(dict_ds)
-        msg = f"The input dataset contains these sampling intervals: {occuring_sampling_intervals}."
+        msg = f"The input files contains these sampling intervals: {occuring_sampling_intervals}."
         log_warning(logger=logger, msg=msg, verbose=verbose)
 
     # ---------------------------------------------------------------------------------------.

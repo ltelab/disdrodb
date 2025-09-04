@@ -26,7 +26,7 @@ from typing import Optional
 
 import dask
 
-from disdrodb.api.checks import check_sensor_name, check_station_inputs
+from disdrodb.api.checks import check_measurement_intervals, check_sensor_name, check_station_inputs
 from disdrodb.api.create_directories import (
     create_l0_directory_structure,
     create_logs_directory,
@@ -53,7 +53,7 @@ from disdrodb.l0.l0b_processing import (
     generate_l0b,
     write_l0b,
 )
-from disdrodb.l0.l0c_processing import TOLERANCE_SECONDS, create_l0c_datasets, retrieve_possible_measurement_intervals
+from disdrodb.l0.l0c_processing import TOLERANCE_SECONDS, create_l0c_datasets
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.archiving import get_files_per_time_block
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
@@ -346,7 +346,7 @@ def _generate_l0c(
         sensor_name = metadata["sensor_name"]
         campaign_name = metadata["campaign_name"]
         station_name = metadata["station_name"]
-        measurement_intervals = retrieve_possible_measurement_intervals(metadata)
+        measurement_intervals = check_measurement_intervals(metadata["measurement_interval"])
 
         # Produce L0C datasets
         dict_ds = create_l0c_datasets(
