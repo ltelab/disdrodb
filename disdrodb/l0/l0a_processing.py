@@ -811,11 +811,14 @@ def read_l0a_dataframe(
         n_rows = min(100, len(df))
         df = df.sample(n=n_rows)
 
-    # Ensure no index
-    df = df.reset_index(drop=True)
-
     # Ensure time is in nanoseconds
     df["time"] = df["time"].astype("M8[ns]")
+
+    # Ensure sorted by time
+    df = df.sort_values(by="time")
+
+    # Ensure no index
+    df = df.reset_index(drop=True)
 
     # ---------------------------------------------------
     # Return dataframe

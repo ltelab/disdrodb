@@ -821,11 +821,13 @@ class TestCreateL0cDatasets:
     def test_successful_processing_single_interval(self, mocker):
         """Test successful creation of L0C dataset with single measurement interval."""
         # Mock dataset with regular timesteps
-        times = pd.date_range("2023-01-01", periods=10, freq="60s")
+        n_times = 10
+        times = pd.date_range("2023-01-01", periods=n_times, freq="60s")
+        raw_drop_number = xr.DataArray(np.ones((n_times, 32)), dims=("time", "diameter_bin_center"))
         ds = xr.Dataset(
             {
-                "raw_drop_number": ("time", np.arange(10)),
-                "data": ("time", np.random.rand(10)),
+                "raw_drop_number": raw_drop_number,
+                "data": ("time", np.random.rand(n_times)),
             },
             coords={"time": times},
         )
@@ -854,11 +856,14 @@ class TestCreateL0cDatasets:
     def test_successful_processing_single_interval_with_missing_observations(self, mocker):
         """Test successful creation of L0C dataset when every timestep miss the neighbours."""
         # Mock dataset with regular timesteps
-        times = pd.date_range("2023-01-01", periods=10, freq="60s")
+        n_times = 10
+        times = pd.date_range("2023-01-01", periods=n_times, freq="60s")
+        raw_drop_number = xr.DataArray(np.ones((n_times, 32)), dims=("time", "diameter_bin_center"))
+
         ds = xr.Dataset(
             {
-                "raw_drop_number": ("time", np.arange(10)),
-                "data": ("time", np.random.rand(10)),
+                "raw_drop_number": raw_drop_number,
+                "data": ("time", np.random.rand(n_times)),
             },
             coords={"time": times},
         )
@@ -957,11 +962,14 @@ class TestCreateL0cDatasets:
                 "2023-01-01T00:20:00",
             ],
         )
+        n_times = len(times)
+        raw_drop_number = xr.DataArray(np.ones((n_times, 32)), dims=("time", "diameter_bin_center"))
+        sample_interval = [60, 60, 60, 60, 60, 60, 180, 180, 180, 180, 180]
         mock_ds = xr.Dataset(
             {
-                "raw_drop_number": ("time", np.arange(11)),
-                "sample_interval": ("time", [60, 60, 60, 60, 60, 60, 180, 180, 180, 180, 180]),
-                "data": ("time", np.random.rand(11)),
+                "raw_drop_number": raw_drop_number,
+                "sample_interval": ("time", sample_interval),
+                "data": ("time", np.random.rand(n_times)),
             },
             coords={"time": times},
         )

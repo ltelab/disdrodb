@@ -90,7 +90,7 @@ def initialize_dask_cluster(minimum_memory=None):
         n_workers=num_workers,
         threads_per_worker=1,
         processes=True,
-        # memory_limit='8GB',
+        memory_limit=0,  # this avoid flexible dask memory management
         silence_logs=logging.ERROR,
     )
     client = Client(cluster)
@@ -111,3 +111,64 @@ def close_dask_cluster(cluster, client):
     finally:
         # Restore the original log level
         logger.setLevel(original_level)
+
+
+def execute_tasks_safely(list_tasks, parallel: bool, logs_dir: str):
+    """
+    Execute Dask tasks and skip failed ones.
+
+    Parameters
+    ----------
+    list_tasks : list
+        List of dask delayed objects or results.
+    parallel : bool
+        Whether to execute in parallel with Dask or not.
+    logs_dir : str
+        Directory to store FAILED_TASKS.log.
+
+    Returns
+    -------
+    list_logs : list
+        List of task results. For failed tasks, adds the path
+        to FAILED_TASKS.log in place of the result.
+    """
+    from dask.distributed import get_client
+
+    # Ensure logs_dir exists
+    os.makedirs(logs_dir, exist_ok=True)
+
+    # Define file name where to log failed dask tasks
+    failed_log_path = os.path.join(logs_dir, "FAILED_DASK_TASKS.log")
+
+    if not parallel:
+        # Non-parallel mode: just return results directly
+        return list_tasks
+
+    # Ensure we have a Dask client
+    try:
+        client = get_client()
+    except ValueError:
+        raise ValueError("No Dask Distributed Client found.")
+
+    # Compute tasks (all concurrently)
+    # - Runs tasks == num_workers * threads_per_worker (which is 1 for DISDRODB)
+    # - If errors occurs in some, skip it
+    futures = client.compute(list_tasks)
+    results = client.gather(futures, errors="skip")
+
+    # Collect failed futures
+    failed_futures = [f for f in futures if f.status != "finished"]  # "error"
+
+    # If no tasks failed, return results
+    if not failed_futures:
+        return results
+
+    # Otherwise define log file listing failed tasks
+    with open(failed_log_path, "w") as f:
+        for fut in failed_futures:
+            err = fut.exception()
+            f.write(f"ERROR - DASK TASK FAILURE - Task {fut.key} failed: {err}\n")
+
+    # Append to list of log filepaths (results) the dask failing log
+    results.append(failed_log_path)
+    return results

@@ -17,8 +17,10 @@
 """Test DISDRODB product writer."""
 import os
 
+import numpy as np
 import xarray as xr
 
+from disdrodb.l0.l0b_processing import set_l0b_encodings
 from disdrodb.tests.fake_datasets import create_template_dataset  #  create_template_l2e_dataset
 from disdrodb.utils.writer import finalize_product, write_product
 
@@ -47,3 +49,47 @@ def test_write_product(tmp_path):
 
     ds_in = xr.open_dataset(filepath, decode_timedelta=False)
     xr.testing.assert_equal(ds, ds_in)
+
+
+def test_correct_chunks_encoding(tmp_path):
+    """Test DISDRODB correctly chunks the netCDF files."""
+    # Create dataset with raw_drop_number variable with following dimensions
+    # - (time: 10000, diameter_bin_center=2, velocity_bin_center=2)
+    time = np.arange(10_000)  # larger than current chunksize
+    velocity_bin_center = np.arange(2)
+    diameter_bin_center = np.arange(2)
+
+    # Create random data for drop_number
+    drop_number_data = np.random.randint(0, 100, size=(len(time), len(velocity_bin_center), len(diameter_bin_center)))
+
+    # Create dataset with drop_number
+    ds = xr.Dataset(
+        data_vars={
+            "raw_drop_number": (("time", "diameter_bin_center", "velocity_bin_center"), drop_number_data),
+        },
+        coords={
+            "time": time,
+            "velocity_bin_center": velocity_bin_center,
+            "diameter_bin_center": diameter_bin_center,
+        },
+    )
+    # Apply encodings
+    ds = set_l0b_encodings(ds=ds, sensor_name="PARSIVEL")
+
+    # Check chunksizes is added by set_l0b_encodings
+    assert "chunksizes" in ds["raw_drop_number"].encoding
+
+    # Retrieve time chunksize
+    chunksize = ds["raw_drop_number"].encoding["chunksizes"][0]
+
+    # Save file by chunks
+    filepath = os.path.join(tmp_path, "chunked.nc")
+    write_product(ds, filepath)
+
+    # Open file with file chunks using chunks={}
+    ds_in = xr.open_dataset(filepath, chunks={}, decode_timedelta=False)
+
+    # Check all time chunks correspond to what specified in encodings (except last)
+    # - chunks format ((time_chunk, time_chunk), (...), (...))
+    chunks = ds_in["raw_drop_number"].chunks
+    assert np.all(np.array(chunks[0][:-1]) == chunksize)

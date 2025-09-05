@@ -98,7 +98,7 @@ def disdrodb_run_l2e_station(
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
     if parallel:
-        cluster, client = initialize_dask_cluster(minimum_memory="8GB")
+        cluster, client = initialize_dask_cluster(minimum_memory="4GB")
 
     # -------------------------------------------------------------------------.
     run_l2e_station(

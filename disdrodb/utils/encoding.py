@@ -50,6 +50,9 @@ def set_encodings(ds: xr.Dataset, encodings_dict: dict) -> xr.Dataset:
     xarray.Dataset
         Output xarray dataset.
     """
+    # TODO: CHANGE CHUNKSIZES SPECIFICATION USING {<DIM>: <CHUNKSIZE>} INSTEAD OF LIST
+    # --> Then unwrap to list of chunksizes here
+
     # Subset encoding dictionary
     # - Here below encodings_dict contains only keys (variables) within the dataset
     encodings_dict = {var: encodings_dict[var] for var in ds.data_vars if var in encodings_dict}
@@ -119,11 +122,12 @@ def rechunk_dataset(ds: xr.Dataset, encodings_dict: dict) -> xr.Dataset:
     """
     for var in ds.data_vars:
         if var in encodings_dict:
-            chunks = encodings_dict[var].pop("chunksizes", None)
+            chunks = encodings_dict[var].get("chunksizes", None)  # .pop("chunksizes", None)
             if chunks is not None:
                 dims = list(ds[var].dims)
                 chunks_dict = dict(zip(dims, chunks))
                 ds[var] = ds[var].chunk(chunks_dict)
+                ds[var].encoding["chunksizes"] = chunks
     return ds
 
 

@@ -24,7 +24,6 @@ import os
 import time
 from typing import Optional
 
-import dask
 import xarray as xr
 
 from disdrodb.api.checks import check_station_inputs
@@ -44,6 +43,7 @@ from disdrodb.configs import (
     get_product_options,
 )
 from disdrodb.l1.processing import generate_l1
+from disdrodb.utils.dask import execute_tasks_safely
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
@@ -63,6 +63,7 @@ def _generate_l1(
     filepath,
     data_dir,
     logs_dir,
+    logs_filename,
     campaign_name,
     station_name,
     # Processing options
@@ -103,8 +104,6 @@ def _generate_l1(
     product = "L1"
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
-    # Define logger filename
-    logs_filename = os.path.basename(filepath)
 
     # Define product processing function
     def core(
@@ -143,6 +142,7 @@ def _generate_l1(
         filepath=filepath,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Archiving options
         data_dir=data_dir,
         folder_partitioning=folder_partitioning,
     )
@@ -284,6 +284,7 @@ def run_l1_station(
             filepath=filepath,
             data_dir=data_dir,
             logs_dir=logs_dir,
+            logs_filename=os.path.basename(filepath),
             campaign_name=campaign_name,
             station_name=station_name,
             # Processing options
@@ -293,7 +294,7 @@ def run_l1_station(
         )
         for filepath in filepaths
     ]
-    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+    list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
     # -----------------------------------------------------------------.
     # Define L1 summary logs

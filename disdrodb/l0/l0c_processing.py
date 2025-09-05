@@ -27,7 +27,7 @@ from disdrodb.api.io import open_netcdf_files
 from disdrodb.l0.l0b_processing import set_l0b_encodings
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.utils.attrs import set_disdrodb_attrs
-from disdrodb.utils.logger import log_warning
+from disdrodb.utils.logger import log_warning, log_info
 from disdrodb.utils.time import ensure_sorted_by_time
 
 logger = logging.getLogger(__name__)
@@ -600,6 +600,10 @@ def _finalize_l0c_dataset(ds, sample_interval, sensor_name, verbose=True, logger
     # Shift timesteps to ensure time correspond to start of measurement interval
     # TODO as function of sensor name
 
+    # Set netCDF dimension order
+    # --> Required for correct encoding !
+    ds = ds.transpose("time", "diameter_bin_center", ...)
+
     # Set encodings
     ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
 
@@ -659,10 +663,16 @@ def create_l0c_datasets(
         filepaths,
         start_time=start_time_tol,
         end_time=end_time_tol,
-        chunks=-1,
+        chunks={},
         parallel=False,
         compute=True,
     )
+    
+    # If not data for that time block, return empty dictionary
+    # - Can occur when raw files are already by block of months and e.g. here saving to daily blocks !
+    if ds.sizes["time"] == 0:
+        log_info(logger=logger, msg=f"No data between {start_time} and {end_time}.", verbose=verbose)
+        return {}
 
     # ---------------------------------------------------------------------------------------.
     # If sample interval is a dataset variable, drop timesteps with unexpected measurement intervals !

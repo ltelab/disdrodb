@@ -24,8 +24,6 @@ import os
 import time
 from typing import Optional
 
-import dask
-
 from disdrodb.api.checks import check_measurement_intervals, check_sensor_name, check_station_inputs
 from disdrodb.api.create_directories import (
     create_l0_directory_structure,
@@ -49,13 +47,11 @@ from disdrodb.l0.l0a_processing import (
     write_l0a,
 )
 from disdrodb.l0.l0b_nc_processing import sanitize_ds
-from disdrodb.l0.l0b_processing import (
-    generate_l0b,
-    write_l0b,
-)
+from disdrodb.l0.l0b_processing import generate_l0b
 from disdrodb.l0.l0c_processing import TOLERANCE_SECONDS, create_l0c_datasets
 from disdrodb.metadata import read_station_metadata
 from disdrodb.utils.archiving import get_files_per_time_block
+from disdrodb.utils.dask import execute_tasks_safely
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
@@ -79,6 +75,7 @@ def _generate_l0a(
     filepath,
     data_dir,
     logs_dir,
+    logs_filename,
     # Processing info
     reader,
     metadata,
@@ -93,8 +90,6 @@ def _generate_l0a(
     product = "L0A"
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
-    # Define logger filename
-    logs_filename = os.path.basename(filepath)
 
     # Define product processing function
     def core(
@@ -102,9 +97,12 @@ def _generate_l0a(
         reader,
         metadata,
         issue_dict,
+        # Archiving options
         data_dir,
         folder_partitioning,
+        # Processing options
         verbose,
+        force,
         logger,
     ):
         """Define L0A product processing."""
@@ -130,9 +128,12 @@ def _generate_l0a(
         reader=reader,
         metadata=metadata,
         issue_dict=issue_dict,
+        # Archiving options
         data_dir=data_dir,
         folder_partitioning=folder_partitioning,
+        # Processing options
         verbose=verbose,
+        force=force,
     )
     # Run product generation
     logger_filepath = run_product_generation(
@@ -155,6 +156,7 @@ def _generate_l0b_from_nc(
     filepath,
     data_dir,
     logs_dir,
+    logs_filename,
     # Processing info
     reader,
     metadata,
@@ -169,8 +171,6 @@ def _generate_l0b_from_nc(
     product = "L0B"
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
-    # Define logger filename
-    logs_filename = os.path.basename(filepath)
 
     # Define product processing function
     def core(
@@ -178,9 +178,12 @@ def _generate_l0b_from_nc(
         reader,
         metadata,
         issue_dict,
+        # Dara archiving options
         data_dir,
         folder_partitioning,
+        # Processing options
         verbose,
+        force,
         logger,
     ):
         """Define L0B product processing."""
@@ -204,7 +207,7 @@ def _generate_l0b_from_nc(
         filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
         folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
         filepath = os.path.join(folder_path, filename)
-        write_l0b(ds, filepath=filepath, force=force)
+        write_product(ds, filepath=filepath, force=force)
 
         # Return L0B dataset
         return ds
@@ -215,9 +218,12 @@ def _generate_l0b_from_nc(
         reader=reader,
         metadata=metadata,
         issue_dict=issue_dict,
-        verbose=verbose,
+        # Archiving options
         data_dir=data_dir,
         folder_partitioning=folder_partitioning,
+        # Processing options
+        verbose=verbose,
+        force=force,
     )
     # Run product generation
     logger_filepath = run_product_generation(
@@ -240,6 +246,7 @@ def _generate_l0b(
     filepath,
     data_dir,
     logs_dir,
+    logs_filename,
     # Processing info
     metadata,
     # Processing options
@@ -252,17 +259,18 @@ def _generate_l0b(
     product = "L0B"
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
-    # Define logger filename
-    logs_filename = os.path.basename(filepath)
 
     # Define product processing function
     def core(
         filepath,
         metadata,
+        # Archiving options
         data_dir,
         folder_partitioning,
+        # Processing options
         debugging_mode,
         verbose,
+        force,
         logger,
     ):
         """Define L0B product processing."""
@@ -279,7 +287,7 @@ def _generate_l0b(
         filename = define_l0b_filename(ds=ds, campaign_name=campaign_name, station_name=station_name)
         folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
         filepath = os.path.join(folder_path, filename)
-        write_l0b(ds, filepath=filepath, force=force)
+        write_product(ds, filepath=filepath, force=force)
         # Return L0B dataset
         return ds
 
@@ -287,10 +295,13 @@ def _generate_l0b(
     core_func_kwargs = dict(  # noqa: C408
         filepath=filepath,
         metadata=metadata,
-        debugging_mode=debugging_mode,
-        verbose=verbose,
+        # Archiving options
         data_dir=data_dir,
         folder_partitioning=folder_partitioning,
+        # Processing options
+        debugging_mode=debugging_mode,
+        verbose=verbose,
+        force=force,
     )
     # Run product generation
     logger_filepath = run_product_generation(
@@ -314,6 +325,7 @@ def _generate_l0c(
     event_info,
     data_dir,
     logs_dir,
+    logs_filename,
     # Processing info
     metadata,
     # Processing options
@@ -326,19 +338,17 @@ def _generate_l0c(
     product = "L0C"
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
-    # Retrieve event start time and end_time
-    start_time = event_info["start_time"]
-    # end_time = event_info["end_time"]
-    # Define logger filename
-    logs_filename = start_time.strftime("%Y%m%dT%H%M%S") + ".log"
 
     # Define product processing function
     def core(
         event_info,
         metadata,
+        # Archiving options
         data_dir,
         folder_partitioning,
+        # Processing options
         verbose,
+        force,
         logger,
     ):
         """Define L0C product processing."""
@@ -379,9 +389,12 @@ def _generate_l0c(
     core_func_kwargs = dict(  # noqa: C408
         event_info=event_info,
         metadata=metadata,
+        # Archiving options
         data_dir=data_dir,
         folder_partitioning=folder_partitioning,
+        # Processing options
         verbose=verbose,
+        force=force,
     )
 
     # Run product generation
@@ -562,6 +575,7 @@ def run_l0a_station(
             filepath=filepath,
             data_dir=data_dir,
             logs_dir=logs_dir,
+            logs_filename=os.path.basename(filepath),
             # Reader argument
             reader=reader,
             # Processing info
@@ -574,7 +588,7 @@ def run_l0a_station(
         )
         for filepath in filepaths
     ]
-    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+    list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
     # -----------------------------------------------------------------.
     # Define product summary logs
@@ -733,6 +747,7 @@ def run_l0b_station(
             filepath=filepath,
             data_dir=data_dir,
             logs_dir=logs_dir,
+            logs_filename=os.path.basename(filepath),
             metadata=metadata,
             force=force,
             verbose=verbose,
@@ -741,7 +756,8 @@ def run_l0b_station(
         )
         for filepath in filepaths
     ]
-    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+
+    list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
     # -----------------------------------------------------------------.
     # Define L0B summary logs
@@ -924,6 +940,7 @@ def run_l0c_station(
             metadata=metadata,
             data_dir=data_dir,
             logs_dir=logs_dir,
+            logs_filename=event_info["start_time"].strftime("%Y%m%dT%H%M%S"),
             # Processing options
             force=force,
             verbose=verbose,
@@ -931,7 +948,7 @@ def run_l0c_station(
         )
         for event_info in list_event_info
     ]
-    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+    list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
     # -----------------------------------------------------------------.
     # Define summary logs

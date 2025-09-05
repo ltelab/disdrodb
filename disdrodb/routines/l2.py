@@ -24,7 +24,6 @@ import os
 import time
 from typing import Optional
 
-import dask
 import pandas as pd
 
 from disdrodb.api.checks import check_station_inputs
@@ -57,12 +56,12 @@ from disdrodb.l2.processing import (
 from disdrodb.metadata import read_station_metadata
 from disdrodb.scattering.routines import precompute_scattering_tables
 from disdrodb.utils.archiving import define_temporal_partitions, get_files_partitions
+from disdrodb.utils.dask import execute_tasks_safely
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 from disdrodb.utils.list import flatten_list
 
 # Logger
 from disdrodb.utils.logger import (
-    create_logger_file,
     create_product_logs,
     log_info,
 )
@@ -218,6 +217,15 @@ class ProcessingOptions:
 #### L2E
 
 
+def define_l2e_logs_filename(campaign_name, station_name, start_time, end_time, accumulation_interval, rolling):
+    """Define L2E logs filename."""
+    temporal_resolution = define_temporal_resolution(seconds=accumulation_interval, rolling=rolling)
+    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
+    logs_filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    return logs_filename
+
+
 @delayed_if_parallel
 @single_threaded_if_parallel
 def _generate_l2e(
@@ -226,6 +234,7 @@ def _generate_l2e(
     filepaths,
     data_dir,
     logs_dir,
+    logs_filename,
     folder_partitioning,
     campaign_name,
     station_name,
@@ -241,16 +250,6 @@ def _generate_l2e(
     """Generate the L2E product from the DISDRODB L1 netCDF file."""
     # Define product
     product = "L2E"
-    # Define logger filename
-    temporal_resolution = define_temporal_resolution(seconds=accumulation_interval, rolling=rolling)
-    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
-    logs_filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=logs_filename,
-        parallel=parallel,
-    )
 
     # Define product processing function
     def core(
@@ -258,7 +257,11 @@ def _generate_l2e(
         campaign_name,
         station_name,
         product_options,
+        # Processing options
         logger,
+        parallel,
+        verbose,
+        force,
         # Resampling arguments
         start_time,
         end_time,
@@ -341,6 +344,10 @@ def _generate_l2e(
         # Archiving arguments
         data_dir=data_dir,
         folder_partitioning=folder_partitioning,
+        # Processing options
+        parallel=parallel,
+        verbose=verbose,
+        force=force,
     )
     # Run product generation
     logger_filepath = run_product_generation(
@@ -530,6 +537,14 @@ def run_l2e_station(
                 filepaths=event_info["filepaths"],
                 data_dir=data_dir,
                 logs_dir=logs_dir,
+                logs_filename=define_l2e_logs_filename(
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    start_time=event_info["start_time"],
+                    end_time=event_info["end_time"],
+                    rolling=rolling,
+                    accumulation_interval=accumulation_interval,
+                ),
                 folder_partitioning=folder_partitioning,
                 campaign_name=campaign_name,
                 station_name=station_name,
@@ -544,7 +559,7 @@ def run_l2e_station(
             )
             for event_info in files_partitions
         ]
-        list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+        list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
         # -----------------------------------------------------------------.
         # Define product summary logs
@@ -571,6 +586,15 @@ def run_l2e_station(
 
 ####----------------------------------------------------------------------------.
 #### L2M
+def define_l2m_logs_filename(campaign_name, station_name, start_time, end_time, model_name, sample_interval, rolling):
+    """Define L2M logs filename."""
+    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
+    logs_filename = (
+        f"L2M_{model_name}.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    )
+    return logs_filename
 
 
 @delayed_if_parallel
@@ -581,6 +605,7 @@ def _generate_l2m(
     filepaths,
     data_dir,
     logs_dir,
+    logs_filename,
     folder_partitioning,
     campaign_name,
     station_name,
@@ -596,19 +621,7 @@ def _generate_l2m(
 ):
     """Generate the L2M product from a DISDRODB L2E netCDF file."""
     # Define product
-    product = "L2E"
-    # Define logger filename
-    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
-    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
-    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
-    logs_filename = (
-        f"L2M_{model_name}.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
-    )
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=logs_filename,
-        parallel=parallel,
-    )
+    product = "L2M"
 
     # Define product processing function
     def core(
@@ -617,7 +630,10 @@ def _generate_l2m(
         filepaths,
         campaign_name,
         station_name,
+        # Processing options
         logger,
+        verbose,
+        force,
         # Product options
         product_options,
         sample_interval,
@@ -701,6 +717,9 @@ def _generate_l2m(
         end_time=end_time,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Processing options
+        verbose=verbose,
+        force=force,
         # Product options
         product_options=product_options,
         sample_interval=sample_interval,
@@ -948,6 +967,15 @@ def run_l2m_station(
                     filepaths=event_info["filepaths"],
                     data_dir=data_dir,
                     logs_dir=logs_dir,
+                    logs_filename=define_l2m_logs_filename(
+                        campaign_name=campaign_name,
+                        station_name=station_name,
+                        start_time=event_info["start_time"],
+                        end_time=event_info["end_time"],
+                        model_name=model_name,
+                        sample_interval=accumulation_interval,
+                        rolling=rolling,
+                    ),
                     folder_partitioning=folder_partitioning,
                     campaign_name=campaign_name,
                     station_name=station_name,
@@ -963,7 +991,7 @@ def run_l2m_station(
                 )
                 for event_info in files_partitions
             ]
-            list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+            list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
             # -----------------------------------------------------------------.
             # Define L2M summary logs

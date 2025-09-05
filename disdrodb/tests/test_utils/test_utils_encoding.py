@@ -40,7 +40,9 @@ def test_rechunk_dataset():
     ds_rechunked = rechunk_dataset(ds, encodings_dict)
     assert ds_rechunked["a"].chunks == ((1, 1), (2, 1))
     assert ds_rechunked["b"].chunks == ((2,), (1, 1, 1))
-
+    assert ds_rechunked["a"].encoding["chunksizes"] == (1, 2)
+    assert ds_rechunked["b"].encoding["chunksizes"] == (2, 1)
+ 
 
 @pytest.fixture
 def encoding_dict_1():

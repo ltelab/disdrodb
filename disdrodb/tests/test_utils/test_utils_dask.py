@@ -17,10 +17,18 @@
 """Test dask utility."""
 import logging
 import os
+from tempfile import TemporaryDirectory
 
 import pytest
+from dask import delayed
+from dask.distributed import Client
 
-from disdrodb.utils.dask import check_parallel_validity, close_dask_cluster, initialize_dask_cluster
+from disdrodb.utils.dask import (
+    check_parallel_validity,
+    close_dask_cluster,
+    execute_tasks_safely,
+    initialize_dask_cluster,
+)
 
 
 def test_check_parallel_validity_no_scheduler():
@@ -108,3 +116,52 @@ class TestInitializeDaskCluster:
         original_level = logger.level
         close_dask_cluster(cluster, client)
         assert logger.level == original_level
+
+
+def test_execute_tasks_safely_with_failures():
+    """Test execute_tasks_safely."""
+
+    # Dummy functions
+    @delayed
+    def succeed(x):
+        return x * 2
+
+    @delayed
+    def fail(x):
+        raise ValueError(f"Bad input: {x}")
+
+    # Create tasks
+    list_tasks = [succeed(2), fail(3, dask_key_name="fail-my_custom_name"), succeed(5)]
+
+    with TemporaryDirectory() as tmpdir:  # noqa: SIM117
+        # Create a local client
+        with Client(n_workers=2, threads_per_worker=1, processes=True, memory_limit="512MB"):
+            # Run tasks
+            results = execute_tasks_safely(list_tasks, parallel=True, logs_dir=tmpdir)
+
+            # Check results length matches tasks
+            assert len(results) == 3
+
+            # Assert first list tasks succeeded
+            assert results[0] == 4
+            assert results[1] == 10
+
+            # Assert last element is the filepath to the file log
+            assert "FAILED_DASK_TASKS.log" in results[2]
+
+            # Open log file containing failures info
+            with open(results[2]) as f:
+                log_content = f.read()
+
+            # Test reports name of the dask task failing
+            assert "my_custom_name" in log_content
+
+            # Test reports cause of error
+            assert "Bad input: 3" in log_content
+
+            # Test that if only successful tasks, no FAILED_DASK_TASKS.log added
+            list_tasks = [succeed(2), succeed(5)]
+            results = execute_tasks_safely(list_tasks, parallel=True, logs_dir=tmpdir)
+            assert len(results) == 2
+            assert results[0] == 4
+            assert results[1] == 10
