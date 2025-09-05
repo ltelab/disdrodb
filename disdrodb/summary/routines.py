@@ -15,10 +15,12 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
 """Utilities to create summary statistics."""
+import gc
+import importlib
 import os
+import shutil
 import subprocess
 import tempfile
-from shutil import which
 
 import matplotlib.lines as mlines
 import matplotlib.pyplot as plt
@@ -33,9 +35,9 @@ import disdrodb
 from disdrodb.api.path import define_station_dir
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
 from disdrodb.l2.empirical_dsd import get_drop_average_velocity
-from disdrodb.l2.event import group_timesteps_into_event
 from disdrodb.scattering import RADAR_OPTIONS
 from disdrodb.utils.dataframe import compute_2d_histogram, log_arange
+from disdrodb.utils.event import group_timesteps_into_event
 from disdrodb.utils.manipulations import (
     get_diameter_bin_edges,
     resample_drop_number_concentration,
@@ -58,7 +60,7 @@ def is_latex_engine_available() -> bool:
     bool
         True if tectonic is found, False otherwise.
     """
-    return which("tectonic") is not None
+    return shutil.which("tectonic") is not None
 
 
 def save_table_to_pdf(
@@ -142,7 +144,7 @@ def save_table_to_pdf(
                 check=True,
             )
         # Move result
-        os.replace(os.path.join(td, "table.pdf"), filepath)
+        shutil.move(os.path.join(td, "table.pdf"), filepath)
 
 
 ####-----------------------------------------------------------------
@@ -400,14 +402,35 @@ def prepare_latex_table_events_summary(df):
 #### Powerlaw routines
 
 
-def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
+def fit_powerlaw_with_ransac(x, y):
+    """Fit powerlaw relationship with RANSAC algorithm."""
+    from sklearn.linear_model import LinearRegression, RANSACRegressor
+
+    x = np.asanyarray(x)
+    y = np.asanyarray(y)
+    X = np.log10(x).reshape(-1, 1)
+    Y = np.log10(y)
+    ransac = RANSACRegressor(
+        estimator=LinearRegression(),
+        min_samples=0.5,
+        residual_threshold=0.3,
+        random_state=42,
+    )
+    ransac.fit(X, Y)
+    b = ransac.estimator_.coef_[0]  # slope
+    loga = ransac.estimator_.intercept_  # intercept
+    a = 10**loga
+    return a, b
+
+
+def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False, use_ransac=True):
     """
     Fit a power-law relationship ``y = a * x**b`` to binned median values.
 
     This function bins ``x`` into intervals defined by ``xbins``, computes the
     median of ``y`` in each bin (robust to outliers), and fits a power-law model
-    using the Levenberg-Marquardt algorithm. Optionally, ``x`` can be converted
-    from decibel units to linear scale automatically before fitting.
+    using the RANSAC or Levenberg-Marquardt algorithm.
+    Optionally, ``x`` can be converted from decibel units to linear scale automatically before fitting.
 
     Parameters
     ----------
@@ -424,6 +447,11 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     x_in_db : bool, optional
         If True, converts ``x`` values from decibels (dB) to linear scale using
         :func:`disdrodb.idecibel`. Default is False.
+    use_ransac: bool, optional
+        Whether to fit the powerlaw using the Random Sample Consensus (RANSAC)
+        algorithm or using the Levenberg-Marquardt algorithm.
+        The default is True.
+        To fit with RANSAC, scikit-learn must be installed.
 
     Returns
     -------
@@ -432,6 +460,8 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     params_std : tuple of float
         One standard deviation uncertainties ``(a_std, b_std)`` estimated from
         the covariance matrix of the fit.
+        Parameters standard deviation is currently
+        not available if fitting with the RANSAC algorithm.
 
     Notes
     -----
@@ -457,6 +487,11 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
     # Set min_counts to 0 during pytest execution in order to test the summary routine
     if os.environ.get("PYTEST_CURRENT_TEST"):
         min_counts = 0
+
+    # Check if RANSAC algorithm is available
+    sklearn_available = importlib.util.find_spec("sklearn") is not None
+    if use_ransac and not sklearn_available:
+        use_ransac = False
 
     # Ensure numpy array
     x = np.asanyarray(x)
@@ -512,19 +547,27 @@ def fit_powerlaw(x, y, xbins, quantile=0.5, min_counts=10, x_in_db=False):
 
     # Fit the data
     with suppress_warnings():
-        (a, b), pcov = curve_fit(
-            lambda x, a, b: a * np.power(x, b),
-            df_agg["x"],
-            df_agg["y"],
-            method="lm",
-            sigma=sigma,
-            absolute_sigma=True,
-            maxfev=10_000,  # max n iterations
-        )
-        (a_std, b_std) = np.sqrt(np.diag(pcov))
+        if use_ransac:
+            a, b = fit_powerlaw_with_ransac(x=df_agg["x"], y=df_agg["y"])
+            a_std = None
+            b_std = None
+        else:
+
+            (a, b), pcov = curve_fit(
+                lambda x, a, b: a * np.power(x, b),
+                df_agg["x"],
+                df_agg["y"],
+                method="lm",
+                sigma=sigma,
+                absolute_sigma=True,
+                maxfev=10_000,  # max n iterations
+            )
+            (a_std, b_std) = np.sqrt(np.diag(pcov))
+            a_std = float(a_std)
+            b_std = float(b_std)
 
     # Return the parameters and their standard deviation
-    return (float(a), float(b)), (float(a_std), float(b_std))
+    return (float(a), float(b)), (a_std, b_std)
 
 
 def predict_from_powerlaw(x, a, b):
@@ -611,8 +654,10 @@ def plot_drop_spectrum(drop_number, norm=None, add_colorbar=True, title="Drop Sp
     """Plot the drop spectrum."""
     cmap = plt.get_cmap("Spectral_r").copy()
     cmap.set_under("none")
+    if "time" in drop_number.dims:
+        drop_number = drop_number.sum(dim="time")
     if norm is None:
-        norm = LogNorm(vmin=1, vmax=None)
+        norm = LogNorm(vmin=1, vmax=None) if drop_number.sum() > 0 else None
 
     p = drop_number.plot.pcolormesh(
         x=DIAMETER_DIMENSION,
@@ -623,8 +668,6 @@ def plot_drop_spectrum(drop_number, norm=None, add_colorbar=True, title="Drop Sp
         add_colorbar=add_colorbar,
         cbar_kwargs={"label": "Number of particles"},
     )
-    p.axes.set_yticks([])
-    p.axes.set_yticklabels([])
     p.axes.set_xlabel("Diamenter [mm]")
     p.axes.set_ylabel("Fall velocity [m/s]")
     p.axes.set_title(title)
@@ -782,7 +825,7 @@ def plot_dsd_density(df_nd, diameter_bin_edges, figsize=(8, 8), dpi=300):
     return p
 
 
-def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
+def plot_dsd_with_dense_lines(drop_number_concentration, r, figsize=(8, 8), dpi=300):
     """Plot N(D) ~ D using dense lines."""
     # Define intervals for rain rates
     r_bins = [0, 2, 5, 10, 50, 100, 500]
@@ -794,13 +837,13 @@ def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
     # Resample N(D) to high resolution !
     # - quadratic, pchip
     da = resample_drop_number_concentration(
-        ds["drop_number_concentration"],
+        drop_number_concentration.compute(),
         diameter_bin_edges=diameter_bin_edges,
         method="linear",
     )
     ds_resampled = xr.Dataset(
         {
-            "R": ds["R"],
+            "R": r.compute(),
             "drop_number_concentration": da,
         },
     )
@@ -822,9 +865,12 @@ def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
     # Compute dense lines
     dict_rgb = {}
     for i in range(0, len(r_bins) - 1):
+
         # Define dataset subset
         idx_rain_interval = np.logical_and(ds_resampled["R"] >= r_bins[i], ds_resampled["R"] < r_bins[i + 1])
         da = ds_resampled.isel(time=idx_rain_interval)["drop_number_concentration"]
+        if da.sizes["time"] == 0:
+            continue
 
         # Retrieve dense lines
         da_dense_lines = compute_dense_lines(
@@ -834,14 +880,17 @@ def plot_dsd_with_dense_lines(ds, figsize=(8, 8), dpi=300):
             y_bins=y_bins,
             normalization="max",
         )
+
         # Define cmap
         cmap = cmap_list[i]
+
         # Map colors and transparency
         # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="linear")
         # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="exp")
         # da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="log")
         da_rgb = to_rgba(da_dense_lines, cmap=cmap, scaling="sqrt")
 
+        # Add to dictionary
         dict_rgb[i] = da_rgb
 
     # Blend images with max-alpha
@@ -1347,7 +1396,7 @@ def plot_dsd_params_density(df, log_dm=False, lwc=True, log_normalize=False, fig
 
     # Nt and Nw range
     nt_bins = log_arange(1, 100_000, log_step=log_step, base=10)
-    nw_bins = log_arange(1, 100_000, log_step=log_step, base=10)
+    nw_bins = log_arange(1, 1_000_000, log_step=log_step, base=10)
     nw_lim = (10, 1_000_000)
     nt_lim = (1, 100_000)
 
@@ -3711,12 +3760,15 @@ def prepare_summary_dataset(ds, velocity_method="fall_velocity", source="drop_nu
     # Select only timesteps with R > 0
     # - We save R with 2 decimals accuracy ... so 0.01 is the smallest value
     rainy_timesteps = np.logical_and(ds["Rm"].compute() >= 0.01, ds["R"].compute() >= 0.01)
-    ds = ds.isel(time=ds["Rm"].compute() >= rainy_timesteps)
+    ds = ds.isel(time=rainy_timesteps)
     return ds
 
 
 def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, station_name):
     """Generate station summary using L2E dataset."""
+    # Create summary directory if does not exist
+    os.makedirs(summary_dir_path, exist_ok=True)
+
     ####---------------------------------------------------------------------.
     #### Prepare dataset
     ds = prepare_summary_dataset(ds)
@@ -3727,6 +3779,7 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     ####---------------------------------------------------------------------.
     #### Create drop spectrum figures and statistics
     # Compute sum of raw and filtered spectrum over time
+
     raw_drop_number = ds["raw_drop_number"].sum(dim="time")
     drop_number = ds["drop_number"].sum(dim="time")
 
@@ -4034,6 +4087,11 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     # TODO:
 
     ####------------------------------------------------------------------------.
+    #### Free space - Remove df from memory
+    del df
+    gc.collect()
+
+    ####------------------------------------------------------------------------.
     #### Create N(D) densities
     df_nd = create_nd_dataframe(ds)
 
@@ -4049,18 +4107,6 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     p.figure.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 
-    #### - Plot N(D) vs D with dense lines
-    filename = define_filename(
-        prefix="N(D)_DenseLines",
-        extension="png",
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-    p = plot_dsd_with_dense_lines(ds)
-    p.figure.savefig(os.path.join(summary_dir_path, filename))
-    plt.close()
-
     #### - Plot N(D)/Nw vs D/Dm
     filename = define_filename(
         prefix="N(D)_Normalized",
@@ -4073,13 +4119,42 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     p.figure.savefig(os.path.join(summary_dir_path, filename))
     plt.close()
 
+    #### Free space - Remove df_nd from memory
+    del df_nd
+    gc.collect()
+
+    #### - Plot N(D) vs D with DenseLines
+    # Extract required variables and free memory
+    drop_number_concentration = ds["drop_number_concentration"].compute().copy()
+    r = ds["R"].compute().copy()
+    del ds
+    gc.collect()
+
+    # Create figure
+    filename = define_filename(
+        prefix="N(D)_DenseLines",
+        extension="png",
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+    )
+    p = plot_dsd_with_dense_lines(drop_number_concentration=drop_number_concentration, r=r)
+    p.figure.savefig(os.path.join(summary_dir_path, filename))
+    plt.close()
+
 
 ####------------------------------------------------------------------------.
 #### Wrappers
 
 
-def create_station_summary(data_source, campaign_name, station_name, parallel=False, data_archive_dir=None):
-    """Create summary figures and tables for a disdrometer station."""
+def create_station_summary(
+    data_source,
+    campaign_name,
+    station_name,
+    parallel=False,
+    data_archive_dir=None,
+):
+    """Create summary figures and tables for a DISDRODB station."""
     # Print processing info
     print(f"Creation of station summary for {data_source} {campaign_name} {station_name} has started.")
 
@@ -4104,6 +4179,7 @@ def create_station_summary(data_source, campaign_name, station_name, parallel=Fa
         product_kwargs={"rolling": False, "sample_interval": 60},
         parallel=parallel,
         chunks=-1,
+        compute=True,
     )
 
     # Generate station summary figures and table

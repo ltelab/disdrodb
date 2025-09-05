@@ -21,7 +21,7 @@
 import click
 
 
-def _execute_cmd(cmd, raise_error=False):
+def execute_cmd(cmd, raise_error=False):
     """Execute command in the terminal, streaming output in python console."""
     from subprocess import PIPE, CalledProcessError, Popen
 
@@ -34,7 +34,7 @@ def _execute_cmd(cmd, raise_error=False):
         raise CalledProcessError(p.returncode, p.args)
 
 
-def _parse_empty_string_and_none(args):
+def parse_empty_string_and_none(args):
     """Utility to parse argument passed from the command line.
 
     If ``args = ''``, returns None.
@@ -58,7 +58,7 @@ def parse_arg_to_list(args):
     If ``args = 'variable1 variable2'`` returns ``[variable1, variable2]``.
     """
     # If '' or 'None' --> Set to None
-    args = _parse_empty_string_and_none(args)
+    args = parse_empty_string_and_none(args)
     # - If multiple arguments, split by space
     if isinstance(args, str):
         # - Split by space
@@ -75,7 +75,7 @@ def parse_archive_dir(archive_dir: str):
     If ``archive_dir = ''`` returns ``None``.
     """
     # If '', set to 'None'
-    return _parse_empty_string_and_none(archive_dir)
+    return parse_empty_string_and_none(archive_dir)
 
 
 def click_station_arguments(function: object):
@@ -86,7 +86,7 @@ def click_station_arguments(function: object):
     function : object
         Function.
     """
-    function = click.argument("station_name", metavar="<station>")(function)
+    function = click.argument("station_name", metavar="<STATION_NAME>")(function)
     function = click.argument("campaign_name", metavar="<CAMPAIGN_NAME>")(function)
     function = click.argument("data_source", metavar="<DATA_SOURCE>")(function)
     return function

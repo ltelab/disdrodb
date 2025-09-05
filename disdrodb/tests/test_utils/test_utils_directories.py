@@ -320,6 +320,8 @@ class TestListAndCountDirectories:
         assert set(dirs) == {str(dir1)}
         assert count == 1
 
+        assert list_directories(tmp_path, recursive=False, return_paths=False) == ["dir1"]
+
         dirs = list_directories(tmp_path, "dir1/*", recursive=False)
         count = count_directories(tmp_path, "dir1/*", recursive=False)
         assert set(dirs) == {str(dir2)}
@@ -405,6 +407,9 @@ class TestListAndCountFiles:
         result = list_files(tmp_path, recursive=False)
         assert set(result) == {str(file1), str(file2), str(file3)}
         assert count_files(tmp_path, recursive=False) == 3
+
+        result = list_files(tmp_path, recursive=False, return_paths=False)
+        assert set(result) == {"file3.ANOTHER", "file1.txt", "file2.txt"}
 
     def test_list_non_recursive_subdir_all(self, tmp_path):
         """Should list only files in a subdirectory with '*/*' pattern non-recursively."""

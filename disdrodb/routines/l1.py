@@ -21,11 +21,9 @@
 import datetime
 import logging
 import os
-import shutil
 import time
 from typing import Optional
 
-import dask
 import xarray as xr
 
 from disdrodb.api.checks import check_station_inputs
@@ -33,7 +31,6 @@ from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
-from disdrodb.api.io import find_files
 from disdrodb.api.path import (
     define_file_folder_path,
     define_l1_filename,
@@ -46,16 +43,15 @@ from disdrodb.configs import (
     get_product_options,
 )
 from disdrodb.l1.processing import generate_l1
+from disdrodb.utils.dask import execute_tasks_safely
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
 # Logger
 from disdrodb.utils.logger import (
-    close_logger,
-    create_logger_file,
     create_product_logs,
-    log_error,
     log_info,
 )
+from disdrodb.utils.routines import run_product_generation, try_get_required_filepaths
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
@@ -67,6 +63,7 @@ def _generate_l1(
     filepath,
     data_dir,
     logs_dir,
+    logs_filename,
     campaign_name,
     station_name,
     # Processing options
@@ -74,7 +71,7 @@ def _generate_l1(
     verbose,
     parallel,  # this is used only to initialize the correct logger !
 ):
-    """Generate the L1 product from the DISRODB L0C netCDF file.
+    """Generate the L1 product from the DISDRODB L0C netCDF file.
 
     Parameters
     ----------
@@ -103,34 +100,23 @@ def _generate_l1(
     If an error occurs during processing, it is caught and logged,
     but no error is raised to interrupt the execution.
     """
-    # -----------------------------------------------------------------.
-    # Define product name
+    # Define product
     product = "L1"
-
     # Define folder partitioning
     folder_partitioning = get_folder_partitioning()
 
-    # -----------------------------------------------------------------.
-    # Create file logger
-    filename = os.path.basename(filepath)
-    logger, logger_filepath = create_logger_file(
-        logs_dir=logs_dir,
-        filename=filename,
-        parallel=parallel,
-    )
+    # Define product processing function
+    def core(
+        filepath,
+        campaign_name,
+        station_name,
+        data_dir,
+        folder_partitioning,
+    ):
+        """Define L1 product processing."""
+        # Retrieve L1 configurations
+        l1_options = get_product_options("L1").get("product_options")  # TODO: MOVE OUTSIDE
 
-    ##------------------------------------------------------------------------.
-    # Log start processing
-    msg = f"{product} processing of {filename} has started."
-    log_info(logger=logger, msg=msg, verbose=verbose)
-    success_flag = False
-    ##------------------------------------------------------------------------.
-    # Retrieve L1 configurations
-    l1_options = get_product_options("L1").get("product_options")
-
-    ##------------------------------------------------------------------------.
-    ### Core computation
-    try:
         # Open the raw netCDF
         with xr.open_dataset(filepath, chunks=-1, decode_timedelta=False, cache=False) as ds:
             ds = ds[["raw_drop_number"]].load()
@@ -138,47 +124,40 @@ def _generate_l1(
         # Produce L1 dataset
         ds = generate_l1(ds=ds, **l1_options)
 
+        # Ensure at least 1 timestep available
+        if ds["time"].size <= 1:
+            return None
+
         # Write L1 netCDF4 dataset
-        if ds["time"].size > 1:
-            # Define filepath
-            filename = define_l1_filename(ds, campaign_name=campaign_name, station_name=station_name)
-            folder_path = define_file_folder_path(ds, data_dir=data_dir, folder_partitioning=folder_partitioning)
-            filepath = os.path.join(folder_path, filename)
-            # Write to disk
-            write_product(ds, filepath=filepath, force=force)
+        filename = define_l1_filename(ds, campaign_name=campaign_name, station_name=station_name)
+        folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
+        filepath = os.path.join(folder_path, filename)
+        write_product(ds, filepath=filepath, force=force)
 
-        ##--------------------------------------------------------------------.
-        #### - Define logger file final directory
-        if folder_partitioning != "":
-            log_dst_dir = define_file_folder_path(ds, data_dir=logs_dir, folder_partitioning=folder_partitioning)
-            os.makedirs(log_dst_dir, exist_ok=True)
+        # Return L1 dataset
+        return ds
 
-        ##--------------------------------------------------------------------.
-        # Clean environment
-        del ds
-
-        # Log end processing
-        msg = f"{product} processing of {filename} has ended."
-        log_info(logger=logger, msg=msg, verbose=verbose)
-        success_flag = True
-
-    ##--------------------------------------------------------------------.
-    # Otherwise log the error
-    except Exception as e:
-        error_type = str(type(e).__name__)
-        msg = f"{error_type}: {e}"
-        log_error(logger, msg, verbose=verbose)
-
-    # Close the file logger
-    close_logger(logger)
-
-    # Move logger file to correct partitioning directory
-    if success_flag and folder_partitioning != "" and logger_filepath is not None:
-        # Move logger file to correct partitioning directory
-        dst_filepath = os.path.join(log_dst_dir, os.path.basename(logger_filepath))
-        shutil.move(logger_filepath, dst_filepath)
-        logger_filepath = dst_filepath
-
+    # Define product processing function kwargs
+    core_func_kwargs = dict(  # noqa: C408
+        filepath=filepath,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Archiving options
+        data_dir=data_dir,
+        folder_partitioning=folder_partitioning,
+    )
+    # Run product generation
+    logger_filepath = run_product_generation(
+        product=product,
+        logs_dir=logs_dir,
+        logs_filename=logs_filename,
+        parallel=parallel,
+        verbose=verbose,
+        folder_partitioning=folder_partitioning,
+        core_func=core,
+        core_func_kwargs=core_func_kwargs,
+        pass_logger=False,
+    )
     # Return the logger file path
     return logger_filepath
 
@@ -282,30 +261,18 @@ def run_l1_station(
 
     # -------------------------------------------------------------------------.
     # List files to process
+    # - If no data available, print error message and return None
     required_product = get_required_product(product)
-    flag_not_available_data = False
-    try:
-        filepaths = find_files(
-            data_archive_dir=data_archive_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-            product=required_product,
-            # Processing options
-            debugging_mode=debugging_mode,
-        )
-    except Exception as e:
-        print(str(e))  # Case where no file paths available
-        flag_not_available_data = True
-
-    # -------------------------------------------------------------------------.
-    # If no data available, print error message and return None
-    if flag_not_available_data:
-        msg = (
-            f"{product} processing of {data_source} {campaign_name} {station_name} "
-            + f"has not been launched because of missing {required_product} data."
-        )
-        print(msg)
+    filepaths = try_get_required_filepaths(
+        data_archive_dir=data_archive_dir,
+        data_source=data_source,
+        campaign_name=campaign_name,
+        station_name=station_name,
+        product=required_product,
+        # Processing options
+        debugging_mode=debugging_mode,
+    )
+    if filepaths is None:
         return
 
     # -----------------------------------------------------------------.
@@ -317,6 +284,7 @@ def run_l1_station(
             filepath=filepath,
             data_dir=data_dir,
             logs_dir=logs_dir,
+            logs_filename=os.path.basename(filepath),
             campaign_name=campaign_name,
             station_name=station_name,
             # Processing options
@@ -326,7 +294,7 @@ def run_l1_station(
         )
         for filepath in filepaths
     ]
-    list_logs = dask.compute(*list_tasks) if parallel else list_tasks
+    list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
 
     # -----------------------------------------------------------------.
     # Define L1 summary logs

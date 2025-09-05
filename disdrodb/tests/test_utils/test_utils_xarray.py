@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -26,26 +24,69 @@ from xarray.core import dtypes
 from disdrodb.utils.xarray import (
     define_dataarray_fill_value,
     define_fill_value_dictionary,
+    remove_diameter_coordinates,
+    remove_velocity_coordinates,
     unstack_datarray_dimension,
     xr_get_last_valid_idx,
-    # remove_diameter_coordinates,
-    # remove_velocity_coordinates,
 )
 
 
-def test_unstack_datarray_dimension_with_prefix_suffix():
-    """Test splitting a DataArray with prefix and suffix."""
-    da = xr.DataArray(
-        np.array([5, 6, 7]),
-        dims=("dim1",),
-        coords={"dim1": ["X", "Y", "Z"]},
-        name="var",
-    )
-    ds = unstack_datarray_dimension(da, dim="dim1", prefix="split_", suffix="_")
-    assert set(ds.data_vars) == {"split_var_X", "split_var_Y", "split_var_Z"}
-    np.testing.assert_array_equal(ds["split_var_X"].values, [5])
-    np.testing.assert_array_equal(ds["split_var_Y"].values, [6])
-    np.testing.assert_array_equal(ds["split_var_Z"].values, [7])
+class TestUnstackDatarrayDimension:
+    def test_invalid_coord_handling_raises(self):
+        """It raises ValueError for invalid coord_handling option."""
+        da = xr.DataArray([1, 2], dims=["d"], coords={"d": ["a", "b"]}, name="var")
+        with pytest.raises(ValueError, match="coord_handling"):
+            unstack_datarray_dimension(da, dim="d", coord_handling="invalid")
+
+    def test_coord_handling_keep_retains_coords(self):
+        """It keeps non-dimensional coordinates when coord_handling='keep'."""
+        da = xr.DataArray(
+            [1, 2],
+            dims=["d"],
+            coords={"d": ["a", "b"], "other": ("d", [10, 20])},
+            name="var",
+        )
+        ds = unstack_datarray_dimension(da, dim="d", coord_handling="keep")
+        # "other" coord should remain
+        assert "other" in ds.coords
+
+    def test_coord_handling_drop_removes_coords(self):
+        """It drops non-dimensional coordinates when coord_handling='drop'."""
+        da = xr.DataArray(
+            [1, 2],
+            dims=["d"],
+            coords={"d": ["a", "b"], "other": ("d", [10, 20])},
+            name="var",
+        )
+        ds = unstack_datarray_dimension(da, dim="d", coord_handling="drop")
+        # "other" coord should be removed
+        assert "other" not in ds.coords
+
+    def test_coord_handling_unstack_splits_coords(self):
+        """It unstacks non-dimensional coordinates when coord_handling='unstack'."""
+        da = xr.DataArray(
+            [1, 2],
+            dims=["d"],
+            coords={"d": ["a", "b"], "other": ("d", [10, 20])},
+            name="var",
+        )
+        ds = unstack_datarray_dimension(da, dim="d", coord_handling="unstack", prefix="p_", suffix="_")
+        # Expect split variables for "var" and "other"
+        assert set(ds.data_vars).issuperset({"p_var_a", "p_var_b", "p_other_a", "p_other_b"})
+
+    def test_unstack_datarray_dimension_with_prefix_suffix(self):
+        """Test splitting a DataArray with prefix and suffix."""
+        da = xr.DataArray(
+            np.array([5, 6, 7]),
+            dims=("dim1",),
+            coords={"dim1": ["X", "Y", "Z"]},
+            name="var",
+        )
+        ds = unstack_datarray_dimension(da, dim="dim1", prefix="split_", suffix="_")
+        assert set(ds.data_vars) == {"split_var_X", "split_var_Y", "split_var_Z"}
+        np.testing.assert_array_equal(ds["split_var_X"].values, [5])
+        np.testing.assert_array_equal(ds["split_var_Y"].values, [6])
+        np.testing.assert_array_equal(ds["split_var_Z"].values, [7])
 
 
 class TestXrGetLastValidIdx:
@@ -210,3 +251,37 @@ class TestDefineFillValueDictionary:
         assert result["fvar"] is dtypes.NA
         assert result["ivar"] == -7
         assert result["x"] == np.iinfo(np.int64).max
+
+
+class TestRemoveDiameterAndVelocityCoordinates:
+    def test_remove_diameter_coordinates(self):
+        """It removes all diameter coordinates if present."""
+        coords = {
+            name: ("x", [1, 2, 3])
+            for name in [
+                "diameter_bin_center",
+                "diameter_bin_width",
+                "diameter_bin_lower",
+                "diameter_bin_upper",
+            ]
+        }
+        ds = xr.Dataset(coords=coords)
+        result = remove_diameter_coordinates(ds)
+        for c in ["diameter_bin_center", "diameter_bin_width", "diameter_bin_lower", "diameter_bin_upper"]:
+            assert c not in result.coords
+
+    def test_remove_velocity_coordinates(self):
+        """It removes all velocity coordinates if present."""
+        coords = {
+            name: ("x", [1, 2, 3])
+            for name in [
+                "velocity_bin_center",
+                "velocity_bin_width",
+                "velocity_bin_lower",
+                "velocity_bin_upper",
+            ]
+        }
+        ds = xr.Dataset(coords=coords)
+        result = remove_velocity_coordinates(ds)
+        for c in ["velocity_bin_center", "velocity_bin_width", "velocity_bin_lower", "velocity_bin_upper"]:
+            assert c not in result.coords

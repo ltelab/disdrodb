@@ -23,18 +23,15 @@ import pytest
 import xarray as xr
 
 from disdrodb.utils.time import (
-    check_freq,
     ensure_sample_interval_in_seconds,
     ensure_sorted_by_time,
-    generate_time_blocks,
+    ensure_timedelta_seconds,
     get_dataframe_start_end_time,
     get_dataset_start_end_time,
     get_file_start_end_time,
-    get_problematic_timestep_indices,
     get_resampling_information,
     infer_sample_interval,
     regularize_dataset,
-    regularize_timesteps,
     seconds_to_temporal_resolution,
     temporal_resolution_to_seconds,
 )
@@ -481,54 +478,42 @@ class TestEnsureSampleIntervalInSeconds:
             ensure_sample_interval_in_seconds(np.datetime64("2021-01-01"))
 
 
-class TestGetProblematicTimestepIndices:
-    def test_no_missing_timesteps(self):
-        """Continuous timesteps yield no problematic indices."""
-        timesteps = pd.date_range("2021-01-01", periods=5, freq="1s")
-        prev, nxt, isol = get_problematic_timestep_indices(timesteps, 1)
-        assert isinstance(prev, np.ndarray)
-        assert prev.size == 0
-        assert isinstance(nxt, np.ndarray)
-        assert nxt.size == 0
-        assert isinstance(isol, np.ndarray)
-        assert isol.size == 0
+class TestEnsureTimedeltaSeconds:
+    """Test ensure_timedelta_seconds."""
 
-    def test_prev_and_next_missing_separate(self):
-        """Timesteps missing previous or next neighbors reported correctly."""
-        timesteps = pd.to_datetime(
-            [
-                "2021-01-01 00:00:00",
-                "2021-01-01 00:00:01",
-                "2021-01-01 00:00:03",
-                "2021-01-01 00:00:04",
-            ],
-        )
-        prev, nxt, isol = get_problematic_timestep_indices(timesteps, 1)
-        # index 2 misses previous, index 1 misses next, no isolated
-        np.testing.assert_array_equal(prev, np.array([2]))
-        np.testing.assert_array_equal(nxt, np.array([1]))
-        assert isol.size == 0
+    def test_with_numpy_array(self):
+        """It converts a numpy array of seconds to timedelta64[s]."""
+        result = ensure_timedelta_seconds(np.array([1, 2, 3]))
+        assert np.issubdtype(result.dtype, np.timedelta64)
+        assert (result == np.array([1, 2, 3], dtype="m8[s]")).all()
 
-    def test_isolated_missing_timesteps(self):
-        """Timesteps missing both previous and next are isolated."""
-        timesteps = pd.to_datetime(
-            [
-                "2021-01-01 00:00:00",
-                "2021-01-01 00:00:02",
-                "2021-01-01 00:00:04",
-                "2021-01-01 00:00:05",
-            ],
-        )
-        prev, nxt, isol = get_problematic_timestep_indices(timesteps, 1)
-        # index 1 is isolated, others split
-        np.testing.assert_array_equal(isol, np.array([1]))
-        np.testing.assert_array_equal(prev, np.array([2]))
-        np.testing.assert_array_equal(nxt, np.array([0]))
+    def test_with_timedelta_array(self):
+        """It converts a numpy array of seconds to timedelta64[s]."""
+        arr = np.array([1, 2, 3]).astype("m8[m]")
+        result = ensure_timedelta_seconds(arr)
+        assert np.issubdtype(result.dtype, np.timedelta64)
+        assert (result == np.array([60, 120, 180], dtype="m8[s]")).all()
 
-    def test_invalid_timesteps_type_raises(self):
-        """Non-datetime timesteps input raises TypeError."""
-        with pytest.raises(TypeError):
-            get_problematic_timestep_indices([1, 2, 3], 1)
+    def test_with_xarray_dataarray(self):
+        """It converts an xarray DataArray of intervals to timedelta64[s]."""
+        result = ensure_timedelta_seconds(xr.DataArray([5, 10]))
+        assert isinstance(result, xr.DataArray)
+        assert np.issubdtype(result.dtype, np.timedelta64)
+        np.testing.assert_array_equal(result.values, np.array([5, 10], dtype="m8[s]"))
+
+    def test_with_scalar_seconds_integer_value(self):
+        """It converts a scalar interval (in seconds) to timedelta64[s]."""
+        result = ensure_timedelta_seconds(42)
+        assert isinstance(result, np.ndarray)
+        assert result.dtype == "m8[s]"
+        assert result == np.array(42, dtype="m8[s]")
+
+    def test_with_scalar_timedelta(self):
+        """It converts a scalar timedelta64 to timedelta64[s]."""
+        result = ensure_timedelta_seconds(np.array(1, dtype="m8[m]"))
+        assert isinstance(result, np.ndarray)
+        assert result.dtype == "m8[s]"
+        assert result == np.array(60, dtype="m8[s]")
 
 
 class TestSecondsToAcronym:
@@ -642,181 +627,6 @@ class TestGetResamplingInformation:
             get_resampling_information("")
 
 
-class TestRegularizeTimesteps:
-    def test_sorted_regular_dataset(self):
-        """Regular timesteps remain unchanged with zero QC flags."""
-        sample_interval = 60
-        freq = "1min"
-        timesteps = pd.date_range("2021-01-01T00:00:00", periods=5, freq=freq)
-        arr = np.arange(5)
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps})
-        ds_out = regularize_timesteps(ds, sample_interval=sample_interval)
-        # times and values unchanged
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), timesteps.to_numpy())
-        np.testing.assert_array_equal(ds_out["data"].to_numpy(), arr)
-        # QC flags all zero
-        assert "time_qc" in ds_out.coords
-        assert np.all(ds_out["time_qc"].to_numpy() == 0)
-
-    def test_unsorted_regular_dataset(self):
-        """Unsorted regular timesteps is sorted by time and has zero QC flags."""
-        sample_interval = 60
-        freq = "1min"
-        timesteps = pd.date_range("2021-01-01T00:00:00", periods=3, freq=freq)
-        arr = np.array([0, 1, 2])
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps[::-1]})
-        ds_out = regularize_timesteps(ds, sample_interval=sample_interval)
-        # Output times sorted ascending
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), timesteps.to_numpy())
-        # QC flags all zero
-        assert "time_qc" in ds_out.coords
-        assert np.all(ds_out["time_qc"].to_numpy() == 0)
-
-    def test_missing_timesteps_quality_flags(self):
-        """Missing timesteps produce correct QC flags for prev/next missing."""
-        base = pd.Timestamp("2021-01-01T00:00:00")
-        timesteps = np.array([base, base + pd.Timedelta(seconds=60)], dtype="datetime64[ns]")
-        ds = xr.Dataset({"data": ("time", [0, 1])}, coords={"time": timesteps})
-        ds_out = regularize_timesteps(ds, sample_interval=30)
-        qc = ds_out["time_qc"].to_numpy()
-        # First index missing next -> flag 2, second missing previous -> flag 1
-        assert qc[0] == 2
-        assert qc[1] == 1
-
-    def test_trailing_seconds_coorection(self):
-        """Trailing seconds are adjusted and flag still kept to 0."""
-        base = pd.Timestamp("2021-01-01T00:00:00")
-        offsets = np.array([0, 29, 59, 92, 118]).astype("timedelta64[s]")
-        timesteps = base + offsets
-        arr = np.arange(timesteps.size)
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps})
-        ds_out = regularize_timesteps(ds, sample_interval=30)
-        # values unchanged
-        np.testing.assert_array_equal(ds_out["data"].to_numpy(), arr)
-        # timesteps corrected for trailing seconds
-        expected_timesteps = base + np.array([0, 30, 60, 90, 120]).astype("timedelta64[s]")
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
-        # QC flags all zero
-        assert "time_qc" in ds_out.coords
-        assert np.all(ds_out["time_qc"].to_numpy() == 0)
-
-    def test_single_duplicate_identified_and_dropped(self):
-        """First occurrence of duplicate timesteps is dropped and flag correctly."""
-        base = pd.Timestamp("2021-01-01T00:00:00")
-        offsets = np.array([0, 30, 30, 60]).astype("timedelta64[s]")
-        timesteps = base + offsets
-        arr = np.arange(timesteps.size)
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps})
-        # Robust=True raise error
-        with pytest.raises(ValueError):
-            regularize_timesteps(ds, sample_interval=30, robust=True)
-        # Otherwise works correctly
-        ds_out = regularize_timesteps(ds, sample_interval=30)
-
-        # One duplicate dropped -> length 3
-        assert ds_out.sizes["time"] == 3
-        # Times are unique and ordered
-        expected_timesteps = base + np.array([0, 30, 60]).astype("timedelta64[s]")
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
-        # Values array has changed: 1 (first duplicate has been dropped)
-        np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 2, 3])
-        # QC flags: only middle flagged as dropped duplicate (5)
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 5, 0])
-
-    def test_multiple_duplicates_identified_and_droppped(self):
-        """First occurrences of duplicates timesteps are dropped and flag correctly."""
-        base = pd.Timestamp("2021-01-01T00:00:00")
-        # Three duplicates of the same timestamp
-        offsets = np.array([0, 30, 30, 30, 60]).astype("timedelta64[s]")
-        timesteps = base + offsets
-        arr = np.arange(timesteps.size)
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps})
-
-        # Robust=True raise error
-        with pytest.raises(ValueError):
-            regularize_timesteps(ds, sample_interval=30, robust=True)
-        # Otherwise works correctly
-        ds_out = regularize_timesteps(ds, sample_interval=30, robust=False)
-
-        # Two duplicate were dropped -> length 3
-        assert ds_out.sizes["time"] == 3
-        # Times are unique and ordered
-        expected_timesteps = base + np.array([0, 30, 60]).astype("timedelta64[s]")
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
-        # Values array has changed: 1 (first two duplicates have been dropped)
-        np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 3, 4])
-        # QC flags: only middle flagged as dropped duplicate (5)
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 5, 0])
-
-    def test_duplicate_moved_to_missing_previous(self):
-        """Test duplicate timestep moved to previous missing timestep."""
-        base = pd.Timestamp("2021-01-01T00:00:00")
-        # Value after 50 seconds can be moved to missing 30 seconds
-        offsets = np.array([0, 50, 60, 90]).astype("timedelta64[s]")
-        timesteps = base + offsets
-        arr = np.arange(timesteps.size)
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps})
-
-        # Robust=True do not raise error
-        ds_out = regularize_timesteps(ds, sample_interval=30, robust=True)
-        ds_out = regularize_timesteps(ds, sample_interval=30, robust=False, verbose=True)
-        # Two duplicate were dropped -> length 3
-        assert ds_out.sizes["time"] == 4
-        # Times are unique and ordered
-        expected_timesteps = base + np.array([0, 30, 60, 90]).astype("timedelta64[s]")
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
-        # Values array has not changed
-        np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 1, 2, 3])
-        # QC flags: timestep moved get flag 4
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 4, 0, 0])  # OR [(2), 4, (1), 0]
-
-    def test_duplicate_moved_to_missing_next(self):
-        """Test duplicate timestep moved to previous missing timestep."""
-        base = pd.Timestamp("2021-01-01T00:00:00")
-        # Value +44 seconds can be moved to missing +60 seconds
-        offsets = np.array([0, 30, 44, 90]).astype("timedelta64[s]")
-        timesteps = base + offsets
-        arr = np.arange(timesteps.size)
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps})
-
-        # Robust=True do not raise error
-        ds_out = regularize_timesteps(ds, sample_interval=30, robust=True)
-        ds_out = regularize_timesteps(ds, sample_interval=30, robust=False, verbose=True)
-        # Two duplicate were dropped -> length 3
-        assert ds_out.sizes["time"] == 4
-        # Times are unique and ordered
-        expected_timesteps = base + np.array([0, 30, 60, 90]).astype("timedelta64[s]")
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
-        # Values array has not changed
-        np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 1, 2, 3])
-        # QC flags: timestep moved get flag 4
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 0, 4, 0])  # OR: [0, (2), 4, (1)]
-
-    def test_triple_duplicate_moved_to_missing_previous_and_next(self):
-        """Test 3 duplicated timestep moved to previous and next missing timesteps."""
-        base = pd.Timestamp("2021-01-01T00:00:00")
-        # Value +46 seconds can be moved to missing +30 seconds
-        # Value +114 seconds can be moved to missing +120 seconds
-        offsets = np.array([0, 46, 60, 74, 120]).astype("timedelta64[s]")
-        timesteps = base + offsets
-        arr = np.arange(timesteps.size)
-        ds = xr.Dataset({"data": ("time", arr)}, coords={"time": timesteps})
-
-        # Robust=True do not raise error
-        ds_out = regularize_timesteps(ds, sample_interval=30, robust=True)
-        ds_out = regularize_timesteps(ds, sample_interval=30, robust=False, verbose=True)
-
-        # Two duplicate were dropped -> length 3
-        assert ds_out.sizes["time"] == 5
-        # Times are unique and ordered
-        expected_timesteps = base + np.array([0, 30, 60, 90, 120]).astype("timedelta64[s]")
-        np.testing.assert_array_equal(ds_out["time"].to_numpy(), expected_timesteps)
-        # Values array has not changed
-        np.testing.assert_array_equal(ds_out["data"].to_numpy(), [0, 1, 2, 3, 4])
-        # QC flags: only middle flagged as dropped duplicate
-        np.testing.assert_array_equal(ds_out["time_qc"].to_numpy(), [0, 4, 0, 4, 0])  # OR [(2), 4, (4), 4, (1)]
-
-
 class TestInferSampleInterval:
 
     def test_uniform_interval(self):
@@ -888,115 +698,3 @@ class TestInferSampleInterval:
         # robust=True should raise error
         with pytest.raises(ValueError, match="Not unique sampling interval"):
             infer_sample_interval(ds, robust=True)
-
-
-class TestGenerateTimeBlocks:
-    def test_none(self):
-        """Test 'none' returns the original interval as a single block."""
-        start_time = np.datetime64("2022-01-01T05:06:07")
-        end_time = np.datetime64("2022-01-02T08:09:10")
-        result = generate_time_blocks(start_time, end_time, freq="none")
-        expected = np.array([[start_time, end_time]], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result, expected)
-
-    def test_hour(self):
-        """Test 'hour' splits into full-hour blocks covering the range."""
-        start_time = np.datetime64("2022-01-01T10:15:00")
-        end_time = np.datetime64("2022-01-01T12:45:00")
-        result = generate_time_blocks(start_time, end_time, freq="hour")
-
-        assert result.shape == (3, 2)
-
-        expected_first = np.array(["2022-01-01T10:00:00", "2022-01-01T10:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[0], expected_first)
-
-        expected_last = np.array(["2022-01-01T12:00:00", "2022-01-01T12:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[-1], expected_last)
-
-    def test_day(self):
-        """Test 'day' splits into calendar-day blocks covering the range."""
-        start_time = np.datetime64("2022-03-10T05:00:00")
-        end_time = np.datetime64("2022-03-12T20:00:00")
-        result = generate_time_blocks(start_time, end_time, freq="day")
-
-        assert result.shape == (3, 2)
-
-        expected_first = np.array(["2022-03-10T00:00:00", "2022-03-10T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[0], expected_first)
-
-        expected_last = np.array(["2022-03-12T00:00:00", "2022-03-12T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[-1], expected_last)
-
-    def test_month(self):
-        """Test 'month' splits into month blocks covering the range."""
-        start_time = np.datetime64("2022-01-15")
-        end_time = np.datetime64("2022-04-10")
-        result = generate_time_blocks(start_time, end_time, freq="month")
-
-        assert result.shape == (4, 2)
-
-        expected_first = np.array(["2022-01-01T00:00:00", "2022-01-31T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[0], expected_first)
-
-        expected_last = np.array(["2022-04-01T00:00:00", "2022-04-30T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[-1], expected_last)
-
-    def test_year(self):
-        """Test 'year' splits into year blocks covering the range."""
-        start_time = np.datetime64("2020-06-01")
-        end_time = np.datetime64("2023-02-01")
-        result = generate_time_blocks(start_time, end_time, freq="year")
-
-        assert result.shape == (4, 2)
-
-        expected_first = np.array(["2020-01-01T00:00:00", "2020-12-31T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[0], expected_first)
-
-        expected_last = np.array(["2023-01-01T00:00:00", "2023-12-31T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[-1], expected_last)
-
-    def test_quarter(self):
-        """Test 'quarter' splits into quarter blocks covering the range."""
-        start_time = np.datetime64("2022-02-10")
-        end_time = np.datetime64("2022-08-20")
-        result = generate_time_blocks(start_time, end_time, freq="quarter")
-
-        assert result.shape == (3, 2)
-
-        expected_first = np.array(["2022-01-01T00:00:00", "2022-03-31T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[0], expected_first)
-
-        expected_last = np.array(["2022-07-01T00:00:00", "2022-09-30T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[-1], expected_last)
-
-    def test_season(self):
-        """Test 'season' splits into meteorological-season blocks covering the range."""
-        start_time = np.datetime64("2022-01-01")
-        end_time = np.datetime64("2022-12-31")
-        result = generate_time_blocks(start_time, end_time, freq="season")
-        assert result.shape == (5, 2)
-
-        expected_first = np.array(["2021-12-01T00:00:00", "2022-02-28T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[0], expected_first)
-
-        expected_last = np.array(["2022-12-01T00:00:00", "2023-02-28T23:59:59"], dtype="datetime64[s]")
-        np.testing.assert_array_equal(result[-1], expected_last)
-
-
-class TestCheckFreq:
-    def test_valid_freq_returns_value(self):
-        """Valid freq strings should be returned unchanged."""
-        for valid in ["none", "year", "season", "quarter", "month", "day", "hour"]:
-            assert check_freq(valid) == valid
-
-    def test_non_string_raises_type_error(self):
-        """Non-string freq inputs should raise a TypeError."""
-        with pytest.raises(TypeError) as excinfo:
-            check_freq(123)
-        assert "'freq' must be a string." in str(excinfo.value)
-
-    def test_invalid_string_raises_value_error(self):
-        """String not in allowed list should raise a ValueError."""
-        with pytest.raises(ValueError) as excinfo:
-            check_freq("minute")
-        assert "'freq' 'minute' is not possible. Must be one of:" in str(excinfo.value)

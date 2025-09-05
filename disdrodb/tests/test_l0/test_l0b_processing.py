@@ -93,21 +93,27 @@ def define_test_dummy_configs():
 
 @pytest.mark.parametrize("create_test_config_files", [define_test_dummy_configs()], indirect=True)
 def test_generate_l0b(create_test_config_files):
+    n_times = 10
+
+    def make_repeated_string(n: int, value: str = "000") -> str:
+        """Return a comma-separated string like '000,000,...' with n repetitions."""
+        return ",".join([value] * n)
+
     # Create a sample DataFrame
     df = pd.DataFrame(
         {
-            "time": pd.date_range("2022-01-01", periods=10, freq="h"),
-            "raw_drop_concentration": np.random.rand(10),
-            "raw_drop_average_velocity": np.random.rand(10),
-            "raw_drop_number": np.random.rand(10),
-            "latitude": np.random.rand(10),
-            "longitude": np.random.rand(10),
-            "altitude": np.random.rand(10),
+            "time": pd.date_range("2022-01-01", periods=n_times, freq="h"),
+            "raw_drop_concentration": [make_repeated_string(32) for _ in range(n_times)],
+            "raw_drop_average_velocity": [make_repeated_string(32) for _ in range(n_times)],
+            "raw_drop_number": [make_repeated_string(1024) for _ in range(n_times)],
+            "latitude": np.random.rand(n_times),
+            "longitude": np.random.rand(n_times),
+            "altitude": np.random.rand(n_times),
         },
     )
     # Create a sample attrs dictionary
     metadata = {
-        "sensor_name": "test",
+        "sensor_name": "PARSIVEL",
         "latitude": 46.52130,
         "longitude": 6.56786,
         "altitude": 400,
@@ -132,6 +138,9 @@ def test_generate_l0b(create_test_config_files):
         "diameter_bin_upper",
         "diameter_bin_width",
         "diameter_bin_center",
+        "raw_drop_concentration",
+        "raw_drop_average_velocity",
+        "raw_drop_number",
     ]
     assert set(ds.variables) == set(expected_variables)
     assert set(ds.dims) == {"diameter_bin_center", "time", "velocity_bin_center", "crs"}

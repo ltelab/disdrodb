@@ -75,8 +75,20 @@ def create_fake_metadata_file(
         metadata_dict["campaign_name"] = campaign_name
     if "station_name" not in metadata_dict:
         metadata_dict["station_name"] = station_name
+
+    # Add mandatory fields if not specified
     if "sensor_name" not in metadata_dict:
         metadata_dict["sensor_name"] = "PARSIVEL"
+    if "measurement_interval" not in metadata_dict:
+        metadata_dict["measurement_interval"] = 60
+    if "deployment_status" not in metadata_dict:
+        metadata_dict["deployment_status"] = "terminated"
+    if "deployment_mode" not in metadata_dict:
+        metadata_dict["deployment_mode"] = "land"
+    if "platform_type" not in metadata_dict:
+        metadata_dict["platform_type"] = "fixed"
+    if "reader" not in metadata_dict:
+        metadata_dict["reader"] = "EPFL/EPFL_2009"
 
     # Update over default metadata dict
     default_metadata_dict = get_default_metadata_dict()

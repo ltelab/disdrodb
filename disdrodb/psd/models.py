@@ -93,7 +93,7 @@ def get_psd_model_formula(psd_model):
     return PSD_MODELS_DICT[psd_model].formula
 
 
-def create_psd(psd_model, parameters):  # TODO: check name around
+def create_psd(psd_model, parameters):
     """Define a PSD from a dictionary or xr.Dataset of parameters."""
     psd_class = get_psd_model(psd_model)
     psd = psd_class.from_parameters(parameters)

@@ -91,7 +91,7 @@ def disdrodb_run_l0b_station(
         Format: <...>/DISDRODB
         If not specified, uses path specified in the DISDRODB active configuration.
     """
-    from disdrodb.l0.routines import run_l0b_station
+    from disdrodb.routines.l0 import run_l0b_station
     from disdrodb.utils.dask import close_dask_cluster, initialize_dask_cluster
 
     data_archive_dir = parse_archive_dir(data_archive_dir)
@@ -100,7 +100,7 @@ def disdrodb_run_l0b_station(
     # -------------------------------------------------------------------------.
     # If parallel=True, set the dask environment
     if parallel:
-        cluster, client = initialize_dask_cluster()
+        cluster, client = initialize_dask_cluster(minimum_memory="4GB")
 
     # -------------------------------------------------------------------------.
     run_l0b_station(

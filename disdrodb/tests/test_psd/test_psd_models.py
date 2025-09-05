@@ -273,6 +273,7 @@ class TestLognormalPSD:
         assert psd1 == psd2, "Identical PSDs should be equal."
         assert psd1 == psd4, "Identical PSDs should be equal."  # mu scalar vs mu xarray with equal values
         assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
 
         # Check with different PSD
         assert GammaPSD(N0=1.0, mu=2.0, Lambda=3.0) != LognormalPSD(Nt=1, mu=1, sigma=1)
@@ -406,6 +407,7 @@ class TestGammaPSD:
         assert psd1 == psd2, "Identical PSDs should be equal."
         assert psd1 == psd4, "Identical PSDs should be equal."  # mu scalar vs mu xarray with equal values
         assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
 
 
 class TestExponentialPSD:
@@ -532,6 +534,8 @@ class TestExponentialPSD:
         assert psd1 == psd2, "Identical PSDs should be equal."
         assert psd1 == psd4, "Identical PSDs should be equal."  # Lambda scalar vs Lambda xarray with equal values
         assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
+        assert psd1 != GammaPSD(), "Different PSDs class should not be equal."
 
 
 class TestNormalizedGammaPSD:
@@ -670,6 +674,7 @@ class TestNormalizedGammaPSD:
         assert psd1 == psd2, "Identical PSDs should be equal."
         assert psd1 == psd4, "Identical PSDs should be equal."  # D50 scalar vs D50 xarray with equal values
         assert psd1 != psd3, "Different PSDs should not be equal."
+        assert psd1 != None, "Comparison against None should return False."  # noqa: E711
 
 
 class TestBinnedPSD:

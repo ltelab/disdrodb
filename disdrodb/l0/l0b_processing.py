@@ -19,7 +19,6 @@
 """Functions to process DISDRODB L0A files into DISDRODB L0B netCDF files."""
 
 import logging
-import os
 
 import numpy as np
 import pandas as pd
@@ -43,13 +42,8 @@ from disdrodb.utils.attrs import (
     set_coordinate_attributes,
     set_disdrodb_attrs,
 )
-from disdrodb.utils.directories import create_directory, remove_if_exists
 from disdrodb.utils.encoding import set_encodings
-from disdrodb.utils.logger import (
-    # log_warning,
-    # log_debug,
-    log_info,
-)
+from disdrodb.utils.logger import log_info
 from disdrodb.utils.time import ensure_sorted_by_time
 
 logger = logging.getLogger(__name__)
@@ -246,12 +240,20 @@ def retrieve_l0b_arrays(
             unavailable_keys.append(key)
             continue
 
-        # Ensure is a string
-        df_series = df[key].astype(str)
+        # Ensure is a string, get a numpy array for each row and then stack
+        # - Option 1: Clear but lot of copies
+        # df_series = df[key].astype(str)
+        # list_arr = df_series.apply(_format_string_array, n_values=n_values)
+        # arr = np.stack(list_arr, axis=0)
 
-        # Get a numpy array for each row and then stack
-        list_arr = df_series.apply(_format_string_array, n_values=n_values)
-        arr = np.stack(list_arr, axis=0)
+        # - Option 2: still copies
+        # arr = np.vstack(_format_string_array(s, n_values=n_values) for s in df_series.astype(str))
+
+        # - Option 3: more memory efficient
+        n_timesteps = len(df[key])
+        arr = np.empty((n_timesteps, n_values), dtype=float)  # preallocates
+        for i, s in enumerate(df[key].astype(str)):
+            arr[i, :] = _format_string_array(s, n_values=n_values)
 
         # Retrieve dimensions
         dims_order = dims_order_dict[key]
@@ -330,18 +332,6 @@ def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
         if var in data_range_dict:
             ds[var].attrs["valid_min"] = data_range_dict[var][0]
             ds[var].attrs["valid_max"] = data_range_dict[var][1]
-    return ds
-
-
-def _set_dataset_attrs(ds, sensor_name):
-    """Set variable and coordinates attributes."""
-    # - Add netCDF variable attributes
-    # --> Attributes: long_name, units, descriptions, valid_min, valid_max
-    ds = _set_variable_attributes(ds=ds, sensor_name=sensor_name)
-    # - Add netCDF coordinate attributes
-    ds = set_coordinate_attributes(ds=ds)
-    #  - Set DISDRODB global attributes
-    ds = set_disdrodb_attrs(ds=ds, product="L0B")
     return ds
 
 
@@ -475,16 +465,25 @@ def finalize_dataset(ds, sensor_name, metadata):
     ds = add_dataset_crs_coords(ds)
 
     # Set netCDF dimension order
+    # --> Required for correct encoding !
     ds = ds.transpose("time", "diameter_bin_center", ...)
-
-    # Add netCDF variable and coordinate attributes
-    ds = _set_dataset_attrs(ds, sensor_name)
 
     # Ensure variables with dtype object are converted to string
     ds = _convert_object_variables_to_string(ds)
 
+    # Add netCDF variable and coordinate attributes
+    # - Add variable attributes: long_name, units, descriptions, valid_min, valid_max
+    ds = _set_variable_attributes(ds=ds, sensor_name=sensor_name)
+    # - Add netCDF coordinate attributes
+    ds = set_coordinate_attributes(ds=ds)
+    #  - Set DISDRODB global attributes
+    ds = set_disdrodb_attrs(ds=ds, product="L0B")
+
     # Check L0B standards
     check_l0b_standards(ds)
+
+    # Set L0B encodings
+    ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
     return ds
 
 
@@ -506,40 +505,6 @@ def set_l0b_encodings(ds: xr.Dataset, sensor_name: str):
     encodings_dict = get_l0b_encodings_dict(sensor_name)
     ds = set_encodings(ds=ds, encodings_dict=encodings_dict)
     return ds
-
-
-def write_l0b(ds: xr.Dataset, filepath: str, force=False) -> None:
-    """Save the xarray dataset into a NetCDF file.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        Input xarray dataset.
-    filepath : str
-        Output file path.
-    sensor_name : str
-        Name of the sensor.
-    force : bool, optional
-        Whether to overwrite existing data.
-        If ``True``, overwrite existing data into destination directories.
-        If ``False``, raise an error if there are already data into destination directories. This is the default.
-    """
-    # Create station directory if does not exist
-    create_directory(os.path.dirname(filepath))
-
-    # Check if the file already exists
-    # - If force=True --> Remove it
-    # - If force=False --> Raise error
-    remove_if_exists(filepath, force=force)
-
-    # Get sensor name from dataset
-    sensor_name = ds.attrs.get("sensor_name")
-
-    # Set encodings
-    ds = set_l0b_encodings(ds=ds, sensor_name=sensor_name)
-
-    # Write netcdf
-    ds.to_netcdf(filepath, engine="netcdf4")
 
 
 ####--------------------------------------------------------------------------.

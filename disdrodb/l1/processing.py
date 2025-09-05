@@ -83,7 +83,7 @@ def generate_l1(
     Returns
     -------
     xarray.Dataset
-        DISRODB L1 dataset.
+        DISDRODB L1 dataset.
     """
     # Retrieve source attributes
     attrs = ds.attrs.copy()

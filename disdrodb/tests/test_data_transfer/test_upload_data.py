@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 # -----------------------------------------------------------------------------.
 # Copyright (c) 2021-2023 DISDRODB developers
 #
@@ -69,9 +67,9 @@ def test_upload_station(tmp_path, requests_mock, mocker, station_url, force, pla
     """Test upload of station data."""
     data_archive_dir = tmp_path / "data" / "DISDRODB"
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
-    data_source = "test_data_source"
-    campaign_name = "test_campaign_name"
-    station_name = "test_station_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
 
     metadata_dict = {}
     metadata_dict["disdrodb_data_url"] = station_url
@@ -248,9 +246,9 @@ def test_upload_archive_do_not_stop(tmp_path, requests_mock, mocker, platform):
     """Test upload of archive stations is not stopped by station errors."""
     data_archive_dir = tmp_path / "data" / "DISDRODB"
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
-    data_source = "test_data_source"
-    campaign_name = "test_campaign_name"
-    station_name = "test_station_name"
+    data_source = "DATA_SOURCE"
+    campaign_name = "CAMPAIGN_NAME"
+    station_name = "STATION_NAME"
 
     metadata_dict = {}
     metadata_dict["disdrodb_data_url"] = "dummy_url"

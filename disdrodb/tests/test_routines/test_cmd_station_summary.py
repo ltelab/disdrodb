@@ -26,12 +26,12 @@ from click.testing import CliRunner
 
 from disdrodb import __root_path__
 from disdrodb.api.path import define_station_dir
+from disdrodb.cli.disdrodb_create_summary import disdrodb_create_summary
 from disdrodb.cli.disdrodb_create_summary_station import disdrodb_create_summary_station
 from disdrodb.constants import ARCHIVE_VERSION
-from disdrodb.summary.routines import create_station_summary
+from disdrodb.routines import create_summary, create_summary_station
 from disdrodb.utils.directories import count_files
 
-TEST_DATA_L1_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "test_data_l1")
 TEST_DATA_L2E_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "test_data_l2e")
 
 DATA_SOURCE = "EPFL"
@@ -40,6 +40,15 @@ STATION_NAME = "10"
 DEBUGGING_MODE = True
 VERBOSE = False
 FORCE = False
+
+# import pathlib
+# tmp_path = pathlib.Path("/tmp/13")
+# test_data_archive_dir = os.path.join(tmp_path, "DISDRODB")
+# dst_dir = os.path.join(test_data_archive_dir, ARCHIVE_VERSION)
+# shutil.copytree(TEST_DATA_L2E_DIR, dst_dir, dirs_exist_ok=True)
+# parallel=False
+# VERBOSE=True
+# os.environ["PYTEST_CURRENT_TEST"] = "1"
 
 
 @pytest.mark.parametrize("parallel", [True, False])
@@ -70,7 +79,7 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
             ],
         )
     else:
-        create_station_summary(
+        create_summary_station(
             # Station arguments
             data_source=DATA_SOURCE,
             campaign_name=CAMPAIGN_NAME,
@@ -79,6 +88,69 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
             parallel=parallel,
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
+        )
+
+    # Check summary files are produced
+    summary_dir = define_station_dir(
+        data_archive_dir=test_data_archive_dir,
+        product="SUMMARY",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+    )
+    assert count_files(summary_dir, glob_pattern="Dataset.SpectrumStats*.nc", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="DSD_Summary.*.csv", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="DSD_Summary.*.pdf", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Events_Summary.*.csv", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Events_Summary.*.pdf", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Station_Summary.*.yaml", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="L2E.1MIN.PARQUET*.parquet", recursive=True) == 1
+    assert count_files(summary_dir, glob_pattern="Figure.*.png", recursive=True) > 4
+
+
+@pytest.mark.parametrize("cli", [True, False])
+def test_disdrodb_create_summary(tmp_path, disdrodb_metadata_archive_dir, cli):
+    """Test the disdrodb_run_l2e command."""
+    test_data_archive_dir = tmp_path / "data" / "DISDRODB"
+    test_metadata_archive_dir = disdrodb_metadata_archive_dir  # fixture for the original DISDRODB Archive
+
+    dst_dir = test_data_archive_dir / ARCHIVE_VERSION
+    shutil.copytree(TEST_DATA_L2E_DIR, dst_dir)
+
+    # Produce data
+    if cli:
+        runner = CliRunner()
+        runner.invoke(
+            disdrodb_create_summary,
+            [
+                # Station arguments
+                "--data_sources",
+                DATA_SOURCE,
+                "--campaign_names",
+                CAMPAIGN_NAME,
+                "--station_names",
+                STATION_NAME,
+                # Processing options
+                "--parallel",
+                False,
+                # DISDRODB root directories
+                "--data_archive_dir",
+                test_data_archive_dir,
+                "--metadata_archive_dir",
+                test_metadata_archive_dir,
+            ],
+        )
+    else:
+        create_summary(
+            # Stations arguments
+            data_sources=DATA_SOURCE,
+            campaign_names=CAMPAIGN_NAME,
+            station_names=STATION_NAME,
+            # Processing options
+            parallel=False,
+            # DISDRODB root directories
+            data_archive_dir=test_data_archive_dir,
+            metadata_archive_dir=test_metadata_archive_dir,
         )
 
     # Check summary files are produced

@@ -120,9 +120,11 @@ def create_station_issue(data_source, campaign_name, station_name, metadata_arch
     )
     if os.path.exists(issue_filepath):
         raise ValueError("A issue YAML file already exists at {issue_filepath}.")
+
     # Create issue dir if not existing
     issue_dir = os.path.dirname(issue_filepath)
     os.makedirs(issue_dir, exist_ok=True)
+
     # Write issue file
     write_issue(filepath=issue_filepath)
     print(f"An empty issue YAML file for station {station_name} has been created .")

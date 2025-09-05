@@ -63,6 +63,7 @@ def define_disdrodb_path(
         The campaign name.
     check_exists : bool, optional
         Whether to check if the directory exists. The default value is ``True``.
+        Raise error if the directory does not exist.
 
     Returns
     -------
@@ -81,7 +82,7 @@ def define_disdrodb_path(
         dir_path = os.path.join(archive_dir, ARCHIVE_VERSION, data_source, campaign_name)
     if check_exists:
         check_directory_exists(dir_path)
-    return dir_path
+    return os.path.normpath(dir_path)
 
 
 def define_data_source_dir(
@@ -107,6 +108,7 @@ def define_data_source_dir(
         If not specified, the path specified in the DISDRODB active configuration will be used.
     check_exists : bool, optional
         Whether to check if the directory exists. The default value is ``False``.
+        Raise error if the directory does not exist.
 
     Returns
     -------
@@ -386,7 +388,7 @@ def define_partitioning_tree(time, folder_partitioning):
         return os.path.join(year, month, day)
     if folder_partitioning == "year/month_name":
         year = str(time.year)
-        month = str(time.month_name())
+        month = time.strftime("%B")
         return os.path.join(year, month)
     if folder_partitioning == "year/quarter":
         year = str(time.year)
@@ -397,7 +399,7 @@ def define_partitioning_tree(time, folder_partitioning):
     raise NotImplementedError(f"Unrecognized '{folder_partitioning}' folder partitioning scheme.")
 
 
-def define_file_folder_path(obj, data_dir, folder_partitioning):
+def define_file_folder_path(obj, dir_path, folder_partitioning):
     """
     Define the folder path where saving a file based on the dataset's starting time.
 
@@ -405,12 +407,13 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
     ----------
     ds : xarray.Dataset or pandas.DataFrame
         The object containing time information.
-    data_dir : str
+    dir : str
         Directory within the DISDRODB Data Archive where DISDRODB product files are to be saved.
+        It can be a product directory or a logs directory.
     folder_partitioning : str or None
         Define the subdirectory structure where saving files.
         Allowed values are:
-          - None: Files are saved directly in data_dir.
+          - None or "": Files are saved directly in data_dir.
           - "year": Files are saved under a subdirectory for the year.
           - "year/month": Files are saved under subdirectories for year and month.
           - "year/month/day": Files are saved under subdirectories for year, month and day
@@ -432,7 +435,7 @@ def define_file_folder_path(obj, data_dir, folder_partitioning):
 
     # Build the folder path based on the chosen partition scheme
     partitioning_tree = define_partitioning_tree(time=starting_time, folder_partitioning=folder_partitioning)
-    return os.path.join(data_dir, partitioning_tree)
+    return os.path.normpath(os.path.join(dir_path, partitioning_tree))
 
 
 def define_product_dir_tree(
@@ -475,15 +478,14 @@ def define_product_dir_tree(
         check_sample_interval(sample_interval)
         temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
         return os.path.join(temporal_resolution)
-    if product == "L2M":
-        rolling = product_kwargs.get("rolling")
-        sample_interval = product_kwargs.get("sample_interval")
-        model_name = product_kwargs.get("model_name")
-        check_rolling(rolling)
-        check_sample_interval(sample_interval)
-        temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
-        return os.path.join(model_name, temporal_resolution)
-    raise ValueError(f"The product {product} is not defined.")
+    # L2M if product == "L2M":
+    rolling = product_kwargs.get("rolling")
+    sample_interval = product_kwargs.get("sample_interval")
+    model_name = product_kwargs.get("model_name")
+    check_rolling(rolling)
+    check_sample_interval(sample_interval)
+    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+    return os.path.join(model_name, temporal_resolution)
 
 
 def define_logs_dir(
@@ -529,7 +531,7 @@ def define_logs_dir(
         product=product,
         **product_kwargs,
     )
-    logs_dir = os.path.join(campaign_dir, "logs", "files", product, product_dir_tree, station_name)
+    logs_dir = os.path.normpath(os.path.join(campaign_dir, "logs", "files", product, product_dir_tree, station_name))
     if check_exists:
         check_directory_exists(logs_dir)
     return str(logs_dir)
@@ -643,7 +645,7 @@ def define_data_dir(
         **product_kwargs,
     )
     # Define data directory
-    data_dir = os.path.join(station_dir, product_dir_tree)
+    data_dir = os.path.normpath(os.path.join(station_dir, product_dir_tree))
     # Check if directory exists
     if check_exists:
         check_directory_exists(data_dir)
@@ -674,7 +676,8 @@ def define_filename(
     campaign_name: str,
     station_name: str,
     # Filename options
-    obj=None,
+    start_time=None,
+    end_time=None,
     add_version=True,
     add_time_period=True,
     add_extension=True,
@@ -688,19 +691,22 @@ def define_filename(
 
     Parameters
     ----------
-    obj  : xarray.Dataset or pandas.DataFrame
-        xarray Dataset or pandas DataFrame.
-        Required if add_time_period = True.
     campaign_name : str
        Name of the campaign.
     station_name : str
        Name of the station.
+    start_time : datetime.datatime, optional
+        Start time.
+        Required if add_time_period = True.
+    end_time : datetime.datatime, optional
+        End time.
+        Required if add_time_period = True.
     sample_interval : int, optional
         The sampling interval in seconds of the product.
-        It must be specified only for product L2E and L2M !
+        It must be specified only for product L0C, L1, L2E and L2M !
     rolling : bool, optional
         Whether the dataset has been resampled by aggregating or rolling.
-        It must be specified only for product L2E and L2M !
+        It must be specified only for product L1, L2E and L2M !
     model_name : str
         The model name of the fitted statistical distribution for the DSD.
         It must be specified only for product L2M !
@@ -715,19 +721,25 @@ def define_filename(
     product = check_product(product)
     product_kwargs = check_product_kwargs(product, product_kwargs)
 
-    # -----------------------------------------.
-    # TODO: Define temporal_resolution
-    # - ADD temporal_resolution also to L0A and L0B
-    # - Add temporal_resolution also to L0C and L1
+    if add_time_period and (start_time is None or end_time is None):
+        raise ValueError("If add_time_period=True, specify start_time and end_time.")
 
     # -----------------------------------------.
     # Define product name
     product_name = f"{product}"
+
+    # L0C ... sample interval known only per-file
+    # L1 ... in future known a priori
+    # if product in ["L1"]:
+    #     # TODO: HACK FOR CURRENT L0C and L1 log files in create_product_logs
+    #     sample_interval = product_kwargs.get("sample_interval",  0)
+    #     temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=False)
+    #     product_name = f"{product}.{temporal_resolution}"
     if product in ["L2E", "L2M"]:
         rolling = product_kwargs.get("rolling")
         sample_interval = product_kwargs.get("sample_interval")
         temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
-        product_name = f"L2E.{temporal_resolution}"
+        product_name = f"{product}.{temporal_resolution}"
     if product in ["L2M"]:
         model_name = product_kwargs.get("model_name")
         product_name = f"L2M_{model_name}.{temporal_resolution}"
@@ -744,10 +756,9 @@ def define_filename(
     # -----------------------------------------.
     # Add time period information
     if add_time_period:
-        starting_time, ending_time = get_file_start_end_time(obj)
-        starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-        ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-        filename = f"{filename}.s{starting_time}.e{ending_time}"
+        start_time = start_time.strftime("%Y%m%d%H%M%S")
+        end_time = end_time.strftime("%Y%m%d%H%M%S")
+        filename = f"{filename}.s{start_time}.e{end_time}"
 
     # -----------------------------------------.
     # Add product version
@@ -784,56 +795,40 @@ def define_l0a_filename(df, campaign_name: str, station_name: str) -> str:
         L0A file name.
     """
     starting_time, ending_time = get_file_start_end_time(df)
-    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = ARCHIVE_VERSION
-    filename = f"L0A.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.parquet"
+    filename = define_filename(
+        product="L0A",
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Filename options
+        start_time=starting_time,
+        end_time=ending_time,
+        add_version=True,
+        add_time_period=True,
+        add_extension=True,
+    )
     return filename
 
 
 def define_l0b_filename(ds, campaign_name: str, station_name: str) -> str:
-    """Define L0B file name.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        L0B xarray Dataset.
-    campaign_name : str
-        Name of the campaign.
-    station_name : str
-        Name of the station.
-
-    Returns
-    -------
-    str
-        L0B file name.
-    """
+    """Define L0B file name."""
     starting_time, ending_time = get_file_start_end_time(ds)
-    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = ARCHIVE_VERSION
-    filename = f"L0B.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    filename = define_filename(
+        product="L0B",
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Filename options
+        start_time=starting_time,
+        end_time=ending_time,
+        add_version=True,
+        add_time_period=True,
+        add_extension=True,
+    )
     return filename
 
 
 def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
-    """Define L0C file name.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        L0B xarray Dataset.
-    campaign_name : str
-        Name of the campaign.
-    station_name : str
-        Name of the station.
-
-    Returns
-    -------
-    str
-        L0B file name.
-    """
-    # TODO: add sample_interval as argument
+    """Define L0C file name."""
+    # TODO: add sample_interval as function argument    s
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
     starting_time, ending_time = get_file_start_end_time(ds)
@@ -845,23 +840,10 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
 
 
 def define_l1_filename(ds, campaign_name, station_name: str) -> str:
-    """Define L1 file name.
+    """Define L1 file name."""
+    # TODO: add sample_interval and rolling as function argument
 
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        L1 xarray Dataset.
-    campaign_name : str
-        Name of the campaign.
-    station_name : str
-        Name of the station.
-
-    Returns
-    -------
-    str
-        L1 file name.
-    """
-    # TODO: add sample_interval as argument
+    starting_time, ending_time = get_file_start_end_time(ds)
     sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
     temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
     starting_time, ending_time = get_file_start_end_time(ds)
@@ -869,32 +851,41 @@ def define_l1_filename(ds, campaign_name, station_name: str) -> str:
     ending_time = ending_time.strftime("%Y%m%d%H%M%S")
     version = ARCHIVE_VERSION
     filename = f"L1.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+
+    # filename = define_filename(
+    #     product="L1",
+    #     campaign_name=campaign_name,
+    #     station_name=station_name,
+    #     # Filename options
+    #     start_time=starting_time,
+    #     end_time=ending_time,
+    #     add_version=True,
+    #     add_time_period=True,
+    #     add_extension=True,
+    #     # Product options
+    #     # sample_interval=sample_interval,
+    #     # rolling=rolling,
+    # )
     return filename
 
 
 def define_l2e_filename(ds, campaign_name: str, station_name: str, sample_interval: int, rolling: bool) -> str:
-    """Define L2E file name.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        L1 xarray Dataset
-    campaign_name : str
-        Name of the campaign.
-    station_name : str
-        Name of the station
-
-    Returns
-    -------
-    str
-        L0B file name.
-    """
-    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+    """Define L2E file name."""
     starting_time, ending_time = get_file_start_end_time(ds)
-    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = ARCHIVE_VERSION
-    filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    filename = define_filename(
+        product="L2E",
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Filename options
+        start_time=starting_time,
+        end_time=ending_time,
+        add_version=True,
+        add_time_period=True,
+        add_extension=True,
+        # Product options
+        sample_interval=sample_interval,
+        rolling=rolling,
+    )
     return filename
 
 
@@ -906,29 +897,21 @@ def define_l2m_filename(
     rolling: bool,
     model_name: str,
 ) -> str:
-    """Define L2M file name.
-
-    Parameters
-    ----------
-    ds  : xarray.Dataset
-        L1 xarray Dataset
-    campaign_name : str
-        Name of the campaign.
-    station_name : str
-        Name of the station
-
-    Returns
-    -------
-    str
-        L0B file name.
-    """
-    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
+    """Define L2M file name."""
     starting_time, ending_time = get_file_start_end_time(ds)
-    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = ARCHIVE_VERSION
-    filename = (
-        f"L2M_{model_name}.{temporal_resolution}.{campaign_name}."
-        + f"{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
+    filename = define_filename(
+        product="L2M",
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Filename options
+        start_time=starting_time,
+        end_time=ending_time,
+        add_version=True,
+        add_time_period=True,
+        add_extension=True,
+        # Product options
+        sample_interval=sample_interval,
+        rolling=rolling,
+        model_name=model_name,
     )
     return filename

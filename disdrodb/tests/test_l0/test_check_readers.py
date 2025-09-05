@@ -26,8 +26,8 @@ import xarray as xr
 from disdrodb import __root_path__
 from disdrodb.api.path import define_campaign_dir, define_station_dir
 from disdrodb.api.search import available_stations
-from disdrodb.l0.routines import run_l0a_station
 from disdrodb.metadata import read_station_metadata
+from disdrodb.routines.l0 import run_l0a_station
 from disdrodb.utils.directories import list_files
 
 TEST_BASE_DIR = os.path.join(__root_path__, "disdrodb", "tests", "data", "check_readers", "DISDRODB")

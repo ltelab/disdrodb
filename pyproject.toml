@@ -95,9 +95,6 @@ disdrodb_download_station="disdrodb.cli.disdrodb_download_station:disdrodb_downl
 disdrodb_upload_archive="disdrodb.cli.disdrodb_upload_archive:disdrodb_upload_archive"
 disdrodb_upload_station="disdrodb.cli.disdrodb_upload_station:disdrodb_upload_station"
 
-# Summary
-disdrodb_create_summary_station="disdrodb.cli.disdrodb_create_summary_station:disdrodb_create_summary_station"
-
 # L0A
 disdrodb_run_l0a_station="disdrodb.cli.disdrodb_run_l0a_station:disdrodb_run_l0a_station"
 disdrodb_run_l0a="disdrodb.cli.disdrodb_run_l0a:disdrodb_run_l0a"
@@ -119,6 +116,10 @@ disdrodb_run_l2e="disdrodb.cli.disdrodb_run_l2e:disdrodb_run_l2e"
 # L2M
 disdrodb_run_l2m_station="disdrodb.cli.disdrodb_run_l2m_station:disdrodb_run_l2m_station"
 disdrodb_run_l2m="disdrodb.cli.disdrodb_run_l2m:disdrodb_run_l2m"
+
+# Summary
+disdrodb_create_summary_station="disdrodb.cli.disdrodb_create_summary_station:disdrodb_create_summary_station"
+disdrodb_create_summary="disdrodb.cli.disdrodb_create_summary:disdrodb_create_summary"
 
 
 [tool.pytest.ini_options]
@@ -226,6 +227,7 @@ ignore = [
     "B904",
 	"RET504",
     "PD901",
+
     # Docstyle Rules
     "D100", # Missing docstring in public module
     "D404", # Docstring can't start with "This"

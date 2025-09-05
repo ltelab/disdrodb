@@ -19,8 +19,32 @@
 """DISDRODB decorators."""
 import functools
 import importlib
+import uuid
 
 import dask
+
+
+def create_dask_task_name(function_name: str, name=None) -> str | None:
+    """
+    Create a custom dask task name.
+
+    Parameters
+    ----------
+    function_name : str
+        Name of the function being delayed.
+    name : str, optional
+        Custom name for the task (e.g., filepath or ID).
+        If None, returns None so that Dask generates is own default name.
+
+    Returns
+    -------
+    str | None
+        Custom dask task name string if `name` is given,
+        otherwise None (use Dask's default naming).
+    """
+    if name is None:
+        return None
+    return f"{function_name}.{name}-{uuid.uuid4()}"
 
 
 def delayed_if_parallel(function):
@@ -34,6 +58,13 @@ def delayed_if_parallel(function):
         if parallel:
             # Enforce verbose to be False
             kwargs["verbose"] = False
+            # Define custom dask task name
+            if "logs_filename" in kwargs:
+                kwargs["dask_key_name"] = create_dask_task_name(
+                    function_name=function.__name__,
+                    name=kwargs["logs_filename"],
+                )
+
             # Define the delayed task
             result = dask.delayed(function)(*args, **kwargs)
         else:

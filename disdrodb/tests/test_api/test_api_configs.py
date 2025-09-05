@@ -32,16 +32,32 @@ def test_available_sensor_names():
     assert len(available_sensor_names()) >= 3
 
 
-@pytest.mark.parametrize("product", ["L0A"])
-@pytest.mark.parametrize("sensor_name", available_sensor_names())
-def test_get_sensor_configs_dir(sensor_name, product):
-    config_sensor_dir = get_sensor_configs_dir(sensor_name=sensor_name, product=product)
-    assert os.path.isdir(config_sensor_dir)
+class TestGetSensorConfigDir:
+    """Test get_sensor_configs_dir."""
+
+    @pytest.mark.parametrize("product", ["L0A"])
+    @pytest.mark.parametrize("sensor_name", available_sensor_names())
+    def test_valid_sensors(self, sensor_name, product):
+        config_sensor_dir = get_sensor_configs_dir(sensor_name=sensor_name, product=product)
+        assert os.path.isdir(config_sensor_dir)
+
+    def test_invalid_sensor_name(self):
+        with pytest.raises(ValueError):
+            get_sensor_configs_dir(sensor_name="NOT_EXIST", product="L0A")
 
 
-def test_invalid_sensor_name():
-    with pytest.raises(ValueError):
-        get_sensor_configs_dir(sensor_name="NOT_EXIST", product="L0A")
+class TestReadConfigFile:
+    """Test reading L0 configuration files."""
 
-    with pytest.raises(ValueError):
-        read_config_file(sensor_name="PARSIVEL", product="L0A", filename="UNEXISTENT.yml")
+    @pytest.mark.parametrize("product", ["L0A"])
+    @pytest.mark.parametrize("sensor_name", available_sensor_names())
+    def test_valid_config_file(self, sensor_name, product):
+        """Test L0 valid config files."""
+        config = read_config_file(sensor_name=sensor_name, product=product, filename="raw_data_format.yml")
+        assert isinstance(config, dict)
+
+    @pytest.mark.parametrize("sensor_name", available_sensor_names())
+    def test_invalid_config_file(self, sensor_name):
+        """Test L0 valid config files."""
+        with pytest.raises(ValueError):
+            read_config_file(sensor_name=sensor_name, product="L0A", filename="UNEXISTENT.yml")

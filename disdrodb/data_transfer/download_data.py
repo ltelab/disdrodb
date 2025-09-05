@@ -239,7 +239,7 @@ def check_consistent_station_name(metadata_filepath, station_name):
     return station_name
 
 
-def download_station_data(metadata_filepath: str, data_archive_dir: str, force: bool = False) -> None:
+def download_station_data(metadata_filepath: str, data_archive_dir: str, force: bool = False, verbose=True) -> None:
     """Download and unzip the station data .
 
     Parameters
@@ -275,17 +275,27 @@ def download_station_data(metadata_filepath: str, data_archive_dir: str, force: 
         raise ValueError(f"Invalid disdrodb_data_url '{disdrodb_data_url}' for station {station_name}")
 
     # Download files
-    # - Option 1: Download Zip file containing all station raw data
+    # - Option 1: Download ZIP file containing all station raw data
     if disdrodb_data_url.startswith("https://zenodo.org/") or disdrodb_data_url.startswith("https://cloudnet.fmi.fi/"):
         download_zip_file(url=disdrodb_data_url, dst_dir=station_dir, force=force)
+
     # - Option 2: Recursive download from a web server via HTTP or HTTPS.
     elif disdrodb_data_url.startswith("http"):
-        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=force, verbose=True)
+        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=force, verbose=verbose)
+        # - Retry to be more sure that all data have been downloaded
+        download_web_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=True, verbose=verbose)
+
+    # - Option 3: Recursive download from a ftp server
+    elif disdrodb_data_url.startswith("ftp"):
+        download_ftp_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=force, verbose=verbose)
+        # - Retry to be more sure that all data have been downloaded
+        download_ftp_server_data(url=disdrodb_data_url, dst_dir=station_dir, force=True, verbose=verbose)
+
     else:
         raise NotImplementedError(f"Open a GitHub Issue to enable the download of data from {disdrodb_data_url}.")
 
 
-####-----------------------------------------------------------------------------------------.
+####--------------------------------------------------------------------.
 #### Download from Web Server via HTTP or HTTPS
 
 
@@ -301,9 +311,17 @@ def download_web_server_data(url: str, dst_dir: str, force=True, verbose=True) -
     3. Compute cut-dirs so that only the last segment of the path remains locally.
     4. Build and run the wget command.
 
-    Example:
-        download_with_wget("https://ruisdael.citg.tudelft.nl/parsivel/PAR001_Cabauw/2021/202101/")
-        # → Creates a local folder "202101/" with all files and subfolders.
+    Parameters
+    ----------
+    url : str
+        HTTPS URL pointing to webserver folder. Example: "https://ruisdael.citg.tudelft.nl/parsivel/PAR001_Cabauw/"
+    dst_dir : str
+         Local directory where to download the file (DISDRODB station data directory).
+    force : bool, optional
+        If ``True``, re-download new/updated files (skip unchanged ones).
+        If ``False``, keep existing files untouched.
+    verbose : bool, optional
+        Print wget output (default is True).
     """
     # 1. Ensure wget exists
     ensure_wget_available()
@@ -391,6 +409,104 @@ def build_webserver_wget_command(url: str, cut_dirs: int, dst_dir: str, force: b
         url,
     ]
     return cmd
+
+
+####--------------------------------------------------------------------.
+#### Download from FTP Server
+
+
+def build_ftp_server_wget_command(
+    url: str,
+    cut_dirs: int,
+    dst_dir: str,
+    force: bool,
+    verbose: bool,
+) -> list[str]:
+    """Construct the wget command list for FTP recursive download.
+
+    Parameters
+    ----------
+    url : str
+        FTP URL to download from.
+    cut_dirs : int
+        Number of leading path components to strip.
+    dst_dir : str
+        Local destination directory.
+    force : bool
+        If True, re-download newer files (--timestamping).
+        If False, keep existing files untouched (--no-clobber).
+    verbose : bool
+        If False, suppress wget output (-q).
+    """
+    cmd = ["wget"]  # base command
+
+    if not verbose:
+        cmd.append("-q")  # quiet mode --> no output except errors
+
+    cmd += [
+        "-r",  # recursive --> traverse into subdirectories
+        "-np",  # no parent --> don't ascend to higher-level dirs
+        "-nH",  # no host dirs --> avoid creating ftp.example.com/ locally
+        f"--cut-dirs={cut_dirs}",  # strip N leading path components
+    ]
+
+    if force:
+        cmd.append("--timestamping")  # download if remote file is newer
+    else:
+        cmd.append("--no-clobber")  # skip files that already exist
+
+    cmd += [
+        "-P",  # specify local destination directory
+        dst_dir,
+        f"ftp://anonymous:disdrodb@{url}",  # target FTP URL
+    ]
+    return cmd
+
+
+def download_ftp_server_data(url: str, dst_dir: str, force: bool = False, verbose: bool = True) -> None:
+    """Download data from an FTP server with anonymous login.
+
+    Parameters
+    ----------
+    url : str
+        FTP server URL pointing to a folder. Example: "ftp://ftp.example.com/path/to/data/"
+    dst_dir : str
+         Local directory where to download the file (DISDRODB station data directory).
+    force : bool, optional
+        If ``True``, re-download new/updated files (skip unchanged ones).
+        If ``False``, keep existing files untouched.
+    verbose : bool, optional
+        Print wget output (default is True).
+    """
+    ensure_wget_available()
+
+    # Ensure trailing slash
+    url = ensure_trailing_slash(url)
+
+    # Compute cut-dirs so files land directly in dst_dir
+    cut_dirs = compute_cut_dirs(url)
+
+    # Make destination directory
+    os.makedirs(dst_dir, exist_ok=True)
+
+    # Build wget command
+    cmd = build_ftp_server_wget_command(
+        url,
+        cut_dirs=cut_dirs,
+        dst_dir=dst_dir,
+        force=force,
+        verbose=verbose,
+    )
+    # Run wget
+    try:
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        raise subprocess.CalledProcessError(
+            returncode=e.returncode,
+            cmd=e.cmd,
+            output=e.output,
+            stderr=e.stderr,
+        )
 
 
 ####--------------------------------------------------------------------.

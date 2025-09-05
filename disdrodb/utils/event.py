@@ -19,8 +19,7 @@
 import numpy as np
 import pandas as pd
 
-from disdrodb.api.info import get_start_end_time_from_filepaths
-from disdrodb.utils.time import ensure_timedelta_seconds_interval, temporal_resolution_to_seconds
+from disdrodb.utils.time import temporal_resolution_to_seconds
 
 
 def group_timesteps_into_event(
@@ -229,67 +228,3 @@ def group_timesteps_into_events(timesteps, event_max_time_gap):
 
 
 ####-----------------------------------------------------------------------------------.
-
-
-def get_files_partitions(list_partitions, filepaths, sample_interval, accumulation_interval, rolling):  # noqa: ARG001
-    """
-    Provide information about the required files for each event.
-
-    For each event in `list_partitions`, this function identifies the file paths from `filepaths` that
-    overlap with the event period, adjusted by the `accumulation_interval`. The event period is
-    extended backward or forward based on the `rolling` parameter.
-
-    Parameters
-    ----------
-    list_partitions : list of dict
-        List of events, where each event is a dictionary containing at least 'start_time' and 'end_time'
-        keys with `numpy.datetime64` values.
-    filepaths : list of str
-        List of file paths corresponding to data files.
-    sample_interval : numpy.timedelta64 or int
-        The sample interval of the input dataset.
-    accumulation_interval : numpy.timedelta64 or int
-        Time interval to adjust the event period for accumulation. If an integer is provided, it is
-        assumed to be in seconds.
-    rolling : bool
-        If True, adjust the event period backward by `accumulation_interval` (rolling backward).
-        If False, adjust forward (aggregate forward).
-
-    Returns
-    -------
-    list of dict
-        A list where each element is a dictionary containing:
-        - 'start_time': Adjusted start time of the event (`numpy.datetime64`).
-        - 'end_time': Adjusted end time of the event (`numpy.datetime64`).
-        - 'filepaths': List of file paths overlapping with the adjusted event period.
-
-    """
-    # Ensure sample_interval and accumulation_interval is numpy.timedelta64
-    accumulation_interval = ensure_timedelta_seconds_interval(accumulation_interval)
-    sample_interval = ensure_timedelta_seconds_interval(sample_interval)
-
-    # Retrieve file start_time and end_time
-    files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
-
-    # Retrieve information for each event
-    event_info = []
-    for event_dict in list_partitions:
-        # Retrieve event time period
-        event_start_time = event_dict["start_time"]
-        event_end_time = event_dict["end_time"]
-
-        # Adapt event_end_time if accumulation interval different from sample interval
-        if sample_interval != accumulation_interval:
-            event_end_time = event_end_time + accumulation_interval
-
-        # Derive event filepaths
-        overlaps = (files_start_time <= event_end_time) & (files_end_time >= event_start_time)
-        event_filepaths = np.array(filepaths)[overlaps].tolist()
-
-        # Create dictionary
-        if len(event_filepaths) > 0:
-            event_info.append(
-                {"start_time": event_start_time, "end_time": event_end_time, "filepaths": event_filepaths},
-            )
-
-    return event_info

@@ -195,6 +195,7 @@ def ensure_valid_coordinates(ds, default_altitude=0, default_latitude=0, default
         The dataset with invalid coordinates replaced by default values.
 
     """
+    # TODO raise error if not present
     invalid_altitude = np.logical_or(np.isnan(ds["altitude"]), ds["altitude"] == -9999)
     ds["altitude"] = ds["altitude"].where(~invalid_altitude, default_altitude)
 
@@ -250,6 +251,12 @@ def get_raindrop_fall_velocity(diameter, method, ds_env=None):
         raise ValueError(f"{method} is an invalid fall velocity method. Valid methods: {available_methods}.")
     # Copy diameter
     diameter = diameter.copy()
+    # Initialize ds_env if None
+    # if ds_env is None:
+    #     ds_env = load_env_dataset(ds_env)
+
+    # TODO: wrapper for DISDRODB product !
+
     # Ensure valid altitude and geolocation (if missing set defaults)
     # - altitude required by Beard
     # - latitude required for gravity
@@ -257,4 +264,43 @@ def get_raindrop_fall_velocity(diameter, method, ds_env=None):
     # Retrieve fall velocity
     func = dict_methods[method]
     fall_velocity = func(diameter, ds_env=ds_env) if method == "Beard1976" else func(diameter)
+    return fall_velocity
+
+
+def get_dataset_fall_velocity(ds, method="Brandes2002"):
+    """Compute the fall velocity and add it to the dataset.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        DISDRODB L0C dataset.
+    method : str, optional
+        Method to compute fall velocity. The default method is ``"Brandes2002"``.
+
+    Returns
+    -------
+    xarray.Dataset
+        DISDRODB L0C dataset with an additional variable 'fall_velocity'.
+    """
+    from disdrodb.constants import DIAMETER_DIMENSION
+    from disdrodb.l1_env.routines import load_env_dataset
+
+    # Check if diameter dimension exists
+    if DIAMETER_DIMENSION not in ds.dims:
+        raise ValueError(f"Diameter dimension '{DIAMETER_DIMENSION}' not found in dataset dimensions.")
+
+    # Retrieve diameter values (in mm)
+    diameter_bin_center = ds["diameter_bin_center"]
+
+    # Ensure valid altitude and geolocation (if missing set defaults)
+    # TODO: MOBILE CASE !
+    default_geolocation = {"altitude": 0, "latitude": 0, "longitude": 0}
+    dataset_coords = {key: ds[key] for key in default_geolocation if key in ds}
+    default_geolocation.update(dataset_coords)
+    ds = ds.assign_coords(default_geolocation)
+
+    # TODO: deal with ENV dataset
+    ds_env = load_env_dataset(ds)
+
+    fall_velocity = get_raindrop_fall_velocity(diameter_bin_center, method=method, ds_env=ds_env)
     return fall_velocity

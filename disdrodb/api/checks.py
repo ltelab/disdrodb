@@ -144,14 +144,14 @@ def check_measurement_intervals(measurement_intervals):
 
 def check_sample_interval(sample_interval):
     """Check sample_interval argument validity."""
-    if not isinstance(sample_interval, int):
-        raise ValueError("'sample_interval' must be an integer.")
+    if not isinstance(sample_interval, int) or isinstance(sample_interval, bool):
+        raise TypeError("'sample_interval' must be an integer.")
 
 
 def check_rolling(rolling):
     """Check rolling argument validity."""
     if not isinstance(rolling, bool):
-        raise ValueError("'rolling' must be a boolean.")
+        raise TypeError("'rolling' must be a boolean.")
 
 
 def check_folder_partitioning(folder_partitioning):
@@ -163,12 +163,12 @@ def check_folder_partitioning(folder_partitioning):
     folder_partitioning : str or None
         Defines the subdirectory structure based on the dataset's start time.
         Allowed values are:
-          - "": No additional subdirectories, files are saved directly in data_dir.
-          - "year": Files are stored under a subdirectory for the year (<data_dir>/2025).
-          - "year/month": Files are stored under subdirectories by year and month (<data_dir>/2025/04).
-          - "year/month/day": Files are stored under subdirectories by year, month and day (<data_dir>/2025/04/01).
-          - "year/month_name": Files are stored under subdirectories by year and month name (<data_dir>/2025/April).
-          - "year/quarter": Files are stored under subdirectories by year and quarter (<data_dir>/2025/Q2).
+          - "" or None: No additional subdirectories, files are saved directly in dir.
+          - "year": Files are stored under a subdirectory for the year (<dir>/2025).
+          - "year/month": Files are stored under subdirectories by year and month (<dir>/2025/04).
+          - "year/month/day": Files are stored under subdirectories by year, month and day (<dir>/2025/04/01).
+          - "year/month_name": Files are stored under subdirectories by year and month name (<dir>/2025/April).
+          - "year/quarter": Files are stored under subdirectories by year and quarter (<dir>/2025/Q2).
 
     Returns
     -------
@@ -176,6 +176,8 @@ def check_folder_partitioning(folder_partitioning):
         The verified folder partitioning scheme.
     """
     valid_options = ["", "year", "year/month", "year/month/day", "year/month_name", "year/quarter"]
+    if folder_partitioning is None:
+        folder_partitioning = ""
     if folder_partitioning not in valid_options:
         raise ValueError(
             f"Invalid folder_partitioning scheme '{folder_partitioning}'. Valid options are: {valid_options}.",
@@ -331,22 +333,83 @@ def check_valid_fields(fields, available_fields, field_name, invalid_fields_poli
         fields = [fields]
     fields = np.unique(np.array(fields))
     invalid_fields_policy = check_invalid_fields_policy(invalid_fields_policy)
+
     # Check for invalid fields
     fields = np.array(fields)
     is_valid = np.isin(fields, available_fields)
     invalid_fields_values = fields[~is_valid].tolist()
     fields = fields[is_valid].tolist()
+
+    # If invalid fields, suggest corrections using difflib
+    if invalid_fields_values:
+
+        # Format invalid fields nicely (avoid single-element lists)
+        if len(invalid_fields_values) == 1:
+            invalid_fields_str = f"'{invalid_fields_values[0]}'"
+        else:
+            invalid_fields_str = f"{invalid_fields_values}"
+
+        # Prepare suggestion string
+        suggestions = []
+        for invalid in invalid_fields_values:
+            matches = difflib.get_close_matches(invalid, available_fields, n=1, cutoff=0.4)
+            if matches:
+                suggestions.append(f"Did you mean '{matches[0]}' instead of '{invalid}'?")
+        suggestion_msg = " " + " ".join(suggestions) if suggestions else ""
+
     # Error handling for invalid fields were found
     if invalid_fields_policy == "warn" and invalid_fields_values:
-        warnings.warn(f"Ignoring invalid {field_name}: {invalid_fields_values}", UserWarning, stacklevel=2)
+        msg = f"Ignoring invalid {field_name}: {invalid_fields_str}.{suggestion_msg}"
+        warnings.warn(msg, UserWarning, stacklevel=2)
     elif invalid_fields_policy == "raise" and invalid_fields_values:
-        raise ValueError(f"These {field_name} does not exist: {invalid_fields_values}.")
+        msg = f"These {field_name} do not exist: {invalid_fields_str}.{suggestion_msg}"
+        raise ValueError(msg)
     else:  # "ignore" silently drop invalid entries
         pass
     # If no valid fields left, raise error
     if len(fields) == 0:
         raise ValueError(f"All specified {field_name} do not exist !.")
     return fields
+
+
+def check_station_inputs(
+    data_source,
+    campaign_name,
+    station_name,
+    metadata_archive_dir=None,
+):
+    """Check validity of stations inputs."""
+    import disdrodb
+
+    # Check data source
+    valid_data_sources = disdrodb.available_data_sources(metadata_archive_dir=metadata_archive_dir)
+    if data_source not in valid_data_sources:
+        matches = difflib.get_close_matches(data_source, valid_data_sources, n=1, cutoff=0.4)
+        suggestion = f"Did you mean '{matches[0]}'?" if matches else ""
+        raise ValueError(f"DISDRODB does not include a data source named {data_source}. {suggestion}")
+
+    # Check campaign name
+    valid_campaigns = disdrodb.available_campaigns(data_sources=data_source, metadata_archive_dir=metadata_archive_dir)
+    if campaign_name not in valid_campaigns:
+        matches = difflib.get_close_matches(campaign_name, valid_campaigns, n=1, cutoff=0.4)
+        suggestion = f"Did you mean campaign '{matches[0]}' ?" if matches else ""
+        raise ValueError(
+            f"The {data_source} data source does not include a campaign named {campaign_name}. {suggestion}",
+        )
+
+    # Check station name
+    valid_stations = disdrodb.available_stations(
+        data_sources=data_source,
+        campaign_names=campaign_name,
+        metadata_archive_dir=metadata_archive_dir,
+        return_tuple=False,
+    )
+    if station_name not in valid_stations:
+        matches = difflib.get_close_matches(station_name, valid_stations, n=1, cutoff=0.4)
+        suggestion = f"Did you mean station '{matches[0]}'?" if matches else ""
+        raise ValueError(
+            f"The {data_source} {campaign_name} campaign does not have a station named {station_name}. {suggestion}",
+        )
 
 
 def has_available_data(
@@ -379,45 +442,6 @@ def has_available_data(
     filepaths = list_files(data_dir, recursive=True)
     nfiles = len(filepaths)
     return nfiles >= 1
-
-
-def check_station_inputs(
-    data_source,
-    campaign_name,
-    station_name,
-    metadata_archive_dir=None,
-):
-    """Check validity of stations inputs."""
-    import disdrodb
-
-    # Check data source
-    valid_data_sources = disdrodb.available_data_sources(metadata_archive_dir=metadata_archive_dir)
-    if data_source not in valid_data_sources:
-        matches = difflib.get_close_matches(data_source, valid_data_sources, n=1, cutoff=0.4)
-        suggestion = f"Did you mean '{matches[0]}'?" if matches else ""
-        raise ValueError(f"DISDRODB does not include a data source named {data_source}. {suggestion}")
-    # Check campaign name
-    valid_campaigns = disdrodb.available_campaigns(data_sources=data_source, metadata_archive_dir=metadata_archive_dir)
-    if campaign_name not in valid_campaigns:
-        matches = difflib.get_close_matches(campaign_name, valid_campaigns, n=1, cutoff=0.4)
-        suggestion = f"Did you mean campaign '{matches[0]}' ?" if matches else ""
-        raise ValueError(
-            f"The {data_source} data source does not include a campaign named {campaign_name}. {suggestion}",
-        )
-
-    # Check station name
-    valid_stations = disdrodb.available_stations(
-        data_sources=data_source,
-        campaign_names=campaign_name,
-        metadata_archive_dir=metadata_archive_dir,
-        return_tuple=False,
-    )
-    if station_name not in valid_stations:
-        matches = difflib.get_close_matches(station_name, valid_stations, n=1, cutoff=0.4)
-        suggestion = f"Did you mean station '{matches[0]}'?" if matches else ""
-        raise ValueError(
-            f"The {data_source} {campaign_name} campaign does not have a station named {station_name}. {suggestion}",
-        )
 
 
 def check_data_availability(
@@ -480,10 +504,9 @@ def check_issue_dir(data_source, campaign_name, metadata_archive_dir=None):
         campaign_name=campaign_name,
         check_exists=False,
     )
-    if not os.path.exists(issue_dir) and os.path.isdir(issue_dir):
-        msg = "The issue directory does not exist at {issue_dir}."
+    if not os.path.exists(issue_dir) or not os.path.isdir(issue_dir):
+        msg = f"The issue directory does not exist at {issue_dir}."
         logger.error(msg)
-        raise ValueError(msg)
     return issue_dir
 
 
@@ -504,7 +527,7 @@ def check_issue_file(data_source, campaign_name, station_name, metadata_archive_
         station_name=station_name,
         check_exists=False,
     )
-    # Check existence
+    # Check existence. If not, create one !
     if not os.path.exists(issue_filepath):
         create_station_issue(
             metadata_archive_dir=metadata_archive_dir,

@@ -20,6 +20,8 @@ from disdrodb.constants import PRODUCTS_REQUIREMENTS
 from disdrodb.utils.directories import contains_files, contains_netcdf_or_parquet_files, list_directories, list_files
 from disdrodb.utils.yaml import read_yaml
 
+####-------------------------------------------------------------------------
+
 
 def get_required_product(product):
     """Determine the required product for input product processing."""
@@ -31,7 +33,7 @@ def get_required_product(product):
 
 
 ####-------------------------------------------------------------------------
-#### List DISDRODB infrastructure directories
+#### List DISDRODB Metadata directories
 
 
 def list_data_sources(metadata_archive_dir, data_sources=None, invalid_fields_policy="raise"):
@@ -167,6 +169,10 @@ def list_station_names(
     return station_names
 
 
+####-------------------------------------------------------------------------
+#### Filtering utilities for available_stations
+
+
 def _finalize_output(list_info, return_tuple):
     # - Return the (data_source, campaign_name, station_name) tuple
     if return_tuple:
@@ -228,7 +234,6 @@ def keep_list_info_elements_with_product_data(data_archive_dir, product, list_in
     checking_function = contains_files if product == "RAW" else contains_netcdf_or_parquet_files
 
     # Check presence of data for each station
-    # TODO: - In parallel over stations to speed up ?
     list_info_with_product_data = []
     for data_source, campaign_name, station_name in list_info:
         data_dir = define_data_dir(
@@ -362,10 +367,11 @@ def available_stations(
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
     product = check_product(product) if product is not None else None
     invalid_fields_policy = check_invalid_fields_policy(invalid_fields_policy)
+
     # Retrieve available stations from the Metadata Archive
     # - Raise error if no stations availables !
     list_info = list_station_names(
-        metadata_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_sources=data_sources,
         campaign_names=campaign_names,
         station_names=station_names,
@@ -484,3 +490,6 @@ def available_campaigns(
     campaign_names = [info[1] for info in list_info]
     campaign_names = np.unique(campaign_names).tolist()
     return campaign_names
+
+
+####-------------------------------------------------------------------------

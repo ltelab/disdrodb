@@ -137,8 +137,6 @@ def _check_metadata_measurement_interval(metadata):
     """Check metadata ``measurement_interval``."""
     from disdrodb.api.checks import check_measurement_intervals
 
-    if "measurement_interval" not in metadata:
-        raise ValueError("The metadata file does not contain the 'measurement_interval' key.")
     measurement_intervals = metadata["measurement_interval"]
     _ = check_measurement_intervals(measurement_intervals)
 
@@ -150,6 +148,98 @@ def _check_metadata_sensor_name(metadata):
     check_sensor_name(sensor_name)
 
 
+#### --------------------------------------------------------------------------.
+#### Geolocation Checks
+
+
+def _check_lonlat_type(longitude, latitude):
+    # Check type validity
+    if isinstance(longitude, str):
+        raise TypeError("longitude is not defined as numeric.")
+    if isinstance(latitude, str):
+        raise TypeError("latitude is not defined as numeric.")
+    # Check is not none
+    if isinstance(longitude, type(None)) or isinstance(latitude, type(None)):
+        raise ValueError("Unspecified longitude and latitude coordinates.")
+
+
+def _check_lonlat_validity(longitude, latitude, raise_error_if_unknown=True):
+    if longitude == -9999 or latitude == -9999:
+        if raise_error_if_unknown:
+            raise ValueError("Missing lat lon coordinates (-9999).")
+        return
+    if longitude > 180 or longitude < -180:
+        raise ValueError("Invalid longitude (outside [-180, 180])")
+    if latitude > 90 or latitude < -90:
+        raise ValueError("Invalid latitude (outside [-90, 90])")
+
+
+def check_station_metadata_geolocation(metadata, raise_error_if_unknown=True) -> None:
+    """Identify metadata with missing or wrong geolocation."""
+    # Get longitude, latitude and platform type
+    longitude = metadata.get("longitude")
+    latitude = metadata.get("latitude")
+    platform_type = metadata.get("platform_type")
+    # Check type validity
+    _check_lonlat_type(longitude=longitude, latitude=latitude)
+    # Check value validity
+    # - If mobile platform
+    if platform_type == "mobile":
+        if longitude != -9999 or latitude != -9999:
+            raise ValueError("For mobile platform_type, specify latitude and longitude -9999")
+    # - If fixed platform
+    else:
+        _check_lonlat_validity(longitude=longitude, latitude=latitude, raise_error_if_unknown=raise_error_if_unknown)
+
+
+def check_metadata_archive_geolocation(metadata_archive_dir: Optional[str] = None, raise_error_if_unknown=True):
+    """Check the metadata files have missing or wrong geolocation..
+
+    Parameters
+    ----------
+    metadata_archive_dir : str (optional)
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is ``True``, otherwise ``False``.
+    """
+    is_valid = True
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
+    list_metadata_paths = get_list_metadata(
+        metadata_archive_dir=metadata_archive_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
+    )
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
+
+        metadata = read_station_metadata(
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+        )
+        try:
+            check_station_metadata_geolocation(metadata, raise_error_if_unknown=raise_error_if_unknown)
+        except Exception as e:
+            is_valid = False
+            print(f"Missing information for {data_source} {campaign_name} {station_name}.")
+            print(f"The error is: {e}.")
+    return is_valid
+
+
+####------------------------------------------------------------------------------------------------------------.
+#### Metadata Station and Archive Checking Routines
 def check_station_metadata(data_source, campaign_name, station_name, metadata_archive_dir=None):
     """Check DISDRODB metadata compliance."""
     from disdrodb.l0.l0_reader import check_metadata_reader
@@ -167,49 +257,64 @@ def check_station_metadata(data_source, campaign_name, station_name, metadata_ar
     _check_metadata_station_name(metadata, expected_name=station_name)
     _check_metadata_sensor_name(metadata)
     _check_metadata_measurement_interval(metadata)
+    check_station_metadata_geolocation(metadata, raise_error_if_unknown=False)
     check_metadata_reader(metadata)
 
 
-#### --------------------------------------------------------------------------.
-#### Metadata Archive Missing Information
+def check_metadata_archive(metadata_archive_dir: Optional[str] = None, raise_error=False):
+    """Check the archive metadata compliance.
+
+    Parameters
+    ----------
+    metadata_archive_dir : str (optional)
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    raise_error: bool (optional)
+        Whether to raise an error and interrupt the archive check if a
+        metadata is not compliant. The default value is ``False``.
+
+    Returns
+    -------
+    bool
+        If the check succeeds, the result is ``True``, otherwise ``False``.
+    """
+    is_valid = True
+    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
+    list_metadata_paths = get_list_metadata(
+        metadata_archive_dir=metadata_archive_dir,
+        data_sources=None,
+        campaign_names=None,
+        station_names=None,
+        product=None,  # --> Search in DISDRODB Metadata Archive
+        available_data=False,  # --> Select all metadata matching the filtering criteria
+    )
+    for filepath in list_metadata_paths:
+        data_source = infer_data_source_from_path(filepath)
+        campaign_name = infer_campaign_name_from_path(filepath)
+        station_name = os.path.basename(filepath).replace(".yml", "")
+        # Check compliance
+        try:
+            check_station_metadata(
+                metadata_archive_dir=metadata_archive_dir,
+                data_source=data_source,
+                campaign_name=campaign_name,
+                station_name=station_name,
+            )
+        except Exception as e:
+            is_valid = False
+            msg = f"Error for {data_source} {campaign_name} {station_name}."
+            msg = msg + f"The error is: {e}."
+            if raise_error:
+                raise ValueError(msg)
+            print(msg)
+
+    return is_valid
 
 
-def _check_lonlat_type(longitude, latitude):
-    # Check type validity
-    if isinstance(longitude, str):
-        raise TypeError("longitude is not defined as numeric.")
-    if isinstance(latitude, str):
-        raise TypeError("latitude is not defined as numeric.")
-    # Check is not none
-    if isinstance(longitude, type(None)) or isinstance(latitude, type(None)):
-        raise ValueError("Unspecified longitude and latitude coordinates.")
-
-
-def _check_lonlat_validity(longitude, latitude):
-    if longitude == -9999 or latitude == -9999:
-        raise ValueError("Missing lat lon coordinates (-9999).")
-    if longitude > 180 or longitude < -180:
-        raise ValueError("Invalid longitude (outside [-180, 180])")
-    if latitude > 90 or latitude < -90:
-        raise ValueError("Invalid latitude (outside [-90, 90])")
-
-
-def check_station_metadata_geolocation(metadata) -> None:
-    """Identify metadata with missing or wrong geolocation."""
-    # Get longitude, latitude and platform type
-    longitude = metadata.get("longitude")
-    latitude = metadata.get("latitude")
-    platform_type = metadata.get("platform_type")
-    # Check type validity
-    _check_lonlat_type(longitude=longitude, latitude=latitude)
-    # Check value validity
-    # - If mobile platform
-    if platform_type == "mobile":
-        if longitude != -9999 or latitude != -9999:
-            raise ValueError("For mobile platform_type, specify latitude and longitude -9999")
-    # - If fixed platform
-    else:
-        _check_lonlat_validity(longitude=longitude, latitude=latitude)
+####-----------------------------------------------------------------------------------------------.
+#### Utilities
 
 
 def identify_missing_metadata_coords(metadata_filepaths: str) -> None:
@@ -252,7 +357,7 @@ def identify_empty_metadata_keys(metadata_filepaths: list, keys: Union[str, list
 
 
 #### --------------------------------------------------------------------------.
-#### Check Metadata Archive
+#### Metadata Archive Utilities
 
 
 def check_metadata_archive_keys(metadata_archive_dir: Optional[str] = None) -> bool:
@@ -530,103 +635,5 @@ def check_metadata_archive_reader(metadata_archive_dir: Optional[str] = None) ->
         except Exception as e:
             is_valid = False
             print(f"Error for {data_source} {campaign_name} {station_name}.")
-            print(f"The error is: {e}.")
-    return is_valid
-
-
-def check_metadata_archive(metadata_archive_dir: Optional[str] = None, raise_error=False):
-    """Check the archive metadata compliance.
-
-    Parameters
-    ----------
-    metadata_archive_dir : str (optional)
-        The directory path where the DISDRODB Metadata Archive is located.
-        The directory path must end with ``<...>/DISDRODB``.
-        If ``None``, it uses the ``metadata_archive_dir`` path specified
-        in the DISDRODB active configuration.
-    raise_error: bool (optional)
-        Whether to raise an error and interrupt the archive check if a
-        metadata is not compliant. The default value is ``False``.
-
-    Returns
-    -------
-    bool
-        If the check succeeds, the result is ``True``, otherwise ``False``.
-    """
-    is_valid = True
-    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
-    list_metadata_paths = get_list_metadata(
-        metadata_archive_dir=metadata_archive_dir,
-        data_sources=None,
-        campaign_names=None,
-        station_names=None,
-        product=None,  # --> Search in DISDRODB Metadata Archive
-        available_data=False,  # --> Select all metadata matching the filtering criteria
-    )
-    for filepath in list_metadata_paths:
-        data_source = infer_data_source_from_path(filepath)
-        campaign_name = infer_campaign_name_from_path(filepath)
-        station_name = os.path.basename(filepath).replace(".yml", "")
-        # Check compliance
-        try:
-            check_station_metadata(
-                metadata_archive_dir=metadata_archive_dir,
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-            )
-        except Exception as e:
-            is_valid = False
-            msg = f"Error for {data_source} {campaign_name} {station_name}."
-            msg = msg + f"The error is: {e}."
-            if raise_error:
-                raise ValueError(msg)
-            print(msg)
-
-    return is_valid
-
-
-def check_metadata_archive_geolocation(metadata_archive_dir: Optional[str] = None):
-    """Check the metadata files have missing or wrong geolocation..
-
-    Parameters
-    ----------
-    metadata_archive_dir : str (optional)
-        The directory path where the DISDRODB Metadata Archive is located.
-        The directory path must end with ``<...>/DISDRODB``.
-        If ``None``, it uses the ``metadata_archive_dir`` path specified
-        in the DISDRODB active configuration.
-
-    Returns
-    -------
-    bool
-        If the check succeeds, the result is ``True``, otherwise ``False``.
-    """
-    is_valid = True
-    metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)
-    list_metadata_paths = get_list_metadata(
-        metadata_archive_dir=metadata_archive_dir,
-        data_sources=None,
-        campaign_names=None,
-        station_names=None,
-        product=None,  # --> Search in DISDRODB Metadata Archive
-        available_data=False,  # --> Select all metadata matching the filtering criteria
-    )
-    for filepath in list_metadata_paths:
-        data_source = infer_data_source_from_path(filepath)
-        campaign_name = infer_campaign_name_from_path(filepath)
-        station_name = os.path.basename(filepath).replace(".yml", "")
-
-        metadata = read_station_metadata(
-            metadata_archive_dir=metadata_archive_dir,
-            data_source=data_source,
-            campaign_name=campaign_name,
-            station_name=station_name,
-        )
-        try:
-            check_station_metadata_geolocation(metadata)
-        except Exception as e:
-            is_valid = False
-            print(f"Missing information for {data_source} {campaign_name} {station_name}.")
             print(f"The error is: {e}.")
     return is_valid

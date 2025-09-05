@@ -133,6 +133,7 @@ def find_files(
     product,
     debugging_mode: bool = False,
     data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
     glob_pattern=None,
     start_time=None,
     end_time=None,
@@ -198,6 +199,7 @@ def find_files(
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
+            metadata_archive_dir=metadata_archive_dir,
         )
         glob_pattern = metadata.get("raw_data_glob_pattern", "")
 
@@ -232,7 +234,7 @@ def find_files(
 #### DISDRODB Open Product Files
 
 
-def open_raw_files(filepaths, data_source, campaign_name, station_name):
+def _open_raw_files(filepaths, data_source, campaign_name, station_name, metadata_archive_dir):
     """Open raw files to DISDRODB L0A or L0B format.
 
     Raw text files are opened into a DISDRODB L0A pandas Dataframe.
@@ -247,6 +249,7 @@ def open_raw_files(filepaths, data_source, campaign_name, station_name):
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        metadata_archive_dir=metadata_archive_dir,
     )
     sensor_name = metadata["sensor_name"]
 
@@ -256,6 +259,7 @@ def open_raw_files(filepaths, data_source, campaign_name, station_name):
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
+            metadata_archive_dir=metadata_archive_dir,
         )
     except Exception:
         issue_dict = None
@@ -265,6 +269,7 @@ def open_raw_files(filepaths, data_source, campaign_name, station_name):
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
+        metadata_archive_dir=metadata_archive_dir,
     )
     # Return DISDRODB L0A dataframe if raw text files
     if metadata["raw_data_format"] == "txt":
@@ -289,6 +294,35 @@ def open_raw_files(filepaths, data_source, campaign_name, station_name):
     return ds
 
 
+def filter_dataset_by_time(ds, start_time=None, end_time=None):
+    """Subset an xarray.Dataset by time, robust to duplicated/non-monotonic indices.
+
+    NOTE: ds.sel(time=slice(start_time, end_time)) fails in presence of duplicated
+    timesteps because time 'index is not monotonic increasing or decreasing'.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset with a `time` coordinate.
+    start_time : np.datetime64 or None
+        Inclusive start bound. If None, no lower bound is applied.
+    end_time : np.datetime64 or None
+        Inclusive end bound. If None, no upper bound is applied.
+
+    Returns
+    -------
+    xr.Dataset
+        Subset dataset with the same ordering of timesteps (duplicates preserved).
+    """
+    time = ds["time"].to_numpy()
+    mask = np.ones(time.shape, dtype=bool)
+    if start_time is not None:
+        mask &= time >= np.array(start_time, dtype="datetime64[ns]")
+    if end_time is not None:
+        mask &= time <= np.array(end_time, dtype="datetime64[ns]")
+    return ds.isel(time=np.where(mask)[0])
+
+
 def open_netcdf_files(
     filepaths,
     chunks=-1,
@@ -299,7 +333,10 @@ def open_netcdf_files(
     compute=True,
     **open_kwargs,
 ):
-    """Open DISDRODB netCDF files using xarray."""
+    """Open DISDRODB netCDF files using xarray.
+
+    Using combine="nested" and join="outer" ensure that duplicated timesteps are not overwritten!
+    """
     import xarray as xr
 
     # Ensure variables is a list
@@ -313,6 +350,7 @@ def open_netcdf_files(
         filepaths,
         chunks=chunks,
         combine="nested",
+        join="outer",
         concat_dim="time",
         engine="netcdf4",
         parallel=parallel,
@@ -329,7 +367,8 @@ def open_netcdf_files(
     if variables is not None and preprocess is None:
         ds = ds[variables]
     # - Subset time
-    ds = ds.sel(time=slice(start_time, end_time))
+    if start_time is not None or end_time is not None:
+        ds = filter_dataset_by_time(ds, start_time=start_time, end_time=end_time)
     # - If compute=True, load in memory and close connections to files
     if compute:
         dataset = ds.compute()
@@ -349,6 +388,7 @@ def open_dataset(
     product_kwargs=None,
     debugging_mode: bool = False,
     data_archive_dir: Optional[str] = None,
+    metadata_archive_dir: Optional[str] = None,
     chunks=-1,
     parallel=False,
     compute=False,
@@ -399,6 +439,7 @@ def open_dataset(
     # List product files
     filepaths = find_files(
         data_archive_dir=data_archive_dir,
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
@@ -413,11 +454,12 @@ def open_dataset(
     # - For raw txt files return DISDRODB L0A dataframe
     # - For raw netCDF files return DISDRODB L0B dataframe
     if product == "RAW":
-        obj = open_raw_files(
+        obj = _open_raw_files(
             filepaths=filepaths,
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
+            metadata_archive_dir=metadata_archive_dir,
         )
         return obj
 
@@ -464,11 +506,9 @@ def remove_product(
         station_name=station_name,
         **product_kwargs,
     )
-    if logger is not None:
-        log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
+    log_info(logger=logger, msg="Removal of {product} files started.", verbose=verbose)
     shutil.rmtree(data_dir)
-    if logger is not None:
-        log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)
+    log_info(logger=logger, msg="Removal of {product} files ended.", verbose=verbose)
 
 
 ####--------------------------------------------------------------------------.

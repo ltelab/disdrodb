@@ -229,7 +229,7 @@ def test_coerce_corrupted_values_to_nan(create_test_config_files):
     assert pd.isna(df_out["key_4"][0])
 
 
-class RemoveIssueTimesteps:
+class TestRemoveIssueTimesteps:
     def test_remove_issue_timesteps(self):
         """Test removal of timesteps listed in the issue dictionary."""
         # Create dummy dataframe
@@ -263,6 +263,30 @@ class RemoveIssueTimesteps:
         # Call function to remove problematic time_periods
         df_cleaned = remove_issue_timesteps(df, issue_dict)
         assert np.all(~df_cleaned["time"].isin(issue_timesteps))
+
+    def test_raises_error_if_all_timesteps_are_removed(self):
+        """Should raise ValueError when all timesteps are removed."""
+        # Create an array of datetime values for the time column
+        timesteps = pd.date_range(start="2023-01-01 00:00:00", end="2023-01-01 00:15:00", freq="1 min").to_numpy()
+
+        # Create the dataframe with the two columns
+        dummy = np.random.rand(len(timesteps))
+        df = pd.DataFrame({"time": timesteps, "dummy": dummy})
+
+        # Define issue dict that covers entire time period
+        start = df["time"].to_numpy()[0]
+        end = df["time"].to_numpy()[-1]
+        issue_dict = {"time_periods": [(start, end)]}
+
+        # Test raise error
+        with pytest.raises(ValueError, match="No rows left after removing problematic"):
+            remove_issue_timesteps(df, issue_dict=issue_dict)
+
+        # Define issue dict with timesteps matching all dataset timesteps
+        issue_dict = {"timesteps": df["time"].to_numpy()}
+        # Test raise error
+        with pytest.raises(ValueError, match="No rows left after removing problematic"):
+            remove_issue_timesteps(df, issue_dict=issue_dict)
 
 
 def test_preprocess_reader_kwargs():
@@ -769,7 +793,7 @@ class TestReadL0ADataFrame:
         # Create dummy dataframe
         data = [{"a": "1", "b": "2", "c": "3"}, {"a": "2", "b": "2", "c": "3"}]
         df = pd.DataFrame(data)
-        df["time"] = pd.Timestamp.now()
+        df["time"] = np.array(["2024-01-01T00:00:00", "2024-01-01T00:01:00"], dtype="datetime64[s]")
 
         # Save dataframe to parquet file
         filepath = os.path.join(tmp_path, "fake_data_sample.parquet")
@@ -779,6 +803,10 @@ class TestReadL0ADataFrame:
         df_written = read_l0a_dataframe(filepath)
         df["time"] = df["time"].astype("M8[ns]")
         pd.testing.assert_frame_equal(df_written, df)
+
+        # Read in debugging mode (< 100 rows should be equal)
+        df_written2 = read_l0a_dataframe(filepath, debugging_mode=True)
+        pd.testing.assert_frame_equal(df_written, df_written2)
 
     def test_read_multiple_l0a_files(self, tmp_path):
         """Test reading multiple L0A parquet files."""

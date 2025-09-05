@@ -442,7 +442,7 @@ Once you updated your metadata YAML files, check once again the validity of the 
 
 At this point, no error and printed message should appear !!!
 
-If you have any question at this point, you are encountering some issues, or you just want to let the DISRODB maintainers know that you are working on the
+If you have any question at this point, you are encountering some issues, or you just want to let the DISDRODB maintainers know that you are working on the
 implementation of a reader for your data, just  ``git add *``, ``git commit -m <describe-your-change>``, ``git push`` the code changes
 made to the disdrodb software and the DISDRODB-METADATA rpeository.
 Then, open a Pull Request in the `GitHub disdrodb software repository <https://github.com/ltelab/disdrodb>`__ and

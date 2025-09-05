@@ -124,6 +124,24 @@ def get_refractive_index(temperature, frequency, permittivity_model):
     >>> m = get_refractive_index(temperature=temperature, frequency=frequency, permittivity_model="Liebe1991")
 
     """
+    # Ensure input is numpy array or xr.DataArray
+    frequency = ensure_array(frequency)
+    temperature = ensure_array(temperature)
+
+    # If both inputs are numpy (or dask) arrays with size > 1 → raise error
+    if (
+        not isinstance(temperature, xr.DataArray)
+        and not isinstance(frequency, xr.DataArray)
+        and np.size(temperature) > 1
+        and np.size(frequency) > 1
+    ):
+        raise ValueError(
+            "get_refractive_index does not support broadcasting plain numpy/dask arrays "
+            "when both `temperature` and `frequency` have size > 1. "
+            "Please provide both input as xarray.DataArray objects "
+            "with different dimensions to enable labeled broadcasting.",
+        )
+
     # Retrieve refractive_index function
     func = get_refractive_index_function(permittivity_model)
 

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Script to run the DISDRODB L0 station processing."""
+"""Script to create summary figures and tables for a DISDRODB station."""
 import sys
 from typing import Optional
 

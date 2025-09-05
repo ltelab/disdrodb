@@ -32,6 +32,10 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
+    # Correct for inverted raw_spectrum axis
+    ds["raw_spectrum"] = ds["raw_spectrum"].transpose("time", "particle_size", "raw_fall_velocity")
+    ds["raw_spectrum"].data = ds["raw_spectrum"].data.swapaxes(1, 2)
+
     # Define dictionary mapping dataset variables to select and rename
     dict_names = {
         ### Dimensions

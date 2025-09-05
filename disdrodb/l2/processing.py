@@ -219,7 +219,7 @@ def generate_l2e(
     Returns
     -------
     xarray.Dataset
-        DISRODB L2E dataset.
+        DISDRODB L2E dataset.
     """
     # Check and prepapre input dataset
     ds = check_l2e_input_dataset(ds)
