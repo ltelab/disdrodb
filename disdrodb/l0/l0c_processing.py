@@ -27,7 +27,7 @@ from disdrodb.api.io import open_netcdf_files
 from disdrodb.l0.l0b_processing import set_l0b_encodings
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.utils.attrs import set_disdrodb_attrs
-from disdrodb.utils.logger import log_warning, log_info
+from disdrodb.utils.logger import log_info, log_warning
 from disdrodb.utils.time import ensure_sorted_by_time
 
 logger = logging.getLogger(__name__)
@@ -667,7 +667,7 @@ def create_l0c_datasets(
         parallel=False,
         compute=True,
     )
-    
+
     # If not data for that time block, return empty dictionary
     # - Can occur when raw files are already by block of months and e.g. here saving to daily blocks !
     if ds.sizes["time"] == 0:
