@@ -10,7 +10,7 @@ from disdrodb.l2.processing import generate_l2e
 def create_template_dataset(with_velocity=True):
     """Create DISDRODB L1 basic dataset."""
     # Define coordinates
-    time = xr.DataArray(np.array([0, 1], dtype=float), dims="time")
+    time = xr.DataArray(np.array(["2018-01-01 00:01:00", "2018-01-01 00:02:00"], dtype="M8[ns]"), dims="time")
     diameter_bin_center = xr.DataArray(np.array([0.2, 0.4, 0.6, 0.8]), dims=DIAMETER_DIMENSION)
     diameter_bin_width = xr.DataArray(np.array([0.2, 0.2, 0.2, 0.2]), dims=DIAMETER_DIMENSION)
     diameter_bin_lower = xr.DataArray(np.array([0.1, 0.3, 0.5, 0.7]), dims=DIAMETER_DIMENSION)
