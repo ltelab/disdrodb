@@ -15,7 +15,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for CSWR FARM disdrometer data (used in PERILS and RELAMPAGO campaign)."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -30,7 +29,7 @@ def reader(
     """Reader."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_PARSE"]
+    column_names = ["TO_SPLIT"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
@@ -39,12 +38,14 @@ def reader(
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
 
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Skip header
+    reader_kwargs["skiprows"] = 0
+
     # - Define encoding
     reader_kwargs["encoding"] = "ISO-8859-1"
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
-    reader_kwargs["skiprows"] = 2
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
@@ -59,13 +60,13 @@ def reader(
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
+    # reader_kwargs['compression'] = 'xz'
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error"]
+    reader_kwargs["na_values"] = ["na", "error", "-.-", " NA"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -78,56 +79,49 @@ def reader(
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Split and assign integrated variables names
-    df = df["TO_PARSE"].str.split(",", expand=True, n=22)
+    # Remove corrupted rows
+    df = df[df["TO_SPLIT"].str.count(";").isin([11, 1035])]
 
+    # Split into columns
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=11) 
+    
+    # Assign columns names
     names = [
+        "date",
         "time",
-        "station_name",
-        "station_number",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "weather_code_synop_4677",
-        "weather_code_metar_4678",
-        "weather_code_nws",
         "reflectivity_32bit",
         "mor_visibility",
-        "sample_interval",
         "laser_amplitude",
         "number_particles",
         "sensor_temperature",
-        "sensor_serial_number",
-        "firmware_iop",
-        "firmware_dsp",
         "sensor_heating_current",
         "sensor_battery_voltage",
-        "sensor_status",
-        "rain_kinetic_energy",
-        "TO_SPLIT",
+        "raw_drop_number",
     ]
     df.columns = names
 
-    # Derive raw drop arrays
-    df_split = df["TO_SPLIT"].str.split(",", expand=True)
-    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
-    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(",".join, axis=1)
-    df["raw_drop_number"] = df_split.iloc[:, 64:].agg(",".join, axis=1)
-    del df_split
+    # Add datetime time column
+    df["time"] = df["date"] + "-" + df["time"]
+    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce")
+    df = df.drop(columns=["date"])
 
-    # Define datetime "time" column
-    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+    # Preprocess the raw spectrum
+    # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+    # --> "" generates an array of zeros in L0B processing
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>ZERO</SPECTRUM>", "")
 
-    # Drop columns not agreeing with DISDRODB L0 standards
-    columns_to_drop = [
-        "station_name",
-        "station_number",
-        "sensor_serial_number",
-        "firmware_iop",
-        "firmware_dsp",
-        "TO_SPLIT",
-    ]
-    df = df.drop(columns=columns_to_drop)
+    # Remove <SPECTRUM> and </SPECTRUM> prefix and suffix from the raw_drop_number field
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+
+    # Add 0 before every , if , not preceded by a digit
+    # Example: ',,1,,' --> '0,0,1,0,'
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
+    
+    # Replace ending 999; with 0;
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0", regex=True)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

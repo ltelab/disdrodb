@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for GID LPM sensors not measuring wind."""
+"""DISDRODB reader for UL LPM sensors in Crni Vrh."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -113,7 +113,7 @@ def reader(
         "quality_index",
         "max_hail_diameter",
         "laser_status",
-        "static_signal",
+        "static_signal_status",
         "laser_temperature_analog_status",
         "laser_temperature_digital_status",
         "laser_current_analog_status",
@@ -127,7 +127,7 @@ def reader(
         "current_heating_heads_status",
         "current_heating_carriers_status",
         "control_output_laser_power_status",
-        "reserve_status",
+        "reserved_status",
         "temperature_interior",
         "laser_temperature",
         "laser_current_average",

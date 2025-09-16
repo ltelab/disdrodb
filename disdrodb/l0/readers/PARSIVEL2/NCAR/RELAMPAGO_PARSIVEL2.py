@@ -90,20 +90,11 @@ def reader(
     valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
     df = df[df["ID"].astype(str).isin(valid_id_str)]
 
-    # Create the dataframe with each row corresponding to a timestep
-    # - Group rows based on when ID values restart
-    groups = df.groupby((df["ID"].astype(int).diff() <= 0).cumsum())
-
-    # Reshape the dataframe
-    group_dfs = []
-    for _, group in groups:
-        group_df = group.set_index("ID").T
-        group_dfs.append(group_df)
-
-    # Merge each timestep dataframe
-    # --> Missing columns are infilled by NaN
-    df = pd.concat(group_dfs, axis=0)
-    df.columns = df.columns.astype(str).str.pad(width=2, side="left", fillchar="0")
+    # Create the dataframe where each row corresponds to a timestep
+    df["_group"] = (df["ID"].astype(int).diff() <= 0).cumsum()
+    df = df.pivot(index="_group", columns="ID")  # noqa
+    df.columns = df.columns.get_level_values("ID")
+    df = df.reset_index(drop=True)
 
     # Assign column names
     column_dict = {

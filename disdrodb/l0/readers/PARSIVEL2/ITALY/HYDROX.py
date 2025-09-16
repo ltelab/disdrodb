@@ -15,36 +15,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Reader for EPFL 2009 campaign."""
+"""Reader for HYDROX PARSIVEL2 disdrometer located at Trafoi (Italy)."""
+import os
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
-
-def read_format1(filepath, logger):
-    """Read format F1 (before 2020)."""
+def read_old_format(filepath, logger): 
+    """Read old format."""
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_PARSE"]
+    column_names = ["TO_SPLIT"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
+
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
+
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Skip header
+    reader_kwargs["skiprows"] = 0
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
-    # Skip the first row (header)
-    reader_kwargs["skiprows"] = 0
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "latin"
 
     # - Define reader engine
     #   - C engine is faster
@@ -53,16 +57,13 @@ def read_format1(filepath, logger):
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
+    # reader_kwargs['compression'] = 'xz'
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error"]
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
+    reader_kwargs["na_values"] = ["na", "error", "-.-", " NA"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
@@ -75,71 +76,79 @@ def read_format1(filepath, logger):
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Create ID and Value columns
-    df = df["TO_PARSE"].str.split(";", expand=True, n=14)
+    # Remove corrupted rows
+    df = df[df["TO_SPLIT"].str.count(";").isin([7, 1031])]
 
-    # Assign column names
-    column_names = [
-        "id",
+    # Split into columns
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=7) 
+    
+    # Assign columns names
+    names = [
+        "date",
         "time",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
-        "reflectivity_32bit",
-        "mor_visibility",
-        "sensor_temperature",
         "laser_amplitude",
         "number_particles",
-        "sensor_status",
-        "sensor_heating_current",
-        "sensor_battery_voltage",
-        "error_code",
+        "sensor_temperature",
         "raw_drop_number",
     ]
-    df.columns = column_names
+    df.columns = names
 
-    # Convert time column to datetime
-    df["time"] = pd.to_datetime(df["time"], format="%d/%m/%Y %H.%M.%S", errors="coerce")
+    # Add datetime time column
+    df["time"] = df["date"] + "-" + df["time"]
+    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce")
+    df = df.drop(columns=["date"])
+
+    # Correct for UTC time (from UTC+1)
+    df["time"] = df["time"] - pd.Timedelta(hours=1)
 
     # Preprocess the raw spectrum
-    # - Add 0 before every ; if ; not preceded by a digit
-    # Example: ';;1;;' --> '0;0;1;0;'
-    df["raw_drop_number"] = df["raw_drop_number"].str.replace("R;", "")
-    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
+    # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+    # --> "" generates an array of zeros in L0B processing
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>ZERO</SPECTRUM>", "")
 
-    # Drop columns not agreeing with DISDRODB L0 standards
-    columns_to_drop = [
-        "id",
-    ]
-    df = df.drop(columns=columns_to_drop)
+    # Remove <SPECTRUM> and </SPECTRUM> prefix and suffix from the raw_drop_number field
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+
+    # Add 0 before every , if , not preceded by a digit
+    # Example: ',,1,,' --> '0,0,1,0,'
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
+       
+    # Replace ending 999; with 0;
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0", regex=True)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
 
 
-def read_format2(filepath, logger):
-    """Read format 2 (July 2012-April 2023)."""
+def read_new_format(filepath, logger): 
     ##------------------------------------------------------------------------.
     #### Define column names
-    column_names = ["TO_PARSE"]
+    column_names = ["TO_SPLIT"]
 
     ##------------------------------------------------------------------------.
     #### Define reader options
     reader_kwargs = {}
+
     # - Define delimiter
     reader_kwargs["delimiter"] = "\\n"
+
+    # - Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    # - Skip header
+    reader_kwargs["skiprows"] = 0
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "ISO-8859-1"
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
 
     # - Define behaviour when encountering bad lines
     reader_kwargs["on_bad_lines"] = "skip"
-
-    # Skip the first row (header)
-    reader_kwargs["skiprows"] = 0
-
-    # - Define encoding
-    reader_kwargs["encoding"] = "latin"
 
     # - Define reader engine
     #   - C engine is faster
@@ -148,20 +157,17 @@ def read_format2(filepath, logger):
 
     # - Define on-the-fly decompression of on-disk data
     #   - Available: gzip, bz2, zip
-    reader_kwargs["compression"] = "infer"
+    # reader_kwargs['compression'] = 'xz'
 
     # - Strings to recognize as NA/NaN and replace with standard NA flags
     #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
     #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
     #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
-    reader_kwargs["na_values"] = ["na", "", "error"]
-
-    # Skip first row as columns names
-    reader_kwargs["header"] = None
+    reader_kwargs["na_values"] = ["na", "error", "-.-", " NA"]
 
     ##------------------------------------------------------------------------.
     #### Read the data
-    df_raw = read_raw_text_file(
+    df = read_raw_text_file(
         filepath=filepath,
         column_names=column_names,
         reader_kwargs=reader_kwargs,
@@ -170,48 +176,49 @@ def read_format2(filepath, logger):
 
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
-    # Create ID and Value columns
-    df = df_raw["TO_PARSE"].str.split(";", expand=True, n=14)
+    # Remove corrupted rows
+    df = df[df["TO_SPLIT"].str.count(";").isin([11, 1035])]
 
-    # Assign column names
+    # Split into columns
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=11) 
+    
+    # Assign columns names
     names = [
-        "id",
+        "date",
         "time",
         "rainfall_rate_32bit",
         "rainfall_accumulated_32bit",
-        "weather_code_synop_4680",
         "reflectivity_32bit",
         "mor_visibility",
-        "sensor_temperature",
         "laser_amplitude",
         "number_particles",
-        "sensor_status",
+        "sensor_temperature",
         "sensor_heating_current",
         "sensor_battery_voltage",
-        "error_code",
         "raw_drop_number",
     ]
     df.columns = names
 
-    # Convert time column to datetime
-    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+    # Add datetime time column
+    df["time"] = df["date"] + "-" + df["time"]
+    df["time"] = pd.to_datetime(df["time"], format="%d.%m.%Y-%H:%M:%S", errors="coerce")
+    df = df.drop(columns=["date"])
 
     # Preprocess the raw spectrum
-    # - Add 0 before every ; if ; not preceded by a digit
-    # Example: ';;1;;' --> '0;0;1;0;'
-    df["raw_drop_number"] = df["raw_drop_number"].str.replace("R;", "")
+    # - The '<SPECTRUM>ZERO</SPECTRUM>' indicates no drops detected
+    # --> "" generates an array of zeros in L0B processing
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>ZERO</SPECTRUM>", "")
+
+    # Remove <SPECTRUM> and </SPECTRUM> prefix and suffix from the raw_drop_number field
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("<SPECTRUM>", "")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("</SPECTRUM>", "")
+
+    # Add 0 before every , if , not preceded by a digit
+    # Example: ',,1,,' --> '0,0,1,0,'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
 
-    # Drop rows with invalid spectrum
-    df = df[df["raw_drop_number"].str.count(";") == 1024]
-
-    # df["rainfall_rate_32bit"].max()
-
-    # Drop columns not agreeing with DISDRODB L0 standards
-    columns_to_drop = [
-        "id",
-    ]
-    df = df.drop(columns=columns_to_drop)
+    # Replace ending 999; with 0;
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0", regex=True)
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
@@ -223,8 +230,7 @@ def reader(
     logger=None,
 ):
     """Reader."""
-    if filepath.endswith("F1.dat.gz"):
-        return read_format1(filepath, logger)
-    if filepath.endswith("F2.dat.gz"):
-        return read_format2(filepath, logger)
-    raise ValueError("Unexpected filename: {os.path.basename(filepath)")
+    date = int(os.path.basename(filepath)[-12:-4])
+    if date > 20140000: 
+        return read_new_format(filepath, logger)
+    return read_old_format(filepath, logger)

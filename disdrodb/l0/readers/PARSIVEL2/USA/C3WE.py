@@ -97,31 +97,13 @@ def reader(
     ]
     df.columns = names
 
-    # Derive raw drop arrays
-    def split_string(s):
-        vals = [v.strip() for v in s.split(";")]
-        c1 = ";".join(vals[:32])
-        c2 = ";".join(vals[32:64])
-        c3 = ";".join(vals[64:1088])
-        c4 = vals[1088]
-        c5 = vals[1089]
-        series = pd.Series(
-            {
-                "raw_drop_concentration": c1,
-                "raw_drop_average_velocity": c2,
-                "raw_drop_number": c3,
-                "rain_kinetic_energy": c4,
-                "CHECK_EMPTY": c5,
-            },
-        )
-        return series
-
-    splitted_string = df["TO_SPLIT"].apply(split_string)
-    df["raw_drop_concentration"] = splitted_string["raw_drop_concentration"]
-    df["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
-    df["raw_drop_number"] = splitted_string["raw_drop_number"]
-    df["rain_kinetic_energy"] = splitted_string["rain_kinetic_energy"]
-    df["CHECK_EMPTY"] = splitted_string["CHECK_EMPTY"]
+    # Derive raw arrays
+    df_split = df["TO_SPLIT"].str.split(";", expand=True)
+    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
+    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:].agg(",".join, axis=1)
+    df["raw_drop_number"] = df_split.iloc[:, 64:1088].agg(",".join, axis=1)
+    df["rain_kinetic_energy"] = df_split.iloc[:, 1088]
+    df["CHECK_EMPTY"] = df_split.iloc[:, 1089]
 
     # Ensure valid observation
     df = df[df["CHECK_EMPTY"] == ""]

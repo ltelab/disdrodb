@@ -89,23 +89,10 @@ def reader(
     df.columns = names
 
     # Derive raw drop arrays
-    def split_string(s):
-        vals = [v.strip() for v in s.split(",")]
-        c1 = ", ".join(vals[:32])
-        c2 = ", ".join(vals[32:64])
-        #    c3 = ", ".join(vals[64:])
-        series = pd.Series(
-            {
-                "raw_drop_concentration": c1,
-                "raw_drop_average_velocity": c2,
-                # "raw_drop_number": c3,
-            },
-        )
-        return series
-
-    splitted_string = df["TO_SPLIT"].apply(split_string)
-    df["raw_drop_concentration"] = splitted_string["raw_drop_concentration"]
-    df["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
+    # - raw_drop_number is missing !
+    df_split = df["TO_SPLIT"].str.split(",", expand=True)
+    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
+    df["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(",".join, axis=1)
 
     # Define datetime time column
     df["year"] = df["year"].str.replace(".0", "")
