@@ -1,4 +1,4 @@
-psd_model: "GammaPSD"
+psd_model: "LognormalPSD"
 optimization: "ML"
 optimization_kwargs:
   init_method: "None"
