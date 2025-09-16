@@ -236,6 +236,12 @@ def get_effective_sampling_area(sensor_name, diameter):
     if sensor_name == "RD80":
         sampling_area = 0.005  # m2
         return sampling_area
+    if sensor_name == "SWS250":  # TODO: L * (B - diameter / 2) ?
+        # Table 29 of the manual that the sample volume is 400cm3, path length?
+        # Distance between the end of the hood heaters is 291 mm.
+        # Adding a factor of 1.5 for better representation of the Tx-Rx distance: L= 436 mm.
+        sampling_area = 0.0091  # m2
+        return sampling_area
     raise NotImplementedError(f"Effective sampling area for {sensor_name} must yet to be specified in the software.")
 
 

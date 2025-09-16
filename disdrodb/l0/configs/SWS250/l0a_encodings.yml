@@ -1,0 +1,18 @@
+precipitation_rate: "float32"
+precipitation_accumulated: "float32"
+weather_code_synop_4680: "float32" # 'uint16'
+weather_code_metar_4678: "str"
+past_weather1: "str"
+past_weather2: "str"
+mor_visibility_5min: "float32"
+mor_visibility: "float32" # 'uint16'
+number_particles: "float32" #  'uint32'
+sensor_temperature: "float32" #  'uint16'
+obstruction_status: "str"
+total_extinction_coefficient: "float32"
+transmissometer_extinction_coefficient: "float32"
+back_scatter_extinction_coefficient: "float32"
+ambient_light_sensor_signal: "float32"
+sensor_status: "str" #
+ambient_light_sensor_signal_status: "str"
+raw_drop_number: "str"
