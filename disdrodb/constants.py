@@ -41,7 +41,7 @@ COORDINATES = [
     "time",
     "sample_interval",
 ]
-OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "PWS100"]
+OPTICAL_SENSORS = ["PARSIVEL", "PARSIVEL2", "LPM", "PWS100", "SWS250"]
 IMPACT_SENSORS = ["RD80"]
 
 PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]
