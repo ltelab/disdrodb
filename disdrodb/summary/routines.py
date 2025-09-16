@@ -247,8 +247,9 @@ def create_table_dsd_summary(df):
     df_stats["SKEWNESS"] = df_subset.skew()
     df_stats["KURTOSIS"] = df_subset.kurt()
 
-    # Round statistics
-    df_stats = df_stats.astype(float).round(2)
+    # Round float columns to nearest integer, leave ints unchanged
+    float_cols = df_stats.select_dtypes(include=["float"]).columns
+    df_stats[float_cols] = df_stats[float_cols].astype(float).round(decimals=2)
     return df_stats
 
 
@@ -327,15 +328,19 @@ def create_table_events_summary(df):
         events_stats.append(event_stats)
 
     df_events = pd.DataFrame.from_records(events_stats)
+
+    # Round float columns to nearest integer, leave ints unchanged
+    float_cols = df_events.select_dtypes(include=["float"]).columns
+    df_events[float_cols] = df_events[float_cols].astype(float).round(decimals=2)
     return df_events
 
 
 def prepare_latex_table_dsd_summary(df):
     """Prepare a DataFrame with DSD statistics for LaTeX table output."""
     df = df.copy()
-    # Round float columns to nearest integer, leave ints unchanged
-    float_cols = df.select_dtypes(include=["float"]).columns
-    df[float_cols] = df[float_cols].astype(float).round(decimals=2).astype(str)
+    # Cast numeric columns to string
+    numeric_cols = df.select_dtypes(include=["float", "int"]).columns
+    df[numeric_cols] = df[numeric_cols].astype(str)
     # Rename
     rename_dict = {
         "W": r"$W\,[\mathrm{g}\,\mathrm{m}^{-3}]$",  # [g/m3]
@@ -360,9 +365,9 @@ def prepare_latex_table_events_summary(df):
     # Round datetime to minutes
     df["start_time"] = df["start_time"].dt.strftime("%Y-%m-%d %H:%M")
     df["end_time"] = df["end_time"].dt.strftime("%Y-%m-%d %H:%M")
-    # Round float columns to nearest integer, leave ints unchanged
-    float_cols = df.select_dtypes(include=["float"]).columns
-    df[float_cols] = df[float_cols].astype(float).round(decimals=2).astype(str)
+    # Cast numeric columns to string
+    numeric_cols = df.select_dtypes(include=["float", "int"]).columns
+    df[numeric_cols] = df[numeric_cols].astype(str)
     # Rename
     rename_dict = {
         "start_time": r"Start",
@@ -687,6 +692,13 @@ def plot_raw_and_filtered_spectrums(
     # Drop number matrix
     cmap = plt.get_cmap("Spectral_r").copy()
     cmap.set_under("none")
+
+    if "time" in drop_number.dims:
+        drop_number = drop_number.sum(dim="time")
+    if "time" in raw_drop_number.dims:
+        raw_drop_number = raw_drop_number.sum(dim="time")
+    if "time" in theoretical_average_velocity.dims:
+        theoretical_average_velocity = theoretical_average_velocity.mean(dim="time")
 
     if norm is None:
         norm = LogNorm(1, None)
@@ -3729,8 +3741,9 @@ def define_filename(prefix, extension, data_source, campaign_name, station_name)
 
 def create_l2_dataframe(ds):
     """Create pandas Dataframe for L2 analysis."""
+    dims_to_drop = set(ds.dims).intersection({DIAMETER_DIMENSION, VELOCITY_DIMENSION})
     # - Drop array variables and convert to pandas
-    df = ds.drop_dims([DIAMETER_DIMENSION, VELOCITY_DIMENSION]).to_pandas()
+    df = ds.drop_dims(dims_to_drop).to_pandas()
     # - Drop coordinates
     coords_to_drop = ["velocity_method", "sample_interval", *RADAR_OPTIONS]
     df = df.drop(columns=coords_to_drop, errors="ignore")
@@ -3759,7 +3772,11 @@ def prepare_summary_dataset(ds, velocity_method="fall_velocity", source="drop_nu
 
     # Select only timesteps with R > 0
     # - We save R with 2 decimals accuracy ... so 0.01 is the smallest value
-    rainy_timesteps = np.logical_and(ds["Rm"].compute() >= 0.01, ds["R"].compute() >= 0.01)
+    if "Rm" in ds:  # in L2E
+        rainy_timesteps = np.logical_and(ds["Rm"].compute() >= 0.01, ds["R"].compute() >= 0.01)
+    else:  # L2M without Rm
+        rainy_timesteps = ds["R"].compute() >= 0.01
+
     ds = ds.isel(time=rainy_timesteps)
     return ds
 
