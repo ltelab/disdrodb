@@ -607,7 +607,7 @@ def estimate_gamma_parameters(
 
     """
     # Define initial guess for parameters
-    a = mu + 1  # (mu = a-1, a = mu+1)
+    a = mu + 1  # (mu = a-1, a = mu+1) (a > 0 --> mu=-1)
     scale = 1 / Lambda
     initial_params = [a, scale]
 
@@ -1208,13 +1208,13 @@ def apply_gamma_gs(
 ):
     """Estimate GammaPSD model parameters using Grid Search."""
     # Define parameters bounds
-    mu_bounds = (0.01, 20)
-    lambda_bounds = (0.01, 60)
+    mu_bounds = (-1, 40)
+    lambda_bounds = (0, 60)
 
     # Define initial set of parameters
-    mu_step = 0.5
+    mu_step = 0.25
     lambda_step = 0.5
-    mu_values = np.arange(0.01, 20, step=mu_step)
+    mu_values = np.arange(0, 40, step=mu_step)
     lambda_values = np.arange(0, 60, step=lambda_step)
 
     # First round of GS
@@ -1304,15 +1304,15 @@ def apply_lognormal_gs(
     """Estimate LognormalPSD model parameters using Grid Search."""
     # Define parameters bounds
     sigma_bounds = (0, np.inf)  # > 0
-    scale_bounds = (0.1, np.inf)  # > 0
+    scale_bounds = (0, np.inf)  # > 0
     # mu_bounds = (- np.inf, np.inf) # mu = np.log(scale)
 
     # Define initial set of parameters
     scale_step = 0.2
     sigma_step = 0.2
-    scale_values = np.arange(0.1, 20, step=scale_step)
-    mu_values = np.log(scale_values)  # TODO: define realistic values
-    sigma_values = np.arange(0, 20, step=sigma_step)  # TODO: define realistic values
+    scale_values = np.arange(0, 60, step=scale_step)  # TODO: define realistic values
+    mu_values = np.log(scale_values)
+    sigma_values = np.arange(0, 60, step=sigma_step)  # TODO: define realistic values
 
     # First round of GS
     Nt, mu, sigma = _apply_lognormal_gs(
@@ -1365,7 +1365,7 @@ def apply_normalized_gamma_gs(
 ):
     """Estimate NormalizedGammaPSD model parameters using Grid Search."""
     # Define set of mu values
-    mu_arr = np.arange(0.01, 20, step=0.01)
+    mu_arr = np.arange(-4, 30, step=0.01)
 
     # Perform grid search
     with suppress_warnings():

@@ -655,7 +655,10 @@ def _generate_l2m(
 
         # Define variables to load
         optimization_kwargs = l2m_options["optimization_kwargs"]
-        if "init_method" in optimization_kwargs:
+        if "init_method" in optimization_kwargs and optimization_kwargs["init_method"] is None:
+            optimization_kwargs["init_method"] = "None"
+
+        if optimization_kwargs.get("init_method", "None") != "None":
             init_method = optimization_kwargs["init_method"]
             moments = [f"M{order}" for order in init_method.replace("M", "")] + ["M1"]
         else:
@@ -924,23 +927,31 @@ def run_l2m_station(
 
             # -------------------------------------------------------------.
             # Create product directory
-            data_dir = create_product_directory(
-                # DISDRODB root directories
-                data_archive_dir=data_archive_dir,
-                metadata_archive_dir=metadata_archive_dir,
-                # Station arguments
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                # Processing options
-                product=product,
-                force=force,
-                # Option for L2E
-                sample_interval=accumulation_interval,
-                rolling=rolling,
-                # Option for L2M
-                model_name=model_name,
-            )
+            try:
+                data_dir = create_product_directory(
+                    # DISDRODB root directories
+                    data_archive_dir=data_archive_dir,
+                    metadata_archive_dir=metadata_archive_dir,
+                    # Station arguments
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    # Processing options
+                    product=product,
+                    force=force,
+                    # Option for L2E
+                    sample_interval=accumulation_interval,
+                    rolling=rolling,
+                    # Option for L2M
+                    model_name=model_name,
+                )
+            except Exception:
+                msg = (
+                    f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has been "
+                    + "skipped because the product already exists and force=False."
+                )
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                continue
 
             # Define logs directory
             logs_dir = create_logs_directory(
