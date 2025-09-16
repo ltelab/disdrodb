@@ -22,13 +22,36 @@ import xarray as xr
 from matplotlib.colors import LogNorm, Normalize
 
 
+def _single_plot_nd_distribution(drop_number_concentration, diameter, diameter_bin_width):
+    fig, ax = plt.subplots(1, 1)
+    ax.bar(
+        diameter,
+        drop_number_concentration,
+        width=diameter_bin_width,
+        edgecolor="darkgray",
+        color="lightgray",
+        label="Data",
+    )
+    ax.set_title("Drop number concentration (N(D))")
+    ax.set_xlabel("Drop diameter (mm)")
+    ax.set_ylabel("N(D) [m-3 mm-1]")
+    return ax
+
+
 def plot_nd(ds, var="drop_number_concentration", cmap=None, norm=None):
     """Plot drop number concentration N(D) timeseries."""
     # Check inputs
     if var not in ds:
         raise ValueError(f"{var} is not a xarray Dataset variable!")
+
     # Check only time and diameter dimensions are specified
-    # TODO: DIAMETER_DIMENSION, "time"
+    if "time" not in ds.dims:
+        ax = _single_plot_nd_distribution(
+            drop_number_concentration=ds[var],
+            diameter=ds["diameter_bin_center"],
+            diameter_bin_width=ds["diameter_bin_width"],
+        )
+        return ax
 
     # Select N(D)
     ds_var = ds[[var]].compute()
