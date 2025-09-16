@@ -68,6 +68,7 @@ relative_humidity:
   shuffle: true
   fletcher32: false
   contiguous: false
+  _FillValue: 65535
   chunksizes: 5000
 wetbulb_temperature:
   dtype: uint16
