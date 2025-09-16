@@ -21,7 +21,6 @@ from tempfile import TemporaryDirectory
 
 import pytest
 from dask import delayed
-from dask.distributed import Client
 
 from disdrodb.utils.dask import (
     check_parallel_validity,
@@ -120,6 +119,7 @@ class TestInitializeDaskCluster:
 
 def test_execute_tasks_safely_with_failures():
     """Test execute_tasks_safely."""
+    from dask.distributed import Client
 
     # Dummy functions
     @delayed

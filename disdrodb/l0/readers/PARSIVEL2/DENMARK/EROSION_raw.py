@@ -22,30 +22,30 @@ from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
 COLUMNS = [
-    'rainfall_rate_32bit',
-    'rainfall_accumulated_32bit',
-    'weather_code_synop_4680',
-    'weather_code_synop_4677',
-    'weather_code_metar_4678',
-    'weather_code_nws',
-    'reflectivity_32bit',
-    'mor_visibility',
-    'sample_interval',
-    'laser_amplitude',
-    'number_particles',
-    'sensor_temperature',
-    'sensor_heating_current',
-    'sensor_battery_voltage',
-    'sensor_status',
-    'rain_kinetic_energy',
-    'snowfall_rate',
-    'raw_drop_concentration',
-    'raw_drop_average_velocity',
-    'raw_drop_number'
+    "rainfall_rate_32bit",
+    "rainfall_accumulated_32bit",
+    "weather_code_synop_4680",
+    "weather_code_synop_4677",
+    "weather_code_metar_4678",
+    "weather_code_nws",
+    "reflectivity_32bit",
+    "mor_visibility",
+    "sample_interval",
+    "laser_amplitude",
+    "number_particles",
+    "sensor_temperature",
+    "sensor_heating_current",
+    "sensor_battery_voltage",
+    "sensor_status",
+    "rain_kinetic_energy",
+    "snowfall_rate",
+    "raw_drop_concentration",
+    "raw_drop_average_velocity",
+    "raw_drop_number",
 ]
 
-    
-def read_par_format(filepath, logger): 
+
+def read_par_format(filepath, logger):
     """Read .par data format."""
     ##------------------------------------------------------------------------.
     #### Define column names
@@ -95,26 +95,26 @@ def read_par_format(filepath, logger):
         reader_kwargs=reader_kwargs,
         logger=logger,
     )
-    
+
     ##------------------------------------------------------------------------.
-    #### Adapt the dataframe to adhere to DISDRODB L0 standards   
+    #### Adapt the dataframe to adhere to DISDRODB L0 standards
     n_separators, counts = np.unique(df_raw["TO_PARSE"].str.count(","), return_counts=True)
     n_separators = n_separators[counts.argmax()]
-    
-    # Assign names 
+
+    # Assign names
     if n_separators == 1113:
         nsplit = 25
         names = [
-            "id", 
-            "y", 
-            "m", 
+            "id",
+            "y",
+            "m",
             "d",
-            "hh", 
-            "mm", 
+            "hh",
+            "mm",
             "ss",
             "rainfall_accumulated_32bit",
             "rainfall_rate_32bit",
-            "snowfall_rate", 
+            "snowfall_rate",
             "reflectivity_32bit",
             "rain_kinetic_energy",
             "mor_visibility",
@@ -124,28 +124,28 @@ def read_par_format(filepath, logger):
             # "weather_code_nws",
             "firmware_iop",
             "firmware_dsp",
-            "sensor_status", 
-            "htst", 
-            "sensor_temperature", 
+            "sensor_status",
+            "htst",
+            "sensor_temperature",
             "sensor_battery_voltage",
             "laser_amplitude",
             "number_particles",
             "nPART",
             "TO_SPLIT",
-         ]
+        ]
     elif n_separators == 1114:
         nsplit = 26
         names = [
-            "id", 
-            "y", 
-            "m", 
+            "id",
+            "y",
+            "m",
             "d",
-            "hh", 
-            "mm", 
+            "hh",
+            "mm",
             "ss",
             "rainfall_accumulated_32bit",
             "rainfall_rate_32bit",
-            "snowfall_rate", 
+            "snowfall_rate",
             "reflectivity_32bit",
             "rain_kinetic_energy",
             "mor_visibility",
@@ -155,63 +155,62 @@ def read_par_format(filepath, logger):
             "weather_code_nws",
             "firmware_iop",
             "firmware_dsp",
-            "sensor_status", 
-            "htst", 
-            "sensor_temperature", 
+            "sensor_status",
+            "htst",
+            "sensor_temperature",
             "sensor_battery_voltage",
             "laser_amplitude",
             "number_particles",
             "nPART",
             "TO_SPLIT",
-         ]
-    else: 
+        ]
+    else:
         raise NotImplementedError("Unrecognized number of columns")
-    
+
     # Remove corrupted rows
-    df_raw = df_raw[df_raw["TO_PARSE"].str.count(",")== n_separators]
-    
+    df_raw = df_raw[df_raw["TO_PARSE"].str.count(",") == n_separators]
+
     # Create ID and Value columns
     df = df_raw["TO_PARSE"].str.split(",", expand=True, n=nsplit)
-       
-    # Assign names 
+
+    # Assign names
     df.columns = names
-         
-    # Define datetime "time" column 
+
+    # Define datetime "time" column
     df["time"] = pd.to_datetime(
-        dict(year=df["y"], month=df["m"], day=df["d"],
-             hour=df["hh"], minute=df["mm"], second=df["ss"])
+        {"year": df["y"], "month": df["m"], "day": df["d"], "hour": df["hh"], "minute": df["mm"], "second": df["ss"]},
     )
-    
+
     # Retrieve raw array
     df_split = df["TO_SPLIT"].str.split(",", expand=True)
-    df["raw_drop_concentration"] =  df_split.iloc[:, :32].agg(",".join, axis=1) 
+    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
     df["raw_drop_average_velocity"] = df_split.iloc[:, 32:].agg(",".join, axis=1)
     df["raw_drop_number"] = df_split.iloc[:, 64:].agg(",".join, axis=1)
     df["raw_drop_number"] = df["raw_drop_number"].str.replace("-9", "0")
-    del df_split 
-    
+    del df_split
+
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-        "nPART", 
-        "htst",  
-        "id", 
-        "y", 
-        "m", 
+        "nPART",
+        "htst",
+        "id",
+        "y",
+        "m",
         "d",
-        "hh", 
-        "mm", 
+        "hh",
+        "mm",
         "ss",
         "firmware_iop",
         "firmware_dsp",
         "TO_SPLIT",
     ]
     df = df.drop(columns=columns_to_drop)
-    
+
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
 
-   
-def read_asdo_format(filepath, logger): 
+
+def read_asdo_format(filepath, logger):
     """Read ASDO format."""
     ##------------------------------------------------------------------------.
     #### Define column names
@@ -284,7 +283,7 @@ def read_asdo_format(filepath, logger):
     # Create the dataframe with each row corresponding to a timestep
     # group -> row, ID -> column
     df["_group"] = (df["ID"].astype(int).diff() <= 0).cumsum()
-    df = df.pivot(index="_group", columns="ID") # noqa
+    df = df.pivot(index="_group", columns="ID")  # noqa
     df.columns = df.columns.get_level_values("ID")
     df = df.reset_index(drop=True)
 
@@ -314,7 +313,7 @@ def read_asdo_format(filepath, logger):
         # "22": "station_name",
         # "23": "station_number",
         # "24": "rainfall_amount_absolute_32bit",
-        # "25": "error_code",     
+        # "25": "error_code",
         # "26": "sensor_temperature_pcb",
         # "27": "sensor_temperature_receiver",
         # "28": "sensor_temperature_trasmitter",
@@ -366,7 +365,8 @@ def reader(
     logger=None,
 ):
     """Reader."""
-    if filepath.endswith(".par"):  # e.g. in Thyboron
+    # Choose the appropriate reader based on the file extension
+    if filepath.endswith(".par"):  # e.g. in Thyboron  # noqa: SIM108
         df = read_par_format(filepath, logger)
     else:  # atm4
         df = read_asdo_format(filepath, logger)
@@ -377,6 +377,6 @@ def reader(
     if len(missing_columns) > 0:
         for column in missing_columns:
             df[column] = "NaN"
-    
+
     # Return the dataframe adhering to DISDRODB L0 standards
-    return df 
+    return df

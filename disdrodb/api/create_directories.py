@@ -85,8 +85,6 @@ def create_l0_directory_structure(
     ``product = "L0A"`` will call ``run_l0a``.
     ``product = "L0B"`` will call ``run_l0b_nc``.
     """
-    from disdrodb.configs import get_data_archive_dir, get_metadata_archive_dir
-
     # Retrieve the DISDRODB Metadata Archive directory
     data_archive_dir = get_data_archive_dir(data_archive_dir)
     metadata_archive_dir = get_metadata_archive_dir(metadata_archive_dir)

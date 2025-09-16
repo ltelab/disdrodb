@@ -86,7 +86,7 @@ class TestBuildWebserverWgetCommand:
         """build_webserver_wget_command includes -q and --timestamping when verbose and force are True."""
         url = "http://example.com/data/"
         cut_dirs = 2
-        dst_dir = "/tmp/download"
+        dst_dir = "/path/to/download/directory"
         cmd = build_webserver_wget_command(url, cut_dirs=cut_dirs, dst_dir=dst_dir, force=True, verbose=True)
 
         assert cmd[0] == "wget"
@@ -126,7 +126,7 @@ class TestBuildFTPServerWgetCommand:
         cmd = build_ftp_server_wget_command(
             url="ftp.test.com/data/",
             cut_dirs=2,
-            dst_dir="/tmp/out",
+            dst_dir="/dummy/path",
             force=True,
             verbose=True,
         )
@@ -135,7 +135,7 @@ class TestBuildFTPServerWgetCommand:
         assert "--no-clobber" not in cmd
         assert "-q" not in cmd
         assert "--cut-dirs=2" in cmd
-        assert cmd[-2] == "/tmp/out"
+        assert cmd[-2] == "/dummy/path"
         assert cmd[-1] == "ftp://anonymous:disdrodb@ftp.test.com/data/"
 
     def test_force_false_and_verbose_false(self):

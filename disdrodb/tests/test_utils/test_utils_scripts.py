@@ -79,5 +79,5 @@ def test_parse_archive_dir():
     archive_dir = "None"
     assert parse_archive_dir(archive_dir) is None
 
-    archive_dir = "/tmp/test10/DISDRODB"
+    archive_dir = "/path/to/DISDRODB"
     assert parse_archive_dir(archive_dir) == archive_dir

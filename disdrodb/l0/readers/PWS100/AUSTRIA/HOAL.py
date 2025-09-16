@@ -18,7 +18,9 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for TU Wien PWS100 raw text data."""
 import os
+
 import pandas as pd
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
@@ -77,7 +79,7 @@ def reader_spectrum(
         reader_kwargs=reader_kwargs,
         logger=logger,
     )
-  
+
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove corrupted rows (and header)
@@ -85,28 +87,28 @@ def reader_spectrum(
 
     # Split into columns
     df = df["TO_SPLIT"].str.split(",", expand=True, n=2)
-    
+
     # Assign columns names
     names = [
         "time",
         "record",
-        "raw_drop_number", # "Size_0.00_Vel_0.00","Size_0.00_Vel_0.10", ...
+        "raw_drop_number",  # "Size_0.00_Vel_0.00","Size_0.00_Vel_0.10", ...
     ]
     df.columns = names
 
     # Add datetime time column
     df["time"] = df["time"].str.replace('"', "")
     df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
-    
+
     # Clean raw_drop_number '"NAN"' --> 'NaN'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace('"NAN"', "NaN")
-    
+
     # Drop columns not needed
     df = df.drop(columns=["record"])
-    return df 
+    return df
 
 
-def reader_met_file(filepath, logger): 
+def reader_met_file(filepath, logger):
     """Reader MET file."""
     ##------------------------------------------------------------------------.
     #### Define column names
@@ -157,19 +159,18 @@ def reader_met_file(filepath, logger):
         reader_kwargs=reader_kwargs,
         logger=logger,
     )
-  
-    
+
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove corrupted rows
     df = df[df["TO_SPLIT"].str.count(",") == 40]
-        
+
     # Split into columns
     df = df["TO_SPLIT"].str.split(",", expand=True)
-    
+
     # Assign columns names
     names = [
-        "time", 
+        "time",
         "RECORD",
         "PWS100_Year",
         "PWS100_Month",
@@ -212,11 +213,11 @@ def reader_met_file(filepath, logger):
         "PWS100_PowerStatus",
     ]
     df.columns = names
-    
+
     # Remove rows with only NaN
     df = df[df["PWS100_Year"] != '"NAN"']
-        
-    # Define type distribution variable 
+
+    # Define type distribution variable
     type_distribution_columns = [
         "PWS100_PartType_Drizzle",
         "PWS100_PartType_FreezingDrizzle",
@@ -231,8 +232,8 @@ def reader_met_file(filepath, logger):
         "PWS100_PartType_Unknown",
     ]
     df["type_distribution"] = df[type_distribution_columns].agg(",".join, axis=1)
-    
-    # Define alarms 
+
+    # Define alarms
     # - should be 16 values
     # alarms_columns = [
     #     "PWS100_VISAlarm1",
@@ -246,40 +247,40 @@ def reader_met_file(filepath, logger):
     #     "PWS100_PowerStatus",
     # ]
     # df["alarms"] = df[alarms_columns].agg(",".join, axis=1)
-   
+
     # Define datetime "time" column from filename
     df["time"] = df["time"].str.replace('"', "")
     df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
     # # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
-          "RECORD",
-          "PWS100_Year",
-          "PWS100_Month",
-          "PWS100_Day",
-          "PWS100_Hours",
-          "PWS100_Minutes",
-          "PWS100_Seconds",
-          "PWS100_PartType_Drizzle",
-          "PWS100_PartType_FreezingDrizzle",
-          "PWS100_PartType_Rain",
-          "PWS100_PartType_FreezingRain",
-          "PWS100_PartType_SnowGrains",
-          "PWS100_PartType_SnowFlakes",
-          "PWS100_PartType_IcePellets",
-          "PWS100_PartType_Hail",
-          "PWS100_PartType_Graupel",
-          "PWS100_PartType_Error",
-          "PWS100_PartType_Unknown",
-          "PWS100_VISAlarm1",
-          "PWS100_VISAlarm2",
-          "PWS100_VISAlarm3",
-          "PWS100_CleanLaserWindow",
-          "PWS100_CleanUpperWindow",
-          "PWS100_CleanLowerWindow",
-          "PWS100_FaultStatus_EN",
-          "PWS100_PowerStatus",
-          "PWS100_PWCode_NWS_String",
+        "RECORD",
+        "PWS100_Year",
+        "PWS100_Month",
+        "PWS100_Day",
+        "PWS100_Hours",
+        "PWS100_Minutes",
+        "PWS100_Seconds",
+        "PWS100_PartType_Drizzle",
+        "PWS100_PartType_FreezingDrizzle",
+        "PWS100_PartType_Rain",
+        "PWS100_PartType_FreezingRain",
+        "PWS100_PartType_SnowGrains",
+        "PWS100_PartType_SnowFlakes",
+        "PWS100_PartType_IcePellets",
+        "PWS100_PartType_Hail",
+        "PWS100_PartType_Graupel",
+        "PWS100_PartType_Error",
+        "PWS100_PartType_Unknown",
+        "PWS100_VISAlarm1",
+        "PWS100_VISAlarm2",
+        "PWS100_VISAlarm3",
+        "PWS100_CleanLaserWindow",
+        "PWS100_CleanUpperWindow",
+        "PWS100_CleanLowerWindow",
+        "PWS100_FaultStatus_EN",
+        "PWS100_PowerStatus",
+        "PWS100_PWCode_NWS_String",
     ]
     df = df.drop(columns=columns_to_drop)
     return df
@@ -291,7 +292,7 @@ def reader(
     logger=None,
 ):
     """Reader."""
-   # Retrieve spectrum filepath
+    # Retrieve spectrum filepath
     spectrum_filepath = filepath.replace("WS_MET_PWS100_Data", "WS_MET_Size_Vel_distr")
 
     # Read integral variables
@@ -318,4 +319,3 @@ def reader(
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
- 

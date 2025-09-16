@@ -17,12 +17,14 @@
 # -----------------------------------------------------------------------------.
 """Reader for HYDROX PARSIVEL2 disdrometer located at Trafoi (Italy)."""
 import os
+
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
-def read_old_format(filepath, logger): 
+
+def read_old_format(filepath, logger):
     """Read old format."""
     ##------------------------------------------------------------------------.
     #### Define column names
@@ -80,8 +82,8 @@ def read_old_format(filepath, logger):
     df = df[df["TO_SPLIT"].str.count(";").isin([7, 1031])]
 
     # Split into columns
-    df = df["TO_SPLIT"].str.split(";", expand=True, n=7) 
-    
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=7)
+
     # Assign columns names
     names = [
         "date",
@@ -115,7 +117,7 @@ def read_old_format(filepath, logger):
     # Add 0 before every , if , not preceded by a digit
     # Example: ',,1,,' --> '0,0,1,0,'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
-       
+
     # Replace ending 999; with 0;
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0", regex=True)
 
@@ -123,7 +125,8 @@ def read_old_format(filepath, logger):
     return df
 
 
-def read_new_format(filepath, logger): 
+def read_new_format(filepath, logger):
+    """Read new NOA data format."""
     ##------------------------------------------------------------------------.
     #### Define column names
     column_names = ["TO_SPLIT"]
@@ -180,8 +183,8 @@ def read_new_format(filepath, logger):
     df = df[df["TO_SPLIT"].str.count(";").isin([11, 1035])]
 
     # Split into columns
-    df = df["TO_SPLIT"].str.split(";", expand=True, n=11) 
-    
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=11)
+
     # Assign columns names
     names = [
         "date",
@@ -231,6 +234,6 @@ def reader(
 ):
     """Reader."""
     date = int(os.path.basename(filepath)[-12:-4])
-    if date > 20140000: 
+    if date > 20140000:
         return read_new_format(filepath, logger)
     return read_old_format(filepath, logger)

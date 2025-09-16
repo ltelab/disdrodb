@@ -496,9 +496,8 @@ def test_identify_missing_metadata_coords(tmp_path):
         metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
     )
-
-    function_return = identify_missing_metadata_coords([metadata_filepath])
-    assert function_return is None
+    # Test does not raise error
+    identify_missing_metadata_coords([metadata_filepath])
 
     # Test bad coordinates
     metadata_dict = {"longitude": "8r0", "latitude": "170", "platform_type": "fixed"}

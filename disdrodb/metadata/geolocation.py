@@ -60,8 +60,6 @@ def infer_altitude(latitude, longitude, dem="aster30m"):
     ----------
     https://www.opentopodata.org/api/
     """
-    import requests
-
     url = f"https://api.opentopodata.org/v1/{dem}?locations={latitude},{longitude}"
     r = requests.get(url)
 

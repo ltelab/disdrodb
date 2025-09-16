@@ -18,6 +18,7 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for Granada Parsivel2 raw text data."""
 import pandas as pd
+
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
@@ -28,7 +29,6 @@ def reader(
     logger=None,
 ):
     """Reader."""
-
     ##------------------------------------------------------------------------.
     #### Define column names
     column_names = ["TO_PARSE"]
@@ -73,16 +73,16 @@ def reader(
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Remove corrupted rows
     df_raw = df_raw[df_raw["TO_PARSE"].str.count(",") == 1106]
-    
+
     # Create ID and Value columns
     df = df_raw["TO_PARSE"].str.split(",", expand=True, n=19)
-   
-    # Assign names 
+
+    # Assign names
     names = [
-        "time", 
+        "time",
         "id",
         "rainfall_rate_32bit",
-        "snowfall_rate", 
+        "snowfall_rate",
         "rainfall_accumulated_32bit",
         "weather_code_synop_4680",
         "reflectivity_32bit",
@@ -98,23 +98,23 @@ def reader(
         "sensor_status",
         "error_code",
         "number_particles",
-        "TO_SPLIT",  
+        "TO_SPLIT",
     ]
     df.columns = names
-    
-    # Define datetime "time" column 
+
+    # Define datetime "time" column
     df["time"] = df["time"].str.replace('"', "")
-    df["time"] = pd.to_datetime( df["time"], format="%Y-%m-%d %H:%M:%S")
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S")
 
     # Retrieve raw array
     df_split = df["TO_SPLIT"].str.split(",", expand=True)
-    df["raw_drop_concentration"] =  df_split.iloc[:, :32].agg(",".join, axis=1) 
+    df["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
     df["raw_drop_average_velocity"] = df_split.iloc[:, 32:].agg(",".join, axis=1)
     df["raw_drop_number"] = df_split.iloc[:, 64:].agg(",".join, axis=1)
     del df_split
 
     # Drop columns not agreeing with DISDRODB L0 standards
     df = df.drop(columns=["TO_SPLIT", "id"])
-    
+
     # Return the dataframe adhering to DISDRODB L0 standards
     return df

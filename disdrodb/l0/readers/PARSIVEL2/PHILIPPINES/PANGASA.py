@@ -73,15 +73,15 @@ def read_txt_file(file, filename, logger):
     # Empty file, return None
     if len(df) == 0:
         raise ValueError(f"{filename} is empty.")
-    
+
     # Create ID and Value columns
     df = df["TO_PARSE"].str.split(":", expand=True, n=1)
     df.columns = ["ID", "Value"]
-    
+
     # Select only rows with values
     df = df[df["Value"].astype(bool)]
     df = df[df["Value"].apply(lambda x: x is not None)]
-    
+
     # Drop rows with invalid IDs
     # - Corrupted rows
     valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
@@ -92,7 +92,7 @@ def read_txt_file(file, filename, logger):
     df = df.pivot(index="_group", columns="ID")  # noqa
     df.columns = df.columns.get_level_values("ID")
     df = df.reset_index(drop=True)
-    
+
     # Assign column names
     column_dict = {
         "01": "rainfall_rate_32bit",
@@ -135,7 +135,7 @@ def read_txt_file(file, filename, logger):
         "91": "raw_drop_average_velocity",
         "93": "raw_drop_number",
     }
-       
+
     # Identify missing columns and add NaN
     expected_columns = np.array(list(column_dict.keys()))
     missing_columns = expected_columns[np.isin(expected_columns, df.columns, invert=True)].tolist()
@@ -145,7 +145,7 @@ def read_txt_file(file, filename, logger):
 
     # Rename columns
     df = df.rename(column_dict, axis=1)
-    
+
     # Keep only columns defined in the dictionary
     df = df[list(column_dict.values())]
 
@@ -165,6 +165,7 @@ def read_txt_file(file, filename, logger):
     # ]
     # df = df.drop(columns=columns_to_drop)
     return df
+
 
 @is_documented_by(reader_generic_docstring)
 def reader(

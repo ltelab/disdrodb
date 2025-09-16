@@ -83,8 +83,8 @@ def reader(
     df = df[df["TO_SPLIT"].str.count(";").isin([11, 1035])]
 
     # Split into columns
-    df = df["TO_SPLIT"].str.split(";", expand=True, n=11) 
-    
+    df = df["TO_SPLIT"].str.split(";", expand=True, n=11)
+
     # Assign columns names
     names = [
         "date",
@@ -119,7 +119,7 @@ def reader(
     # Add 0 before every , if , not preceded by a digit
     # Example: ',,1,,' --> '0,0,1,0,'
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
-    
+
     # Replace ending 999; with 0;
     df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"999;$", "0", regex=True)
 

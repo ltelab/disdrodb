@@ -18,7 +18,8 @@
 # -----------------------------------------------------------------------------.
 """DISDRODB reader for DWD stations."""
 import os
-import numpy as np 
+
+import numpy as np
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -103,14 +104,15 @@ COLUMNS = [
     "raw_drop_number",
 ]
 
-def read_synop_file(filepath, logger): 
+
+def read_synop_file(filepath, logger):
     """Read SYNOP 10 min file."""
     ##------------------------------------------------------------------------.
-    #### Define column names 
+    #### Define column names
     column_names = [
-        "time", 
-        "temperature_2m", 
-        "relative_humidity", 
+        "time",
+        "temperature_2m",
+        "relative_humidity",
         "precipitation_accumulated_10min",
         "total_cloud_cover",
         "wind_speed",
@@ -159,7 +161,7 @@ def read_synop_file(filepath, logger):
         reader_kwargs=reader_kwargs,
         logger=logger,
     )
-       
+
     # Define datetime "time" column
     df["time"] = pd.to_datetime(df["time"], format="%Y%m%d%H%M%S", errors="coerce")
 
@@ -167,25 +169,24 @@ def read_synop_file(filepath, logger):
     return df
 
 
-def parse_format_v1(df): 
+def parse_format_v1(df):
     """Parse DWD format v1."""
-    raise NotImplementedError()
+    raise NotImplementedError
 
 
-def parse_format_v2(df): 
+def parse_format_v2(df):
     """Parse DWD format v2."""
-  
     # Count number of delimiters to identify valid rows
     df = df[df["TO_PARSE"].str.count(";") == 520]
- 
+
     # Split by ; delimiter (before raw drop number)
     df = df["TO_PARSE"].str.split(";", expand=True, n=81)
 
     # Assign column names
     column_names = [
-        "dummy_1", 
-        "dummy_2", 
-        "start_identifier", 
+        "dummy_1",
+        "dummy_2",
+        "start_identifier",
         "dummy_3",
         "device_address",
         "sensor_date",
@@ -272,18 +273,18 @@ def parse_format_v2(df):
     df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
     df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
 
-     # Drop rows with invalid raw_drop_number
+    # Drop rows with invalid raw_drop_number
     df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Drop columns not agreeing with DISDRODB L0 standards
     columns_to_drop = [
         "device_address",
-        "start_identifier", 
+        "start_identifier",
         "sensor_date",
         "sensor_time",
-        "dummy_1", 
-        "dummy_2", 
-        "dummy_3",  
+        "dummy_1",
+        "dummy_2",
+        "dummy_3",
     ]
     df = df.drop(columns=columns_to_drop)
     return df
@@ -293,21 +294,21 @@ def parse_format_v3(df):
     """Parse DWD format v3."""
     # Count number of delimiters to identify valid rows
     df = df[df["TO_PARSE"].str.count(";") == 498]
- 
+
     # Split by ; delimiter (before raw drop number)
     df = df["TO_PARSE"].str.split(";", expand=True, n=59)
 
     # Assign column names
     column_names = [
-        "dummy_1", 
-        "dummy_2", 
-        "dummy_3", 
+        "dummy_1",
+        "dummy_2",
+        "dummy_3",
         "dummy_4",
         "device_address",
         "sensor_serial_number",
-        "software_version", 
-        "dummy_5", 
-        "dummy_6", 
+        "software_version",
+        "dummy_5",
+        "dummy_6",
         "sensor_date",
         "sensor_time",
         "weather_code_synop_4677_5min",
@@ -408,11 +409,11 @@ def parse_format_v3(df):
         "software_version",
         "sensor_date",
         "sensor_time",
-        "dummy_1", 
-        "dummy_2", 
-        "dummy_3",  
-        "dummy_4", 
-        "dummy_5", 
+        "dummy_1",
+        "dummy_2",
+        "dummy_3",
+        "dummy_4",
+        "dummy_5",
         "dummy_6",
     ]
     df = df.drop(columns=columns_to_drop)
@@ -475,11 +476,10 @@ def reader(
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     filename = os.path.basename(filepath)
-    if filename.startswith("3_"): 
+    if filename.startswith("3_"):
         return parse_format_v3(df)
-    elif filename.startswith("2_"): 
+    if filename.startswith("2_"):
         return parse_format_v2(df)
-    elif filename.startswith("1_"): 
+    if filename.startswith("1_"):
         return parse_format_v1(df)
     raise ValueError(f"Not implemented parser for DWD {filepath} data format.")
-
