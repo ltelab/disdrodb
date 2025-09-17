@@ -72,7 +72,7 @@ from disdrodb.utils.routines import (
 )
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
-    get_resampling_information,
+    get_sampling_information,
 )
 from disdrodb.utils.writer import write_product
 
@@ -124,7 +124,7 @@ class ProcessingOptions:
             product_options = dict_product_options[temporal_resolution].copy()
 
             # Retrieve accumulation_interval and rolling option
-            accumulation_interval, rolling = get_resampling_information(temporal_resolution)
+            accumulation_interval, rolling = get_sampling_information(temporal_resolution)
 
             # Extract processing options
             archive_options = product_options.pop("archive_options")
@@ -492,7 +492,7 @@ def run_l2e_station(
         product_options = l2e_processing_options.get_product_options(temporal_resolution)
 
         # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_resampling_information(temporal_resolution)
+        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
 
         # Precompute required scattering tables
         if product_options["radar_enabled"]:
@@ -842,7 +842,7 @@ def run_l2m_station(
     for temporal_resolution in temporal_resolutions:
 
         # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_resampling_information(temporal_resolution)
+        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
 
         # ------------------------------------------------------------------.
         # Avoid generation of rolling products for source sample interval !
@@ -901,6 +901,7 @@ def run_l2m_station(
         # -----------------------------------------------------------------.
         # Loop over distributions to fit
         # model_name = "GAMMA_ML"
+        # model_name = "LOGNORMAL_GS_ND_MAE"
         # model_options =  l2m_options["models"][model_name]
         # Retrieve list of models to fit
         models = global_product_options.pop("models")

@@ -1,4 +1,4 @@
-psd_model: "LogNormalPSD"
+psd_model: "LognormalPSD"
 optimization: "GS"
 optimization_kwargs:
   target: "ND"

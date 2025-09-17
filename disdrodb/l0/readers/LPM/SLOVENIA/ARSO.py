@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""DISDRODB reader for ARSO LPM sensors not measuring wind."""
+"""DISDRODB reader for ARSO LPM sensors."""
 import pandas as pd
 
 from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
@@ -118,6 +118,9 @@ def read_SM05_telegram(
 
     # - Avoid first column to become df index !!!
     reader_kwargs["index_col"] = False
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin"
 
     # Since column names are expected to be passed explicitly, header is set to None
     reader_kwargs["header"] = None
@@ -283,4 +286,7 @@ def reader(
     logger=None,
 ):
     """Reader."""
-    pass
+    return read_SM05_telegram(
+        filepath=filepath,
+        logger=logger,
+    )

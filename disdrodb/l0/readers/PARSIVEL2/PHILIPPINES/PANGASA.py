@@ -153,6 +153,11 @@ def read_txt_file(file, filename, logger):
     time_str = filename.split("_")[-1].replace(".txt", "")
     df["time"] = pd.to_datetime(time_str, format="%Y%m%d%H%M%S", errors="coerce")
 
+    # Keep only rows with valid raw_drop_number
+    df = df[df["raw_drop_number"].str.count(";") == 1024]
+    if len(df) == 0:
+        raise ValueError("Invalid raw drop number field.")
+
     # Drop columns not agreeing with DISDRODB L0 standards
     # columns_to_drop = [
     #     # "sensor_date",
@@ -174,6 +179,11 @@ def reader(
 ):
     """Reader."""
     import zipfile
+
+    # return read_txt_file(file=filepath,
+    #                      filename=os.path.basename(filepath),
+    #                      logger=logger,
+    #                      )
 
     # ---------------------------------------------------------------------.
     #### Iterate over all files (aka timesteps) in the daily zip archive

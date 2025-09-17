@@ -1440,6 +1440,7 @@ def create_summary(
     campaign_names=None,
     station_names=None,
     parallel=False,
+    temporal_resolution="1MIN",
     data_archive_dir=None,
     metadata_archive_dir=None,
 ):
@@ -1493,6 +1494,7 @@ def create_summary(
             station_name=station_name,
             # Processing option
             parallel=parallel,
+            temporal_resolution=temporal_resolution,
         )
     print("Creation of station summaries has terminated.")
 

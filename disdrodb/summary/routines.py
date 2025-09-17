@@ -43,6 +43,7 @@ from disdrodb.utils.manipulations import (
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
+from disdrodb.utils.time import get_sampling_information
 from disdrodb.utils.warnings import suppress_warnings
 from disdrodb.utils.yaml import write_yaml
 from disdrodb.viz import compute_dense_lines, max_blend_images, to_rgba
@@ -3793,10 +3794,13 @@ def generate_station_summary(ds, summary_dir_path, data_source, campaign_name, s
     # Ensure all data are in memory
     ds = ds.compute()
 
+    # Keep only timesteps with at least 3 Nbins to remove noise
+    valid_idx = np.where(ds["Nbins"] >= 3)[0]
+    ds = ds.isel(time=valid_idx)
+
     ####---------------------------------------------------------------------.
     #### Create drop spectrum figures and statistics
     # Compute sum of raw and filtered spectrum over time
-
     raw_drop_number = ds["raw_drop_number"].sum(dim="time")
     drop_number = ds["drop_number"].sum(dim="time")
 
@@ -4170,6 +4174,7 @@ def create_station_summary(
     station_name,
     parallel=False,
     data_archive_dir=None,
+    temporal_resolution="1MIN",
 ):
     """Create summary figures and tables for a DISDRODB station."""
     # Print processing info
@@ -4186,6 +4191,10 @@ def create_station_summary(
     )
     os.makedirs(summary_dir_path, exist_ok=True)
 
+    # Define product_kwargs
+    sample_interval, rolling = get_sampling_information(temporal_resolution)
+    product_kwargs = {"rolling": rolling, "sample_interval": sample_interval}
+
     # Load L2E 1MIN dataset
     ds = disdrodb.open_dataset(
         data_archive_dir=data_archive_dir,
@@ -4193,7 +4202,7 @@ def create_station_summary(
         campaign_name=campaign_name,
         station_name=station_name,
         product="L2E",
-        product_kwargs={"rolling": False, "sample_interval": 60},
+        product_kwargs=product_kwargs,
         parallel=parallel,
         chunks=-1,
         compute=True,

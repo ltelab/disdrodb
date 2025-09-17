@@ -389,6 +389,12 @@ def parse_format_v3(df):
     ]
     df.columns = column_names
 
+    # Sanitize columns
+    df["current_heating_voltage_supply"] = df["current_heating_voltage_supply"].str.replace("///", "NaN")
+    df["current_heating_house"] = df["current_heating_house"].str.replace("////", "NaN")
+    df["current_heating_heads"] = df["current_heating_heads"].str.replace("////", "NaN")
+    df["current_heating_carriers"] = df["current_heating_carriers"].str.replace("////", "NaN")
+
     # Define datetime "time" column
     df["time"] = df["sensor_date"] + "-" + df["sensor_time"]
     df["time"] = pd.to_datetime(df["time"], format="%d.%m.%y-%H:%M:%S", errors="coerce")
@@ -397,7 +403,7 @@ def parse_format_v3(df):
     df = df[df["raw_drop_number"].astype(str).str.len() == 1759]
 
     # Identify missing columns and add NaN
-    missing_columns = COLUMNS[np.isin(COLUMNS, df.columns, invert=True)].tolist()
+    missing_columns = np.array(COLUMNS)[np.isin(COLUMNS, df.columns, invert=True)].tolist()
     if len(missing_columns) > 0:
         for column in missing_columns:
             df[column] = "NaN"

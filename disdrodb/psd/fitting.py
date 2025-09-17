@@ -1310,7 +1310,7 @@ def apply_lognormal_gs(
     # Define initial set of parameters
     scale_step = 0.2
     sigma_step = 0.2
-    scale_values = np.arange(0, 60, step=scale_step)  # TODO: define realistic values
+    scale_values = np.arange(scale_step, 60, step=scale_step)  # TODO: define realistic values
     mu_values = np.log(scale_values)
     sigma_values = np.arange(0, 60, step=sigma_step)  # TODO: define realistic values
 
@@ -1333,7 +1333,8 @@ def apply_lognormal_gs(
     # Second round of GS
     sigma_values = define_param_range(sigma, sigma_step, bounds=sigma_bounds)
     scale_values = define_param_range(np.exp(mu), scale_step, bounds=scale_bounds)
-    mu_values = np.log(scale_values)
+    with suppress_warnings():
+        mu_values = np.log(scale_values)
     Nt, mu, sigma = _apply_lognormal_gs(
         mu_values=mu_values,
         sigma_values=sigma_values,

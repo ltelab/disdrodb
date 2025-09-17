@@ -22,7 +22,7 @@ import os
 from typing import Optional, Union
 
 import numpy as np
-from pydantic import BaseModel, ValidationError, field_validator, model_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator, model_validator
 
 from disdrodb.api.configs import available_sensor_names, get_sensor_configs_dir, read_config_file
 from disdrodb.l0.standards import (
@@ -47,7 +47,7 @@ CONFIG_FILES_LIST = [
 ]
 
 
-def _check_yaml_files_exists(sensor_name: str) -> None:
+def check_yaml_files_exists(sensor_name: str) -> None:
     """Check if all L0 config YAML files exist.
 
     Parameters
@@ -64,7 +64,7 @@ def _check_yaml_files_exists(sensor_name: str) -> None:
         raise FileNotFoundError(f"Missing YAML files {missing_keys_text} in {config_dir} for sensor {sensor_name}.")
 
 
-def _check_variable_consistency(sensor_name: str) -> None:
+def check_variable_consistency(sensor_name: str) -> None:
     """
     Check variable consistency across config files.
 
@@ -126,7 +126,7 @@ def _schema_error(object_to_validate: Union[str, list], schema: BaseModel, messa
 
 
 class L0BEncodingSchema(BaseModel):
-    """Pydantic model for DISDRODB L0B encodings."""
+    """Pydantic model for DISDRODB netCDF encodings."""
 
     contiguous: bool
     dtype: str
@@ -134,7 +134,7 @@ class L0BEncodingSchema(BaseModel):
     complevel: int
     shuffle: bool
     fletcher32: bool
-    _FillValue: Optional[Union[int, float]]
+    FillValue: Optional[Union[int, float]] = Field(default=None, alias="_FillValue")
     chunksizes: Optional[Union[int, list[int]]]
 
     # if contiguous=False, chunksizes specified, otherwise should be not !
@@ -167,6 +167,39 @@ class L0BEncodingSchema(BaseModel):
             raise ValueError("'fletcher32' must be set to False if 'contiguous' is True")
         return values
 
+    # if dtype is integer/unsigned integer, _FillValue must be specified and valid
+    @model_validator(mode="before")
+    def check_integer_fillvalue(cls, values):
+        """Check that integer dtypes have valid _FillValue."""
+        dtype = values.get("dtype")
+        fill_value = values.get("_FillValue", None)
+        integer_types = ["int8", "int16", "int32", "int64", "uint8", "uint16", "uint32", "uint64"]
+        # Check if dtype is an integer type
+        if dtype in integer_types:
+            # _FillValue must be specified for integer types
+            if fill_value is None:
+                raise ValueError(f"'_FillValue' must be specified for integer dtype '{dtype}'")
+
+            # Check that _FillValue is within valid range for the dtype
+            dtype_info = np.iinfo(dtype)
+            max_value = dtype_info.max
+            # min_value = dtype_info.min
+
+            # if not (min_value <= fill_value <= max_value):
+            #     raise ValueError(
+            #         f"'_FillValue' ({fill_value}) is out of range for dtype '{dtype}'. "
+            #         f"Valid range is [{min_value}, {max_value}]",
+            #     )
+
+            # Check that _FillValue corresponds to the maximum allowed value
+            if fill_value != max_value:
+                raise ValueError(
+                    f"'_FillValue' ({fill_value}) should be set to the maximum allowed value "
+                    f"({max_value}) for integer dtype '{dtype}'",
+                )
+
+        return values
+
 
 def check_l0b_encoding(sensor_name: str) -> None:
     """Check ``l0b_encodings.yml`` file based on the schema defined in the class ``L0BEncodingSchema``.
@@ -176,7 +209,7 @@ def check_l0b_encoding(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    data = read_config_file(sensor_name, product="L0A", filename="l0b_encodings.yml")
+    data = read_config_file(sensor_name, product="L0B", filename="l0b_encodings.yml")
 
     # check that the second level of the dictionary match the schema
     for key, value in data.items():
@@ -234,7 +267,7 @@ class RawDataFormatSchema(BaseModel):
         return None
 
 
-def _check_raw_data_format(sensor_name: str) -> None:
+def check_raw_data_format(sensor_name: str) -> None:
     """Check ``raw_data_format.yml`` file based on the schema defined in the class ``RawDataFormatSchema``.
 
     Parameters
@@ -253,7 +286,7 @@ def _check_raw_data_format(sensor_name: str) -> None:
         )
 
 
-def _check_cf_attributes(sensor_name: str) -> None:
+def check_cf_attributes(sensor_name: str) -> None:
     """Check that the ``l0b_cf_attrs.yml`` description, long_name and units values are strings.
 
     Parameters
@@ -268,7 +301,7 @@ def _check_cf_attributes(sensor_name: str) -> None:
                 raise ValueError(f"Wrong value for {key} in {var} for sensor {sensor_name}.")
 
 
-def _check_bin_consistency(sensor_name: str) -> None:
+def check_bin_consistency(sensor_name: str) -> None:
     """Check bin consistency from config file.
 
     Do not check the first and last bin !
@@ -313,7 +346,7 @@ def _check_bin_consistency(sensor_name: str) -> None:
         )
 
 
-def _check_raw_array(sensor_name: str) -> None:
+def check_raw_array(sensor_name: str) -> None:
     """Check raw array consistency from config file.
 
     Parameters
@@ -363,14 +396,14 @@ def check_sensor_configs(sensor_name: str) -> None:
     sensor_name : str
         Name of the sensor.
     """
-    _check_yaml_files_exists(sensor_name)
-    _check_variable_consistency(sensor_name)
+    check_yaml_files_exists(sensor_name)
+    check_variable_consistency(sensor_name)
     check_l0b_encoding(sensor_name=sensor_name)
     check_l0a_encoding(sensor_name=sensor_name)
-    _check_raw_data_format(sensor_name=sensor_name)
-    _check_cf_attributes(sensor_name=sensor_name)
-    _check_bin_consistency(sensor_name=sensor_name)
-    _check_raw_array(sensor_name=sensor_name)
+    check_raw_data_format(sensor_name=sensor_name)
+    check_cf_attributes(sensor_name=sensor_name)
+    check_bin_consistency(sensor_name=sensor_name)
+    check_raw_array(sensor_name=sensor_name)
 
 
 def check_all_sensors_configs() -> None:
