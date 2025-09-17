@@ -1017,7 +1017,7 @@ def run_l2m_station(
                 data_archive_dir=data_archive_dir,
                 # Product options
                 model_name=model_name,
-                sample_interval=sample_interval,
+                sample_interval=accumulation_interval,
                 rolling=rolling,
                 # Logs list
                 list_logs=list_logs,

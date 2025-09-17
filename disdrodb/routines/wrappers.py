@@ -643,6 +643,7 @@ def create_summary_station(
     campaign_name,
     station_name,
     parallel=False,
+    temporal_resolution="1MIN",
     data_archive_dir=None,
 ):
     """Create summary figures and tables for a DISDRODB station."""
@@ -658,6 +659,8 @@ def create_summary_station(
             str(data_archive_dir),
             "--parallel",
             str(parallel),
+            "--temporal_resolution",
+            str(temporal_resolution),
         ],
     )
     # Execute command
