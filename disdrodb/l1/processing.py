@@ -19,8 +19,8 @@
 import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION, VELOCITY_DIMENSION
-from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity
-from disdrodb.l1.filters import define_spectrum_mask, filter_diameter_bins, filter_velocity_bins
+from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity_from_ds
+from disdrodb.l1.filters import define_raindrop_spectrum_mask, filter_diameter_bins, filter_velocity_bins
 from disdrodb.l1.resampling import add_sample_interval
 from disdrodb.l1_env.routines import load_env_dataset
 from disdrodb.l2.empirical_dsd import (  # TODO: maybe move out of L2
@@ -34,7 +34,7 @@ from disdrodb.utils.writer import finalize_product
 def generate_l1(
     ds,
     # Fall velocity option
-    fall_velocity_method="Beard1976",
+    fall_velocity_model="Beard1976",
     # Diameter-Velocity Filtering Options
     minimum_diameter=0,
     maximum_diameter=10,
@@ -54,7 +54,7 @@ def generate_l1(
     ----------
     ds : xarray.Dataset
         DISDRODB L0C dataset.
-    fall_velocity_method : str, optional
+    fall_velocity_model : str, optional
         Method to compute fall velocity.
         The default method is ``"Beard1976"``.
     minimum_diameter : float, optional
@@ -106,7 +106,9 @@ def generate_l1(
 
     # ---------------------------------------------------------------------------
     # Retrieve ENV dataset or take defaults
-    # --> Used only for Beard fall velocity currently !
+    # - Used only for Beard fall velocity currently !
+    # - It checks and includes default geolocation if missing
+    # - For mobile disdrometer, infill missing geolocation with backward and forward filling
     ds_env = load_env_dataset(ds)
 
     # ---------------------------------------------------------------------------
@@ -120,7 +122,7 @@ def generate_l1(
     ds_l1 = add_sample_interval(ds_l1, sample_interval=sample_interval)
 
     # Add L0C coordinates that might got lost
-    if "time_qc" in ds_l1:
+    if "time_qc" in ds:
         ds_l1 = ds_l1.assign_coords({"time_qc": ds["time_qc"]})
 
     # -------------------------------------------------------------------------------------------
@@ -128,7 +130,7 @@ def generate_l1(
     if sensor_name in ["PARSIVEL", "PARSIVEL2"]:
         # - Remove first two bins because never reports data !
         # - If not removed, can alter e.g. L2M model fitting
-        ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=0.312)  # it includes the 0.2495-0.3745 bin
+        ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=0.2495)  # it includes the 0.2495-0.3745 bin
 
     # - Filter diameter bins
     ds_l1 = filter_diameter_bins(ds=ds_l1, minimum_diameter=minimum_diameter, maximum_diameter=maximum_diameter)
@@ -138,16 +140,12 @@ def generate_l1(
 
     # -------------------------------------------------------------------------------------------
     # Compute fall velocity
-    ds_l1["fall_velocity"] = get_raindrop_fall_velocity(
-        diameter=ds_l1["diameter_bin_center"],
-        method=fall_velocity_method,
-        ds_env=ds_env,  # mm
-    )
+    ds_l1["fall_velocity"] = get_raindrop_fall_velocity_from_ds(ds=ds_l1, ds_env=ds_env, model=fall_velocity_model)
 
     # -------------------------------------------------------------------------------------------
     # Define filtering mask according to fall velocity
     if has_velocity_dimension:
-        mask = define_spectrum_mask(
+        mask = define_raindrop_spectrum_mask(
             drop_number=ds_l1["raw_drop_number"],
             fall_velocity=ds_l1["fall_velocity"],
             above_velocity_fraction=above_velocity_fraction,

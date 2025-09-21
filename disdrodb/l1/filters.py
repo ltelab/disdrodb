@@ -57,17 +57,15 @@ def filter_diameter_bins(ds, minimum_diameter=None, maximum_diameter=None):
         ds["diameter_bin_upper"] > minimum_diameter,
         ds["diameter_bin_lower"] < maximum_diameter,
     )
-
-    # Select bins with diameter values entirely inside the specified min/max values
-    # valid_indices = np.logical_and(
-    #     ds["diameter_bin_lower"] >= minimum_diameter,
-    #     ds["diameter_bin_upper"] <= maximum_diameter,
-    # )
     ds = ds.isel({DIAMETER_DIMENSION: valid_indices})
+
+    if ds.sizes[DIAMETER_DIMENSION] == 0:
+        msg = f"Filtering using {minimum_diameter=} removes all diameter bins."
+        raise ValueError(msg)
     return ds
 
 
-def filter_velocity_bins(ds, minimum_velocity=0, maximum_velocity=12):
+def filter_velocity_bins(ds, minimum_velocity=None, maximum_velocity=None):
     """
     Filter the dataset to include only velocity bins within specified bounds.
 
@@ -77,10 +75,10 @@ def filter_velocity_bins(ds, minimum_velocity=0, maximum_velocity=12):
         The dataset containing velocity bin data.
     minimum_velocity : float, optional
         The minimum velocity to include in the filter, in meters per second.
-        Defaults to 0 m/s.
+        Defaults to the minimum value in `ds["velocity_bin_lower"]`.
     maximum_velocity : float, optional
         The maximum velocity to include in the filter, in meters per second.
-        Defaults to 12 m/s.
+        Defaults to the maximum value in `ds["velocity_bin_upper"]`.
 
     Returns
     -------
@@ -103,16 +101,14 @@ def filter_velocity_bins(ds, minimum_velocity=0, maximum_velocity=12):
         ds["velocity_bin_lower"] < maximum_velocity,
     )
 
-    # Select bins with velocity values entirely inside the specified min/max values
-    # valid_indices = np.logical_and(
-    #     ds["velocity_bin_lower"] >= minimum_velocity,
-    #     ds["velocity_bin_upper"] <= maximum_velocity,
-    # )
     ds = ds.isel({VELOCITY_DIMENSION: valid_indices})
+    if ds.sizes[VELOCITY_DIMENSION] == 0:
+        msg = f"Filtering using {minimum_velocity=} removes all velocity bins."
+        raise ValueError(msg)
     return ds
 
 
-def define_spectrum_mask(
+def define_raindrop_spectrum_mask(
     drop_number,
     fall_velocity,
     above_velocity_fraction=None,
@@ -130,29 +126,29 @@ def define_spectrum_mask(
     drop_number : xarray.DataArray
         Array of drop counts per diameter and velocity bins.
     fall_velocity : array-like
-        The expected terminal fall velocities for drops of given sizes.
+        The expected terminal fall velocities for rain drops of given sizes.
     above_velocity_fraction : float, optional
-        Fraction of terminal fall velocity above which drops are considered too fast.
+        Fraction of terminal fall velocity above which rain drops are considered too fast.
         Either specify ``above_velocity_fraction`` or ``above_velocity_tolerance``.
     above_velocity_tolerance : float, optional
-        Absolute tolerance above which drops terminal fall velocities are considered too fast.
+        Absolute tolerance above which rain drops terminal fall velocities are considered too fast.
         Either specify ``above_velocity_fraction`` or ``above_velocity_tolerance``.
     below_velocity_fraction : float, optional
-        Fraction of terminal fall velocity below which drops are considered too slow.
+        Fraction of terminal fall velocity below which rain drops are considered too slow.
         Either specify ``below_velocity_fraction`` or ``below_velocity_tolerance``.
     below_velocity_tolerance : float, optional
-        Absolute tolerance below which drops terminal fall velocities are considered too slow.
+        Absolute tolerance below which rain drops terminal fall velocities are considered too slow.
          Either specify ``below_velocity_fraction`` or ``below_velocity_tolerance``.
     maintain_smallest : bool, optional
-        If True, ensures that the small drops in the spectrum are retained in the mask.
-        The smallest drops are characterized by ``small_diameter_threshold``
+        If True, ensures that the small rain drops in the spectrum are retained in the mask.
+        The smallest rain drops are characterized by ``small_diameter_threshold``
         and ``small_velocity_threshold`` arguments.
         Defaults to False.
     small_diameter_threshold : float, optional
-        The diameter threshold to use for keeping the smallest drop.
+        The diameter threshold to use for keeping the smallest rain drop.
         Defaults to 1 mm.
     small_velocity_threshold : float, optional
-        The fall velocity threshold to use for keeping the smallest drops.
+        The fall velocity threshold to use for keeping the smallest rain drops.
         Defaults to 2.5 m/s.
 
     Returns
@@ -178,6 +174,7 @@ def define_spectrum_mask(
         above_fall_velocity = fall_velocity + above_velocity_tolerance
     else:
         above_fall_velocity = np.inf
+
     if below_velocity_fraction is not None:
         below_fall_velocity = fall_velocity * (1 - below_velocity_fraction)
     elif below_velocity_tolerance is not None:
@@ -191,15 +188,15 @@ def define_spectrum_mask(
 
     # Define mask
     mask = np.logical_and(
-        np.logical_or(velocity_lower >= below_fall_velocity, velocity_upper >= below_fall_velocity),
-        np.logical_or(velocity_lower <= above_fall_velocity, velocity_upper <= above_fall_velocity),
+        velocity_upper > below_fall_velocity,
+        velocity_lower < above_fall_velocity,
     )
 
     # Maintant smallest drops
     if maintain_smallest_drops:
         mask_smallest = np.logical_and(
-            drop_number["diameter_bin_upper"] < small_diameter_threshold,
-            drop_number["velocity_bin_upper"] < small_velocity_threshold,
+            drop_number["diameter_bin_upper"] <= small_diameter_threshold,
+            drop_number["velocity_bin_upper"] <= small_velocity_threshold,
         )
         mask = np.logical_or(mask, mask_smallest)
 

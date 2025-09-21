@@ -456,6 +456,33 @@ def get_raindrop_reynolds_number(diameter, temperature, air_density, water_densi
     return reynolds_number
 
 
+def get_drag_coefficient(diameter, air_density, water_density, fall_velocity, g=9.81):
+    """
+    Computes the drag coefficient for a raindrop.
+
+    Parameters
+    ----------
+    diameter : float
+        Diameter of the raindrop in meters.
+    air_density : float
+        Density of air in kg/m^3.
+    water_density : float
+        Density of water in kg/m^3.
+    fall_velocity : float
+        Terminal fall velocity of the raindrop in m/s.
+    g : float
+        Gravitational acceleration in m/s^2.
+
+    Returns
+    -------
+    float
+        Drag coefficient of the raindrop.
+    """
+    delta_density = water_density - air_density
+    drag_coefficient = 4 * delta_density * g * diameter / (3 * air_density * fall_velocity**2)
+    return drag_coefficient
+
+
 def get_fall_velocity_beard_1976(diameter, temperature, air_density, water_density, g):
     """
     Computes the terminal fall velocity of a raindrop in still air.
@@ -490,33 +517,6 @@ def get_fall_velocity_beard_1976(diameter, temperature, air_density, water_densi
     )
     fall_velocity = air_viscosity * reynolds_number / (air_density * diameter)
     return fall_velocity
-
-
-def get_drag_coefficient(diameter, air_density, water_density, fall_velocity, g=9.81):
-    """
-    Computes the drag coefficient for a raindrop.
-
-    Parameters
-    ----------
-    diameter : float
-        Diameter of the raindrop in meters.
-    air_density : float
-        Density of air in kg/m^3.
-    water_density : float
-        Density of water in kg/m^3.
-    fall_velocity : float
-        Terminal fall velocity of the raindrop in m/s.
-    g : float
-        Gravitational acceleration in m/s^2.
-
-    Returns
-    -------
-    float
-        Drag coefficient of the raindrop.
-    """
-    delta_density = water_density - air_density
-    drag_coefficient = 4 * delta_density * g * diameter / (3 * air_density * fall_velocity**2)
-    return drag_coefficient
 
 
 def retrieve_fall_velocity(
@@ -573,19 +573,24 @@ def retrieve_fall_velocity(
             gas_constant_dry_air=gas_constant_dry_air,
         )
 
+    # else
+    # --> Estimate sea_level_air_pressure from air_pressure ?
+
     # Retrieve vapour pressure (from relative humidity)
     vapor_pressure = get_vapor_actual_pressure(
         relative_humidity=relative_humidity,
         temperature=temperature,
     )
 
-    # Retrieve air density and water density
+    # Retrieve air density
     air_density = get_air_density(
         temperature=temperature,
         air_pressure=air_pressure,
         vapor_pressure=vapor_pressure,
         gas_constant_dry_air=gas_constant_dry_air,
     )
+
+    # Retrieve water density
     water_density = get_water_density(
         temperature=temperature,
         air_pressure=air_pressure,
@@ -611,106 +616,3 @@ def retrieve_fall_velocity(
     #                                         fall_velocity=fall_velocity)
 
     return fall_velocity
-
-
-####-----------------------------------------------------------------------------------------
-#### OLD CODE
-
-
-# def get_fall_velocity_beard_1977(diameter):
-#     """
-#     Compute the fall velocity of raindrops using the Beard (1977) relationship.
-
-#     Parameters
-#     ----------
-#     diameter : array-like
-#         Diameter of the raindrops in millimeters.
-#         Valid up to 7 mm (0.7 cm).
-
-#     Returns
-#     -------
-#     fall_velocity : array-like
-#         Fall velocities in meters per second.
-
-#     Notes
-#     -----
-#     This method uses an exponential function based on the work of Beard (1977),
-#     valid at sea level conditions (pressure = 1 atm, temperature = 20°C,
-#     air density = 1.194 kg/m³).
-
-#     References
-#     ----------
-#     Beard, K. V. (1977).
-#     Terminal velocity adjustment for cloud and precipitation drops aloft.
-#     Journal of the Atmospheric Sciences, 34(8), 1293-1298.
-#     https://doi.org/10.1175/1520-0469(1977)034<1293:TVAFCA>2.0.CO;2
-
-#     """
-#     diameter_cm = diameter/1000
-#     c = [7.06037, 1.74951, 4.86324, 6.60631, 4.84606, 2.14922, 0.58714, 0.096348, 0.00869209, 0.00033089]
-#     log_diameter = np.log(diameter_cm)
-#     y = c[0] + sum(c * log_diameter**i for i, c in enumerate(c[1:], start=1))
-#     fall_velocity = np.exp(y)
-#     return fall_velocity
-
-
-# def get_fall_velocity_beard_1977(diameter, temperature, air_pressure, gas_constant_dry_air=287.04):
-#     """
-#     Computes the terminal fall velocity of a raindrop in still air.
-
-#     This function is based on the Table 4 coefficients of Kenneth V. Beard (1977),
-#     "Terminal Velocity and Shape of Cloud and Precipitation Drops Aloft",
-#     Journal of the Atmospheric Sciences, Vol. 34, pp. 1293-1298.
-
-#     Note: This approximation is valid at sea level with conditions:
-#           Pressure = 1 atm, Temperature = 20°C, (saturated) air density = 1.194 kg/m³.
-
-#     Parameters
-#     ----------
-#     diameter : array-like
-#         Array of equivolume drop diameters in meters.
-
-#     Returns
-#     -------
-#     fall_velocity : array-like
-#         Array of terminal fall velocity in meters per second (m/s).
-#         For diameters greater than 7 mm, the function returns NaN.
-
-#     """
-#     # PROBLEMATIC
-#     # Compute sea level velocity
-#     c = [7.06037, 1.74951, 4.86324, 6.60631, 4.84606, 2.14922, 0.58714, 0.096348, 0.00869209, 0.00033089]
-#     log_diameter = np.log(diameter / 1000 * 10)
-#     y = c[0] + sum(c * log_diameter**i for i, c in enumerate(c[1:], start=1))
-#     v0 = np.exp(y)
-
-#     # Compute fall velocity
-#     t_20 = 273.15 + 20
-#     eps_s = get_air_dynamic_viscosity(t_20) / get_air_dynamic_viscosity(temperature) - 1
-#     eps_c = -1 + (
-#         np.sqrt(
-#             get_air_density(
-#                 temperature=t_20,
-#                 air_pressure=101325,
-#                 vapor_pressure=0,
-#                 gas_constant_dry_air=gas_constant_dry_air,
-#             )
-#             / get_air_density(
-#                 temperature=temperature,
-#                 air_pressure=air_pressure,
-#                 vapor_pressure=0,
-#                 gas_constant_dry_air=gas_constant_dry_air,
-#             ),
-#         )
-#     )
-#     a = 1.104 * eps_s
-#     b = (1.058 * eps_c - 1.104 * eps_s) / 5.01
-#     x = np.log(diameter) + 5.52
-#     f = (a + b * x) + 1
-#     fall_velocity = v0 * f
-#     # fall_velocity.plot()
-
-#     eps = 1.104 * eps_s + (1.058 * eps_c - 1.104 * eps_s) * np.log(diameter / 1e-3) / 5.01
-#     # eps = 1.104 * eps_s + (1.058 * eps_c - 1.104 * eps_s) * np.log(diameter / 4e-5) / 5.01
-#     fall_velocity = 0.01 * v0 * (1 + eps)
-#     return fall_velocity

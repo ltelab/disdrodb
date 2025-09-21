@@ -21,7 +21,7 @@ import pytest
 import xarray as xr
 
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.fall_velocity import get_dataset_fall_velocity
+from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity_from_ds
 from disdrodb.psd.fitting import (
     _compute_target_variable_error,
     available_mom_methods,
@@ -135,7 +135,7 @@ class TestGSOptimization:
         }
         ds, psd = _simulate_dataset(psd_model, parameters)
         if target == "R":
-            ds["fall_velocity"] = get_dataset_fall_velocity(ds)
+            ds["fall_velocity"] = get_raindrop_fall_velocity_from_ds(ds)
             V = ds["fall_velocity"].to_numpy()
         else:
             V = None

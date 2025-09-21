@@ -24,13 +24,23 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from disdrodb.l0 import l0b_processing
 from disdrodb.l0.l0b_processing import (
-    _set_variable_attributes,
     add_dataset_crs_coords,
+    convert_object_variables_to_string,
+    ensure_valid_geolocation,
+    format_string_array,
     generate_l0b,
+    infer_split_str,
+    replace_empty_strings_with_zeros,
+    reshape_raw_spectrum,
+    retrieve_l0b_arrays,
+    set_variable_attributes,
 )
-from disdrodb.l0.standards import get_bin_coords_dict
+from disdrodb.l0.standards import (
+    get_bin_coords_dict,
+    get_dims_size_dict,
+    get_raw_array_dims_order,
+)
 
 # NOTE:
 # The following fixtures are not defined in this file, but are used and injected by Pytest:
@@ -175,7 +185,7 @@ def test_add_dataset_crs_coords():
     assert ds_out["crs"].to_numpy() == "WGS84"
 
 
-def test__set_variable_attributes(mocker):
+def test_set_variable_attributes(mocker):
     # Create a sample dataset
     data = np.random.rand(10, 10)
     ds = xr.Dataset({"var_1": (("lat", "lon"), data)})
@@ -204,7 +214,7 @@ def test__set_variable_attributes(mocker):
     )
 
     # Call the function to set variable attributes
-    ds = _set_variable_attributes(ds, sensor_name)
+    ds = set_variable_attributes(ds, sensor_name)
     assert ds["var_1"].attrs["description"] == "descrition_1"
     assert ds["var_1"].attrs["units"] == "unit_1"
     assert ds["var_1"].attrs["long_name"] == "long_1"
@@ -234,64 +244,59 @@ def test_get_bin_coords_dict(create_test_config_files):
     assert result == expected_result
 
 
-def testinfer_split_str():
+def test_infer_split_str():
     # Test type error if string=None
     with pytest.raises(TypeError):
-        l0b_processing.infer_split_str(None)
+        infer_split_str(None)
 
     # Test strings with no delimiter
-    assert l0b_processing.infer_split_str("") is None
-    assert l0b_processing.infer_split_str("") is None
-    assert l0b_processing.infer_split_str("abc") is None
+    assert infer_split_str("") is None
+    assert infer_split_str("") is None
+    assert infer_split_str("abc") is None
 
     # Test strings with semicolon delimiter
-    assert l0b_processing.infer_split_str("a;b;c") == ";"
-    assert l0b_processing.infer_split_str("a;b;c;") == ";"
+    assert infer_split_str("a;b;c") == ";"
+    assert infer_split_str("a;b;c;") == ";"
 
     # Test strings with comma delimiter
-    assert l0b_processing.infer_split_str("a,b,c") == ","
-    assert l0b_processing.infer_split_str("a,b,c,") == ","
+    assert infer_split_str("a,b,c") == ","
+    assert infer_split_str("a,b,c,") == ","
 
     # Test strings with both semicolon and comma delimiters
-    assert l0b_processing.infer_split_str("a;b,c;d;e") == ";"
+    assert infer_split_str("a;b,c;d;e") == ";"
 
 
 def test_replace_empty_strings_with_zeros():
     values = np.array(["", "0", "", "1"])
-    output = l0b_processing._replace_empty_strings_with_zeros(values).tolist()
+    output = replace_empty_strings_with_zeros(values).tolist()
     expected_output = np.array(["0", "0", "0", "1"]).tolist()
     assert output == expected_output
 
 
-def test__format_string_array():
+def test_format_string_array():
     # Tests splitter behaviour with None
     assert [] == []
 
     # Test empty string
-    assert np.allclose(l0b_processing._format_string_array("", 4), [0, 0, 0, 0])
+    assert np.allclose(format_string_array("", 4), [0, 0, 0, 0])
 
     # Test strings with semicolon and column delimiter
-    assert np.allclose(l0b_processing._format_string_array("2;44;22;33", 4), [2, 44, 22, 33])
-    assert np.allclose(l0b_processing._format_string_array("2,44,22,33", 4), [2, 44, 22, 33])
-    assert np.allclose(l0b_processing._format_string_array("000;000;000;001", 4), [0, 0, 0, 1])
+    assert np.allclose(format_string_array("2;44;22;33", 4), [2, 44, 22, 33])
+    assert np.allclose(format_string_array("2,44,22,33", 4), [2, 44, 22, 33])
+    assert np.allclose(format_string_array("000;000;000;001", 4), [0, 0, 0, 1])
 
     # Test strip away excess delimiters
-    assert np.allclose(l0b_processing._format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33])
+    assert np.allclose(format_string_array(",,2,44,22,33,,", 4), [2, 44, 22, 33])
     # Test strings with incorrect number of values
     arr_nan = [np.nan, np.nan, np.nan, np.nan]
-    assert np.allclose(l0b_processing._format_string_array("2,44,22", 4), arr_nan, equal_nan=True)
+    assert np.allclose(format_string_array("2,44,22", 4), arr_nan, equal_nan=True)
 
-    assert np.allclose(l0b_processing._format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True)
+    assert np.allclose(format_string_array("2,44,22,33,44", 4), arr_nan, equal_nan=True)
     # Test strings with incorrect format
-    assert np.allclose(l0b_processing._format_string_array(",,2,", 4), arr_nan, equal_nan=True)
+    assert np.allclose(format_string_array(",,2,", 4), arr_nan, equal_nan=True)
 
 
-def test__reshape_raw_spectrum():
-    from disdrodb.l0.standards import (
-        get_dims_size_dict,
-        get_raw_array_dims_order,
-    )
-
+def test_reshape_raw_spectrum():
     list_sensor_name = ["LPM", "PARSIVEL"]
     # sensor_name = "LPM"
     # sensor_name = "PARSIVEL"
@@ -329,7 +334,7 @@ def test__reshape_raw_spectrum():
         dims_order_dict = get_raw_array_dims_order(sensor_name=sensor_name)
         dims_size_dict = get_dims_size_dict(sensor_name=sensor_name)
         dims_order = dims_order_dict["raw_drop_number"]
-        arr, dims = l0b_processing._reshape_raw_spectrum(
+        arr, dims = reshape_raw_spectrum(
             arr=arr,
             dims_order=dims_order,
             dims_size_dict=dims_size_dict,
@@ -349,7 +354,7 @@ def test__reshape_raw_spectrum():
     # Test invalid inputs
     dims_size_dict["diameter_bin_center"] = 20
     with pytest.raises(ValueError):
-        l0b_processing._reshape_raw_spectrum(
+        reshape_raw_spectrum(
             arr=arr,
             dims_order=dims_order,
             dims_size_dict=dims_size_dict,
@@ -399,7 +404,7 @@ def test_retrieve_l0b_arrays():
         df = pd.DataFrame({"dummy": ["row1", "row2"], "raw_drop_number": raw_spectrum})
 
         # Use retrieve_l0b_arrays
-        data_vars = l0b_processing.retrieve_l0b_arrays(df=df, sensor_name=sensor_name, verbose=False)
+        data_vars = retrieve_l0b_arrays(df=df, sensor_name=sensor_name, verbose=False)
         # Create Dataset
         ds = xr.Dataset(data_vars=data_vars)
 
@@ -416,7 +421,7 @@ def test_retrieve_l0b_arrays():
         xr.testing.assert_equal(da, da_expected_spectrum)
 
 
-def test__convert_object_variables_to_string():
+def test_convert_object_variables_to_string():
     # Create test dataset
     df = pd.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
     ds = xr.Dataset.from_dataframe(df)
@@ -425,7 +430,7 @@ def test__convert_object_variables_to_string():
     assert pd.api.types.is_object_dtype(ds["b"])
 
     # Convert variables with object dtype to string
-    ds = l0b_processing._convert_object_variables_to_string(ds)
+    ds = convert_object_variables_to_string(ds)
 
     # Check that variable 'b' is not of type object
     assert not pd.api.types.is_object_dtype(ds["b"])
@@ -438,7 +443,57 @@ def test__convert_object_variables_to_string():
     ds = xr.Dataset.from_dataframe(df)
 
     # Convert variables with object dtype to string
-    ds = l0b_processing._convert_object_variables_to_string(ds)
+    ds = convert_object_variables_to_string(ds)
 
     # Check that variable 'b' is of type 'float'
     assert ds["b"].dtype == "float"
+
+
+class TestEnsureValidGeolocation:
+    """Unit tests for ensure_valid_geolocation function."""
+
+    def test_altitude_scalar_ignore(self):
+        """Test scalar altitude outside range is unchanged when errors='ignore'."""
+        ds = xr.Dataset({"altitude": xr.DataArray(-5)})
+        result = ensure_valid_geolocation(ds, "altitude", errors="ignore")
+        assert result["altitude"].item() == -5  # unchanged
+
+    def test_latitude_scalar_raise(self):
+        """Test scalar latitude outside range raises ValueError when errors='raise'."""
+        ds = xr.Dataset({"latitude": xr.DataArray(100)})
+        with pytest.raises(ValueError, match="latitude out of range"):
+            ensure_valid_geolocation(ds, "latitude", errors="raise")
+
+    def test_longitude_scalar_coerce(self):
+        """Test scalar longitude outside range is set to NaN when errors='coerce'."""
+        ds = xr.Dataset({"longitude": xr.DataArray(200)})
+        result = ensure_valid_geolocation(ds, "longitude", errors="coerce")
+        assert np.isnan(result["longitude"].item())
+
+    def test_altitude_time_ignore(self):
+        """Test time-varying altitude with invalid values is unchanged when errors='ignore'."""
+        ds = xr.Dataset({"altitude": ("time", [0, 10, -5, 50])})
+        result = ensure_valid_geolocation(ds, "altitude", errors="ignore")
+        np.testing.assert_array_equal(result["altitude"].to_numpy(), [0, 10, -5, 50])
+
+    def test_latitude_time_coerce(self):
+        """Test time-varying latitude with invalid values coerced to NaN."""
+        ds = xr.Dataset({"latitude": ("time", [-100, 0, 45, 120])})
+        result = ensure_valid_geolocation(ds, "latitude", errors="coerce")
+        vals = result["latitude"].to_numpy()
+        assert np.isnan(vals[0])
+        assert np.isnan(vals[3])
+        assert vals[1] == 0
+        assert vals[2] == 45
+
+    def test_longitude_time_raise(self):
+        """Test time-varying longitude with invalid values raises ValueError."""
+        ds = xr.Dataset({"longitude": ("time", [0, 90, 200, -190])})
+        with pytest.raises(ValueError, match="longitude out of range"):
+            ensure_valid_geolocation(ds, "longitude", errors="raise")
+
+    def test_invalid_coordinate_name(self):
+        """Test function raises ValueError when coordinate is not valid geolocation."""
+        ds = xr.Dataset({"lat": xr.DataArray([1000])})
+        with pytest.raises(ValueError, match="Valid geolocation coordinates"):
+            ensure_valid_geolocation(ds, "lat")

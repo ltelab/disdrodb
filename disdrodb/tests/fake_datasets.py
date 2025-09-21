@@ -17,6 +17,10 @@ def create_template_dataset(with_velocity=True):
     diameter_bin_upper = xr.DataArray(np.array([0.3, 0.5, 0.7, 0.9]), dims=DIAMETER_DIMENSION)
 
     velocity_bin_center = xr.DataArray(np.array([0.2, 0.5, 1]), dims=VELOCITY_DIMENSION)
+    velocity_bin_width = xr.DataArray(np.array([0.4, 0.2, 0.8]), dims=VELOCITY_DIMENSION)
+    velocity_bin_lower = xr.DataArray(np.array([0, 0.4, 0.6]), dims=VELOCITY_DIMENSION)
+    velocity_bin_upper = xr.DataArray(np.array([0.4, 0.6, 1.4]), dims=VELOCITY_DIMENSION)
+
     # Define variables
     fall_velocity = xr.DataArray(np.array([[0.5, 1, 1.5, 2], [0.5, 1, 1.5, 2]]), dims=("time", DIAMETER_DIMENSION))
     drop_number_concentration = xr.DataArray(
@@ -42,6 +46,9 @@ def create_template_dataset(with_velocity=True):
             "diameter_bin_upper": diameter_bin_upper,
             "diameter_bin_width": diameter_bin_width,
             "velocity_bin_center": velocity_bin_center,
+            "velocity_bin_width": velocity_bin_width,
+            "velocity_bin_lower": velocity_bin_lower,
+            "velocity_bin_upper": velocity_bin_upper,
         },
     )
     # Compute N
@@ -53,6 +60,15 @@ def create_template_dataset(with_velocity=True):
         ds.attrs["sensor_name"] = "RD80"
     else:
         ds.attrs["sensor_name"] = "PARSIVEL2"
+    return ds
+
+
+def create_template_l0c_dataset(with_velocity=True):
+    """Create DISDRODB L0C basic dataset."""
+    ds = create_template_dataset(with_velocity=with_velocity)
+    ds["time_qc"] = xr.zeros_like(ds["drop_number_concentration"].isel({DIAMETER_DIMENSION: 0}))
+    ds = ds.drop_vars(names=["fall_velocity", "drop_number_concentration"], errors="ignore")
+    ds = ds.rename({"drop_number": "raw_drop_number"})
     return ds
 
 

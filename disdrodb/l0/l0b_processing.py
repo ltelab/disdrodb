@@ -80,15 +80,16 @@ def infer_split_str(string: str) -> str:
     return split_str
 
 
-def _replace_empty_strings_with_zeros(values):
+def replace_empty_strings_with_zeros(values):
+    """Replace empty comma separated strings with '0'."""
     values[np.char.str_len(values) == 0] = "0"
     return values
 
 
-def _format_string_array(string: str, n_values: int) -> np.array:
+def format_string_array(string: str, n_values: int) -> np.array:
     """Split a string with multiple numbers separated by a delimiter into an 1D array.
 
-        e.g. : _format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
+        e.g. : format_string_array("2,44,22,33", 4) will return [ 2. 44. 22. 33.]
 
     If empty string ("") --> Return an arrays of zeros
     If the list length is not n_values -> Return an arrays of np.nan
@@ -126,7 +127,7 @@ def _format_string_array(string: str, n_values: int) -> np.array:
         # Ensure string type
         values = values.astype("str")
         # Replace '' with 0
-        values = _replace_empty_strings_with_zeros(values)
+        values = replace_empty_strings_with_zeros(values)
         # Replace "-9.999" with 0
         values = np.char.replace(values, "-9.999", "0")
         # Cast values to float type
@@ -135,7 +136,7 @@ def _format_string_array(string: str, n_values: int) -> np.array:
     return values
 
 
-def _reshape_raw_spectrum(
+def reshape_raw_spectrum(
     arr: np.array,
     dims_order: list,
     dims_size_dict: dict,
@@ -243,17 +244,17 @@ def retrieve_l0b_arrays(
         # Ensure is a string, get a numpy array for each row and then stack
         # - Option 1: Clear but lot of copies
         # df_series = df[key].astype(str)
-        # list_arr = df_series.apply(_format_string_array, n_values=n_values)
+        # list_arr = df_series.apply(format_string_array, n_values=n_values)
         # arr = np.stack(list_arr, axis=0)
 
         # - Option 2: still copies
-        # arr = np.vstack(_format_string_array(s, n_values=n_values) for s in df_series.astype(str))
+        # arr = np.vstack(format_string_array(s, n_values=n_values) for s in df_series.astype(str))
 
         # - Option 3: more memory efficient
         n_timesteps = len(df[key])
         arr = np.empty((n_timesteps, n_values), dtype=float)  # preallocates
         for i, s in enumerate(df[key].astype(str)):
-            arr[i, :] = _format_string_array(s, n_values=n_values)
+            arr[i, :] = format_string_array(s, n_values=n_values)
 
         # Retrieve dimensions
         dims_order = dims_order_dict[key]
@@ -263,7 +264,7 @@ def retrieve_l0b_arrays(
         # - This applies i.e for PARSIVEL*, LPM, PWS100
         # - This does not apply to RD80
         if key == "raw_drop_number" and len(dims_order) == 2:
-            arr, dims = _reshape_raw_spectrum(
+            arr, dims = reshape_raw_spectrum(
                 arr=arr,
                 dims_order=dims_order,
                 dims_size_dict=dims_size_dict,
@@ -288,7 +289,57 @@ def retrieve_l0b_arrays(
 #### L0B Coords and attributes
 
 
-def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
+def ensure_valid_geolocation(ds: xr.Dataset, coord: str, errors: str = "ignore") -> xr.Dataset:
+    """Ensure valid geolocation coordinates.
+
+    'altitude' must be >= 0, 'latitude' must be within [-90, 90] and
+    'longitude' within [-180, 180].
+
+    It can deal with coordinates varying with time.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing the coordinate.
+    coord : str
+        Name of the coordinate variable to validate.
+    errors : {"ignore", "raise", "coerce"}, default "ignore"
+        - "ignore": nothing is done.
+        - "raise" : raise ValueError if invalid values are found.
+        - "coerce": out-of-range values are replaced with NaN.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with validated coordinate values.
+    """
+    # Define coordinates ranges
+    ranges = {
+        "altitude": (0, np.inf),
+        "latitude": (-90, 90),
+        "longitude": (-180, 180),  # used only for "raise"/"coerce"
+    }
+
+    # Check coordinate is available and correctly defined.
+    if coord not in ds:
+        raise ValueError(f"Coordinate '{coord}' not found in dataset.")
+    if coord not in list(ranges):
+        raise ValueError(f"Valid geolocation coordinates are: {list(ranges)}.")
+
+    # Validate coordinate
+    vmin, vmax = ranges[coord]
+    invalid = (ds[coord] < vmin) | (ds[coord] > vmax)
+    invalid = invalid.compute()
+
+    # Deal within invalid errors
+    if errors == "raise" and invalid.any():
+        raise ValueError(f"{coord} out of range {vmin}-{vmax}.")
+    if errors == "coerce":
+        ds[coord] = ds[coord].where(~invalid)
+    return ds
+
+
+def convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
     """Convert variables with ``object`` dtype to ``string``.
 
     Parameters
@@ -307,7 +358,7 @@ def _convert_object_variables_to_string(ds: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def _set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
+def set_variable_attributes(ds: xr.Dataset, sensor_name: str) -> xr.Dataset:
     """Set attributes to each ``xr.Dataset`` variable.
 
     Parameters
@@ -353,7 +404,7 @@ def add_dataset_crs_coords(ds):
 
 
 def _define_dataset_variables(df, sensor_name, logger=None, verbose=False):
-    """Define DISDRODB L0B netCDF variables."""
+    """Define DISDRODB L0B netCDF array variables."""
     # Preprocess raw_spectrum, diameter and velocity arrays if available
     raw_fields = ["raw_drop_concentration", "raw_drop_average_velocity", "raw_drop_number"]
     if np.any(np.isin(raw_fields, df.columns)):
@@ -436,7 +487,7 @@ def set_geolocation_coordinates(ds, metadata):
         # If coordinate not present, add it from dictionary
         if coord not in ds:
             ds = ds.assign_coords({coord: metadata.pop(coord, np.nan)})
-        # Else if set coordinates the variable in the dataset (present in the raw data)
+        # Else ensure coord is a dataset coordinates
         else:
             ds = ds.set_coords(coord)
             _ = metadata.pop(coord, None)
@@ -444,6 +495,10 @@ def set_geolocation_coordinates(ds, metadata):
     # Set -9999 flag value to np.nan
     for coord in coords:
         ds[coord] = xr.where(ds[coord] == -9999, np.nan, ds[coord])
+
+    # Ensure valid geolocation coordinates
+    for coord in coords:
+        ds = ensure_valid_geolocation(ds=ds, coord=coord, errors="coerce")
 
     # Set attributes without geolocation coordinates
     ds.attrs = metadata
@@ -469,11 +524,11 @@ def finalize_dataset(ds, sensor_name, metadata):
     ds = ds.transpose("time", "diameter_bin_center", ...)
 
     # Ensure variables with dtype object are converted to string
-    ds = _convert_object_variables_to_string(ds)
+    ds = convert_object_variables_to_string(ds)
 
     # Add netCDF variable and coordinate attributes
     # - Add variable attributes: long_name, units, descriptions, valid_min, valid_max
-    ds = _set_variable_attributes(ds=ds, sensor_name=sensor_name)
+    ds = set_variable_attributes(ds=ds, sensor_name=sensor_name)
     # - Add netCDF coordinate attributes
     ds = set_coordinate_attributes(ds=ds)
     #  - Set DISDRODB global attributes
