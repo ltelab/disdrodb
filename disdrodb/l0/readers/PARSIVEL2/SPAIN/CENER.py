@@ -111,31 +111,19 @@ def reader(
     df_raw_spectrum = df[df["TO_PARSE"].str.len() == 4545]
 
     # Derive raw drop arrays
-    def split_string(s):
-        vals = [v.strip() for v in s.split(",")]
-        c1 = ",".join(vals[:32])
-        c2 = ",".join(vals[32:64])
-        c3 = ",".join(vals[64].replace("r", "").split("/"))
-        series = pd.Series(
-            {
-                "raw_drop_concentration": c1,
-                "raw_drop_average_velocity": c2,
-                "raw_drop_number": c3,
-            },
-        )
-        return series
-
-    splitted_string = df_raw_spectrum["TO_PARSE"].apply(split_string)
-    df_raw_spectrum["raw_drop_concentration"] = splitted_string["raw_drop_concentration"]
-    df_raw_spectrum["raw_drop_average_velocity"] = splitted_string["raw_drop_average_velocity"]
-    df_raw_spectrum["raw_drop_number"] = splitted_string["raw_drop_number"]
+    df_split = df["TO_PARSE"].str.split(",", expand=True)
+    df_raw_spectrum["raw_drop_concentration"] = df_split.iloc[:, :32].agg(",".join, axis=1)
+    df_raw_spectrum["raw_drop_average_velocity"] = df_split.iloc[:, 32:64].agg(",".join, axis=1)
+    df_raw_spectrum["raw_drop_number"] = df_split.iloc[:, 64:].agg(",".join, axis=1)
     df_raw_spectrum = df_raw_spectrum.drop(columns=["date", "TO_PARSE"])
+    del df_split
 
     # Add raw array
     df = df_data.set_index("time")
     df_raw_spectrum = df_raw_spectrum.set_index("time")
 
     df.update(df_raw_spectrum)
+    del df_raw_spectrum
 
     # Set back time as column
     df = df.reset_index()

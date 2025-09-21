@@ -29,7 +29,7 @@ from disdrodb.utils.time import (
     get_dataframe_start_end_time,
     get_dataset_start_end_time,
     get_file_start_end_time,
-    get_resampling_information,
+    get_sampling_information,
     infer_sample_interval,
     regularize_dataset,
     seconds_to_temporal_resolution,
@@ -557,74 +557,74 @@ def test_temporal_resolution_to_seconds():
     assert temporal_resolution_to_seconds("30S") == 30
 
 
-class TestGetResamplingInformation:
+class TestGetSamplingInformation:
     def test_single_seconds(self):
         """Single seconds temporal resolution string returns correct seconds and non-rolling flag."""
-        seconds, rolling = get_resampling_information("30S")
+        seconds, rolling = get_sampling_information("30S")
         assert seconds == 30
         assert rolling is False
 
     def test_single_minutes(self):
         """Single minutes temporal resolution string returns correct seconds and non-rolling flag."""
-        seconds, rolling = get_resampling_information("5MIN")
+        seconds, rolling = get_sampling_information("5MIN")
         assert seconds == 5 * 60
         assert rolling is False
 
     def test_hours_and_minutes(self):
         """Composite hours and minutes temporal resolution string computes proper seconds and non-rolling flag."""
-        seconds, rolling = get_resampling_information("2H30MIN")
+        seconds, rolling = get_sampling_information("2H30MIN")
         assert seconds == 2 * 3600 + 30 * 60
         assert rolling is False
 
     def test_full_components(self):
         """Composite days, hours, minutes, and seconds computes proper seconds."""
-        seconds, rolling = get_resampling_information("1D2H15MIN30S")
+        seconds, rolling = get_sampling_information("1D2H15MIN30S")
         assert seconds == 1 * 86400 + 2 * 3600 + 15 * 60 + 30
         assert rolling is False
 
     def test_rolling_prefix_simple(self):
         """Rolling prefix with single unit returns correct seconds and rolling flag."""
-        seconds, rolling = get_resampling_information("ROLL1H")
+        seconds, rolling = get_sampling_information("ROLL1H")
         assert seconds == 3600
         assert rolling is True
 
     def test_rolling_prefix_composite(self):
         """Rolling prefix with composite units returns correct seconds and rolling flag."""
-        seconds, rolling = get_resampling_information("ROLL15MIN45S")
+        seconds, rolling = get_sampling_information("ROLL15MIN45S")
         assert seconds == 15 * 60 + 45
         assert rolling is True
 
     def test_zero_seconds(self):
         """Zero seconds temporal resolution string returns zero and non-rolling flag."""
-        seconds, rolling = get_resampling_information("0S")
+        seconds, rolling = get_sampling_information("0S")
         assert seconds == 0
         assert rolling is False
 
     def test_order_independence(self):
         """Unit order in temporal resolution string does not affect computed seconds."""
-        s1, _ = get_resampling_information("1H30MIN")
-        s2, _ = get_resampling_information("30MIN1H")
+        s1, _ = get_sampling_information("1H30MIN")
+        s2, _ = get_sampling_information("30MIN1H")
         assert s1 == s2
 
     def test_invalid_missing_unit(self):
         """Acronym missing unit part raises ValueError."""
         with pytest.raises(ValueError):
-            get_resampling_information("30")
+            get_sampling_information("30")
 
     def test_invalid_unknown_unit(self):
         """Acronym with unknown unit raises ValueError."""
         with pytest.raises(ValueError):
-            get_resampling_information("10X")
+            get_sampling_information("10X")
 
     def test_invalid_partial(self):
         """Acronym with partial valid and invalid parts raises ValueError."""
         with pytest.raises(ValueError):
-            get_resampling_information("1H30")
+            get_sampling_information("1H30")
 
     def test_empty_string(self):
         """Empty temporal resolution string raises ValueError."""
         with pytest.raises(ValueError):
-            get_resampling_information("")
+            get_sampling_information("")
 
 
 class TestInferSampleInterval:

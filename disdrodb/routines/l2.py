@@ -72,7 +72,7 @@ from disdrodb.utils.routines import (
 )
 from disdrodb.utils.time import (
     ensure_sample_interval_in_seconds,
-    get_resampling_information,
+    get_sampling_information,
 )
 from disdrodb.utils.writer import write_product
 
@@ -124,7 +124,7 @@ class ProcessingOptions:
             product_options = dict_product_options[temporal_resolution].copy()
 
             # Retrieve accumulation_interval and rolling option
-            accumulation_interval, rolling = get_resampling_information(temporal_resolution)
+            accumulation_interval, rolling = get_sampling_information(temporal_resolution)
 
             # Extract processing options
             archive_options = product_options.pop("archive_options")
@@ -492,7 +492,7 @@ def run_l2e_station(
         product_options = l2e_processing_options.get_product_options(temporal_resolution)
 
         # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_resampling_information(temporal_resolution)
+        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
 
         # Precompute required scattering tables
         if product_options["radar_enabled"]:
@@ -655,7 +655,10 @@ def _generate_l2m(
 
         # Define variables to load
         optimization_kwargs = l2m_options["optimization_kwargs"]
-        if "init_method" in optimization_kwargs:
+        if "init_method" in optimization_kwargs and optimization_kwargs["init_method"] is None:
+            optimization_kwargs["init_method"] = "None"
+
+        if optimization_kwargs.get("init_method", "None") != "None":
             init_method = optimization_kwargs["init_method"]
             moments = [f"M{order}" for order in init_method.replace("M", "")] + ["M1"]
         else:
@@ -839,7 +842,7 @@ def run_l2m_station(
     for temporal_resolution in temporal_resolutions:
 
         # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_resampling_information(temporal_resolution)
+        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
 
         # ------------------------------------------------------------------.
         # Avoid generation of rolling products for source sample interval !
@@ -898,6 +901,7 @@ def run_l2m_station(
         # -----------------------------------------------------------------.
         # Loop over distributions to fit
         # model_name = "GAMMA_ML"
+        # model_name = "LOGNORMAL_GS_ND_MAE"
         # model_options =  l2m_options["models"][model_name]
         # Retrieve list of models to fit
         models = global_product_options.pop("models")
@@ -924,23 +928,31 @@ def run_l2m_station(
 
             # -------------------------------------------------------------.
             # Create product directory
-            data_dir = create_product_directory(
-                # DISDRODB root directories
-                data_archive_dir=data_archive_dir,
-                metadata_archive_dir=metadata_archive_dir,
-                # Station arguments
-                data_source=data_source,
-                campaign_name=campaign_name,
-                station_name=station_name,
-                # Processing options
-                product=product,
-                force=force,
-                # Option for L2E
-                sample_interval=accumulation_interval,
-                rolling=rolling,
-                # Option for L2M
-                model_name=model_name,
-            )
+            try:
+                data_dir = create_product_directory(
+                    # DISDRODB root directories
+                    data_archive_dir=data_archive_dir,
+                    metadata_archive_dir=metadata_archive_dir,
+                    # Station arguments
+                    data_source=data_source,
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    # Processing options
+                    product=product,
+                    force=force,
+                    # Option for L2E
+                    sample_interval=accumulation_interval,
+                    rolling=rolling,
+                    # Option for L2M
+                    model_name=model_name,
+                )
+            except Exception:
+                msg = (
+                    f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has been "
+                    + "skipped because the product already exists and force=False."
+                )
+                log_info(logger=logger, msg=msg, verbose=verbose)
+                continue
 
             # Define logs directory
             logs_dir = create_logs_directory(
@@ -1005,7 +1017,7 @@ def run_l2m_station(
                 data_archive_dir=data_archive_dir,
                 # Product options
                 model_name=model_name,
-                sample_interval=sample_interval,
+                sample_interval=accumulation_interval,
                 rolling=rolling,
                 # Logs list
                 list_logs=list_logs,

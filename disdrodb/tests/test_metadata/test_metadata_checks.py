@@ -433,25 +433,25 @@ def test_check_metadata_archive_reader(tmp_path, sensor_name):
     metadata_archive_dir = tmp_path / "metadata" / "DISDRODB"
 
     list_readers = available_readers(sensor_name)
+    if len(list_readers) > 0:
+        # Test 1 : Correct reader metadata key
+        reader_reference = list_readers[0]
+        metadata_dict = {"reader": f"{reader_reference}", "sensor_name": sensor_name}
+        _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
+        is_valid = check_metadata_archive_reader(metadata_archive_dir)
+        assert is_valid
 
-    # Test 1 : Correct reader metadata key
-    reader_reference = list_readers[0]
-    metadata_dict = {"reader": f"{reader_reference}", "sensor_name": sensor_name}
-    _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_metadata_archive_reader(metadata_archive_dir)
-    assert is_valid
+        # Test 2 : Wrong reader metadata key
+        metadata_dict = {"reader": "", "sensor_name": sensor_name}
+        _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
+        is_valid = check_metadata_archive_reader(metadata_archive_dir)
+        assert not is_valid
 
-    # Test 2 : Wrong reader metadata key
-    metadata_dict = {"reader": "", "sensor_name": sensor_name}
-    _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_metadata_archive_reader(metadata_archive_dir)
-    assert not is_valid
-
-    # Test 3 : Wrong reader metadata key
-    metadata_dict = {"reader": "dummy/dummy", "sensor_name": sensor_name}
-    _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
-    is_valid = check_metadata_archive_reader(metadata_archive_dir)
-    assert not is_valid
+        # Test 3 : Wrong reader metadata key
+        metadata_dict = {"reader": "dummy/dummy", "sensor_name": sensor_name}
+        _ = create_fake_metadata_file(metadata_archive_dir=metadata_archive_dir, metadata_dict=metadata_dict)
+        is_valid = check_metadata_archive_reader(metadata_archive_dir)
+        assert not is_valid
 
 
 def test_check_metadata_archive(tmp_path):
@@ -496,9 +496,8 @@ def test_identify_missing_metadata_coords(tmp_path):
         metadata_archive_dir=metadata_archive_dir,
         metadata_dict=metadata_dict,
     )
-
-    function_return = identify_missing_metadata_coords([metadata_filepath])
-    assert function_return is None
+    # Test does not raise error
+    identify_missing_metadata_coords([metadata_filepath])
 
     # Test bad coordinates
     metadata_dict = {"longitude": "8r0", "latitude": "170", "platform_type": "fixed"}

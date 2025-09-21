@@ -81,20 +81,11 @@ def reader(
     valid_id_str = np.char.rjust(np.arange(0, 94).astype(str), width=2, fillchar="0")
     df = df[df["ID"].astype(str).isin(valid_id_str)]
 
-    # Create the dataframe with each row corresponding to a timestep
-    # - Group rows based on when ID values restart
-    groups = df.groupby((df["ID"].astype(int).diff() <= 0).cumsum())
-
-    # Reshape the dataframe
-    group_dfs = []
-    for _, group in groups:
-        group_df = group.set_index("ID").T
-        group_dfs.append(group_df)
-
-    # Merge each timestep dataframe
-    # --> Missing columns are infilled by NaN
-    df = pd.concat(group_dfs, axis=0)
-    df.columns = df.columns.astype(str).str.pad(width=2, side="left", fillchar="0")
+    # Create the dataframe where each row corresponds to a timestep
+    df["_group"] = (df["ID"].astype(int).diff() <= 0).cumsum()
+    df = df.pivot(index="_group", columns="ID")  # noqa
+    df.columns = df.columns.get_level_values("ID")
+    df = df.reset_index(drop=True)
 
     # Define available column names
     column_dict = {
@@ -123,9 +114,14 @@ def reader(
         # "23": "station_number",
         "24": "rainfall_amount_absolute_32bit",
         "25": "error_code",
+        # "26": "sensor_temperature_pcb",
+        # "27": "sensor_temperature_receiver",
+        # "28": "sensor_temperature_trasmitter",
         "30": "rainfall_rate_16_bit_30",
         "31": "rainfall_rate_16_bit_1200",
         "32": "rainfall_accumulated_16bit",
+        # "34": "rain_kinetic_energy",
+        # "35": "snowfall_rate",
         "90": "raw_drop_concentration",
         "91": "raw_drop_average_velocity",
         "93": "raw_drop_number",

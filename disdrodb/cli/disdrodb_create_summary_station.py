@@ -36,6 +36,14 @@ sys.tracebacklimit = 0  # avoid full traceback error if occur
 @click_station_arguments
 @click_data_archive_dir_option
 @click.option("-p", "--parallel", type=bool, show_default=True, default=False, help="Read files in parallel")
+@click.option(
+    "-t",
+    "--temporal_resolution",
+    type=str,
+    show_default=True,
+    default="1MIN",
+    help="Temporal resolution of the L2E product to be used for the summary.",
+)
 def disdrodb_create_summary_station(
     # Station arguments
     data_source: str,
@@ -43,6 +51,7 @@ def disdrodb_create_summary_station(
     station_name: str,
     # Processing options:
     parallel=False,
+    temporal_resolution="1MIN",
     # DISDRODB root directories
     data_archive_dir: Optional[str] = None,
 ):
@@ -81,6 +90,7 @@ def disdrodb_create_summary_station(
         station_name=station_name,
         # Options
         parallel=parallel,
+        temporal_resolution=temporal_resolution,
         # DISDRODB root directory
         data_archive_dir=data_archive_dir,
     )

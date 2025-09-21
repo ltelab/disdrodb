@@ -36,7 +36,7 @@ def test_create_station_metadata(tmp_path):
     data_source = "DATA_SOURCE"
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
-    _ = create_station_metadata(
+    create_station_metadata(
         metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,

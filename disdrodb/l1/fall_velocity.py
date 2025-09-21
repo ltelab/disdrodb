@@ -14,10 +14,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------.
-"""Theoretical models to estimate the drop fall velocity."""
-
-
+"""Theoretical models to estimate the raindrop fall velocity based on drop diameter in mm."""
 import numpy as np
+import xarray as xr
+
+from disdrodb.constants import DIAMETER_DIMENSION
+from disdrodb.l0.l0b_processing import ensure_valid_geolocation
+from disdrodb.l1_env.routines import load_env_dataset
+from disdrodb.utils.warnings import suppress_warnings
 
 
 def get_fall_velocity_atlas_1973(diameter):
@@ -53,7 +57,7 @@ def get_fall_velocity_atlas_1973(diameter):
 
     """
     fall_velocity = 9.65 - 10.3 * np.exp(-0.6 * diameter)  # clip to 0 !
-    fall_velocity = np.clip(fall_velocity, 0, None)
+    fall_velocity = fall_velocity.clip(min=0, max=None)
     return fall_velocity
 
 
@@ -80,6 +84,7 @@ def get_fall_velocity_brandes_2002(diameter):
 
     """
     fall_velocity = -0.1021 + 4.932 * diameter - 0.9551 * diameter**2 + 0.07934 * diameter**3 - 0.002362 * diameter**4
+    fall_velocity = fall_velocity.clip(min=0, max=None)
     return fall_velocity
 
 
@@ -107,6 +112,7 @@ def get_fall_velocity_uplinger_1981(diameter):
     """
     # Valid between 0.1 and 7 mm
     fall_velocity = 4.874 * diameter * np.exp(-0.195 * diameter)
+    fall_velocity = fall_velocity.clip(min=0, max=None)
     return fall_velocity
 
 
@@ -133,6 +139,7 @@ def get_fall_velocity_van_dijk_2002(diameter):
 
     """
     fall_velocity = -0.254 + 5.03 * diameter - 0.912 * diameter**2 + 0.0561 * diameter**3
+    fall_velocity = fall_velocity.clip(min=0, max=None)
     return fall_velocity
 
 
@@ -147,9 +154,10 @@ def get_fall_velocity_beard_1976(diameter, ds_env):
         A dataset containing the following environmental variables:
         - 'altitude' :  Altitude in meters (m).
         - 'latitude' :  Latitude in degrees.
-        - 'temperature' : Temperature in degrees Celsius (°C).
+        - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity in percentage (%).
         - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
+        - 'air_pressure': Air pressure in Pascals (Pa).
         - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
 
     Returns
@@ -166,121 +174,171 @@ def get_fall_velocity_beard_1976(diameter, ds_env):
         latitude=ds_env["latitude"],
         temperature=ds_env["temperature"],
         relative_humidity=ds_env["relative_humidity"],
-        # TODO: add air_pressure # TODO
+        air_pressure=ds_env.get("air_pressure", None),
         sea_level_air_pressure=ds_env["sea_level_air_pressure"],
         lapse_rate=ds_env["lapse_rate"],
     )
+    fall_velocity = fall_velocity.clip(min=0, max=None)
     return fall_velocity
 
 
-def ensure_valid_coordinates(ds, default_altitude=0, default_latitude=0, default_longitude=0):
-    """Ensure dataset valid coordinates for altitude, latitude, and longitude.
+RAINDROP_FALL_VELOCITY_MODELS = {
+    "Atlas1973": get_fall_velocity_atlas_1973,
+    "Beard1976": get_fall_velocity_beard_1976,
+    "Brandes2002": get_fall_velocity_brandes_2002,
+    "Uplinger1981": get_fall_velocity_uplinger_1981,
+    "VanDijk2002": get_fall_velocity_van_dijk_2002,
+}
 
-    Invalid values are np.nan and -9999.
+
+def available_raindrop_fall_velocity_models():
+    """Return a list of the available raindrop fall velocity models."""
+    return list(RAINDROP_FALL_VELOCITY_MODELS)
+
+
+def check_raindrop_fall_velocity_model(model):
+    """Check validity of the specified raindrop fall velocity model."""
+    available_models = available_raindrop_fall_velocity_models()
+    if model not in available_models:
+        raise ValueError(f"{model} is an invalid raindrop fall velocity model. Valid models: {available_models}.")
+    return model
+
+
+def get_raindrop_fall_velocity_model(model):
+    """Return the specified raindrop fall velocity model.
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        The dataset for which to ensure valid geolocation coordinates.
-    default_altitude : float, optional
-        The default value to use for invalid altitude values. Defaults to 0.
-    default_latitude : float, optional
-        The default value to use for invalid latitude values. Defaults to 0.
-    default_longitude : float, optional
-        The default value to use for invalid longitude values. Defaults to 0.
+    model : str
+        The model to use for calculating the rain drop fall velocity. Available models are:
+       'Atlas1973', 'Beard1976', 'Brandes2002', 'Uplinger1981', 'VanDijk2002'.
 
     Returns
     -------
-    xarray.Dataset
-        The dataset with invalid coordinates replaced by default values.
+    callable
+        A function which compute the raindrop fall velocity model
+        given the rain drop diameter in mm.
 
+    Notes
+    -----
+    This function serves as a wrapper to various raindrop fall velocity models.
+    It returns the appropriate model based on the `model` parameter.
     """
-    # TODO raise error if not present
-    invalid_altitude = np.logical_or(np.isnan(ds["altitude"]), ds["altitude"] == -9999)
-    ds["altitude"] = ds["altitude"].where(~invalid_altitude, default_altitude)
-
-    invalid_lat = np.logical_or(np.isnan(ds["latitude"]), ds["latitude"] == -9999)
-    ds["latitude"] = ds["latitude"].where(~invalid_lat, default_latitude)
-
-    invalid_lon = np.logical_or(np.isnan(ds["longitude"]), ds["longitude"] == -9999)
-    ds["longitude"] = ds["longitude"].where(~invalid_lon, default_longitude)
-    return ds
+    model = check_raindrop_fall_velocity_model(model)
+    return RAINDROP_FALL_VELOCITY_MODELS[model]
 
 
-def get_raindrop_fall_velocity(diameter, method, ds_env=None):
+def get_raindrop_fall_velocity(diameter, model, ds_env=None):
     """Calculate the fall velocity of raindrops based on their diameter.
 
     Parameters
     ----------
     diameter : array-like
         The diameter of the raindrops in millimeters.
-    method : str
-        The method to use for calculating the fall velocity. Must be one of the following:
+    model : str
+        The model to use for calculating the raindrop fall velocity. Must be one of the following:
         'Atlas1973', 'Beard1976', 'Brandes2002', 'Uplinger1981', 'VanDijk2002'.
     ds_env : xr.Dataset, optional
+        Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:
-        - 'altitude' :  Altitude in meters (m).
-        - 'latitude' :  Latitude in degrees.
-        - 'temperature' : Temperature in degrees Celsius (°C).
+        - 'altitude' (m)
+        - 'latitude' (°)
+        - 'temperature' : Temperature in degrees Kelvin (K).
         - 'relative_humidity' :  Relative humidity. A value between 0 and 1.
         - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
         - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
-        It is required for for the 'Beard1976' method.
+        If not specified, sensible default values are used.
 
     Returns
     -------
-    fall_velocity : array-like
-        The calculated fall velocities of the raindrops.
+    fall_velocity : xr.DataArray
+        The calculated raindrop fall velocities per diameter.
 
     Notes
     -----
-    The 'Beard1976' method requires additional environmental parameters such as altitude and latitude.
-    These parameters can be provided through the `ds_env` argument. If not provided, default values will be used.
+    The 'Beard1976' model requires additional environmental parameters.
+    These parameters can be provided through the `ds_env` argument.
+    If not provided, default values are be used.
+
+    For D < 0.12, Atlas1973 relationship results output V = 0 m/s  !
+    For D < 0.05, VanDijk2002 relationship results output V = 0 m/s !
+    For D < 0.02, Brandes relationship results output V = 0 m/s !
+
     """
-    # Input diameter in mm
-    dict_methods = {
-        "Atlas1973": get_fall_velocity_atlas_1973,
-        "Beard1976": get_fall_velocity_beard_1976,
-        "Brandes2002": get_fall_velocity_brandes_2002,
-        "Uplinger1981": get_fall_velocity_uplinger_1981,
-        "VanDijk2002": get_fall_velocity_van_dijk_2002,
-    }
     # Check valid method
-    available_methods = list(dict_methods)
-    if method not in dict_methods:
-        raise ValueError(f"{method} is an invalid fall velocity method. Valid methods: {available_methods}.")
+    model = check_raindrop_fall_velocity_model(model)
+
     # Copy diameter
-    diameter = diameter.copy()
-    # Initialize ds_env if None
-    # if ds_env is None:
-    #     ds_env = load_env_dataset(ds_env)
+    if isinstance(diameter, xr.DataArray):
+        diameter = diameter.copy()
+    else:
+        diameter = np.atleast_1d(diameter)
+        diameter = xr.DataArray(diameter, dims=DIAMETER_DIMENSION, coords={DIAMETER_DIMENSION: diameter.copy()})
 
-    # TODO: wrapper for DISDRODB product !
+    # Initialize ds_env if None and method == "Beard1976"
+    if model == "Beard1976":
+        if ds_env is None:
+            ds_env = load_env_dataset()
 
-    # Ensure valid altitude and geolocation (if missing set defaults)
-    # - altitude required by Beard
-    # - latitude required for gravity
-    ds_env = ensure_valid_coordinates(ds_env)
+        # Ensure valid altitude and geolocation
+        # - altitude required by Beard
+        # - latitude required for gravity
+        for coord in ["altitude", "latitude"]:
+            ds_env = ensure_valid_geolocation(ds_env, coord=coord, errors="raise")
+
     # Retrieve fall velocity
-    func = dict_methods[method]
-    fall_velocity = func(diameter, ds_env=ds_env) if method == "Beard1976" else func(diameter)
-    return fall_velocity
+    func = get_raindrop_fall_velocity_model(model)
+    with suppress_warnings():  # e.g. when diameter = 0 for Beard1976
+        fall_velocity = func(diameter, ds_env=ds_env) if model == "Beard1976" else func(diameter)
+
+    # Set to NaN for diameter outside [0, 10)
+    fall_velocity = fall_velocity.where(diameter < 10).where(diameter > 0)
+    # Ensure fall velocity is > 0 to avoid division by zero
+    # - Some models, at small diameter, can return negative/zero fall velocity
+    fall_velocity = fall_velocity.where(fall_velocity > 0)
+
+    # Add attributes
+    fall_velocity.name = "fall_velocity"
+    fall_velocity.attrs["units"] = "m/s"
+    fall_velocity.attrs["model"] = model
+    return fall_velocity.squeeze()
 
 
-def get_dataset_fall_velocity(ds, method="Brandes2002"):
-    """Compute the fall velocity and add it to the dataset.
+def get_raindrop_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976"):
+    """Compute the raindrop fall velocity.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        DISDRODB L0C dataset.
-    method : str, optional
-        Method to compute fall velocity. The default method is ``"Brandes2002"``.
+        DISDRODB dataset with the ``'diameter_bin_center'`` coordinate.
+        The ``'altitude'`` and ``'latitude'`` coordinates are used if ``model='Beard1976'``.
+    model : str, optional
+        Model to compute rain drop fall velocity.
+        The default model is ``"Beard1976"``.
+    ds_env : xr.Dataset, optional
+        Only required if model is 'Beard1976'.
+        A dataset containing the following environmental variables:
+        - 'temperature' : Temperature in degrees Kelvin (K).
+        - 'relative_humidity' :  Relative humidity. A value between 0 and 1.
+        - 'sea_level_air_pressure' : Sea level air pressure in Pascals (Pa).
+        - 'lapse_rate' : Lapse rate in degrees Celsius per meter (°C/m).
+        If not specified, sensible default values are used.
 
     Returns
     -------
-    xarray.Dataset
-        DISDRODB L0C dataset with an additional variable 'fall_velocity'.
+    xarray.DataArray
+        Rain drop fall velocity DataArray.
+
+    Notes
+    -----
+    The 'Beard1976' model requires additional environmental parameters.
+    These parameters can be provided through the `ds_env` argument.
+    If not provided, default values are be used.
+
+    For D < 0.12, Atlas1973 relationship results output V = 0 m/s
+    For D < 0.05, VanDijk2002 relationship results output V = 0 m/s
+    For D < 0.02, Brandes relationship results output V = 0 m/s
+
     """
     from disdrodb.constants import DIAMETER_DIMENSION
     from disdrodb.l1_env.routines import load_env_dataset
@@ -289,18 +347,13 @@ def get_dataset_fall_velocity(ds, method="Brandes2002"):
     if DIAMETER_DIMENSION not in ds.dims:
         raise ValueError(f"Diameter dimension '{DIAMETER_DIMENSION}' not found in dataset dimensions.")
 
-    # Retrieve diameter values (in mm)
-    diameter_bin_center = ds["diameter_bin_center"]
+    # Retrieve ENV dataset
+    # - It checks and includes default geolocation if missing
+    # - For mobile disdrometer, infill missing geolocation with backward and forward filling
+    if ds_env is None:
+        ds_env = load_env_dataset(ds)
 
-    # Ensure valid altitude and geolocation (if missing set defaults)
-    # TODO: MOBILE CASE !
-    default_geolocation = {"altitude": 0, "latitude": 0, "longitude": 0}
-    dataset_coords = {key: ds[key] for key in default_geolocation if key in ds}
-    default_geolocation.update(dataset_coords)
-    ds = ds.assign_coords(default_geolocation)
+    # Compute raindrop fall velocity
+    fall_velocity = get_raindrop_fall_velocity(diameter=ds["diameter_bin_center"], model=model, ds_env=ds_env)  # mn
 
-    # TODO: deal with ENV dataset
-    ds_env = load_env_dataset(ds)
-
-    fall_velocity = get_raindrop_fall_velocity(diameter_bin_center, method=method, ds_env=ds_env)
     return fall_velocity

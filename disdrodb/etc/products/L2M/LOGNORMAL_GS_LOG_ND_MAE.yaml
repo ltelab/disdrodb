@@ -1,0 +1,6 @@
+psd_model: "LognormalPSD"
+optimization: "GS"
+optimization_kwargs:
+  target: "ND"
+  transformation: "log"
+  error_order: 1

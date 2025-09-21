@@ -94,4 +94,4 @@ class TestParseArchiveDir:
 
     def test_returns_value_for_other_strings(self):
         """It returns the directory path unchanged for other strings."""
-        assert parse_archive_dir("/tmp/data") == "/tmp/data"
+        assert parse_archive_dir("/path/to/data/archive") == "/path/to/data/archive"

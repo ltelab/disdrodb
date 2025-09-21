@@ -40,6 +40,7 @@ STATION_NAME = "10"
 DEBUGGING_MODE = True
 VERBOSE = False
 FORCE = False
+TEMPORAL_RESOLUTION = "1MIN"
 
 # import pathlib
 # tmp_path = pathlib.Path("/tmp/13")
@@ -73,6 +74,8 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
                 # Processing options
                 "--parallel",
                 parallel,
+                "--temporal_resolution",
+                TEMPORAL_RESOLUTION,
                 # DISDRODB root directories
                 "--data_archive_dir",
                 test_data_archive_dir,
@@ -86,6 +89,7 @@ def test_disdrodb_create_summary_station(tmp_path, parallel, cli):
             station_name=STATION_NAME,
             # Processing options
             parallel=parallel,
+            temporal_resolution=TEMPORAL_RESOLUTION,
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
         )
@@ -133,6 +137,8 @@ def test_disdrodb_create_summary(tmp_path, disdrodb_metadata_archive_dir, cli):
                 # Processing options
                 "--parallel",
                 False,
+                "--temporal_resolution",
+                TEMPORAL_RESOLUTION,
                 # DISDRODB root directories
                 "--data_archive_dir",
                 test_data_archive_dir,
@@ -148,6 +154,7 @@ def test_disdrodb_create_summary(tmp_path, disdrodb_metadata_archive_dir, cli):
             station_names=STATION_NAME,
             # Processing options
             parallel=False,
+            temporal_resolution=TEMPORAL_RESOLUTION,
             # DISDRODB root directories
             data_archive_dir=test_data_archive_dir,
             metadata_archive_dir=test_metadata_archive_dir,

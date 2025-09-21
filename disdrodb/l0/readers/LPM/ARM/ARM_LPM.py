@@ -69,7 +69,7 @@ def reader(
         "quality_measurement": "quality_index",
         "max_diameter_hail": "max_hail_diameter",
         "laser_status": "laser_status",
-        "static_signal": "static_signal",
+        "static_signal_status": "static_signal_status",
         "interior_temperature": "temperature_interior",
         "laser_temperature": "laser_temperature",
         "laser_temperature_analog_status": "laser_temperature_analog_status",

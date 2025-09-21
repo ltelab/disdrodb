@@ -1,0 +1,6 @@
+psd_model: "GammaPSD"
+optimization: "GS"
+optimization_kwargs:
+  target: "ND"
+  transformation: "identity"
+  error_order: 1

@@ -1,0 +1,72 @@
+precipitation_rate:
+  description: Rainfall rate
+  long_name: Precipitation rate
+  units: mm/h
+precipitation_accumulated:
+  description: Accumulated rain amount over the measurement interval
+  long_name: Precipitation accumulated
+  units: mm
+weather_code_synop_4680:
+  description: SYNOP weather code according to table 4680 of Parsivel documentation
+  long_name: Weather code SYNOP 4680
+  units: ""
+weather_code_metar_4678:
+  description: METAR/SPECI weather code according to table 4678 of Parsivel documentation
+  long_name: Weather code METAR 4678
+  units: ""
+past_weather1:
+  description: Past weather code 1
+  long_name: Past weather 1
+  units: ""
+past_weather2:
+  description: Past weather code 2
+  long_name: Past weather 2
+  units: ""
+mor_visibility_5min:
+  description: Meteorological Optical Range in precipitation (5 minute average)
+  long_name: MOR visibility 5 minute
+  units: m
+mor_visibility:
+  description: Meteorological Optical Range in precipitation
+  long_name: MOR visibility
+  units: m
+number_particles:
+  description: Number of particles detected and validated
+  long_name: Number of detected particles
+  units: ""
+sensor_temperature:
+  description: Temperature in sensor housing
+  long_name: Temperature of the sensor
+  units: "degC"
+obstruction_status:
+  description: Obstruction status of the sensor
+  long_name: Obstruction status
+  units: ""
+total_extinction_coefficient:
+  description: Total extinction coefficient
+  long_name: Total extinction coefficient
+  units: "1/km"
+transmissometer_extinction_coefficient:
+  description: Transmissometer extinction coefficient
+  long_name: Transmissometer extinction coefficient
+  units: "1/km"
+back_scatter_extinction_coefficient:
+  description: Back scatter extinction coefficient
+  long_name: Back scatter extinction coefficient
+  units: "1/km"
+ambient_light_sensor_signal:
+  description: Ambient light sensor signal
+  long_name: Ambient light sensor signal
+  units: "cd/m2"
+sensor_status:
+  description: Sensor status
+  long_name: Sensor status
+  units: ""
+ambient_light_sensor_signal_status:
+  description: Ambient light sensor signal status
+  long_name: Ambient light sensor signal status
+  units: ""
+raw_drop_number:
+  description: Drop counts per diameter and velocity class
+  long_name: Raw drop number
+  units: ""

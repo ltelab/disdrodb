@@ -184,7 +184,7 @@ laser_status:
   contiguous: false
   chunksizes: 5000
   _FillValue: 255
-static_signal:
+static_signal_status:
   dtype: uint8
   zlib: true
   complevel: 3
@@ -310,7 +310,7 @@ control_output_laser_power_status:
   contiguous: false
   chunksizes: 5000
   _FillValue: 255
-reserve_status:
+reserved_status:
   dtype: uint8
   zlib: true
   complevel: 3

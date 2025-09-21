@@ -483,7 +483,7 @@ def reader_spectrum(filepath, logger):
     df = df.drop(columns=["TO_PARSE", "RECORD"])
 
     # Infill with NaN at invalid timesteps
-    add_nan_at_invalid_timesteps(df, invalid_timesteps)
+    df = add_nan_at_invalid_timesteps(df, invalid_timesteps)
     return df
 
 

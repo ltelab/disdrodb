@@ -34,6 +34,7 @@ dependencies = [
     "scipy",
 	"dask[distributed]",
 	"xarray",
+    "bottleneck",
     "matplotlib",
 
 ]
@@ -275,7 +276,7 @@ max-line-length = 120
 ignore = ["D001"]
 
 [tool.codespell]
-ignore-words-list = "nd,mis,thi,thet"
+ignore-words-list = "nd,mis,thi,thet,ALS"
 
 [tool.coverage.run]
 omit = [

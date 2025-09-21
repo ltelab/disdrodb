@@ -1,7 +1,7 @@
 psd_model: "GammaPSD"
 optimization: "ML"
 optimization_kwargs:
-  init_method: "M346"
+  init_method: "None"
   probability_method: "cdf"
   likelihood: "multinomial"
   truncated_likelihood: True

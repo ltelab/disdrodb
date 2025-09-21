@@ -39,7 +39,7 @@ def test_check_software_availability_decorator():
         return a, b
 
     with pytest.raises(ImportError):
-        dummy_function()
+        dummy_function(a=2, b=3)
 
     @check_software_availability(software="numpy", conda_package="numpy")
     def dummy_function(a, b=1):

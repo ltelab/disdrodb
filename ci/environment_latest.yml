@@ -16,6 +16,8 @@ dependencies:
   - pandas
   - dask[distributed]
   - xarray
+  - bottleneck
+  - flox
   - tectonic
   - matplotlib-base
   # Docs

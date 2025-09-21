@@ -22,12 +22,8 @@ from disdrodb.l0.l0_reader import is_documented_by, reader_generic_docstring
 from disdrodb.l0.l0a_processing import read_raw_text_file
 
 
-@is_documented_by(reader_generic_docstring)
-def reader(
-    filepath,
-    logger=None,
-):
-    """Reader."""
+def read_format1(filepath, logger):
+    """Read format F1 (before 2020)."""
     ##------------------------------------------------------------------------.
     #### Define column names
     column_names = ["TO_PARSE"]
@@ -91,8 +87,8 @@ def reader(
         "weather_code_synop_4680",
         "reflectivity_32bit",
         "mor_visibility",
-        "sensor_temperature",  # maybe
-        "laser_amplitude",  # probably
+        "sensor_temperature",
+        "laser_amplitude",
         "number_particles",
         "sensor_status",
         "sensor_heating_current",
@@ -119,3 +115,116 @@ def reader(
 
     # Return the dataframe adhering to DISDRODB L0 standards
     return df
+
+
+def read_format2(filepath, logger):
+    """Read format 2 (July 2012-April 2023)."""
+    ##------------------------------------------------------------------------.
+    #### Define column names
+    column_names = ["TO_PARSE"]
+
+    ##------------------------------------------------------------------------.
+    #### Define reader options
+    reader_kwargs = {}
+    # - Define delimiter
+    reader_kwargs["delimiter"] = "\\n"
+
+    # - Avoid first column to become df index !!!
+    reader_kwargs["index_col"] = False
+
+    # - Define behaviour when encountering bad lines
+    reader_kwargs["on_bad_lines"] = "skip"
+
+    # Skip the first row (header)
+    reader_kwargs["skiprows"] = 0
+
+    # - Define encoding
+    reader_kwargs["encoding"] = "latin"
+
+    # - Define reader engine
+    #   - C engine is faster
+    #   - Python engine is more feature-complete
+    reader_kwargs["engine"] = "python"
+
+    # - Define on-the-fly decompression of on-disk data
+    #   - Available: gzip, bz2, zip
+    reader_kwargs["compression"] = "infer"
+
+    # - Strings to recognize as NA/NaN and replace with standard NA flags
+    #   - Already included: '#N/A', '#N/A N/A', '#NA', '-1.#IND', '-1.#QNAN',
+    #                       '-NaN', '-nan', '1.#IND', '1.#QNAN', '<NA>', 'N/A',
+    #                       'NA', 'NULL', 'NaN', 'n/a', 'nan', 'null'
+    reader_kwargs["na_values"] = ["na", "", "error"]
+
+    # Skip first row as columns names
+    reader_kwargs["header"] = None
+
+    ##------------------------------------------------------------------------.
+    #### Read the data
+    df_raw = read_raw_text_file(
+        filepath=filepath,
+        column_names=column_names,
+        reader_kwargs=reader_kwargs,
+        logger=logger,
+    )
+
+    ##------------------------------------------------------------------------.
+    #### Adapt the dataframe to adhere to DISDRODB L0 standards
+    # Create ID and Value columns
+    df = df_raw["TO_PARSE"].str.split(";", expand=True, n=14)
+
+    # Assign column names
+    names = [
+        "id",
+        "time",
+        "rainfall_rate_32bit",
+        "rainfall_accumulated_32bit",
+        "weather_code_synop_4680",
+        "reflectivity_32bit",
+        "mor_visibility",
+        "sensor_temperature",
+        "laser_amplitude",
+        "number_particles",
+        "sensor_status",
+        "sensor_heating_current",
+        "sensor_battery_voltage",
+        "error_code",
+        "raw_drop_number",
+    ]
+    df.columns = names
+
+    # Convert time column to datetime
+    df["time"] = pd.to_datetime(df["time"], format="%Y-%m-%d %H:%M:%S", errors="coerce")
+
+    # Preprocess the raw spectrum
+    # - Add 0 before every ; if ; not preceded by a digit
+    # Example: ';;1;;' --> '0;0;1;0;'
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace("R;", "")
+    df["raw_drop_number"] = df["raw_drop_number"].str.replace(r"(?<!\d);", "0;", regex=True)
+
+    # Drop rows with invalid spectrum
+    df = df[df["raw_drop_number"].str.count(";") == 1024]
+
+    # df["rainfall_rate_32bit"].max()
+
+    # Drop columns not agreeing with DISDRODB L0 standards
+    columns_to_drop = [
+        "id",
+    ]
+    df = df.drop(columns=columns_to_drop)
+
+    # Return the dataframe adhering to DISDRODB L0 standards
+    return df
+
+
+@is_documented_by(reader_generic_docstring)
+def reader(
+    filepath,
+    logger=None,
+):
+    """Reader."""
+    if filepath.endswith("F1.dat.gz"):
+        return read_format1(filepath, logger)
+    if filepath.endswith("F2.dat.gz"):
+        return read_format2(filepath, logger)
+    raise ValueError("Unexpected filename: {os.path.basename(filepath)")

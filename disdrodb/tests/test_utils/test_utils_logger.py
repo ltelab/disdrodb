@@ -162,9 +162,8 @@ def test_define_summary_log_when_no_problems(tmp_path):
     # Check that if no problems, the problems log is not created
     log_contents1 = "INFO: DUMMY MESSAGE \nProcess has started \n Process has ended  \n"
     log_contents2 = "INFO: DUMMY MESSAGE \nProcess has started \n Process has ended  \n"
-    log_file1 = create_dummy_log_file(log1_fpath, log_contents1)
-    log_file2 = create_dummy_log_file(log2_fpath, log_contents2)
-    list_logs = [str(log_file1), str(log_file2)]  # noqa
+    _ = create_dummy_log_file(log1_fpath, log_contents1)
+    _ = create_dummy_log_file(log2_fpath, log_contents2)
 
     # List logs direc
     create_product_logs(
@@ -224,7 +223,7 @@ def log_environment(tmp_path):
 def test_create_logger_file_paralle_false(log_environment):
     campaign_dir, product, station_name, filename = log_environment
     logs_dir = os.path.join(str(campaign_dir), "logs", product, station_name)
-    logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
+    logger, _ = create_logger_file(logs_dir, filename, parallel=False)
 
     assert isinstance(logger, logging.Logger)
 
@@ -251,6 +250,6 @@ def test_create_logger_file_paralle_false(log_environment):
 def test_close_logger(log_environment):
     campaign_dir, product, station_name, filename = log_environment
     logs_dir = os.path.join(str(campaign_dir), "logs", product, station_name)
-    logger, logger_filepath = create_logger_file(logs_dir, filename, parallel=False)
+    logger, _ = create_logger_file(logs_dir, filename, parallel=False)
     close_logger(logger)
     assert not logger.handlers

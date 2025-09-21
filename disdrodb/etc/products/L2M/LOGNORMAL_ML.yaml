@@ -1,0 +1,8 @@
+psd_model: "LognormalPSD"
+optimization: "ML"
+optimization_kwargs:
+  init_method: "None"
+  probability_method: "cdf"
+  likelihood: "multinomial"
+  truncated_likelihood: True
+  optimizer: "Nelder-Mead"

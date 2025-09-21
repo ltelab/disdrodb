@@ -31,6 +31,10 @@ def reader(
     #### Open the netCDF
     ds = open_raw_netcdf_file(filepath=filepath, logger=logger)
 
+    # Correct for inverted raw_spectrum axis
+    ds["data_raw"] = ds["data_raw"].transpose("time", "diameter", "velocity")
+    ds["data_raw"].data = ds["data_raw"].data.swapaxes(1, 2)
+
     ##------------------------------------------------------------------------.
     #### Adapt the dataframe to adhere to DISDRODB L0 standards
     # Define dictionary mapping dataset variables to select and rename

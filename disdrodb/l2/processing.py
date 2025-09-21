@@ -441,7 +441,7 @@ def generate_l2m(
     diameter_spacing=0.05,
     # Processing options
     ds_env=None,
-    fall_velocity_method="Beard1976",
+    fall_velocity_model="Beard1976",
     # Filtering options
     minimum_ndrops=1,
     minimum_nbins=3,
@@ -548,7 +548,7 @@ def generate_l2m(
     drop_number_concentration = psd(diameter)
 
     # Retrieve fall velocity for each new diameter bin
-    velocity = get_raindrop_fall_velocity(diameter=diameter, method=fall_velocity_method, ds_env=ds_env)  # mm
+    velocity = get_raindrop_fall_velocity(diameter=diameter, model=fall_velocity_model, ds_env=ds_env)  # mm
 
     # Compute integral parameters
     ds_params = compute_integral_parameters(

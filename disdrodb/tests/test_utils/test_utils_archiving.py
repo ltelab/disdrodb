@@ -200,7 +200,7 @@ class TestIdentifyEvents:
 
         # --- Monkeypatch open_netcdf_files to return a minimal dataset ---
         def fake_open_netcdf_files(filepaths, variables, parallel, compute):
-            times = pd.date_range("2022-01-01", periods=5, freq="H")
+            times = pd.date_range("2022-01-01", periods=5, freq="h")
             N = [0, 10, 0, 12, 15]  # some below and some above min_drops
             ds = xr.Dataset(
                 {
@@ -230,7 +230,7 @@ class TestIdentifyEvents:
 
         # --- Monkeypatch open_netcdf_files to return empty dataset ---
         def fake_open_netcdf_files(filepaths, variables, parallel, compute):
-            times = pd.date_range("2022-01-01", periods=5, freq="H")
+            times = pd.date_range("2022-01-01", periods=5, freq="h")
             N = [0, 0, 0, 0, 0]  # all below threshold
             ds = xr.Dataset(
                 {

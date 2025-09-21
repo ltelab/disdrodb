@@ -62,7 +62,7 @@ def seconds_to_temporal_resolution(seconds):
     return temporal_resolution
 
 
-def get_resampling_information(temporal_resolution):
+def get_sampling_information(temporal_resolution):
     """
     Extract resampling information from the temporal_resolution string.
 
@@ -127,7 +127,7 @@ def temporal_resolution_to_seconds(temporal_resolution):
     seconds
         Duration in seconds.
     """
-    seconds, _ = get_resampling_information(temporal_resolution)
+    seconds, _ = get_sampling_information(temporal_resolution)
     return seconds
 
 

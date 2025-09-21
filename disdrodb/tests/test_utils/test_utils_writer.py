@@ -55,7 +55,10 @@ def test_correct_chunks_encoding(tmp_path):
     """Test DISDRODB correctly chunks the netCDF files."""
     # Create dataset with raw_drop_number variable with following dimensions
     # - (time: 10000, diameter_bin_center=2, velocity_bin_center=2)
-    time = np.arange(10_000)  # larger than current chunksize
+    time = np.datetime64("2000-01-01T00:00") + np.arange(10_000) * np.timedelta64(
+        1,
+        "m",
+    )  # larger than current chunksize
     velocity_bin_center = np.arange(2)
     diameter_bin_center = np.arange(2)
 

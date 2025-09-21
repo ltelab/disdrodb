@@ -23,7 +23,7 @@ from scipy.optimize import minimize
 from scipy.special import gamma, gammaln  # Regularized lower incomplete gamma function
 
 from disdrodb.constants import DIAMETER_DIMENSION
-from disdrodb.l1.fall_velocity import get_dataset_fall_velocity
+from disdrodb.l1.fall_velocity import get_raindrop_fall_velocity_from_ds
 from disdrodb.l2.empirical_dsd import (
     get_median_volume_drop_diameter,
     get_moment,
@@ -607,7 +607,7 @@ def estimate_gamma_parameters(
 
     """
     # Define initial guess for parameters
-    a = mu + 1  # (mu = a-1, a = mu+1)
+    a = mu + 1  # (mu = a-1, a = mu+1) (a > 0 --> mu=-1)
     scale = 1 / Lambda
     initial_params = [a, scale]
 
@@ -1208,13 +1208,13 @@ def apply_gamma_gs(
 ):
     """Estimate GammaPSD model parameters using Grid Search."""
     # Define parameters bounds
-    mu_bounds = (0.01, 20)
-    lambda_bounds = (0.01, 60)
+    mu_bounds = (-1, 40)
+    lambda_bounds = (0, 60)
 
     # Define initial set of parameters
-    mu_step = 0.5
+    mu_step = 0.25
     lambda_step = 0.5
-    mu_values = np.arange(0.01, 20, step=mu_step)
+    mu_values = np.arange(0, 40, step=mu_step)
     lambda_values = np.arange(0, 60, step=lambda_step)
 
     # First round of GS
@@ -1304,15 +1304,17 @@ def apply_lognormal_gs(
     """Estimate LognormalPSD model parameters using Grid Search."""
     # Define parameters bounds
     sigma_bounds = (0, np.inf)  # > 0
-    scale_bounds = (0.1, np.inf)  # > 0
+    scale_bounds = (0, np.inf)  # > 0
     # mu_bounds = (- np.inf, np.inf) # mu = np.log(scale)
 
     # Define initial set of parameters
+    # --> Typically sigma between 0 and 3
+    # --> Typically mu between -2 and 2
     scale_step = 0.2
     sigma_step = 0.2
-    scale_values = np.arange(0.1, 20, step=scale_step)
-    mu_values = np.log(scale_values)  # TODO: define realistic values
-    sigma_values = np.arange(0, 20, step=sigma_step)  # TODO: define realistic values
+    scale_values = np.arange(scale_step, 20, step=scale_step)
+    mu_values = np.log(scale_values)
+    sigma_values = np.arange(0, 3, step=sigma_step)
 
     # First round of GS
     Nt, mu, sigma = _apply_lognormal_gs(
@@ -1333,7 +1335,8 @@ def apply_lognormal_gs(
     # Second round of GS
     sigma_values = define_param_range(sigma, sigma_step, bounds=sigma_bounds)
     scale_values = define_param_range(np.exp(mu), scale_step, bounds=scale_bounds)
-    mu_values = np.log(scale_values)
+    with suppress_warnings():
+        mu_values = np.log(scale_values)
     Nt, mu, sigma = _apply_lognormal_gs(
         mu_values=mu_values,
         sigma_values=sigma_values,
@@ -1365,7 +1368,7 @@ def apply_normalized_gamma_gs(
 ):
     """Estimate NormalizedGammaPSD model parameters using Grid Search."""
     # Define set of mu values
-    mu_arr = np.arange(0.01, 20, step=0.01)
+    mu_arr = np.arange(-4, 30, step=0.01)
 
     # Perform grid search
     with suppress_warnings():
@@ -2353,7 +2356,7 @@ def get_gs_parameters(ds, psd_model, target="ND", transformation="log", error_or
 
     # Check fall velocity is available if target R
     if "fall_velocity" not in ds:
-        ds["fall_velocity"] = get_dataset_fall_velocity(ds)
+        ds["fall_velocity"] = get_raindrop_fall_velocity_from_ds(ds)
 
     # Retrieve estimation function
     func = OPTIMIZATION_ROUTINES_DICT["GS"][psd_model]

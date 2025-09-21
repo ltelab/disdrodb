@@ -20,90 +20,6 @@ import numpy as np
 import xarray as xr
 
 
-def available_axis_ratio_models():
-    """Return a list of the available drop axis ratio models."""
-    return list(AXIS_RATIO_MODELS)
-
-
-def get_axis_ratio_model(model):
-    """Return the specified drop axis ratio model.
-
-    Parameters
-    ----------
-    model : str
-        The model to use for calculating the axis ratio. Available models are:
-        'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
-        'Pruppacher1970', 'Beard1987', 'Andsager1999'.
-
-    Returns
-    -------
-    callable
-        A function which compute the vertical-to-horizontal axis ratio given a
-        particle diameter in mm.
-
-    Notes
-    -----
-    This function serves as a wrapper to various axis ratio models for raindrops.
-    It returns the appropriate model based on the `model` parameter.
-
-    Please note that the axis ratio function to be provided to pyTmatrix expects to
-    return a horizontal-to-vertical axis ratio !
-
-    """
-    model = check_axis_ratio_model(model)
-    return AXIS_RATIO_MODELS[model]
-
-
-def check_axis_ratio_model(model):
-    """Check validity of the specified drop axis ratio model."""
-    available_models = available_axis_ratio_models()
-    if model not in available_models:
-        raise ValueError(f"{model} is an invalid axis-ratio model. Valid models: {available_models}.")
-    return model
-
-
-def get_axis_ratio(diameter, model):
-    """
-    Compute the axis ratio of raindrops using the specified model.
-
-    Parameters
-    ----------
-    diameter : array-like
-        Raindrops diameter in mm.
-    model : str
-        The axis ratio model to use for calculating the axis ratio. Available models are:
-        'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
-        'Pruppacher1970', 'Beard1987', 'Andsager1999'.
-
-    Returns
-    -------
-    axis_ratio : array-like
-        The vertical-to-horizontal drop axis ratio corresponding to the input diameters.
-        Values of 1 indicate spherical particles, while values <1 indicate oblate particles.
-        Values >1 means prolate particles.
-
-    Notes
-    -----
-    This function serves as a wrapper to various axis ratio models for raindrops.
-    It selects and applies the appropriate model based on the `model` parameter.
-
-    Examples
-    --------
-    >>> diameter = np.array([0.5, 1.0, 2.0, 3.0])
-    >>> axis_ratio = get_axis_ratio(diameter, model="Brandes2002")
-
-    """
-    # Retrieve axis ratio function
-    axis_ratio_func = get_axis_ratio_model(model)
-
-    # Retrieve axis ratio
-    axis_ratio = axis_ratio_func(diameter)
-
-    # Clip values between 0 and 1
-    axis_ratio = np.clip(axis_ratio, 0, 1)
-    return axis_ratio
-
-
 def get_axis_ratio_andsager_1999(diameter):
     """
     Compute the axis ratio of raindrops using the Andsager et al. (1999) model.
@@ -366,3 +282,93 @@ AXIS_RATIO_MODELS = {
     "Beard1987": get_axis_ratio_beard_1987,
     "Andsager1999": get_axis_ratio_andsager_1999,
 }
+
+
+def available_axis_ratio_models():
+    """Return a list of the available drop axis ratio models."""
+    return list(AXIS_RATIO_MODELS)
+
+
+def check_axis_ratio_model(model):
+    """Check validity of the specified drop axis ratio model."""
+    available_models = available_axis_ratio_models()
+    if model not in available_models:
+        raise ValueError(f"{model} is an invalid axis-ratio model. Valid models: {available_models}.")
+    return model
+
+
+def get_axis_ratio_model(model):
+    """Return the specified drop axis ratio model.
+
+    Parameters
+    ----------
+    model : str
+        The model to use for calculating the axis ratio. Available models are:
+        'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
+        'Pruppacher1970', 'Beard1987', 'Andsager1999'.
+
+    Returns
+    -------
+    callable
+        A function which compute the vertical-to-horizontal axis ratio given a
+        particle diameter in mm.
+
+    Notes
+    -----
+    This function serves as a wrapper to various axis ratio models for raindrops.
+    It returns the appropriate model based on the `model` parameter.
+
+    Please note that the axis ratio function to be provided to pyTmatrix expects to
+    return a horizontal-to-vertical axis ratio !
+
+    """
+    model = check_axis_ratio_model(model)
+    return AXIS_RATIO_MODELS[model]
+
+
+def get_axis_ratio(diameter, model):
+    """
+    Compute the axis ratio of raindrops using the specified model.
+
+    Parameters
+    ----------
+    diameter : array-like
+        Raindrops diameter in mm.
+    model : str
+        The axis ratio model to use for calculating the axis ratio. Available models are:
+        'Thurai2005', 'Thurai2007', 'Battaglia2010', 'Brandes2002',
+        'Pruppacher1970', 'Beard1987', 'Andsager1999'.
+
+    Returns
+    -------
+    axis_ratio : array-like
+        The vertical-to-horizontal drop axis ratio corresponding to the input diameters.
+        Values of 1 indicate spherical particles, while values <1 indicate oblate particles.
+        Values >1 means prolate particles.
+
+    Notes
+    -----
+    This function serves as a wrapper to various axis ratio models for raindrops.
+    It selects and applies the appropriate model based on the `model` parameter.
+
+    Examples
+    --------
+    >>> diameter = np.array([0.5, 1.0, 2.0, 3.0])
+    >>> axis_ratio = get_axis_ratio(diameter, model="Brandes2002")
+
+    """
+    # Retrieve axis ratio function
+    axis_ratio_func = get_axis_ratio_model(model)
+
+    # Retrieve axis ratio
+    axis_ratio = axis_ratio_func(diameter)
+
+    # Clip values between 0 and 1
+    axis_ratio = np.clip(axis_ratio, 0, 1)
+
+    # Add attributes
+    if isinstance(axis_ratio, xr.DataArray):
+        axis_ratio.name = "axis_ratio"
+        axis_ratio.attrs["units"] = ""
+        axis_ratio.attrs["model"] = model
+    return axis_ratio

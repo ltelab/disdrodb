@@ -213,7 +213,7 @@ laser_status:
     - 0
     - 1
   field_number: "22"
-static_signal:
+static_signal_status:
   n_digits: 1
   n_characters: 1
   n_decimals: 1
@@ -389,7 +389,7 @@ control_output_laser_power_status:
     - 0
     - 1
   field_number: "36"
-reserve_status:
+reserved_status:
   n_digits: 1
   n_characters: 1
   n_decimals: 1

@@ -95,6 +95,8 @@ def update_disdrodb_attrs(ds, product: str):
     # ----------------------------------------------
     # Add time_coverage_start and time_coverage_end
     if "time" in ds.dims:
+        ds["time"] = ds["time"].dt.floor("s")  # ensure no sub-second values
+        ds["time"] = ds["time"].astype("datetime64[s]")
         attrs["time_coverage_start"] = str(ds["time"].data[0])
         attrs["time_coverage_end"] = str(ds["time"].data[-1])
 

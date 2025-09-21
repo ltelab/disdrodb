@@ -109,7 +109,7 @@ def test_create_station_issue(tmp_path):
     campaign_name = "CAMPAIGN_NAME"
     station_name = "station_name"
 
-    _ = create_station_issue(
+    create_station_issue(
         metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,

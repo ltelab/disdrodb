@@ -66,7 +66,7 @@ laser_status:
   description: Status Laser (OK/on:0, off:1)
   long_name: Status laser
   units: ""
-static_signal:
+static_signal_status:
   description: Static signal (OK:0, Error:1)
   long_name: Static signal
   units: ""
@@ -122,7 +122,7 @@ control_output_laser_power_status:
   description: Status Control output laser power (OK:0, warning:1)
   long_name: Status control output laser
   units: ""
-reserve_status:
+reserved_status:
   description: Reserve Status (0)
   long_name: Reserve status
   units: ""
