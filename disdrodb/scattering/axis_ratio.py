@@ -365,4 +365,10 @@ def get_axis_ratio(diameter, model):
 
     # Clip values between 0 and 1
     axis_ratio = np.clip(axis_ratio, 0, 1)
+
+    # Add attributes
+    if isinstance(axis_ratio, xr.DataArray):
+        axis_ratio.name = "axis_ratio"
+        axis_ratio.attrs["units"] = ""
+        axis_ratio.attrs["model"] = model
     return axis_ratio

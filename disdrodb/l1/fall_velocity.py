@@ -293,13 +293,18 @@ def get_raindrop_fall_velocity(diameter, model, ds_env=None):
 
     # Set to NaN for diameter outside [0, 10)
     fall_velocity = fall_velocity.where(diameter < 10).where(diameter > 0)
+    # Ensure fall velocity is > 0 to avoid division by zero
+    # - Some models, at small diameter, can return negative/zero fall velocity
+    fall_velocity = fall_velocity.where(fall_velocity > 0)
+
+    # Add attributes
     fall_velocity.name = "fall_velocity"
     fall_velocity.attrs["units"] = "m/s"
     fall_velocity.attrs["model"] = model
     return fall_velocity.squeeze()
 
 
-def get_raindrop_fall_velocity_from_ds(ds, ds_env=None, model="Brandes2002"):
+def get_raindrop_fall_velocity_from_ds(ds, ds_env=None, model="Beard1976"):
     """Compute the raindrop fall velocity.
 
     Parameters
@@ -309,7 +314,7 @@ def get_raindrop_fall_velocity_from_ds(ds, ds_env=None, model="Brandes2002"):
         The ``'altitude'`` and ``'latitude'`` coordinates are used if ``model='Beard1976'``.
     model : str, optional
         Model to compute rain drop fall velocity.
-        The default model is ``"Brandes2002"``.
+        The default model is ``"Beard1976"``.
     ds_env : xr.Dataset, optional
         Only required if model is 'Beard1976'.
         A dataset containing the following environmental variables:

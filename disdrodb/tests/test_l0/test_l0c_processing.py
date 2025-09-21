@@ -76,7 +76,7 @@ class TestDropTimestepsWithInvalidSampleInterval:
         ds_out = drop_timesteps_with_invalid_sample_interval(ds, measurement_intervals, verbose=False)
 
         # Expect empty dataset along time
-        assert ds_out.dims["time"] == 0
+        assert ds_out.sizes["time"] == 0
 
     def test_mixed_valid_intervals(self, capsys):
         """Invalid timesteps should trigger warnings if verbose=True."""

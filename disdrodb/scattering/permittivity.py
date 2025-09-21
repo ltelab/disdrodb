@@ -147,6 +147,12 @@ def get_refractive_index(temperature, frequency, permittivity_model):
 
     # Retrieve refractive_index
     refractive_index = func(temperature=temperature, frequency=frequency)
+
+    # Add attributes
+    if isinstance(refractive_index, xr.DataArray):
+        refractive_index.name = "refractive_index"
+        refractive_index.attrs["units"] = ""
+        refractive_index.attrs["model"] = permittivity_model
     return refractive_index
 
 
