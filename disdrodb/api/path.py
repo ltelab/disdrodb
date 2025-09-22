@@ -469,15 +469,15 @@ def define_product_dir_tree(
     product_kwargs = check_product_kwargs(product, product_kwargs)
     if product.upper() == "RAW":
         return ""
-    if product.upper() in ["L0A", "L0B", "L0C", "L1"]:
+    if product.upper() in ["L0A", "L0B", "L0C"]:
         return ""
-    if product == "L2E":
+    if product in ["L1", "L2E"]:
         rolling = product_kwargs.get("rolling")
         sample_interval = product_kwargs.get("sample_interval")
         check_rolling(rolling)
         check_sample_interval(sample_interval)
         temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
-        return os.path.join(temporal_resolution)
+        return temporal_resolution
     # L2M if product == "L2M":
     rolling = product_kwargs.get("rolling")
     sample_interval = product_kwargs.get("sample_interval")
@@ -735,7 +735,7 @@ def define_filename(
     #     sample_interval = product_kwargs.get("sample_interval",  0)
     #     temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=False)
     #     product_name = f"{product}.{temporal_resolution}"
-    if product in ["L2E", "L2M"]:
+    if product in ["L1", "L2E", "L2M"]:
         rolling = product_kwargs.get("rolling")
         sample_interval = product_kwargs.get("sample_interval")
         temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
@@ -839,33 +839,23 @@ def define_l0c_filename(ds, campaign_name: str, station_name: str) -> str:
     return filename
 
 
-def define_l1_filename(ds, campaign_name, station_name: str) -> str:
+def define_l1_filename(ds, campaign_name, station_name: str, sample_interval: int, rolling: bool) -> str:
     """Define L1 file name."""
-    # TODO: add sample_interval and rolling as function argument
-
     starting_time, ending_time = get_file_start_end_time(ds)
-    sample_interval = int(ensure_sample_interval_in_seconds(ds["sample_interval"]).data.item())
-    temporal_resolution = define_temporal_resolution(sample_interval, rolling=False)
-    starting_time, ending_time = get_file_start_end_time(ds)
-    starting_time = starting_time.strftime("%Y%m%d%H%M%S")
-    ending_time = ending_time.strftime("%Y%m%d%H%M%S")
-    version = ARCHIVE_VERSION
-    filename = f"L1.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}.{version}.nc"
-
-    # filename = define_filename(
-    #     product="L1",
-    #     campaign_name=campaign_name,
-    #     station_name=station_name,
-    #     # Filename options
-    #     start_time=starting_time,
-    #     end_time=ending_time,
-    #     add_version=True,
-    #     add_time_period=True,
-    #     add_extension=True,
-    #     # Product options
-    #     # sample_interval=sample_interval,
-    #     # rolling=rolling,
-    # )
+    filename = define_filename(
+        product="L1",
+        campaign_name=campaign_name,
+        station_name=station_name,
+        # Filename options
+        start_time=starting_time,
+        end_time=ending_time,
+        add_version=True,
+        add_time_period=True,
+        add_extension=True,
+        # Product options
+        sample_interval=sample_interval,
+        rolling=rolling,
+    )
     return filename
 
 

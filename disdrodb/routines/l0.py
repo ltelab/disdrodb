@@ -50,7 +50,7 @@ from disdrodb.l0.l0b_nc_processing import sanitize_ds
 from disdrodb.l0.l0b_processing import generate_l0b
 from disdrodb.l0.l0c_processing import TOLERANCE_SECONDS, create_l0c_datasets
 from disdrodb.metadata import read_station_metadata
-from disdrodb.utils.archiving import get_files_per_time_block
+from disdrodb.utils.archiving import group_files_by_time_block
 from disdrodb.utils.dask import execute_tasks_safely
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
@@ -928,7 +928,7 @@ def run_l0c_station(
     # -------------------------------------------------------------------------.
     # Retrieve dictionary with the required files per time block
     # TODO: allow customizing this in config file, but risk of out of memory !
-    list_event_info = get_files_per_time_block(filepaths=filepaths, freq="day", tolerance_seconds=TOLERANCE_SECONDS)
+    list_event_info = group_files_by_time_block(filepaths=filepaths, freq="day", tolerance_seconds=TOLERANCE_SECONDS)
 
     # -----------------------------------------------------------------.
     # Generate L0C files

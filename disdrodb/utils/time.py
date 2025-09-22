@@ -235,6 +235,8 @@ def regularize_dataset(
     time_dim: str = "time",
     method: Optional[str] = None,
     fill_value=None,
+    start_time=None,
+    end_time=None,
 ):
     """Regularize a dataset across time dimension with uniform resolution.
 
@@ -265,7 +267,13 @@ def regularize_dataset(
     """
     attrs = xr_obj.attrs.copy()
     xr_obj = _check_time_sorted(xr_obj, time_dim=time_dim)
-    start_time, end_time = get_dataset_start_end_time(xr_obj, time_dim=time_dim)
+
+    # Define start time and end_time
+    start, end = get_dataset_start_end_time(xr_obj, time_dim=time_dim)
+    if start_time is None:
+        start_time = start
+    if end_time is None:
+        end_time = end
 
     # Define new time index
     new_time_index = pd.date_range(

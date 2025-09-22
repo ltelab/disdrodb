@@ -59,6 +59,7 @@ FORCE = False
 # VERBOSE=True
 # test_metadata_archive_dir = "/home/ghiggi/Projects/DISDRODB-METADATA/DISDRODB"
 # test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+# os.environ["PYTEST_CURRENT_TEST"] = "1"
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -136,17 +137,17 @@ def test_disdrodb_run_l2e_station(tmp_path, disdrodb_metadata_archive_dir, paral
         rolling=False,
     )
     assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
-    # - ROLL1MIN
+    # - ROLL2MIN
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60,
+        sample_interval=60 * 2,
         rolling=True,
     )
-    assert count_files(data_dir, glob_pattern="L2E.ROLL1MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2E.ROLL2MIN.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -306,17 +307,17 @@ def test_disdrodb_run_l2e(tmp_path, disdrodb_metadata_archive_dir, cli):
         rolling=False,
     )
     assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
-    # - ROLL1MIN
+    # - ROLL2MIN
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L2E",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=60,
+        sample_interval=60 * 2,
         rolling=True,
     )
-    assert count_files(data_dir, glob_pattern="L2E.ROLL1MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2E.ROLL2MIN.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])

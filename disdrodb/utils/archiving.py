@@ -23,10 +23,7 @@ import pandas as pd
 from disdrodb.api.info import get_start_end_time_from_filepaths
 from disdrodb.api.io import open_netcdf_files
 from disdrodb.utils.event import group_timesteps_into_event
-from disdrodb.utils.time import (
-    ensure_sorted_by_time,
-    ensure_timedelta_seconds,
-)
+from disdrodb.utils.time import ensure_sorted_by_time, temporal_resolution_to_seconds
 
 ####---------------------------------------------------------------------------------
 #### Time blocks
@@ -140,6 +137,7 @@ def identify_events(
     neighbor_time_interval : str
         The time interval around a given a timestep defining the neighborhood.
         Only timesteps that fall within this time interval before or after a timestep are considered neighbors.
+        The neighbor_time_interval must be at least equal to the dataset sampling interval!
     neighbor_min_size : int, optional
         The minimum number of neighboring timesteps required within `neighbor_time_interval` for a
         timestep to be considered non-isolated.  Isolated timesteps are removed !
@@ -171,6 +169,12 @@ def identify_events(
     # Define candidate timesteps to group into events
     idx_valid = ds["N"].to_numpy() > min_drops
     timesteps = ds["time"].to_numpy()[idx_valid]
+    if "sample_interval" in ds:
+        sample_interval = ds["sample_interval"].compute().item()
+        if temporal_resolution_to_seconds(neighbor_time_interval) < sample_interval:
+            msg = "'neighbor_time_interval' must be at least equal to the dataset sample interval ({sample_interval} s)"
+            raise ValueError(msg)
+
     # Define event list
     event_list = group_timesteps_into_event(
         timesteps=timesteps,
@@ -326,29 +330,32 @@ def _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_star
     return results
 
 
-def get_files_partitions(list_partitions, filepaths, sample_interval, accumulation_interval, rolling):  # noqa: ARG001
+def group_files_by_temporal_partitions(
+    temporal_partitions,
+    filepaths,
+    block_starts_offset=0,
+    block_ends_offset=0,
+):
     """
     Provide information about the required files for each event.
 
-    For each event in `list_partitions`, this function identifies the file paths from `filepaths` that
-    overlap with the event period, adjusted by the `accumulation_interval`. The event period is
-    extended backward or forward based on the `rolling` parameter.
+    For each time block in `temporal_partitions`, the function identifies the `filepaths` that
+    overlap such time period. The time blocks of `temporal_partitions` can be adjusted using
+    block_starts_offset and block_ends_offset e.g. for resampling applications.
 
     Parameters
     ----------
-    list_partitions : list of dict
-        List of events, where each event is a dictionary containing at least 'start_time' and 'end_time'
+    temporal_partitions : list of dict
+        List of time blocks, where each time blocks is a dictionary containing at least 'start_time' and 'end_time'
         keys with `numpy.datetime64` values.
     filepaths : list of str
         List of file paths corresponding to data files.
-    sample_interval : numpy.timedelta64 or int
-        The sample interval of the input dataset.
-    accumulation_interval : numpy.timedelta64 or int
-        Time interval to adjust the event period for accumulation. If an integer is provided, it is
-        assumed to be in seconds.
-    rolling : bool
-        If True, adjust the event period backward by `accumulation_interval` (rolling backward).
-        If False, adjust forward (aggregate forward).
+    block_starts_offset: int
+        Optional offset (in seconds) to add to time blocks starts.
+        Provide negative offset to go back in time.
+    block_ends_offset: int
+        Optional offset (in seconds) to add to time blocks ends.
+        Provide negative offset to go back in time.
 
     Returns
     -------
@@ -359,54 +366,54 @@ def get_files_partitions(list_partitions, filepaths, sample_interval, accumulati
         - 'filepaths': List of file paths overlapping with the adjusted event period.
 
     """
-    if len(filepaths) == 0 or len(list_partitions) == 0:
+    if len(filepaths) == 0 or len(temporal_partitions) == 0:
         return []
-
-    # Ensure sample_interval and accumulation_interval is numpy.timedelta64
-    accumulation_interval = ensure_timedelta_seconds(accumulation_interval)
-    sample_interval = ensure_timedelta_seconds(sample_interval)
-
-    # Define offset on event_end_time
-    offset = accumulation_interval if sample_interval != accumulation_interval else ensure_timedelta_seconds(0)
 
     # Retrieve file start_time and end_time
     files_start_time, files_end_time = get_start_end_time_from_filepaths(filepaths)
 
     # Retrieve partitions blocks start and end time arrays
-    block_starts = np.array([p["start_time"] for p in list_partitions]).astype("M8[s]")
-    block_ends = np.array([p["end_time"] for p in list_partitions]).astype("M8[s]")
+    block_starts = np.array([p["start_time"] for p in temporal_partitions]).astype("M8[s]")
+    block_ends = np.array([p["end_time"] for p in temporal_partitions]).astype("M8[s]")
 
-    # Add optional offset for resampling
-    # TODO: expanding partition time should be done only at L1 stage when resampling
-    # In disdrodb, the time reported is time at the start of the accumulation period !
-    # If sensors report time at the end of measurement interval, we might being reporting time
-    #  with an inaccuracy equals to the sensor measurement interval.
-    # We could correct for that at L0C stage already !
-    block_ends = block_ends + offset
+    # Add optional offset to blocks' starts/ends (e.g. for resampling)
+    block_starts = block_starts + block_starts_offset
+    block_ends = block_ends + block_ends_offset
 
     # Map filepaths to corresponding time blocks
     list_event_info = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)
     return list_event_info
 
 
-def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=120):
+def group_files_by_time_block(filepaths, freq="day", tolerance_seconds=120):
     """
-    Organize files by the days they cover based on their start and end times.
+    Organize files by time blocks based on their start and end times.
+
+    If tolerance_seconds is specified, it adds some tolerance to files start and end_time.
+    This means that files starting/ending next to the time blocks boundaries will be included in both
+    time blocks. This can be useful to deal with imprecise time within files.
 
     Parameters
     ----------
     filepaths : list of str
         List of file paths to be processed.
+    freq: str
+        Frequency of the time block. The default frequency is 'day'.
+    tolerance_seconds: int
+        Tolerance in seconds to subtract/add to files start time and end time.
 
     Returns
     -------
-    dict
-        Dictionary where keys are days (as strings) and values are lists of file paths
-        that cover those days.
+    list of dict
+        A list where each element is a dictionary containing:
+        - 'start_time': Adjusted start time of the event (`datetime.datetime64`).
+        - 'end_time': Adjusted end time of the event (`datetime.datetime64`).
+        - 'filepaths': List of file paths overlapping with the adjusted event period.
 
     Notes
     -----
-    This function adds a tolerance of 60 seconds to account for imprecise time logging by the sensors.
+    In the DISDRODB L0C processing chain, a tolerance of 120 seconds is used to account
+    for the possible imprecise/drifting time logged by the sensors before it is corrected.
     """
     # Empty filepaths list return a dictionary
     if len(filepaths) == 0:
@@ -421,13 +428,13 @@ def get_files_per_time_block(filepaths, freq="day", tolerance_seconds=120):
     files_end_time = files_end_time + np.array(tolerance_seconds, dtype="m8[s]")
 
     # Identify candidate blocks
-    list_partitions = identify_time_partitions(
+    temporal_partitions = identify_time_partitions(
         start_times=files_start_time,
         end_times=files_end_time,
         freq=freq,
     )
-    block_starts = np.array([b["start_time"] for b in list_partitions]).astype("M8[s]")
-    block_ends = np.array([b["end_time"] for b in list_partitions]).astype("M8[s]")
+    block_starts = np.array([b["start_time"] for b in temporal_partitions]).astype("M8[s]")
+    block_ends = np.array([b["end_time"] for b in temporal_partitions]).astype("M8[s]")
 
     # Map filepaths to corresponding time blocks
     list_event_info = _map_files_to_blocks(files_start_time, files_end_time, filepaths, block_starts, block_ends)

@@ -39,7 +39,7 @@ def is_possible_product(accumulation_interval, sample_interval, rolling):
     # Avoid product generation if the accumulation_interval is less than the sample interval
     if accumulation_interval < sample_interval:
         return False
-    # Avoid producti generation if accumulation_interval is not multiple of sample_interval
+    # Avoid product generation if accumulation_interval is not multiple of sample_interval
     return accumulation_interval % sample_interval == 0
 
 

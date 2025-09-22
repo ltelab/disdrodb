@@ -160,10 +160,9 @@ def generate_l1(
     # -------------------------------------------------------------------------------------------
     # Retrieve drop number and drop_counts arrays
     if has_velocity_dimension:
-        drop_number = ds_l1["raw_drop_number"].where(mask)  # 2D (diameter, velocity)
+        drop_number = ds_l1["raw_drop_number"].where(mask, 0)  # 2D (diameter, velocity)
         drop_counts = drop_number.sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
         drop_counts_raw = ds_l1["raw_drop_number"].sum(dim=VELOCITY_DIMENSION)  # 1D (diameter)
-
     else:
         drop_number = ds_l1["raw_drop_number"]  # 1D (diameter)
         drop_counts = ds_l1["raw_drop_number"]  # 1D (diameter)

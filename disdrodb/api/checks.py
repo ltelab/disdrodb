@@ -154,6 +154,16 @@ def check_rolling(rolling):
         raise TypeError("'rolling' must be a boolean.")
 
 
+def check_temporal_resolution(temporal_resolution):
+    """Check temporal resolution validity."""
+    from disdrodb.utils.time import get_sampling_information
+
+    if not isinstance(temporal_resolution, str):
+        raise TypeError("'temporal_resolution' must be a string.")
+    # If correct, the follow should not raise error
+    sample_interval, rolling = get_sampling_information(temporal_resolution)
+
+
 def check_folder_partitioning(folder_partitioning):
     """
     Check if the given folder partitioning scheme is valid.

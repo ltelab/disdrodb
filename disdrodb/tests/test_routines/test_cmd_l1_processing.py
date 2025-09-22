@@ -44,6 +44,7 @@ VERBOSE = True
 FORCE = False
 PARALLEL = False
 
+
 # from disdrodb.metadata.download import download_metadata_archive
 # import pathlib
 # tmp_path = pathlib.Path("/tmp/10")
@@ -51,6 +52,7 @@ PARALLEL = False
 # dst_dir = os.path.join(test_data_archive_dir, "V0")
 # shutil.copytree(TEST_DATA_L0C_DIR, dst_dir, dirs_exist_ok=True)
 # test_metadata_archive_dir = download_metadata_archive(tmp_path / "original_metadata_archive_repo")
+# os.environ["PYTEST_CURRENT_TEST"] = "1"
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -112,8 +114,32 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_archive_dir, parall
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
+        sample_interval=60,
+        rolling=False,  # 1MIN
     )
-    assert count_files(data_dir, glob_pattern="L1.30S.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L1.1MIN.*.nc", recursive=True) == 2
+
+    data_dir = define_data_dir(
+        data_archive_dir=test_data_archive_dir,
+        product="L1",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+        sample_interval=60 * 10,  # 10MIN
+        rolling=False,  # 1MIN
+    )
+    assert count_files(data_dir, glob_pattern="L1.10MIN.*.nc", recursive=True) == 2
+
+    data_dir = define_data_dir(
+        data_archive_dir=test_data_archive_dir,
+        product="L1",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+        sample_interval=60 * 2,
+        rolling=True,  # ROLL2MIN
+    )
+    assert count_files(data_dir, glob_pattern="L1.ROLL2MIN.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -169,12 +195,36 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_archive_dir, cli):
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check products files are produced
+    # Check product files are produced
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
         product="L1",
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
+        sample_interval=60,
+        rolling=False,  # 1MIN
     )
-    assert count_files(data_dir, glob_pattern="L1.30S.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L1.1MIN.*.nc", recursive=True) == 2
+
+    data_dir = define_data_dir(
+        data_archive_dir=test_data_archive_dir,
+        product="L1",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+        sample_interval=60 * 10,  # 10MIN
+        rolling=False,  # 1MIN
+    )
+    assert count_files(data_dir, glob_pattern="L1.10MIN.*.nc", recursive=True) == 2
+
+    data_dir = define_data_dir(
+        data_archive_dir=test_data_archive_dir,
+        product="L1",
+        data_source=DATA_SOURCE,
+        campaign_name=CAMPAIGN_NAME,
+        station_name=STATION_NAME,
+        sample_interval=60 * 2,
+        rolling=True,  # ROLL2MIN
+    )
+    assert count_files(data_dir, glob_pattern="L1.ROLL2MIN.*.nc", recursive=True) == 2

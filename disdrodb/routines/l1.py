@@ -24,25 +24,29 @@ import os
 import time
 from typing import Optional
 
-import xarray as xr
+import pandas as pd
 
 from disdrodb.api.checks import check_station_inputs
 from disdrodb.api.create_directories import (
     create_logs_directory,
     create_product_directory,
 )
+from disdrodb.api.io import open_netcdf_files
 from disdrodb.api.path import (
     define_file_folder_path,
     define_l1_filename,
+    define_temporal_resolution,
 )
 from disdrodb.api.search import get_required_product
 from disdrodb.configs import (
     get_data_archive_dir,
     get_folder_partitioning,
     get_metadata_archive_dir,
-    get_product_options,
 )
 from disdrodb.l1.processing import generate_l1
+from disdrodb.l1.resampling import resample_dataset
+from disdrodb.metadata.reader import read_station_metadata
+from disdrodb.routines.options import L1ProcessingOptions
 from disdrodb.utils.dask import execute_tasks_safely
 from disdrodb.utils.decorators import delayed_if_parallel, single_threaded_if_parallel
 
@@ -52,20 +56,40 @@ from disdrodb.utils.logger import (
     log_info,
 )
 from disdrodb.utils.routines import run_product_generation, try_get_required_filepaths
+from disdrodb.utils.time import (
+    ensure_sample_interval_in_seconds,
+    get_sampling_information,
+)
 from disdrodb.utils.writer import write_product
 
 logger = logging.getLogger(__name__)
 
 
+def define_l1_logs_filename(campaign_name, station_name, start_time, end_time, accumulation_interval, rolling):
+    """Define L1 logs filename."""
+    temporal_resolution = define_temporal_resolution(seconds=accumulation_interval, rolling=rolling)
+    starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
+    ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
+    logs_filename = f"L1.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
+    return logs_filename
+
+
 @delayed_if_parallel
 @single_threaded_if_parallel
 def _generate_l1(
-    filepath,
+    start_time,
+    end_time,
+    filepaths,
     data_dir,
     logs_dir,
     logs_filename,
+    folder_partitioning,
     campaign_name,
     station_name,
+    # L1 options
+    accumulation_interval,
+    rolling,
+    product_options,
     # Processing options
     force,
     verbose,
@@ -107,29 +131,61 @@ def _generate_l1(
 
     # Define product processing function
     def core(
-        filepath,
+        filepaths,
+        start_time,
+        end_time,
         campaign_name,
         station_name,
+        # Processing options
+        # logger,
+        # verbose,
+        force,
+        # Product options
+        accumulation_interval,  # TODO: temporal_resolution
+        rolling,  # TODO: temporal_resolution
+        product_options,
+        # Archiving arguments
         data_dir,
         folder_partitioning,
     ):
         """Define L1 product processing."""
-        # Retrieve L1 configurations
-        l1_options = get_product_options("L1").get("product_options")  # TODO: MOVE OUTSIDE
+        # Open the L0C netCDF files
+        ds = open_netcdf_files(
+            filepaths,
+            start_time=start_time,
+            end_time=end_time,
+            variables=["raw_drop_number", "time_qc"],
+            parallel=False,
+            compute=True,
+        )
 
-        # Open the raw netCDF
-        with xr.open_dataset(filepath, chunks=-1, decode_timedelta=False, cache=False) as ds:
-            ds = ds[["raw_drop_number"]].load()
+        # Resample dataset
+        # - Define sample interval in seconds
+        sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).to_numpy().item()
+
+        # - Resample dataset
+        ds = resample_dataset(
+            ds=ds,
+            sample_interval=sample_interval,
+            accumulation_interval=accumulation_interval,
+            rolling=rolling,
+        )
 
         # Produce L1 dataset
-        ds = generate_l1(ds=ds, **l1_options)
+        ds = generate_l1(ds=ds, **product_options)
 
         # Ensure at least 1 timestep available
         if ds["time"].size <= 1:
             return None
 
         # Write L1 netCDF4 dataset
-        filename = define_l1_filename(ds, campaign_name=campaign_name, station_name=station_name)
+        filename = define_l1_filename(
+            ds,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            rolling=rolling,
+            sample_interval=accumulation_interval,
+        )
         folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
         filepath = os.path.join(folder_path, filename)
         write_product(ds, filepath=filepath, force=force)
@@ -139,13 +195,24 @@ def _generate_l1(
 
     # Define product processing function kwargs
     core_func_kwargs = dict(  # noqa: C408
-        filepath=filepath,
+        filepaths=filepaths,
+        start_time=start_time,
+        end_time=end_time,
         campaign_name=campaign_name,
         station_name=station_name,
+        # Processing options
+        # verbose=verbose,
+        force=force,
+        # Product options
+        accumulation_interval=accumulation_interval,  # TODO: temporal_resolution
+        rolling=rolling,  # TODO: temporal_resolution
+        product_options=product_options,
         # Archiving options
         data_dir=data_dir,
         folder_partitioning=folder_partitioning,
     )
+
+    # TODO: Inspect core arguments: pass logger, verbose, folder_partitioning if present?
     # Run product generation
     logger_filepath = run_product_generation(
         product=product,
@@ -231,33 +298,12 @@ def run_l1_station(
         station_name=station_name,
     )
 
-    # Define logs directory
-    logs_dir = create_logs_directory(
-        product=product,
-        data_archive_dir=data_archive_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-    )
-
     # ------------------------------------------------------------------------.
     # Start processing
     if verbose:
         t_i = time.time()
         msg = f"{product} processing of station {station_name} has started."
         log_info(logger=logger, msg=msg, verbose=verbose)
-
-    # ------------------------------------------------------------------------.
-    # Create directory structure
-    data_dir = create_product_directory(
-        data_archive_dir=data_archive_dir,
-        metadata_archive_dir=metadata_archive_dir,
-        data_source=data_source,
-        campaign_name=campaign_name,
-        station_name=station_name,
-        product=product,
-        force=force,
-    )
 
     # -------------------------------------------------------------------------.
     # List files to process
@@ -275,38 +321,122 @@ def run_l1_station(
     if filepaths is None:
         return
 
-    # -----------------------------------------------------------------.
-    # Generate L1 files
-    # - Loop over the L0 netCDF files and generate L1 files.
-    # - If parallel=True, it does that in parallel using dask.delayed
-    list_tasks = [
-        _generate_l1(
-            filepath=filepath,
-            data_dir=data_dir,
-            logs_dir=logs_dir,
-            logs_filename=os.path.basename(filepath),
-            campaign_name=campaign_name,
-            station_name=station_name,
-            # Processing options
-            force=force,
-            verbose=verbose,
-            parallel=parallel,
-        )
-        for filepath in filepaths
-    ]
-    list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
-
-    # -----------------------------------------------------------------.
-    # Define L1 summary logs
-    create_product_logs(
-        product=product,
+    # -------------------------------------------------------------------------.
+    # Read station metadata and retrieve sensor name
+    metadata = read_station_metadata(
+        metadata_archive_dir=metadata_archive_dir,
         data_source=data_source,
         campaign_name=campaign_name,
         station_name=station_name,
-        data_archive_dir=data_archive_dir,
-        # Logs list
-        list_logs=list_logs,
     )
+    sensor_name = metadata["sensor_name"]
+
+    # -------------------------------------------------------------------------.
+    # Retrieve L1 processing options
+    l1_processing_options = L1ProcessingOptions(
+        sensor_name=sensor_name,
+        filepaths=filepaths,
+        parallel=parallel,
+    )
+
+    # -------------------------------------------------------------------------.
+    # Generate products for each temporal resolution
+    # temporal_resolution = "1MIN"
+    # temporal_resolution = "10MIN"
+    for temporal_resolution in l1_processing_options.temporal_resolutions:
+        # Print progress message
+        msg = f"Production of {product} {temporal_resolution} has started."
+        log_info(logger=logger, msg=msg, verbose=verbose)
+
+        # Retrieve event info
+        files_partitions = l1_processing_options.group_files_by_temporal_partitions(temporal_resolution)
+
+        # Retrieve folder partitioning (for files and logs)
+        folder_partitioning = l1_processing_options.get_folder_partitioning(temporal_resolution)
+
+        # Retrieve product options
+        product_options = l1_processing_options.get_product_options(temporal_resolution)
+        product_options = product_options.get("product_options")
+
+        # Retrieve accumulation_interval and rolling option
+        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
+
+        # ------------------------------------------------------------------.
+        # Create product directory
+        data_dir = create_product_directory(
+            data_archive_dir=data_archive_dir,
+            metadata_archive_dir=metadata_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            product=product,
+            force=force,
+            # Option for L2E
+            sample_interval=accumulation_interval,
+            rolling=rolling,
+        )
+
+        # Define logs directory
+        logs_dir = create_logs_directory(
+            product=product,
+            data_archive_dir=data_archive_dir,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            # Option for L2E
+            sample_interval=accumulation_interval,
+            rolling=rolling,
+        )
+
+        # ------------------------------------------------------------------.
+        # Generate files
+        # - Loop over the L0C netCDF files and generate L1 files.
+        # - If parallel=True, it does that in parallel using dask.delayed
+        list_tasks = [
+            _generate_l1(
+                start_time=event_info["start_time"],
+                end_time=event_info["end_time"],
+                filepaths=event_info["filepaths"],
+                data_dir=data_dir,
+                logs_dir=logs_dir,
+                logs_filename=define_l1_logs_filename(
+                    campaign_name=campaign_name,
+                    station_name=station_name,
+                    start_time=event_info["start_time"],
+                    end_time=event_info["end_time"],
+                    rolling=rolling,
+                    accumulation_interval=accumulation_interval,
+                ),
+                folder_partitioning=folder_partitioning,
+                campaign_name=campaign_name,
+                station_name=station_name,
+                # L1 product options
+                rolling=rolling,
+                accumulation_interval=accumulation_interval,
+                product_options=product_options,
+                # Processing options
+                force=force,
+                verbose=verbose,
+                parallel=parallel,
+            )
+            for event_info in files_partitions
+        ]
+        list_logs = execute_tasks_safely(list_tasks=list_tasks, parallel=parallel, logs_dir=logs_dir)
+
+        # -----------------------------------------------------------------.
+        # Define product summary logs
+        create_product_logs(
+            product=product,
+            data_source=data_source,
+            campaign_name=campaign_name,
+            station_name=station_name,
+            data_archive_dir=data_archive_dir,
+            # Product options
+            sample_interval=accumulation_interval,
+            rolling=rolling,
+            # Logs list
+            list_logs=list_logs,
+        )
 
     # ---------------------------------------------------------------------.
     # End L1 processing
