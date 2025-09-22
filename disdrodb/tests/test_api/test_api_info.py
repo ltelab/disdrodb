@@ -355,8 +355,7 @@ class TestGetSampleIntervalFromFilepaths:
             station_name=station_name,
             start_time=start_time,
             end_time=end_time,
-            sample_interval=60,  # 60s → "60S"
-            rolling=False,
+            temporal_resolution="1MIN",
         )
         res = get_sample_interval_from_filepaths([filepath])
         assert res == [60]
@@ -374,8 +373,7 @@ class TestGetSampleIntervalFromFilepaths:
                 station_name=station_name,
                 start_time=start_time,
                 end_time=end_time,
-                sample_interval=300,  # 300s = 5min
-                rolling=False,
+                temporal_resolution="5MIN",
             ),
             define_filename(
                 product="L2E",
@@ -383,8 +381,7 @@ class TestGetSampleIntervalFromFilepaths:
                 station_name=station_name,
                 start_time=start_time,
                 end_time=end_time,
-                sample_interval=300,
-                rolling=False,
+                temporal_resolution="300S",
             ),
         ]
         res = get_sample_interval_from_filepaths(filepaths)
@@ -402,8 +399,7 @@ class TestGetSampleIntervalFromFilepaths:
             station_name=station_name,
             start_time=start_time,
             end_time=end_time,
-            sample_interval=60,
-            rolling=False,
+            temporal_resolution="1MIN",
         )
         file2 = define_filename(
             product="L2E",
@@ -411,8 +407,7 @@ class TestGetSampleIntervalFromFilepaths:
             station_name=station_name,
             start_time=start_time,
             end_time=end_time,
-            sample_interval=300,
-            rolling=False,
+            temporal_resolution="5MIN",
         )
         res = get_sample_interval_from_filepaths([file1, file2])
         assert sorted(res) == [60, 300]
@@ -495,8 +490,6 @@ class TestGetGroupsValue:
         campaign_name = "CAMPAIGN_NAME"
         station_name = "STATION_NAME"
         product = "L2E"
-        sample_interval = 60
-        rolling = False
 
         filepath = define_filename(
             product=product,
@@ -504,8 +497,7 @@ class TestGetGroupsValue:
             station_name=station_name,
             start_time=start_time,
             end_time=end_time,
-            sample_interval=sample_interval,
-            rolling=rolling,
+            temporal_resolution="1MIN",
         )
         res = get_groups_value(["product", "year", "month"], filepath)
         assert res == "L2E/2020/1"
@@ -559,8 +551,7 @@ class TestGroupFilepaths:
             station_name=station_name,
             start_time=start_time,
             end_time=end_time,
-            sample_interval=60,
-            rolling=False,
+            temporal_resolution="1MIN",
         )
         filepath3 = define_filename(
             product="L2M",
@@ -568,8 +559,7 @@ class TestGroupFilepaths:
             station_name=station_name,
             start_time=start_time,
             end_time=end_time,
-            sample_interval=60,
-            rolling=False,
+            temporal_resolution="1MIN",
             model_name="GAMMA",
         )
 

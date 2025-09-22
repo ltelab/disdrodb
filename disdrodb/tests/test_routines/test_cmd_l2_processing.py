@@ -114,40 +114,18 @@ def test_disdrodb_run_l2e_station(tmp_path, disdrodb_metadata_archive_dir, paral
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check products at different sampling intervals are produced
-    # - 1MIN
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L2E",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60,
-        rolling=False,
-    )
-    assert count_files(data_dir, glob_pattern="L2E.1MIN.*.nc", recursive=True) == 2
-    # - 10MIN
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L2E",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 10,
-        rolling=False,
-    )
-    assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
-    # - ROLL2MIN
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L2E",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 2,
-        rolling=True,
-    )
-    assert count_files(data_dir, glob_pattern="L2E.ROLL2MIN.*.nc", recursive=True) == 2
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L2E",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L2E.{temporal_resolution}.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -210,8 +188,7 @@ def test_disdrodb_run_l2m_station(tmp_path, disdrodb_metadata_archive_dir, paral
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=600,
-        rolling=False,
+        temporal_resolution="10MIN",
         model_name="GAMMA_ML",
     )
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
@@ -223,11 +200,10 @@ def test_disdrodb_run_l2m_station(tmp_path, disdrodb_metadata_archive_dir, paral
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=600,
-        rolling=False,
-        model_name="GAMMA_ML",
+        temporal_resolution="10MIN",
+        model_name="NGAMMA_GS_LOG_ND_MAE",
     )
-    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2M_NGAMMA_GS_LOG_ND_MAE.10MIN.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -284,40 +260,18 @@ def test_disdrodb_run_l2e(tmp_path, disdrodb_metadata_archive_dir, cli):
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check products at different sampling intervals are produced
-    # - 1MIN
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L2E",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60,
-        rolling=False,
-    )
-    assert count_files(data_dir, glob_pattern="L2E.1MIN.*.nc", recursive=True) == 2
-    # - 10MIN
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L2E",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 10,
-        rolling=False,
-    )
-    assert count_files(data_dir, glob_pattern="L2E.10MIN.*.nc", recursive=True) == 2
-    # - ROLL2MIN
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L2E",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 2,
-        rolling=True,
-    )
-    assert count_files(data_dir, glob_pattern="L2E.ROLL2MIN.*.nc", recursive=True) == 2
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L2E",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L2E.{temporal_resolution}.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -374,7 +328,7 @@ def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check products are produced
+    # Check various products are produced
     # - 10MIN GAMMA ML
     data_dir = define_data_dir(
         data_archive_dir=test_data_archive_dir,
@@ -382,8 +336,7 @@ def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=600,
-        rolling=False,
+        temporal_resolution="10MIN",
         model_name="GAMMA_ML",
     )
     assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
@@ -395,8 +348,7 @@ def test_disdrodb_run_l2m(tmp_path, disdrodb_metadata_archive_dir, cli):
         data_source=DATA_SOURCE,
         campaign_name=CAMPAIGN_NAME,
         station_name=STATION_NAME,
-        sample_interval=600,
-        rolling=False,
-        model_name="GAMMA_ML",
+        temporal_resolution="10MIN",
+        model_name="NGAMMA_GS_LOG_ND_MAE",
     )
-    assert count_files(data_dir, glob_pattern="L2M_GAMMA_ML.10MIN.*.nc", recursive=True) == 2
+    assert count_files(data_dir, glob_pattern="L2M_NGAMMA_GS_LOG_ND_MAE.10MIN.*.nc", recursive=True) == 2

@@ -35,7 +35,6 @@ from disdrodb.api.io import open_netcdf_files
 from disdrodb.api.path import (
     define_file_folder_path,
     define_l1_filename,
-    define_temporal_resolution,
 )
 from disdrodb.api.search import get_required_product
 from disdrodb.configs import (
@@ -65,9 +64,8 @@ from disdrodb.utils.writer import write_product
 logger = logging.getLogger(__name__)
 
 
-def define_l1_logs_filename(campaign_name, station_name, start_time, end_time, accumulation_interval, rolling):
+def define_l1_logs_filename(campaign_name, station_name, start_time, end_time, temporal_resolution):
     """Define L1 logs filename."""
-    temporal_resolution = define_temporal_resolution(seconds=accumulation_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
     logs_filename = f"L1.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
@@ -87,8 +85,7 @@ def _generate_l1(
     campaign_name,
     station_name,
     # L1 options
-    accumulation_interval,
-    rolling,
+    temporal_resolution,
     product_options,
     # Processing options
     force,
@@ -141,8 +138,7 @@ def _generate_l1(
         # verbose,
         force,
         # Product options
-        accumulation_interval,  # TODO: temporal_resolution
-        rolling,  # TODO: temporal_resolution
+        temporal_resolution,
         product_options,
         # Archiving arguments
         data_dir,
@@ -159,11 +155,13 @@ def _generate_l1(
             compute=True,
         )
 
-        # Resample dataset
-        # - Define sample interval in seconds
+        # Define sample interval in seconds
         sample_interval = ensure_sample_interval_in_seconds(ds["sample_interval"]).to_numpy().item()
 
-        # - Resample dataset
+        # Define accumulation interval and rolling option
+        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
+
+        # Resample dataset
         ds = resample_dataset(
             ds=ds,
             sample_interval=sample_interval,
@@ -183,8 +181,7 @@ def _generate_l1(
             ds,
             campaign_name=campaign_name,
             station_name=station_name,
-            rolling=rolling,
-            sample_interval=accumulation_interval,
+            temporal_resolution=temporal_resolution,
         )
         folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
         filepath = os.path.join(folder_path, filename)
@@ -204,8 +201,7 @@ def _generate_l1(
         # verbose=verbose,
         force=force,
         # Product options
-        accumulation_interval=accumulation_interval,  # TODO: temporal_resolution
-        rolling=rolling,  # TODO: temporal_resolution
+        temporal_resolution=temporal_resolution,
         product_options=product_options,
         # Archiving options
         data_dir=data_dir,
@@ -358,9 +354,6 @@ def run_l1_station(
         product_options = l1_processing_options.get_product_options(temporal_resolution)
         product_options = product_options.get("product_options")
 
-        # Retrieve accumulation_interval and rolling option
-        accumulation_interval, rolling = get_sampling_information(temporal_resolution)
-
         # ------------------------------------------------------------------.
         # Create product directory
         data_dir = create_product_directory(
@@ -371,9 +364,8 @@ def run_l1_station(
             station_name=station_name,
             product=product,
             force=force,
-            # Option for L2E
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            # Option for L1
+            temporal_resolution=temporal_resolution,
         )
 
         # Define logs directory
@@ -383,9 +375,8 @@ def run_l1_station(
             data_source=data_source,
             campaign_name=campaign_name,
             station_name=station_name,
-            # Option for L2E
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            # Option for L1
+            temporal_resolution=temporal_resolution,
         )
 
         # ------------------------------------------------------------------.
@@ -404,15 +395,13 @@ def run_l1_station(
                     station_name=station_name,
                     start_time=event_info["start_time"],
                     end_time=event_info["end_time"],
-                    rolling=rolling,
-                    accumulation_interval=accumulation_interval,
+                    temporal_resolution=temporal_resolution,
                 ),
                 folder_partitioning=folder_partitioning,
                 campaign_name=campaign_name,
                 station_name=station_name,
                 # L1 product options
-                rolling=rolling,
-                accumulation_interval=accumulation_interval,
+                temporal_resolution=temporal_resolution,
                 product_options=product_options,
                 # Processing options
                 force=force,
@@ -432,8 +421,7 @@ def run_l1_station(
             station_name=station_name,
             data_archive_dir=data_archive_dir,
             # Product options
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
             # Logs list
             list_logs=list_logs,
         )

@@ -165,12 +165,9 @@ def find_files(
 
     Other Parameters
     ----------------
-    sample_interval : int, optional
-        The sampling interval in seconds of the product.
-        It must be specified only for product L2E and L2M !
-    rolling : bool, optional
-        Whether the dataset has been resampled by aggregating or rolling.
-        It must be specified only for product L2E and L2M !
+    temporal_resolution : str, optional
+        The temporal resolution of the product (e.g., "1MIN", "10MIN", "1H").
+        It must be specified only for product L1, L2E and L2M !
     model_name : str
         The model name of the statistical distribution for the DSD.
         It must be specified only for product L2M !
@@ -411,15 +408,11 @@ def open_dataset(
         The name of the station.
     product : str
         The name DISDRODB product.
-    sample_interval : int, optional
-        The sampling interval in seconds of the product.
-        It must be specified only for product L2E and L2M !
-    rolling : bool, optional
-        Whether the dataset has been resampled by aggregating or rolling.
-        It must be specified only for product L2E and L2M !
-    model_name : str
-        The model name of the statistical distribution for the DSD.
-        It must be specified only for product L2M !
+    product_kwargs : dict, optional
+        DISDRODB product options dictionary.
+        It must be specified only for product L1, L2E and L2M products !
+        For L1, L2E and L2M products, temporal_resolution is required
+        FOr L2M product, model_name is required.
     debugging_mode : bool, optional
         If ``True``, it select maximum 3 files for debugging purposes.
         The default value is ``False``.

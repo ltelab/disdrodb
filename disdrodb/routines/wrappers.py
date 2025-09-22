@@ -1468,6 +1468,14 @@ def create_summary(
         The directory path must end with ``<...>/DISDRODB``.
         If ``None``, it uses the ``data_archive_dir`` path specified
         in the DISDRODB active configuration.
+    metadata_archive_dir
+        The directory path where the DISDRODB Metadata Archive is located.
+        The directory path must end with ``<...>/DISDRODB-METADATA/DISDRODB``.
+        If ``None``, it uses the ``metadata_archive_dir`` path specified
+        in the DISDRODB active configuration.
+    temporal_resolution : str
+        Temporal resolution of the summary.
+        The default value is ``1MIN``.
     """
     # Get list of available stations
     list_info = available_stations(
@@ -1480,7 +1488,7 @@ def create_summary(
         station_names=station_names,
         # Search options
         product="L2E",
-        product_kwargs={"rolling": False, "sample_interval": 60},
+        product_kwargs={"temporal_resolution": temporal_resolution},
         raise_error_if_empty=True,
     )
 

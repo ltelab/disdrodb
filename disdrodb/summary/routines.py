@@ -43,7 +43,6 @@ from disdrodb.utils.manipulations import (
     resample_drop_number_concentration,
     unstack_radar_variables,
 )
-from disdrodb.utils.time import get_sampling_information
 from disdrodb.utils.warnings import suppress_warnings
 from disdrodb.utils.yaml import write_yaml
 from disdrodb.viz import compute_dense_lines, max_blend_images, to_rgba
@@ -4192,8 +4191,7 @@ def create_station_summary(
     os.makedirs(summary_dir_path, exist_ok=True)
 
     # Define product_kwargs
-    sample_interval, rolling = get_sampling_information(temporal_resolution)
-    product_kwargs = {"rolling": rolling, "sample_interval": sample_interval}
+    product_kwargs = {"temporal_resolution": temporal_resolution}
 
     # Load L2E 1MIN dataset
     ds = disdrodb.open_dataset(

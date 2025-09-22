@@ -107,39 +107,18 @@ def test_disdrodb_run_l1_station(tmp_path, disdrodb_metadata_archive_dir, parall
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check product files are produced
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60,
-        rolling=False,  # 1MIN
-    )
-    assert count_files(data_dir, glob_pattern="L1.1MIN.*.nc", recursive=True) == 2
-
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 10,  # 10MIN
-        rolling=False,  # 1MIN
-    )
-    assert count_files(data_dir, glob_pattern="L1.10MIN.*.nc", recursive=True) == 2
-
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 2,
-        rolling=True,  # ROLL2MIN
-    )
-    assert count_files(data_dir, glob_pattern="L1.ROLL2MIN.*.nc", recursive=True) == 2
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L1",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2
 
 
 @pytest.mark.parametrize("cli", [True, False])
@@ -195,36 +174,15 @@ def test_disdrodb_run_l1(tmp_path, disdrodb_metadata_archive_dir, cli):
             debugging_mode=DEBUGGING_MODE,
         )
 
-    # Check product files are produced
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60,
-        rolling=False,  # 1MIN
-    )
-    assert count_files(data_dir, glob_pattern="L1.1MIN.*.nc", recursive=True) == 2
-
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 10,  # 10MIN
-        rolling=False,  # 1MIN
-    )
-    assert count_files(data_dir, glob_pattern="L1.10MIN.*.nc", recursive=True) == 2
-
-    data_dir = define_data_dir(
-        data_archive_dir=test_data_archive_dir,
-        product="L1",
-        data_source=DATA_SOURCE,
-        campaign_name=CAMPAIGN_NAME,
-        station_name=STATION_NAME,
-        sample_interval=60 * 2,
-        rolling=True,  # ROLL2MIN
-    )
-    assert count_files(data_dir, glob_pattern="L1.ROLL2MIN.*.nc", recursive=True) == 2
+    # Check products at different temporal resolutions are produced
+    temporal_resolutions = ["1MIN", "10MIN", "ROLL2MIN"]
+    for temporal_resolution in temporal_resolutions:
+        data_dir = define_data_dir(
+            data_archive_dir=test_data_archive_dir,
+            product="L1",
+            data_source=DATA_SOURCE,
+            campaign_name=CAMPAIGN_NAME,
+            station_name=STATION_NAME,
+            temporal_resolution=temporal_resolution,
+        )
+        assert count_files(data_dir, glob_pattern=f"L1.{temporal_resolution}.*.nc", recursive=True) == 2

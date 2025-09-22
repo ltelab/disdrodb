@@ -47,9 +47,9 @@ IMPACT_SENSORS = ["RD80"]
 PRODUCTS = ["RAW", "L0A", "L0B", "L0C", "L1", "L2E", "L2M"]
 
 PRODUCTS_ARGUMENTS = {
-    "L1": ["rolling", "sample_interval"],
-    "L2E": ["rolling", "sample_interval"],
-    "L2M": ["rolling", "sample_interval", "model_name"],
+    "L1": ["temporal_resolution"],
+    "L2E": ["temporal_resolution"],
+    "L2M": ["temporal_resolution", "model_name"],
 }
 
 PRODUCTS_REQUIREMENTS = {

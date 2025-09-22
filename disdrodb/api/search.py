@@ -342,9 +342,9 @@ def available_stations(
         If None, the default metadata base directory is used. Default is None.
     **product_kwargs : dict, optional
         Additional arguments required for some products.
-        For example, for the "L2E" product, you need to specify ``rolling`` and
-        ``sample_interval``. For the "L2M" product, you need to specify also
-        the ``model_name``.
+        It must be specified only for product L1, L2E and L2M products !
+        For L1, L2E and L2M products, ``temporal_resolution`` is required.
+        FOr L2M product, ``model_name`` is required.
 
     Returns
     -------

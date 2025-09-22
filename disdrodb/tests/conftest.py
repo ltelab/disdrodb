@@ -142,8 +142,7 @@ def get_default_product_kwargs(product, product_kwargs=None):
     # Define default test product_kwargs
     default_kwargs = {
         "model_name": "GAMMA_ML",
-        "sample_interval": 30,
-        "rolling": False,
+        "temporal_resolution": "1MIN",
     }
     # Set missing product kwargs
     required_args = PRODUCTS_ARGUMENTS[product]

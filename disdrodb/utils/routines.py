@@ -22,7 +22,7 @@ import shutil
 import tempfile
 
 from disdrodb.api.io import find_files
-from disdrodb.api.path import define_file_folder_path, define_temporal_resolution
+from disdrodb.api.path import define_file_folder_path
 from disdrodb.utils.logger import (
     close_logger,
     create_logger_file,
@@ -67,11 +67,8 @@ def try_get_required_filepaths(
     # If no files available, print informative message
     except Exception as e:
         temporal_resolution = ""
-        if "sample_interval" in product_kwargs and "rolling" in product_kwargs:
-            temporal_resolution = define_temporal_resolution(
-                seconds=product_kwargs["sample_interval"],
-                rolling=product_kwargs["rolling"],
-            )
+        if "temporal_resolution" in product_kwargs:
+            temporal_resolution = product_kwargs["temporal_resolution"]
         print(str(e))
         msg = (
             f"{product} processing of {data_source} {campaign_name} {station_name} "

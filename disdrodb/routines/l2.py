@@ -35,7 +35,6 @@ from disdrodb.api.path import (
     define_file_folder_path,
     define_l2e_filename,
     define_l2m_filename,
-    define_temporal_resolution,
 )
 from disdrodb.api.search import get_required_product
 from disdrodb.configs import (
@@ -75,9 +74,8 @@ logger = logging.getLogger(__name__)
 #### L2E
 
 
-def define_l2e_logs_filename(campaign_name, station_name, start_time, end_time, accumulation_interval, rolling):
+def define_l2e_logs_filename(campaign_name, station_name, start_time, end_time, temporal_resolution):
     """Define L2E logs filename."""
-    temporal_resolution = define_temporal_resolution(seconds=accumulation_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
     logs_filename = f"L2E.{temporal_resolution}.{campaign_name}.{station_name}.s{starting_time}.e{ending_time}"
@@ -97,8 +95,7 @@ def _generate_l2e(
     campaign_name,
     station_name,
     # L2E options
-    accumulation_interval,
-    rolling,
+    temporal_resolution,
     product_options,
     # Processing options
     force,
@@ -122,8 +119,7 @@ def _generate_l2e(
         verbose,
         force,
         # Product options
-        accumulation_interval,  # TODO: temporal_resolution
-        rolling,  # TODO: temporal_resolution
+        temporal_resolution,
         product_options,
         # Archiving arguments
         data_dir,
@@ -165,8 +161,7 @@ def _generate_l2e(
             ds,
             campaign_name=campaign_name,
             station_name=station_name,
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
         )
         folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
         filepath = os.path.join(folder_path, filename)
@@ -184,8 +179,7 @@ def _generate_l2e(
         campaign_name=campaign_name,
         station_name=station_name,
         # Product options
-        accumulation_interval=accumulation_interval,
-        rolling=rolling,
+        temporal_resolution=temporal_resolution,
         product_options=product_options,
         # Archiving arguments
         data_dir=data_dir,
@@ -340,8 +334,7 @@ def run_l2e_station(
             # Processing options
             debugging_mode=debugging_mode,
             # Product options
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
         )
         if filepaths is None:
             continue
@@ -389,8 +382,7 @@ def run_l2e_station(
             product=product,
             force=force,
             # Option for L2E
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
         )
 
         # Define logs directory
@@ -401,8 +393,7 @@ def run_l2e_station(
             campaign_name=campaign_name,
             station_name=station_name,
             # Option for L2E
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
         )
 
         # ---------------------------------------------------------------------.
@@ -421,15 +412,13 @@ def run_l2e_station(
                     station_name=station_name,
                     start_time=event_info["start_time"],
                     end_time=event_info["end_time"],
-                    rolling=rolling,
-                    accumulation_interval=accumulation_interval,
+                    temporal_resolution=temporal_resolution,
                 ),
                 folder_partitioning=folder_partitioning,
                 campaign_name=campaign_name,
                 station_name=station_name,
                 # L2E options
-                rolling=rolling,
-                accumulation_interval=accumulation_interval,
+                temporal_resolution=temporal_resolution,
                 product_options=product_options,
                 # Processing options
                 force=force,
@@ -449,8 +438,7 @@ def run_l2e_station(
             station_name=station_name,
             data_archive_dir=data_archive_dir,
             # Product options
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
             # Logs list
             list_logs=list_logs,
         )
@@ -465,9 +453,8 @@ def run_l2e_station(
 
 ####----------------------------------------------------------------------------.
 #### L2M
-def define_l2m_logs_filename(campaign_name, station_name, start_time, end_time, model_name, sample_interval, rolling):
+def define_l2m_logs_filename(campaign_name, station_name, start_time, end_time, model_name, temporal_resolution):
     """Define L2M logs filename."""
-    temporal_resolution = define_temporal_resolution(seconds=sample_interval, rolling=rolling)
     starting_time = pd.to_datetime(start_time).strftime("%Y%m%d%H%M%S")
     ending_time = pd.to_datetime(end_time).strftime("%Y%m%d%H%M%S")
     logs_filename = (
@@ -489,8 +476,7 @@ def _generate_l2m(
     campaign_name,
     station_name,
     # L2M options
-    sample_interval,
-    rolling,
+    temporal_resolution,
     model_name,
     product_options,
     # Processing options
@@ -515,8 +501,7 @@ def _generate_l2m(
         force,
         # Product options
         product_options,
-        sample_interval,
-        rolling,
+        temporal_resolution,
         model_name,
         # Archiving arguments
         data_dir,
@@ -586,8 +571,7 @@ def _generate_l2m(
             ds,
             campaign_name=campaign_name,
             station_name=station_name,
-            sample_interval=sample_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
             model_name=model_name,
         )
         folder_path = define_file_folder_path(ds, dir_path=data_dir, folder_partitioning=folder_partitioning)
@@ -609,8 +593,7 @@ def _generate_l2m(
         force=force,
         # Product options
         product_options=product_options,
-        sample_interval=sample_interval,
-        rolling=rolling,
+        temporal_resolution=temporal_resolution,
         model_name=model_name,
         # Archiving arguments
         data_dir=data_dir,
@@ -750,8 +733,7 @@ def run_l2m_station(
             # Processing options
             debugging_mode=debugging_mode,
             # Product options
-            sample_interval=accumulation_interval,
-            rolling=rolling,
+            temporal_resolution=temporal_resolution,
         )
         if filepaths is None:
             continue
@@ -825,14 +807,13 @@ def run_l2m_station(
                     product=product,
                     force=force,
                     # Option for L2E
-                    sample_interval=accumulation_interval,
-                    rolling=rolling,
+                    temporal_resolution=temporal_resolution,
                     # Option for L2M
                     model_name=model_name,
                 )
             except Exception:
                 msg = (
-                    f"Production of L2M_{model_name} for sample interval {accumulation_interval} s has been "
+                    f"Production of L2M_{model_name} for {temporal_resolution} data has been "
                     + "skipped because the product already exists and force=False."
                 )
                 log_info(logger=logger, msg=msg, verbose=verbose)
@@ -847,8 +828,7 @@ def run_l2m_station(
                 campaign_name=campaign_name,
                 station_name=station_name,
                 # Option for L2E
-                sample_interval=accumulation_interval,
-                rolling=rolling,
+                temporal_resolution=temporal_resolution,
                 # Option for L2M
                 model_name=model_name,
             )
@@ -869,15 +849,13 @@ def run_l2m_station(
                         start_time=event_info["start_time"],
                         end_time=event_info["end_time"],
                         model_name=model_name,
-                        sample_interval=accumulation_interval,
-                        rolling=rolling,
+                        temporal_resolution=temporal_resolution,
                     ),
                     folder_partitioning=folder_partitioning,
                     campaign_name=campaign_name,
                     station_name=station_name,
                     # L2M options
-                    sample_interval=accumulation_interval,
-                    rolling=rolling,
+                    temporal_resolution=temporal_resolution,
                     model_name=model_name,
                     product_options=product_options,
                     # Processing options
@@ -901,8 +879,7 @@ def run_l2m_station(
                 data_archive_dir=data_archive_dir,
                 # Product options
                 model_name=model_name,
-                sample_interval=accumulation_interval,
-                rolling=rolling,
+                temporal_resolution=temporal_resolution,
                 # Logs list
                 list_logs=list_logs,
             )
