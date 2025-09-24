@@ -38,7 +38,6 @@ from disdrodb.utils.yaml import read_yaml
 
 @pytest.fixture
 def temporary_home(tmp_path, monkeypatch):
-    """Temporarily set HOME to a tmp_path and restore afterwards."""
     """Force _define_config_filepath to point into tmp_path."""
     from disdrodb import configs
 

@@ -73,11 +73,19 @@ The data are stored in remote data repositories but are easily accessible throug
 
 The metadata of each stations are stored in a `centralized repository hosted on GitHub <https://github.com/ltelab/DISDRODB-METADATA>`__.
 
-The currently available disdrometer stations are depicted in the figure below.
+The currently available disdrometer stations can be explored in the following interactive map.  
+You can also access the full-screen map `here <https://ltelab.github.io/DISDRODB-METADATA/stations_map.html>`_. 
 
-.. image:: /static/map_stations.png
-   :width: 100%
-   :align: center
+.. raw:: html
+
+   <iframe src="https://ltelab.github.io/DISDRODB-METADATA/stations_map.html"
+           width="100%" height="650" style="border:none;">
+   </iframe>
+
+
+.. .. image:: /static/map_stations.png
+..    :width: 100%
+..    :align: center
 
 
 .. warning::
